@@ -14,6 +14,7 @@ import numpy as np
 from collections import Counter
 
 from quickice.structure_generation.types import Candidate
+from quickice.ranking.types import RankedCandidate, RankingResult
 
 
 # Constants for scoring
@@ -203,3 +204,44 @@ def diversity_score(candidate: Candidate, all_candidates: list[Candidate]) -> fl
     # If seed appears once, score = 1.0 (most unique)
     # If seed appears twice, score = 0.5 (less unique)
     return 1.0 / same_seed_count
+
+
+def normalize_scores(scores: list[float]) -> np.ndarray:
+    """Normalize scores to 0-1 range using min-max scaling.
+    
+    Lower raw scores become lower normalized scores (0 = min, 1 = max).
+    If all scores equal, returns zeros.
+    
+    This normalization is used to bring all scoring components to a common
+    0-1 scale before combining them with weights. The convention is:
+    
+    - Energy score: lower raw = better, so lower normalized = better
+    - Density score: lower raw = better, so lower normalized = better  
+    - Diversity score: higher raw = better, so higher normalized = better
+      (will be inverted during combination to maintain lower=better convention)
+    
+    Args:
+        scores: List of raw scores to normalize
+    
+    Returns:
+        Normalized scores as numpy array (0.0 to 1.0 range).
+        Returns array of zeros if all scores are equal.
+    
+    Example:
+        >>> normalize_scores([1.0, 2.0, 3.0])
+        array([0. , 0.5, 1. ])
+    """
+    scores_array = np.array(scores, dtype=float)
+    
+    # Get min and max
+    min_score = np.min(scores_array)
+    max_score = np.max(scores_array)
+    
+    # Handle edge case: all scores equal
+    if max_score == min_score:
+        return np.zeros_like(scores_array)
+    
+    # Min-max normalization
+    normalized = (scores_array - min_score) / (max_score - min_score)
+    
+    return normalized
