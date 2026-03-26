@@ -20,14 +20,14 @@ PHASE_TO_GENICE = {
 
 # Molecules per unit cell for each GenIce lattice
 UNIT_CELL_MOLECULES = {
-    "ice1h": 4,
+    "ice1h": 16,  # 4 in conventional cell, 16 in GenIce unit cell
     "ice1c": 8,
     "ice2": 12,
     "ice3": 12,
     "ice5": 28,
     "ice6": 10,  # double network
     "ice7": 16,  # double network
-    "ice8": 16,  # double network
+    "ice8": 64,  # 16 in conventional cell, 64 in GenIce unit cell
 }
 
 
