@@ -20,10 +20,10 @@
 
 ### Structure Generation
 
-- [ ] **GEN-01**: GenIce integration for coordinate generation
-- [ ] **GEN-02**: Generate multiple candidates per query (10 total)
-- [ ] **GEN-03**: Handle molecule count → supercell sizing
-- [ ] **GEN-04**: Generate valid hydrogen bond network (via GenIce)
+- [x] **GEN-01**: GenIce integration for coordinate generation
+- [x] **GEN-02**: Generate multiple candidates per query (10 total)
+- [x] **GEN-03**: Handle molecule count → supercell sizing
+- [x] **GEN-04**: Generate valid hydrogen bond network (via GenIce)
 
 ### Ranking
 
@@ -90,10 +90,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PHASE-01 | Phase 2 | Complete |
 | PHASE-02 | Phase 2 | Complete |
 | PHASE-03 | Phase 2 | Complete |
-| GEN-01 | Phase 3 | Pending |
-| GEN-02 | Phase 3 | Pending |
-| GEN-03 | Phase 3 | Pending |
-| GEN-04 | Phase 3 | Pending |
+| GEN-01 | Phase 3 | Complete |
+| GEN-02 | Phase 3 | Complete |
+| GEN-03 | Phase 3 | Complete |
+| GEN-04 | Phase 3 | Complete |
 | RANK-01 | Phase 4 | Pending |
 | RANK-02 | Phase 4 | Pending |
 | RANK-03 | Phase 4 | Pending |
