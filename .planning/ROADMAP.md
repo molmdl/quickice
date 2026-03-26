@@ -44,7 +44,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** PHASE-01, PHASE-02, PHASE-03
 
-**Plans:** 6 plans in 3 waves (original) + 3 correction plans
+**Plans:** 7 plans in 3 waves (original) + 4 correction plans
 
 **Success Criteria:**
 
@@ -61,6 +61,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 - [x] 02-04-PLAN.md — Curved boundary data (IAPWS triple points, polygons) [CORRECTION]
 - [x] 02-05-PLAN.md — Curved boundary lookup logic (shapely) [CORRECTION]
 - [x] 02-06-PLAN.md — Update test expectations [CORRECTION]
+- [ ] 02-07-PLAN.md — Fix II-III-V triple point (248.85 K) [CORRECTION]
 
 ---
 
@@ -128,15 +129,17 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Dependencies:** Phase 4 (ranking needed before output)
 
-**Plans:** 6 plans in 5 waves
+**Plans:** 8 plans in 6 waves
 
 **Plans:**
-- [ ] 05-01-PLAN.md — Output types (OutputResult dataclass)
-- [ ] 05-02-PLAN.md — PDB writer with TDD (CRYST1 records, coordinate conversion)
-- [ ] 05-03-PLAN.md — Validator with TDD (space group, atomic overlap with PBC)
-- [ ] 05-04-PLAN.md — Phase diagram generator (PNG/SVG/text, checkpoint for visual verification)
+- [x] 05-01-PLAN.md — Output types (OutputResult dataclass)
+- [x] 05-02-PLAN.md — PDB writer with TDD (CRYST1 records, coordinate conversion)
+- [x] 05-03-PLAN.md — Validator with TDD (space group, atomic overlap with PBC)
+- [x] 05-04-PLAN.md — Phase diagram generator (superseded by 05-08)
 - [ ] 05-05-PLAN.md — Output orchestrator (coordinates all output components)
 - [ ] 05-06-PLAN.md — CLI integration (--output, --no-diagram flags, end-to-end checkpoint)
+- [x] 05-07-PLAN.md — Curved boundaries correction (superseded by 05-08)
+- [ ] 05-08-PLAN.md — Unified diagram with PHASE_POLYGONS [CORRECTION]
 
 ---
 
@@ -180,10 +183,10 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
-| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
+| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ⚠️ Correction (02-07) |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
-| 5 - Output | PDB files | OUT-01 to OUT-05 | Pending |
+| 5 - Output | PDB files | OUT-01 to OUT-05 | ⚠️ Correction (05-08) |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
