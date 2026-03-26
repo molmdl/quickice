@@ -1,4 +1,4 @@
-Provided here the code of genice.
+Provided here the source code of genice, which is also installed in the current conda environment.
 
 Derive a framework to model the phase diagram of ice and the respective coordinates of water without using physics. 
 
