@@ -162,3 +162,44 @@ def density_score(candidate: Candidate) -> float:
     
     # Return absolute deviation (lower = better)
     return abs(actual_density - expected_density)
+
+
+def diversity_score(candidate: Candidate, all_candidates: list[Candidate]) -> float:
+    """Calculate diversity score based on structural variety.
+    
+    For single-phase generation (Phase 3), uses seed-based diversity.
+    Higher score = more unique structure.
+    
+    This function rewards candidates generated from seeds that appear less
+    frequently in the overall candidate set. In Phase 3, candidates are
+    generated for a single phase using different random seeds. This scoring
+    approach ensures that the final ranked list includes diverse structures
+    rather than multiple variations from the same seed.
+    
+    Args:
+        candidate: The candidate to score
+        all_candidates: All candidates in the generation batch
+    
+    Returns:
+        Diversity score (higher = more unique). Returns 1.0 if all seeds
+        are unique, returns lower values for candidates with duplicate seeds.
+    
+    Note:
+        This is the single-phase fallback approach. If multi-phase generation
+        is implemented in the future, a different diversity metric based on
+        structural fingerprints (e.g., radial distribution functions, bond
+        angle distributions) would be more appropriate.
+    """
+    # Get all seeds from the candidate set
+    all_seeds = [c.seed for c in all_candidates]
+    
+    # Count occurrences of each seed
+    seed_counts = Counter(all_seeds)
+    
+    # Get count of candidates with same seed as this candidate
+    same_seed_count = seed_counts[candidate.seed]
+    
+    # Return inverse frequency (higher = more unique)
+    # If seed appears once, score = 1.0 (most unique)
+    # If seed appears twice, score = 0.5 (less unique)
+    return 1.0 / same_seed_count
