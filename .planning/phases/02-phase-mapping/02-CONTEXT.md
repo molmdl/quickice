@@ -44,7 +44,7 @@ No specific requirements — open to standard approaches for phase diagram looku
 <deferred>
 ## Deferred Ideas
 
-- **Phase diagram visualization** — Output 2D/3D phase diagram plot with user's T,P point marked. Useful for users to visualize where their conditions fall. Belongs in a future phase or as optional output feature.
+None — discussion stayed within phase scope. (Phase diagram visualization moved to Phase 5 scope.)
 
 </deferred>
 

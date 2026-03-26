@@ -90,7 +90,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 ### Phase 5: Output
 
-**Goal:** Users receive 10 usable PDB files ready for molecular visualization or analysis.
+**Goal:** Users receive 10 usable PDB files ready for molecular visualization or analysis. Optional phase diagram visualization shows user's T,P point.
 
 **Requirements:** OUT-01, OUT-02, OUT-03, OUT-04, OUT-05
 
@@ -100,6 +100,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 2. 10 PDB files output per query with rank suffix (_01 to _10)
 3. No atomic overlap in output structures
 4. Valid space group verified via spglib
+5. Optional: --diagram flag outputs phase diagram with T,P point marked
 
 **Dependencies:** Phase 4 (ranking needed before output)
 

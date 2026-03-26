@@ -37,7 +37,7 @@
 | 2 | Phase Mapping | T,P → polymorph | 3 |
 | 3 | Structure Generation | Valid GenIce output | 4 |
 | 4 | Ranking | Scored candidates | 4 |
-| 5 | Output | PDB files | 5 |
+| 5 | Output | PDB files + phase diagram | 5 |
 | 6 | Documentation | User guides | 4 |
 
 ---
