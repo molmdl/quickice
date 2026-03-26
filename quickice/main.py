@@ -2,18 +2,35 @@
 
 import sys
 
+from quickice.cli.parser import get_arguments
+
 
 def main() -> int:
     """Main entry point for QuickIce.
     
+    Parses command-line arguments and prints validated inputs.
+    
     Returns:
         Exit code (0 for success, non-zero for error).
     """
-    print("QuickIce - Ice structure generation")
-    print("Run 'python quickice.py --help' for usage.")
-    print()
-    print("Note: CLI parser will be implemented in Phase 1, Plan 03.")
-    return 0
+    try:
+        args = get_arguments()
+        
+        # Print validated inputs
+        print("QuickIce - Ice structure generation")
+        print()
+        print(f"Temperature: {args.temperature}K")
+        print(f"Pressure: {args.pressure} MPa")
+        print(f"Molecules: {args.nmolecules}")
+        
+        return 0
+    except SystemExit:
+        # argparse calls sys.exit on error or --help
+        # Re-raise to propagate the exit code
+        raise
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
