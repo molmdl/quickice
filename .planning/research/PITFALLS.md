@@ -127,9 +127,9 @@ Domain-specific security issues are minimal for this CLI tool (no network, no us
 
 ## Sources
 
-- GenIce2 documentation
-- Ice phase diagram literature
-- ML crystal generation best practices
+- [GenIce2 GitHub](https://github.com/vitroid/GenIce) — Ice structure generation
+- [GenIce README](https://github.com/vitroid/GenIce/blob/main/README.md) — Phase list and validation
+- [analice2](https://github.com/vitroid/GenIce/tree/main/GenIce/Utilities) — Ice rule validation
 
 ---
 *Pitfalls research for: ML-based ice structure generation*

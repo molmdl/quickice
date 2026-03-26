@@ -103,9 +103,12 @@ Input Parameters
 
 ## Sources
 
-- GenIce2 GitHub: Physics-based ice generation
-- MLIP tools: MACE-OFF, UMA for fast relaxation
-- Crystal structure prediction literature
+- [GenIce2 GitHub](https://github.com/vitroid/GenIce) — Physics-based ice structure generation
+- [Genarris 3.0](https://github.com/Yi5817/Genarris) — Random molecular crystal generator
+- [XtalOpt](https://github.com/xtalopt/XtalOpt) — Evolutionary algorithm for crystal structure prediction
+- [MACE-OFF](https://github.com/ACEsuit/mace-off) — Machine learning force field for organic molecules
+- [UMA](https://huggingface.co/facebook/UMA) — Universal Model for Atoms
+- [FAIRChem](https://github.com/facebookresearch/fairchem) — Meta FAIR Chemistry library (includes UMA)
 
 ---
 *Feature research for: ML-based ice structure generation*

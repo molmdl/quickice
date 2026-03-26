@@ -73,10 +73,12 @@ pip install numpy>=2.4.0 scipy>=1.17.0 spglib>=2.7.0 click>=8.3.0 pyyaml>=6.0 py
 
 ## Sources
 
-- NumPy 2.4.0 Release Notes
-- SciPy 1.17.0 Documentation
-- Spglib GitHub v2.7.0
-- Click Documentation v8.3.1
+- [NumPy Documentation](https://numpy.org/doc/stable/) — Array computing fundamentals
+- [SciPy Documentation](https://docs.scipy.org/doc/scipy/) — Scientific computing routines
+- [Spglib GitHub](https://github.com/spglib/spglib) — Crystal symmetry handling
+- [Click Documentation](https://click.palletsprojects.com/) — CLI framework
+- [GenIce2 GitHub](https://github.com/vitroid/GenIce) — Ice structure generation
+- [MACE-OFF GitHub](https://github.com/ACEsuit/mace-off) — ML force fields for organic molecules
 
 ---
 *Stack research for: ML-based ice structure generation*

@@ -140,13 +140,11 @@ src/
 
 ## Sources
 
-- NumPy 2.4.0 Release Notes
-- SciPy 1.17.0 Documentation  
-- Spglib GitHub v2.7.0
-- Click Documentation v8.3.1
-- GenIce2 GitHub
-- Ice Phase Diagram literature
-- ML crystal generation best practices
+- [GenIce2 GitHub](https://github.com/vitroid/GenIce) — Ice structure generation
+- [Spglib](https://github.com/spglib/spglib) — Crystal symmetry handling
+- [MACE-OFF](https://github.com/ACEsuit/mace-off) — ML force fields for organic molecules
+- [UMA](https://huggingface.co/facebook/UMA) — Universal Model for Atoms
+- [FAIRChem](https://github.com/facebookresearch/fairchem) — Meta FAIR Chemistry library
 
 ---
 
