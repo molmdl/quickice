@@ -44,6 +44,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** PHASE-01, PHASE-02, PHASE-03
 
+**Plans:** 3 plans in 3 waves
+
 **Success Criteria:**
 
 1. User can query with T,P and receive polymorph identification
@@ -133,7 +135,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
-| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | Planning |
+| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | Planned |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | Pending |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | Pending |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | Pending |
