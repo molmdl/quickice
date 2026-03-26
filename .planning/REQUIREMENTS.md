@@ -87,31 +87,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INPUT-02 | Phase 1 | Pending |
 | INPUT-03 | Phase 1 | Pending |
 | INPUT-04 | Phase 1 | Pending |
-| PHASE-01 | Phase 1 | Pending |
-| PHASE-02 | Phase 1 | Pending |
-| PHASE-03 | Phase 1 | Pending |
-| GEN-01 | Phase 1 | Pending |
-| GEN-02 | Phase 1 | Pending |
-| GEN-03 | Phase 1 | Pending |
-| GEN-04 | Phase 1 | Pending |
-| RANK-01 | Phase 1 | Pending |
-| RANK-02 | Phase 1 | Pending |
-| RANK-03 | Phase 1 | Pending |
-| RANK-04 | Phase 1 | Pending |
-| OUT-01 | Phase 1 | Pending |
-| OUT-02 | Phase 1 | Pending |
-| OUT-03 | Phase 1 | Pending |
-| OUT-04 | Phase 1 | Pending |
-| OUT-05 | Phase 1 | Pending |
-| DOC-01 | Phase 1 | Pending |
-| DOC-02 | Phase 1 | Pending |
-| DOC-03 | Phase 1 | Pending |
-| DOC-04 | Phase 1 | Pending |
+| PHASE-01 | Phase 2 | Pending |
+| PHASE-02 | Phase 2 | Pending |
+| PHASE-03 | Phase 2 | Pending |
+| GEN-01 | Phase 3 | Pending |
+| GEN-02 | Phase 3 | Pending |
+| GEN-03 | Phase 3 | Pending |
+| GEN-04 | Phase 3 | Pending |
+| RANK-01 | Phase 4 | Pending |
+| RANK-02 | Phase 4 | Pending |
+| RANK-03 | Phase 4 | Pending |
+| RANK-04 | Phase 4 | Pending |
+| OUT-01 | Phase 5 | Pending |
+| OUT-02 | Phase 5 | Pending |
+| OUT-03 | Phase 5 | Pending |
+| OUT-04 | Phase 5 | Pending |
+| OUT-05 | Phase 5 | Pending |
+| DOC-01 | Phase 6 | Pending |
+| DOC-02 | Phase 6 | Pending |
+| DOC-03 | Phase 6 | Pending |
+| DOC-04 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️ (to be mapped in roadmap)
+- Mapped to phases: 24 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-26*
