@@ -61,7 +61,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 - [x] 02-04-PLAN.md — Curved boundary data (IAPWS triple points, polygons) [CORRECTION]
 - [x] 02-05-PLAN.md — Curved boundary lookup logic (shapely) [CORRECTION]
 - [x] 02-06-PLAN.md — Update test expectations [CORRECTION]
-- [ ] 02-07-PLAN.md — Fix II-III-V triple point (248.85 K) [CORRECTION]
+- [x] 02-07-PLAN.md — Fix II-III-V triple point (248.85 K) + LSBU citation [CORRECTION]
 
 ---
 
@@ -183,7 +183,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
-| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ⚠️ Correction (02-07) |
+| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | ⚠️ Correction (05-08) |
