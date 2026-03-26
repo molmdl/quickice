@@ -15,6 +15,10 @@ from quickice.structure_generation.mapper import (
     get_genice_lattice_name,
 )
 from quickice.structure_generation.types import Candidate, GenerationResult
+from quickice.structure_generation.generator import (
+    IceStructureGenerator,
+    generate_candidates,
+)
 
 __all__ = [
     # Types
@@ -26,6 +30,9 @@ __all__ = [
     # Mapper functions
     "get_genice_lattice_name",
     "calculate_supercell",
+    # Generator
+    "IceStructureGenerator",
+    "generate_candidates",
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",
