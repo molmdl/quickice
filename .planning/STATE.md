@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 4 Ranking in progress
+**Current Focus:** Phase 4 Ranking complete, ready for Phase 5 Output
 
 ---
 
@@ -22,10 +22,10 @@
 | Field | Value |
 |-------|-------|
 | Phase | 4 of 7 (Ranking) |
-| Plan | 3 of 4 in current phase |
-| Status | In progress |
-| Last activity | 2026-03-26 - Completed 04-03-PLAN.md |
-| Progress Bar | █████████████████████████████████ 85% (11 plans complete) |
+| Plan | 4 of 4 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-03-26 - Completed 04-04-PLAN.md |
+| Progress Bar | ██████████████████████████████████ 89% (12 plans complete) |
 
 ---
 
@@ -88,6 +88,8 @@
 | Default density 0.9167 g/cm³ | Ice Ih density when not in metadata | Approved (04-02) |
 | Diversity inverted in combined score | 1 - norm_diversity to maintain lower=better convention | Approved (04-03) |
 | Default equal weights (1:1:1) | Simple starting point, users can customize | Approved (04-03) |
+| Test fixtures with explicit positions | Avoids random inf energy scores, ensures reproducibility | Approved (04-04) |
+| Empty list raises ValueError | Documents expected behavior, no silent handling | Approved (04-04) |
 
 ### Dependencies Identified
 
@@ -114,10 +116,10 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-26T17:01:50Z
-**Last Completed:** Phase 4 Plan 3 - Ranking Integration
+**Last Session:** 2026-03-26T17:09:53Z
+**Last Completed:** Phase 4 Plan 4 - Ranking Tests
 
-**Next Session:** Continue Phase 4 - Plan 04 (final integration with CLI)
+**Next Session:** Start Phase 5 - Output
 
 ---
 
@@ -131,11 +133,11 @@
 - [x] Phase 3: Structure Generation — COMPLETE (verified 10/10)
   - [x] 03-01: Phase ID to GenIce lattice mapping + supercell calculation
   - [x] 03-02: GenIce integration + generate_candidates
-- [ ] Phase 4: Ranking
+- [x] Phase 4: Ranking — COMPLETE (verified 34/34 tests)
   - [x] 04-01: Ranking data structures
   - [x] 04-02: Scoring functions
   - [x] 04-03: Ranking integration
-  - [ ] 04-04: Final integration with CLI
+  - [x] 04-04: Ranking tests
 - [ ] Phase 5: Output
 - [ ] Phase 6: Documentation
 - [ ] Phase 7: Audit & Correctness
