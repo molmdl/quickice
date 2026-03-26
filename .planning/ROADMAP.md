@@ -32,9 +32,9 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** None
 
 **Plans:**
-- [ ] 01-01-PLAN.md — Package structure + Poetry configuration
+- [ ] 01-01-PLAN.md — Conda env + setup.sh + executable + package structure
 - [ ] 01-02-PLAN.md — TDD validators for T/P/nmolecules
-- [ ] 01-03-PLAN.md — CLI parser + entry point + integration tests
+- [ ] 01-03-PLAN.md — CLI parser + main.py + integration tests
 
 ---
 
