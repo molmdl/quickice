@@ -159,9 +159,9 @@ PHASE_POLYGONS = {
     # Low-pressure phase, stable below ~210 MPa
     # Boundaries: Ih-III-Liquid TP, Ih-II-III TP, Ih melting curve
     "ice_ih": [
-        # Start at low T, low P corner
-        (100.0, 0.1),           # Lower left (cold, low pressure)
-        (273.16, 0.1),          # Lower right (0°C at atmospheric pressure)
+        # Start at low T, low P corner (extended to P=0 for atmospheric pressure)
+        (100.0, 0.0),           # Lower left (cold, atmospheric pressure)
+        (273.16, 0.0),          # Lower right (0°C at atmospheric pressure)
         (273.16, 100.0),        # Near triple point with liquid
         (251.165, 207.5),       # Ih-III-Liquid triple point
         (238.55, 212.9),        # Ih-II-III triple point
@@ -181,8 +181,11 @@ PHASE_POLYGONS = {
     
     # Ice II region
     # Rhombohedral phase, stable at moderate pressures
+    # Extended to cover gap between ice_iii and ice_v at moderate temperatures
     "ice_ii": [
         (218.95, 620.0),        # II-V-VI triple point
+        (260.0, 620.0),         # Extended high temperature boundary
+        (260.0, 210.0),         # Extended boundary at T=260K
         (249.65, 344.3),        # II-III-V triple point
         (238.55, 212.9),        # Ih-II-III triple point
         (200.0, 300.0),         # Lower temperature extension
