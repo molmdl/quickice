@@ -22,13 +22,13 @@ def create_parser() -> argparse.ArgumentParser:
         Configured ArgumentParser instance
     """
     parser = argparse.ArgumentParser(
-        prog="quickice",
+        prog="python quickice.py",
         description="QuickIce - Ice structure generation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --temperature 300 --pressure 100 --nmolecules 100
-  %(prog)s --temperature 250 --pressure 0.1 --nmolecules 256
+  python quickice.py --temperature 300 --pressure 100 --nmolecules 100
+  python quickice.py --temperature 250 --pressure 0.1 --nmolecules 256
         """
     )
     
