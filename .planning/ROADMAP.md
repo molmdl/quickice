@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Generated:** 2026-03-26  
-**Depth:** Comprehensive (6 phases derived from natural boundaries)
+**Depth:** Comprehensive (7 phases derived from natural boundaries)
 
 ---
 
@@ -79,8 +79,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** Phase 2 (phase must be identified before generation)
 
 **Plans:**
-- [ ] 03-01-PLAN.md — TDD phase mapper (types + phase_id → GenIce lattice mapping + supercell calculation)
-- [ ] 03-02-PLAN.md — IceStructureGenerator with GenIce integration + generate_candidates function
+- [x] 03-01-PLAN.md — TDD phase mapper (types + phase_id → GenIce lattice mapping + supercell calculation)
+- [x] 03-02-PLAN.md — IceStructureGenerator with GenIce integration + generate_candidates function
 
 ---
 
@@ -136,16 +136,35 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 ---
 
+### Phase 7: Audit Codebase, Documentation, Scientific Correctness, Safety & Citations
+
+**Goal:** Codebase and documentation are audited for consistency, scientific correctness, efficiency, safety, proper citations, and accuracy. Issues identified are fixed.
+
+**Requirements:** AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04, AUDIT-05
+
+**Success Criteria:**
+
+1. Code consistency verified across all modules (naming, patterns, error handling)
+2. Scientific correctness validated (physics units, formulas, GenIce usage)
+3. Efficiency reviewed (no obvious bottlenecks, proper algorithms)
+4. Safety checks in place (input validation, file handling, no silent failures)
+5. Citations verified and real scientific sources cited where appropriate
+
+**Dependencies:** Phase 6 (documentation complete before audit)
+
+---
+
 ## Progress Table
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
 | 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
-| 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | Planned |
+| 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | Pending |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | Pending |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
+| 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
 ---
 
@@ -159,8 +178,9 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase 4 | RANK-01, RANK-02, RANK-03, RANK-04 |
 | Phase 5 | OUT-01, OUT-02, OUT-03, OUT-04, OUT-05 |
 | Phase 6 | DOC-01, DOC-02, DOC-03, DOC-04 |
+| Phase 7 | AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04, AUDIT-05 |
 
-**Coverage:** 24/24 v1 requirements mapped ✓
+**Coverage:** 29/29 v1 requirements mapped ✓
 
 ---
 
