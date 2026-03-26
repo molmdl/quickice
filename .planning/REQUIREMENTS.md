@@ -27,10 +27,10 @@
 
 ### Ranking
 
-- [ ] **RANK-01**: Energy-based ranking of candidates
-- [ ] **RANK-02**: Density-based scoring (match expected density at T,P)
-- [ ] **RANK-03**: Diversity scoring (different polymorphs preferred)
-- [ ] **RANK-04**: Combined ranking score output
+- [x] **RANK-01**: Energy-based ranking of candidates
+- [x] **RANK-02**: Density-based scoring (match expected density at T,P)
+- [x] **RANK-03**: Diversity scoring (different polymorphs preferred)
+- [x] **RANK-04**: Combined ranking score output
 
 ### Output
 
@@ -94,10 +94,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-02 | Phase 3 | Complete |
 | GEN-03 | Phase 3 | Complete |
 | GEN-04 | Phase 3 | Complete |
-| RANK-01 | Phase 4 | Pending |
-| RANK-02 | Phase 4 | Pending |
-| RANK-03 | Phase 4 | Pending |
-| RANK-04 | Phase 4 | Pending |
+| RANK-01 | Phase 4 | Complete |
+| RANK-02 | Phase 4 | Complete |
+| RANK-03 | Phase 4 | Complete |
+| RANK-04 | Phase 4 | Complete |
 | OUT-01 | Phase 5 | Pending |
 | OUT-02 | Phase 5 | Pending |
 | OUT-03 | Phase 5 | Pending |
@@ -115,4 +115,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 after initial definition*
+*Last updated: 2026-03-27 after Phase 4 completion*
