@@ -90,6 +90,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** RANK-01, RANK-02, RANK-03, RANK-04
 
+**Plans:** 4 plans in 4 waves
+
 **Success Criteria:**
 
 1. Candidates ranked by energy (lower energy preferred)
@@ -98,6 +100,12 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 4. Combined ranking score available for each candidate
 
 **Dependencies:** Phase 3 (candidates must exist before ranking)
+
+**Plans:**
+- [ ] 04-01-PLAN.md — Ranking types (RankedCandidate, RankingResult dataclasses)
+- [ ] 04-02-PLAN.md — Scoring functions (energy, density, diversity)
+- [ ] 04-03-PLAN.md — Integration (rank_candidates + normalization + exports)
+- [ ] 04-04-PLAN.md — Testing (comprehensive test coverage)
 
 ---
 
