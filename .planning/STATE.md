@@ -22,10 +22,10 @@
 | Field | Value |
 |-------|-------|
 | Phase | 5 of 7 (Output) |
-| Plan | 1 of 6 in current phase |
+| Plan | 2 of 6 in current phase |
 | Status | In progress |
-| Last activity | 2026-03-26 - Completed 05-01-PLAN.md (OutputResult types) |
-| Progress Bar | ██████████████░░░░░░░░ 72% (13 plans complete) |
+| Last activity | 2026-03-26 - Completed 05-02-PLAN.md (PDB Writer) |
+| Progress Bar | ██████████████▌░░░░░░ 74% (14 plans complete) |
 
 ---
 
@@ -93,6 +93,9 @@
 | Remove GenIce submodule | Using pip-installed genice2 (v2.2.13.1), submodule was outdated and unused | Approved (quick-001) |
 | OutputResult follows RankingResult pattern | Consistency across phases, clean module structure | Approved (05-01) |
 | Flexible dict types for validation/summary | Extensible for future validation metrics and statistics | Approved (05-01) |
+| HETATM for water molecules | Standard PDB practice for non-standard residues | Approved (05-02) |
+| Top 10 candidates written | Reasonable output size, matches user expectations | Approved (05-02) |
+| Element symbols right-justified | Follows PDB format specification | Approved (05-02) |
 
 ### Dependencies Identified
 
@@ -119,10 +122,10 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-26T18:15:14Z
-**Last Completed:** Phase 5 Plan 1 - Output Types
+**Last Session:** 2026-03-26T18:25:36Z
+**Last Completed:** Phase 5 Plan 2 - PDB Writer
 
-**Next Session:** Continue Phase 5 - Output (Plan 2: PDB Writer)
+**Next Session:** Continue Phase 5 - Output (Plan 3: Validator)
 
 ---
 
@@ -143,7 +146,7 @@
   - [x] 04-04: Ranking tests
 - [ ] Phase 5: Output
   - [x] 05-01: Output types (OutputResult dataclass)
-  - [ ] 05-02: PDB Writer
+  - [x] 05-02: PDB Writer
   - [ ] 05-03: Validator
   - [ ] 05-04: Phase diagram generation
   - [ ] 05-05: Output integration
