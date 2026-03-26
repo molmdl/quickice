@@ -17,18 +17,23 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 ### Active
 
 - [ ] CLI interface with flags: temperature, pressure, molecule count
-- [ ] ML-based structure generation (no physics)
+- [ ] Phase diagram mapping (T,P → ice polymorphs)
+- [ ] GenIce integration for coordinate generation
 - [ ] Output 10 ranked PDB candidates per query
-- [ ] Ranking approach: research and determine optimal strategy
-- [ ] GenIce integration for coordinate generation and validation
+- [ ] Energy/density-based ranking
+- [ ] Basic structure validation
+- [ ] README noting "pure vibe coding project"
+- [ ] Professional documentation (usage, principles, explanation of outcomes)
+- [ ] Use only Python libraries in current conda environment
 
 ### Out of Scope
 
-- Physics-based simulations
+- Physics-based ranking/simulation (GenIce for generation only)
 - Structure analysis tools
 - Visualization
 - Python API (CLI only)
 - Non-water systems
+- Training new ML models
 
 ## Context
 
