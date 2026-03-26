@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 5 Output in progress, OutputResult types established
+**Current Focus:** Phase 5 Output - Wave 3 complete, at checkpoint (phase diagram verification)
 
 ---
 
@@ -22,10 +22,10 @@
 | Field | Value |
 |-------|-------|
 | Phase | 5 of 7 (Output) |
-| Plan | 2 of 6 in current phase |
-| Status | In progress |
-| Last activity | 2026-03-26 - Completed 05-02-PLAN.md (PDB Writer) |
-| Progress Bar | ██████████████▌░░░░░░ 74% (14 plans complete) |
+| Plan | 4 of 6 in current phase (at checkpoint) |
+| Status | Wave 3 complete, awaiting phase diagram verification |
+| Last activity | 2026-03-27 - Completed 05-04 Phase Diagram Generator (checkpoint) |
+| Progress Bar | ████████████████████░░░░ 83% (15 plans complete) |
 
 ---
 
@@ -96,6 +96,10 @@
 | HETATM for water molecules | Standard PDB practice for non-standard residues | Approved (05-02) |
 | Top 10 candidates written | Reasonable output size, matches user expectations | Approved (05-02) |
 | Element symbols right-justified | Follows PDB format specification | Approved (05-02) |
+| spglib requires fractional coordinates | Must convert Cartesian to fractional before spglib | Approved (05-03) |
+| symprec=1e-4 for generated structures | More tolerant than default 1e-5 for generated structures | Approved (05-03) |
+| min_distance=0.8 Å for overlap | Avoids false positives from O-H bonds (~0.96 Å) | Approved (05-03) |
+| Phase diagram outputs PNG/SVG/text | Multiple formats for presentations, publications, external plotting | Approved (05-04) |
 
 ### Dependencies Identified
 
@@ -122,10 +126,13 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-26T18:25:36Z
-**Last Completed:** Phase 5 Plan 2 - PDB Writer
+**Last Session:** 2026-03-27T02:40:00+08:00
+**Last Completed:** Phase 5 Plan 4 - Phase Diagram Generator (checkpoint)
 
-**Next Session:** Continue Phase 5 - Output (Plan 3: Validator)
+**Next Session:** Continue Phase 5 - Output
+- Resume from checkpoint: verify phase diagram visually
+- Then execute Wave 4 (05-05 Output Orchestrator)
+- Use: `/gsd-execute-phase 5` or `/gsd-resume-work`
 
 ---
 
@@ -146,11 +153,11 @@
   - [x] 04-04: Ranking tests
 - [ ] Phase 5: Output
   - [x] 05-01: Output types (OutputResult dataclass)
-  - [x] 05-02: PDB Writer
-  - [ ] 05-03: Validator
-  - [ ] 05-04: Phase diagram generation
-  - [ ] 05-05: Output integration
-  - [ ] 05-06: Output tests
+  - [x] 05-02: PDB Writer (13 tests pass)
+  - [x] 05-03: Validator (11 tests pass, spglib fractional coords fix)
+  - [x] 05-04: Phase diagram generator (checkpoint: visual verification pending)
+  - [ ] 05-05: Output orchestrator
+  - [ ] 05-06: CLI integration
 - [ ] Phase 6: Documentation
 - [ ] Phase 7: Audit & Correctness
 
@@ -164,4 +171,4 @@
 
 ---
 
-*State updated: 2026-03-26*
+*State updated: 2026-03-27*
