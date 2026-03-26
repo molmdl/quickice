@@ -22,9 +22,9 @@
 | Field | Value |
 |-------|-------|
 | Phase | 2 + 5 (unified correction) |
-| Plan | 02-07 (triple point fix) → 05-08 (diagram rewrite) |
-| Status | READY - New correction plans created |
-| Last activity | 2026-03-27 - Created unified correction plans |
+| Plan | 02-07 ✓ → 05-08 (diagram rewrite) |
+| Status | Wave 1 complete - Ready for Wave 2 |
+| Last activity | 2026-03-27 - Completed 02-07 (triple point fix) |
 | Progress Bar | ███████████████░░░░░░░░░ 57% (4/7 phases) |
 
 ---
@@ -77,19 +77,18 @@
 
 | Plan | Description | Wave | Depends On | Status |
 |------|-------------|------|-----------|--------|
-| 02-07 | Fix II-III-V triple point (248.85 K) | 1 | - | Ready |
+| 02-07 | Fix II-III-V triple point (248.85 K) | 1 | - | ✓ Complete |
 | 05-08 | Rewrite diagram with PHASE_POLYGONS | 2 | 02-07 | Ready |
 
 ---
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27
-**Stopped at:** Created unified correction plans for boundary consistency
+**Last Session:** 2026-03-27 21:24 UTC
+**Stopped at:** Completed 02-07 (triple point fix)
 
 **Next Session:**
-1. Execute: `/gsd-execute-phase 2 --plans 07` (fix triple point)
-2. Then: `/gsd-execute-phase 5 --plans 08` (rewrite diagram)
+1. Execute: `/gsd-execute-phase 5 --plans 08` (rewrite diagram with PHASE_POLYGONS)
 
 ---
 
@@ -99,7 +98,7 @@
 |----------|-----------|--------|
 | Use curved phase boundaries | Rectangular approximation is scientifically incorrect | ✓ Implemented |
 | Single source of truth | PHASE_POLYGONS used by both lookup and diagram | Pending (05-08) |
-| Fix triple point II-III-V | 0.8K error needs correction | Pending (02-07) |
+| Fix triple point II-III-V | 0.8K error needs correction | ✓ Fixed (02-07) |
 | Labels on phase regions | Better UX than legend-only | Pending (05-08) |
 
 ---
@@ -113,4 +112,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Created unified correction plans 02-07, 05-08)*
+*State updated: 2026-03-27 (Completed 02-07: II-III-V triple point correction)*
