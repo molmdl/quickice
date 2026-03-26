@@ -22,10 +22,10 @@
 | Field | Value |
 |-------|-------|
 | Phase | 4 of 7 (Ranking) |
-| Plan | 1 of 4 in current phase |
+| Plan | 2 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-03-26 - Completed 04-01-PLAN.md |
-| Progress Bar | ██████████████████████████████ 75% (9 plans complete) |
+| Last activity | 2026-03-26 - Completed 04-02-PLAN.md |
+| Progress Bar | ███████████████████████████████ 77% (10 plans complete) |
 
 ---
 
@@ -83,6 +83,9 @@
 | GenIce unit cell definitions | Different from conventional cells, requires mapping adjustment | Approved (03-02) |
 | Combined score: lower=better | Consistent with energy scoring convention | Approved (04-01) |
 | Flexible metadata dicts | dict[str, Any] for extensibility | Approved (04-01) |
+| Manual PBC implementation | scipy.spatial.distance.cdist doesn't handle PBC | Approved (04-02) |
+| Energy score scaled by 100 | Makes typical deviations (0.001-0.01 nm) visible | Approved (04-02) |
+| Default density 0.9167 g/cm³ | Ice Ih density when not in metadata | Approved (04-02) |
 
 ### Dependencies Identified
 
@@ -109,10 +112,10 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-26T16:51:51Z
-**Last Completed:** Phase 4 Plan 1 - Ranking Data Structures
+**Last Session:** 2026-03-26T16:57:22Z
+**Last Completed:** Phase 4 Plan 2 - Scoring Functions
 
-**Next Session:** Continue Phase 4 - Plan 02 (Scoring functions)
+**Next Session:** Continue Phase 4 - Plan 03 (Ranking integration)
 
 ---
 
@@ -128,7 +131,7 @@
   - [x] 03-02: GenIce integration + generate_candidates
 - [ ] Phase 4: Ranking
   - [x] 04-01: Ranking data structures
-  - [ ] 04-02: Scoring functions
+  - [x] 04-02: Scoring functions
   - [ ] 04-03: Diversity calculation
   - [ ] 04-04: Ranking integration
 - [ ] Phase 5: Output
