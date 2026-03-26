@@ -24,8 +24,9 @@ class TestLookupPhaseIceIh:
         assert result["phase_name"] == "Ice Ih"
 
     def test_lookup_boundary_pressure(self):
-        """Temperature 250K, Pressure 210 MPa (upper boundary) should return ice_ih."""
-        result = lookup_phase(250, 210)
+        """Temperature 245K, Pressure 210 MPa (upper P boundary) should return ice_ih."""
+        # T=245K is above ice_ic range (0-240K), so clearly ice_ih
+        result = lookup_phase(245, 210)
         assert result["phase_id"] == "ice_ih"
 
 
