@@ -1,22 +1,26 @@
 """
-Ice phase boundaries using IAPWS-certified data.
+Ice phase boundaries using reference data from multiple sources.
 
 This module defines curved phase boundaries for ice polymorphs using:
-- Triple point coordinates from IAPWS R14-08(2011)
-- Melting curve equations from IAPWS R14-08(2011)
+- Triple point coordinates from LSBU Water Phase Data
+- Melting curve equations from IAPWS R14-08(2011) where applicable
 - Phase polygon vertices derived from triple points and melting curves
 
-References:
-    IAPWS R14-08(2011): Revised Release on the Equation of State 2006
-        for H2O Ice Ih
-    IAPWS R10-06(2009): Revised Supplementary Release on Saturation
-        Properties of Ordinary Water Substance
+Data Sources (from state_reference.md):
+    1. GenIce2 Python Library: https://pypi.org/project/genice2/
+    2. IAPWS Python Library: https://pypi.org/project/iapws/
+    3. Wikipedia Phase Diagram: https://en.wikipedia.org/wiki/Phases_of_ice
+    4. LSBU Water Phase Data: https://ergodic.ugr.es/termo/lecciones/water1.html
+
+Note: IAPWS R14-08(2011) covers Ice Ih equation of state specifically.
+      Triple point values for ice phases II, III, V, VI, VII, VIII are
+      primarily sourced from LSBU/Wikipedia reference tables.
 """
 
 # =============================================================================
-# TRIPLE POINTS - IAPWS-certified coordinates
+# TRIPLE POINTS - Reference coordinates from LSBU/Wikipedia
 # =============================================================================
-# All values from IAPWS R14-08(2011) and related IAPWS releases
+# Values from LSBU Water Phase Data (source #4 in state_reference.md)
 # T = Temperature in Kelvin, P = Pressure in MPa
 
 TRIPLE_POINTS = {
@@ -33,8 +37,9 @@ TRIPLE_POINTS = {
         "description": "Triple point: Ice Ih, Ice II, Ice III"
     },
     # Ice II - Ice III - Ice V triple point
+    # Source: LSBU Water Phase Data (ergodic.ugr.es/termo/lecciones/water1.html)
     "ii_iii_v": {
-        "T": 248.85,  # Corrected from 249.65 to match IAPWS reference
+        "T": 248.85,  # Corrected from 249.65 to match LSBU reference
         "P": 344.3,
         "description": "Triple point: Ice II, Ice III, Ice V"
     },
@@ -396,4 +401,4 @@ __all__ = [
 ]
 
 __version__ = "1.0.0"
-__source__ = "IAPWS R14-08(2011), IAPWS R10-06(2009)"
+__source__ = "LSBU Water Phase Data, IAPWS R14-08(2011) for Ice Ih melting curve"
