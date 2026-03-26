@@ -245,3 +245,93 @@ def normalize_scores(scores: list[float]) -> np.ndarray:
     normalized = (scores_array - min_score) / (max_score - min_score)
     
     return normalized
+
+
+def rank_candidates(
+    candidates: list[Candidate],
+    weights: dict[str, float] | None = None
+) -> RankingResult:
+    """Rank candidates by combined scoring.
+    
+    Args:
+        candidates: List of Candidate objects from Phase 3
+        weights: Optional weight config (default: equal weights 1:1:1)
+            Must contain 'energy', 'density', 'diversity' keys if provided.
+    
+    Returns:
+        RankingResult with sorted candidates and score breakdown.
+        Candidates are sorted by combined_score (ascending, lower = better).
+        Ranks are assigned with 1 = best.
+    
+    Note:
+        The combined score follows the convention that lower = better:
+        - Energy score: lower normalized = better (use directly)
+        - Density score: lower normalized = better (use directly)
+        - Diversity score: higher normalized = better (invert: 1 - norm_diversity)
+        
+        This ensures consistent ranking where combined_score 0 = best possible.
+    
+    Example:
+        >>> result = rank_candidates(candidates)
+        >>> print(result.ranked_candidates[0].rank)  # 1 (best)
+    """
+    # Default weights: equal weighting
+    if weights is None:
+        weights = {'energy': 1.0, 'density': 1.0, 'diversity': 1.0}
+    
+    n_candidates = len(candidates)
+    
+    # Calculate raw scores for each component
+    energy_scores = [energy_score(c) for c in candidates]
+    density_scores = [density_score(c) for c in candidates]
+    diversity_scores = [diversity_score(c, candidates) for c in candidates]
+    
+    # Normalize each component to 0-1
+    norm_energy = normalize_scores(energy_scores)
+    norm_density = normalize_scores(density_scores)
+    norm_diversity = normalize_scores(diversity_scores)
+    
+    # Calculate combined score for each candidate
+    # For energy/density: lower normalized = better, use directly
+    # For diversity: higher normalized = better, invert for lower=better convention
+    ranked_candidates = []
+    
+    for i, candidate in enumerate(candidates):
+        # Combined score: lower = better
+        # Invert diversity: (1 - norm_diversity) so higher diversity gives lower combined
+        combined_score = (
+            weights['energy'] * norm_energy[i] +
+            weights['density'] * norm_density[i] +
+            weights['diversity'] * (1.0 - norm_diversity[i])
+        )
+        
+        ranked_candidates.append(RankedCandidate(
+            candidate=candidate,
+            energy_score=energy_scores[i],
+            density_score=density_scores[i],
+            diversity_score=diversity_scores[i],
+            combined_score=float(combined_score),
+            rank=0  # Will be assigned after sorting
+        ))
+    
+    # Sort by combined_score (ascending, lower = better)
+    ranked_candidates.sort(key=lambda rc: rc.combined_score)
+    
+    # Assign ranks (1 = best)
+    for rank, rc in enumerate(ranked_candidates, start=1):
+        rc.rank = rank
+    
+    # Build metadata
+    scoring_metadata = {
+        'n_candidates': n_candidates,
+        'ideal_oo_distance': IDEAL_OO_DISTANCE,
+        'energy_range': (float(min(energy_scores)), float(max(energy_scores))),
+        'density_range': (float(min(density_scores)), float(max(density_scores))),
+        'diversity_range': (float(min(diversity_scores)), float(max(diversity_scores))),
+    }
+    
+    return RankingResult(
+        ranked_candidates=ranked_candidates,
+        scoring_metadata=scoring_metadata,
+        weight_config=weights.copy()
+    )
