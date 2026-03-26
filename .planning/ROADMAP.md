@@ -32,9 +32,9 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** None
 
 **Plans:**
-- [ ] 01-01-PLAN.md — Conda env + setup.sh + executable + package structure
-- [ ] 01-02-PLAN.md — TDD validators for T/P/nmolecules
-- [ ] 01-03-PLAN.md — CLI parser + main.py + integration tests
+- [x] 01-01-PLAN.md — Conda env + setup.sh + entry point + package structure
+- [x] 01-02-PLAN.md — TDD validators for T/P/nmolecules
+- [x] 01-03-PLAN.md — CLI parser + main.py + integration tests
 
 ---
 
@@ -126,7 +126,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | Pending |
+| 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
 | 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | Pending |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | Pending |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | Pending |
