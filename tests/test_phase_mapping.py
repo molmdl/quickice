@@ -90,14 +90,14 @@ class TestLookupPhaseIceIii:
         assert result["density"] == 1.16
 
     def test_lookup_near_ii_iii_v_triple_point(self):
-        """Temperature 249K, Pressure 340 MPa should return ice_ii near II-III-V triple point.
+        """Temperature 249K, Pressure 340 MPa should return ice_iii near II-III-V triple point.
         
-        The II-III-V triple point is at T=249.65K, P=344.3MPa.
-        At T=249K, P=340MPa, we're just below the triple point in Ice II region.
-        Ice III is stable at higher temperatures (near the III-V-Liquid TP at 256.165K).
+        The II-III-V triple point is at T=248.85K, P=344.3MPa (IAPWS reference).
+        At T=249K, P=340MPa, we're just above the triple point in Ice III region.
+        Ice II is stable at lower temperatures (below 248.85K at this pressure).
         """
         result = lookup_phase(249, 340)
-        assert result["phase_id"] == "ice_ii"
+        assert result["phase_id"] == "ice_iii"
 
     def test_lookup_near_ih_iii_boundary(self):
         """Temperature 248K, Pressure 220 MPa should return ice_iii near Ih-III boundary.
