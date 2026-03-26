@@ -102,10 +102,10 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** Phase 3 (candidates must exist before ranking)
 
 **Plans:**
-- [ ] 04-01-PLAN.md — Ranking types (RankedCandidate, RankingResult dataclasses)
-- [ ] 04-02-PLAN.md — Scoring functions (energy, density, diversity)
-- [ ] 04-03-PLAN.md — Integration (rank_candidates + normalization + exports)
-- [ ] 04-04-PLAN.md — Testing (comprehensive test coverage)
+- [x] 04-01-PLAN.md — Ranking types (RankedCandidate, RankingResult dataclasses)
+- [x] 04-02-PLAN.md — Scoring functions (energy, density, diversity)
+- [x] 04-03-PLAN.md — Integration (rank_candidates + normalization + exports)
+- [x] 04-04-PLAN.md — Testing (comprehensive test coverage)
 
 ---
 
@@ -169,7 +169,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
 | 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
-| 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | Pending |
+| 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | Pending |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
