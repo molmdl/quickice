@@ -117,3 +117,48 @@ def energy_score(candidate: Candidate) -> float:
     # Scale for visibility (multiply by 100)
     # This makes typical deviations (0.001-0.01 nm) visible in scores (0.1-1.0)
     return mean_deviation * 100.0
+
+
+def density_score(candidate: Candidate) -> float:
+    """Calculate density deviation from expected phase density.
+    
+    Returns absolute deviation in g/cm³ (lower = better match).
+    
+    This function compares the actual density of the candidate structure to
+    the expected density for its phase. The expected density is taken from
+    the candidate's metadata (set during Phase 2 phase mapping), with a
+    default of 0.9167 g/cm³ (ice Ih density at standard conditions).
+    
+    Args:
+        candidate: A Candidate object from Phase 3
+    
+    Returns:
+        Absolute density deviation in g/cm³ (lower = better match).
+    
+    Note:
+        The density calculation uses:
+        - Cell volume from the simulation box
+        - Number of molecules
+        - Water molecular mass (18.01528 g/mol)
+        - Unit conversions: nm³ to cm³ (1e-21 factor)
+    """
+    # Get expected density from metadata (default: ice Ih density)
+    expected_density = candidate.metadata.get('density', 0.9167)  # g/cm³
+    
+    # Calculate cell volume in nm³
+    volume_nm3 = abs(np.linalg.det(candidate.cell))
+    
+    # Constants for density calculation
+    AVOGADRO = 6.022e23  # molecules/mol
+    WATER_MASS = 18.01528  # g/mol
+    
+    # Convert volume from nm³ to cm³ (1 nm³ = 1e-21 cm³)
+    volume_cm3 = volume_nm3 * 1e-21
+    
+    # Calculate actual density
+    # density = (n_molecules * mass_per_molecule) / volume
+    # mass_per_molecule = molecular_mass / avogadro
+    actual_density = (candidate.nmolecules * WATER_MASS) / (AVOGADRO * volume_cm3)
+    
+    # Return absolute deviation (lower = better)
+    return abs(actual_density - expected_density)
