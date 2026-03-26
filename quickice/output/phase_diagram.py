@@ -6,16 +6,12 @@ as single source of truth for consistency with phase lookup.
 Outputs PNG, SVG, and text data files.
 """
 
-import json
 from pathlib import Path
-from typing import Optional, Tuple, List
-import warnings
+from typing import Tuple
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
 
 from quickice.phase_mapping.data.ice_boundaries import (
     TRIPLE_POINTS,
@@ -187,7 +183,6 @@ def generate_phase_diagram(
     ]
     
     # Plot each phase region using PHASE_POLYGONS
-    legend_patches = []
     for phase_id in phases_to_plot:
         if phase_id not in PHASE_POLYGONS:
             continue
@@ -211,11 +206,13 @@ def generate_phase_diagram(
         ax.add_patch(poly)
         
         # Add label directly on the phase region using shapely centroid
+        # Note: vertices are (T, P), so centroid.x=T, centroid.y=P
+        # Plot coordinates are (x=P, y=T), so we swap
         shapely_poly = ShapelyPolygon(vertices)
         centroid = shapely_poly.centroid
         label = PHASE_LABELS.get(phase_id, phase_id)
         ax.text(
-            centroid.x, centroid.y,  # (T, P) - x=T, y=P but plot is (P, T)
+            centroid.y, centroid.x,  # Plot: x=P, y=T (swap from centroid)
             label,
             fontsize=14,
             fontweight='bold',
@@ -224,11 +221,6 @@ def generate_phase_diagram(
             color='black',
             alpha=0.8,
             zorder=5,
-        )
-        
-        # Create legend entry (small patch)
-        legend_patches.append(
-            mpatches.Patch(color=color, label=PHASE_NAMES.get(phase_id, phase_id), alpha=0.6)
         )
     
     # Plot melting curves as lines (on top of filled regions)
@@ -304,15 +296,6 @@ def generate_phase_diagram(
     ax.set_xlabel("Pressure (MPa)", fontsize=14, fontweight='bold')
     ax.set_ylabel("Temperature (K)", fontsize=14, fontweight='bold')
     ax.set_title("Water Ice Phase Diagram", fontsize=18, fontweight='bold', pad=20)
-    
-    # Add legend (smaller, in corner)
-    ax.legend(
-        handles=legend_patches,
-        loc='upper right',
-        fontsize=9,
-        framealpha=0.9,
-        ncol=1,
-    )
     
     # Add note about data source
     ax.text(
