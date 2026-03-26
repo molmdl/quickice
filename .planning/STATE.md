@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 2 Correction - Fixing scientifically incorrect rectangular phase boundaries
+**Current Focus:** Phase 2 Correction Complete - Ready for Phase 5 correction
 
 ---
 
@@ -21,26 +21,21 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 2 of 7 (Phase Mapping - CORRECTION IN PROGRESS) |
-| Plan | 5 of 6 (correction plans) |
-| Status | Completed 02-05 - Curved boundary lookup implemented |
-| Last activity | 2026-03-27 - Completed 02-05-PLAN.md |
-| Progress Bar | ████████████████████░░░░ 84% (16 of 19 plans complete) |
+| Phase | 2 of 7 (Phase Mapping - CORRECTION COMPLETE) |
+| Plan | 6 of 6 (correction plans) |
+| Status | Phase 2 correction complete, ready for Phase 5 correction |
+| Last activity | 2026-03-27 - Completed 02-06-PLAN.md |
+| Progress Bar | █████████████████████░░░ 89% (17 of 19 plans complete) |
 
 ---
 
-## ⚠️ CRITICAL ISSUE IDENTIFIED
+## ⚠️ CRITICAL ISSUE IDENTIFIED (CORRECTION IN PROGRESS)
 
 **Problem:** Phase 2 (Phase Mapping) and Phase 5 (Phase Diagram) use **rectangular phase boundaries** which is SCIENTIFICALLY INCORRECT. Real ice phase boundaries are **curved lines**.
 
-**Impact:**
-- Phase lookup gives WRONG results near boundaries
-- Example: T=260K, P=300MPa returns "ice_iii" (wrong) instead of "ice_ii" (correct)
-- Phase diagram shows rectangles instead of curved regions
-
-**Correction Plans Created:**
-- Phase 2: Plans 02-04, 02-05, 02-06 (boundary data, lookup logic, tests)
-- Phase 5: Plan 05-07 (phase diagram generator)
+**Correction Status:**
+- ~~Phase 2: Plans 02-04, 02-05, 02-06~~ ✓ COMPLETE
+- Phase 5: Plan 05-07 (phase diagram generator) - PENDING
 
 **New Dependencies Added:**
 - iapws>=1.5.4 (IAPWS ice phase equations)
@@ -54,7 +49,7 @@
 | Phase | Name | Goal | Status |
 |-------|------|------|--------|
 | 1 | Input Validation | Valid CLI flags | ✓ Complete |
-| 2 | Phase Mapping | T,P → polymorph | ⚠️ NEEDS CORRECTION |
+| 2 | Phase Mapping | T,P → polymorph | ✓ CORRECTION COMPLETE |
 | 3 | Structure Generation | Valid GenIce output | ✓ Complete |
 | 4 | Ranking | Scored candidates | ✓ Complete |
 | 5 | Output | PDB files + phase diagram | ⚠️ NEEDS CORRECTION |
@@ -65,15 +60,15 @@
 
 ## Correction Plans
 
-### Phase 2 Corrections (Wave 1-3)
+### Phase 2 Corrections (Wave 1-3) ✓ COMPLETE
 
 | Plan | Description | Status |
 |------|-------------|--------|
 | 02-04 | Curved boundary data (IAPWS triple points, polygons) | ✓ Complete |
 | 02-05 | Curved boundary lookup logic (shapely) | ✓ Complete |
-| 02-06 | Update test expectations | Pending |
+| 02-06 | Update test expectations | ✓ Complete |
 
-### Phase 5 Corrections (Wave 6)
+### Phase 5 Corrections (Wave 6) - PENDING
 
 | Plan | Description | Status |
 |------|-------------|--------|
@@ -83,23 +78,22 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27T16:00:00Z
-**Last Completed:** 02-05-PLAN.md (Curved boundary lookup with shapely)
+**Last Session:** 2026-03-27T04:25:00+08:00
+**Last Completed:** 02-06-PLAN.md (Test expectations updated)
 
-**Next Session:** Continue Phase 2 corrections
-- Run: `/gsd-execute-phase 2 --plans 06`
-- Then: `/gsd-execute-phase 5 --plans 07`
+**Next Session:** Phase 5 correction
+- Run: `/gsd-execute-phase 5 --plans 07`
 
 ---
 
 ## Todo
 
 - [x] Phase 1: Input Validation — COMPLETE
-- [ ] Phase 2: Phase Mapping — CORRECTION IN PROGRESS
-  - [x] 02-01, 02-02, 02-03 — Original plans (rectangular - WRONG)
+- [x] Phase 2: Phase Mapping — CORRECTION COMPLETE
+  - [x] 02-01, 02-02, 02-03 — Original plans (rectangular - superseded)
   - [x] 02-04 — Curved boundary data
   - [x] 02-05 — Curved lookup logic
-  - [ ] 02-06 — Updated tests
+  - [x] 02-06 — Updated tests
 - [x] Phase 3: Structure Generation — COMPLETE
 - [x] Phase 4: Ranking — COMPLETE
 - [ ] Phase 5: Output — CORRECTION NEEDED
@@ -116,14 +110,15 @@
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
-| Use curved phase boundaries | Rectangular approximation is scientifically incorrect | Approved (correction) |
-| Use iapws package | Implements IAPWS R14-08 certified ice phase equations | Approved |
-| Use shapely for point-in-polygon | Handles curved boundary checking correctly | Approved |
-| Re-plan from Phase 2 onwards | Phase lookup affects all downstream phases | Approved |
-| Simon-Glatzel melting curves | Correctly fits triple points: P = P_ref + A * [(T/T_ref)^c - 1] | Approved (02-04) |
-| Polygon vertex representation | (T, P) tuples ordered CCW for shapely compatibility | Approved (02-04) |
-| Use polygon.covers() for boundary | Points on phase boundaries belong to that phase | Approved (02-05) |
+| Use curved phase boundaries | Rectangular approximation is scientifically incorrect | ✓ Implemented |
+| Use iapws package | Implements IAPWS R14-08 certified ice phase equations | ✓ Implemented |
+| Use shapely for point-in-polygon | Handles curved boundary checking correctly | ✓ Implemented |
+| Re-plan from Phase 2 onwards | Phase lookup affects all downstream phases | ✓ Complete for Phase 2 |
+| Simon-Glatzel melting curves | Correctly fits triple points: P = P_ref + A * [(T/T_ref)^c - 1] | ✓ Implemented |
+| Polygon vertex representation | (T, P) tuples ordered CCW for shapely compatibility | ✓ Implemented |
+| Use polygon.covers() for boundary | Points on phase boundaries belong to that phase | ✓ Implemented |
+| Test expectations based on IAPWS data | Tests must match scientifically correct boundaries | ✓ Implemented |
 
 ---
 
-*State updated: 2026-03-27 (02-05 complete)*
+*State updated: 2026-03-27 (02-06 complete, Phase 2 correction done)*
