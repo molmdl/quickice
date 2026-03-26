@@ -21,11 +21,11 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 2 of 7 (Phase Mapping - CORRECTION NEEDED) |
-| Plan | 04 of 06 (correction plans) |
-| Status | Rectangular boundaries identified as wrong, correction plans created |
-| Last activity | 2026-03-27 - Created correction plans for curved phase boundaries |
-| Progress Bar | ████████████████████░░░░ 83% (15 original plans, 4 correction plans added) |
+| Phase | 2 of 7 (Phase Mapping - CORRECTION IN PROGRESS) |
+| Plan | 4 of 6 (correction plans) |
+| Status | Completed 02-04 - Curved boundary data created |
+| Last activity | 2026-03-27 - Completed 02-04-PLAN.md |
+| Progress Bar | ████████████████████░░░░ 84% (16 of 19 plans complete) |
 
 ---
 
@@ -69,7 +69,7 @@
 
 | Plan | Description | Status |
 |------|-------------|--------|
-| 02-04 | Curved boundary data (IAPWS triple points, polygons) | Pending |
+| 02-04 | Curved boundary data (IAPWS triple points, polygons) | ✓ Complete |
 | 02-05 | Curved boundary lookup logic (shapely) | Pending |
 | 02-06 | Update test expectations | Pending |
 
@@ -83,11 +83,11 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27T15:30:00+08:00
-**Last Completed:** Research for Phase 2 correction, created correction plans
+**Last Session:** 2026-03-27T03:41:44Z
+**Last Completed:** 02-04-PLAN.md (Curved boundary data with IAPWS triple points)
 
-**Next Session:** Execute Phase 2 corrections
-- Run: `/gsd-execute-phase 2 --plans 04-06`
+**Next Session:** Continue Phase 2 corrections
+- Run: `/gsd-execute-phase 2 --plans 05-06`
 - Then: `/gsd-execute-phase 5 --plans 07`
 
 ---
@@ -95,9 +95,9 @@
 ## Todo
 
 - [x] Phase 1: Input Validation — COMPLETE
-- [ ] Phase 2: Phase Mapping — CORRECTION NEEDED
+- [ ] Phase 2: Phase Mapping — CORRECTION IN PROGRESS
   - [x] 02-01, 02-02, 02-03 — Original plans (rectangular - WRONG)
-  - [ ] 02-04 — Curved boundary data
+  - [x] 02-04 — Curved boundary data
   - [ ] 02-05 — Curved lookup logic
   - [ ] 02-06 — Updated tests
 - [x] Phase 3: Structure Generation — COMPLETE
@@ -120,7 +120,9 @@
 | Use iapws package | Implements IAPWS R14-08 certified ice phase equations | Approved |
 | Use shapely for point-in-polygon | Handles curved boundary checking correctly | Approved |
 | Re-plan from Phase 2 onwards | Phase lookup affects all downstream phases | Approved |
+| Simon-Glatzel melting curves | Correctly fits triple points: P = P_ref + A * [(T/T_ref)^c - 1] | Approved (02-04) |
+| Polygon vertex representation | (T, P) tuples ordered CCW for shapely compatibility | Approved (02-04) |
 
 ---
 
-*State updated: 2026-03-27*
+*State updated: 2026-03-27 (02-04 complete)*
