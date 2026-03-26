@@ -34,7 +34,7 @@ TRIPLE_POINTS = {
     },
     # Ice II - Ice III - Ice V triple point
     "ii_iii_v": {
-        "T": 249.65,
+        "T": 248.85,  # Corrected from 249.65 to match IAPWS reference
         "P": 344.3,
         "description": "Triple point: Ice II, Ice III, Ice V"
     },
@@ -186,7 +186,7 @@ PHASE_POLYGONS = {
         (218.95, 620.0),        # II-V-VI triple point
         (260.0, 620.0),         # Extended high temperature boundary
         (260.0, 210.0),         # Extended boundary at T=260K
-        (249.65, 344.3),        # II-III-V triple point
+        (248.85, 344.3),        # II-III-V triple point
         (238.55, 212.9),        # Ih-II-III triple point
         (200.0, 300.0),         # Lower temperature extension
         (180.0, 620.0),         # Cold boundary at high pressure
@@ -199,18 +199,18 @@ PHASE_POLYGONS = {
         (238.55, 212.9),        # Ih-II-III triple point
         (251.165, 207.5),       # Ih-III-Liquid triple point
         (256.165, 346.3),       # III-V-Liquid triple point
-        (249.65, 344.3),        # II-III-V triple point
+        (248.85, 344.3),        # II-III-V triple point
         (238.55, 212.9),        # Back to start
     ],
     
     # Ice V region
     # Monoclinic phase, moderate to high pressure
     "ice_v": [
-        (249.65, 344.3),        # II-III-V triple point
+        (248.85, 344.3),        # II-III-V triple point
         (256.165, 346.3),       # III-V-Liquid triple point
         (273.31, 625.9),        # V-VI-Liquid triple point
         (218.95, 620.0),        # II-V-VI triple point
-        (249.65, 344.3),        # Back to start
+        (248.85, 344.3),        # Back to start
     ],
     
     # Ice VI region
