@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "description": "Ice phase diagram boundaries",
+    "source": "Scientific literature (NIST, Wikipedia Phases of Ice)",
+    "units": {
+      "temperature": "Kelvin",
+      "pressure": "MPa",
+      "density": "g/cm³"
+    }
+  },
+  "phases": {
+    "ice_ih": {
+      "name": "Ice Ih",
+      "crystal_form": "hexagonal",
+      "density": 0.9167,
+      "boundaries": {
+        "temperature": {"min": 0, "max": 273.15},
+        "pressure": {"min": 0, "max": 210}
+      }
+    },
+    "ice_ic": {
+      "name": "Ice Ic",
+      "crystal_form": "diamond cubic",
+      "density": 0.92,
+      "boundaries": {
+        "temperature": {"min": 0, "max": 240},
+        "pressure": {"min": 0, "max": 210}
+      },
+      "notes": "Metastable phase"
+    },
+    "ice_ii": {
+      "name": "Ice II",
+      "crystal_form": "rhombohedral",
+      "density": 1.18,
+      "boundaries": {
+        "temperature": {"min": 190, "max": 210},
+        "pressure": {"min": 300, "max": 2100}
+      }
+    },
+    "ice_iii": {
+      "name": "Ice III",
+      "crystal_form": "tetragonal",
+      "density": 1.16,
+      "boundaries": {
+        "temperature": {"min": 250, "max": 273},
+        "pressure": {"min": 210, "max": 350}
+      }
+    },
+    "ice_v": {
+      "name": "Ice V",
+      "crystal_form": "monoclinic",
+      "density": 1.24,
+      "boundaries": {
+        "temperature": {"min": 253, "max": 273},
+        "pressure": {"min": 350, "max": 1100}
+      }
+    },
+    "ice_vi": {
+      "name": "Ice VI",
+      "crystal_form": "tetragonal",
+      "density": 1.31,
+      "boundaries": {
+        "temperature": {"min": 270, "max": 355},
+        "pressure": {"min": 1100, "max": 2200}
+      }
+    },
+    "ice_vii": {
+      "name": "Ice VII",
+      "crystal_form": "cubic",
+      "density": 1.65,
+      "boundaries": {
+        "temperature": {"min": 273, "max": 500},
+        "pressure": {"min": 2200, "max": 10000}
+      }
+    },
+    "ice_viii": {
+      "name": "Ice VIII",
+      "crystal_form": "tetragonal",
+      "density": 1.65,
+      "boundaries": {
+        "temperature": {"min": 0, "max": 278},
+        "pressure": {"min": 2100, "max": 10000}
+      },
+      "notes": "Ordered form of Ice VII at low temperature"
+    }
+  }
+}
