@@ -1,5 +1,7 @@
 """Mapping layer between QuickIce phase IDs and GenIce lattice names."""
 
+import math
+
 import numpy as np
 
 from quickice.structure_generation.errors import UnsupportedPhaseError
@@ -67,8 +69,6 @@ def calculate_supercell(
     # Calculate minimum supercell size
     # We need n such that molecules_per_unit_cell * n^3 >= target_molecules
     # n >= (target_molecules / molecules_per_unit_cell)^(1/3)
-    import math
-
     ratio = target_molecules / molecules_per_unit_cell
     n = math.ceil(ratio ** (1/3))
 
