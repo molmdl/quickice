@@ -22,10 +22,10 @@
 | Field | Value |
 |-------|-------|
 | Phase | 4 of 7 (Ranking) |
-| Plan | 2 of 4 in current phase |
+| Plan | 3 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-03-26 - Completed 04-02-PLAN.md |
-| Progress Bar | ███████████████████████████████ 77% (10 plans complete) |
+| Last activity | 2026-03-26 - Completed 04-03-PLAN.md |
+| Progress Bar | █████████████████████████████████ 85% (11 plans complete) |
 
 ---
 
@@ -86,6 +86,8 @@
 | Manual PBC implementation | scipy.spatial.distance.cdist doesn't handle PBC | Approved (04-02) |
 | Energy score scaled by 100 | Makes typical deviations (0.001-0.01 nm) visible | Approved (04-02) |
 | Default density 0.9167 g/cm³ | Ice Ih density when not in metadata | Approved (04-02) |
+| Diversity inverted in combined score | 1 - norm_diversity to maintain lower=better convention | Approved (04-03) |
+| Default equal weights (1:1:1) | Simple starting point, users can customize | Approved (04-03) |
 
 ### Dependencies Identified
 
@@ -112,10 +114,10 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-26T16:57:22Z
-**Last Completed:** Phase 4 Plan 2 - Scoring Functions
+**Last Session:** 2026-03-26T17:01:50Z
+**Last Completed:** Phase 4 Plan 3 - Ranking Integration
 
-**Next Session:** Continue Phase 4 - Plan 03 (Ranking integration)
+**Next Session:** Continue Phase 4 - Plan 04 (final integration with CLI)
 
 ---
 
@@ -132,8 +134,8 @@
 - [ ] Phase 4: Ranking
   - [x] 04-01: Ranking data structures
   - [x] 04-02: Scoring functions
-  - [ ] 04-03: Diversity calculation
-  - [ ] 04-04: Ranking integration
+  - [x] 04-03: Ranking integration
+  - [ ] 04-04: Final integration with CLI
 - [ ] Phase 5: Output
 - [ ] Phase 6: Documentation
 - [ ] Phase 7: Audit & Correctness
