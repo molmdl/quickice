@@ -14,9 +14,9 @@
 
 ### Phase Mapping
 
-- [ ] **PHASE-01**: Rule-based T,P → ice polymorph lookup table
-- [ ] **PHASE-02**: Support common ice phases (Ice Ih, Ic, II, III, V, VI, VII, VIII)
-- [ ] **PHASE-03**: Phase diagram data structure (YAML or JSON)
+- [x] **PHASE-01**: Rule-based T,P → ice polymorph lookup table
+- [x] **PHASE-02**: Support common ice phases (Ice Ih, Ic, II, III, V, VI, VII, VIII)
+- [x] **PHASE-03**: Phase diagram data structure (YAML or JSON)
 
 ### Structure Generation
 
@@ -83,13 +83,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INPUT-01 | Phase 1 | Pending |
-| INPUT-02 | Phase 1 | Pending |
-| INPUT-03 | Phase 1 | Pending |
-| INPUT-04 | Phase 1 | Pending |
-| PHASE-01 | Phase 2 | Pending |
-| PHASE-02 | Phase 2 | Pending |
-| PHASE-03 | Phase 2 | Pending |
+| INPUT-01 | Phase 1 | Complete |
+| INPUT-02 | Phase 1 | Complete |
+| INPUT-03 | Phase 1 | Complete |
+| INPUT-04 | Phase 1 | Complete |
+| PHASE-01 | Phase 2 | Complete |
+| PHASE-02 | Phase 2 | Complete |
+| PHASE-03 | Phase 2 | Complete |
 | GEN-01 | Phase 3 | Pending |
 | GEN-02 | Phase 3 | Pending |
 | GEN-03 | Phase 3 | Pending |
