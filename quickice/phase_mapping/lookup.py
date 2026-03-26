@@ -4,14 +4,18 @@ Phase lookup functionality for QuickIce.
 This module provides the core phase mapping functionality to determine
 which ice polymorph is stable at given temperature and pressure conditions.
 
-The lookup is based on phase diagram boundaries defined in ice_phases.json.
+The lookup uses curved phase boundaries defined via IAPWS-certified triple points
+and melting curves, using shapely for point-in-polygon evaluation.
 """
 
 import json
 from pathlib import Path
 from typing import Optional
 
+from shapely.geometry import Point, Polygon
+
 from quickice.phase_mapping.errors import UnknownPhaseError
+from quickice.phase_mapping.data.ice_boundaries import PHASE_POLYGONS
 
 
 class IcePhaseLookup:
@@ -48,10 +52,10 @@ class IcePhaseLookup:
 
         # Order phases by specificity: high pressure phases first
         # This ensures we check more restrictive regions before general ones
-        # Order: VII, VIII, VI, V, III, II, Ic, Ih
+        # Order: VIII, VII, VI, V, III, II, Ic, Ih
         self.phase_order = [
-            "ice_vii",
             "ice_viii",
+            "ice_vii",
             "ice_vi",
             "ice_v",
             "ice_iii",
@@ -60,9 +64,35 @@ class IcePhaseLookup:
             "ice_ih",
         ]
 
+    def _build_result(
+        self, phase_id: str, temperature: float, pressure: float
+    ) -> dict:
+        """
+        Build the result dictionary for a matched phase.
+
+        Args:
+            phase_id: Phase identifier (e.g., "ice_ih")
+            temperature: Input temperature
+            pressure: Input pressure
+
+        Returns:
+            Dictionary with phase details
+        """
+        phase_data = self.phases[phase_id]
+        return {
+            "phase_id": phase_id,
+            "phase_name": phase_data["name"],
+            "density": phase_data["density"],
+            "temperature": temperature,
+            "pressure": pressure,
+        }
+
     def lookup(self, temperature: float, pressure: float) -> dict:
         """
-        Find the ice phase stable at given T,P conditions.
+        Find the ice phase stable at given T,P conditions using curved boundaries.
+
+        Uses shapely Point-in-Polygon evaluation for accurate phase identification
+        at curved boundaries defined by IAPWS triple points and melting curves.
 
         Args:
             temperature: Temperature in Kelvin.
@@ -79,28 +109,39 @@ class IcePhaseLookup:
         Raises:
             UnknownPhaseError: If no phase matches the given conditions.
         """
-        # Check each phase in order of specificity
-        for phase_id in self.phase_order:
+        # Create a point for the T,P coordinates
+        point = Point(temperature, pressure)
+
+        # Check phases hierarchically (high pressure first)
+        # This ensures we check more restrictive regions before general ones
+        phase_order = [
+            "ice_viii",
+            "ice_vii",
+            "ice_vi",
+            "ice_v",
+            "ice_iii",
+            "ice_ii",
+            "ice_ic",
+            "ice_ih",
+        ]
+
+        for phase_id in phase_order:
+            # Skip if phase not in data
             if phase_id not in self.phases:
                 continue
 
-            phase_data = self.phases[phase_id]
-            boundaries = phase_data["boundaries"]
+            # Check if phase has polygon data
+            if phase_id not in PHASE_POLYGONS:
+                continue
 
-            t_min = boundaries["temperature"]["min"]
-            t_max = boundaries["temperature"]["max"]
-            p_min = boundaries["pressure"]["min"]
-            p_max = boundaries["pressure"]["max"]
+            # Get polygon vertices and create shapely polygon
+            polygon_vertices = PHASE_POLYGONS[phase_id]
+            polygon = Polygon(polygon_vertices)
 
-            # Check if T,P falls within this phase's boundaries
-            if t_min <= temperature <= t_max and p_min <= pressure <= p_max:
-                return {
-                    "phase_id": phase_id,
-                    "phase_name": phase_data["name"],
-                    "density": phase_data["density"],
-                    "temperature": temperature,
-                    "pressure": pressure,
-                }
+            # Check if point is inside the polygon (curved boundary evaluation)
+            # Use covers() to include points on the boundary
+            if polygon.covers(point):
+                return self._build_result(phase_id, temperature, pressure)
 
         # No matching phase found
         raise UnknownPhaseError(
