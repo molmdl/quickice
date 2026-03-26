@@ -22,9 +22,9 @@
 | Field | Value |
 |-------|-------|
 | Phase | 2 of 7 (Phase Mapping - CORRECTION IN PROGRESS) |
-| Plan | 4 of 6 (correction plans) |
-| Status | Completed 02-04 - Curved boundary data created |
-| Last activity | 2026-03-27 - Completed 02-04-PLAN.md |
+| Plan | 5 of 6 (correction plans) |
+| Status | Completed 02-05 - Curved boundary lookup implemented |
+| Last activity | 2026-03-27 - Completed 02-05-PLAN.md |
 | Progress Bar | ████████████████████░░░░ 84% (16 of 19 plans complete) |
 
 ---
@@ -70,7 +70,7 @@
 | Plan | Description | Status |
 |------|-------------|--------|
 | 02-04 | Curved boundary data (IAPWS triple points, polygons) | ✓ Complete |
-| 02-05 | Curved boundary lookup logic (shapely) | Pending |
+| 02-05 | Curved boundary lookup logic (shapely) | ✓ Complete |
 | 02-06 | Update test expectations | Pending |
 
 ### Phase 5 Corrections (Wave 6)
@@ -83,11 +83,11 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27T03:41:44Z
-**Last Completed:** 02-04-PLAN.md (Curved boundary data with IAPWS triple points)
+**Last Session:** 2026-03-27T16:00:00Z
+**Last Completed:** 02-05-PLAN.md (Curved boundary lookup with shapely)
 
 **Next Session:** Continue Phase 2 corrections
-- Run: `/gsd-execute-phase 2 --plans 05-06`
+- Run: `/gsd-execute-phase 2 --plans 06`
 - Then: `/gsd-execute-phase 5 --plans 07`
 
 ---
@@ -98,7 +98,7 @@
 - [ ] Phase 2: Phase Mapping — CORRECTION IN PROGRESS
   - [x] 02-01, 02-02, 02-03 — Original plans (rectangular - WRONG)
   - [x] 02-04 — Curved boundary data
-  - [ ] 02-05 — Curved lookup logic
+  - [x] 02-05 — Curved lookup logic
   - [ ] 02-06 — Updated tests
 - [x] Phase 3: Structure Generation — COMPLETE
 - [x] Phase 4: Ranking — COMPLETE
@@ -122,7 +122,8 @@
 | Re-plan from Phase 2 onwards | Phase lookup affects all downstream phases | Approved |
 | Simon-Glatzel melting curves | Correctly fits triple points: P = P_ref + A * [(T/T_ref)^c - 1] | Approved (02-04) |
 | Polygon vertex representation | (T, P) tuples ordered CCW for shapely compatibility | Approved (02-04) |
+| Use polygon.covers() for boundary | Points on phase boundaries belong to that phase | Approved (02-05) |
 
 ---
 
-*State updated: 2026-03-27 (02-04 complete)*
+*State updated: 2026-03-27 (02-05 complete)*
