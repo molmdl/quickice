@@ -44,12 +44,12 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** PHASE-01, PHASE-02, PHASE-03
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 6 plans in 3 waves (original) + 3 correction plans
 
 **Success Criteria:**
 
 1. User can query with T,P and receive polymorph identification
-2. Lookup table correctly maps T,P to phases
+2. Lookup table correctly maps T,P to phases using curved boundaries (IAPWS R14-08)
 3. Common ice phases (Ih, Ic, II, III, V, VI, VII, VIII) are supported
 
 **Dependencies:** Phase 1 (validated inputs needed)
@@ -58,6 +58,9 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 - [x] 02-01-PLAN.md — Phase mapping data (JSON) + error types
 - [x] 02-02-PLAN.md — TDD phase lookup logic
 - [x] 02-03-PLAN.md — CLI integration with phase output
+- [x] 02-04-PLAN.md — Curved boundary data (IAPWS triple points, polygons) [CORRECTION]
+- [x] 02-05-PLAN.md — Curved boundary lookup logic (shapely) [CORRECTION]
+- [x] 02-06-PLAN.md — Update test expectations [CORRECTION]
 
 ---
 
