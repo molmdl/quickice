@@ -67,6 +67,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** GEN-01, GEN-02, GEN-03, GEN-04
 
+**Plans:** 2 plans in 2 waves
+
 **Success Criteria:**
 
 1. GenIce generates valid hydrogen bond networks (exactly 4 H-bonds per molecule)
@@ -75,6 +77,10 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 4. Generated coordinates are parseable and valid
 
 **Dependencies:** Phase 2 (phase must be identified before generation)
+
+**Plans:**
+- [ ] 03-01-PLAN.md — TDD phase mapper (types + phase_id → GenIce lattice mapping + supercell calculation)
+- [ ] 03-02-PLAN.md — IceStructureGenerator with GenIce integration + generate_candidates function
 
 ---
 
