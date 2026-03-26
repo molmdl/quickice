@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
+from quickice.phase_mapping.data.ice_boundaries import PHASE_POLYGONS
+
 
 # Phase colors for visualization
 PHASE_COLORS = {
@@ -25,9 +27,21 @@ PHASE_COLORS = {
     "ice_viii": "#DC143C", # Crimson
 }
 
+# Phase display names
+PHASE_NAMES = {
+    "ice_ih": "Ice Ih",
+    "ice_ic": "Ice Ic",
+    "ice_ii": "Ice II",
+    "ice_iii": "Ice III",
+    "ice_v": "Ice V",
+    "ice_vi": "Ice VI",
+    "ice_vii": "Ice VII",
+    "ice_viii": "Ice VIII",
+}
+
 
 def _load_phase_data() -> dict:
-    """Load ice phase boundary data from JSON file.
+    """Load ice phase metadata from JSON file.
     
     Returns:
         Dictionary with phase information
@@ -37,33 +51,26 @@ def _load_phase_data() -> dict:
         return json.load(f)
 
 
-def _create_phase_polygon(phase_info: dict) -> Optional[mpatches.Polygon]:
-    """Create a polygon patch for a phase region.
+def _create_phase_polygon(phase_id: str) -> Optional[mpatches.Polygon]:
+    """Create a polygon patch for a phase region using curved boundaries.
     
     Args:
-        phase_info: Dictionary with phase boundaries
+        phase_id: Phase identifier (e.g., "ice_ih", "ice_ii")
         
     Returns:
-        Polygon patch or None if boundaries invalid
+        Polygon patch or None if phase not found
     """
-    boundaries = phase_info.get("boundaries", {})
-    t_bounds = boundaries.get("temperature", {})
-    p_bounds = boundaries.get("pressure", {})
+    # Get polygon vertices from PHASE_POLYGONS
+    if phase_id not in PHASE_POLYGONS:
+        return None
     
-    t_min = t_bounds.get("min", 0)
-    t_max = t_bounds.get("max", 500)
-    p_min = p_bounds.get("min", 0)
-    p_max = p_bounds.get("max", 10000)
+    vertices = PHASE_POLYGONS[phase_id]
     
-    # Create rectangle vertices (P on x-axis, T on y-axis)
-    vertices = np.array([
-        [p_min, t_min],
-        [p_max, t_min],
-        [p_max, t_max],
-        [p_min, t_max],
-    ])
+    # Convert (T, P) tuples to (P, T) for matplotlib (P on x-axis, T on y-axis)
+    # Note: vertices are stored as (T, P), need to swap for plotting
+    plot_vertices = np.array([[p, t] for t, p in vertices])
     
-    return mpatches.Polygon(vertices, closed=True)
+    return mpatches.Polygon(plot_vertices, closed=True)
 
 
 def generate_phase_diagram(
@@ -75,6 +82,9 @@ def generate_phase_diagram(
 ) -> list[str]:
     """Generate phase diagram with user's operating conditions marked.
     
+    Creates publication-quality phase diagrams showing ice polymorph regions
+    with curved boundaries derived from IAPWS-certified data.
+    
     Args:
         user_t: User's temperature in Kelvin
         user_p: User's pressure in MPa
@@ -84,21 +94,24 @@ def generate_phase_diagram(
         
     Returns:
         List of paths to generated files
+        
+    Raises:
+        FileNotFoundError: If phase data files not found
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Load phase data
+    # Load phase metadata
     data = _load_phase_data()
     phases = data.get("phases", {})
     
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
     
-    # Plot each phase region
+    # Plot each phase region with curved boundaries
     legend_patches = []
     for phase_id, phase_info in phases.items():
-        poly = _create_phase_polygon(phase_info)
+        poly = _create_phase_polygon(phase_id)
         if poly is not None:
             color = PHASE_COLORS.get(phase_id, "#CCCCCC")
             poly.set_facecolor(color)
@@ -108,8 +121,9 @@ def generate_phase_diagram(
             ax.add_patch(poly)
             
             # Create legend entry
+            phase_name = phase_info.get("name", PHASE_NAMES.get(phase_id, phase_id))
             legend_patches.append(
-                mpatches.Patch(color=color, label=phase_info.get("name", phase_id), alpha=0.7)
+                mpatches.Patch(color=color, label=phase_name, alpha=0.7)
             )
     
     # Plot user's T,P point
@@ -125,7 +139,7 @@ def generate_phase_diagram(
     
     # Set axis limits
     ax.set_xlim(0, 5000)
-    ax.set_ylim(0, 500)
+    ax.set_ylim(200, 500)
     
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -153,26 +167,21 @@ def generate_phase_diagram(
     # Write text data file
     with open(txt_path, 'w') as f:
         f.write("# Water Ice Phase Diagram Data\n")
-        f.write("# Source: Scientific literature (NIST, Wikipedia Phases of Ice)\n")
+        f.write("# Source: IAPWS R14-08(2011), IAPWS R10-06(2009)\n")
+        f.write("# Boundary type: Curved (polygon vertices from triple points and melting curves)\n")
         f.write("# Columns: T(K)\tP(MPa)\tPhase\tCrystalForm\tDensity(g/cm³)\n")
         f.write("#\n")
         
         for phase_id, phase_info in phases.items():
-            boundaries = phase_info.get("boundaries", {})
-            t_bounds = boundaries.get("temperature", {})
-            p_bounds = boundaries.get("pressure", {})
-            
-            t_min = t_bounds.get("min", 0)
-            t_max = t_bounds.get("max", 500)
-            p_min = p_bounds.get("min", 0)
-            p_max = p_bounds.get("max", 10000)
-            
-            name = phase_info.get("name", phase_id)
-            crystal = phase_info.get("crystal_form", "unknown")
-            density = phase_info.get("density", 0.0)
-            
-            f.write(f"{t_min}\t{p_min}\t{name}\t{crystal}\t{density}\n")
-            f.write(f"{t_max}\t{p_max}\t{name}\t{crystal}\t{density}\n")
+            # Write polygon vertices for each phase
+            if phase_id in PHASE_POLYGONS:
+                vertices = PHASE_POLYGONS[phase_id]
+                name = phase_info.get("name", PHASE_NAMES.get(phase_id, phase_id))
+                crystal = phase_info.get("crystal_form", "unknown")
+                density = phase_info.get("density", 0.0)
+                
+                for t, p in vertices:
+                    f.write(f"{t}\t{p}\t{name}\t{crystal}\t{density}\n")
     
     # Close figure to prevent memory leak
     plt.close(fig)
