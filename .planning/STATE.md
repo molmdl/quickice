@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 3 complete, ready for Phase 4 execution
+**Current Focus:** Phase 4 Ranking in progress
 
 ---
 
@@ -21,11 +21,11 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 3 of 7 (Structure Generation) |
-| Plan | 2 of 2 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-03-27 - Completed Phase 3 verification |
-| Progress Bar | ████████████████████████████░░ 66% (8 plans complete, Phase 3 done) |
+| Phase | 4 of 7 (Ranking) |
+| Plan | 1 of 4 in current phase |
+| Status | In progress |
+| Last activity | 2026-03-26 - Completed 04-01-PLAN.md |
+| Progress Bar | ██████████████████████████████ 75% (9 plans complete) |
 
 ---
 
@@ -81,6 +81,8 @@
 | GROMACS format for output | Easily parseable, standard in MD community | Approved (03-02) |
 | Strict depolarization | Ensures physically valid structures | Approved (03-02) |
 | GenIce unit cell definitions | Different from conventional cells, requires mapping adjustment | Approved (03-02) |
+| Combined score: lower=better | Consistent with energy scoring convention | Approved (04-01) |
+| Flexible metadata dicts | dict[str, Any] for extensibility | Approved (04-01) |
 
 ### Dependencies Identified
 
@@ -107,10 +109,10 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27T00:00:00Z
-**Last Completed:** Phase 3 - Structure Generation (verified 10/10)
+**Last Session:** 2026-03-26T16:51:51Z
+**Last Completed:** Phase 4 Plan 1 - Ranking Data Structures
 
-**Next Session:** Execute Phase 4 - Ranking
+**Next Session:** Continue Phase 4 - Plan 02 (Scoring functions)
 
 ---
 
@@ -125,10 +127,14 @@
   - [x] 03-01: Phase ID to GenIce lattice mapping + supercell calculation
   - [x] 03-02: GenIce integration + generate_candidates
 - [ ] Phase 4: Ranking
+  - [x] 04-01: Ranking data structures
+  - [ ] 04-02: Scoring functions
+  - [ ] 04-03: Diversity calculation
+  - [ ] 04-04: Ranking integration
 - [ ] Phase 5: Output
 - [ ] Phase 6: Documentation
 - [ ] Phase 7: Audit & Correctness
 
 ---
 
-*State updated: 2026-03-27*
+*State updated: 2026-03-26*
