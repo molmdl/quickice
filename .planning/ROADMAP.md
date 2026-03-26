@@ -20,6 +20,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** INPUT-01, INPUT-02, INPUT-03, INPUT-04
 
+**Plans:** 3 plans in 3 waves
+
 **Success Criteria:**
 
 1. User can specify temperature in Kelvin via --temperature flag
@@ -28,6 +30,11 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 4. Invalid inputs are rejected with clear error messages (T: 0-500K, P: 0-10000 MPa, N: 4-100000)
 
 **Dependencies:** None
+
+**Plans:**
+- [ ] 01-01-PLAN.md — Package structure + Poetry configuration
+- [ ] 01-02-PLAN.md — TDD validators for T/P/nmolecules
+- [ ] 01-03-PLAN.md — CLI parser + entry point + integration tests
 
 ---
 
