@@ -11,4 +11,4 @@ conda activate quickice
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 echo "QuickIce environment activated."
-echo "Run 'quickice --help' for usage."
+echo "Run 'python quickice.py --help' for usage."
