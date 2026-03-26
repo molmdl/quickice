@@ -149,8 +149,9 @@ User CLI Args → Validator → Phase Mapper → GenIce (×N) → Ranker → PDB
 
 ## Sources
 
-- GenIce2 GitHub: https://github.com/vitroid/GenIce
-- Ice Phase Diagram literature
+- [GenIce2 GitHub](https://github.com/vitroid/GenIce) — Ice structure generation with 7-stage pipeline
+- [GenIce README](https://github.com/vitroid/GenIce/blob/main/README.md) — Supported ice phases and usage
+- [Spglib](https://github.com/spglib/spglib) — Crystal symmetry detection
 
 ---
 *Architecture research for: ML-based ice structure generation*
