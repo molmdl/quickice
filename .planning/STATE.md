@@ -22,11 +22,11 @@
 | Field | Value |
 | | |
 | Phase | 5.1 of 8 (Add Missing Ice Phases) |
-| Plan | 2 of 3 in current phase |
-| Status | In progress |
-| Last activity | 2026-03-27 - Completed 05.1-02-PLAN.md |
+| Plan | 3 of 3 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-03-27 - Completed 05.1-03-PLAN.md |
 
-| Progress Bar | ████████░░░░░░░░░░░░ 33% (8/24 plans) |
+| Progress Bar | █████████░░░░░░░░░░░ 38% (9/24 plans) |
 
 ---
 
@@ -39,7 +39,7 @@
 | 3 | Structure Generation | Valid GenIce output | ✓ Complete (2/2) |
 | 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
 | 5 | Output | PDB files + phase diagram | ✓ Complete (7/7) |
-| 5.1 | Missing Ice Phases | IX, XI, X, XV | In progress (2/3) |
+| 5.1 | Missing Ice Phases | IX, XI, X, XV | ✓ Complete (3/3) |
 | 6 | Documentation | User guides | Pending (0/0) |
 | 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
@@ -83,8 +83,8 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27 14:08 UTC
-**Stopped at:** Completed 05.1-02-PLAN.md
+**Last Session:** 2026-03-27 14:15 UTC
+**Stopped at:** Completed 05.1-03-PLAN.md
 **Resume file:** None
 
 ---
@@ -121,6 +121,9 @@
 | Ice XV checked after VII/VIII | Ordered Ice VI at moderate pressure | ✓ Implemented (05.1-02) |
 | Ice IX checked before Ice II | Overlapping conditions; ordered form takes precedence | ✓ Implemented (05.1-02) |
 | Ice XI checked before Ice Ih | More specific condition must be checked first | ✓ Implemented (05.1-02) |
+| Extended phase diagram to 50K | Ice XI visible at T < 72K | ✓ Implemented (05.1-03) |
+| Extended phase diagram to 100 GPa | Ice X visible at P > 30 GPa | ✓ Implemented (05.1-03) |
+| Layered rendering for phase overlap | Highest pressure first ensures correct visual layering | ✓ Implemented (05.1-03) |
 
 ---
 
@@ -134,4 +137,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Phase 5.1 in progress - Ice XI, IX, X, XV detection complete, 05.1-02 done)*
+*State updated: 2026-03-27 (Phase 5.1 complete - All 12 ice phases visualized)*
