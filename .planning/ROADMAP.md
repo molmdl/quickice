@@ -154,10 +154,18 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Depends on:** Phase 5
 
-**Plans:** 0 plans
+**Plans:** 3 plans in 3 waves
+
+**Success Criteria:**
+1. lookup_phase() correctly identifies Ice XI, IX, X, XV
+2. Phase diagram shows new phase regions
+3. Extended T range to 50K (for Ice XI) and P range to 100 GPa (for Ice X)
+4. All 12 ice phases supported
 
 **Plans:**
-- [ ] TBD (run /gsd-plan-phase 5.1 to break down)
+- [ ] 05.1-01-PLAN.md — Triple points + boundary curves for Ice XI, IX, X, XV (wave 1)
+- [ ] 05.1-02-PLAN.md — Update phase lookup to detect new phases + tests (wave 2)
+- [ ] 05.1-03-PLAN.md — Extend phase diagram for new phases (wave 3)
 
 **Details:**
 - Ice XI: T<72K at low P (proton-ordered Ih)
