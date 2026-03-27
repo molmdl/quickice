@@ -1,33 +1,39 @@
-# Phase 5: Output - Research (Updated)
+# Phase 5: Output - Research (CORRECTED)
 
-**Researched:** 2026-03-27
+**Researched:** 2026-03-27 (Updated with user correction)
 **Domain:** Water ice phase diagram axis arrangement verification and polygon data validation
 **Confidence:** HIGH (verified against Wikipedia and LSBU reference data)
 
 ## Summary
 
-This research verifies the water ice phase diagram axis arrangement and assesses the PHASE_POLYGONS data issues identified in the checkpoint. 
+This research verifies the water ice phase diagram axis arrangement and assesses the approach for rendering phase regions.
 
 **Key findings:**
-1. **Axis arrangement is CORRECT**: Wikipedia and standard convention use Pressure on X-axis (logarithmic), Temperature on Y-axis (linear) - this matches the current implementation
-2. **Phase 2 polygon data HAS GEOMETRIC ERRORS**: The ice_ii polygon has incorrect vertex definitions causing overlaps with ice_iii and ice_v
-3. **The ice_ic polygon definition is problematic**: It overlaps significantly with ice_ih
+1. **Axis arrangement is WRONG in current implementation**: Wikipedia uses Temperature on X-axis (linear), Pressure on Y-axis (logarithmic) - the current implementation has these SWAPPED
+2. **Should NOT use polygons**: Fill space within curves instead of using pre-defined polygon vertices
+3. **Single source of truth**: Use the same curve functions as Phase 2's lookup
 
-**Primary recommendation:** The axis arrangement requires NO changes. The PHASE_POLYGONS data in ice_boundaries.py needs correction to fix the geometric overlaps, particularly in the ice_ii polygon definition.
+**Primary recommendation:** 
+1. Swap axis arrangement (T on X-axis, P on Y-axis with log scale)
+2. Replace PHASE_POLYGONS with curve-based region filling
 
 ---
 
 ## Axis Arrangement Verification
 
-### Standard Convention (Wikipedia)
+### Standard Convention (Wikipedia - CORRECTED)
 
 The Wikipedia phase diagram shows:
-- **X-axis (horizontal):** Pressure (logarithmic scale, MPa)
-- **Y-axis (vertical):** Temperature (linear scale, Kelvin)
+- **X-axis (horizontal):** Temperature (linear scale, Kelvin)
+- **Y-axis (vertical):** Pressure (logarithmic scale, MPa)
 
-This is explicitly stated in the Wikipedia description: "Log-lin pressure-temperature phase diagram of water."
+The caption "Log-lin pressure-temperature phase diagram of water" indicates:
+- Logarithmic scale for Pressure (Y-axis)
+- Linear scale for Temperature (X-axis)
 
-### Current Implementation
+This is the standard convention for water/ice phase diagrams.
+
+### Current Implementation (WRONG)
 
 In `phase_diagram.py` (lines 296-297):
 ```python
@@ -40,75 +46,93 @@ And the coordinate transformation (line 197):
 plot_vertices = np.array([[p, t] for t, p in vertices])
 ```
 
-This converts (T, P) tuples to (x=P, y=T), which correctly places:
-- Pressure on the X-axis
-- Temperature on the Y-axis
+This converts (T, P) tuples to (x=P, y=T), which places:
+- Pressure on the X-axis (WRONG)
+- Temperature on the Y-axis (WRONG)
 
-**VERDICT: Axis arrangement is CORRECT and matches Wikipedia convention.**
+**VERDICT: Axis arrangement is WRONG - needs to be SWAPPED.**
+
+### Correct Implementation
+
+To match Wikipedia convention:
+```python
+# Correct axis labels
+ax.set_xlabel("Temperature (K)", fontsize=14, fontweight='bold')
+ax.set_ylabel("Pressure (MPa)", fontsize=14, fontweight='bold')
+
+# Correct coordinate transformation
+plot_vertices = np.array([[t, p] for t, p in vertices])  # (x=T, y=P)
+
+# Correct user point plotting
+ax.plot(user_t, user_p, ...)  # x=T, y=P
+
+# Set log scale on Y-axis (Pressure)
+ax.set_yscale('log')
+
+# Correct axis limits
+ax.set_xlim(100, 500)  # Temperature range
+ax.set_ylim(0.1, 10000)  # Pressure range (log scale)
+```
+
+**CRITICAL FIX 1: Swap axis arrangement in phase_diagram.py**
 
 ---
 
-## PHASE_POLYGONS Assessment
+## Phase Region Filling Approach
 
-### Identified Geometric Issues
+### Current Approach (WRONG - Uses Polygons)
 
-From the checkpoint, the following overlaps exist:
-
-| Phase Pair | Overlap | Severity |
-|------------|---------|----------|
-| ice_ih <-> ice_ic | 14058 K*MPa | HIGH |
-| ice_ii <-> ice_iii | 228 K*MPa | LOW |
-| ice_ii <-> ice_v | 7061 K*MPa | HIGH |
-
-### Root Cause Analysis
-
-#### 1. ice_ii Polygon (CRITICAL ISSUE)
-
-Current definition in `ice_boundaries.py`:
+The current implementation uses `PHASE_POLYGONS` to fill phase regions:
 ```python
-"ice_ii": [
-    (218.95, 620.0),        # II-V-VI triple point
-    (260.0, 620.0),         # Extended high T boundary ← WRONG
-    (260.0, 210.0),         # Extended boundary at T=260K ← WRONG
-    (248.85, 344.3),        # II-III-V triple point
-    (238.55, 212.9),        # Ih-II-III triple point
-    (200.0, 300.0),         # Lower T extension
-    (180.0, 620.0),         # Cold boundary at high P
-    (218.95, 620.0),        # Back to triple point
-],
+# Current approach - uses polygons
+vertices = PHASE_POLYGONS[phase_id]
+plot_vertices = np.array([[p, t] for t, p in vertices])
+poly = Polygon(plot_vertices, closed=True)
+ax.add_patch(poly)
 ```
 
-**Problem:** The vertices (260.0, 620.0) and (260.0, 210.0) extend the ice_ii region incorrectly into ice_v's territory. According to the phase diagram:
-- Ice II is stable at HIGH pressure (300-620 MPa) and LOW temperature (180-250 K)
-- At higher temperatures (above ~250K), ice II is not stable
-- The boundary should curve from the II-III-V triple point toward the II-V-VI triple point
+This approach:
+- Requires pre-defined polygon vertices
+- Causes geometric overlap errors
+- Is inconsistent with curve-based phase lookup
+- Duplicates data that already exists as curves
 
-#### 2. ice_ic Polygon (METASTABLE)
+### Correct Approach (CURVE-BASED FILLING)
 
-Current definition:
+The phase diagram should fill regions BETWEEN curves, not use pre-defined polygons:
+
+1. **Draw phase boundary curves** (melting curves, solid-solid boundaries)
+2. **Fill regions between curves** using matplotlib's `fill_between` or polygon patches derived from curves
+3. **Single source of truth**: Use the same curve functions as Phase 2's lookup
+
+Example approach:
 ```python
-"ice_ic": [
-    (100.0, 0.1),           # Low T, low P
-    (240.0, 0.1),           # Upper temp limit
-    (240.0, 150.0),         # Upper pressure
-    (200.0, 150.0),         # Higher pressure boundary
-    (100.0, 150.0),         # Cold boundary
-],
+def fill_phase_region(ax, phase_id, T_range, P_range):
+    """Fill a phase region between boundary curves."""
+    # Get boundary curves for this phase
+    boundaries = get_phase_boundaries(phase_id)  # curve functions
+    
+    # Sample points along boundaries
+    points = sample_boundary_points(boundaries, T_range, P_range)
+    
+    # Create closed polygon from curve points
+    if len(points) >= 3:
+        poly = Polygon(points, closed=True)
+        poly.set_facecolor(PHASE_COLORS[phase_id])
+        ax.add_patch(poly)
 ```
 
-**Problem:** Ice Ic is a metastable phase that exists at:
-- Low pressure (atmospheric)
-- Low temperature (130-240 K range)
+**Benefits:**
+- No pre-defined polygons that can have overlaps
+- Consistency with curve-based phase lookup (Phase 2)
+- Easier to maintain - change a curve, diagram updates automatically
+- Scientifically accurate - regions follow actual phase boundaries
 
-The current definition overlaps with ice_ih because ice_ic should only exist in a narrow region at atmospheric pressure.
+**CRITICAL FIX 2: Replace PHASE_POLYGONS with curve-based region filling**
 
 ---
 
-## Correct Polygon Definitions
-
-Based on the LSBU reference data and Wikipedia phase diagram, here are the correct boundaries:
-
-### Triple Points (VERIFIED)
+## Triple Points (VERIFIED from LSBU)
 
 | Triple Point | T (K) | P (MPa) |
 |--------------|-------|---------|
@@ -121,59 +145,35 @@ Based on the LSBU reference data and Wikipedia phase diagram, here are the corre
 | VI-VII-Liquid | 354.75 | 2200.0 |
 | VI-VII-VIII | 278.0 | 2100.0 |
 
-### Corrected ice_ii Polygon
-
-The correct ice_ii polygon should be bounded by:
-- (238.55, 212.9) - Ih-II-III triple point (shared with ice_ih and ice_iii)
-- (248.85, 344.3) - II-III-V triple point (shared with ice_iii and ice_v)
-- (218.95, 620.0) - II-V-VI triple point (shared with ice_v and ice_vi)
-- Connect these with proper curved boundaries
-
-The extension to T=260K is WRONG - ice II is stable only below ~250K.
-
-### Corrected ice_ic Polygon
-
-Ice Ic is metastable and should be a narrow band at low temperature and atmospheric pressure:
-- T: ~130-240 K
-- P: ~0.1 MPa (atmospheric)
-- Should NOT overlap with ice_ih
+These are correctly defined in `ice_boundaries.py` - no changes needed.
 
 ---
 
 ## Recommendations
 
-### 1. Fix ice_ii Polygon (HIGH PRIORITY)
+### Fix 1: Swap Axis Arrangement
 
-Replace the incorrect extension with proper boundaries:
-```python
-"ice_ii": [
-    (238.55, 212.9),        # Ih-II-III triple point
-    (248.85, 344.3),        # II-III-V triple point  
-    (218.95, 620.0),        # II-V-VI triple point
-    (200.0, 620.0),         # Cold boundary at high pressure
-    (200.0, 300.0),         # Lower pressure extension
-    (238.55, 212.9),        # Back to start
-],
-```
+In `phase_diagram.py`:
+1. Swap `set_xlabel` and `set_ylabel`
+2. Change coordinate transformation from `[[p, t] ...]` to `[[t, p] ...]`
+3. Swap arguments in `ax.plot(user_p, user_t, ...)` to `ax.plot(user_t, user_p, ...)`
+4. Change `set_xscale('log')` to `set_yscale('log')`
+5. Swap axis limits
 
-### 2. Fix ice_ic Polygon (MEDIUM PRIORITY)
+### Fix 2: Curve-Based Region Filling
 
-Either remove ice_ic or define it correctly as metastable:
-```python
-"ice_ic": [
-    (130.0, 0.1),           # Lower temp limit
-    (240.0, 0.1),           # Upper temp limit (conversion to Ih)
-    (220.0, 50.0),          # Slight pressure extension
-    (130.0, 50.0),          # Cold boundary
-],
-```
+In `phase_diagram.py`:
+1. Remove usage of `PHASE_POLYGONS`
+2. Use curve functions from `ice_boundaries.py`:
+   - `get_melting_pressure()` for melting curves
+   - Boundary functions for solid-solid transitions
+3. Generate polygon vertices dynamically from curves
+4. Fill regions between adjacent curves
 
-### 3. Verify No Overlaps After Fix
+### Fix 3: Update Labels and Triple Points
 
-After corrections, validate that:
-- No polygon pairs have geometric overlap
-- All triple points are shared correctly between adjacent phases
-- Phase regions are contiguous and cover the full T-P space
+1. Swap coordinates in triple point annotations
+2. Update text positions for labels on phase regions
 
 ---
 
@@ -181,7 +181,7 @@ After corrections, validate that:
 
 ### Primary (HIGH confidence)
 - **Wikipedia Phase Diagram** - https://en.wikipedia.org/wiki/Phases_of_ice
-  - Confirms axis arrangement: Pressure (log) on X-axis, Temperature on Y-axis
+  - Confirms axis arrangement: Temperature on X-axis, Pressure on Y-axis (log)
 - **LSBU Water Phase Data** - https://ergodic.ugr.es/termo/lecciones/water1.html
   - Triple point coordinates verified
   - Phase stability regions confirmed
@@ -195,11 +195,14 @@ After corrections, validate that:
 ## Metadata
 
 **Confidence breakdown:**
-- Axis arrangement: HIGH - verified against Wikipedia
-- Polygon assessment: HIGH - based on verified triple point data
-- Recommendations: HIGH - corrections align with phase diagram geometry
+- Axis arrangement: HIGH - verified against Wikipedia (corrected by user)
+- Curve-based filling: HIGH - standard approach for phase diagrams
+- Triple points: HIGH - verified against LSBU reference
 
 **Research date:** 2026-03-27
 **Valid until:** Phase diagram geometry is scientifically established (no expected changes)
 
-**Action required:** Update PHASE_POLYGONS in `quickice/phase_mapping/data/ice_boundaries.py` with corrected vertex definitions, then re-run Phase 2 to propagate the fix to Phase 5.
+**Action required:** 
+1. Fix axis arrangement in `quickice/output/phase_diagram.py`
+2. Replace polygon filling with curve-based filling
+3. Verify output matches Wikipedia diagram style
