@@ -505,3 +505,89 @@ class TestCLIIntegration:
         assert result.returncode == 0
         assert "Density:" in result.stdout
         assert "g/cm³" in result.stdout
+
+
+class TestLookupPhaseIceXi:
+    """Tests for Ice XI (proton-ordered Ice Ih) lookups."""
+
+    def test_lookup_very_low_temp_low_pressure(self):
+        """Temperature 60K, Pressure 0.1 MPa should return ice_xi."""
+        result = lookup_phase(60, 0.1)
+        assert result["phase_id"] == "ice_xi"
+        assert result["phase_name"] == "Ice XI"
+        assert result["density"] == 0.92
+
+    def test_lookup_boundary_temperature(self):
+        """Temperature 70K, Pressure 0.1 MPa should return ice_xi."""
+        result = lookup_phase(70, 0.1)
+        assert result["phase_id"] == "ice_xi"
+
+    def test_lookup_above_72k_returns_ice_ih(self):
+        """Temperature 80K, Pressure 0.1 MPa should return ice_ih."""
+        result = lookup_phase(80, 0.1)
+        assert result["phase_id"] == "ice_ih"
+
+
+class TestLookupPhaseIceIx:
+    """Tests for Ice IX (proton-ordered Ice III) lookups."""
+
+    def test_lookup_ice_ix_region(self):
+        """Temperature 100K, Pressure 300 MPa should return ice_ix."""
+        result = lookup_phase(100, 300)
+        assert result["phase_id"] == "ice_ix"
+        assert result["phase_name"] == "Ice IX"
+        assert result["density"] == 1.16
+
+    def test_lookup_ice_ix_low_pressure(self):
+        """Temperature 120K, Pressure 300 MPa should return ice_ix."""
+        result = lookup_phase(120, 300)
+        assert result["phase_id"] == "ice_ix"
+
+    def test_lookup_above_140k_not_ice_ix(self):
+        """Temperature 150K, Pressure 300 MPa should NOT return ice_ix."""
+        # At T=150K, we're above Ice IX limit - should be Ice II
+        result = lookup_phase(150, 300)
+        assert result["phase_id"] != "ice_ix"
+
+
+class TestLookupPhaseIceX:
+    """Tests for Ice X (symmetric hydrogen bonds) lookups."""
+
+    def test_lookup_extreme_pressure(self):
+        """Temperature 400K, Pressure 35000 MPa should return ice_x."""
+        result = lookup_phase(400, 35000)
+        assert result["phase_id"] == "ice_x"
+        assert result["phase_name"] == "Ice X"
+        assert result["density"] == 2.79
+
+    def test_lookup_very_high_pressure_low_temp(self):
+        """Temperature 200K, Pressure 40000 MPa should return ice_x."""
+        result = lookup_phase(200, 40000)
+        assert result["phase_id"] == "ice_x"
+
+    def test_lookup_below_30gpa_not_ice_x(self):
+        """Temperature 300K, Pressure 20000 MPa should NOT return ice_x."""
+        result = lookup_phase(300, 20000)
+        assert result["phase_id"] != "ice_x"
+
+
+class TestLookupPhaseIceXv:
+    """Tests for Ice XV (proton-ordered Ice VI) lookups."""
+
+    def test_lookup_ice_xv_region(self):
+        """Temperature 95K, Pressure 1100 MPa should return ice_xv."""
+        result = lookup_phase(95, 1100)
+        assert result["phase_id"] == "ice_xv"
+        assert result["phase_name"] == "Ice XV"
+        assert result["density"] == 1.31
+
+    def test_lookup_ice_xv_boundary_temp(self):
+        """Temperature 100K, Pressure 1100 MPa should return ice_xv."""
+        result = lookup_phase(100, 1100)
+        assert result["phase_id"] == "ice_xv"
+
+    def test_lookup_outside_temp_range_not_xv(self):
+        """Temperature 120K, Pressure 1100 MPa should NOT return ice_xv."""
+        result = lookup_phase(120, 1100)
+        # Should be Ice VI at this temperature
+        assert result["phase_id"] != "ice_xv"
