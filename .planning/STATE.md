@@ -21,10 +21,10 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 6 of 6 (Documentation) |
+| Phase | 5.1 of 8 (Add Missing Ice Phases) |
 | Plan | 0 of 0 (pending planning) |
-| Status | Ready to Plan |
-| Last activity | 2026-03-27 - Completed quick task 002: Fix phase diagram boundaries and ranking output |
+| Status | Ready to Plan (INSERTED) |
+| Last activity | 2026-03-27 - Phase 5.1 inserted: Add missing ice phases (IX, XI, X, XV) |
 
 | Progress Bar | ██████░░░░░░░░░░░░░░ 29% (7/24 plans) |
 
@@ -39,6 +39,7 @@
 | 3 | Structure Generation | Valid GenIce output | ✓ Complete (2/2) |
 | 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
 | 5 | Output | PDB files + phase diagram | ✓ Complete (7/7) |
+| 5.1 | Missing Ice Phases | IX, XI, X, XV | Pending (0/0) (INSERTED) |
 | 6 | Documentation | User guides | Pending (0/0) |
 | 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
@@ -85,6 +86,14 @@
 **Last Session:** 2026-03-27
 **Stopped at:** Phase 5 complete, Phase 6 ready to plan
 **Resume file:** None
+
+---
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 5.1 inserted after Phase 5: Add missing ice phases (IX, XI, X, XV) (URGENT)
 
 ---
 
