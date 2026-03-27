@@ -472,6 +472,30 @@ def generate_phase_diagram(
         if len(T_curve) > 0:
             ax.plot(T_curve, P_curve, color=color, linewidth=1.5, linestyle='-', alpha=0.8)
     
+    # Add Liquid and Vapor labels
+    ax.text(
+        340, 50,  # T=340K, P=50 MPa (liquid region above melting curves)
+        "Liquid",
+        fontsize=14,
+        fontweight='bold',
+        ha='center',
+        va='center',
+        color='black',
+        alpha=0.8,
+        zorder=5,
+    )
+    ax.text(
+        400, 0.2,  # T=400K, P=0.2 MPa (low pressure region near bottom)
+        "Vapor",
+        fontsize=14,
+        fontweight='bold',
+        ha='center',
+        va='center',
+        color='black',
+        alpha=0.8,
+        zorder=5,
+    )
+    
     # Mark triple points
     triple_point_names = [
         ("Ih_III_Liquid", "Ih-III-L"),
