@@ -470,7 +470,21 @@ def generate_phase_diagram(
     for curve_name, color, label in melting_curves:
         T_curve, P_curve = _sample_melting_curve(curve_name, n_points=200)
         if len(T_curve) > 0:
-            ax.plot(T_curve, P_curve, color=color, linewidth=1.5, linestyle='-', alpha=0.8)
+            ax.plot(T_curve, P_curve, color=color, linewidth=3.0, linestyle='-', alpha=0.8)
+    
+    # Liquid-Vapor boundary using IAPWS saturation curve
+    from iapws import IAPWS97
+    lv_T = np.linspace(273.16, 500, 50)
+    lv_P = []
+    for T in lv_T:
+        try:
+            st = IAPWS97(T=T, x=0)  # saturated liquid
+            lv_P.append(st.P)
+        except:
+            pass
+    if len(lv_P) > 0:
+        lv_T = lv_T[:len(lv_P)]
+        ax.plot(lv_T, lv_P, color='blue', linewidth=3.0, linestyle='-', alpha=0.8)
     
     # Add Liquid and Vapor labels
     ax.text(
@@ -485,7 +499,7 @@ def generate_phase_diagram(
         zorder=5,
     )
     ax.text(
-        400, 0.2,  # T=400K, P=0.2 MPa (low pressure region near bottom)
+        460, 0.5,  # T=460K, P=0.5 MPa (vapor region, below saturation curve)
         "Vapor",
         fontsize=14,
         fontweight='bold',

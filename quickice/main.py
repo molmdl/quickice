@@ -51,6 +51,15 @@ def main() -> int:
         )
         print(f"Ranked {len(ranking_result.ranked_candidates)} candidates")
         
+        # Print ranking scores for top candidates
+        print("\nRanking scores (lower combined = better):")
+        print("-" * 70)
+        print(f"{'Rank':<6}{'Energy':<12}{'Density':<12}{'Diversity':<12}{'Combined':<12}")
+        print("-" * 70)
+        for rc in ranking_result.ranked_candidates[:5]:
+            print(f"{rc.rank:<6}{rc.energy_score:<12.4f}{rc.density_score:<12.4f}{rc.diversity_score:<12.4f}{rc.combined_score:<12.4f}")
+        print("-" * 70)
+        
         # Output PDB files and phase diagram
         output_result = output_ranked_candidates(
             ranking_result=ranking_result,
