@@ -44,24 +44,22 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** PHASE-01, PHASE-02, PHASE-03
 
-**Plans:** 7 plans in 3 waves (original) + 4 correction plans
+**Plans:** 4 plans in 4 waves (curve-based replan)
 
 **Success Criteria:**
 
 1. User can query with T,P and receive polymorph identification
 2. Lookup table correctly maps T,P to phases using curved boundaries (IAPWS R14-08)
 3. Common ice phases (Ih, Ic, II, III, V, VI, VII, VIII) are supported
+4. No polygon overlap errors near phase boundaries
 
 **Dependencies:** Phase 1 (validated inputs needed)
 
 **Plans:**
-- [x] 02-01-PLAN.md — Phase mapping data (JSON) + error types
-- [x] 02-02-PLAN.md — TDD phase lookup logic
-- [x] 02-03-PLAN.md — CLI integration with phase output
-- [x] 02-04-PLAN.md — Curved boundary data (IAPWS triple points, polygons) [CORRECTION]
-- [x] 02-05-PLAN.md — Curved boundary lookup logic (shapely) [CORRECTION]
-- [x] 02-06-PLAN.md — Update test expectations [CORRECTION]
-- [x] 02-07-PLAN.md — Fix II-III-V triple point (248.85 K) + LSBU citation [CORRECTION]
+- [ ] 02-01-PLAN.md — Triple points + IAPWS melting curves (wave 1)
+- [ ] 02-02-PLAN.md — Solid-solid boundary functions (wave 2)
+- [ ] 02-03-PLAN.md — TDD curve-based phase lookup (wave 3)
+- [ ] 02-04-PLAN.md — CLI integration + verification (wave 4)
 
 ---
 
@@ -183,10 +181,10 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✓ Complete |
-| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
+| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ⚠️ Replanned (curve-based) |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
-| 5 - Output | PDB files | OUT-01 to OUT-05 | ⚠️ Correction (05-08) |
+| 5 - Output | PDB files | OUT-01 to OUT-05 | ⚠️ Blocked on Phase 2 |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
