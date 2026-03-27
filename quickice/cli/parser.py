@@ -57,6 +57,21 @@ Examples:
     )
     
     parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="output",
+        help="Output directory for PDB files and phase diagram (default: output)"
+    )
+    
+    parser.add_argument(
+        "--no-diagram",
+        action="store_true",
+        default=False,
+        help="Disable phase diagram generation"
+    )
+    
+    parser.add_argument(
         "--version",
         "-V",
         action="version",
@@ -77,6 +92,8 @@ def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
             - temperature: float (0-500K)
             - pressure: float (0-10000 MPa)
             - nmolecules: int (4-100000)
+            - output: str (output directory path, default: "output")
+            - no_diagram: bool (if True, skip diagram generation)
             
     Raises:
         SystemExit: If arguments are invalid or missing
