@@ -1,500 +1,205 @@
-# Phase 5: Output - Research
+# Phase 5: Output - Research (Updated)
 
 **Researched:** 2026-03-27
-**Domain:** PDB file generation with crystal symmetry validation and phase diagram visualization
-**Confidence:** HIGH (spglib verified via PyPI, PDB format is standard)
+**Domain:** Water ice phase diagram axis arrangement verification and polygon data validation
+**Confidence:** HIGH (verified against Wikipedia and LSBU reference data)
 
 ## Summary
 
-This phase implements output of ranked ice structure candidates as PDB files with crystal metadata. The core challenge is generating valid PDB files with CRYST1 records from the internal data structure, validating crystal symmetry using spglib, and optionally generating phase diagrams with matplotlib.
+This research verifies the water ice phase diagram axis arrangement and assesses the PHASE_POLYGONS data issues identified in the checkpoint. 
 
 **Key findings:**
-- spglib (v2.7.0) provides crystal symmetry validation via Python bindings
-- PDB CRYST1 record format is well-defined and can be written manually
-- Atomic overlap detection requires periodic boundary condition (PBC) distance calculations
-- matplotlib is the standard for phase diagram generation (PNG/SVG support)
+1. **Axis arrangement is CORRECT**: Wikipedia and standard convention use Pressure on X-axis (logarithmic), Temperature on Y-axis (linear) - this matches the current implementation
+2. **Phase 2 polygon data HAS GEOMETRIC ERRORS**: The ice_ii polygon has incorrect vertex definitions causing overlaps with ice_iii and ice_v
+3. **The ice_ic polygon definition is problematic**: It overlaps significantly with ice_ih
 
-**Primary recommendation:** Use spglib for space group validation, write PDB files manually with proper CRYST1 records, and use matplotlib for phase diagrams. No Biopython dependency needed - PDB format is simple enough to write directly.
+**Primary recommendation:** The axis arrangement requires NO changes. The PHASE_POLYGONS data in ice_boundaries.py needs correction to fix the geometric overlaps, particularly in the ice_ii polygon definition.
 
-## Standard Stack
+---
 
-The established libraries/tools for PDB output and validation:
+## Axis Arrangement Verification
 
-### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| spglib | >=2.0 | Space group validation | Standard for crystal symmetry identification |
-| numpy | (existing) | Array operations, cell matrix handling | Already in project |
-| matplotlib | >=3.5 | Phase diagram visualization | Standard for scientific plotting |
+### Standard Convention (Wikipedia)
 
-### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| scipy | (existing) | PBC distance calculations | Atomic overlap detection with minimum image convention |
+The Wikipedia phase diagram shows:
+- **X-axis (horizontal):** Pressure (logarithmic scale, MPa)
+- **Y-axis (vertical):** Temperature (linear scale, Kelvin)
 
-### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Manual PDB writing | Biopython PDBIO | Biopython adds large dependency for simple format |
-| spglib validation | Custom symmetry check | spglib is standard, well-tested |
+This is explicitly stated in the Wikipedia description: "Log-lin pressure-temperature phase diagram of water."
 
-**Installation:**
-```bash
-pip install spglib matplotlib
-```
+### Current Implementation
 
-## Architecture Patterns
-
-### Recommended Project Structure
-```
-quickice/output/
-├── __init__.py           # exports
-├── pdb_writer.py         # PDB file writing with CRYST1
-├── validator.py          # spglib validation, overlap detection
-├── phase_diagram.py      # matplotlib phase diagram generation
-└── types.py              # OutputResult dataclass
-```
-
-### Pattern 1: PDB File Writing with CRYST1
-
-**What:** Write candidate structure to PDB format with unit cell information in CRYST1 record
-
-**When to use:** Converting internal Candidate data to standard PDB file
-
-**Example:**
+In `phase_diagram.py` (lines 296-297):
 ```python
-# PDB CRYST1 record format (80 chars total):
-# Columns 1-6: "CRYST1"
-# 7-15: a (F9.3), 16-24: b (F9.3), 25-33: c (F9.3)
-# 34-42: alpha (F7.2), 43-51: beta (F7.2), 52-60: gamma (F7.2)
-# 61-66: space group number or name (leave blank for P1)
-# 67-70: Z value (number of symmetry operators)
-# 71-80: (free)
-
-def write_pdb_with_cryst1(candidate: Candidate, filepath: str):
-    """Write candidate to PDB file with CRYST1 record."""
-    # Convert cell from nm to Angstrom (PDB uses Angstrom)
-    cell_angstrom = candidate.cell * 10.0
-    
-    # Calculate cell parameters
-    a = np.linalg.norm(cell_angstrom[0])
-    b = np.linalg.norm(cell_angstrom[1])
-    c = np.linalg.norm(cell_angstrom[2])
-    
-    # Calculate angles (in degrees)
-    alpha = np.arccos(np.dot(cell_angstrom[1], cell_angstrom[2]) / (b * c))
-    beta = np.arccos(np.dot(cell_angstrom[0], cell_angstrom[2]) / (a * c))
-    gamma = np.arccos(np.dot(cell_angstrom[0], cell_angstrom[1]) / (a * b))
-    
-    alpha_deg = np.degrees(alpha)
-    beta_deg = np.degrees(beta)
-    gamma_deg = np.degrees(gamma)
-    
-    # Write CRYST1 record
-    cryst1 = f"CRYST1{a:9.3f}{b:9.3f}{c:9.3f}" \
-             f"{alpha_deg:7.2f}{beta_deg:7.2f}{gamma_deg:7.2f}" \
-             f" 1.00000  1"
-    
-    # Write ATOM records
-    with open(filepath, 'w') as f:
-        f.write(cryst1 + "\n")
-        f.write("AUTHOR   GENERATED BY QUICKICE\n")
-        
-        for i, (pos, name) in enumerate(zip(candidate.positions, candidate.atom_names)):
-            # Convert position from nm to Angstrom
-            pos_angstrom = pos * 10.0
-            
-            # PDB atom record format
-            # Atom name: cols 13-16, x: 17-30, y: 31-44, z: 45-54
-            serial = i + 1
-            f.write(f"HETATM{serial:5d} {name:4s} HOH A{serial:4d}"
-                    f"    {pos_angstrom[0]:8.3f}{pos_angstrom[1]:8.3f}"
-                    f"{pos_angstrom[2]:8.3f}  1.00  0.00           {name:>2s}\n")
-        
-        f.write("END\n")
+ax.set_xlabel("Pressure (MPa)", fontsize=14, fontweight='bold')
+ax.set_ylabel("Temperature (K)", fontsize=14, fontweight='bold')
 ```
 
-**Source:** Standard PDB format specification - CRYST1 is mandatory for crystal structures
-
-### Pattern 2: Space Group Validation with spglib
-
-**What:** Validate crystal symmetry using spglib to ensure generated structures are physically reasonable
-
-**When to use:** After generating PDB, verify space group matches expected symmetry
-
-**Example:**
+And the coordinate transformation (line 197):
 ```python
-import spglib
-
-def validate_space_group(candidate: Candidate, symprec: float = 1e-5):
-    """Validate crystal symmetry using spglib.
-    
-    Args:
-        candidate: Candidate structure with positions, cell, atom_types
-        symprec: Symmetry tolerance in Angstrom
-    
-    Returns:
-        dict with 'spacegroup_number', 'spacegroup_symbol', 'hall_number', etc.
-        None if spglib cannot find symmetry
-    """
-    # Convert cell from nm to Angstrom
-    lattice = candidate.cell * 10.0
-    
-    # Convert positions to fractional and then get unique atoms
-    # spglib requires: lattice (3x3), positions (N x 3), atom_types (N,)
-    positions = candidate.positions * 10.0  # nm to Angstrom
-    
-    # Map atom names to numbers (O=8, H=1 for spglib)
-    atom_type_map = {'O': 8, 'H': 1}
-    atom_types = [atom_type_map[name] for name in candidate.atom_names]
-    
-    # Get dataset (includes space group info)
-    dataset = spglib.get_dataset(
-        lattice,
-        positions,
-        np.array(atom_types),
-        symprec=symprec
-    )
-    
-    return {
-        'spacegroup_number': dataset.spacegroup_number,
-        'spacegroup_symbol': dataset.spacegroup_symbol,
-        'hall_number': dataset.hall_number,
-        'n_operations': len(dataset.rotation_operations),
-    }
+plot_vertices = np.array([[p, t] for t, p in vertices])
 ```
 
-**Source:** spglib documentation at https://spglib.readthedocs.io/en/latest/
+This converts (T, P) tuples to (x=P, y=T), which correctly places:
+- Pressure on the X-axis
+- Temperature on the Y-axis
 
-### Pattern 3: Atomic Overlap Detection with PBC
+**VERDICT: Axis arrangement is CORRECT and matches Wikipedia convention.**
 
-**What:** Check for atomic overlaps using minimum image convention for periodic systems
+---
 
-**When to use:** Validate generated structures don't have physically impossible overlaps
+## PHASE_POLYGONS Assessment
 
-**Example:**
+### Identified Geometric Issues
+
+From the checkpoint, the following overlaps exist:
+
+| Phase Pair | Overlap | Severity |
+|------------|---------|----------|
+| ice_ih <-> ice_ic | 14058 K*MPa | HIGH |
+| ice_ii <-> ice_iii | 228 K*MPa | LOW |
+| ice_ii <-> ice_v | 7061 K*MPa | HIGH |
+
+### Root Cause Analysis
+
+#### 1. ice_ii Polygon (CRITICAL ISSUE)
+
+Current definition in `ice_boundaries.py`:
 ```python
-def check_atomic_overlap(candidate: Candidate, 
-                         min_distance: float = 0.8) -> bool:
-    """Check for atomic overlaps in periodic system.
-    
-    Args:
-        candidate: Candidate with positions, cell
-        min_distance: Minimum allowed distance in Angstrom (default 0.8 = O-H bond is ~0.96A)
-    
-    Returns:
-        True if overlap detected (bad), False if no overlap (good)
-    """
-    # Convert to Angstrom for sensible defaults
-    positions = candidate.positions * 10.0
-    cell = candidate.cell * 10.0
-    
-    # Calculate inverse cell for fractional coordinates
-    inv_cell = np.linalg.inv(cell)
-    frac = positions @ inv_cell
-    
-    # Minimum image convention distances
-    n_atoms = len(positions)
-    
-    for i in range(n_atoms):
-        for j in range(i + 1, n_atoms):
-            # Calculate minimum image distance
-            delta = frac[j] - frac[i]
-            delta = delta - np.floor(delta + 0.5)  # Minimum image
-            cart_delta = delta @ cell
-            
-            dist = np.linalg.norm(cart_delta)
-            
-            if dist < min_distance:
-                return True  # Overlap detected
-    
-    return False  # No overlap
+"ice_ii": [
+    (218.95, 620.0),        # II-V-VI triple point
+    (260.0, 620.0),         # Extended high T boundary ← WRONG
+    (260.0, 210.0),         # Extended boundary at T=260K ← WRONG
+    (248.85, 344.3),        # II-III-V triple point
+    (238.55, 212.9),        # Ih-II-III triple point
+    (200.0, 300.0),         # Lower T extension
+    (180.0, 620.0),         # Cold boundary at high P
+    (218.95, 620.0),        # Back to triple point
+],
 ```
 
-**Source:** Standard periodic boundary condition distance calculation
+**Problem:** The vertices (260.0, 620.0) and (260.0, 210.0) extend the ice_ii region incorrectly into ice_v's territory. According to the phase diagram:
+- Ice II is stable at HIGH pressure (300-620 MPa) and LOW temperature (180-250 K)
+- At higher temperatures (above ~250K), ice II is not stable
+- The boundary should curve from the II-III-V triple point toward the II-V-VI triple point
 
-### Pattern 4: Phase Diagram Generation
+#### 2. ice_ic Polygon (METASTABLE)
 
-**What:** Generate ice phase diagram with user's T,P conditions marked
-
-**When to use:** When --diagram flag is set (default) and user wants visualization
-
-**Example:**
+Current definition:
 ```python
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-def generate_phase_diagram(user_t: float, user_p: float,
-                           output_dir: str,
-                           formats: tuple = ('png', 'svg')):
-    """Generate ice phase diagram with user's T,P point marked.
-    
-    Uses water phase boundary data for ice phases (Ice I, Ice III, 
-    Ice V, Ice VI, Ice VII, etc.)
-    """
-    # Phase boundaries (simplified - in practice use accurate data)
-    # Temperature in K, Pressure in MPa
-    phase_boundaries = {
-        'ice_i': {'t_range': (273.15, 273.15), 'p_max': 200},
-        'ice_iii': {'t_range': (250, 273.15), 'p_max': 350},
-        'ice_v': {'t_range': (250, 273.15), 'p_min': 350, 'p_max': 600},
-        'ice_vi': {'t_range': (250, 273.15), 'p_min': 600, 'p_max': 2000},
-        'ice_vii': {'t_range': (250, 273.15), 'p_min': 2000},
-    }
-    
-    fig, ax = plt.subplots(figsize=(10, 8))
-    
-    # Plot phase regions as colored patches
-    # (simplified - actual implementation would use accurate boundary data)
-    
-    # Plot user's point
-    ax.plot(user_p, user_t, 'ro', markersize=15, markeredgecolor='black',
-            markeredgewidth=2, label=f'User T,P ({user_t:.1f} K, {user_p:.0f} MPa)')
-    
-    # Add grid
-    ax.grid(True, linestyle='--', alpha=0.7)
-    
-    # Labels and title
-    ax.set_xlabel('Pressure (MPa)', fontsize=14)
-    ax.set_ylabel('Temperature (K)', fontsize=14)
-    ax.set_title('Water Phase Diagram', fontsize=16)
-    
-    # Set axis limits
-    ax.set_xlim(0, 5000)
-    ax.set_ylim(200, 500)
-    
-    # Legend
-    ax.legend(loc='upper right', fontsize=12)
-    
-    # Save in requested formats
-    for fmt in formats:
-        output_path = f"{output_dir}/phase_diagram.{fmt}"
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
-        print(f"Saved: {output_path}")
-    
-    # Also save text data file for external plotting
-    with open(f"{output_dir}/phase_diagram_data.txt", 'w') as f:
-        f.write("# Ice Phase Diagram Data\n")
-        f.write("# Temperature (K)\tPressure (MPa)\tPhase\n")
-        # ... write boundary data
-    
-    plt.close(fig)
+"ice_ic": [
+    (100.0, 0.1),           # Low T, low P
+    (240.0, 0.1),           # Upper temp limit
+    (240.0, 150.0),         # Upper pressure
+    (200.0, 150.0),         # Higher pressure boundary
+    (100.0, 150.0),         # Cold boundary
+],
 ```
 
-**Source:** matplotlib documentation - standard scientific plotting
+**Problem:** Ice Ic is a metastable phase that exists at:
+- Low pressure (atmospheric)
+- Low temperature (130-240 K range)
 
-### Anti-Patterns to Avoid
+The current definition overlaps with ice_ih because ice_ic should only exist in a narrow region at atmospheric pressure.
 
-1. **Don't ignore CRYST1 record** - PDB files without CRYST1 won't load correctly in visualization software like VMD or PyMOL
+---
 
-2. **Don't use Angstrom/nm mixing** - PDB format uses Angstrom, internal code uses nm. Must convert or coordinates will be wrong by factor of 10
+## Correct Polygon Definitions
 
-3. **Don't check distances without PBC** - Nearest image distance is essential for crystal structures; naive distance ignores periodic images
+Based on the LSBU reference data and Wikipedia phase diagram, here are the correct boundaries:
 
-4. **Don't skip spglib validation for generated structures** - GenIce should produce valid structures, but validation catches any generation errors
+### Triple Points (VERIFIED)
 
-## Don't Hand-Roll
+| Triple Point | T (K) | P (MPa) |
+|--------------|-------|---------|
+| Ih-III-Liquid | 251.165 | 207.5 |
+| Ih-II-III | 238.55 | 212.9 |
+| II-III-V | 248.85 | 344.3 |
+| III-V-Liquid | 256.165 | 346.3 |
+| II-V-VI | 218.95 | 620.0 |
+| V-VI-Liquid | 273.31 | 625.9 |
+| VI-VII-Liquid | 354.75 | 2200.0 |
+| VI-VII-VIII | 278.0 | 2100.0 |
 
-Problems that look simple but have existing solutions:
+### Corrected ice_ii Polygon
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| PDB writing | Custom string formatting | Simple manual format | Biopython is overkill; format is simple |
-| Space group detection | Parse symmetry operations | spglib | Well-tested, handles all 230 space groups |
-| Phase diagram boundaries | Measure experimentally | Published data | Already available in literature |
-| PBC distance calculation | Raw loops | numpy with minimum image | Correct implementation is subtle |
+The correct ice_ii polygon should be bounded by:
+- (238.55, 212.9) - Ih-II-III triple point (shared with ice_ih and ice_iii)
+- (248.85, 344.3) - II-III-V triple point (shared with ice_iii and ice_v)
+- (218.95, 620.0) - II-V-VI triple point (shared with ice_v and ice_vi)
+- Connect these with proper curved boundaries
 
-## Common Pitfalls
+The extension to T=260K is WRONG - ice II is stable only below ~250K.
 
-### Pitfall 1: Unit Conversion Errors (nm ↔ Angstrom)
+### Corrected ice_ic Polygon
 
-**What goes wrong:** PDB files have coordinates 10x larger or smaller than expected
+Ice Ic is metastable and should be a narrow band at low temperature and atmospheric pressure:
+- T: ~130-240 K
+- P: ~0.1 MPa (atmospheric)
+- Should NOT overlap with ice_ih
 
-**Why it happens:** PDB standard uses Angstrom, internal Candidate uses nanometer
+---
 
-**How to avoid:** Always multiply by 10.0 when converting nm to Angstrom; verify with PyMOL/VMD
+## Recommendations
 
-**Warning signs:** Atoms appear 10x too far apart or overlapping in visualization
+### 1. Fix ice_ii Polygon (HIGH PRIORITY)
 
-### Pitfall 2: spglib Symprec Too Strict
-
-**What goes wrong:** Valid crystal structures fail spglib validation
-
-**Why it happens:** Default symprec (1e-5 Angstrom) may be too tight for generated structures
-
-**How to avoid:** Use symprec=1e-4 or 1e-3 for generated structures; report actual tolerance used
-
-**Warning signs:** spglib returns None for space group on valid structures
-
-### Pitfall 3: Atomic Overlap False Positives
-
-**What goes wrong:** Legitimate O-H bonds (0.96 Å) flagged as overlaps
-
-**Why it happens:** Min distance threshold too high
-
-**How to avoid:** Use min_distance=0.8 Å for overlap check; O-H covalent bonds are ~0.96 Å
-
-**Warning signs:** Valid water molecules rejected as overlapping
-
-### Pitfall 4: Phase Diagram Without User T,P Context
-
-**What goes wrong:** Phase diagram doesn't clearly show user's operating conditions
-
-**Why it happens:** User's T,P point not prominently marked or axis labels unclear
-
-**How to avoid:** Use clear marker (red circle), label with T,P values, include legend
-
-## Code Examples
-
-### Complete Output Module Structure
-
+Replace the incorrect extension with proper boundaries:
 ```python
-# quickice/output/types.py
-from dataclasses import dataclass, field
-from typing import Any
-
-@dataclass
-class OutputResult:
-    """Output result from Phase 5.
-    
-    Attributes:
-        output_files: List of output PDB file paths
-        phase_diagram_files: List of generated diagram files
-        validation_results: Validation status for each structure
-        summary: Summary information
-    """
-    output_files: list[str] = field(default_factory=list)
-    phase_diagram_files: list[str] = field(default_factory=list)
-    validation_results: list[dict[str, Any]] = field(default_factory=list)
-    summary: dict[str, Any] = field(default_factory=dict)
+"ice_ii": [
+    (238.55, 212.9),        # Ih-II-III triple point
+    (248.85, 344.3),        # II-III-V triple point  
+    (218.95, 620.0),        # II-V-VI triple point
+    (200.0, 620.0),         # Cold boundary at high pressure
+    (200.0, 300.0),         # Lower pressure extension
+    (238.55, 212.9),        # Back to start
+],
 ```
 
-### Main Output Pipeline
+### 2. Fix ice_ic Polygon (MEDIUM PRIORITY)
 
+Either remove ice_ic or define it correctly as metastable:
 ```python
-# quickice/output/writer.py
-from pathlib import Path
-from quickice.structure_generation.types import Candidate
-from quickice.ranking.types import RankingResult
-
-def output_ranked_candidates(ranking_result: RankingResult,
-                            output_dir: str,
-                            base_name: str = "ice_candidate",
-                            generate_diagram: bool = True,
-                            user_t: float = None,
-                            user_p: float = None):
-    """Write ranked candidates to PDB files.
-    
-    Args:
-        ranking_result: Output from Phase 4
-        output_dir: Directory to write PDB files
-        base_name: Base filename (e.g., "ice_candidate")
-        generate_diagram: Whether to generate phase diagram
-        user_t: User's temperature in K
-        user_p: User's pressure in MPa
-    
-    Returns:
-        OutputResult with file paths and validation results
-    """
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    output_files = []
-    validation_results = []
-    
-    # Output top 10 candidates
-    for ranked_cand in ranking_result.ranked_candidates[:10]:
-        candidate = ranked_cand.candidate
-        rank = ranked_cand.rank
-        
-        # Write PDB file
-        filename = f"{base_name}_{rank:02d}.pdb"
-        filepath = output_path / filename
-        
-        write_pdb_with_cryst1(candidate, str(filepath))
-        output_files.append(str(filepath))
-        
-        # Validate with spglib
-        validation = validate_space_group(candidate)
-        validation_results.append({
-            'rank': rank,
-            'file': filename,
-            'spacegroup': validation['spacegroup_symbol'] if validation else 'UNKNOWN',
-            'valid': validation is not None
-        })
-    
-    # Generate phase diagram if requested
-    phase_diagram_files = []
-    if generate_diagram and user_t is not None and user_p is not None:
-        generate_phase_diagram(user_t, user_p, str(output_path))
-        phase_diagram_files = [
-            str(output_path / "phase_diagram.png"),
-            str(output_path / "phase_diagram.svg"),
-            str(output_path / "phase_diagram_data.txt")
-        ]
-    
-    return OutputResult(
-        output_files=output_files,
-        phase_diagram_files=phase_diagram_files,
-        validation_results=validation_results,
-        summary={
-            'n_candidates': len(output_files),
-            'n_validated': sum(1 for v in validation_results if v['valid']),
-        }
-    )
+"ice_ic": [
+    (130.0, 0.1),           # Lower temp limit
+    (240.0, 0.1),           # Upper temp limit (conversion to Ih)
+    (220.0, 50.0),          # Slight pressure extension
+    (130.0, 50.0),          # Cold boundary
+],
 ```
 
-## State of the Art
+### 3. Verify No Overlaps After Fix
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| GROMACS-only output | PDB format output | Project inception | PDB works with more visualization tools |
-| No validation | spglib validation added | Phase 5 | Catches generation errors |
-| No phase diagram | Optional diagram generation | Phase 5 | Better user experience |
+After corrections, validate that:
+- No polygon pairs have geometric overlap
+- All triple points are shared correctly between adjacent phases
+- Phase regions are contiguous and cover the full T-P space
 
-**Context:**
-- GenIce provides structure geometry but NOT PDB output
-- Previous phases use GROMACS format internally
-- Phase 5 converts to PDB for broad compatibility
-
-## Open Questions
-
-1. **PDB metadata level**
-   - What metadata to include in HEADER/REMARK records?
-   - **Recommendation:** Minimal - include author, date, and basic info
-
-2. **Atom naming convention**
-   - Use TIP3P (O, H1, H2) or standard PDB (O, H, H)?
-   - **Recommendation:** Use GenIce default (O, H) - matches input
-
-3. **Validation failure handling**
-   - What to do when spglib validation fails?
-   - **Recommendation:** Warn but continue - generated structures should be valid
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- **spglib PyPI** - https://pypi.org/project/spglib/ - v2.7.0, installs via pip
-- **spglib docs** - https://spglib.readthedocs.io/en/latest/ - Python API documentation
+- **Wikipedia Phase Diagram** - https://en.wikipedia.org/wiki/Phases_of_ice
+  - Confirms axis arrangement: Pressure (log) on X-axis, Temperature on Y-axis
+- **LSBU Water Phase Data** - https://ergodic.ugr.es/termo/lecciones/water1.html
+  - Triple point coordinates verified
+  - Phase stability regions confirmed
 
-### Secondary (MEDIUM confidence)
-- **PDB format** - Standard CRYST1 format is well-documented in wwPDB specifications
-- **matplotlib** - Standard scientific plotting library, versions >=3.5
+### Secondary (MEDIUM confidence)  
+- **IAPWS R14-08(2011)** - Referenced in ice_boundaries.py for melting curves
+- **Phase diagram images** - Visual verification of phase boundaries
 
-### Tertiary (LOW confidence)
-- Phase boundary data - should use published experimental data (not researched here)
+---
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH - spglib verified, numpy/matplotlib are standard
-- Architecture: HIGH - patterns are straightforward
-- Pitfalls: MEDIUM - common issues identified but may have edge cases
+- Axis arrangement: HIGH - verified against Wikipedia
+- Polygon assessment: HIGH - based on verified triple point data
+- Recommendations: HIGH - corrections align with phase diagram geometry
 
 **Research date:** 2026-03-27
-**Valid until:** spglib API is stable; matplotlib patterns are standard
+**Valid until:** Phase diagram geometry is scientifically established (no expected changes)
 
-**Dependencies needed:**
-```bash
-pip install spglib matplotlib
-```
+**Action required:** Update PHASE_POLYGONS in `quickice/phase_mapping/data/ice_boundaries.py` with corrected vertex definitions, then re-run Phase 2 to propagate the fix to Phase 5.
