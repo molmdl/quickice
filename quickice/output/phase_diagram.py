@@ -1,24 +1,36 @@
 """Phase diagram generator for ice polymorph visualization.
 
-Generates publication-quality phase diagrams using PHASE_POLYGONS
-as single source of truth for consistency with phase lookup.
+Generates publication-quality phase diagrams using curve-based boundaries
+from Phase 2 melting_curves and solid_boundaries modules (single source of truth).
 
 Outputs PNG, SVG, and text data files.
 """
 
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon
 
-from quickice.phase_mapping.data.ice_boundaries import (
+from quickice.phase_mapping import (
+    melting_pressure,
+    solid_boundary,
     TRIPLE_POINTS,
-    MELTING_CURVE_COEFFICIENTS,
-    PHASE_POLYGONS,
-    get_melting_pressure,
     get_triple_point,
+)
+from quickice.phase_mapping.solid_boundaries import (
+    ih_ii_boundary,
+    ii_iii_boundary,
+    iii_v_boundary,
+    ii_v_boundary,
+    v_vi_boundary,
+    vi_vii_boundary,
+    VII_VIII_ORDERING_TEMP,
+)
+from quickice.phase_mapping.data.ice_boundaries import (
+    MELTING_CURVE_COEFFICIENTS,
+    get_melting_pressure,
 )
 
 
@@ -132,6 +144,231 @@ def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = T
         return temperatures[valid], pressures[valid]
 
 
+def _build_phase_polygon_from_curves(phase_id: str) -> List[Tuple[float, float]]:
+    """Build polygon vertices for a phase region using boundary curves.
+    
+    Returns list of (T, P) tuples defining the polygon.
+    Uses melting curves and solid boundaries from Phase 2 (single source of truth).
+    
+    Args:
+        phase_id: Phase identifier (e.g., "ice_ih", "ice_vii")
+        
+    Returns:
+        List of (T, P) tuples forming the polygon boundary
+    """
+    # Define phase region boundaries using curve functions
+    if phase_id == "ice_ih":
+        return _build_ice_ih_polygon()
+    elif phase_id == "ice_ii":
+        return _build_ice_ii_polygon()
+    elif phase_id == "ice_iii":
+        return _build_ice_iii_polygon()
+    elif phase_id == "ice_v":
+        return _build_ice_v_polygon()
+    elif phase_id == "ice_vi":
+        return _build_ice_vi_polygon()
+    elif phase_id == "ice_vii":
+        return _build_ice_vii_polygon()
+    elif phase_id == "ice_viii":
+        return _build_ice_viii_polygon()
+    else:
+        return []
+
+
+def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
+    """Ice Ih region: low pressure, bounded by melting curve and Ih-II boundary."""
+    vertices = []
+    
+    # Lower boundary: P ≈ 0 (atmospheric)
+    vertices.append((100.0, 0.1))
+    vertices.append((273.16, 0.1))
+    
+    # Ih melting curve from 251.165K to 273.16K
+    T_vals = np.linspace(251.165, 273.16, 20)
+    for T in T_vals[::-1]:  # Reverse to close polygon
+        try:
+            P = melting_pressure(T, "Ih")
+            vertices.append((T, P))
+        except ValueError:
+            pass
+    
+    # Ih-III-Liquid triple point (251.165 K, 207.5 MPa)
+    vertices.append((251.165, 207.5))
+    
+    # Ih-II-III triple point (238.55 K, 212.9 MPa)
+    vertices.append((238.55, 212.9))
+    
+    # Ih-II boundary from TP down to cold
+    T_vals = np.linspace(238.55, 100.0, 15)
+    for T in T_vals:
+        P = ih_ii_boundary(T)
+        vertices.append((T, P))
+    
+    # Close back to start
+    vertices.append((100.0, 0.1))
+    
+    return vertices
+
+
+def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
+    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, II-V-VI boundaries."""
+    vertices = []
+    
+    # Start at Ih-II-III triple point
+    T1, P1 = get_triple_point("Ih_II_III")
+    vertices.append((T1, P1))
+    
+    # II-III boundary to II-III-V triple point
+    T_vals = np.linspace(T1, 248.85, 10)
+    for T in T_vals[1:]:
+        P = ii_iii_boundary(T)
+        vertices.append((T, P))
+    
+    # II-III-V triple point (248.85 K, 344.3 MPa)
+    T2, P2 = get_triple_point("II_III_V")
+    vertices.append((T2, P2))
+    
+    # II-V boundary to II-V-VI triple point
+    T_vals = np.linspace(T2, 218.95, 10)
+    for T in T_vals[1:]:
+        P = ii_v_boundary(T)
+        vertices.append((T, P))
+    
+    # II-V-VI triple point (218.95 K, 620.0 MPa)
+    T3, P3 = get_triple_point("II_V_VI")
+    vertices.append((T3, P3))
+    
+    # Cold boundary (extend down)
+    vertices.append((180.0, P3))
+    
+    # Ih-II boundary back to Ih-II-III TP
+    T_vals = np.linspace(180.0, T1, 15)
+    for T in T_vals:
+        P = ih_ii_boundary(T)
+        vertices.append((T, P))
+    
+    return vertices
+
+
+def _build_ice_iii_polygon() -> List[Tuple[float, float]]:
+    """Ice III region: narrow stability between Ih, II, V, and liquid."""
+    vertices = []
+    
+    # Ih-II-III triple point
+    T1, P1 = get_triple_point("Ih_II_III")
+    vertices.append((T1, P1))
+    
+    # Ih-III-Liquid triple point
+    T2, P2 = get_triple_point("Ih_III_Liquid")
+    vertices.append((T2, P2))
+    
+    # III-V-Liquid triple point
+    T3, P3 = get_triple_point("III_V_Liquid")
+    vertices.append((T3, P3))
+    
+    # II-III-V triple point
+    T4, P4 = get_triple_point("II_III_V")
+    vertices.append((T4, P4))
+    
+    # II-III boundary back to start
+    T_vals = np.linspace(T4, T1, 10)
+    for T in T_vals[1:-1]:
+        P = ii_iii_boundary(T)
+        vertices.append((T, P))
+    
+    return vertices
+
+
+def _build_ice_v_polygon() -> List[Tuple[float, float]]:
+    """Ice V region: moderate-high pressure."""
+    vertices = []
+    
+    # II-III-V triple point
+    T1, P1 = get_triple_point("II_III_V")
+    vertices.append((T1, P1))
+    
+    # III-V-Liquid triple point
+    T2, P2 = get_triple_point("III_V_Liquid")
+    vertices.append((T2, P2))
+    
+    # V-VI-Liquid triple point
+    T3, P3 = get_triple_point("V_VI_Liquid")
+    vertices.append((T3, P3))
+    
+    # II-V-VI triple point
+    T4, P4 = get_triple_point("II_V_VI")
+    vertices.append((T4, P4))
+    
+    # II-V boundary back to start
+    T_vals = np.linspace(T4, T1, 10)
+    for T in T_vals[1:-1]:
+        P = ii_v_boundary(T)
+        vertices.append((T, P))
+    
+    return vertices
+
+
+def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
+    """Ice VI region: high pressure."""
+    vertices = []
+    
+    # II-V-VI triple point
+    T1, P1 = get_triple_point("II_V_VI")
+    vertices.append((T1, P1))
+    
+    # V-VI-Liquid triple point
+    T2, P2 = get_triple_point("V_VI_Liquid")
+    vertices.append((T2, P2))
+    
+    # VI-VII-Liquid triple point
+    T3, P3 = get_triple_point("VI_VII_Liquid")
+    vertices.append((T3, P3))
+    
+    # VI-VII-VIII triple point
+    T4, P4 = get_triple_point("VI_VII_VIII")
+    vertices.append((T4, P4))
+    
+    # Cold boundary
+    vertices.append((200.0, P4))
+    vertices.append((200.0, P1))
+    
+    return vertices
+
+
+def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
+    """Ice VII region: very high pressure, high temperature."""
+    vertices = []
+    
+    # VI-VII-VIII triple point
+    T1, P1 = get_triple_point("VI_VII_VIII")
+    vertices.append((T1, P1))
+    
+    # VI-VII-Liquid triple point
+    T2, P2 = get_triple_point("VI_VII_Liquid")
+    vertices.append((T2, P2))
+    
+    # Extend to high T/P
+    vertices.append((450.0, 4000.0))
+    vertices.append((450.0, 10000.0))
+    vertices.append((T1, 10000.0))
+    
+    return vertices
+
+
+def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
+    """Ice VIII region: ordered form of VII at low temperature."""
+    vertices = []
+    
+    # VI-VII-VIII triple point
+    T1, P1 = get_triple_point("VI_VII_VIII")
+    vertices.append((T1, P1))
+    vertices.append((T1, 10000.0))
+    vertices.append((100.0, 10000.0))
+    vertices.append((100.0, P1))
+    
+    return vertices
+
+
 def generate_phase_diagram(
     user_t: float,
     user_p: float,
@@ -143,7 +380,8 @@ def generate_phase_diagram(
     """Generate phase diagram with curved boundaries and user's conditions marked.
     
     Creates publication-quality phase diagrams showing ice polymorph regions
-    using PHASE_POLYGONS as single source of truth for consistency with lookup.
+    using curve-based boundaries from Phase 2 (melting_pressure and solid_boundary
+    functions) as single source of truth.
     
     Args:
         user_t: User's temperature in Kelvin
@@ -182,18 +420,17 @@ def generate_phase_diagram(
         "ice_ih",
     ]
     
-    # Plot each phase region using PHASE_POLYGONS
+    # Plot each phase region using curve-based boundaries
+    from shapely.geometry import Polygon as ShapelyPolygon
+    
     for phase_id in phases_to_plot:
-        if phase_id not in PHASE_POLYGONS:
-            continue
-            
-        # Get vertices from PHASE_POLYGONS (single source of truth)
-        vertices = PHASE_POLYGONS[phase_id]
+        # Build polygon from curves (single source of truth)
+        vertices = _build_phase_polygon_from_curves(phase_id)
         
-        if vertices is None or len(vertices) < 3:
+        if len(vertices) < 3:
             continue
         
-        # Vertices are (T, P) tuples, use directly for plotting (x=T, y=P)
+        # Vertices are (T, P) pairs, use directly for plotting
         plot_vertices = np.array(vertices)
         
         # Create polygon patch
@@ -205,14 +442,12 @@ def generate_phase_diagram(
         poly.set_alpha(0.6)
         ax.add_patch(poly)
         
-        # Add label directly on the phase region using shapely centroid
-        # Note: vertices are (T, P), so centroid.x=T, centroid.y=P
-        # Plot coordinates are (x=T, y=P), so we use directly
+        # Label using shapely centroid
         shapely_poly = ShapelyPolygon(vertices)
         centroid = shapely_poly.centroid
         label = PHASE_LABELS.get(phase_id, phase_id)
         ax.text(
-            centroid.x, centroid.y,  # Plot: x=T, y=P
+            centroid.x, centroid.y,  # x=T, y=P (correct orientation)
             label,
             fontsize=14,
             fontweight='bold',
@@ -239,20 +474,20 @@ def generate_phase_diagram(
     
     # Mark triple points
     triple_point_names = [
-        ("ih_iii_liquid", "Ih-III-L"),
-        ("ih_ii_iii", "Ih-II-III"),
-        ("ii_iii_v", "II-III-V"),
-        ("iii_v_liquid", "III-V-L"),
-        ("ii_v_vi", "II-V-VI"),
-        ("v_vi_liquid", "V-VI-L"),
-        ("vi_vii_liquid", "VI-VII-L"),
-        ("vi_vii_viii", "VI-VII-VIII"),
+        ("Ih_III_Liquid", "Ih-III-L"),
+        ("Ih_II_III", "Ih-II-III"),
+        ("II_III_V", "II-III-V"),
+        ("III_V_Liquid", "III-V-L"),
+        ("II_V_VI", "II-V-VI"),
+        ("V_VI_Liquid", "V-VI-L"),
+        ("VI_VII_Liquid", "VI-VII-L"),
+        ("VI_VII_VIII", "VI-VII-VIII"),
     ]
     
     for tp_name, tp_label in triple_point_names:
-        tp = get_triple_point(tp_name)
+        tp_T, tp_P = get_triple_point(tp_name)
         ax.plot(
-            tp["T"], tp["P"],
+            tp_T, tp_P,
             'ko',  # Black circle
             markersize=5,
             markeredgecolor='white',
@@ -261,7 +496,7 @@ def generate_phase_diagram(
         )
         # Add small label
         ax.text(
-            tp["T"], tp["P"] * 1.1,
+            tp_T, tp_P * 1.1,
             tp_label,
             fontsize=8,
             ha='left',
@@ -329,7 +564,7 @@ def generate_phase_diagram(
         f.write("#\n")
         f.write("# TRIPLE POINTS\n")
         for tp_name, tp in TRIPLE_POINTS.items():
-            f.write(f"# {tp_name}: T={tp['T']} K, P={tp['P']} MPa\n")
+            f.write(f"# {tp_name}: T={tp[0]} K, P={tp[1]} MPa\n")
         f.write("#\n")
         f.write("# MELTING CURVES\n")
         for curve_name in MELTING_CURVE_COEFFICIENTS:
