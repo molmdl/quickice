@@ -21,11 +21,12 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 2 (replanned, ready for execution) |
-| Plan | 02-01 |
-| Status | Curve-based phase mapping plans created |
-| Last activity | 2026-03-27 - Phase 2 replanned |
-| Progress Bar | ████████████████░░░░░░░ 71% (5/7 phases, Phase 5 blocked on Phase 2) |
+| Phase | 2 of 6 (Phase Mapping) |
+| Plan | 1 of 4 complete |
+| Status | In progress |
+| Last activity | 2026-03-27 - Completed 02-01-PLAN.md |
+
+| Progress Bar | ░░░░░░░░░░░░░░░░░░░░ 5% (1/21 plans) |
 
 ---
 
@@ -33,13 +34,12 @@
 
 | Phase | Name | Goal | Status |
 |-------|------|------|--------|
-| 1 | Input Validation | Valid CLI flags | ✓ Complete |
-| 2 | Phase Mapping | T,P → polymorph | ⚠️ REPLANNED (curve-based, 4 plans) |
-| 3 | Structure Generation | Valid GenIce output | ✓ Complete |
-| 4 | Ranking | Scored candidates | ✓ Complete |
-| 5 | Output | PDB files + phase diagram | ⚠️ Blocked on Phase 2 |
-| 6 | Documentation | User guides | Pending |
-| 7 | Audit & Correctness | Quality assurance | Pending |
+| 1 | Input Validation | Valid CLI flags | ✓ Complete (3/3) |
+| 2 | Phase Mapping | T,P → polymorph | ⚠️ In Progress (1/4) |
+| 3 | Structure Generation | Valid GenIce output | ✓ Complete (2/2) |
+| 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
+| 5 | Output | PDB files + phase diagram | ⚠️ In Progress (3/8) |
+| 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
 ---
 
@@ -65,12 +65,13 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27
-**Stopped at:** Phase 2 replanned with curve-based approach
+**Last Session:** 2026-03-27 08:06 UTC
+**Stopped at:** Completed 02-01-PLAN.md (IAPWS melting curves and triple points)
+**Resume file:** None
 
 **Next Session:**
-1. Run: `/gsd-execute-phase 2` (execute new curve-based plans)
-2. Run: `/gsd-execute-phase 5` (complete Phase 5)
+1. Continue with 02-02-PLAN.md (phase boundary lookup)
+2. Or run: `/gsd-execute-phase 2` to continue Phase 2 execution
 
 ---
 
@@ -79,9 +80,10 @@
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | Use curve-based phase lookup | Polygon containment has geometric overlap errors | ✓ Replanned |
-| IAPWS R14-08 melting curves | HIGH confidence, internationally validated | ✓ In research |
-| Linear interpolation for solid-solid | MEDIUM confidence, based on triple points | ✓ In research |
-| Remove shapely dependency | No longer needed with curve approach | ✓ Planned |
+| IAPWS R14-08 melting curves | HIGH confidence, internationally validated | ✓ Implemented (02-01) |
+| Linear interpolation for solid-solid | MEDIUM confidence, based on triple points | Planned (02-02) |
+| Remove shapely dependency | No longer needed with curve approach | Planned |
+| Ice Ih steep slope verification | T=273.0K gives P=2.145 MPa (not 0.0006 MPa) | ✓ Documented (02-01) |
 
 ---
 
@@ -95,4 +97,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Phase 2 replanned with curve-based approach)*
+*State updated: 2026-03-27 08:06 UTC (Completed 02-01-PLAN.md)*
