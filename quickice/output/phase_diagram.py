@@ -169,7 +169,7 @@ def generate_phase_diagram(
     
     # Set up logarithmic pressure scale if requested
     if use_log_scale:
-        ax.set_xscale('log')
+        ax.set_yscale('log')
     
     # Define phases to plot (in order, back to front for proper layering)
     phases_to_plot = [
@@ -193,8 +193,8 @@ def generate_phase_diagram(
         if vertices is None or len(vertices) < 3:
             continue
         
-        # Convert (T, P) to plot coordinates (x=P, y=T)
-        plot_vertices = np.array([[p, t] for t, p in vertices])
+        # Vertices are (T, P) tuples, use directly for plotting (x=T, y=P)
+        plot_vertices = np.array(vertices)
         
         # Create polygon patch
         color = PHASE_COLORS.get(phase_id, "#CCCCCC")
@@ -207,12 +207,12 @@ def generate_phase_diagram(
         
         # Add label directly on the phase region using shapely centroid
         # Note: vertices are (T, P), so centroid.x=T, centroid.y=P
-        # Plot coordinates are (x=P, y=T), so we swap
+        # Plot coordinates are (x=T, y=P), so we use directly
         shapely_poly = ShapelyPolygon(vertices)
         centroid = shapely_poly.centroid
         label = PHASE_LABELS.get(phase_id, phase_id)
         ax.text(
-            centroid.y, centroid.x,  # Plot: x=P, y=T (swap from centroid)
+            centroid.x, centroid.y,  # Plot: x=T, y=P
             label,
             fontsize=14,
             fontweight='bold',
@@ -235,7 +235,7 @@ def generate_phase_diagram(
     for curve_name, color, label in melting_curves:
         T_curve, P_curve = _sample_melting_curve(curve_name, n_points=200)
         if len(T_curve) > 0:
-            ax.plot(P_curve, T_curve, color=color, linewidth=1.5, linestyle='-', alpha=0.8)
+            ax.plot(T_curve, P_curve, color=color, linewidth=1.5, linestyle='-', alpha=0.8)
     
     # Mark triple points
     triple_point_names = [
@@ -252,7 +252,7 @@ def generate_phase_diagram(
     for tp_name, tp_label in triple_point_names:
         tp = get_triple_point(tp_name)
         ax.plot(
-            tp["P"], tp["T"],
+            tp["T"], tp["P"],
             'ko',  # Black circle
             markersize=5,
             markeredgecolor='white',
@@ -261,7 +261,7 @@ def generate_phase_diagram(
         )
         # Add small label
         ax.text(
-            tp["P"] * 1.1, tp["T"],
+            tp["T"], tp["P"] * 1.1,
             tp_label,
             fontsize=8,
             ha='left',
@@ -273,7 +273,7 @@ def generate_phase_diagram(
     
     # Plot user's T,P point
     ax.plot(
-        user_p, user_t,
+        user_t, user_p,
         'ro',  # Red circle
         markersize=15,
         markeredgecolor='black',
@@ -282,19 +282,19 @@ def generate_phase_diagram(
         zorder=10,  # Ensure it's on top
     )
     
-    # Set axis limits (using log scale range)
+    # Set axis limits (Temperature on X, Pressure on Y with log scale)
+    ax.set_xlim(100, 500)  # Temperature range (linear)
     if use_log_scale:
-        ax.set_xlim(0.1, 10000)
+        ax.set_ylim(0.1, 10000)  # Pressure range (log scale)
     else:
-        ax.set_xlim(0, 5000)
-    ax.set_ylim(100, 500)
+        ax.set_ylim(0, 5000)  # Pressure range (linear)
     
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.5, which='both')
     
     # Labels and title
-    ax.set_xlabel("Pressure (MPa)", fontsize=14, fontweight='bold')
-    ax.set_ylabel("Temperature (K)", fontsize=14, fontweight='bold')
+    ax.set_xlabel("Temperature (K)", fontsize=14, fontweight='bold')
+    ax.set_ylabel("Pressure (MPa)", fontsize=14, fontweight='bold')
     ax.set_title("Water Ice Phase Diagram", fontsize=18, fontweight='bold', pad=20)
     
     # Add note about data source
