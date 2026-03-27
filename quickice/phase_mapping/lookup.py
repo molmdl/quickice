@@ -12,7 +12,8 @@ import math
 from quickice.phase_mapping.melting_curves import melting_pressure
 from quickice.phase_mapping.solid_boundaries import (
     solid_boundary, ih_ii_boundary, ii_iii_boundary, iii_v_boundary,
-    ii_v_boundary, v_vi_boundary, vi_vii_boundary, VII_VIII_ORDERING_TEMP
+    ii_v_boundary, v_vi_boundary, vi_vii_boundary, VII_VIII_ORDERING_TEMP,
+    xi_boundary, ix_boundary, x_boundary, xv_boundary,
 )
 from quickice.phase_mapping.triple_points import TRIPLE_POINTS
 from quickice.phase_mapping.errors import UnknownPhaseError
@@ -83,9 +84,17 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         UnknownPhaseError: If no phase matches the given conditions
     
     Algorithm (evaluated in order, first match wins):
+        0. Ice X (extreme pressure phase)
+           - P > 30 GPa (30000 MPa)
+           - Symmetric hydrogen bonds at extreme pressure
+           
         1. High pressure phases (VII/VIII at P > 2100 MPa)
            - VIII if T < 278K (ordered proton structure)
            - VII if T >= 278K (disordered proton structure)
+        
+        1b. Ice XV (proton-ordered Ice VI)
+           - T = 80-108K
+           - P ≈ 1.1 GPa (1000-1200 MPa)
            
         2. Ice VI region (between V-VI and VI-VII boundaries)
            - T >= 218.95K (extends from II-V-VI triple point)
@@ -108,6 +117,11 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
            - P > 200 MPa
            - Between II-III and III-V boundaries
            
+        5b. Ice IX (proton-ordered Ice III)
+           - T < 140K
+           - P = 200-400 MPa
+           - Ordered form of Ice III
+           
         6. Ice Ih region (below melting curve)
            - T <= 273.16K (Ih-Liquid-Vapor triple point)
            - P < melting pressure at T
@@ -115,6 +129,11 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         7. Ice Ic (metastable, low T low P)
            - T < 150K, P < 100 MPa
            - Only if no other phase matched
+           
+        8. Ice XI (proton-ordered Ice Ih)
+           - T < 72K
+           - P < 1 MPa (essentially atmospheric)
+           - Ordered form of Ice Ih at very low temperatures
     
     Phase boundaries reference:
         - Ih-II: Linear approximation from Ih-II-III triple point
@@ -125,9 +144,21 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         - VI-VII: Linear interpolation from VI-VII-VIII to VI-VII-Liquid triple points
         - Ih melting: IAPWS R14-08 equation (HIGH confidence)
         - VII-VIII ordering: Fixed at T=278K, P=2100 MPa
+        - Ice X boundary: P > 30 GPa with slight T dependence
+        - Ice XV boundary: P ≈ 1.1 GPa at T=80-108K
+        - Ice IX boundary: P decreases from 200 MPa at T=140K
+        - Ice XI boundary: T < 72K at low P
     """
     T, P = temperature, pressure
     phase_id = None
+    
+    # 0. Ice X region (P > 30 GPa = 30000 MPa)
+    # Ice X: symmetric hydrogen bonds at extreme pressure
+    if P > 30000:
+        P_x = x_boundary(T)
+        if P > P_x:
+            phase_id = "ice_x"
+            return _build_result(phase_id, T, P)
     
     # 1. High pressure phases (VII/VIII at P > 2100 MPa)
     # These phases exist at very high pressures
@@ -135,6 +166,13 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         # VII-VIII transition at 278K (ordering transition)
         phase_id = "ice_viii" if T < VII_VIII_ORDERING_TEMP else "ice_vii"
         return _build_result(phase_id, T, P)
+    
+    # 1b. Ice XV region (ordered Ice VI at T=80-108K, P≈1.1 GPa)
+    if 80.0 <= T <= 108.0 and 1000 <= P <= 1200:
+        P_xv = xv_boundary(T)
+        if abs(P - P_xv) < 100:  # Within 100 MPa of boundary
+            phase_id = "ice_xv"
+            return _build_result(phase_id, T, P)
     
     # 2. Ice VI region (between V-VI and VI-VII boundaries)
     # Ice VI: T(273.31-355K at high P), P(626-2200 MPa)
@@ -202,6 +240,13 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
                 phase_id = "ice_iii"
                 return _build_result(phase_id, T, P)
     
+    # 5b. Ice IX region: T < 140K, P = 200-400 MPa (ordered Ice III)
+    if T < 140.0 and 200 <= P <= 400:
+        P_ix = ix_boundary(T)
+        if P > P_ix:
+            phase_id = "ice_ix"
+            return _build_result(phase_id, T, P)
+    
     # 6. Ice Ih region
     # Ice Ih: T(100-273.16K), P(0-207.5 MPa at T=251.165K)
     # The Ih melting curve is the upper P boundary
@@ -226,7 +271,12 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         phase_id = "ice_ic"
         return _build_result(phase_id, T, P)
     
-    # 8. No match - unknown region
+    # 8. Ice XI region: T < 72K at low P (ordered Ice Ih)
+    if T < 72.0 and P < 1:
+        phase_id = "ice_xi"
+        return _build_result(phase_id, T, P)
+    
+    # 9. No match - unknown region
     # This could be:
     # - Liquid water region (above melting curves)
     # - Outside all known phase regions
