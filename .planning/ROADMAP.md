@@ -148,6 +148,25 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 ---
 
+### Phase 5.1: Add Missing Ice Phases (INSERTED)
+
+**Goal:** Extend phase mapping to include Ice IX, XI, X, XV for comprehensive coverage.
+
+**Depends on:** Phase 5
+
+**Plans:** 0 plans
+
+**Plans:**
+- [ ] TBD (run /gsd-plan-phase 5.1 to break down)
+
+**Details:**
+- Ice XI: T<72K at low P (proton-ordered Ih)
+- Ice IX: T<140K, P=200-400 MPa (proton-ordered III)
+- Ice X: P>30 GPa (symmetrized hydrogen bonds)
+- Ice XV: T=80-108K, P≈1.1 GPa (proton-ordered VI)
+
+---
+
 ### Phase 6: Documentation
 
 **Goal:** Users understand how to use the tool, interpret results, and know this is a "pure vibe coding project."
@@ -192,6 +211,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | ✓ Complete |
+| 5.1 - Missing Ice Phases | IX, XI, X, XV | TBD | Pending (INSERTED) |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
@@ -206,6 +226,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | Phase 3 | GEN-01, GEN-02, GEN-03, GEN-04 |
 | Phase 4 | RANK-01, RANK-02, RANK-03, RANK-04 |
 | Phase 5 | OUT-01, OUT-02, OUT-03, OUT-04, OUT-05 |
+| Phase 5.1 | TBD (INSERTED - Ice IX, XI, X, XV) |
 | Phase 6 | DOC-01, DOC-02, DOC-03, DOC-04 |
 | Phase 7 | AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04, AUDIT-05 |
 
