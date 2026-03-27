@@ -1,9 +1,13 @@
 """Main entry point for QuickIce CLI."""
 
 import sys
+from pathlib import Path
 
 from quickice.cli.parser import get_arguments
 from quickice.phase_mapping import lookup_phase, UnknownPhaseError
+from quickice.structure_generation import generate_candidates
+from quickice.ranking import rank_candidates
+from quickice.output import output_ranked_candidates
 
 
 def main() -> int:
@@ -31,6 +35,45 @@ def main() -> int:
         # Print phase information
         print(f"Phase: {phase_info['phase_name']} ({phase_info['phase_id']})")
         print(f"Density: {phase_info['density']} g/cm³")
+        print()
+        
+        # Generate candidates for the phase
+        gen_result = generate_candidates(
+            phase_info=phase_info,
+            nmolecules=args.nmolecules,
+            n_candidates=10
+        )
+        print(f"Generated {len(gen_result.candidates)} candidates")
+        
+        # Rank candidates by energy, density, diversity
+        ranking_result = rank_candidates(
+            candidates=gen_result.candidates
+        )
+        print(f"Ranked {len(ranking_result.ranked_candidates)} candidates")
+        
+        # Output PDB files and phase diagram
+        output_result = output_ranked_candidates(
+            ranking_result=ranking_result,
+            output_dir=args.output,
+            base_name="ice_candidate",
+            generate_diagram=not args.no_diagram,
+            user_t=args.temperature,
+            user_p=args.pressure
+        )
+        
+        print(f"\nOutput:")
+        print(f"  PDB files: {len(output_result.output_files)}")
+        print(f"  Directory: {args.output}")
+        for f in output_result.output_files[:3]:
+            print(f"    - {Path(f).name}")
+        if len(output_result.output_files) > 3:
+            print(f"    - ... and {len(output_result.output_files) - 3} more")
+        
+        if output_result.phase_diagram_files:
+            print(f"  Phase diagram: {Path(output_result.phase_diagram_files[0]).parent / 'phase_diagram.png'}")
+        
+        print(f"\nValidation:")
+        print(f"  Valid structures: {output_result.summary['n_validated']}/{output_result.summary['n_candidates']}")
         
         return 0
     except UnknownPhaseError as e:
