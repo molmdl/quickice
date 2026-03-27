@@ -34,7 +34,7 @@ from quickice.phase_mapping.data.ice_boundaries import (
 )
 
 
-# Phase colors for visualization
+# Phase colors for visualization (add new phases)
 PHASE_COLORS = {
     "ice_ih": "#ADD8E6",   # Light blue
     "ice_ic": "#87CEEB",   # Sky blue
@@ -44,6 +44,11 @@ PHASE_COLORS = {
     "ice_vi": "#FFA500",   # Orange
     "ice_vii": "#FF6B6B",  # Light red
     "ice_viii": "#DC143C", # Crimson
+    # NEW phases:
+    "ice_xi": "#B0E0E6",   # Powder blue (lighter than Ih)
+    "ice_ix": "#98FB98",   # Pale green (similar to III)
+    "ice_x": "#8B0000",    # Dark red (distinct from VII/VIII)
+    "ice_xv": "#FFD700",   # Gold (distinct from VI)
     "liquid": "#1E90FF",   # Dodger blue
 }
 
@@ -57,6 +62,11 @@ PHASE_LABELS = {
     "ice_vi": "VI",
     "ice_vii": "VII",
     "ice_viii": "VIII",
+    # NEW phases:
+    "ice_xi": "XI",
+    "ice_ix": "IX",
+    "ice_x": "X",
+    "ice_xv": "XV",
     "liquid": "Liquid",
 }
 
@@ -70,6 +80,11 @@ PHASE_NAMES = {
     "ice_vi": "Ice VI",
     "ice_vii": "Ice VII",
     "ice_viii": "Ice VIII",
+    # NEW phases:
+    "ice_xi": "Ice XI",
+    "ice_ix": "Ice IX",
+    "ice_x": "Ice X",
+    "ice_xv": "Ice XV",
     "liquid": "Liquid water",
 }
 
