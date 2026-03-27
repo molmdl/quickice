@@ -34,11 +34,11 @@
 
 ### Output
 
-- [ ] **OUT-01**: PDB format output with CRYST1 record
-- [ ] **OUT-02**: 10 PDB files per query (one per candidate)
-- [ ] **OUT-03**: Rank suffix in filename (e.g., ice_candidate_01.pdb)
-- [ ] **OUT-04**: Basic validation (no atomic overlap check)
-- [ ] **OUT-05**: Valid space group verification via spglib
+- [x] **OUT-01**: PDB format output with CRYST1 record
+- [x] **OUT-02**: 10 PDB files per query (one per candidate)
+- [x] **OUT-03**: Rank suffix in filename (e.g., ice_candidate_01.pdb)
+- [x] **OUT-04**: Basic validation (no atomic overlap check)
+- [x] **OUT-05**: Valid space group verification via spglib
 
 ### Documentation
 
@@ -98,11 +98,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RANK-02 | Phase 4 | Complete |
 | RANK-03 | Phase 4 | Complete |
 | RANK-04 | Phase 4 | Complete |
-| OUT-01 | Phase 5 | Pending |
-| OUT-02 | Phase 5 | Pending |
-| OUT-03 | Phase 5 | Pending |
-| OUT-04 | Phase 5 | Pending |
-| OUT-05 | Phase 5 | Pending |
+| OUT-01 | Phase 5 | Complete |
+| OUT-02 | Phase 5 | Complete |
+| OUT-03 | Phase 5 | Complete |
+| OUT-04 | Phase 5 | Complete |
+| OUT-05 | Phase 5 | Complete |
 | DOC-01 | Phase 6 | Pending |
 | DOC-02 | Phase 6 | Pending |
 | DOC-03 | Phase 6 | Pending |
@@ -115,4 +115,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 4 completion*
+*Last updated: 2026-03-27 after Phase 5 completion*

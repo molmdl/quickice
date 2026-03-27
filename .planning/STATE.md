@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - ML-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 2 replanned with curve-based approach
+**Current Focus:** Phase 5 complete, ready for Phase 6 (Documentation)
 
 ---
 
@@ -21,12 +21,12 @@
 
 | Field | Value |
 |-------|-------|
-| Phase | 5 of 6 (Output) |
-| Plan | 5 of 8 complete |
-| Status | In Progress |
-| Last activity | 2026-03-27 - Completed 05-05-PLAN.md |
+| Phase | 6 of 6 (Documentation) |
+| Plan | 0 of 0 (pending planning) |
+| Status | Ready to Plan |
+| Last activity | 2026-03-27 - Completed Phase 5 (Output) |
 
-| Progress Bar | █████░░░░░░░░░░░░░░░ 24% (5/21 plans) |
+| Progress Bar | ██████░░░░░░░░░░░░░░ 29% (7/24 plans) |
 
 ---
 
@@ -38,7 +38,8 @@
 | 2 | Phase Mapping | T,P → polymorph | ✓ Complete (4/4) |
 | 3 | Structure Generation | Valid GenIce output | ✓ Complete (2/2) |
 | 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
-| 5 | Output | PDB files + phase diagram | ⚠️ In Progress (5/8) |
+| 5 | Output | PDB files + phase diagram | ✓ Complete (7/7) |
+| 6 | Documentation | User guides | Pending (0/0) |
 | 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
 ---
@@ -61,31 +62,20 @@
 - All 50 tests passing
 - Module-level exports for public API
 
-### Phase 5 - Diagram (FIXED)
+### Phase 5 - Diagram (✓ FIXED)
 
-**Commit:** `60e9780`
-- Fixed centroid coordinate swap
-- Removed redundant legend
-- Image now correct size (3568 x 2956 px)
+**Commits:** `fcabfe7`, `b7be4eb`
+- Fixed axis arrangement: T on X, P on Y (log scale)
+- Fixed TRIPLE_POINTS tuple indexing
+- Diagram matches Wikipedia convention
 
 ---
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27 09:11 UTC
-**Stopped at:** Completed 05-05-PLAN.md (Output orchestrator)
+**Last Session:** 2026-03-27
+**Stopped at:** Phase 5 complete, Phase 6 ready to plan
 **Resume file:** None
-
-**Phase 5 Progress:** 5 of 8 plans complete
-- 05-01: Output types
-- 05-02: PDB writer
-- 05-03: Structure validator
-- 05-04: Phase diagram generator
-- 05-05: Output orchestrator
-
-**Next Plans:**
-- 05-06: CLI integration
-- Then Phase 7: Audit & Correctness
 
 ---
 
@@ -104,6 +94,7 @@
 | Unified boundary interface | Consistent API matching melting_curves pattern | ✓ Implemented (02-02) |
 | Hierarchical evaluation order | High pressure first ensures correct identification | ✓ Implemented (02-03) |
 | Orchestrator pattern for output | Single entry point coordinating multiple subsystems | ✓ Implemented (05-05) |
+| Wikipedia convention for phase diagram | T on X-axis (linear), P on Y-axis (log scale) | ✓ Implemented (05-07) |
 
 ---
 
@@ -117,4 +108,4 @@
 
 ---
 
-*State updated: 2026-03-27 09:11 UTC (Completed 05-05-PLAN.md)*
+*State updated: 2026-03-27 (Phase 5 complete)*
