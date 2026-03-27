@@ -27,6 +27,12 @@ PHASE_METADATA = {
     "ice_vi": {"name": "Ice VI", "density": 1.31},
     "ice_vii": {"name": "Ice VII", "density": 1.65},
     "ice_viii": {"name": "Ice VIII", "density": 1.65},
+    # Proton-ordered phases
+    "ice_xi": {"name": "Ice XI", "density": 0.92},   # Proton-ordered Ih
+    "ice_ix": {"name": "Ice IX", "density": 1.16},   # Proton-ordered III
+    "ice_xv": {"name": "Ice XV", "density": 1.31},   # Proton-ordered VI
+    # Symmetric hydrogen bond phase
+    "ice_x": {"name": "Ice X", "density": 2.79},    # Symmetric H bonds
 }
 
 
