@@ -129,17 +129,20 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Dependencies:** Phase 4 (ranking needed before output)
 
-**Plans:** 8 plans in 6 waves
+**Plans:** 6 plans in 5 waves
 
 **Plans:**
 - [x] 05-01-PLAN.md — Output types (OutputResult dataclass)
 - [x] 05-02-PLAN.md — PDB writer with TDD (CRYST1 records, coordinate conversion)
 - [x] 05-03-PLAN.md — Validator with TDD (space group, atomic overlap with PBC)
-- [x] 05-04-PLAN.md — Phase diagram generator (superseded by 05-08)
-- [ ] 05-05-PLAN.md — Output orchestrator (coordinates all output components)
+- [ ] 05-04-PLAN.md — Phase diagram verification (PNG, SVG, text outputs - already implemented)
+- [ ] 05-05-PLAN.md — Output orchestrator (coordinates PDB writer, validator, diagram)
 - [ ] 05-06-PLAN.md — CLI integration (--output, --no-diagram flags, end-to-end checkpoint)
-- [x] 05-07-PLAN.md — Curved boundaries correction (superseded by 05-08)
-- [ ] 05-08-PLAN.md — Unified diagram with PHASE_POLYGONS [CORRECTION]
+
+**Archived:**
+- 05-04-PLAN.md.superseded — Original diagram plan (replaced by verification)
+- 05-07-PLAN.md.superseded — Curved boundaries correction (diagram already correct)
+- 05-08-PLAN.md.superseded — Unified diagram (diagram already uses PHASE_POLYGONS)
 
 ---
 
