@@ -156,16 +156,18 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Plans:** 3 plans in 3 waves
 
+**Status:** ✓ Complete
+
 **Success Criteria:**
-1. lookup_phase() correctly identifies Ice XI, IX, X, XV
-2. Phase diagram shows new phase regions
-3. Extended T range to 50K (for Ice XI) and P range to 100 GPa (for Ice X)
-4. All 12 ice phases supported
+1. ✓ lookup_phase() correctly identifies Ice XI, IX, X, XV
+2. ✓ Phase diagram shows new phase regions
+3. ✓ Extended T range to 50K (for Ice XI) and P range to 100 GPa (for Ice X)
+4. ✓ All 12 ice phases supported
 
 **Plans:**
-- [ ] 05.1-01-PLAN.md — Triple points + boundary curves for Ice XI, IX, X, XV (wave 1)
-- [ ] 05.1-02-PLAN.md — Update phase lookup to detect new phases + tests (wave 2)
-- [ ] 05.1-03-PLAN.md — Extend phase diagram for new phases (wave 3)
+- [x] 05.1-01-PLAN.md — Triple points + boundary curves for Ice XI, IX, X, XV (wave 1)
+- [x] 05.1-02-PLAN.md — Update phase lookup to detect new phases + tests (wave 2)
+- [x] 05.1-03-PLAN.md — Extend phase diagram for new phases (wave 3)
 
 **Details:**
 - Ice XI: T<72K at low P (proton-ordered Ih)
@@ -219,7 +221,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | ✓ Complete |
-| 5.1 - Missing Ice Phases | IX, XI, X, XV | TBD | Pending (INSERTED) |
+| 5.1 - Missing Ice Phases | IX, XI, X, XV | PHASE-04 (extended) | ✓ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
