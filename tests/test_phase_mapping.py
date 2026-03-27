@@ -188,6 +188,120 @@ class TestLookupPhaseIceIi:
         assert result["density"] == 1.18
 
 
+class TestPolygonOverlapFixes:
+    """Tests that verify curve-based lookup fixes polygon overlap errors.
+
+    These tests document specific cases where the old polygon-based approach
+    had overlapping regions causing incorrect phase identification.
+
+    CRITICAL: These tests MUST pass to verify the curve-based approach works.
+    """
+
+    def test_lookup_260_400_ice_v(self):
+        """T=260K, P=400MPa should return ice_v (not ice_ii from overlap).
+
+        This was a CRITICAL overlap error in the polygon-based approach.
+        Ice V region: T(218-273K), P(344-626MPa)
+        At T=260K, P=400MPa, we're clearly in Ice V region.
+
+        The polygon-based approach incorrectly identified this as Ice II
+        due to polygon overlap in the II-V boundary region.
+        """
+        result = lookup_phase(260, 400)
+        assert result["phase_id"] == "ice_v", (
+            f"Expected ice_v at T=260K, P=400MPa but got {result['phase_id']}. "
+            "This indicates polygon overlap error not fixed."
+        )
+        assert result["phase_name"] == "Ice V"
+
+    def test_lookup_240_220_ice_iii(self):
+        """T=240K, P=220MPa should return ice_iii (not ice_ii from overlap).
+
+        This was a CRITICAL overlap error in the polygon-based approach.
+        Ice III region: T(238.55-256.165K), P(~210-350MPa)
+        At T=240K, P=220MPa, we're in Ice III region.
+
+        The polygon-based approach incorrectly identified this as Ice II
+        due to polygon overlap near the Ih-II-III triple point (238.55K, 212.9MPa).
+        """
+        result = lookup_phase(240, 220)
+        assert result["phase_id"] == "ice_iii", (
+            f"Expected ice_iii at T=240K, P=220MPa but got {result['phase_id']}. "
+            "This indicates polygon overlap error near Ih-II-III triple point."
+        )
+        assert result["phase_name"] == "Ice III"
+
+    def test_lookup_230_500_ice_ii(self):
+        """T=230K, P=500MPa should return ice_ii (not ice_v from overlap).
+
+        This was a CRITICAL overlap error in the polygon-based approach.
+        Ice II region: T(100-248.85K), P(~200-620MPa at higher T)
+        At T=230K, P=500MPa, we're in Ice II region.
+
+        The polygon-based approach incorrectly identified this as Ice V
+        due to polygon overlap in the II-V boundary region.
+        """
+        result = lookup_phase(230, 500)
+        assert result["phase_id"] == "ice_ii", (
+            f"Expected ice_ii at T=230K, P=500MPa but got {result['phase_id']}. "
+            "This indicates polygon overlap error in II-V boundary region."
+        )
+        assert result["phase_name"] == "Ice II"
+
+
+class TestCurveBasedPhaseLookup:
+    """Comprehensive tests for curve-based phase lookup.
+
+    These tests verify correct phase identification using curve evaluation
+    rather than polygon containment.
+    """
+
+    def test_ice_v_within_region(self):
+        """T=260K, P=500MPa should be ice_v (within Ice V region)."""
+        result = lookup_phase(260, 500)
+        assert result["phase_id"] == "ice_v"
+
+    def test_ice_vi_above_v_vi_boundary(self):
+        """T=260K, P=600MPa should be ice_vi (above V-VI boundary)."""
+        result = lookup_phase(260, 600)
+        assert result["phase_id"] == "ice_vi"
+
+    def test_ice_iii_narrow_wedge(self):
+        """T=250K, P=300MPa should be ice_iii (Ice III narrow region)."""
+        result = lookup_phase(250, 300)
+        assert result["phase_id"] == "ice_iii"
+
+    def test_ice_ii_at_240_250(self):
+        """T=240K, P=250MPa should be ice_ii."""
+        result = lookup_phase(240, 250)
+        assert result["phase_id"] == "ice_ii"
+
+    def test_ice_ii_at_lower_temp(self):
+        """T=220K, P=500MPa should be ice_ii."""
+        result = lookup_phase(220, 500)
+        assert result["phase_id"] == "ice_ii"
+
+    def test_ice_vi_region(self):
+        """T=270K, P=650MPa should be ice_vi."""
+        result = lookup_phase(270, 650)
+        assert result["phase_id"] == "ice_vi"
+
+    def test_ice_ih_low_pressure(self):
+        """T=200K, P=150MPa should be ice_ih."""
+        result = lookup_phase(200, 150)
+        assert result["phase_id"] == "ice_ih"
+
+    def test_ice_viii_very_high_pressure(self):
+        """T=100K, P=2100MPa should be ice_viii."""
+        result = lookup_phase(100, 2100)
+        assert result["phase_id"] == "ice_viii"
+
+    def test_ice_vii_very_high_pressure_higher_temp(self):
+        """T=300K, P=2200MPa should be ice_vii."""
+        result = lookup_phase(300, 2200)
+        assert result["phase_id"] == "ice_vii"
+
+
 class TestCurvedBoundaryVerification:
     """Tests for curved boundary behavior using real IAPWS phase diagram data.
 
@@ -209,11 +323,13 @@ class TestCurvedBoundaryVerification:
         """Test lookup near Ih-II-III triple point at T=238.55K, P=212.9MPa.
 
         The triple point is where Ice Ih, Ice II, and Ice III meet.
-        Points near this triple point should return one of these phases.
+        At T=240K, P=220MPa (just above the triple point), we're in Ice III region.
         """
         # Point just above the triple point in Ice III region
         result = lookup_phase(240, 220)
-        assert result["phase_id"] in ["ice_iii", "ice_ii"]
+        assert result["phase_id"] == "ice_iii", (
+            f"Expected ice_iii at T=240K, P=220MPa but got {result['phase_id']}"
+        )
 
     def test_ice_iii_narrow_region(self):
         """Test that Ice III's narrow stability region is correctly identified.
