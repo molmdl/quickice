@@ -199,10 +199,15 @@ def _build_phase_polygon_from_curves(phase_id: str) -> List[Tuple[float, float]]
 
 
 def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
-    """Ice Ih region: low pressure, bounded by melting curve and Ih-II boundary."""
+    """Ice Ih region: low pressure, bounded by melting curve and Ih-II boundary.
+    
+    Extended to T=50K to meet Ice XI region (gap fix).
+    """
     vertices = []
     
     # Lower boundary: P ≈ 0 (atmospheric)
+    # Extended down to 50K to connect with Ice XI (fixes Ih-XI gap)
+    vertices.append((50.0, 0.1))
     vertices.append((100.0, 0.1))
     vertices.append((273.16, 0.1))
     
@@ -221,20 +226,25 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
     # Ih-II-III triple point (238.55 K, 212.9 MPa)
     vertices.append((238.55, 212.9))
     
-    # Ih-II boundary from TP down to cold
-    T_vals = np.linspace(238.55, 100.0, 15)
+    # Ih-II boundary from TP down to T=50K (extended to meet XI)
+    T_vals = np.linspace(238.55, 50.0, 20)
     for T in T_vals:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
     
-    # Close back to start
-    vertices.append((100.0, 0.1))
+    # Close back to start at T=50K
+    vertices.append((50.0, 0.1))
     
     return vertices
 
 
 def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
-    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, II-V-VI boundaries."""
+    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, II-V-VI boundaries.
+    
+    Extended to connect with Ice IX at lower temperatures (gap fix).
+    """
+    from quickice.phase_mapping.solid_boundaries import ix_boundary
+    
     vertices = []
     
     # Start at Ih-II-III triple point
@@ -261,11 +271,24 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     T3, P3 = get_triple_point("II_V_VI")
     vertices.append((T3, P3))
     
-    # Cold boundary (extend down)
-    vertices.append((180.0, P3))
+    # Cold boundary (extend down to 100K to meet IX)
+    vertices.append((100.0, P3))
     
-    # Ih-II boundary back to Ih-II-III TP
-    T_vals = np.linspace(180.0, T1, 15)
+    # Extend to connect with Ice IX boundary at T=100K
+    # IX lower boundary at T=100K is ~250 MPa
+    P_ix_lower = ix_boundary(100.0)  # 250 MPa
+    vertices.append((100.0, P_ix_lower))
+    
+    # Trace along IX boundary down to meet the Ih-II boundary region
+    T_vals = np.linspace(100.0, 140.0, 10)
+    for T in T_vals[1:]:
+        P = ix_boundary(T)
+        if P < 500:  # Valid boundary
+            vertices.append((T, P))
+    
+    # Now go back via Ih-II boundary to T=100K
+    # At T=100K, Ih-II boundary is at ~194 MPa
+    T_vals = np.linspace(100.0, T1, 15)
     for T in T_vals:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
@@ -332,7 +355,10 @@ def _build_ice_v_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
-    """Ice VI region: high pressure."""
+    """Ice VI region: high pressure.
+    
+    Extended to connect with Ice XV (gap fix).
+    """
     vertices = []
     
     # II-V-VI triple point
@@ -351,15 +377,20 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")
     vertices.append((T4, P4))
     
-    # Cold boundary
-    vertices.append((200.0, P4))
-    vertices.append((200.0, P1))
+    # Cold boundary - extended to T=100K to meet Ice XV
+    vertices.append((100.0, P4))
+    vertices.append((100.0, P1))
     
     return vertices
 
 
 def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
-    """Ice VII region: very high pressure, high temperature."""
+    """Ice VII region: very high pressure, high temperature.
+    
+    Extended to fill gap between VIII/X and connect with Ice X boundary (gap fix).
+    """
+    from quickice.phase_mapping.solid_boundaries import x_boundary
+    
     vertices = []
     
     # VI-VII-VIII triple point
@@ -370,93 +401,157 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     T2, P2 = get_triple_point("VI_VII_Liquid")
     vertices.append((T2, P2))
     
-    # Extend to high T/P
+    # Extend to high T/P - now extend up to meet Ice X boundary
+    # Ice X starts at P ~30000 MPa, so extend VII to fill the gap
     vertices.append((450.0, 4000.0))
-    vertices.append((450.0, 10000.0))
-    vertices.append((T1, 10000.0))
+    vertices.append((450.0, 30000.0))  # Extended to meet X boundary
+    vertices.append((T1, 30000.0))  # Back to triple point temperature
     
     return vertices
 
 
 def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
-    """Ice VIII region: ordered form of VII at low temperature."""
+    """Ice VIII region: ordered form of VII at low temperature.
+    
+    Extended to T=50K (user request) and extended pressure to meet Ice X.
+    """
     vertices = []
     
     # VI-VII-VIII triple point
     T1, P1 = get_triple_point("VI_VII_VIII")
     vertices.append((T1, P1))
-    vertices.append((T1, 10000.0))
-    vertices.append((100.0, 10000.0))
-    vertices.append((100.0, P1))
+    
+    # Extend up to meet Ice X boundary
+    vertices.append((T1, 30000.0))
+    vertices.append((50.0, 30000.0))  # Extended to T=50K per user request
+    vertices.append((50.0, P1))  # Back down to P1
     
     return vertices
 
 
 def _build_ice_xi_polygon() -> List[Tuple[float, float]]:
-    """Ice XI region: T < 72K at low pressure (proton-ordered Ih)."""
+    """Ice XI region: T < 72K at low pressure (proton-ordered Ih).
+    
+    Ice XI is stable at T < 72K, P < ~200 MPa (low pressure).
+    This extends the region to match lookup logic (P < 200 MPa).
+    """
     vertices = []
     
     # Bottom-left corner (very low T, very low P)
     vertices.append((50.0, 0.1))
     
-    # Top of region at T=72K
+    # Top of region at T=72K - extend to match lookup (P < 200 MPa)
     vertices.append((72.0, 0.1))
-    vertices.append((72.0, 1.0))
+    vertices.append((72.0, 200.0))
     
-    # Bottom boundary (very low P)
+    # Right boundary at high P (match lookup: P < 200 MPa)
+    vertices.append((50.0, 200.0))
+    
+    # Close back to start
     vertices.append((50.0, 0.1))
     
     return vertices
 
 
 def _build_ice_ix_polygon() -> List[Tuple[float, float]]:
-    """Ice IX region: T < 140K, P = 200-400 MPa (proton-ordered III)."""
+    """Ice IX region: T < 140K, P = 200-400 MPa (proton-ordered III).
+    
+    Uses variable boundary from ix_boundary(T) to match lookup logic.
+    The lower boundary varies from P=250 MPa (at T=100K) to P=200 MPa (at T=140K).
+    Note: ix_boundary returns 1e9 for T >= 140, so we stop before reaching 140.
+    """
+    from quickice.phase_mapping.solid_boundaries import ix_boundary
+    
     vertices = []
     
-    # Lower boundary at T=100K
-    vertices.append((100.0, 200.0))
+    # Start at T=100K, lower boundary
+    P_100 = ix_boundary(100.0)  # ~250 MPa
+    vertices.append((100.0, P_100))
     
-    # Upper boundary at T=140K
-    vertices.append((140.0, 200.0))
+    # Trace along lower boundary from T=100 to T<140 (don't include 140 since boundary returns 1e9)
+    T_vals = np.linspace(100.0, 139.0, 10)
+    for T in T_vals:
+        P = ix_boundary(T)
+        if P < 500:  # Skip invalid boundary values
+            vertices.append((T, P))
+    
+    # Upper boundary at P=400 MPa - go up to T=140
     vertices.append((140.0, 400.0))
-    
-    # Back along upper P boundary
     vertices.append((100.0, 400.0))
     
-    # Close polygon
-    vertices.append((100.0, 200.0))
+    # Close back to start
+    vertices.append((100.0, P_100))
     
     return vertices
 
 
 def _build_ice_x_polygon() -> List[Tuple[float, float]]:
-    """Ice X region: P > 30 GPa (symmetric hydrogen bonds)."""
+    """Ice X region: P > 30 GPa (symmetric hydrogen bonds).
+    
+    Extended to T=50K per user request (gap fix).
+    Uses temperature-dependent boundary from x_boundary(T) to match lookup logic.
+    Boundary: P > 30000 + 10*(T-165) MPa for T > 165K
+    """
+    from quickice.phase_mapping.solid_boundaries import x_boundary
+    
     vertices = []
     
-    # Start at VI-VII-VIII region extended
-    # Ice X at P > 30000 MPa
-    T_low = 100.0
+    # Extended to T=50K per user request
+    T_low = 50.0
     T_high = 500.0
-    P_min = 30000.0
     P_max = 100000.0  # 100 GPa
     
-    vertices.append((T_low, P_min))
-    vertices.append((T_high, P_min))
+    # Start at T=50K - boundary is 30000 (no T dependence below 165K)
+    P_min_low = x_boundary(T_low)  # 30000 MPa
+    vertices.append((T_low, P_min_low))
+    
+    # Trace along temperature-dependent boundary to T=500K
+    T_vals = np.linspace(T_low, T_high, 15)
+    for T in T_vals[1:]:
+        P = x_boundary(T)
+        vertices.append((T, P))
+    
+    # Upper boundary at P_max
     vertices.append((T_high, P_max))
     vertices.append((T_low, P_max))
+    
+    # Close back to start
+    vertices.append((T_low, P_min_low))
     
     return vertices
 
 
 def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
-    """Ice XV region: T = 80-108K, P ≈ 1.1 GPa (proton-ordered VI)."""
+    """Ice XV region: T = 80-108K, P ≈ 1.1 GPa (proton-ordered VI).
+    
+    Extended to connect with Ice VI (gap fix).
+    Ice XV forms at T=80-108K, P≈1100 MPa, but extends to connect to VI.
+    """
+    from quickice.phase_mapping.solid_boundaries import xv_boundary
+    
     vertices = []
     
-    # Narrow region around 1.1 GPa
-    vertices.append((80.0, 1000.0))
-    vertices.append((108.0, 1000.0))
-    vertices.append((108.0, 1200.0))
-    vertices.append((80.0, 1200.0))
+    # Start at T=80K, lower boundary
+    P_80 = xv_boundary(80.0)  # ~1100 MPa
+    vertices.append((80.0, P_80))
+    
+    # Trace along boundary to T=108K
+    T_vals = np.linspace(80.0, 108.0, 10)
+    for T in T_vals[1:]:
+        P = xv_boundary(T)
+        vertices.append((T, P))
+    
+    # Upper boundary - create a band around the boundary
+    # Use ±100 MPa around the boundary like lookup does
+    vertices.append((108.0, P_80 + 200.0))  # Upper edge
+    
+    # Extend to connect with Ice VI region
+    # Connect at T=200K (where VI starts) and similar pressure range
+    vertices.append((200.0, 1100.0))  # Connect to VI region
+    vertices.append((200.0, P_80))  # Also connect the lower boundary
+    
+    # Close back to start
+    vertices.append((80.0, P_80))
     
     return vertices
 
@@ -633,17 +728,30 @@ def generate_phase_diagram(
             markeredgewidth=0.5,
             zorder=6,
         )
-        # Add small label
-        ax.text(
-            tp_T, tp_P * 1.1,
-            tp_label,
-            fontsize=8,
-            ha='left',
-            va='center',
-            color='black',
-            alpha=0.7,
-            zorder=6,
-        )
+        # Add small label - handle low pressure triple points specially
+        # For Ih-XI-V at very low P (essentially atmospheric), position label above
+        if tp_P < 1.0:  # Very low pressure - move label up into plot area
+            ax.text(
+                tp_T, 1.0,  # Position at P=1 MPa (inside plot bounds)
+                tp_label,
+                fontsize=8,
+                ha='left',
+                va='bottom',
+                color='black',
+                alpha=0.7,
+                zorder=6,
+            )
+        else:
+            ax.text(
+                tp_T, tp_P * 1.1,
+                tp_label,
+                fontsize=8,
+                ha='left',
+                va='center',
+                color='black',
+                alpha=0.7,
+                zorder=6,
+            )
     
     # Plot user's T,P point
     ax.plot(
