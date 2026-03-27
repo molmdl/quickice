@@ -186,6 +186,14 @@ def _build_phase_polygon_from_curves(phase_id: str) -> List[Tuple[float, float]]
         return _build_ice_vii_polygon()
     elif phase_id == "ice_viii":
         return _build_ice_viii_polygon()
+    elif phase_id == "ice_xi":
+        return _build_ice_xi_polygon()
+    elif phase_id == "ice_ix":
+        return _build_ice_ix_polygon()
+    elif phase_id == "ice_x":
+        return _build_ice_x_polygon()
+    elif phase_id == "ice_xv":
+        return _build_ice_xv_polygon()
     else:
         return []
 
@@ -380,6 +388,75 @@ def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
     vertices.append((T1, 10000.0))
     vertices.append((100.0, 10000.0))
     vertices.append((100.0, P1))
+    
+    return vertices
+
+
+def _build_ice_xi_polygon() -> List[Tuple[float, float]]:
+    """Ice XI region: T < 72K at low pressure (proton-ordered Ih)."""
+    vertices = []
+    
+    # Bottom-left corner (very low T, very low P)
+    vertices.append((50.0, 0.1))
+    
+    # Top of region at T=72K
+    vertices.append((72.0, 0.1))
+    vertices.append((72.0, 1.0))
+    
+    # Bottom boundary (very low P)
+    vertices.append((50.0, 0.1))
+    
+    return vertices
+
+
+def _build_ice_ix_polygon() -> List[Tuple[float, float]]:
+    """Ice IX region: T < 140K, P = 200-400 MPa (proton-ordered III)."""
+    vertices = []
+    
+    # Lower boundary at T=100K
+    vertices.append((100.0, 200.0))
+    
+    # Upper boundary at T=140K
+    vertices.append((140.0, 200.0))
+    vertices.append((140.0, 400.0))
+    
+    # Back along upper P boundary
+    vertices.append((100.0, 400.0))
+    
+    # Close polygon
+    vertices.append((100.0, 200.0))
+    
+    return vertices
+
+
+def _build_ice_x_polygon() -> List[Tuple[float, float]]:
+    """Ice X region: P > 30 GPa (symmetric hydrogen bonds)."""
+    vertices = []
+    
+    # Start at VI-VII-VIII region extended
+    # Ice X at P > 30000 MPa
+    T_low = 100.0
+    T_high = 500.0
+    P_min = 30000.0
+    P_max = 100000.0  # 100 GPa
+    
+    vertices.append((T_low, P_min))
+    vertices.append((T_high, P_min))
+    vertices.append((T_high, P_max))
+    vertices.append((T_low, P_max))
+    
+    return vertices
+
+
+def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
+    """Ice XV region: T = 80-108K, P ≈ 1.1 GPa (proton-ordered VI)."""
+    vertices = []
+    
+    # Narrow region around 1.1 GPa
+    vertices.append((80.0, 1000.0))
+    vertices.append((108.0, 1000.0))
+    vertices.append((108.0, 1200.0))
+    vertices.append((80.0, 1200.0))
     
     return vertices
 
