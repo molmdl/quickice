@@ -1,6 +1,6 @@
 # QuickIce State
 
-**Project:** QuickIce - ML-based Ice Structure Generation  
+**Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
 **Current Focus:** Phase 5 complete, ready for Phase 6 (Documentation)
 
