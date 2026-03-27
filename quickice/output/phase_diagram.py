@@ -503,12 +503,16 @@ def generate_phase_diagram(
     
     # Define phases to plot (in order, back to front for proper layering)
     phases_to_plot = [
+        "ice_x",      # NEW: highest pressure
         "ice_viii",
         "ice_vii", 
+        "ice_xv",     # NEW: ordered VI
         "ice_vi",
         "ice_v",
+        "ice_ix",     # NEW: ordered III
         "ice_ii",
         "ice_iii",
+        "ice_xi",     # NEW: ordered Ih
         "ice_ih",
     ]
     
@@ -612,6 +616,11 @@ def generate_phase_diagram(
         ("V_VI_Liquid", "V-VI-L"),
         ("VI_VII_Liquid", "VI-VII-L"),
         ("VI_VII_VIII", "VI-VII-VIII"),
+        # NEW triple points:
+        ("Ih_XI_Vapor", "Ih-XI-V"),
+        ("III_IX_Transition", "III-IX"),
+        ("VII_X_Transition", "VII-X"),
+        ("VI_XV_Transition", "VI-XV"),
     ]
     
     for tp_name, tp_label in triple_point_names:
@@ -648,11 +657,11 @@ def generate_phase_diagram(
     )
     
     # Set axis limits (Temperature on X, Pressure on Y with log scale)
-    ax.set_xlim(100, 500)  # Temperature range (linear)
+    ax.set_xlim(50, 500)  # Extended from 100 to 50K for Ice XI
     if use_log_scale:
-        ax.set_ylim(0.1, 10000)  # Pressure range (log scale)
+        ax.set_ylim(0.1, 100000)  # Extended from 10000 to 100000 MPa (100 GPa) for Ice X
     else:
-        ax.set_ylim(0, 5000)  # Pressure range (linear)
+        ax.set_ylim(0, 50000)  # Extended for Ice X
     
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.5, which='both')
@@ -665,7 +674,7 @@ def generate_phase_diagram(
     # Add note about data source
     ax.text(
         0.02, 0.02,
-        "Data: IAPWS R14-08(2011)",
+        "Data: IAPWS R14-08(2011) + Literature values for XI, IX, X, XV",
         transform=ax.transAxes,
         fontsize=8,
         ha='left',
