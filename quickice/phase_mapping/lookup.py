@@ -60,6 +60,12 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
     boundaries in order from highest pressure phases to lowest, eliminating
     the ambiguity of polygon containment methods.
     
+    Unlike polygon-based approaches, this method:
+    - Directly evaluates boundary curves (no geometric containment)
+    - Eliminates overlap errors between phase regions
+    - Uses IAPWS R14-08 certified melting curves (HIGH confidence)
+    - Uses linear interpolation for solid-solid boundaries (MEDIUM confidence)
+    
     Args:
         temperature: Temperature in Kelvin
         pressure: Pressure in MPa
@@ -70,14 +76,49 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
     Raises:
         UnknownPhaseError: If no phase matches the given conditions
     
-    Algorithm:
+    Algorithm (evaluated in order, first match wins):
         1. High pressure phases (VII/VIII at P > 2100 MPa)
+           - VIII if T < 278K (ordered proton structure)
+           - VII if T >= 278K (disordered proton structure)
+           
         2. Ice VI region (between V-VI and VI-VII boundaries)
-        3. Ice V region (check V-VI and II-V boundaries)
-        4. Ice II region (check Ih-II and II-III boundaries)
-        5. Ice III region (narrow wedge, check II-III and III-V boundaries)
-        6. Ice Ih region (check Ih melting curve)
+           - T >= 218.95K (extends from II-V-VI triple point)
+           - P > 620 MPa
+           - Check VI-VII boundary for T > 278K
+           
+        3. Ice V region (between II-V and V-VI boundaries)
+           - T in [218.95, 273.31]K
+           - P > 344 MPa
+           - Below V-VI boundary, above II-V boundary
+           
+        4. Ice II region (below Ih-II-III triple point)
+           - T < 248.85K (max temp at II-III-V triple point)
+           - P > 200 MPa
+           - Above Ih-II boundary (T < 238.55K) or
+           - Above II-III boundary (T >= 238.55K)
+           
+        5. Ice III region (narrow wedge)
+           - T in [238.55, 256.165]K
+           - P > 200 MPa
+           - Between II-III and III-V boundaries
+           
+        6. Ice Ih region (below melting curve)
+           - T <= 273.16K (Ih-Liquid-Vapor triple point)
+           - P < melting pressure at T
+           
         7. Ice Ic (metastable, low T low P)
+           - T < 150K, P < 100 MPa
+           - Only if no other phase matched
+    
+    Phase boundaries reference:
+        - Ih-II: Linear approximation from Ih-II-III triple point
+        - II-III: Linear interpolation from Ih-II-III to II-III-V triple points
+        - III-V: Linear interpolation from II-III-V to III-V-Liquid triple points
+        - II-V: Linear interpolation from II-V-VI to II-III-V triple points
+        - V-VI: Linear interpolation from II-V-VI to V-VI-Liquid triple points
+        - VI-VII: Linear interpolation from VI-VII-VIII to VI-VII-Liquid triple points
+        - Ih melting: IAPWS R14-08 equation (HIGH confidence)
+        - VII-VIII ordering: Fixed at T=278K, P=2100 MPa
     """
     T, P = temperature, pressure
     phase_id = None
