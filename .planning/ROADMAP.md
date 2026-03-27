@@ -131,14 +131,16 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Plans:** 7 plans in 5 waves
 
+**Status:** ✓ Complete
+
 **Plans:**
 - [x] 05-01-PLAN.md — Output types (OutputResult dataclass)
 - [x] 05-02-PLAN.md — PDB writer with TDD (CRYST1 records, coordinate conversion)
 - [x] 05-03-PLAN.md — Validator with TDD (space group, atomic overlap with PBC)
 - [x] 05-04-PLAN.md — Phase diagram verification (PNG, SVG, text outputs - already implemented)
 - [x] 05-05-PLAN.md — Output orchestrator (coordinates PDB writer, validator, diagram)
-- [ ] 05-06-PLAN.md — CLI integration (--output, --no-diagram flags, end-to-end checkpoint)
-- [ ] 05-07-PLAN.md — Fix phase diagram axes and curve-based filling (T on X, P on Y with log scale)
+- [x] 05-06-PLAN.md — CLI integration (--output, --no-diagram flags, end-to-end checkpoint)
+- [x] 05-07-PLAN.md — Fix phase diagram axes and curve-based filling (T on X, P on Y with log scale)
 
 **Archived:**
 - 05-04-PLAN.md.superseded — Original diagram plan (replaced by verification)
@@ -189,7 +191,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✓ Complete |
 | 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✓ Complete |
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
-| 5 - Output | PDB files | OUT-01 to OUT-05 | Pending |
+| 5 - Output | PDB files | OUT-01 to OUT-05 | ✓ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
