@@ -11,8 +11,9 @@ The GUI features an all-in-one interface with the following:
 2. textbox to input options
 3. info window of info of that point in phase diagram with necessary citation 
 4. button to generate 3D structure of the selected point in the phase diagram
-5. 3D viewer of the generated structures, show one at a time to save resource. simple view of stick/ball and stick and dashed lines of hydrogen bonds
-6. option to save the plot/3D structure/export data/image of 3D scene to file
+5. progress bar to show the generation progress
+6. 3D viewer of the generated structures, show one at a time to save resource. simple view of stick/ball and stick and dashed lines of hydrogen bonds
+7. option to save the plot/3D structure/export data/image of 3D scene to file
 
 Notes:
 a. Cap the number of water molecules for the generation to e.g. 216.
