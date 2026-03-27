@@ -20,13 +20,13 @@
 ## Current Position
 
 | Field | Value |
-|-------|-------|
+| | |
 | Phase | 5.1 of 8 (Add Missing Ice Phases) |
-| Plan | 0 of 0 (pending planning) |
-| Status | Ready to Plan (INSERTED) |
-| Last activity | 2026-03-27 - Phase 5.1 inserted: Add missing ice phases (IX, XI, X, XV) |
+| Plan | 1 of 1 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-03-27 - Completed 05.1-01-PLAN.md |
 
-| Progress Bar | ██████░░░░░░░░░░░░░░ 29% (7/24 plans) |
+| Progress Bar | ████████░░░░░░░░░░░░ 33% (8/24 plans) |
 
 ---
 
@@ -39,7 +39,7 @@
 | 3 | Structure Generation | Valid GenIce output | ✓ Complete (2/2) |
 | 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
 | 5 | Output | PDB files + phase diagram | ✓ Complete (7/7) |
-| 5.1 | Missing Ice Phases | IX, XI, X, XV | Pending (0/0) (INSERTED) |
+| 5.1 | Missing Ice Phases | IX, XI, X, XV | ✓ Complete (1/1) |
 | 6 | Documentation | User guides | Pending (0/0) |
 | 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
@@ -83,8 +83,8 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27
-**Stopped at:** Phase 5 complete, Phase 6 ready to plan
+**Last Session:** 2026-03-27 13:54 UTC
+**Stopped at:** Completed 05.1-01-PLAN.md
 **Resume file:** None
 
 ---
@@ -113,6 +113,10 @@
 | Hierarchical evaluation order | High pressure first ensures correct identification | ✓ Implemented (02-03) |
 | Orchestrator pattern for output | Single entry point coordinating multiple subsystems | ✓ Implemented (05-05) |
 | Wikipedia convention for phase diagram | T on X-axis (linear), P on Y-axis (log scale) | ✓ Implemented (05-07) |
+| Ice XI triple point at 72K | Proton-ordered Ih at low T, atmospheric P | ✓ Implemented (05.1-01) |
+| Ice IX boundary from Ice III | Cooling threshold at 140K with linear P interpolation | ✓ Implemented (05.1-01) |
+| Ice X boundary at 30 GPa | Symmetric H bonds at extreme pressure | ✓ Implemented (05.1-01) |
+| Ice XV boundary at 1.1 GPa | Proton-ordered VI in narrow T range 80-108K | ✓ Implemented (05.1-01) |
 
 ---
 
@@ -126,4 +130,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Quick task 002 complete)*
+*State updated: 2026-03-27 (Phase 5.1 complete - Ice XI, IX, X, XV added)*
