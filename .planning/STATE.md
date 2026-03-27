@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 5 complete, ready for Phase 6 (Documentation)
+**Current Focus:** Phase 5.1 complete, ready for Phase 6 (Documentation)
 
 ---
 
@@ -12,8 +12,8 @@
 |-----------|-------|
 | Core Value | Generate plausible ice structure candidates quickly for given thermodynamic conditions |
 | Mode | yolo |
-| Depth | Comprehensive (7 phases) |
-| Approach | Pure "vibe coding" — no physics simulations |
+| Depth | Comprehensive (8 phases) |
+| Approach | Simple and quick — no physics simulations |
 
 ---
 
@@ -21,12 +21,12 @@
 
 | Field | Value |
 | | |
-| Phase | 5.1 of 8 (Add Missing Ice Phases) |
-| Plan | 3 of 3 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-03-27 - Completed 05.1-03-PLAN.md |
+| Phase | 6 of 8 (Documentation) |
+| Plan | 0 of 0 (pending planning) |
+| Status | Ready to Plan |
+| Last activity | 2026-03-27 - Phase 5.1 complete: All 12 ice phases supported |
 
-| Progress Bar | █████████░░░░░░░░░░░ 38% (9/24 plans) |
+| Progress Bar | ██████████░░░░░░░░░░ 42% (10/24 plans) |
 
 ---
 
