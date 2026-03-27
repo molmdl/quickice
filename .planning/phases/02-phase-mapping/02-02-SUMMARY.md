@@ -1,152 +1,103 @@
 ---
 phase: 02-phase-mapping
 plan: 02
-subsystem: phase-lookup
-tags:
-  - tdd
-  - phase-diagram
-  - lookup
-  - ice-polymorphs
-completed: 2026-03-26
+subsystem: phase-mapping
+tags: [linear-interpolation, solid-solid-boundaries, triple-points, ice-phases]
+
+# Dependency graph
+requires:
+  - phase: 02-01
+    provides: Triple point coordinates (TRIPLE_POINTS dictionary)
+provides:
+  - Six solid-solid boundary functions with linear interpolation
+  - Unified solid_boundary() interface
+  - VII_VIII_ORDERING_TEMP constant for ordering transition
+affects:
+  - phase-determination (will use these boundaries for phase lookup)
+  - phase-diagram (will visualize these boundaries)
+
+# Tech tracking
+tech-stack:
+  added: []
+  patterns: [linear-interpolation-between-triple-points]
+
+key-files:
+  created:
+    - quickice/phase_mapping/solid_boundaries.py
+  modified: []
+
+key-decisions:
+  - "Linear interpolation for solid-solid boundaries (MEDIUM confidence)"
+  - "Approximated Ih-II boundary with slight slope due to limited data"
+  - "Unified solid_boundary() interface for consistency with melting_curves pattern"
+
+patterns-established:
+  - "Linear interpolation between verified triple points for solid-solid transitions"
+  - "Unified function interface matching melting_curves.py pattern"
+
+# Metrics
+duration: 2 min
+completed: 2026-03-27
 ---
 
-# Phase 02 Plan 02: Ice Phase Lookup Summary
+# Phase 2 Plan 2: Solid-Solid Boundaries Summary
 
-## One-Liner
+**Six solid-solid boundary functions implemented using linear interpolation between verified triple point coordinates**
 
-Implemented T,P → ice polymorph lookup function using TDD methodology with comprehensive boundary checking.
+## Performance
 
-## What Was Built
+- **Duration:** 2 min
+- **Started:** 2026-03-27T08:13:14Z
+- **Completed:** 2026-03-27T08:15:05Z
+- **Tasks:** 1
+- **Files modified:** 1
 
-### Core Implementation
+## Accomplishments
 
-1. **IcePhaseLookup class** (`quickice/phase_mapping/lookup.py`)
-   - Loads phase boundary data from JSON
-   - Checks phases in order of specificity (high pressure first)
-   - Returns phase info including name, density, and input conditions
-   - Raises UnknownPhaseError for unmapped regions
+- Implemented six solid-solid boundary functions with linear interpolation
+- Created unified solid_boundary() interface for consistent API
+- All functions correctly interpolate between IAPWS-verified triple point coordinates
+- Added VII_VIII_ORDERING_TEMP constant for ordering transition threshold
 
-2. **lookup_phase function** (`quickice/phase_mapping/lookup.py`)
-   - Convenience function for single lookups
-   - Delegates to IcePhaseLookup instance
+## Task Commits
 
-3. **Module exports** (`quickice/phase_mapping/__init__.py`)
-   - Exports lookup_phase and IcePhaseLookup for public use
+Each task was committed atomically:
 
-### Test Coverage
+1. **Task 1: Create solid_boundaries.py with linear interpolation** - `e1ca9bf` (feat)
 
-- 24 tests covering all 8 ice phases
-- Tests for unknown regions and error handling
-- Tests for return value structure
-- Tests for IcePhaseLookup class initialization
+**Plan metadata:** Pending final commit
 
-## How It Works
+## Files Created/Modified
 
-```
-Temperature (K), Pressure (MPa)
-         ↓
-IcePhaseLookup.lookup()
-         ↓
-Check phases in order:
-  VII → VIII → VI → V → III → II → Ic → Ih
-         ↓
-First match → Return phase info
-         ↓
-No match → UnknownPhaseError
-```
-
-**Key insight:** High pressure phases checked first to handle boundary overlaps correctly.
+- `quickice/phase_mapping/solid_boundaries.py` - Solid-solid boundary functions with linear interpolation between triple points
 
 ## Decisions Made
 
-| Decision | Rationale |
-|----------|-----------|
-| Phase order: VII, VIII, VI, V, III, II, Ic, Ih | Ensures high pressure phases match before low pressure at overlapping boundaries |
-| Return dict with 5 keys | Provides complete phase info including input conditions for downstream use |
-| Separate class and function | Class for repeated lookups (cached data), function for convenience |
+- **Linear interpolation for solid-solid boundaries**: Used linear interpolation between triple points since exact equations are not available in IAPWS literature. This provides MEDIUM confidence estimates.
+- **Ih-II boundary approximation**: Approximated with slight slope (212.9 + 0.1*(T - 238.55)) since the boundary extends from the Ih-II-III triple point to lower temperatures with limited data.
+- **Unified interface pattern**: Followed the same pattern as melting_curves.py with a unified solid_boundary() function that accepts a boundary name and temperature.
 
 ## Deviations from Plan
 
-### Auto-fixed Issues
+None - plan executed exactly as written.
 
-**1. [Rule 1 - Bug] Fixed test boundary case**
+## Issues Encountered
 
-- **Found during:** GREEN phase
-- **Issue:** Test `test_lookup_boundary_pressure` expected ice_ih at T=250K, P=210MPa, but this falls in overlapping region with ice_iii
-- **Fix:** Changed test to T=245K, P=210MPa (clearly in ice_ih range, outside ice_ic range)
-- **Files modified:** tests/test_phase_mapping.py
-- **Commit:** 0585acf
+None - all verification tests passed successfully:
+- II-III boundary at T=244K returns 282.43 MPa (between 212.9 and 344.3 MPa)
+- V-VI boundary at T=250K returns 623.37 MPa (between 620.0 and 625.9 MPa)
+- Invalid boundary names correctly raise ValueError
 
-No other deviations - plan executed following TDD methodology.
+## User Setup Required
 
-## Test Results
-
-```
-24 tests passed
-- 3 tests for Ice Ih
-- 2 tests for Ice VII
-- 2 tests for Ice VI
-- 2 tests for Ice III
-- 2 tests for Ice V
-- 2 tests for Ice VIII
-- 1 test for Ice II
-- 3 tests for unknown regions
-- 4 tests for return structure
-- 3 tests for IcePhaseLookup class
-```
-
-## Dependency Graph
-
-```
-requires:
-  - 02-01: Phase boundary data (ice_phases.json)
-  - 02-01: Error types (UnknownPhaseError)
-
-provides:
-  - lookup_phase(): T,P → ice phase function
-  - IcePhaseLookup: Class for repeated lookups
-
-affects:
-  - 02-03: Phase mapping integration
-  - Phase 3: Structure generation (needs phase_id)
-```
-
-## Tech Stack
-
-### Added
-- None (uses existing Python stdlib: json, pathlib)
-
-### Patterns
-- Class + convenience function pattern
-- Ordered boundary checking
-- TDD (RED-GREEN-REFACTOR)
-
-## Key Files
-
-### Created
-- `quickice/phase_mapping/lookup.py` (144 lines)
-
-### Modified
-- `quickice/phase_mapping/__init__.py` (added exports)
-- `tests/test_phase_mapping.py` (24 tests)
-
-## Metrics
-
-| Metric | Value |
-|--------|-------|
-| Duration | ~6 minutes |
-| Tests written | 24 |
-| Tests passed | 24 |
-| Coverage | 100% of lookup functionality |
-| Commits | 3 (RED, GREEN, REFACTOR) |
+None - no external service configuration required.
 
 ## Next Phase Readiness
 
-**Blockers:** None
+- Solid-solid boundary functions ready for use in phase determination
+- Six boundaries implemented: Ih-II, II-III, III-V, II-V, V-VI, VI-VII
+- Ready for plan 02-03 (phase boundary lookup implementation)
 
-**Ready for:** 02-03 (Phase Mapping Integration)
-
-**Notes:** 
-- All 8 ice phases correctly mapped
-- UnknownPhaseError provides clear error messages with T,P values
-- Phase order may need adjustment if new phases added with overlapping boundaries
+---
+*Phase: 02-phase-mapping*
+*Completed: 2026-03-27*
