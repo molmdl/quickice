@@ -1,6 +1,6 @@
 # QuickIce Roadmap
 
-**Project:** QuickIce - ML-based Ice Structure Generation  
+**Project:** QuickIce - Condition-based Ice Structure Generation  
 **Generated:** 2026-03-26  
 **Depth:** Comprehensive (7 phases derived from natural boundaries)
 
@@ -90,7 +90,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 ### Phase 4: Ranking
 
-**Goal:** Candidates are ranked by relevance to user's T,P conditions using ML/vibe scoring.
+**Goal:** Candidates are ranked by relevance to user's T,P conditions using knowledge-based scoring.
 
 **Requirements:** RANK-01, RANK-02, RANK-03, RANK-04
 
@@ -185,7 +185,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 1. README clearly notes "pure vibe coding project" disclaimer
 2. Usage documentation with CLI examples provided
-3. Principles explanation (why ML/vibe approach, not physics simulation)
+3. Principles explanation 
 4. Explanation of outcomes and ranking methodology
 
 **Dependencies:** None (can run in parallel or post-MVP)
@@ -244,7 +244,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 ## Notes
 
-- **Philosophy:** Pure "vibe coding" approach — no physics simulations. GenIce provides valid coordinate generation; ML/vibe methods handle ranking.
+- **Philosophy:** Simple and quick — no physics simulations. GenIce provides valid coordinate generation; knowledge-based methods handle ranking.
 - **Architecture:** Sequential pipeline (CLI → Validator → Phase Mapper → GenIce → Ranker → PDB Writer)
 - **Anti-Patterns Avoided:** No horizontal layers, no project management artifacts, no vague success criteria
 
