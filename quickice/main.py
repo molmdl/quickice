@@ -3,8 +3,7 @@
 import sys
 
 from quickice.cli.parser import get_arguments
-from quickice.phase_mapping.lookup import lookup_phase
-from quickice.phase_mapping.errors import UnknownPhaseError
+from quickice.phase_mapping import lookup_phase, UnknownPhaseError
 
 
 def main() -> int:
