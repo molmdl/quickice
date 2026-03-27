@@ -24,7 +24,7 @@
 | Phase | 6 of 6 (Documentation) |
 | Plan | 0 of 0 (pending planning) |
 | Status | Ready to Plan |
-| Last activity | 2026-03-27 - Completed quick task 001: Add Liquid/Vapor labels to phase diagram |
+| Last activity | 2026-03-27 - Completed quick task 002: Fix phase diagram boundaries and ranking output |
 
 | Progress Bar | ██████░░░░░░░░░░░░░░ 29% (7/24 plans) |
 
@@ -75,7 +75,8 @@
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 001 | Add Liquid/Vapor labels to phase diagram | 2026-03-27 | 268ece6 | [001-add-liquid-vapor-labels](./quick/001-add-liquid-vapor-labels/) |
+| 001 | Add Liquid/Vapor labels to phase diagram | 2026-03-27 | e14ce73 | [001-add-liquid-vapor-labels](./quick/001-add-liquid-vapor-labels/) |
+| 002 | Fix phase diagram boundaries and ranking output | 2026-03-27 | e8b60ef | [002-fix-diagram-and-ranking-output](./quick/002-fix-diagram-and-ranking-output/) |
 
 ---
 
@@ -116,4 +117,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Quick task 001 complete)*
+*State updated: 2026-03-27 (Quick task 002 complete)*
