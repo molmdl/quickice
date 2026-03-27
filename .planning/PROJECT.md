@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A lightweight CLI tool that generates plausible ice structures for water given temperature, pressure, and molecule count. Users specify conditions via flags; the tool outputs 10 ranked PDB file candidates. Pure ML-based approach — no physics simulations.
+A lightweight CLI tool that generates plausible ice structures for water given temperature, pressure, and molecule count. Users specify conditions via flags; the tool outputs 10 ranked PDB file candidates. 
 
 ## Core Value
 
@@ -39,7 +39,7 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 
 - GenIce codebase mapped: `./planning/codebase/` contains architecture docs
 - GenIce provides ice generation pipeline and PDB output capability
-- This project wraps/extends GenIce with ML-guided condition matching
+- This project wraps/extends GenIce with a simple condition matching interface
 - Initial prompt notes: "pure vibe coding project"
 
 ## Constraints
@@ -55,7 +55,7 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 |----------|-----------|---------|
 | CLI-only interface | Keep it simple, fast to use | — Pending |
 | PDB output format | Standard, universal compatibility | — Pending |
-| ML ranking approach | Research phase will determine best strategy | — Pending |
+| Ranking approach | Research phase will determine best strategy | — Pending |
 | Pre-trained model | Minimal resources, no training needed | — Pending |
 
 ---
