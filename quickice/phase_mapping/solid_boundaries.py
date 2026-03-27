@@ -4,6 +4,9 @@ Solid-solid phase boundary curves using linear interpolation.
 These boundaries connect triple points where three phases coexist.
 Unlike IAPWS melting curves, solid-solid transitions use linear approximation
 (MEDIUM confidence - exact equations not readily available in literature).
+
+Additional boundaries for proton-ordered phases (XI, IX, XV) and
+symmetrized hydrogen bond phase (X).
 """
 
 from typing import Tuple
@@ -86,12 +89,67 @@ def vi_vii_boundary(T: float) -> float:
     return _linear_interpolate(T, T1, P1, T2, P2)
 
 
+def xi_boundary(T: float) -> float:
+    """
+    Ice XI boundary: T < 72K at low P.
+    
+    Ice XI is the proton-ordered form of Ice Ih, stable at low temperatures.
+    Returns 0.1 MPa (essentially atmospheric) if T < 72K.
+    Returns very high pressure (no Ice XI) otherwise.
+    """
+    return 0.1 if T < 72.0 else 1e9
+
+
+def ix_boundary(T: float) -> float:
+    """
+    Ice IX boundary: forms from Ice III at T < 140K.
+    
+    Ice IX is the proton-ordered form of Ice III.
+    Ice IX exists in narrow P band: 200-400 MPa at T < 140K.
+    Returns the lower pressure boundary for Ice IX.
+    """
+    if T >= 140.0:
+        return 1e9  # No Ice IX at T >= 140K
+    # Linear: P decreases slightly with T in Ice IX region
+    # At T=140K, P=200 MPa (boundary with Ice III)
+    # At T=100K, P=250 MPa (extrapolated)
+    return 200.0 + 1.25 * (140.0 - T)
+
+
+def x_boundary(T: float) -> float:
+    """
+    Ice X boundary: P > 30 GPa for symmetric H bonds.
+    
+    Ice X has symmetric hydrogen bonds at extreme pressures.
+    Returns minimum pressure for Ice X at temperature T.
+    Ice X forms from Ice VII at extreme pressures.
+    """
+    # Base pressure at 30000 MPa (30 GPa)
+    # Slight temperature dependence: higher T needs higher P
+    return 30000.0 + 10.0 * max(0, T - 165.0)
+
+
+def xv_boundary(T: float) -> float:
+    """
+    Ice XV boundary: proton-ordered Ice VI at T=80-108K, P≈1.1 GPa.
+    
+    Ice XV is the proton-ordered form of Ice VI.
+    Returns pressure threshold for Ice XV at temperature T.
+    """
+    if not (80.0 <= T <= 108.0):
+        return 1e9  # No Ice XV outside temperature range
+    # Ice XV exists around 1.1 GPa in this T range
+    # Narrow pressure band, approximate as ~1100 MPa
+    return 1100.0
+
+
 def solid_boundary(boundary: str, T: float) -> float:
     """
     Unified solid boundary function.
     
     Args:
-        boundary: One of "Ih-II", "II-III", "III-V", "II-V", "V-VI", "VI-VII"
+        boundary: One of "Ih-II", "II-III", "III-V", "II-V", "V-VI", "VI-VII",
+                        "XI", "IX", "X", "XV"
         T: Temperature in K
     
     Returns:
@@ -104,6 +162,10 @@ def solid_boundary(boundary: str, T: float) -> float:
         "II-V": ii_v_boundary,
         "V-VI": v_vi_boundary,
         "VI-VII": vi_vii_boundary,
+        "XI": xi_boundary,
+        "IX": ix_boundary,
+        "X": x_boundary,
+        "XV": xv_boundary,
     }
     if boundary not in boundaries:
         raise ValueError(f"Unknown boundary: {boundary}. Available: {list(boundaries.keys())}")
