@@ -47,7 +47,7 @@
 - [ ] **DOC-03**: Principles explanation
 - [ ] **DOC-04**: Explanation of outcomes and ranking
 
-## v2 Requirements
+## v3 Requirements
 
 ### ML Enhancement
 
