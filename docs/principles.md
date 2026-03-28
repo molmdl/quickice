@@ -186,7 +186,7 @@ GenIce2 is used for structure generation:
 
 Phase boundaries are based on the IAPWS Release on the Equation of State for Ice Ih (R14-08):
 
-- Document: https://www.iapws.org/relguide/Ice-2014.html
+- Document: https://www.iapws.org/relguide/MeltSub.html
 - Provides melting curves and thermodynamic properties for Ice Ih
 
 ### Ice Phase Diagrams
