@@ -233,6 +233,16 @@ pytest -v
 
 ## Reference
 
-- **GenIce2** by Vitroid for ice structure generation
-- **IAPWS** for validated thermodynamic properties of water and ice
-- Phase boundary data from experimental measurements in the literature
+### GenIce2
+- Repository: https://github.com/genice-dev/GenIce2
+- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation", J. Comput. Chem. 2018
+- DOI: https://doi.org/10.1002/jcc.25179
+
+### IAPWS R14-08
+- Document: "Revised Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance"
+- URL: https://www.iapws.org/relguide/MeltSub.html
+
+### spglib
+- Repository: https://github.com/atztogo/spglib
+- Paper: "Spglib: a software library for crystal symmetry search", Sci. Technol. Adv. Mater., Meth. 4, 2384822 (2024)
+- DOI: https://doi.org/10.1080/27660400.2024.2384822
