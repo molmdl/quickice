@@ -561,8 +561,12 @@ class TestLookupPhaseIceX:
         assert result["density"] == 2.79
 
     def test_lookup_very_high_pressure_low_temp(self):
-        """Temperature 200K, Pressure 40000 MPa should return ice_x."""
-        result = lookup_phase(200, 40000)
+        """Temperature 200K, Pressure 50000 MPa should return ice_x.
+        
+        Note: With updated x_boundary interpolation through VII_VIII_X (62 GPa at 100K)
+        and VII_X_Transition (30 GPa at 300K), the Ice X boundary at T=200K is ~46 GPa.
+        """
+        result = lookup_phase(200, 50000)
         assert result["phase_id"] == "ice_x"
 
     def test_lookup_below_30gpa_not_ice_x(self):

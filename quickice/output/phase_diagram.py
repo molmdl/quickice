@@ -420,6 +420,7 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     """Ice VII region: very high pressure, high temperature.
     
     Extended to fill gap between VIII/X and connect with Ice X boundary (gap fix).
+    Upper boundary uses x_boundary which interpolates through triple points.
     """
     from quickice.phase_mapping.solid_boundaries import x_boundary
     
@@ -434,10 +435,17 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     vertices.append((T2, P2))
     
     # Extend to high T/P - now extend up to meet Ice X boundary
-    # Ice X starts at P ~30000 MPa, so extend VII to fill the gap
-    vertices.append((450.0, 4000.0))
-    vertices.append((450.0, 30000.0))  # Extended to meet X boundary
-    vertices.append((T1, 30000.0))  # Back to triple point temperature
+    # Use x_boundary to find where VII meets X
+    T_high = 450.0  # VII extends up to T=450K in our diagram
+    P_x_boundary = x_boundary(T_high)
+    vertices.append((T_high, 4000.0))  # Keep connection to VI-VII-Liquid
+    vertices.append((T_high, P_x_boundary))  # Extended to meet X boundary
+    
+    # Follow x_boundary back down to T1 temperature
+    T_vals = np.linspace(T_high, T1, 20)
+    for T in T_vals[1:]:
+        P = x_boundary(T)
+        vertices.append((T, P))
     
     return vertices
 
@@ -446,16 +454,27 @@ def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
     """Ice VIII region: ordered form of VII at low temperature.
     
     Extended to T=50K (user request) and extended pressure to meet Ice X.
+    Upper boundary uses x_boundary which interpolates through triple points.
     """
+    from quickice.phase_mapping.solid_boundaries import x_boundary
+    
     vertices = []
     
     # VI-VII-VIII triple point
     T1, P1 = get_triple_point("VI_VII_VIII")
     vertices.append((T1, P1))
     
-    # Extend up to meet Ice X boundary
-    vertices.append((T1, 30000.0))
-    vertices.append((50.0, 30000.0))  # Extended to T=50K per user request
+    # Extend up to meet Ice X boundary at T1
+    P_x_at_T1 = x_boundary(T1)
+    vertices.append((T1, P_x_at_T1))
+    
+    # Follow x_boundary down to T=50K (includes VII_VIII_X triple point at T=100K)
+    T_vals = np.linspace(T1, 50.0, 30)
+    for T in T_vals[1:]:
+        P = x_boundary(T)
+        vertices.append((T, P))
+    
+    # Bottom edge at T=50K
     vertices.append((50.0, P1))  # Back down to P1
     
     return vertices
@@ -527,28 +546,29 @@ def _build_ice_ix_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_x_polygon() -> List[Tuple[float, float]]:
-    """Ice X region: P > 30 GPa (symmetric hydrogen bonds).
+    """Ice X region: P > x_boundary(T) (symmetric hydrogen bonds).
     
     Extended to T=50K per user request.
-    Lower boundary at P=30000 MPa touches VIII (T=50-278K) and VII (T=278-450K).
+    Lower boundary uses x_boundary function which interpolates through:
+    - VII_VIII_X at (100K, 62000 MPa)
+    - VII_X_Transition at (300K, 30000 MPa)
+    - VII_X_Liquid at (1000K, 43000 MPa)
     """
+    from quickice.phase_mapping.solid_boundaries import x_boundary
+    
     vertices = []
     
     T_low = 50.0
     T_high = 500.0
-    P_boundary = 30000.0  # Fixed boundary to touch VIII/VII
     P_max = 100000.0  # 100 GPa
     
-    # Start at T=50K, P=30000 (touches VIII)
-    vertices.append((T_low, P_boundary))
+    # Start at T=50K, using x_boundary(50) = 62000 MPa (clamped at T <= 100K)
+    P_boundary_low = x_boundary(T_low)
+    vertices.append((T_low, P_boundary_low))
     
-    # Lower boundary at P=30000 to touch VIII (T<278K) and VII (T<450K)
-    # VII's max T is 450K, so for T>450K use x_boundary
-    vertices.append((450.0, P_boundary))
-    
-    # For T>450K, follow x_boundary (no VII there)
-    from quickice.phase_mapping.solid_boundaries import x_boundary
-    T_vals = np.linspace(450.0, T_high, 5)
+    # Lower boundary: follow x_boundary from T=50K to T=500K
+    # This creates a curved lower boundary that passes through all triple points
+    T_vals = np.linspace(T_low, T_high, 50)
     for T in T_vals[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
@@ -558,7 +578,7 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
     vertices.append((T_low, P_max))
     
     # Close back to start
-    vertices.append((T_low, P_boundary))
+    vertices.append((T_low, P_boundary_low))
     
     return vertices
 
@@ -760,6 +780,7 @@ def generate_phase_diagram(
         ("III_IX_Transition", "III-IX"),
         ("VII_X_Transition", "VII-X"),
         ("VI_XV_Transition", "VI-XV"),
+        ("VII_VIII_X", "VII-VIII-X"),
     ]
     
     for tp_name, tp_label in triple_point_names:
