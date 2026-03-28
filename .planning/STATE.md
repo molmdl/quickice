@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 5.1 complete, ready for Phase 6 (Documentation)
+**Current Focus:** Phase 6 in progress: README complete, docs/ folder next
 
 ---
 
@@ -22,11 +22,11 @@
 | Field | Value |
 | | |
 | Phase | 6 of 8 (Documentation) |
-| Plan | 0 of 0 (pending planning) |
-| Status | Ready to Plan |
-| Last activity | 2026-03-27 - Phase 5.1 complete: All 12 ice phases supported |
+| Plan | 1 of 2 in current phase |
+| Status | In progress |
+| Last activity | 2026-03-28 - Completed 06-01-PLAN.md: README documentation |
 
-| Progress Bar | ██████████░░░░░░░░░░ 42% (10/24 plans) |
+| Progress Bar | ██████████░░░░░░░░░░ 46% (11/24 plans) |
 
 ---
 
@@ -40,7 +40,7 @@
 | 4 | Ranking | Scored candidates | ✓ Complete (4/4) |
 | 5 | Output | PDB files + phase diagram | ✓ Complete (7/7) |
 | 5.1 | Missing Ice Phases | IX, XI, X, XV | ✓ Complete (3/3) |
-| 6 | Documentation | User guides | Pending (0/0) |
+| 6 | Documentation | User guides | In progress (1/2) |
 | 7 | Audit & Correctness | Quality assurance | Pending (0/0) |
 
 ---
@@ -83,8 +83,8 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-27 14:15 UTC
-**Stopped at:** Completed 05.1-03-PLAN.md
+**Last Session:** 2026-03-28 07:27 UTC
+**Stopped at:** Completed 06-01-PLAN.md
 **Resume file:** None
 
 ---
@@ -124,6 +124,7 @@
 | Extended phase diagram to 50K | Ice XI visible at T < 72K | ✓ Implemented (05.1-03) |
 | Extended phase diagram to 100 GPa | Ice X visible at P > 30 GPa | ✓ Implemented (05.1-03) |
 | Layered rendering for phase overlap | Highest pressure first ensures correct visual layering | ✓ Implemented (05.1-03) |
+| README with honest disclaimer | Experimental nature clearly stated, no physics simulations | ✓ Implemented (06-01) |
 
 ---
 
@@ -137,4 +138,4 @@
 
 ---
 
-*State updated: 2026-03-27 (Phase 5.1 complete - All 12 ice phases visualized)*
+*State updated: 2026-03-28 (Phase 6 in progress - README documentation complete)*
