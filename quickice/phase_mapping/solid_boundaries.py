@@ -118,15 +118,25 @@ def ix_boundary(T: float) -> float:
 
 def x_boundary(T: float) -> float:
     """
-    Ice X boundary: P > 30 GPa for symmetric H bonds.
+    Ice X boundary: interpolates between triple points.
     
-    Ice X has symmetric hydrogen bonds at extreme pressures.
-    Returns minimum pressure for Ice X at temperature T.
-    Ice X forms from Ice VII at extreme pressures.
+    Uses:
+    - VII_VIII_X at (100K, 62000 MPa) for T <= 100K
+    - VII_X_Transition at (300K, 30000 MPa) for T = 300K
+    - VII_X_Liquid at (1000K, 43000 MPa) for T >= 1000K
+    
+    Linear interpolation between these points.
     """
-    # Base pressure at 30000 MPa (30 GPa)
-    # Slight temperature dependence: higher T needs higher P
-    return 30000.0 + 10.0 * max(0, T - 165.0)
+    if T <= 100.0:
+        return 62000.0  # VII_VIII_X triple point
+    elif T <= 300.0:
+        # Linear interpolation: (100K, 62000) to (300K, 30000)
+        return 62000.0 + (30000.0 - 62000.0) * (T - 100.0) / (300.0 - 100.0)
+    elif T <= 1000.0:
+        # Linear interpolation: (300K, 30000) to (1000K, 43000)
+        return 30000.0 + (43000.0 - 30000.0) * (T - 300.0) / (1000.0 - 300.0)
+    else:
+        return 43000.0 + 10.0 * (T - 1000.0)  # Slight increase at very high T
 
 
 def xv_boundary(T: float) -> float:
