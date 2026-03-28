@@ -179,7 +179,7 @@ QuickIce generates ideal crystalline structures. Real ice contains:
 
 GenIce2 is used for structure generation:
 
-- Repository: https://github.com/vitroid/GenIce
+- Repository: https://github.com/genice-dev/GenIce2
 - Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation" (J. Comput. Chem. 2018)
 
 ### IAPWS R14-08
