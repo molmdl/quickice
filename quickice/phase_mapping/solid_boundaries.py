@@ -89,6 +89,29 @@ def vi_vii_boundary(T: float) -> float:
     return _linear_interpolate(T, T1, P1, T2, P2)
 
 
+def vii_viii_boundary(T: float) -> float:
+    """
+    Ice VII - Ice VIII boundary.
+    
+    Connects:
+    - VI-VII-VIII triple point: (278K, 2100 MPa)
+    - VII-VIII-X triple point: (100K, 62000 MPa)
+    
+    This is the ordering transition between disordered VII and ordered VIII.
+    Valid for T between 100K and 278K.
+    """
+    T1, P1 = TRIPLE_POINTS["VI_VII_VIII"]  # (278.0, 2100.0)
+    T2, P2 = TRIPLE_POINTS["VII_VIII_X"]   # (100.0, 62000.0)
+    
+    # Clamp to valid range
+    if T > T1:
+        return P1  # Above 278K, return the triple point pressure
+    if T < T2:
+        return P2  # Below 100K, stay at the triple point pressure
+    
+    return _linear_interpolate(T, T1, P1, T2, P2)
+
+
 def xi_boundary(T: float) -> float:
     """
     Ice XI boundary: T < 72K at low P.
@@ -172,6 +195,7 @@ def solid_boundary(boundary: str, T: float) -> float:
         "II-V": ii_v_boundary,
         "V-VI": v_vi_boundary,
         "VI-VII": vi_vii_boundary,
+        "VII-VIII": vii_viii_boundary,
         "XI": xi_boundary,
         "IX": ix_boundary,
         "X": x_boundary,

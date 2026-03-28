@@ -12,7 +12,8 @@ import math
 from quickice.phase_mapping.melting_curves import melting_pressure
 from quickice.phase_mapping.solid_boundaries import (
     solid_boundary, ih_ii_boundary, ii_iii_boundary, iii_v_boundary,
-    ii_v_boundary, v_vi_boundary, vi_vii_boundary, VII_VIII_ORDERING_TEMP,
+    ii_v_boundary, v_vi_boundary, vi_vii_boundary, vii_viii_boundary,
+    VII_VIII_ORDERING_TEMP,
     xi_boundary, ix_boundary, x_boundary, xv_boundary,
 )
 from quickice.phase_mapping.triple_points import TRIPLE_POINTS
@@ -166,8 +167,28 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
     # 1. High pressure phases (VII/VIII at P > 2100 MPa)
     # These phases exist at very high pressures
     if P > 2100:
-        # VII-VIII transition at 278K (ordering transition)
-        phase_id = "ice_viii" if T < VII_VIII_ORDERING_TEMP else "ice_vii"
+        # VII-VIII boundary: curved from (278K, 2100 MPa) to (100K, 62000 MPa)
+        # Above this boundary: Ice VIII (low-T form) or Ice X (at very high P)
+        # Below this boundary: Ice VII (high-T form) or Ice VI (at lower P)
+        #
+        # For T <= 100K: the boundary meets X at 62 GPa
+        # - Below 62 GPa: Ice VIII (the low-T form is stable)
+        # - Above 62 GPa: Ice X
+        #
+        # For 100K < T < 278K:
+        # - Above VII-VIII boundary: Ice VIII
+        # - Below VII-VIII boundary: Ice VII
+        #
+        # For T >= 278K: Ice VII is stable
+        if T >= 278:
+            phase_id = "ice_vii"
+        elif T <= 100:
+            # At T <= 100K, all pressures below X boundary are Ice VIII
+            phase_id = "ice_viii"
+        else:
+            # For 100K < T < 278K: use the boundary
+            P_vii_viii = vii_viii_boundary(T)
+            phase_id = "ice_viii" if P > P_vii_viii else "ice_vii"
         return _build_result(phase_id, T, P)
     
     # 1b. Ice XV region (ordered Ice VI at T=80-108K, P≈1.1 GPa)
