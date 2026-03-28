@@ -235,8 +235,8 @@ pytest -v
 
 ### GenIce2
 - Repository: https://github.com/genice-dev/GenIce2
-- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation", J. Comput. Chem. 2018
-- DOI: https://doi.org/10.1002/jcc.25179
+- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation", J. Comput. Chem. 2017
+- DOI: https://doi.org/10.1002/jcc.25077
 
 ### IAPWS R14-08
 - Document: "Revised Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance"
