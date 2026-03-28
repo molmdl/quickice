@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** v1.0 shipped — ready for next milestone
+**Current Focus:** v2.0 GUI Application - started
 
 ---
 
@@ -19,11 +19,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v1.0 COMPLETE |
-| Phase | 8 (all complete) |
-| Status | Shipped |
+| Milestone | v2.0 (GUI Application) |
+| Phase | Not started (defining requirements) |
+| Status | Planning |
 
-**Progress:** ✅ v1.0 MVP COMPLETE
+**Progress:** Defining requirements for v2.0
 
 ---
 
@@ -85,7 +85,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Session Continuity
 
 **Last Session:** 2026-03-29
-**Stopped at:** v1.0 milestone complete
+**Started:** v2.0 milestone - GUI Application
 
 ---
 
@@ -97,4 +97,4 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ---
 
-*State updated: 2026-03-29 - v1.0 milestone complete*
+*State updated: 2026-03-29 - v2.0 milestone started*

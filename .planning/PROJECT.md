@@ -51,6 +51,21 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 - Performance optimizations (parallel generation)
 - Additional output formats (CIF, GRO)
 
+---
+
+## Current Milestone: v2.0 GUI Application
+
+**Goal:** Transform QuickIce from CLI tool to cross-platform GUI application with interactive phase diagram and 3D structure viewer
+
+**Target features:**
+- Interactive phase diagram (click to select T,P)
+- Textbox input for options
+- Info window with citations for ice phases
+- Generate 3D structure button
+- Progress bar for generation
+- 3D viewer (stick/ball + hydrogen bonds)
+- Save/export options (plot, 3D scene, data)
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
@@ -78,4 +93,4 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 
 ---
 
-*Last updated: 2026-03-29 after v1.0 milestone*
+*Last updated: 2026-03-29 after v2.0 milestone*
