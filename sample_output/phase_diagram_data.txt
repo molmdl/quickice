@@ -15,6 +15,8 @@
 # III_IX_Transition: T=140.0 K, P=300.0 MPa
 # VII_X_Transition: T=300.0 K, P=30000.0 MPa
 # VI_XV_Transition: T=100.0 K, P=1100.0 MPa
+# VII_VIII_X: T=100.0 K, P=62000.0 MPa
+# VII_X_Liquid: T=1000.0 K, P=43000.0 MPa
 #
 # MELTING CURVES
 # ice_ih_melting:
