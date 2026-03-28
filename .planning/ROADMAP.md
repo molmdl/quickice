@@ -195,8 +195,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** None (can run in parallel or post-MVP)
 
 **Plans:**
-- [ ] 06-01-PLAN.md — README.md update with disclaimer, overview, installation, quick start
-- [ ] 06-02-PLAN.md — docs/ folder (CLI reference, ranking methodology, principles)
+- [x] 06-01-PLAN.md — README.md update with disclaimer, overview, installation, quick start
+- [x] 06-02-PLAN.md — docs/ folder (CLI reference, ranking methodology, principles)
 
 ---
 
@@ -228,7 +228,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✓ Complete |
 | 5 - Output | PDB files | OUT-01 to OUT-05 | ✓ Complete |
 | 5.1 - Missing Ice Phases | IX, XI, X, XV | PHASE-04 (extended) | ✓ Complete |
-| 6 - Documentation | User guides | DOC-01 to DOC-04 | Pending |
+| 6 - Documentation | User guides | DOC-01 to DOC-04 | ✓ Complete |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
 
 ---
