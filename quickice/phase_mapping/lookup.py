@@ -179,8 +179,34 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         # - Above VII-VIII boundary: Ice VIII
         # - Below VII-VIII boundary: Ice VII
         #
-        # For T >= 278K: Ice VII is stable
-        if T >= 278:
+        # For T >= 278K: Ice VII OR Liquid (must check melting curve for T > 354.75K)
+        if T > 354.75:
+            # Above VI-VII-Liquid triple point: check VII melting curve
+            # VII melting curve valid for 355K < T <= 715K
+            # For Ice VII: P > P_melt(T) means solid, P < P_melt(T) means liquid
+            # (Unlike Ice Ih where lower P = solid; Ice VII needs high P to stay solid)
+            try:
+                P_melt_vii = melting_pressure(T, "VII")
+                if P > P_melt_vii:
+                    # Above melting curve = solid Ice VII (high pressure keeps it solid)
+                    phase_id = "ice_vii"
+                else:
+                    # Below melting curve = liquid water
+                    raise UnknownPhaseError(
+                        "Liquid water region (below Ice VII melting curve)",
+                        temperature=T,
+                        pressure=P,
+                    )
+            except ValueError:
+                # T outside VII melting curve range (T > 715K)
+                # At very high T, likely liquid or supercritical
+                raise UnknownPhaseError(
+                    f"Temperature {T}K outside Ice VII melting curve range",
+                    temperature=T,
+                    pressure=P,
+                )
+        elif T >= 278:
+            # T in [278, 354.75]: solid Ice VII, below the melting curve boundary
             phase_id = "ice_vii"
         elif T <= 100:
             # At T <= 100K, all pressures below X boundary are Ice VIII
@@ -201,9 +227,31 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
     # 2. Ice VI region (between V-VI and VI-VII boundaries)
     # Ice VI: T(273.31-355K at high P), P(626-2200 MPa)
     # Note: At lower temperatures, Ice VI extends down to T=218.95K (II-V-VI TP)
+    # For T > 354.75K (VI-VII-Liquid TP): Ice VI doesn't exist, boundary is VII melting curve
     if T >= 218.95 and P > 620:
-        # Check if above VI-VII boundary for T > 278K
-        if T > 278:
+        if T > 354.75:
+            # Above VI-VII-Liquid TP: Ice VI doesn't exist
+            # Must check VII melting curve to determine VII vs Liquid
+            # For Ice VII: P > P_melt(T) means solid, P < P_melt(T) means liquid
+            try:
+                P_melt_vii = melting_pressure(T, "VII")
+                if P > P_melt_vii:
+                    # High pressure keeps Ice VII solid
+                    phase_id = "ice_vii"
+                else:
+                    raise UnknownPhaseError(
+                        "Liquid water region (below Ice VII melting curve)",
+                        temperature=T,
+                        pressure=P,
+                    )
+            except ValueError:
+                raise UnknownPhaseError(
+                    f"Temperature {T}K outside Ice VII melting curve range",
+                    temperature=T,
+                    pressure=P,
+                )
+        elif T > 278:
+            # T in (278, 354.75]: check VI-VII boundary
             P_vi_vii = vi_vii_boundary(T)
             phase_id = "ice_vii" if P > P_vi_vii else "ice_vi"
         else:
