@@ -1,123 +1,121 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-03-28
 
 ## Languages
 
 **Primary:**
-- Python 3.9+ - Main implementation language
+- Python 3.14.3 - Core implementation language for all modules
 
 **Secondary:**
-- None - Pure Python implementation
+- None detected - Pure Python codebase
 
 ## Runtime
 
 **Environment:**
-- Python 3.9+ (specified in pyproject.toml)
+- Conda environment named `quickice`
+- Python 3.14.3 with CPython implementation
 
 **Package Manager:**
-- Poetry (poetry.toml present)
-- pip/setuptools fallback (setup.py alternative)
-- Lockfile: Not present in repo (would be poetry.lock)
+- Conda (primary) - Environment management via `env.yml`
+- pip - Python package installation within conda environment
+- Lockfile: Not present (no pip lockfile)
+
+**Setup:**
+- Run `conda env create -f env.yml` once to create environment
+- Run `source setup.sh` in each new shell to activate and set PYTHONPATH
 
 ## Frameworks
 
 **Core:**
-- genice-core >=0.9 - Core algorithm for ice rule satisfaction and depolarization
+- argparse - CLI argument parsing (standard library)
+- dataclasses - Data structures (standard library)
 
 **Testing:**
-- pytest ^8.1.1 - Unit testing framework
+- pytest >=9.0.0 - Test framework
 
 **Build/Dev:**
-- Poetry - Dependency management and build
-- setuptools - Alternative build backend
+- No build system detected - direct Python execution
+- No type checking tools configured
+- No linting/formatting tools configured
 
 ## Key Dependencies
 
-**Critical:**
-- numpy >=1.26.2 - Array operations, coordinate transformations
-- networkx >=2.0 - Graph representation and manipulation
-- pairlist >=0.5.1.2 - Neighbor pair detection for periodic systems
-- cycless >=0.4.2 - Cycle detection for ring analysis
-- graphstat >=0.2.1 - Graph statistics and comparison
-- yaplotlib >=0.1.2 - Visualization output
-- openpyscad >=0.5.0 - OpenSCAD output format
+**Scientific Computing:**
+- numpy 2.4.3 - Array operations, numerical computing
+- scipy >=1.8 - Scientific algorithms, spline interpolation (`scipy.interpolate.UnivariateSpline`)
+- networkx 3.6.1 - Graph algorithms for molecular networks
 
-**Infrastructure:**
-- importlib_metadata - Entry point discovery (Python <3.10)
-- Python standard library: logging, argparse, itertools, collections
+**Visualization:**
+- matplotlib >=3.5 - Phase diagram plotting, publication-quality figures
+
+**Molecular Simulation:**
+- genice2 2.2.13.1 - Ice structure generation (core library)
+- genice-core 1.4.3 - GenIce core functionality
+- spglib 2.7.0 - Space group detection, crystal symmetry analysis
+- pairlist 0.6.4 - Pair detection for molecular structures
+- cycless 0.7 - Cycle detection in molecular networks
+
+**Geometry:**
+- shapely >=2.0 - Geometric operations, polygon handling for phase diagrams
+
+**Water Properties:**
+- iapws >=1.5.4 - IAPWS water/steam thermodynamic properties
+  - Used for: `IAPWS97` class to compute liquid-vapor saturation curves
+
+**Utilities:**
+- click 8.3.1 - Present in dependencies but argparse used in implementation
+- packaging 25.0 - Version parsing (standard library extension)
 
 ## Configuration
 
 **Environment:**
-- No environment variables required
-- Plugins can be loaded from local `lattices/`, `formats/`, `molecules/` directories
+- Conda environment defined in `env.yml`
+- PYTHONPATH must include project root (set via `setup.sh`)
+- No `.env` files or environment variables required
 
 **Build:**
-- pyproject.toml - Main configuration
-- poetry.toml - Poetry-specific settings
+- No build configuration files (setup.py, pyproject.toml, etc.)
+- Direct execution via `python quickice.py`
 
-**Package Entry Points:**
-- `genice2_lattice` - Lattice plugins
-- `genice2_format` - Format plugins  
-- `genice2_molecule` - Molecule plugins
-- `genice2_loader` - Input file loaders
-- `genice2_group` - Functional group plugins
+**Entry Point:**
+- `quickice.py` - CLI entry point that imports from `quickice/` package
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.9+
-- For M1 Mac: Additional scipy dependencies may be needed
+- Linux/x86_64 platform (conda packages are platform-specific)
+- Conda or Miniconda installed
+- Python 3.14 compatible environment
 
 **Production:**
-- Any Python 3.9+ environment
-- No compiled extensions (pure Python)
-
-**Optional Dependencies:**
-- Jupyter/IPython notebooks for interactive use (ipykernel ^6.27.1)
-- py3dmol for 3D visualization (^2.0.4)
-- matplotlib for plotting (^3.8.2)
-- genice2-cage for cage analysis (^2.2)
-- genice2-svg for SVG output (^2.2)
-- genice2-mdanalysis for MDAnalysis integration (^0.6.5)
-
----
+- Any platform supporting Python 3.14 and listed dependencies
+- No deployment infrastructure configured
+- Output files written to local `output/` directory
 
 ## Dependency Graph
 
 ```
-genice2
-├── genice-core (external) ─── ice_graph algorithm
-├── numpy ─────────────────── array operations
-├── networkx ──────────────── graph data structure
-├── pairlist ──────────────── neighbor detection
-├── cycless ───────────────── cycle/polyhedra detection
-├── graphstat ─────────────── graph comparison
-├── yaplotlib ─────────────── YaPlot visualization
-└── openpyscad ───────────── OpenSCAD output
-```
-
-## Installation Methods
-
-**From PyPI:**
-```bash
-pip install genice2
-```
-
-**From Source:**
-```bash
-git clone https://github.com/vitroid/GenIce
-cd GenIce
-pip install .
-```
-
-**Development:**
-```bash
-pip install -e .
-./genice.x  # Uses local source
+quickice.py
+    └── quickice/main.py
+            ├── quickice/cli/parser.py (argparse)
+            ├── quickice/phase_mapping/
+            │       ├── lookup.py (custom logic)
+            │       ├── melting_curves.py (custom IAPWS equations)
+            │       ├── solid_boundaries.py (linear interpolation)
+            │       └── triple_points.py (data tables)
+            ├── quickice/structure_generation/
+            │       ├── generator.py (genice2, numpy)
+            │       └── mapper.py (numpy)
+            ├── quickice/ranking/
+            │       └── scorer.py (numpy)
+            └── quickice/output/
+                    ├── orchestrator.py
+                    ├── pdb_writer.py (numpy)
+                    ├── validator.py (spglib, numpy)
+                    └── phase_diagram.py (matplotlib, shapely, scipy, iapws)
 ```
 
 ---
 
-*Stack analysis: 2026-03-26*
+*Stack analysis: 2026-03-28*
