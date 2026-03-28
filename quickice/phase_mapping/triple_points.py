@@ -27,6 +27,9 @@ TRIPLE_POINTS: Dict[str, Tuple[float, float]] = {
     "III_IX_Transition": (140.0, 300.0),  # Ice IX forms from Ice III cooling below 140K
     "VII_X_Transition": (300.0, 30000.0),  # Ice X transition at P>30 GPa
     "VI_XV_Transition": (100.0, 1100.0),  # Ice XV boundary near 1.1 GPa
+    # Additional triple points for Ice X
+    "VII_VIII_X": (100.0, 62000.0),  # 100K, 62 GPa - Ice VII/VIII/X triple point
+    "VII_X_Liquid": (1000.0, 43000.0),  # ~1000K, 43 GPa - Liquid/VII/X (outside diagram bounds)
 }
 
 def get_triple_point(name: str) -> Tuple[float, float]:
