@@ -1,3 +1,13 @@
+# Requirements Archive: v1.0 MVP
+
+**Archived:** 2026-03-29
+**Status:** ✅ SHIPPED
+
+This is the archived requirements specification for v1.0.
+For current requirements, see `.planning/REQUIREMENTS.md` (created for next milestone).
+
+---
+
 # Requirements: QuickIce
 
 **Defined:** 2026-03-26
@@ -87,8 +97,6 @@
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INPUT-01 | Phase 1 | Complete |
@@ -127,5 +135,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-03-26*
-*Last updated: 2026-03-28 after Phase 7 completion*
+
+## Milestone Summary
+
+**Shipped:** 29 of 29 v1 requirements
+**Adjusted:** 0
+**Dropped:** 0
+
+**Additional achievements:**
+- Extended phase support from 8 to 12 ice phases (Ice IX, XI, X, XV)
+- Added spglib space group validation
+- Added phase diagram visualization
+
+---
+
+*Archived: 2026-03-29 as part of v1.0 milestone completion*
