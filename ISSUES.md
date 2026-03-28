@@ -11,19 +11,24 @@ Phase diagram polygons have gaps between some boundaries and overlaps in others.
 ## Issue 1: Polygon Gaps
 
 ### a. Ih-XI Gap
-- **Location**: Between Ice Ih (T=72-273K) and Ice XI (T=50-72K)
-- **Problem**: Gap exists at the boundary where Ih ends and XI should take over
-- **Expected**: Polygons should meet at T≈72K with matching pressures (~196 MPa)
+- **Location**: Between Ice Ih and Ice XI
+- **Problem**: Triangular gap with correct connection at higher pressure, but Ih shrinked at low pressure
+- **Expected**: Polygons should meet at T≈72K
 
 ### b. IX-II Gap  
 - **Location**: Between Ice IX and Ice II boundaries
 - **Problem**: No continuous boundary between these phases
-- **Expected**: Either direct boundary connection or identification of intermediate phase
+- **Expected**: II likely needs to expand towards IX boundary
 
 ### c. IX-VI Gap
 - **Location**: Between Ice IX (T=100-140K, P=200-400 MPa) and Ice VI
 - **Problem**: Gap exists in the P=400-620 MPa region
 - **Expected**: Proper boundary connection or identification of missing phase
+
+### c. IX-Ih Gap
+- **Location**: Between Ice IX and Ih
+- **Problem**: Irregular IX shape result in the gap
+- **Expected**: Proper boundary connection or identification of missing phase.
 
 ---
 
@@ -32,21 +37,21 @@ Phase diagram polygons have gaps between some boundaries and overlaps in others.
 ### a. XV Overlaps VI
 - **Location**: Ice XV extends beyond its thermodynamic region
 - **Problem**: XV polygon overlaps with Ice VI region
-- **Fix needed**: Restrict XV to T=80-108K, P≈1100 MPa without extending to meet VI
-
-### b. Ih Covers XI
-- **Location**: Ice Ih extends into Ice XI region
-- **Problem**: Ih polygon covers the entire XI region at low temperature
-- **Fix needed**: Ih should stop at T≈72K where XI begins
+- **Fix needed**: Restrict XV to stop at the boundary of VI
 
 ---
 
 ## Issue 3: Size Issues
 
 ### XV Too Small
-- **Problem**: Ice XV exists in a narrow T=80-108K, P≈1100 MPa band
-- **Note**: This may be thermodynamically correct - XV is only stable in this narrow region
-- **Action**: Verify against literature; may need to accept as-is or expand for visualization
+- **Problem**: Ice XV exists in a narrow region
+- **Note**: Verify the temperature and pressure range of this phase
+- **Action**: Verify against literature; may need to expand in both temperature an pressure
+
+### IX Too Small
+- **Problem**: Ice XV does not extend to lower temperature
+- **Note**: Verify the temperature and pressure range of this phase
+- **Action**: Verify against literature; may need to expand in both temperature an pressure 
 
 ---
 
@@ -83,7 +88,7 @@ Polygon vertices are defined with fixed boundaries that don't properly meet at t
 1. **Use boundary functions dynamically** - Instead of fixed vertices, compute boundaries at render time using curve functions
 2. **Add validation** - Check for gaps/overlaps before rendering
 3. **Consult phase diagram literature** - Verify actual boundary connections
-4. **Accept small gaps if thermodynamically correct** - Some regions may have no ice phase
+4. **Inspect if this is a problem in diagram only of affecting the phase lookup** - verify if this is just the problem in drawing diagram or affects the phase identification
 
 ---
 
