@@ -202,6 +202,7 @@ spglib is used for crystal symmetry analysis and validation:
 
 Phase boundary data compiled from multiple sources:
 - Wagner et al., "The IAPWS Industrial Formulation 1997 for the Thermodynamic Properties of Water and Steam"
+- Londono et al., "Neutron diffraction studies of ice III and ice IX" (J. Chem. Phys. 1993) — DOI: https://doi.org/10.1063/1.464440
 - Lobban et al., "The structure of a new phase of ice" (Nature 1998) — DOI: https://doi.org/10.1038/34622
 - Salzmann et al., "Ice XV: A New Thermodynamically Stable Phase of Ice" (Phys. Rev. Lett. 2009) — DOI: https://doi.org/10.1103/physrevlett.103.105701
 
