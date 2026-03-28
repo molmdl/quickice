@@ -38,10 +38,21 @@ QuickIce uses:
 
 - Conda (Miniconda or Anaconda)
 
-### Setup
+### One-Time Setup
 
 ```bash
-# Create conda environment and install package (setup.sh activates env and exports PATH)
+# Create conda environment
+conda env create -f env.yml
+```
+
+### Run QuickIce
+
+```bash
+# Activate conda environment and setup (one command)
+conda activate quickice && source setup.sh
+
+# Or in two steps:
+conda activate quickice
 source setup.sh
 ```
 
