@@ -417,34 +417,52 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
-    """Ice VII region: very high pressure, high temperature.
+    """Ice VII region: exists between VII-VIII boundary and X boundary.
     
-    Ice VII exists at T > 278K (no VIII above this temp) and T < 278K but P < VII-VIII boundary.
-    Upper boundary: x_boundary (Ice X at very high pressure).
-    Lower boundary: extends from VI-VII-VIII triple point at 278K.
+    Ice VII exists in two regimes:
+    1. T >= 278K: All pressures from ~2100 MPa up to X boundary
+    2. 100K <= T < 278K: Thin strip between VII-VIII boundary (lower) and X boundary (upper)
+    
+    The polygon traces:
+    - Bottom edge: from (278K, 2100 MPa) to (500K, 2100 MPa)
+    - Right edge: up to X boundary at high T
+    - Top edge: along X boundary from 500K down to 100K (VII-VIII-X triple point)
+    - Left edge: along VII-VIII boundary from 100K back up to 278K
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary
+    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
     
     vertices = []
     
     # VI-VII-VIII triple point (where VII meets VIII and VI)
     T_tp, P_tp = get_triple_point("VI_VII_VIII")  # (278, 2100)
     
-    # Start at VI-VII-VIII triple point
+    # VII-VIII-X triple point (where VII meets VIII and X at low T)
+    T_tp_x, P_tp_x = get_triple_point("VII_VIII_X")  # (100, 62000)
+    
+    # 1. Start at VI-VII-VIII triple point (bottom-left corner)
     vertices.append((T_tp, P_tp))
     
-    # Go to high temperature (horizontal line at P=2100 MPa)
+    # 2. Bottom edge: horizontal to high temperature
     T_high = 500.0
     vertices.append((T_high, P_tp))
     
-    # Follow X boundary up from (500K, 2100 MPa) to (500K, X boundary)
+    # 3. Right edge: up to X boundary at high T
     P_x_high = x_boundary(T_high)
     vertices.append((T_high, P_x_high))
     
-    # Follow X boundary back down to T=278K
-    T_vals = np.linspace(T_high, T_tp, 30)
-    for T in T_vals[1:]:
+    # 4. Top edge: follow X boundary DOWN from 500K to 100K
+    #    This traces the upper boundary of Ice VII
+    T_vals_down = np.linspace(T_high, T_tp_x, 40)
+    for T in T_vals_down[1:]:
         P = x_boundary(T)
+        vertices.append((T, P))
+    
+    # 5. Left edge: follow VII-VIII boundary UP from 100K to 278K
+    #    This traces the lower boundary of Ice VII in the cold region
+    #    Note: at T=100K, VII-VIII boundary = X boundary = 62000 MPa
+    T_vals_up = np.linspace(T_tp_x, T_tp, 30)
+    for T in T_vals_up[1:]:
+        P = vii_viii_boundary(T)
         vertices.append((T, P))
     
     return vertices
