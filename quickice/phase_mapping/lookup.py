@@ -145,7 +145,8 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         - VI-VII: Linear interpolation from VI-VII-VIII to VI-VII-Liquid triple points
         - Ih melting: IAPWS R14-08 equation (HIGH confidence)
         - VII-VIII ordering: Fixed at T=278K, P=2100 MPa
-        - Ice X boundary: P > 30 GPa with slight T dependence
+        - Ice X boundary: P > x_boundary(T), interpolates through VII_VIII_X (62 GPa at 100K),
+                         VII_X_Transition (30 GPa at 300K), and VII_X_Liquid (43 GPa at 1000K)
         - Ice XV boundary: P ≈ 1.1 GPa at T=80-108K
         - Ice IX boundary: P decreases from 200 MPa at T=140K
         - Ice XI boundary: T < 72K at low P
@@ -153,8 +154,9 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
     T, P = temperature, pressure
     phase_id = None
     
-    # 0. Ice X region (P > 30 GPa = 30000 MPa)
-    # Ice X: symmetric hydrogen bonds at extreme pressure
+    # 0. Ice X region (symmetric hydrogen bonds at extreme pressure)
+    # Ice X: P > x_boundary(T) where boundary varies from 30-62 GPa depending on T
+    # Quick filter: P > 30000 MPa to avoid computing x_boundary for low-P cases
     if P > 30000:
         P_x = x_boundary(T)
         if P > P_x:
