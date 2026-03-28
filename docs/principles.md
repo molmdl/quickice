@@ -179,32 +179,22 @@ QuickIce generates ideal crystalline structures. Real ice contains:
 
 GenIce2 is used for structure generation:
 
-- Repository: https://github.com/genice-dev/GenIce2
-- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation" (Matsumoto et al., J. Comput. Chem. 2018)
-- DOI: https://doi.org/10.1002/jcc.25179
+- Repository: https://github.com/vitroid/GenIce
+- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation" (J. Comput. Chem. 2018)
 
 ### IAPWS R14-08
 
-Phase boundaries are based on IAPWS Release on melting and sublimation curves:
+Phase boundaries are based on the IAPWS Release on the Equation of State for Ice Ih (R14-08):
 
 - Document: https://www.iapws.org/relguide/MeltSub.html
-- Title: "Revised Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance" (2011, revised 2018)
-
-### spglib
-
-Space group validation uses spglib:
-
-- Repository: https://github.com/atztogo/spglib
-- Paper: "Spglib: a software library for crystal symmetry search" (Togo et al., Sci. Technol. Adv. Mater. Meth. 2024)
-- DOI: https://doi.org/10.1080/27660400.2024.2384822
+- Provides melting curves and thermodynamic properties for Ice Ih
 
 ### Ice Phase Diagrams
 
 Phase boundary data compiled from multiple sources:
-
-- Wagner, W. et al., "The IAPWS Industrial Formulation 1997 for the Thermodynamic Properties of Water and Steam", ASME J. Eng. Gas Turbines Power 122, 186 (2000), DOI: https://doi.org/10.1115/1.3020562
-- Lobban, C. et al., "Neutron diffraction studies of ice polymorphs", J. Chem. Phys. 109, 10656 (1998), DOI: https://doi.org/10.1063/1.477765
-- Salzmann, C.G. et al., "Ice XV: A new polymorph of ice", J. Chem. Phys. 130, 111102 (2009), DOI: https://doi.org/10.1063/1.3100899
+- Wagner et al., "The IAPWS Industrial Formulation 1997 for the Thermodynamic Properties of Water and Steam"
+- Lobban et al., "Neutron diffraction studies of ice polymorphs" (J. Chem. Phys. 1998)
+- Salzmann et al., "Ice XV: A new polymorph of ice" (J. Chem. Phys. 2009)
 
 ---
 
