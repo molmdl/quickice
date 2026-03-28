@@ -48,11 +48,7 @@ conda env create -f env.yml
 ### Run QuickIce
 
 ```bash
-# Activate conda environment and setup (one command)
-conda activate quickice && source setup.sh
-
-# Or in two steps:
-conda activate quickice
+# For each new shell - setup.sh activates conda and exports PYTHONPATH
 source setup.sh
 ```
 
