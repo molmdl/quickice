@@ -180,7 +180,8 @@ QuickIce generates ideal crystalline structures. Real ice contains:
 GenIce2 is used for structure generation:
 
 - Repository: https://github.com/genice-dev/GenIce2
-- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation" (J. Comput. Chem. 2018)
+- Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation" (J. Comput. Chem. 2017)
+- DOI: https://doi.org/10.1002/jcc.25077
 
 ### IAPWS R14-08
 
@@ -188,6 +189,14 @@ Phase boundaries are based on the IAPWS Release on the Equation of State for Ice
 
 - Document: https://www.iapws.org/relguide/MeltSub.html
 - Provides melting curves and thermodynamic properties for Ice Ih
+
+### spglib
+
+spglib is used for crystal symmetry analysis and validation:
+
+- Repository: https://github.com/atztogo/spglib
+- Paper: "Spglib: a software library for crystal symmetry search" (Sci. Technol. Adv. Mater. Meth. 2024)
+- DOI: https://doi.org/10.1080/27660400.2024.2384822
 
 ### Ice Phase Diagrams
 
