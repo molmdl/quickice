@@ -419,33 +419,35 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     """Ice VII region: very high pressure, high temperature.
     
-    Extended to fill gap between VIII/X and connect with Ice X boundary (gap fix).
-    Upper boundary uses x_boundary which interpolates through triple points.
+    Boundary: VII-VIII boundary (curved) separates VII from VIII.
+    Upper boundary: x_boundary (Ice X at very high pressure).
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary
+    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
     
     vertices = []
     
-    # VI-VII-VIII triple point
+    # VI-VII-VIII triple point (bottom left)
     T1, P1 = get_triple_point("VI_VII_VIII")
     vertices.append((T1, P1))
     
-    # VI-VII-Liquid triple point
-    T2, P2 = get_triple_point("VI_VII_Liquid")
-    vertices.append((T2, P2))
+    # Follow VII-VIII boundary up to T=300K (then it becomes Ice X boundary)
+    T_mid = 300.0
+    T_vals_up = np.linspace(T1, T_mid, 20)
+    for T in T_vals_up[1:]:
+        P = vii_viii_boundary(T)
+        vertices.append((T, P))
     
-    # Extend to high T/P - now extend up to meet Ice X boundary
-    # Use x_boundary to find where VII meets X
-    T_high = 450.0  # VII extends up to T=450K in our diagram
-    P_x_boundary = x_boundary(T_high)
-    vertices.append((T_high, 4000.0))  # Keep connection to VI-VII-Liquid
-    vertices.append((T_high, P_x_boundary))  # Extended to meet X boundary
-    
-    # Follow x_boundary back down to T1 temperature
-    T_vals = np.linspace(T_high, T1, 20)
-    for T in T_vals[1:]:
+    # At T=300K, follow X boundary up to T=450K
+    T_high = 450.0
+    T_vals_x = np.linspace(T_mid, T_high, 20)
+    for T in T_vals_x[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
+    
+    # Top edge at T=450K, then down to VI-VII-Liquid
+    T_liq, P_liq = get_triple_point("VI_VII_Liquid")
+    vertices.append((T_high, 4000.0))  # Keep connection to VI-VII-Liquid region
+    vertices.append((T_liq, P_liq))
     
     return vertices
 
@@ -453,29 +455,32 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
 def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
     """Ice VIII region: ordered form of VII at low temperature.
     
-    Extended to T=50K (user request) and extended pressure to meet Ice X.
-    Upper boundary uses x_boundary which interpolates through triple points.
+    Upper boundary: x_boundary (Ice X at very high pressure)
+    Lower boundary: VII-VIII boundary (curved from 278K/2100MPa to 100K/62000MPa)
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary
+    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
     
     vertices = []
     
-    # VI-VII-VIII triple point
+    # VI-VII-VIII triple point (bottom left corner)
     T1, P1 = get_triple_point("VI_VII_VIII")
     vertices.append((T1, P1))
     
-    # Extend up to meet Ice X boundary at T1
-    P_x_at_T1 = x_boundary(T1)
-    vertices.append((T1, P_x_at_T1))
+    # Follow VII-VIII boundary down to T=100K (VII-VIII-X triple point)
+    T_viii_x = 100.0
+    T_vals_down = np.linspace(T1, T_viii_x, 20)
+    for T in T_vals_down[1:]:
+        P = vii_viii_boundary(T)
+        vertices.append((T, P))
     
-    # Follow x_boundary down to T=50K (includes VII_VIII_X triple point at T=100K)
-    T_vals = np.linspace(T1, 50.0, 30)
-    for T in T_vals[1:]:
+    # At T=100K, follow X boundary up to T=50K
+    T_vals_x = np.linspace(T_viii_x, 50.0, 20)
+    for T in T_vals_x[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
     
-    # Bottom edge at T=50K
-    vertices.append((50.0, P1))  # Back down to P1
+    # Bottom edge at T=50K - connect back to VI-VII-VIII
+    vertices.append((50.0, P1))
     
     return vertices
 
