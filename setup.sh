@@ -9,6 +9,7 @@ conda activate quickice
 
 # 2. Add project to PYTHONPATH so 'quickice' package is importable
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+export PATH="${PATH}:$(pwd)"
 
 echo "QuickIce environment activated."
 echo "Run 'python quickice.py --help' for usage."
