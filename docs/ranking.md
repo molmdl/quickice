@@ -50,7 +50,7 @@ energy_score = 0.00225 × 100 = 0.225
 
 ### Important Notes
 
-**This is NOT an actual energy calculation.** This is a heuristic based on O-O distance statistics. For real energies, use molecular dynamics simulations with appropriate force fields.
+**This is NOT an actual energy calculation.** This is an estimation based on O-O distance statistics. For real energies, use molecular dynamics simulations with appropriate force fields.
 
 ---
 
@@ -213,7 +213,7 @@ combined_score = 0.2 + 0.3 + 0.0 = 0.5
 
 ### General
 
-- Scoring is heuristic, suitable for "vibe coding" exploration
+- Scoring is estimated based on geometry
 - Not a replacement for rigorous physics-based analysis
 - For production use, validate top candidates with proper MD simulations
 
