@@ -268,7 +268,7 @@ All inputs are validated before processing:
 
 - **Temperature:** Must be between 0 and 500 K
 - **Pressure:** Must be between 0 and 10000 MPa
-- **Nolecules:** Must be between 4 and 100000
+- **Nmolecules:** Must be between 4 and 100000
 
 Invalid inputs will cause immediate exit with an error message.
 
@@ -281,9 +281,9 @@ Invalid inputs will cause immediate exit with an error message.
 Each candidate is saved as a separate PDB file:
 
 ```
-output/candidate_1.pdb  # Best-ranked structure
-output/candidate_2.pdb  # Second-best
-output/candidate_3.pdb  # Third-best
+output/ice_candidate_01.pdb  # Best-ranked structure
+output/ice_candidate_02.pdb  # Second-best
+output/ice_candidate_03.pdb  # Third-best
 ...
 ```
 
