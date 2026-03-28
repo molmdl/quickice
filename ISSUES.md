@@ -25,7 +25,7 @@ Phase diagram polygons have gaps between some boundaries and overlaps in others.
 - **Problem**: Gap exists in the P=400-620 MPa region
 - **Expected**: Proper boundary connection or identification of missing phase
 
-### c. IX-Ih Gap
+### d. IX-Ih Gap
 - **Location**: Between Ice IX and Ih
 - **Problem**: Irregular IX shape result in the gap
 - **Expected**: Proper boundary connection or identification of missing phase.
