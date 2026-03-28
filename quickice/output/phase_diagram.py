@@ -28,10 +28,6 @@ from quickice.phase_mapping.solid_boundaries import (
     vi_vii_boundary,
     VII_VIII_ORDERING_TEMP,
 )
-from quickice.phase_mapping.data.ice_boundaries import (
-    MELTING_CURVE_COEFFICIENTS,
-    get_melting_pressure,
-)
 
 
 # Phase colors for visualization (add new phases)
@@ -89,10 +85,21 @@ PHASE_NAMES = {
 }
 
 
+# IAPWS melting curve ranges (from melting_curves.py - single source of truth)
+IAPWS_MELTING_RANGES = {
+    "ice_ih_melting": {"T_min": 251.165, "T_max": 273.16, "ice_type": "Ih"},
+    "ice_iii_melting": {"T_min": 251.165, "T_max": 256.164, "ice_type": "III"},
+    "ice_v_melting": {"T_min": 256.164, "T_max": 273.31, "ice_type": "V"},
+    "ice_vi_melting": {"T_min": 273.31, "T_max": 355.0, "ice_type": "VI"},
+    "ice_vii_melting": {"T_min": 355.0, "T_max": 715.0, "ice_type": "VII"},
+}
+
+
 def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = True) -> Tuple[np.ndarray, np.ndarray]:
     """Sample points along a melting curve using IAPWS equations.
     
-    Uses spline interpolation for smooth curves when smooth=True.
+    Uses the correct IAPWS melting pressure functions from melting_curves.py,
+    not the Simon-Glatzel approximation from ice_boundaries.py.
     
     Args:
         curve_name: Name of melting curve (e.g., "ice_ih_melting")
@@ -102,12 +109,13 @@ def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = T
     Returns:
         Tuple of (temperatures, pressures) arrays
     """
-    if curve_name not in MELTING_CURVE_COEFFICIENTS:
+    if curve_name not in IAPWS_MELTING_RANGES:
         return np.array([]), np.array([])
     
-    curve = MELTING_CURVE_COEFFICIENTS[curve_name]
+    curve = IAPWS_MELTING_RANGES[curve_name]
     T_min = curve["T_min"]
     T_max = curve["T_max"]
+    ice_type = curve["ice_type"]
     
     if smooth:
         # Use more sample points for spline interpolation
@@ -117,7 +125,7 @@ def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = T
         
         for i, T in enumerate(T_sample):
             try:
-                P_sample[i] = get_melting_pressure(curve_name, T)
+                P_sample[i] = melting_pressure(T, ice_type)
             except ValueError:
                 P_sample[i] = np.nan
         
@@ -151,7 +159,7 @@ def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = T
         
         for i, T in enumerate(temperatures):
             try:
-                pressures[i] = get_melting_pressure(curve_name, T)
+                pressures[i] = melting_pressure(T, ice_type)
             except ValueError:
                 pressures[i] = np.nan
         
@@ -919,7 +927,7 @@ def generate_phase_diagram(
             f.write(f"# {tp_name}: T={tp[0]} K, P={tp[1]} MPa\n")
         f.write("#\n")
         f.write("# MELTING CURVES\n")
-        for curve_name in MELTING_CURVE_COEFFICIENTS:
+        for curve_name in IAPWS_MELTING_RANGES:
             T_curve, P_curve = _sample_melting_curve(curve_name, n_points=50)
             f.write(f"# {curve_name}:\n")
             for T, P in zip(T_curve, P_curve):
