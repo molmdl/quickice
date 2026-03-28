@@ -182,7 +182,7 @@ See [ISSUES.md](ISSUES.md) for known limitations and planned improvements.
 
 Key limitations:
 
-- Ranking uses heuristic energy estimates, not actual force field calculations
+- Ranking uses distance-based energy estimates, not actual force field calculations
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
 - Generated structures require validation for production use
