@@ -249,11 +249,11 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
-    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, II-V-VI boundaries.
+    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, and VI boundaries.
     
-    II exists in the region between Ih-II boundary and higher pressure phases.
-    At lower temperatures, II extends to higher pressures (up to VII/VIII boundary at P=2100 MPa).
-    IX is a sub-region of II at T < 140K, P = 200-400 MPa.
+    II exists in the region between Ih-II boundary and the VI region.
+    At T < 218.95K, VI exists at P >= 620 MPa, so II stops at P~620 MPa.
+    IX is a sub-region of II at T < 140K, P = 200-400 MPa (rendered on top).
     """
     vertices = []
     
@@ -281,35 +281,10 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     T3, P3 = get_triple_point("II_V_VI")
     vertices.append((T3, P3))
     
-    # Cold edge: extend down along the V-VI boundary area
-    # At T < 218.95K, II extends to higher pressures
-    # The upper pressure limit is where VII/VIII starts (P=2100 MPa)
-    # But VI exists between P=620 and P=2100 for T >= 218.95K
-    # For T < 218.95K, there's no VI, so II extends up to P=2100
-    
-    # Go from (218.95, 620) to (50, 2100) following the cold edge
-    # At T < 218.95K, II exists from Ih-II boundary up to P=2100 MPa
-    # But IX is at P=200-400 MPa for T < 140K
-    
-    # First, go up to P=2100 at T=218.95K (top of II cold edge)
-    vertices.append((218.95, 2100.0))
-    
-    # Then go down the cold edge at P=2100 to T=50K
-    vertices.append((50.0, 2100.0))
-    
-    # Then go along P=200 MPa (lower boundary) from T=50K back to T=140K
-    # Then up to P=400 MPa at T=140K (around IX region)
-    # Then along P=400 MPa to T=50K
-    
-    # Actually, let's trace around IX properly:
-    # At T < 140K, IX exists at P=200-400 MPa
-    # II should extend UNDER IX (IX is rendered on top)
-    
-    # From (50, 2100), go down to (50, 400) - left edge above IX
-    vertices.append((50.0, 400.0))
-    
-    # Then down to (50, 200) - left edge
-    vertices.append((50.0, 200.0))
+    # Cold edge: At T < 218.95K, VI exists at P >= 620 MPa
+    # So II should only extend to P=620 MPa at the cold edge
+    # Go down the VI boundary at P=620 MPa to T=50K
+    vertices.append((50.0, 620.0))
     
     # Lower boundary: follow Ih-II boundary back to start
     T_vals = np.linspace(50.0, T1, 20)
@@ -381,13 +356,13 @@ def _build_ice_v_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     """Ice VI region: high pressure.
     
-    Ice VI exists at T >= 218.95K, P > 620 MPa.
-    Cold boundary stops at II-V-VI triple point (T=218.95K).
-    XV is a separate phase at T=80-108K, not part of VI.
+    Ice VI exists at T >= 80K, P >= 620 MPa.
+    Cold boundary extends down to meet XV at T=80-108K, P~1100 MPa.
+    At T < 218.95K, VI occupies P=620-2100 MPa.
     """
     vertices = []
     
-    # II-V-VI triple point - this is the cold temperature limit
+    # II-V-VI triple point - this is the cold temperature limit where II meets VI
     T1, P1 = get_triple_point("II_V_VI")
     vertices.append((T1, P1))
     
@@ -403,21 +378,16 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP down to meet II-V-VI TP area
-    # VI only exists at T >= 218.95K, so cold edge stops at T=218.95K
-    # Vertical line from (278, 2100) down to (218.95, 2100)
-    vertices.append((T1, P4))  # (218.95, 2100)
+    # Cold boundary: from VI-VII-VIII TP down to T=80K at P=2100 MPa
+    # Then across to meet XV region, then back up to II-V-VI TP
+    vertices.append((80.0, 2100.0))  # Bottom of high-pressure edge
     
-    # Then follow V-VI boundary back to start (this is the lower pressure boundary)
-    T_cold = np.linspace(T1, T1, 2)  # Just close the polygon
-    # Actually, we need to trace back along the lower boundary
-    # From (218.95, 2100) down to (218.95, 620) - vertical line
-    # But that would create a zero-width polygon at the cold edge
+    # Bottom edge: T=80K, from P=2100 down to P=620
+    vertices.append((80.0, 620.0))
     
-    # Better: trace along the V-VI boundary from T=218.95 up to... wait, V-VI boundary goes from T=218.95 to T=273.31
-    # We're already at T=218.95, P=2100, and need to get back to (218.95, 620)
-    # Just add the vertical line down
-    vertices.append((T1, P1))  # Close back to start (218.95, 620)
+    # Cold edge: vertical line from (80, 620) up to (218.95, 620)
+    # This closes the polygon back to the starting point
+    vertices.append((T1, P1))  # Back to II-V-VI TP (218.95, 620)
     
     return vertices
 
@@ -502,32 +472,32 @@ def _build_ice_ix_polygon() -> List[Tuple[float, float]]:
     """Ice IX region: T < 140K, P = 200-400 MPa (proton-ordered III).
     
     Ice IX is the proton-ordered form of Ice III at low temperatures.
-    Uses ix_boundary for lower pressure boundary.
     Extends from T=50K to T=140K.
+    Lower boundary touches the Ih-II boundary (~200 MPa).
+    Upper boundary at P=400 MPa.
     """
-    from quickice.phase_mapping.solid_boundaries import ix_boundary
-    
     vertices = []
     
-    # Start at T=50K (lower temperature limit), lower boundary
-    P_low = ix_boundary(50.0)  # ~312.5 MPa at T=50K
-    vertices.append((50.0, P_low))
+    # Start at T=50K, lower boundary (touching Ih-II boundary)
+    P_low_at_50 = ih_ii_boundary(50.0)  # ~197.9 MPa
+    vertices.append((50.0, P_low_at_50))
     
-    # Trace along lower boundary from T=50K to T=140K
+    # Trace along lower boundary from T=50K to T=140K (following Ih-II boundary)
     T_vals = np.linspace(50.0, 140.0, 20)
     for T in T_vals[1:]:
-        P = ix_boundary(T)
-        if P < 500:  # Skip invalid boundary values
-            vertices.append((T, P))
+        P = ih_ii_boundary(T)
+        vertices.append((T, P))
     
     # Upper boundary at P=400 MPa - go up to T=140K
     vertices.append((140.0, 400.0))
     
-    # Left edge at T=50K
-    vertices.append((50.0, 400.0))
+    # Left edge: go back along P=400 MPa to T=50K
+    T_vals = np.linspace(140.0, 50.0, 10)
+    for T in T_vals[1:]:
+        vertices.append((T, 400.0))
     
     # Close back to start
-    vertices.append((50.0, P_low))
+    vertices.append((50.0, P_low_at_50))
     
     return vertices
 
@@ -569,32 +539,32 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
-    """Ice XV region: T = 80-108K, P ≈ 1.1 GPa (proton-ordered VI).
+    """Ice XV region: T = 80-130K, P ≈ 1.0-1.2 GPa (proton-ordered VI).
     
-    Ice XV forms at T=80-108K, P≈1000-1200 MPa.
+    Ice XV forms at T=80-130K, P≈1000-1200 MPa.
     XV is the ordered phase below VI at these temperatures.
+    Centered on the VI-XV transition point at T=100K, P=1100 MPa.
     """
     from quickice.phase_mapping.solid_boundaries import xv_boundary
     
     vertices = []
     
-    # XV exists at P=1000-1200 MPa, T=80-108K
-    P_lower = 1000.0
-    P_upper = 1200.0
+    # XV exists at P=950-1250 MPa, T=80-130K (centered on VI-XV transition at 100K, 1100 MPa)
+    # The VI-XV transition point (100, 1100) should be inside this polygon
+    P_lower = 950.0
+    P_upper = 1250.0
     
     # Start at T=80K, lower boundary
     vertices.append((80.0, P_lower))
     
-    # Trace along lower boundary to T=108K
-    T_vals = np.linspace(80.0, 108.0, 10)
+    # Trace along lower boundary to T=130K
+    T_vals = np.linspace(80.0, 130.0, 10)
     for T in T_vals[1:]:
         vertices.append((T, P_lower))
     
-    # Upper boundary at T=108K
-    vertices.append((108.0, P_upper))
+    # Upper boundary at T=130K
+    vertices.append((130.0, P_upper))
     
-    # Trace back along upper boundary to T=80K
-    T_vals = np.linspace(108.0, 80.0, 10)
     for T in T_vals[1:]:
         vertices.append((T, P_upper))
     
@@ -645,18 +615,19 @@ def generate_phase_diagram(
         ax.set_yscale('log')
     
     # Define phases to plot (in order, back to front for proper layering)
+    # Sub-phases (XI, IX, XV) should be rendered AFTER their parent phases
     phases_to_plot = [
         "ice_x",      # NEW: highest pressure
         "ice_viii",
         "ice_vii", 
-        "ice_xv",     # NEW: ordered VI
         "ice_vi",
+        "ice_xv",     # NEW: ordered VI (rendered AFTER VI so it appears on top)
         "ice_v",
-        "ice_ix",     # NEW: ordered III
         "ice_ii",
+        "ice_ix",     # NEW: ordered III (rendered AFTER II so it appears on top)
         "ice_iii",
-        "ice_xi",     # NEW: ordered Ih
         "ice_ih",
+        "ice_xi",     # NEW: ordered Ih (rendered AFTER Ih so it appears on top)
     ]
     
     # Plot each phase region using curve-based boundaries
@@ -777,14 +748,14 @@ def generate_phase_diagram(
             zorder=6,
         )
         # Add small label - handle low pressure triple points specially
-        # For Ih-XI-V at very low P (essentially atmospheric), position label above
-        if tp_P < 1.0:  # Very low pressure - move label up into plot area
+        # For Ih-XI-V at very low P (essentially atmospheric), position label to the right
+        if tp_P < 1.0:  # Very low pressure - position label to the right
             ax.text(
-                tp_T, 1.0,  # Position at P=1 MPa (inside plot bounds)
+                tp_T + 5, 0.3,  # Position slightly to the right and at P=0.3 MPa
                 tp_label,
                 fontsize=8,
                 ha='left',
-                va='bottom',
+                va='center',
                 color='black',
                 alpha=0.7,
                 zorder=6,
