@@ -8,10 +8,10 @@ updated: 2026-03-28T23:01:00Z
 
 ## Current Test
 
-number: 8
-name: Phase Lookup - Ice V
+number: 10
+name: Phase Lookup - Ice VII at High T Below Melting Curve
 expected: |
-  T=260K, P=400MPa returns Ice V (ice_v) - previously overlapped with Ice II
+  T=400K, P=2000MPa returns Liquid (UnknownPhaseError) - below VII melting curve at this T
 awaiting: user response
 
 ## Tests
@@ -52,60 +52,72 @@ result: [pending]
 expected: T=240K, P=220MPa returns Ice III (ice_iii) - previously overlapped with Ice II
 result: [pending]
 
-### 10. Structure Generation
+### 10. Phase Lookup - Ice VII at High T Below Melting Curve
+expected: T=400K, P=2000MPa returns Liquid (UnknownPhaseError) - below VII melting curve at this T
+result: [pending]
+
+### 11. Phase Lookup - Ice VII at High T Above Melting Curve
+expected: T=400K, P=3000MPa returns Ice VII (ice_vii) - above VII melting curve (P > P_melt)
+result: [pending]
+
+### 12. Phase Lookup - Ice VII Melting Curve Direction
+expected: T=500K, P=4500MPa returns Liquid (UnknownPhaseError) - below VII melting curve at high T
+result: [pending]
+
+### 14. Structure Generation
 expected: Generates 10 candidates for given T,P conditions
 result: [pending]
 
-### 11. Ranking Output
+### 15. Ranking Output
 expected: Candidates are ranked with energy, density, diversity scores
 result: [pending]
 
-### 12. PDB Output Files
+### 16. PDB Output Files
 expected: 10 PDB files created in output/ with naming ice_candidate_01.pdb to ice_candidate_10.pdb
 result: [pending]
 
-### 13. Phase Diagram Generation
+### 17. Phase Diagram Generation
 expected: PNG phase diagram generated with user's T,P point marked
 result: [pending]
 
-### 14. --output Flag
+### 18. --output Flag
 expected: Custom output directory can be specified with --output flag
 result: [pending]
 
-### 15. --no-diagram Flag
+### 19. --no-diagram Flag
 expected: Phase diagram can be disabled with --no-diagram flag
 result: [pending]
 
-### 16. Ice XI Detection
+### 20. Ice XI Detection
 expected: T=50K, P=10MPa returns Ice XI (ice_xi) - proton-ordered phase at low T
 result: [pending]
 
-### 17. Ice X Detection
+### 21. Ice X Detection
 expected: T=300K, P=50000MPa returns Ice X (ice_x) - symmetric H bonds at extreme P
 result: [pending]
 
-### 18. Phase Diagram Extended Ranges
+### 22. Phase Diagram Extended Ranges
 expected: Phase diagram shows T range to 50K and P range to 100 GPa
 result: [pending]
 
-### 19. README Exists
+### 23. README Exists
 expected: README.md exists with installation instructions and quick start
 result: [pending]
 
-### 20. Documentation Exists
+### 24. Documentation Exists
 expected: docs/ folder contains cli-reference.md, ranking.md, principles.md
 result: [pending]
 
-### 21. Test Suite Passes
+### 25. Test Suite Passes
 expected: pytest runs and all tests pass
 result: [pending]
 
 ## Summary
 
-total: 21
+total: 24
 passed: 7
 issues: 0
-pending: 14
+pending: 17
 skipped: 0
 
 ## Gaps
