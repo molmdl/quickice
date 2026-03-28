@@ -30,7 +30,7 @@ QuickIce uses:
 - **IAPWS-95 validated melting curves** for high-confidence phase boundaries
 - **Triple point data** for solid-solid phase transitions
 - **GenIce2** for structure generation with proper hydrogen bonding networks
-- **Heuristic ranking** based on lattice energy estimates and density matching
+- **Knowledge-based ranking** based on lattice energy estimates and density matching
 
 ## Installation
 

@@ -119,7 +119,7 @@ GenIce2 is a well-established tool for generating ice structures. It:
 
 QuickIce wraps GenIce2 with condition-based selection and ranking.
 
-### Heuristic Scoring
+### Knowledge-based Scoring
 
 The ranking system uses simple geometric estimations:
 - O-O distances as an energy proxy
