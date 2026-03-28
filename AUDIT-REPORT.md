@@ -30,6 +30,8 @@ QuickIce passes the audit with minor documentation fixes applied. The codebase f
 | GenIce2 URL incorrect | Medium | Fixed | README.md, docs/principles.md |
 | spglib citation missing | Medium | Fixed | README.md, docs/principles.md |
 | IAPWS fake DOI | Medium | Fixed | Removed fake DOI, using official URL |
+| Lobban citation incorrect journal | Low | Fixed | docs/principles.md (Nature, not J. Chem. Phys.) |
+| Salzmann Ice XV citation incorrect journal | Low | Fixed | docs/principles.md (Phys. Rev. Lett., not J. Chem. Phys.) |
 
 ### Documentation (FIXED)
 
