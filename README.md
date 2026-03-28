@@ -105,9 +105,9 @@ Rank  Energy      Density     Diversity   Combined
 Output:
   PDB files: 10
   Directory: output
-    - ice_candidate_001.pdb
-    - ice_candidate_002.pdb
-    - ice_candidate_003.pdb
+    - ice_candidate_01.pdb
+    - ice_candidate_02.pdb
+    - ice_candidate_03.pdb
     - ... and 7 more
   Phase diagram: output/phase_diagram.png
 
