@@ -7,10 +7,10 @@
 
 ### Input Parameters
 
-- [ ] **INPUT-01**: CLI accepts temperature (K) via --temperature flag
-- [ ] **INPUT-02**: CLI accepts pressure (MPa) via --pressure flag
-- [ ] **INPUT-03**: CLI accepts molecule count via --nmolecules flag
-- [ ] **INPUT-04**: Input validation (T: 0-500K, P: 0-10000 MPa, N: 4-100000)
+- [x] **INPUT-01**: CLI accepts temperature (K) via --temperature flag
+- [x] **INPUT-02**: CLI accepts pressure (MPa) via --pressure flag
+- [x] **INPUT-03**: CLI accepts molecule count via --nmolecules flag
+- [x] **INPUT-04**: Input validation (T: 0-500K, P: 0-10000 MPa, N: 4-100000)
 
 ### Phase Mapping
 
@@ -42,10 +42,18 @@
 
 ### Documentation
 
-- [ ] **DOC-01**: README noting "pure vibe coding project"
-- [ ] **DOC-02**: Usage documentation with examples
-- [ ] **DOC-03**: Principles explanation
-- [ ] **DOC-04**: Explanation of outcomes and ranking
+- [x] **DOC-01**: README noting "pure vibe coding project"
+- [x] **DOC-02**: Usage documentation with examples
+- [x] **DOC-03**: Principles explanation
+- [x] **DOC-04**: Explanation of outcomes and ranking
+
+### Audit & Correctness
+
+- [x] **AUDIT-01**: Citation verification and fix
+- [x] **AUDIT-02**: Documentation consistency audit
+- [x] **AUDIT-03**: Scientific correctness verification
+- [x] **AUDIT-04**: Code quality and safety audit
+- [x] **AUDIT-05**: Comprehensive audit report
 
 ## v3 Requirements
 
@@ -103,16 +111,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OUT-03 | Phase 5 | Complete |
 | OUT-04 | Phase 5 | Complete |
 | OUT-05 | Phase 5 | Complete |
-| DOC-01 | Phase 6 | Pending |
-| DOC-02 | Phase 6 | Pending |
-| DOC-03 | Phase 6 | Pending |
-| DOC-04 | Phase 6 | Pending |
+| DOC-01 | Phase 6 | Complete |
+| DOC-02 | Phase 6 | Complete |
+| DOC-03 | Phase 6 | Complete |
+| DOC-04 | Phase 6 | Complete |
+| AUDIT-01 | Phase 7 | Complete |
+| AUDIT-02 | Phase 7 | Complete |
+| AUDIT-03 | Phase 7 | Complete |
+| AUDIT-04 | Phase 7 | Complete |
+| AUDIT-05 | Phase 7 | Complete |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24 ✓
+- v1 requirements: 29 total
+- Mapped to phases: 29 ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 5 completion*
+*Last updated: 2026-03-28 after Phase 7 completion*
