@@ -36,26 +36,24 @@ QuickIce uses:
 
 ### Prerequisites
 
-- Python 3.9 or higher
-- pip package manager
+- Conda (Miniconda or Anaconda)
 
-### Install Dependencies
+### Setup
 
 ```bash
-pip install iapws numpy scipy matplotlib genice2 genice-core pytest
+# Create conda environment from env.yml
+conda env create -f env.yml
+
+# Activate the environment
+conda activate quickice
+
+# Run setup to install the package in development mode
+source setup.sh
 ```
 
-Or install from requirements (if provided):
+### Verify Installation
 
 ```bash
-pip install -r requirements-dev.txt
-```
-
-### Clone and Run
-
-```bash
-git clone https://github.com/your-username/quickice.git
-cd quickice
 python quickice.py --help
 ```
 
