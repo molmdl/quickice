@@ -252,10 +252,9 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, and IX/XV boundaries.
     
     II exists in the region between Ih-II boundary and the XV/VI regions.
-    At T < 140K, IX exists at P=200-400 MPa, so II must stop at P=400 MPa.
-    At T < 218.95K, II extends to meet XV at P~950 MPa (XV lower boundary).
-    IX is rendered ON TOP of II at T < 140K, P = 200-400 MPa.
-    XV is rendered ON TOP of II at T < 100K, P = 950-2100 MPa.
+    At T < 140K, IX exists at P=200-400 MPa, so II must stay at P >= 400 MPa.
+    At T < 100K, XV exists at P=950-2100 MPa, so II must stay at P <= 950 MPa.
+    II should NOT overlap VI - trace just below VI boundary.
     """
     vertices = []
     
@@ -283,22 +282,35 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     T3, P3 = get_triple_point("II_V_VI")
     vertices.append((T3, P3))
     
-    # Cold edge: II extends to meet XV at P~950 MPa
-    # At T=218.95K, go from P=620 MPa to P=950 MPa (XV lower boundary)
-    vertices.append((218.95, 950.0))
+    # Cold edge: II traces just BELOW VI boundary
+    # VI's left edge: from (218.95, 620) to (100, 1100)
+    # Line equation: P = 620 + 480 * (218.95 - T) / 118.95
+    T_cold = np.linspace(218.95, 140.0, 10)
+    for T in T_cold[1:]:
+        P_vi = 620.0 + 480.0 * (218.95 - T) / 118.95
+        vertices.append((T, P_vi - 5.0))
     
-    # Down to T=140K at P=950 MPa
-    vertices.append((140.0, 950.0))
+    # At T=140K, IX ends. II continues down towards XV.
+    # From T=140K to T=100K: II at P just below VI boundary, but capped at P=950 (XV's lower)
+    T_cold2 = np.linspace(140.0, 100.0, 5)
+    for T in T_cold2[1:]:
+        P_vi = 620.0 + 480.0 * (218.95 - T) / 118.95
+        # Cap at P=950 to avoid entering XV region
+        P = min(P_vi - 5.0, 950.0)
+        vertices.append((T, P))
     
-    # At T=140K, IX starts at P=400 MPa
-    # II should stop at IX upper boundary (P=400 MPa) for T < 140K
-    vertices.append((140.0, 400.0))
+    # At T=100K, II stops at P=950 (XV's lower boundary)
+    # Go down to T=50K at P=950
+    vertices.append((50.0, 950.0))
     
-    # Down to T=50K at P=400 MPa (IX upper boundary)
+    # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
     vertices.append((50.0, 400.0))
     
+    # Up to T=140K at P=400 (IX upper boundary)
+    vertices.append((140.0, 400.0))
+    
     # Lower boundary: follow Ih-II boundary back to start
-    T_vals = np.linspace(50.0, T1, 20)
+    T_vals = np.linspace(140.0, T1, 15)
     for T in T_vals[1:]:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
@@ -517,25 +529,26 @@ def _build_ice_ix_polygon() -> List[Tuple[float, float]]:
 def _build_ice_x_polygon() -> List[Tuple[float, float]]:
     """Ice X region: P > 30 GPa (symmetric hydrogen bonds).
     
-    Extended to T=50K per user request (gap fix).
-    Uses temperature-dependent boundary from x_boundary(T) to match lookup logic.
-    Boundary: P > 30000 + 10*(T-165) MPa for T > 165K
+    Extended to T=50K per user request.
+    Lower boundary at P=30000 MPa touches VIII (T=50-278K) and VII (T=278-450K).
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary
-    
     vertices = []
     
-    # Extended to T=50K per user request
     T_low = 50.0
     T_high = 500.0
+    P_boundary = 30000.0  # Fixed boundary to touch VIII/VII
     P_max = 100000.0  # 100 GPa
     
-    # Start at T=50K - boundary is 30000 (no T dependence below 165K)
-    P_min_low = x_boundary(T_low)  # 30000 MPa
-    vertices.append((T_low, P_min_low))
+    # Start at T=50K, P=30000 (touches VIII)
+    vertices.append((T_low, P_boundary))
     
-    # Trace along temperature-dependent boundary to T=500K
-    T_vals = np.linspace(T_low, T_high, 15)
+    # Lower boundary at P=30000 to touch VIII (T<278K) and VII (T<450K)
+    # VII's max T is 450K, so for T>450K use x_boundary
+    vertices.append((450.0, P_boundary))
+    
+    # For T>450K, follow x_boundary (no VII there)
+    from quickice.phase_mapping.solid_boundaries import x_boundary
+    T_vals = np.linspace(450.0, T_high, 5)
     for T in T_vals[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
@@ -545,7 +558,7 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
     vertices.append((T_low, P_max))
     
     # Close back to start
-    vertices.append((T_low, P_min_low))
+    vertices.append((T_low, P_boundary))
     
     return vertices
 
