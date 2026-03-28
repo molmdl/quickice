@@ -417,19 +417,23 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
-    """Ice VII region: exists between VII-VIII boundary and X boundary.
+    """Ice VII region: exists between VII-VIII/VII-melting boundary and X boundary.
     
     Ice VII exists in two regimes:
-    1. T >= 278K: All pressures from ~2100 MPa up to X boundary
-    2. 100K <= T < 278K: Thin strip between VII-VIII boundary (lower) and X boundary (upper)
+    1. T >= 278K: Pressures from lower boundary up to X boundary
+       - For T < 354.75K: lower boundary is VI-VII boundary (linear)
+       - For T >= 354.75K: lower boundary is VII melting curve
+    2. 100K <= T < 278K: Thin strip between VII-VIII boundary and X boundary
     
     The polygon traces:
-    - Bottom edge: from (278K, 2100 MPa) to (500K, 2100 MPa)
+    - Bottom edge: from VI-VII-VIII TP along VI-VII boundary to VI-VII-Liquid TP,
+                   then along VII melting curve to high T
     - Right edge: up to X boundary at high T
     - Top edge: along X boundary from 500K down to 100K (VII-VIII-X triple point)
     - Left edge: along VII-VIII boundary from 100K back up to 278K
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
+    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary, vi_vii_boundary
+    from quickice.phase_mapping.melting_curves import melting_pressure
     
     vertices = []
     
@@ -439,27 +443,42 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     # VII-VIII-X triple point (where VII meets VIII and X at low T)
     T_tp_x, P_tp_x = get_triple_point("VII_VIII_X")  # (100, 62000)
     
+    # VI-VII-Liquid triple point (where VII meets VI and Liquid)
+    T_tp_liq, P_tp_liq = get_triple_point("VI_VII_Liquid")  # (354.75, 2200)
+    
     # 1. Start at VI-VII-VIII triple point (bottom-left corner)
     vertices.append((T_tp, P_tp))
     
-    # 2. Bottom edge: horizontal to high temperature
-    T_high = 500.0
-    vertices.append((T_high, P_tp))
+    # 2. Bottom edge part 1: follow VI-VII boundary from 278K to 354.75K
+    T_vals_vi_vii = np.linspace(T_tp, T_tp_liq, 15)
+    for T in T_vals_vi_vii[1:]:
+        P = vi_vii_boundary(T)
+        vertices.append((T, P))
     
-    # 3. Right edge: up to X boundary at high T
+    # 3. Bottom edge part 2: follow VII melting curve from 354.75K to 500K
+    #    The melting curve is the boundary between Ice VII and Liquid
+    T_high = 500.0
+    T_vals_melt = np.linspace(T_tp_liq, T_high, 30)
+    for T in T_vals_melt[1:]:
+        try:
+            P = melting_pressure(T, "VII")
+            vertices.append((T, P))
+        except ValueError:
+            # Fallback: extrapolate linearly if outside range
+            P_prev = vertices[-1][1]
+            vertices.append((T, P_prev + 2.0))  # ~2 MPa/K slope
+    
+    # 4. Right edge: up to X boundary at high T
     P_x_high = x_boundary(T_high)
     vertices.append((T_high, P_x_high))
     
-    # 4. Top edge: follow X boundary DOWN from 500K to 100K
-    #    This traces the upper boundary of Ice VII
+    # 5. Top edge: follow X boundary DOWN from 500K to 100K
     T_vals_down = np.linspace(T_high, T_tp_x, 40)
     for T in T_vals_down[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
     
-    # 5. Left edge: follow VII-VIII boundary UP from 100K to 278K
-    #    This traces the lower boundary of Ice VII in the cold region
-    #    Note: at T=100K, VII-VIII boundary = X boundary = 62000 MPa
+    # 6. Left edge: follow VII-VIII boundary UP from 100K to 278K
     T_vals_up = np.linspace(T_tp_x, T_tp, 30)
     for T in T_vals_up[1:]:
         P = vii_viii_boundary(T)
