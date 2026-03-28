@@ -303,16 +303,14 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     # Go down to T=50K at P=950
     vertices.append((50.0, 950.0))
     
-    # Lower boundary: follow Ih-II boundary from T=50K to T=140K to fill gap
-    # This creates a smooth transition that meets IX at P=400, T=140
-    T_vals = np.linspace(50.0, 140.0, 10)
-    for T in T_vals[1:]:
-        P = ih_ii_boundary(T)
-        vertices.append((T, P))
+    # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
+    vertices.append((50.0, 400.0))
     
-    # At T=140K, IX boundary is P=400, but Ih-II gives lower P
-    # For T>140K, follow Ih-II boundary to start
-    T_vals = np.linspace(140.0, T1, 10)
+    # Up to T=140K at P=400 (IX upper boundary)
+    vertices.append((140.0, 400.0))
+    
+    # Lower boundary: follow Ih-II boundary back to start
+    T_vals = np.linspace(140.0, T1, 15)
     for T in T_vals[1:]:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
@@ -403,12 +401,16 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP (278, 2100) down to T=100K
-    # Touch II upper boundary at (100, 950) then go to XV at (100, 1100)
-    vertices.append((100.0, 950.0))  # Touch II upper boundary
-    vertices.append((100.0, 1100.0))  # VI-XV transition point
+    # Cold boundary: from VI-VII-VIII TP down to T=100K at P=2100 MPa
+    # This touches XV's upper boundary (VIII's lower boundary)
+    vertices.append((100.0, 2100.0))
     
-    # Back to II-V-VI TP - follow II upper boundary (slightly below VI boundary)
+    # Touch VI-XV transition point at (100K, 1100 MPa)
+    # This is where VI meets XV (XV is rendered on top at T < 100K)
+    vertices.append((100.0, 1100.0))
+    
+    # Back to II-V-VI TP - follow boundary from (100, 1100) to (218.95, 620)
+    # This creates the cold edge that doesn't overlap XV
     vertices.append((T1, P1))  # Back to II-V-VI TP (218.95, 620)
     
     return vertices
