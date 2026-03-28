@@ -208,6 +208,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Plans:** 5 plans in 3 waves
 
+**Status:** ✓ Complete
+
 **Success Criteria:**
 
 1. Code consistency verified across all modules (naming, patterns, error handling)
@@ -219,11 +221,11 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 **Dependencies:** Phase 6 (documentation complete before audit)
 
 **Plans:**
-- [ ] 07-01-PLAN.md — Citation audit and fix (wave 1)
-- [ ] 07-02-PLAN.md — Documentation consistency audit and fix (wave 1)
-- [ ] 07-03-PLAN.md — Scientific correctness audit (wave 2)
-- [ ] 07-04-PLAN.md — Code consistency and safety audit (wave 2)
-- [ ] 07-05-PLAN.md — Create audit report (wave 3)
+- [x] 07-01-PLAN.md — Citation audit and fix (wave 1)
+- [x] 07-02-PLAN.md — Documentation consistency audit and fix (wave 1)
+- [x] 07-03-PLAN.md — Scientific correctness audit (wave 2)
+- [x] 07-04-PLAN.md — Code consistency and safety audit (wave 2)
+- [x] 07-05-PLAN.md — Create audit report (wave 3)
 
 ---
 
@@ -238,7 +240,7 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 | 5 - Output | PDB files | OUT-01 to OUT-05 | ✓ Complete |
 | 5.1 - Missing Ice Phases | IX, XI, X, XV | PHASE-04 (extended) | ✓ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | ✓ Complete |
-| 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | Pending |
+| 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | ✓ Complete |
 
 ---
 
