@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** Phase 7 (Audit & Correctness) - Code consistency and safety audit complete
+**Current Focus:** Phase 7 (Audit & Correctness) - Scientific correctness audit complete (07-03)
 
 ---
 
@@ -24,7 +24,7 @@
 | Phase | 7 of 8 (Audit & Correctness) |
 | Plan | 4 of 5 in current phase |
 | Status | In progress |
-| Last activity | 2026-03-28 - Completed 07-04-PLAN.md: Code consistency and safety audit |
+| Last activity | 2026-03-28 - Completed 07-03-PLAN.md: Scientific correctness audit |
 
 | Progress Bar | ██████████████████░░░ 90% (28/30 plans) |
 
@@ -83,8 +83,8 @@
 
 ## Session Continuity
 
-**Last Session:** 2026-03-28 15:24 UTC
-**Stopped at:** Completed 07-04-PLAN.md
+**Last Session:** 2026-03-28 15:17 UTC
+**Stopped at:** Completed 07-03-PLAN.md
 **Resume file:** None
 
 ---
@@ -131,6 +131,7 @@
 | No silent failures | All error paths propagate or are logged | ✓ Verified (07-04) |
 | DOI verification before citation | Always verify DOI resolves to correct paper via webfetch | ✓ Implemented (07-01) |
 | GenIce2 DOI corrected | 10.1002/jcc.25077 (was incorrectly 10.1002/jcc.25179) | ✓ Fixed (07-01) |
+| Scientific correctness verified | All IAPWS curves, formulas, units, GenIce integration pass audit | ✓ Audited (07-03) |
 
 ---
 
@@ -144,4 +145,4 @@
 
 ---
 
-*State updated: 2026-03-28 (Phase 7 in progress - Code consistency audit complete)*
+*State updated: 2026-03-28 (Phase 7 in progress - Scientific correctness audit complete)*
