@@ -419,35 +419,33 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     """Ice VII region: very high pressure, high temperature.
     
-    Boundary: VII-VIII boundary (curved) separates VII from VIII.
+    Ice VII exists at T > 278K (no VIII above this temp) and T < 278K but P < VII-VIII boundary.
     Upper boundary: x_boundary (Ice X at very high pressure).
+    Lower boundary: extends from VI-VII-VIII triple point at 278K.
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
+    from quickice.phase_mapping.solid_boundaries import x_boundary
     
     vertices = []
     
-    # VI-VII-VIII triple point (bottom left)
-    T1, P1 = get_triple_point("VI_VII_VIII")
-    vertices.append((T1, P1))
+    # VI-VII-VIII triple point (where VII meets VIII and VI)
+    T_tp, P_tp = get_triple_point("VI_VII_VIII")  # (278, 2100)
     
-    # Follow VII-VIII boundary up to T=300K (then it becomes Ice X boundary)
-    T_mid = 300.0
-    T_vals_up = np.linspace(T1, T_mid, 20)
-    for T in T_vals_up[1:]:
-        P = vii_viii_boundary(T)
-        vertices.append((T, P))
+    # Start at VI-VII-VIII triple point
+    vertices.append((T_tp, P_tp))
     
-    # At T=300K, follow X boundary up to T=450K
-    T_high = 450.0
-    T_vals_x = np.linspace(T_mid, T_high, 20)
-    for T in T_vals_x[1:]:
+    # Go to high temperature (horizontal line at P=2100 MPa)
+    T_high = 500.0
+    vertices.append((T_high, P_tp))
+    
+    # Follow X boundary up from (500K, 2100 MPa) to (500K, X boundary)
+    P_x_high = x_boundary(T_high)
+    vertices.append((T_high, P_x_high))
+    
+    # Follow X boundary back down to T=278K
+    T_vals = np.linspace(T_high, T_tp, 30)
+    for T in T_vals[1:]:
         P = x_boundary(T)
         vertices.append((T, P))
-    
-    # Top edge at T=450K, then down to VI-VII-Liquid
-    T_liq, P_liq = get_triple_point("VI_VII_Liquid")
-    vertices.append((T_high, 4000.0))  # Keep connection to VI-VII-Liquid region
-    vertices.append((T_liq, P_liq))
     
     return vertices
 
