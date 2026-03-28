@@ -249,11 +249,13 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
-    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, and VI boundaries.
+    """Ice II region: moderate pressure, bounded by Ih-II, II-III, II-V, and IX/XV boundaries.
     
-    II exists in the region between Ih-II boundary and the VI region.
-    At T < 218.95K, VI exists at P >= 620 MPa, so II stops at P~620 MPa.
-    IX is a sub-region of II at T < 140K, P = 200-400 MPa (rendered on top).
+    II exists in the region between Ih-II boundary and the XV/VI regions.
+    At T < 140K, IX exists at P=200-400 MPa, so II must stop at P=400 MPa.
+    At T < 218.95K, II extends to meet XV at P~950 MPa (XV lower boundary).
+    IX is rendered ON TOP of II at T < 140K, P = 200-400 MPa.
+    XV is rendered ON TOP of II at T < 100K, P = 950-2100 MPa.
     """
     vertices = []
     
@@ -281,10 +283,19 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     T3, P3 = get_triple_point("II_V_VI")
     vertices.append((T3, P3))
     
-    # Cold edge: At T < 218.95K, VI exists at P >= 620 MPa
-    # So II should only extend to P=620 MPa at the cold edge
-    # Go down the VI boundary at P=620 MPa to T=50K
-    vertices.append((50.0, 620.0))
+    # Cold edge: II extends to meet XV at P~950 MPa
+    # At T=218.95K, go from P=620 MPa to P=950 MPa (XV lower boundary)
+    vertices.append((218.95, 950.0))
+    
+    # Down to T=140K at P=950 MPa
+    vertices.append((140.0, 950.0))
+    
+    # At T=140K, IX starts at P=400 MPa
+    # II should stop at IX upper boundary (P=400 MPa) for T < 140K
+    vertices.append((140.0, 400.0))
+    
+    # Down to T=50K at P=400 MPa (IX upper boundary)
+    vertices.append((50.0, 400.0))
     
     # Lower boundary: follow Ih-II boundary back to start
     T_vals = np.linspace(50.0, T1, 20)
@@ -356,9 +367,9 @@ def _build_ice_v_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     """Ice VI region: high pressure.
     
-    Ice VI exists at T >= 80K, P >= 620 MPa.
-    Cold boundary extends down to meet XV at T=80-108K, P~1100 MPa.
-    At T < 218.95K, VI occupies P=620-2100 MPa.
+    Ice VI exists at T >= 100K, P >= 620 MPa.
+    Cold boundary touches XV at the VI-XV transition point (100K, 1100 MPa).
+    At T < 100K, XV (ordered VI) exists instead of VI.
     """
     vertices = []
     
@@ -378,15 +389,16 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP down to T=80K at P=2100 MPa
-    # Then across to meet XV region, then back up to II-V-VI TP
-    vertices.append((80.0, 2100.0))  # Bottom of high-pressure edge
+    # Cold boundary: from VI-VII-VIII TP down to T=100K at P=2100 MPa
+    # This touches XV's upper boundary (VIII's lower boundary)
+    vertices.append((100.0, 2100.0))
     
-    # Bottom edge: T=80K, from P=2100 down to P=620
-    vertices.append((80.0, 620.0))
+    # Touch VI-XV transition point at (100K, 1100 MPa)
+    # This is where VI meets XV (XV is rendered on top at T < 100K)
+    vertices.append((100.0, 1100.0))
     
-    # Cold edge: vertical line from (80, 620) up to (218.95, 620)
-    # This closes the polygon back to the starting point
+    # Back to II-V-VI TP - follow boundary from (100, 1100) to (218.95, 620)
+    # This creates the cold edge that doesn't overlap XV
     vertices.append((T1, P1))  # Back to II-V-VI TP (218.95, 620)
     
     return vertices
@@ -539,37 +551,36 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
-    """Ice XV region: T = 80-130K, P ≈ 1.0-1.2 GPa (proton-ordered VI).
+    """Ice XV region: T = 50-100K, P = 950-2100 MPa (proton-ordered VI).
     
-    Ice XV forms at T=80-130K, P≈1000-1200 MPa.
-    XV is the ordered phase below VI at these temperatures.
-    Centered on the VI-XV transition point at T=100K, P=1100 MPa.
+    Ice XV is the proton-ordered form of Ice VI at low temperatures.
+    Extends from T=50K to T=100K where it meets VI.
+    Pressure spans from II's upper boundary (P~950 MPa) to VIII's lower boundary (P=2100 MPa).
+    The VI-XV transition point (100K, 1100 MPa) is at the top of this region.
     """
     from quickice.phase_mapping.solid_boundaries import xv_boundary
     
     vertices = []
     
-    # XV exists at P=950-1250 MPa, T=80-130K (centered on VI-XV transition at 100K, 1100 MPa)
-    # The VI-XV transition point (100, 1100) should be inside this polygon
+    # XV lower boundary at P=950 MPa (touching II's upper boundary)
+    # XV upper boundary at P=2100 MPa (touching VIII's lower boundary)
     P_lower = 950.0
-    P_upper = 1250.0
+    P_upper = 2100.0
     
-    # Start at T=80K, lower boundary
-    vertices.append((80.0, P_lower))
+    # Start at T=50K, lower boundary
+    vertices.append((50.0, P_lower))
     
-    # Trace along lower boundary to T=130K
-    T_vals = np.linspace(80.0, 130.0, 10)
-    for T in T_vals[1:]:
-        vertices.append((T, P_lower))
+    # Lower boundary to T=100K
+    vertices.append((100.0, P_lower))
     
-    # Upper boundary at T=130K
-    vertices.append((130.0, P_upper))
+    # Upper boundary at T=100K (touching VIII)
+    vertices.append((100.0, P_upper))
     
-    for T in T_vals[1:]:
-        vertices.append((T, P_upper))
+    # Back along upper boundary to T=50K
+    vertices.append((50.0, P_upper))
     
     # Close back to start
-    vertices.append((80.0, P_lower))
+    vertices.append((50.0, P_lower))
     
     return vertices
 
@@ -721,6 +732,8 @@ def generate_phase_diagram(
     )
     
     # Mark triple points
+    # Note: Ih-XI-Vapor triple point is at P=0.0001 MPa, outside graph bounds (P >= 0.1 MPa)
+    # So it's not included here
     triple_point_names = [
         ("Ih_III_Liquid", "Ih-III-L"),
         ("Ih_II_III", "Ih-II-III"),
@@ -730,8 +743,7 @@ def generate_phase_diagram(
         ("V_VI_Liquid", "V-VI-L"),
         ("VI_VII_Liquid", "VI-VII-L"),
         ("VI_VII_VIII", "VI-VII-VIII"),
-        # NEW triple points:
-        ("Ih_XI_Vapor", "Ih-XI-V"),
+        # NEW triple points (within graph bounds):
         ("III_IX_Transition", "III-IX"),
         ("VII_X_Transition", "VII-X"),
         ("VI_XV_Transition", "VI-XV"),
@@ -747,11 +759,11 @@ def generate_phase_diagram(
             markeredgewidth=0.5,
             zorder=6,
         )
-        # Add small label - handle low pressure triple points specially
-        # For Ih-XI-V at very low P (essentially atmospheric), position label to the right
-        if tp_P < 1.0:  # Very low pressure - position label to the right
+        # Add small label near the triple point
+        # For very low pressure points (P < 1 MPa), position label to avoid log scale issues
+        if tp_P < 1.0:
             ax.text(
-                tp_T + 5, 0.3,  # Position slightly to the right and at P=0.3 MPa
+                tp_T + 5, 0.3,  # Position to the right at a visible pressure
                 tp_label,
                 fontsize=8,
                 ha='left',
