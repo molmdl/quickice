@@ -41,13 +41,7 @@ QuickIce uses:
 ### Setup
 
 ```bash
-# Create conda environment from env.yml
-conda env create -f env.yml
-
-# Activate the environment
-conda activate quickice
-
-# Run setup to install the package in development mode
+# Create conda environment and install package (setup.sh activates env and exports PATH)
 source setup.sh
 ```
 
