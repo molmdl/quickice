@@ -8,7 +8,7 @@ QuickIce generates ice structure candidates for given thermodynamic conditions (
 
 1. **Maps conditions to ice phases** - Determines which ice polymorph is stable at the given T, P
 2. **Generates candidate structures** - Uses GenIce2 to create plausible atomic configurations
-3. **Ranks candidates** - Scores structures based on geometric heuristics
+3. **Ranks candidates** - Scores structures based on geometric assumptions
 4. **Outputs results** - Saves ranked PDB files and a phase diagram
 
 The goal is to quickly generate starting structures for further analysis, not to perform physics simulations.
@@ -65,7 +65,7 @@ Candidates are generated using GenIce2, a combinatorial ice structure generator:
 
 ### Phase 4: Ranking
 
-Candidates are scored and ranked using three heuristic components:
+Candidates are scored and ranked using three estimated components:
 - **Energy score:** O-O distance deviation from ideal (0.276 nm)
 - **Density score:** Deviation from expected phase density
 - **Diversity score:** Rewards unique seeds
@@ -90,7 +90,7 @@ QuickIce does NOT perform:
 - Force field calculations
 - Quantum chemistry calculations
 
-Structures are generated combinatorially by GenIce2 and scored with geometric heuristics. This makes QuickIce fast but approximate.
+Structures are generated combinatorially by GenIce2 and scored with geometric estimations. This makes QuickIce fast but approximate.
 
 **Why?** Real MD simulations require:
 - Hours to days of computation
@@ -121,7 +121,7 @@ QuickIce wraps GenIce2 with condition-based selection and ranking.
 
 ### Heuristic Scoring
 
-The ranking system uses simple geometric heuristics:
+The ranking system uses simple geometric estimations:
 - O-O distances as an energy proxy
 - Density matching for phase consistency
 - Seed diversity for structural variety
@@ -222,7 +222,7 @@ QuickIce is a vibe coding project. Contributions welcome:
 
 - Bug reports and fixes
 - Additional ice phases
-- Improved heuristics
+- Improved estimations
 - Documentation improvements
 
 ---
