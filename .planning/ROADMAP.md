@@ -183,6 +183,8 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 
 **Requirements:** DOC-01, DOC-02, DOC-03, DOC-04
 
+**Plans:** 2 plans in 1 wave
+
 **Success Criteria:**
 
 1. README clearly notes "pure vibe coding project" disclaimer
@@ -191,6 +193,10 @@ QuickIce is a CLI tool that generates plausible ice structure candidates from te
 4. Explanation of outcomes and ranking methodology
 
 **Dependencies:** None (can run in parallel or post-MVP)
+
+**Plans:**
+- [ ] 06-01-PLAN.md — README.md update with disclaimer, overview, installation, quick start
+- [ ] 06-02-PLAN.md — docs/ folder (CLI reference, ranking methodology, principles)
 
 ---
 
