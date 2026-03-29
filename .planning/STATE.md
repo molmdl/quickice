@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** v2.0 GUI Application - started
+**Current Focus:** v1.1 Hotfix - Critical bugs & performance
 
 ---
 
@@ -19,18 +19,18 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.0 (GUI Application) |
-| Phase | Not started (defining requirements) |
-| Status | Planning |
+| Milestone | v1.1 (Hotfix - Performance & Critical Bugs) |
+| Phase | 7.1 - Fix Performance & Critical Bugs (URGENT) |
+| Status | Urgent - Not planned yet |
 
-**Progress:** Defining requirements for v2.0
+**Progress:** Phase 7.1 inserted - urgent fixes needed (see codebase analysis)
 
 ---
 
 ## v1.0 Milestone Summary
 
 **Shipped:** 2026-03-29
-**Phases:** 8 (01-07 + 05.1)
+**Phases:** 9 (01-07 + 05.1 + 07.1)
 **Plans:** 30+
 **Code:** ~3,800 lines Python
 
@@ -86,6 +86,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Last Session:** 2026-03-29
 **Started:** v2.0 milestone - GUI Application
+
+---
+
+## Roadmap Evolution
+
+- Phase 7.1 inserted after Phase 7: Fix performance issues (O(n²) distance calc → vectorization in validator.py:111-127, scorer.py:60-74) and critical bugs (C1, C2, S2, S3) (URGENT)
 
 ---
 
