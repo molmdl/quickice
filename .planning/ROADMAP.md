@@ -23,6 +23,7 @@
 - [x] Phase 5.1: Add Missing Ice Phases (3/3 plans) — completed 2026-03-27
 - [x] Phase 6: Documentation (2/2 plans) — completed 2026-03-28
 - [x] Phase 7: Audit & Correctness (5/5 plans) — completed 2026-03-28
+- [ ] Phase 7.1: Fix Performance Issues & Critical Bugs (INSERTED)
 
 **Full details:** [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
 
@@ -42,6 +43,7 @@
 | 5.1 - Missing Ice Phases | IX, XI, X, XV | Extended | ✅ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | ✅ Complete |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | ✅ Complete |
+| 7.1 - Fix Performance & Bugs | Performance & correctness | PERF-01, BUG-01+ | 🔄 Not Started |
 
 ---
 
