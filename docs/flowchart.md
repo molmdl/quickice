@@ -1,0 +1,272 @@
+# QuickIce Execution Flowchart
+
+## High-Level Flow
+
+```
+python quickice.py -T <T> -P <P> -N <N> -o <output_dir>
+        │
+        ▼
+┌───────────────────┐
+│ quickice.py       │
+│ main() entry     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ get_arguments()   │
+│ CLI argument      │
+│ parsing          │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Print banner:     │
+│ Temperature,      │
+│ Pressure, N       │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ lookup_phase()    │
+│ T, P → phase     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Print phase info: │
+│ phase_name,       │
+│ density           │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ generate_        │
+│ candidates()      │
+│ n=10 candidates   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ rank_candidates() │
+│ Energy + Density  │
+│ + Diversity scores│
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Print ranking     │
+│ table (top 5)     │  ◄── FAST: just text output
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ output_ranked_    │
+│ candidates()      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Print summary:    │
+│ PDB files count,  │
+│ validation count  │
+└───────────────────┘
+```
+
+## Slow Step: `output_ranked_candidates()` Detail
+
+```
+output_ranked_candidates()
+        │
+        ▼
+┌───────────────────┐
+│ Create output dir  │
+└─────────┬─────────┘
+          │
+   ┌──────┴──────┐
+   │ Loop: top 10│
+   │ candidates  │
+   └──────┬──────┘
+          │
+    ┌─────┴─────┐
+    │ More      │──YES──► write_pdb_with_cryst1()
+    │ candidates│         validate_space_group()
+    │ to process│         check_atomic_overlap()
+    └─────┬─────┘
+          │NO
+          ▼
+┌───────────────────┐
+│ generate_diagram? │
+│ + user_t, user_p? │
+└─────────┬─────────┘
+          │
+    ┌─────┴─────┐
+    │           │
+    │  ┌────────┴────────┐
+    │  │ YES            │
+    │  ▼                │
+    │ ┌──────────────────┐
+    │ │ generate_        │
+    │ │ phase_diagram()  │
+    │ │                  │  ◄── SLOW: ALL diagram
+    │ │  ALL diagram     │      computation happens
+    │ │  computation     │      here (no caching)
+    │ │  happens here    │
+    │ └──────────────────┘
+    │           │
+    │ NO        │
+    │ (skip     │
+    │ diagram)  │
+    └───────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Build summary     │
+│ Return OutputResult
+└───────────────────┘
+```
+
+## `generate_phase_diagram()` Internal Flow
+
+```
+generate_phase_diagram(user_t, user_p, output_dir)
+        │
+        ▼
+┌───────────────────┐
+│ Create output dir  │
+│ plt.subplots()    │
+│ Create figure+axes│
+└─────────┬─────────┘
+          │
+    ┌─────┴─────┐
+    │ Loop: 11   │
+    │ phases     │
+    └─────┬─────┘
+          │
+    ┌─────┴─────┐
+    │ _build_   │
+    │ phase_     │
+    │ polygon_   │
+    │ from_curves│
+    └─────┬─────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Shapely     │  ◄── Repeated 11x
+    │ Polygon()   │      creates Polygon,
+    │ .centroid   │      computes centroid
+    └──────┬──────┘
+           │
+           ▼
+┌───────────────────┐
+│ ax.add_patch()    │
+│ ax.text() label   │
+└─────────┬─────────┘
+          │
+          ▼
+   ┌──────┴──────┐
+   │ 11 phases   │──NO──► next phase
+   │ done?       │
+   └──────┬──────┘
+          │YES
+          ▼
+┌───────────────────┐
+│ Loop: 5 melting   │
+│ curves            │
+└─────────┬─────────┘
+          │
+    ┌─────┴─────┐
+    │ _sample_  │
+    │ melting_   │
+    │ curve()    │  ◄── 5 curves × 500 iterations
+    │            │      of melting_pressure()
+    └─────┬─────┘
+          │
+          ▼
+┌───────────────────┐
+│ ax.plot()         │
+│ curve lines       │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Loop: IAPWS97     │  ◄── 50 iterations of
+│ liquid-vapor      │      IAPWS97(T=T, x=0)
+│ saturation curve  │      NOT cached
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Plot triple points│
+│ (11 triple points)│
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Plot user T,P    │  ◄── User's condition marker
+│ point (red circle)│
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ ax.set_xlim/ylim()│
+│ ax.grid()         │
+│ ax.set_xlabel/   │
+│ ylabel/title()    │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ plt.tight_layout()│
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ plt.savefig()     │  ◄── SLOW: PNG at 300 DPI
+│ PNG @ 300 DPI    │      high-resolution rasterization
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ plt.savefig()     │
+│ SVG (vector)      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Write text data   │
+│ phase_diagram_    │
+│ data.txt          │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ plt.close(fig)   │
+│ Return file paths │
+└───────────────────┘
+```
+
+## Key Decision Points
+
+1. **`--no-diagram` flag**: Skips phase diagram generation entirely (fastest path)
+
+## Performance Bottlenecks Summary
+
+| Step | Relative Cost | Notes |
+|------|---------------|-------|
+| Polygon vertex building | Medium | 11 phases, boundary function calls |
+| Shapely centroid computation | Medium | 11 phases, geometric computation |
+| Matplotlib polygon patches | Medium | 11 phases, 11×ax.add_patch() |
+| Melting curve sampling | Medium | 5 curves × 500 iterations of melting_pressure() |
+| IAPWS97 liquid-vapor curve | Medium | 50 iterations of IAPWS97() — NOT cached |
+| Triple point markers + labels | Low | 11 points |
+| User point marker | Low | 1 point |
+| plt.savefig PNG @ 300 DPI | **HIGH** | I/O + rasterization |
+| plt.savefig SVG | Medium | Vector (faster than PNG) |
+
+## Suggested Optimizations
+
+1. **Cache IAPWS97 liquid-vapor curve** — precompute once at module load or use a simple approximation
+2. **Reduce PNG DPI** for CLI output (150 DPI sufficient for screen, 300 for publication)
+3. **Skip SVG generation** for routine CLI runs (only needed for publication)
+4. **Parallelize** polygon building across phases
+5. **Precompute centroid approximations** — centroid only used for label positioning, not precision-critical
