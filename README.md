@@ -45,7 +45,7 @@ QuickIce uses:
 conda env create -f env.yml
 ```
 
-### Run QuickIce
+### Setup Environment
 
 ```bash
 # For each new shell - setup.sh activates conda and exports PYTHONPATH
@@ -80,40 +80,46 @@ The tool will:
 
 Example output:
 
+Terminal STDOUT:
 ```
 QuickIce - Ice structure generation
 
-Temperature: 250K
-Pressure: 100 MPa
-Molecules: 128
+Temperature: 273.0K
+Pressure: 0.1 MPa
+Molecules: 216
 
 Phase: Ice Ih (ice_ih)
-Density: 0.920 g/cm³
+Density: 0.9167 g/cm³
 
 Generated 10 candidates
 Ranked 10 candidates
 
 Ranking scores (lower combined = better):
 ----------------------------------------------------------------------
-Rank  Energy      Density     Diversity   Combined
+Rank  Energy      Density     Diversity   Combined    
 ----------------------------------------------------------------------
-1     0.0234      0.0012      0.8234      0.0847
-2     0.0298      0.0008      0.7891      0.0819
-3     0.0312      0.0021      0.7543      0.0876
-...
+1     0.0898      0.0008      1.0000      1.0000      
+2     0.0899      0.0008      1.0000      1.0353      
+3     0.0900      0.0008      1.0000      1.0839      
+4     0.0900      0.0008      1.0000      1.1040      
+5     0.0901      0.0008      1.0000      1.1179      
+----------------------------------------------------------------------
 
 Output:
   PDB files: 10
-  Directory: output
+  Directory: /tmp/sample_output
     - ice_candidate_01.pdb
     - ice_candidate_02.pdb
     - ice_candidate_03.pdb
     - ... and 7 more
-  Phase diagram: output/phase_diagram.png
+  Phase diagram: sample_output/phase_diagram.png
 
 Validation:
   Valid structures: 10/10
 ```
+
+See [sample_output](sample_output) for files generated with this example (ice Ih at 273K and 1atm).
+``
 
 ### CLI Options
 
@@ -246,3 +252,4 @@ pytest -v
 - Repository: https://github.com/atztogo/spglib
 - Paper: "Spglib: a software library for crystal symmetry search", Sci. Technol. Adv. Mater., Meth. 4, 2384822 (2024)
 - DOI: https://doi.org/10.1080/27660400.2024.2384822
+
