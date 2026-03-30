@@ -12,6 +12,7 @@ physics simulations are performed.
 
 import numpy as np
 from collections import Counter
+from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
 from quickice.ranking.types import RankedCandidate, RankingResult
@@ -30,7 +31,7 @@ def _calculate_oo_distances_pbc(
 ) -> np.ndarray:
     """Calculate O-O distances with periodic boundary conditions.
     
-    Uses minimum image convention for PBC handling.
+    Uses cKDTree for O(n log n) neighbor search with supercell PBC handling.
     
     Args:
         positions: (N_atoms, 3) coordinates in nm
@@ -41,36 +42,43 @@ def _calculate_oo_distances_pbc(
     Returns:
         Array of O-O distances within cutoff
     """
-    # Extract O atom indices (O atoms at indices 0, 3, 6... for TIP3P)
+    # Extract O positions (O atoms at indices 0, 3, 6... for TIP3P)
     o_indices = [i for i, name in enumerate(atom_names) if name == 'O']
     
     if len(o_indices) < 2:
         return np.array([])
     
-    # Get O positions
     o_positions = positions[o_indices]
-    
-    # Convert to fractional coordinates
-    inv_cell = np.linalg.inv(cell)
-    frac_coords = o_positions @ inv_cell
-    
-    # Calculate pairwise distances with minimum image convention
-    distances = []
     n_oxygen = len(o_indices)
     
-    for i in range(n_oxygen):
-        for j in range(i + 1, n_oxygen):
-            # Fractional displacement with minimum image
-            delta_frac = frac_coords[j] - frac_coords[i]
-            delta_frac = delta_frac - np.floor(delta_frac + 0.5)
-            
-            # Convert back to Cartesian
-            delta_cart = delta_frac @ cell
-            
-            # Calculate distance
-            dist = np.linalg.norm(delta_cart)
-            
-            if dist < cutoff:
+    # Get cell dimensions (assuming orthorhombic for ice structures)
+    cell_dims = np.diag(cell)
+    
+    # Build 3x3x3 supercell for PBC handling
+    supercell_o = []
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            for k in (-1, 0, 1):
+                offset = np.array([i, j, k]) * cell_dims
+                supercell_o.append(o_positions + offset)
+    
+    supercell_o = np.vstack(supercell_o)
+    
+    # Build KDTree for supercell
+    tree = cKDTree(supercell_o)
+    
+    # Find pairs within cutoff
+    pairs = tree.query_pairs(cutoff)
+    
+    # Extract distances, filtering for central cell atoms
+    distances = []
+    for i, j in pairs:
+        # Only count pairs where i is in central cell
+        if i < n_oxygen:
+            j_original = j % n_oxygen
+            # Avoid double counting: i < j_original
+            if i < j_original:
+                dist = np.linalg.norm(supercell_o[j] - supercell_o[i])
                 distances.append(dist)
     
     return np.array(distances)
