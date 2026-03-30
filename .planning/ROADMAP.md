@@ -26,7 +26,7 @@
 - [ ] Phase 7.1: Fix Performance Issues & Critical Bugs (4 plans)
   - [x] 7.1-01 — Fix lookup.py correctness bugs (C2, PH1, Q1) — completed 2026-03-30
   - [x] 7.1-02 — Fix security and code quality issues (S2, S3, Q2) — completed 2026-03-30
-  - [ ] 7.1-03 — Fix O(n²) pairwise distance calculations
+  - [x] 7.1-03 — Fix O(n²) pairwise distance calculations — completed 2026-03-30
   - [ ] 7.1-04 — Fix phase diagram performance (P2, P3)
 
 **Full details:** [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
@@ -47,7 +47,7 @@
 | 5.1 - Missing Ice Phases | IX, XI, X, XV | Extended | ✅ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | ✅ Complete |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | ✅ Complete |
-| 7.1 - Fix Performance & Bugs | Fix critical bugs + O(n²) perf | C2, S2, S3, PH1, P2, P3 | 🔄 In progress (2/4) |
+| 7.1 - Fix Performance & Bugs | Fix critical bugs + O(n²) perf | C2, S2, S3, PH1, P2, P3 | 🔄 In progress (3/4) |
 
 ---
 
