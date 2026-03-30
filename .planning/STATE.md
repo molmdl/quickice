@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 |-------|-------|
 | Milestone | v1.1 (Hotfix - Performance & Critical Bugs) |
 | Phase | 7.1 - Fix Performance & Critical Bugs |
-| Status | ✓ Complete (7.1-04 discarded - speed already improved) |
+| Status | ✓ Complete (7.1-05 added exception logging) |
 
-**Progress:** Phase 7.1 complete - critical bugs fixed, O(n²)→O(n log n) optimization
+**Progress:** Phase 7.1 complete - critical bugs fixed, O(n²)→O(n log n) optimization, exception handling improved
 
 ---
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## v1.1 Hotfix Summary
 
 **Completed:** 2026-03-30
-**Plans:** 3 of 3 (7.1-04 discarded - speed already improved by KDTree optimization)
+**Plans:** 4 of 4 (7.1-04 discarded - speed already improved by KDTree optimization)
 
 **Fixes applied:**
 - C2: Ice XV pressure range corrected (950-2100 MPa)
@@ -58,6 +58,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 - S3: Global numpy state saved/restored
 - Q2: Exception messages include type name
 - P1/P2: O(n²)→O(n log n) KDTree optimization
+- S4: Exception handling security (no bare except, proper logging)
 
 **Verification:** 9/10 must-haves verified (1 partial: GenIce requires np.random.seed)
 
@@ -103,7 +104,17 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Session Continuity
 
 **Last Session:** 2026-03-30
-**Completed:** Phase 7.1 - Fix Performance & Critical Bugs
+**Completed:** 7.1-05 - Fixed exception handling security issues in phase_diagram.py
+
+---
+
+## Decisions Made
+
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 7.1-05 | Use logging.debug for expected failures, logging.warning for unexpected | Expected failures have fallback paths, unexpected need attention |
+| 7.1-05 | Include T/P values in log messages | Context helps debug issues faster |
+| 7.1-05 | Log exception type with `type(e).__name__` | Identifies specific exception class |
 
 ---
 
@@ -121,4 +132,4 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ---
 
-*State updated: 2026-03-30 - Phase 7.1 complete*
+*State updated: 2026-03-30 - Phase 7.1-05 complete (exception handling security)*
