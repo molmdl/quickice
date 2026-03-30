@@ -783,8 +783,8 @@ def generate_phase_diagram(
         try:
             st = IAPWS97(T=T, x=0)  # saturated liquid
             lv_P.append(st.P)
-        except:
-            pass
+        except Exception as e:
+            logging.warning(f"IAPWS97 calculation failed at T={T}K: {type(e).__name__}: {e}")
     if len(lv_P) > 0:
         lv_T = lv_T[:len(lv_P)]
         ax.plot(lv_T, lv_P, color='blue', linewidth=3.0, linestyle='-', alpha=0.8)
