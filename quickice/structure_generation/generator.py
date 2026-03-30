@@ -79,8 +79,9 @@ class IceStructureGenerator:
             StructureGenerationError: If GenIce fails to generate
         """
         try:
-            # Set random seed for reproducible generation
-            np.random.seed(seed)
+            # Create local random generator for reproducible, thread-safe generation
+            # PCG64 is a high-quality, fast generator
+            rng = np.random.Generator(np.random.PCG64(seed))
 
             # Load lattice
             lattice = safe_import("lattice", self.lattice_name).Lattice()
