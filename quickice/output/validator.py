@@ -9,6 +9,7 @@ from typing import Any
 
 import numpy as np
 import spglib
+from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
 
@@ -77,6 +78,8 @@ def check_atomic_overlap(
 ) -> bool:
     """Check for overlapping atoms with periodic boundary conditions.
 
+    Uses scipy's cKDTree for O(n log n) neighbor search.
+
     Args:
         candidate: Ice structure candidate to check
         min_distance: Minimum allowed distance between atoms in Angstrom
@@ -86,44 +89,48 @@ def check_atomic_overlap(
         True if overlap detected, False if no overlap
 
     Note:
-        Uses minimum image convention for PBC distance calculations.
         Candidate positions and cell are in nm, converted to Angstrom internally.
+        Uses a 3x3x3 supercell approach for PBC handling.
     """
     # Handle edge cases
-    if len(candidate.positions) == 0:
-        return False
-
-    if len(candidate.positions) == 1:
+    if len(candidate.positions) <= 1:
         return False
 
     # Convert from nm to Angstrom
     positions = candidate.positions * 10.0
     cell = candidate.cell * 10.0
-
-    # Calculate inverse cell for fractional coordinates
-    inv_cell = np.linalg.inv(cell)
-
-    # Convert to fractional coordinates
-    frac = positions @ inv_cell
-
-    # Check all pairs
+    
     n_atoms = len(positions)
-    for i in range(n_atoms):
-        for j in range(i + 1, n_atoms):
-            # Calculate delta in fractional coordinates
-            delta = frac[j] - frac[i]
-
-            # Apply minimum image convention
-            # Wrap to [-0.5, 0.5] range
-            delta = delta - np.floor(delta + 0.5)
-
-            # Convert back to Cartesian
-            cart_delta = delta @ cell
-
-            # Calculate distance
-            dist = np.linalg.norm(cart_delta)
-
-            if dist < min_distance:
+    
+    # Get cell dimensions (assuming orthorhombic for ice structures)
+    cell_dims = np.diag(cell)
+    
+    # Build 3x3x3 supercell for PBC handling
+    supercell_positions = []
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            for k in (-1, 0, 1):
+                offset = np.array([i, j, k]) * cell_dims
+                supercell_positions.append(positions + offset)
+    
+    supercell_positions = np.vstack(supercell_positions)
+    
+    # Build KDTree for supercell
+    tree = cKDTree(supercell_positions)
+    
+    # Find pairs within min_distance
+    pairs = tree.query_pairs(min_distance)
+    
+    # Filter: only count pairs where at least one atom is in central cell
+    # Central cell indices are [0, n_atoms)
+    for i, j in pairs:
+        if i < n_atoms and j < n_atoms:
+            # Both in central cell - real overlap
+            return True
+        elif i < n_atoms:
+            # i in central, j is image - check if j's original is different from i
+            j_original = j % n_atoms
+            if j_original != i:
                 return True
-
+    
     return False
