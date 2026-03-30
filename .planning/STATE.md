@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions  
-**Current Focus:** v1.1 Hotfix - Critical bugs & performance
+**Current Focus:** v1.1 Hotfix Complete - Ready for next milestone
 
 ---
 
@@ -11,7 +11,7 @@
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Generate plausible ice structure candidates quickly for given thermodynamic conditions
-**Current focus:** Planning next milestone
+**Current focus:** Phase 7.1 complete, ready for next phase
 
 ---
 
@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 |-------|-------|
 | Milestone | v1.1 (Hotfix - Performance & Critical Bugs) |
 | Phase | 7.1 - Fix Performance & Critical Bugs |
-| Status | In progress |
+| Status | ✓ Complete (3/4 plans, 7.1-04 skipped) |
 
-**Progress:** 3/4 plans complete in Phase 7.1 (7.1-01, 7.1-02, 7.1-03 done)
+**Progress:** Phase 7.1 complete - critical bugs fixed, O(n²)→O(n log n) optimization
 
 ---
 
@@ -42,6 +42,24 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 - PDB output with validation
 - Documentation (README, CLI reference, ranking, principles)
 - Audit & correctness verification
+
+---
+
+## v1.1 Hotfix Summary
+
+**Completed:** 2026-03-30
+**Plans:** 3 of 4 (7.1-04 skipped)
+
+**Fixes applied:**
+- C2: Ice XV pressure range corrected (950-2100 MPa)
+- PH1: Ice Ic checked before Ice Ih fallback
+- Q1: Unused import removed
+- S2: Path traversal protection added
+- S3: Global numpy state saved/restored
+- Q2: Exception messages include type name
+- P1/P2: O(n²)→O(n log n) KDTree optimization
+
+**Verification:** 9/10 must-haves verified (1 partial: GenIce requires np.random.seed)
 
 ---
 
@@ -85,16 +103,13 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Session Continuity
 
 **Last Session:** 2026-03-30
-**Completed:** 7.1-03 - Fix O(n²) pairwise distance calculations
+**Completed:** Phase 7.1 - Fix Performance & Critical Bugs
 
 ---
 
 ## Roadmap Evolution
 
-- Phase 7.1 inserted after Phase 7: Fix performance issues (O(n²) distance calc → vectorization in validator.py:111-127, scorer.py:60-74) and critical bugs (C1, C2, S2, S3) (URGENT)
-- 7.1-01 completed: Fixed Ice XV pressure range, Ice Ic detection order, removed unused import
-- 7.1-02 completed: Path traversal protection, minimized global random state pollution, improved exception handling
-- 7.1-03 completed: Replaced O(n²) pairwise distance calculations with O(n log n) KDTree in validator.py and scorer.py
+- Phase 7.1 inserted after Phase 7: Fix performance issues (O(n²) distance calc → vectorization in validator.py:111-127, scorer.py:60-74) and critical bugs (C1, C2, S2, S3) (URGENT) - ✓ COMPLETE 2026-03-30
 
 ---
 
@@ -106,4 +121,4 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ---
 
-*State updated: 2026-03-30 - 7.1-03 completed*
+*State updated: 2026-03-30 - Phase 7.1 complete*
