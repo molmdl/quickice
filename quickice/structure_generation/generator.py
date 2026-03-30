@@ -79,8 +79,13 @@ class IceStructureGenerator:
             StructureGenerationError: If GenIce fails to generate
         """
         try:
-            # Create local random generator for reproducible, thread-safe generation
-            # PCG64 is a high-quality, fast generator
+            # Save global random state to minimize pollution
+            # GenIce uses np.random internally, so we must set the seed for reproducibility
+            original_state = np.random.get_state()
+            np.random.seed(seed)
+
+            # Create local random generator for potential future use
+            # (GenIce currently uses global state, but this prepares for GenIce updates)
             rng = np.random.Generator(np.random.PCG64(seed))
 
             # Load lattice
@@ -101,6 +106,9 @@ class IceStructureGenerator:
             gro_string = ice.generate_ice(
                 formatter=formatter, water=water, depol="strict"
             )
+
+            # Restore global random state to minimize pollution
+            np.random.set_state(original_state)
 
             # Parse GRO output
             positions, atom_names, cell = self._parse_gro(gro_string)
