@@ -44,8 +44,17 @@ def output_ranked_candidates(
         - validation_results: Per-structure validation info
         - summary: Summary info (n_candidates, n_validated, user_T, user_P)
     """
-    # Create output directory
-    output_path = Path(output_dir)
+    # Create output directory with path traversal protection
+    output_path = Path(output_dir).resolve()
+    allowed_base = Path.cwd().resolve()
+
+    # Security check: output must be within current working directory
+    if not str(output_path).startswith(str(allowed_base)):
+        raise ValueError(
+            f"Security error: Output path must be within {allowed_base}. "
+            f"Got: {output_path}"
+        )
+
     output_path.mkdir(parents=True, exist_ok=True)
 
     # Initialize result containers
