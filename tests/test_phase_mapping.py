@@ -539,10 +539,10 @@ class TestLookupPhaseIceXi:
         result = lookup_phase(70, 0.1)
         assert result["phase_id"] == "ice_xi"
 
-    def test_lookup_above_72k_returns_ice_ih(self):
-        """Temperature 80K, Pressure 0.1 MPa should return ice_ih."""
+    def test_lookup_above_72k_returns_ice_ic(self):
+        """Temperature 80K, Pressure 0.1 MPa should return ice_ic (T < 150K, P < 100 MPa)."""
         result = lookup_phase(80, 0.1)
-        assert result["phase_id"] == "ice_ih"
+        assert result["phase_id"] == "ice_ic"
 
 
 class TestLookupPhaseIceIx:
