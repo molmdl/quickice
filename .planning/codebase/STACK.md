@@ -1,121 +1,112 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-28
+**Analysis Date:** 2026-03-30
 
 ## Languages
 
 **Primary:**
-- Python 3.14.3 - Core implementation language for all modules
+- Python 3.14.3 - Main application code, CLI, all modules
 
 **Secondary:**
-- None detected - Pure Python codebase
+- Shell (bash) - Setup scripts (`setup.sh`, `run_oc.sh`)
 
 ## Runtime
 
 **Environment:**
-- Conda environment named `quickice`
-- Python 3.14.3 with CPython implementation
+- Conda (Miniconda/Anaconda) - Environment management via `env.yml`
 
 **Package Manager:**
-- Conda (primary) - Environment management via `env.yml`
-- pip - Python package installation within conda environment
-- Lockfile: Not present (no pip lockfile)
-
-**Setup:**
-- Run `conda env create -f env.yml` once to create environment
-- Run `source setup.sh` in each new shell to activate and set PYTHONPATH
+- pip (within conda environment)
+- Lockfile: Not present (uses conda environment specification)
 
 ## Frameworks
 
 **Core:**
-- argparse - CLI argument parsing (standard library)
-- dataclasses - Data structures (standard library)
+- Click 8.3.1 - CLI argument parsing (`quickice/cli/parser.py`)
+- GenIce2 2.2.13.1 - Ice structure generation engine
+- GenIce-core 1.4.3 - Core lattice algorithms for GenIce
 
 **Testing:**
-- pytest >=9.0.0 - Test framework
+- pytest >= 9.0.0 - Unit testing framework
 
-**Build/Dev:**
-- No build system detected - direct Python execution
-- No type checking tools configured
-- No linting/formatting tools configured
+**Visualization:**
+- matplotlib >= 3.5 - Phase diagram generation (PNG/SVG output)
 
 ## Key Dependencies
 
 **Scientific Computing:**
-- numpy 2.4.3 - Array operations, numerical computing
-- scipy >=1.8 - Scientific algorithms, spline interpolation (`scipy.interpolate.UnivariateSpline`)
-- networkx 3.6.1 - Graph algorithms for molecular networks
+- numpy 2.4.3 - Array operations, coordinate transformations, distance calculations
+- scipy >= 1.8 - KDTree for neighbor search, spline interpolation for curves
+- shapely >= 2.0 - Polygon geometry for phase diagram regions
 
-**Visualization:**
-- matplotlib >=3.5 - Phase diagram plotting, publication-quality figures
-
-**Molecular Simulation:**
-- genice2 2.2.13.1 - Ice structure generation (core library)
-- genice-core 1.4.3 - GenIce core functionality
-- spglib 2.7.0 - Space group detection, crystal symmetry analysis
-- pairlist 0.6.4 - Pair detection for molecular structures
-- cycless 0.7 - Cycle detection in molecular networks
-
-**Geometry:**
-- shapely >=2.0 - Geometric operations, polygon handling for phase diagrams
-
-**Water Properties:**
-- iapws >=1.5.4 - IAPWS water/steam thermodynamic properties
-  - Used for: `IAPWS97` class to compute liquid-vapor saturation curves
+**Domain-Specific:**
+- iapws >= 1.5.4 - IAPWS-95/97 water property standards (melting curves, saturation curves)
+- spglib 2.7.0 - Space group analysis for structure validation
+- networkx 3.6.1 - Graph operations (used by GenIce for hydrogen bond networks)
+- pairlist 0.6.4 - Neighbor list calculations
+- cycless 0.7 - Cycle detection in molecular structures
 
 **Utilities:**
-- click 8.3.1 - Present in dependencies but argparse used in implementation
-- packaging 25.0 - Version parsing (standard library extension)
+- methodtools 0.4.7 - Method decorators
+- deprecated 1.3.1 / deprecation 2.1.0 - Deprecation warnings
+- six 1.17.0 - Python 2/3 compatibility
+- wrapt 2.1.2 / wirerope 1.0.0 - Wrapper utilities
+- openpyscad 0.5.0 - OpenSCAD integration (potential 3D output)
+- yaplotlib 0.1.3 - Visualization library
+- graphstat 0.3.3 - Graph statistics
 
 ## Configuration
 
 **Environment:**
 - Conda environment defined in `env.yml`
-- PYTHONPATH must include project root (set via `setup.sh`)
-- No `.env` files or environment variables required
+- Environment name: `quickice`
+- No `.env` files - configuration via CLI arguments
+- Setup via `source setup.sh` which activates conda and exports PYTHONPATH
 
 **Build:**
-- No build configuration files (setup.py, pyproject.toml, etc.)
-- Direct execution via `python quickice.py`
-
-**Entry Point:**
-- `quickice.py` - CLI entry point that imports from `quickice/` package
+- No build step required (pure Python)
+- Entry point: `quickice.py` (wrapper) or `quickice.main:main` (module)
 
 ## Platform Requirements
 
 **Development:**
-- Linux/x86_64 platform (conda packages are platform-specific)
-- Conda or Miniconda installed
-- Python 3.14 compatible environment
+- Python 3.14+ required
+- Conda environment for dependency management
+- pytest for running tests
 
 **Production:**
-- Any platform supporting Python 3.14 and listed dependencies
-- No deployment infrastructure configured
-- Output files written to local `output/` directory
+- Pure Python application - portable to any platform with Python 3.14+
+- No database or external service dependencies
+- File-based output (PDB files, PNG/SVG diagrams)
+- Can run as standalone CLI tool
 
-## Dependency Graph
+## External File Formats
 
-```
-quickice.py
-    └── quickice/main.py
-            ├── quickice/cli/parser.py (argparse)
-            ├── quickice/phase_mapping/
-            │       ├── lookup.py (custom logic)
-            │       ├── melting_curves.py (custom IAPWS equations)
-            │       ├── solid_boundaries.py (linear interpolation)
-            │       └── triple_points.py (data tables)
-            ├── quickice/structure_generation/
-            │       ├── generator.py (genice2, numpy)
-            │       └── mapper.py (numpy)
-            ├── quickice/ranking/
-            │       └── scorer.py (numpy)
-            └── quickice/output/
-                    ├── orchestrator.py
-                    ├── pdb_writer.py (numpy)
-                    ├── validator.py (spglib, numpy)
-                    └── phase_diagram.py (matplotlib, shapely, scipy, iapws)
-```
+**Input:**
+- None (all inputs via CLI arguments)
+
+**Output:**
+- PDB (Protein Data Bank format) - Crystal structure files
+- PNG - Phase diagram raster images
+- SVG - Phase diagram vector images
+- TXT - Phase diagram data files
+
+**Intermediate:**
+- GRO (GROMACS format) - Internal GenIce format, parsed and converted to PDB
+
+## Code Organization
+
+**Package Structure:**
+- `quickice.py` - CLI entry point
+- `quickice/` - Main package directory
+  - `main.py` - Workflow orchestration
+  - `cli/` - Command-line argument parsing
+  - `validation/` - Input validation
+  - `phase_mapping/` - T,P to ice polymorph lookup
+  - `structure_generation/` - GenIce2 integration
+  - `ranking/` - Candidate scoring
+  - `output/` - PDB writing and phase diagrams
 
 ---
 
-*Stack analysis: 2026-03-28*
+*Stack analysis: 2026-03-30*

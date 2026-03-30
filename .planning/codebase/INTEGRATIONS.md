@@ -1,150 +1,129 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-28
+**Analysis Date:** 2026-03-30
 
 ## APIs & External Services
 
-**None detected.**
-- No external API calls
-- No web services consumed
-- No cloud platform integrations
-- This is a self-contained scientific computing tool
+**None** - This is a standalone CLI application with no external API calls or network services.
 
-## Scientific Libraries as "Integrations"
+## Scientific Libraries
 
-**GenIce (Ice Structure Generation):**
-- Package: `genice2`, `genice-core`
-- Purpose: Generate physically valid ice crystal structures
-- Integration pattern: Plugin system via `genice2.plugin.safe_import()`
-- Used in: `quickice/structure_generation/generator.py`
-- Example usage:
-  ```python
-  from genice2.plugin import safe_import
-  from genice2.genice import GenIce
-  
-  lattice = safe_import("lattice", "ice1h").Lattice()
-  ice = GenIce(lattice, density=0.9167, reshape=supercell_matrix)
-  water = safe_import("molecule", "tip3p").Molecule()
-  formatter = safe_import("format", "gromacs").Format()
-  gro_string = ice.generate_ice(formatter=formatter, water=water, depol="strict")
-  ```
-- Supported lattices: ice1h, ice1c, ice2, ice3, ice5, ice6, ice7, ice8
+**GenIce2 (genice2):**
+- Purpose: Generate hydrogen-disordered ice crystal structures
+- Integration: `quickice/structure_generation/generator.py`
+- Usage: Plugin system via `safe_import("lattice", name)` and `safe_import("molecule", "tip3p")`
+- Key classes: `GenIce` class for structure generation with density and supercell parameters
+- Output format: GRO (GROMACS) internally, converted to PDB
+- Reference: https://github.com/genice-dev/GenIce2
 
-**IAPWS (Water/Steam Properties):**
-- Package: `iapws`
-- Purpose: International standard thermodynamic properties for water
-- Used in: `quickice/output/phase_diagram.py`
-- Example usage:
-  ```python
-  from iapws import IAPWS97
-  st = IAPWS97(T=T, x=0)  # saturated liquid
-  pressure = st.P
-  ```
-- Note: IAPWS equations also implemented directly in `melting_curves.py` (Simon-Glatzel form)
+**IAPWS (iapws):**
+- Purpose: Water/ice thermophysical properties per IAPWS standards
+- Integration: `quickice/phase_mapping/melting_curves.py`, `quickice/output/phase_diagram.py`
+- Usage: 
+  - `IAPWS97(T=T, x=0)` - Saturated liquid properties for vapor-liquid curve
+  - `melting_pressure(T, ice_type)` - Melting curve calculations per IAPWS R14-08
+- Standards implemented:
+  - IAPWS R14-08(2011) - Melting and sublimation curves
+  - IAPWS R10-06(2009) - Thermodynamic properties
+- Key functions: `ice_ih_melting_pressure`, `ice_iii_melting_pressure`, `ice_v_melting_pressure`, `ice_vi_melting_pressure`, `ice_vii_melting_pressure`
 
-**spglib (Crystal Symmetry):**
-- Package: `spglib`
-- Purpose: Space group detection for crystal structures
-- Used in: `quickice/output/validator.py`
-- Example usage:
-  ```python
-  import spglib
-  dataset = spglib.get_symmetry_dataset((lattice, positions, atom_types), symprec=1e-4)
-  spacegroup_number = dataset.number
-  spacegroup_symbol = dataset.international
-  ```
+**spglib:**
+- Purpose: Space group analysis and crystal symmetry operations
+- Integration: `quickice/output/validator.py`
+- Usage: `spglib.get_spacegroup()` for structure validation
+- Validates generated ice structures have correct symmetry
 
 ## Data Storage
 
 **Databases:**
-- None - No database connectivity
+- None - No database integration
 
 **File Storage:**
 - Local filesystem only
-- Output directory: `output/` (created at runtime)
-- Generated files:
-  - PDB files: `ice_candidate_01.pdb`, `ice_candidate_02.pdb`, etc.
-  - Phase diagram: `phase_diagram.png`, `phase_diagram.svg`, `phase_diagram_data.txt`
+- Output directory configurable via `--output` CLI flag
+- Default: `output/` directory (created if not exists)
 
 **Caching:**
 - None - No caching layer
 
+## Internal Data Files
+
+**Phase Boundary Data:**
+- `quickice/phase_mapping/triple_points.py` - Triple point coordinates (T, P) for ice polymorphs
+- `quickice/phase_mapping/melting_curves.py` - IAPWS R14-08 melting curve equations
+- `quickice/phase_mapping/solid_boundaries.py` - Solid-solid phase boundary interpolations
+- All data is embedded in Python code (no external data files)
+
+**GenIce Lattices:**
+- Uses GenIce2 plugin system to load lattice definitions
+- Supported lattices: ice_ih, ice_ic, ice_ii, ice_iii, ice_v, ice_vi, ice_vii, ice_viii, ice_xi, ice_ix, ice_x, ice_xv
+- Mapping: `quickice/structure_generation/mapper.py` - phase_id to GenIce lattice name
+
 ## Authentication & Identity
 
-**Auth Provider:**
-- None - No authentication required
-- Single-user local application
+**None** - No authentication or identity management
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None - Standard Python exception handling
+- None - Errors printed to stderr via `print(..., file=sys.stderr)`
 
-**Logs:**
-- Standard library `logging` module
-- Used in: `quickice/output/orchestrator.py`
-- Pattern: `logging.warning()` for non-critical issues
+**Logging:**
+- Minimal logging via Python `logging` module in `quickice/output/orchestrator.py`
+- No centralized logging configuration
+- Errors handled via exceptions with descriptive messages
+
+**Output Tracking:**
+- Terminal STDOUT for progress and results
+- Files written to output directory
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- None - Local development tool
+- Standalone CLI tool - no deployment platform
 
 **CI Pipeline:**
-- None detected - No `.github/`, `.gitlab-ci.yml`, or similar
-
-**Version Control:**
-- Git repository (`.git/` present)
-- No hooks configured
+- None detected (no `.github/workflows/`, `.gitlab-ci.yml`, etc.)
+- Tests runnable via `pytest`
 
 ## Environment Configuration
 
 **Required env vars:**
-- None - All configuration via command-line arguments
+- None - All configuration via CLI arguments
 
-**Configuration files:**
-- `env.yml` - Conda environment specification
-- `setup.sh` - Shell script to activate environment and set PYTHONPATH
-- `requirements-dev.txt` - Development dependencies (pytest)
+**PYTHONPATH:**
+- Must include project root for imports to work
+- Set by `setup.sh`: `export PYTHONPATH=/path/to/quickice`
 
-**Secrets location:**
-- None - No secrets or credentials required
+**Conda Environment:**
+- Environment name: `quickice`
+- Create: `conda env create -f env.yml`
+- Activate: `conda activate quickice`
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- None
+- None - CLI tool with no server component
 
 **Outgoing:**
-- None
+- None - No external notifications or callbacks
 
-## File Format Integrations
+## Third-Party Data Sources
 
-**Input Formats:**
-- None - User input via CLI arguments only
+**Scientific Standards:**
+- IAPWS R14-08(2011) - "Revised Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance"
+  - URL: https://www.iapws.org/relguide/MeltSub.html
+  - Implementation: `quickice/phase_mapping/melting_curves.py`
+  
+- Literature triple points - Used for solid-solid boundaries
+  - LSBU Water Phase Data
+  - IUPAC recommendations
+  - Implementation: `quickice/phase_mapping/triple_points.py`
 
-**Output Formats:**
-- PDB (Protein Data Bank format) - Crystal structure coordinates
-  - Writer: `quickice/output/pdb_writer.py`
-  - Includes: `CRYST1` record for unit cell, `HETATM` records for atoms
-- GRO (GROMACS format) - Intermediate format from GenIce
-  - Parser: `quickice/structure_generation/generator.py:_parse_gro()`
-  - Not written to output, only parsed internally
-- PNG/SVG - Phase diagram visualization
-- Plain text - Phase diagram data file
-
-## Scientific Data Sources
-
-**Built-in Data Tables:**
-- Triple points: `quickice/phase_mapping/triple_points.py`
-  - Source: IAPWS R14-08(2011), LSBU Water Phase Data
-  - 12 triple point coordinates defined
-- Melting curve coefficients: `quickice/phase_mapping/data/ice_boundaries.py`
-  - Simon-Glatzel equation parameters for ice phases
-
-**External Data:**
-- None - All scientific data is embedded in code
+**No External API Calls:**
+- All scientific data embedded in code
+- No network requests at runtime
 
 ---
 
-*Integration audit: 2026-03-28*
+*Integration audit: 2026-03-30*
