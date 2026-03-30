@@ -146,9 +146,9 @@ def _sample_melting_curve(curve_name: str, n_points: int = 100, smooth: bool = T
             except ImportError:
                 # Fallback if scipy not available
                 pass
-            except Exception:
-                # Fallback if spline fails
-                pass
+            except Exception as e:
+                # Fallback if spline fails - log for debugging
+                logging.debug(f"Spline interpolation failed: {type(e).__name__}: {e}")
         
         # Fallback: use sample points directly
         indices = np.linspace(0, len(T_sample) - 1, n_points, dtype=int)
