@@ -20,10 +20,10 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 | Field | Value |
 |-------|-------|
 | Milestone | v1.1 (Hotfix - Performance & Critical Bugs) |
-| Phase | 7.1 - Fix Performance & Critical Bugs (URGENT) |
-| Status | Urgent - Not planned yet |
+| Phase | 7.1 - Fix Performance & Critical Bugs |
+| Status | In progress |
 
-**Progress:** Phase 7.1 inserted - urgent fixes needed (see codebase analysis)
+**Progress:** 1/4 plans complete in Phase 7.1 (7.1-01 done)
 
 ---
 
@@ -84,14 +84,15 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Session Continuity
 
-**Last Session:** 2026-03-29
-**Started:** v2.0 milestone - GUI Application
+**Last Session:** 2026-03-30
+**Completed:** 7.1-01 - Fix lookup.py correctness bugs (C2, PH1, Q1)
 
 ---
 
 ## Roadmap Evolution
 
 - Phase 7.1 inserted after Phase 7: Fix performance issues (O(n²) distance calc → vectorization in validator.py:111-127, scorer.py:60-74) and critical bugs (C1, C2, S2, S3) (URGENT)
+- 7.1-01 completed: Fixed Ice XV pressure range, Ice Ic detection order, removed unused import
 
 ---
 
@@ -103,4 +104,4 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ---
 
-*State updated: 2026-03-29 - v2.0 milestone started*
+*State updated: 2026-03-30 - 7.1-01 completed*
