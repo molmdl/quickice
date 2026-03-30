@@ -226,8 +226,8 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
             if P < 0.1:
                 P = 0.1  # Clamp to atmospheric
             vertices.append((T, P))
-        except ValueError:
-            pass
+        except ValueError as e:
+            logging.debug(f"Melting pressure calculation failed at T={T}K: {e}")
     
     # Ih-III-Liquid triple point (251.165 K, 207.5 MPa)
     vertices.append((251.165, 207.5))
