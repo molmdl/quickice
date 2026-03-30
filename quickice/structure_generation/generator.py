@@ -122,9 +122,9 @@ class IceStructureGenerator:
             return candidate
 
         except Exception as e:
-            # Wrap GenIce errors in our custom exception
+            # Wrap any GenIce or internal errors with full context
             raise StructureGenerationError(
-                f"Failed to generate ice structure: {e}"
+                f"Failed to generate ice structure ({type(e).__name__}): {e}"
             ) from e
 
     def _parse_gro(self, gro_string: str) -> tuple[np.ndarray, list[str], np.ndarray]:
