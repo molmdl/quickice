@@ -8,7 +8,6 @@ This approach eliminates polygon overlap errors by directly evaluating which
 boundary curves the (T,P) point is above or below.
 """
 
-import math
 from quickice.phase_mapping.melting_curves import melting_pressure
 from quickice.phase_mapping.solid_boundaries import (
     solid_boundary, ih_ii_boundary, ii_iii_boundary, iii_v_boundary,
