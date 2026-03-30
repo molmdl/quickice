@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 | Phase | 7.1 - Fix Performance & Critical Bugs |
 | Status | In progress |
 
-**Progress:** 1/4 plans complete in Phase 7.1 (7.1-01 done)
+**Progress:** 2/4 plans complete in Phase 7.1 (7.1-01, 7.1-02 done)
 
 ---
 
@@ -85,7 +85,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Session Continuity
 
 **Last Session:** 2026-03-30
-**Completed:** 7.1-01 - Fix lookup.py correctness bugs (C2, PH1, Q1)
+**Completed:** 7.1-02 - Fix security and code quality issues (S2, S3, Q2)
 
 ---
 
@@ -93,6 +93,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 - Phase 7.1 inserted after Phase 7: Fix performance issues (O(n²) distance calc → vectorization in validator.py:111-127, scorer.py:60-74) and critical bugs (C1, C2, S2, S3) (URGENT)
 - 7.1-01 completed: Fixed Ice XV pressure range, Ice Ic detection order, removed unused import
+- 7.1-02 completed: Path traversal protection, minimized global random state pollution, improved exception handling
 
 ---
 
@@ -104,4 +105,4 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ---
 
-*State updated: 2026-03-30 - 7.1-01 completed*
+*State updated: 2026-03-30 - 7.1-02 completed*
