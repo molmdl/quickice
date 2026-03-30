@@ -339,19 +339,16 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
                 return _build_result(phase_id, T, P)
         except ValueError:
             # Outside Ih melting curve range (T < 251.165K)
-            # At low T and moderate P, still Ice Ih
+            # Check Ice Ic first (metastable, T < 150K, low P)
+            if T < 150 and P < 100:
+                phase_id = "ice_ic"
+                return _build_result(phase_id, T, P)
+            # Default fallback to Ice Ih for other low-T, low-P conditions
             if P < 200:
                 phase_id = "ice_ih"
                 return _build_result(phase_id, T, P)
     
-    # 7. Ice Ic (metastable, low T low P)
-    # Ice Ic: T(100-150K), P(0-100 MPa)
-    # This is a metastable phase at very low temperatures and pressures
-    if T < 150 and P < 100:
-        phase_id = "ice_ic"
-        return _build_result(phase_id, T, P)
-    
-    # 8. No match - unknown region
+    # 7. No match - unknown region
     # This could be:
     # - Liquid water region (above melting curves)
     # - Outside all known phase regions
