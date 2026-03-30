@@ -217,12 +217,11 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
             phase_id = "ice_viii" if P > P_vii_viii else "ice_vii"
         return _build_result(phase_id, T, P)
     
-    # 1b. Ice XV region (ordered Ice VI at T=80-108K, P≈1.1 GPa)
-    if 80.0 <= T <= 108.0 and 1000 <= P <= 1200:
-        P_xv = xv_boundary(T)
-        if abs(P - P_xv) < 100:  # Within 100 MPa of boundary
-            phase_id = "ice_xv"
-            return _build_result(phase_id, T, P)
+    # 1b. Ice XV region (ordered Ice VI at T=80-108K, P≈0.95-2.1 GPa)
+    # Ice XV is the proton-ordered form of Ice VI, stable across a pressure band
+    if 80.0 <= T <= 108.0 and 950 <= P <= 2100:
+        phase_id = "ice_xv"
+        return _build_result(phase_id, T, P)
     
     # 2. Ice VI region (between V-VI and VI-VII boundaries)
     # Ice VI: T(273.31-355K at high P), P(626-2200 MPa)
