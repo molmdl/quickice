@@ -23,11 +23,11 @@
 - [x] Phase 5.1: Add Missing Ice Phases (3/3 plans) — completed 2026-03-27
 - [x] Phase 6: Documentation (2/2 plans) — completed 2026-03-28
 - [x] Phase 7: Audit & Correctness (5/5 plans) — completed 2026-03-28
-- [x] Phase 7.1: Fix Performance Issues & Critical Bugs (3/4 plans — 7.1-04 skipped) — completed 2026-03-30
+- [x] Phase 7.1: Fix Performance Issues & Critical Bugs (3/3 plans) — completed 2026-03-30
   - [x] 7.1-01 — Fix lookup.py correctness bugs (C2, PH1, Q1) — completed 2026-03-30
   - [x] 7.1-02 — Fix security and code quality issues (S2, S3, Q2) — completed 2026-03-30
   - [x] 7.1-03 — Fix O(n²) pairwise distance calculations — completed 2026-03-30
-  - [ ] 7.1-04 — Fix phase diagram performance (P2, P3) — skipped (security warning)
+  - ⊘ 7.1-04 — Fix phase diagram performance (P2, P3) — discarded (speed already improved by 7.1-03)
 
 **Full details:** [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
 
@@ -47,7 +47,7 @@
 | 5.1 - Missing Ice Phases | IX, XI, X, XV | Extended | ✅ Complete |
 | 6 - Documentation | User guides | DOC-01 to DOC-04 | ✅ Complete |
 | 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | ✅ Complete |
-| 7.1 - Fix Performance & Bugs | Fix critical bugs + O(n²) perf | C2, S2, S3, PH1, P2, P3 | ✅ Complete (3/4) |
+| 7.1 - Fix Performance & Bugs | Fix critical bugs + O(n²) perf | C2, S2, S3, PH1 | ✅ Complete |
 
 ---
 

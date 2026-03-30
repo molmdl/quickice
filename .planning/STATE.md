@@ -21,7 +21,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 |-------|-------|
 | Milestone | v1.1 (Hotfix - Performance & Critical Bugs) |
 | Phase | 7.1 - Fix Performance & Critical Bugs |
-| Status | ✓ Complete (3/4 plans, 7.1-04 skipped) |
+| Status | ✓ Complete (7.1-04 discarded - speed already improved) |
 
 **Progress:** Phase 7.1 complete - critical bugs fixed, O(n²)→O(n log n) optimization
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## v1.1 Hotfix Summary
 
 **Completed:** 2026-03-30
-**Plans:** 3 of 4 (7.1-04 skipped)
+**Plans:** 3 of 3 (7.1-04 discarded - speed already improved by KDTree optimization)
 
 **Fixes applied:**
 - C2: Ice XV pressure range corrected (950-2100 MPa)
