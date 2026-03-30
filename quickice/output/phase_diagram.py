@@ -6,6 +6,7 @@ from Phase 2 melting_curves and solid_boundaries modules (single source of truth
 Outputs PNG, SVG, and text data files.
 """
 
+import logging
 from pathlib import Path
 from typing import Tuple, List
 
