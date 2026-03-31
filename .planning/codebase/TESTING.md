@@ -1,60 +1,48 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-30
+**Analysis Date:** 2026-03-31
 
 ## Test Framework
 
 **Runner:**
 - pytest (version >= 9.0.0)
-- No explicit configuration file (uses pytest defaults)
-- Test discovery: files matching `tests/test_*.py`
+- No explicit pytest configuration file detected
+- Uses pytest's automatic test discovery
 
 **Assertion Library:**
-- pytest assertions (no unittest.TestCase)
-- `assert` statements for simple checks
-- `pytest.raises()` for exception testing
-- `np.testing.assert_allclose()` for numerical comparisons
+- Standard pytest assertions
+- `numpy.testing.assert_allclose` for numerical comparisons
+- `pytest.raises` for exception testing
 
 **Run Commands:**
 ```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_phase_mapping.py
-
-# Run specific test class
-pytest tests/test_phase_mapping.py::TestLookupPhaseIceIh
-
-# Run specific test
-pytest tests/test_phase_mapping.py::TestLookupPhaseIceIh::test_lookup_atmospheric_near_melting
-
-# Verbose output
-pytest -v
-
-# With coverage (if configured)
-pytest --cov=quickice
+pytest                              # Run all tests
+pytest tests/                       # Run tests in directory
+pytest tests/test_validators.py     # Run specific test file
+pytest -v                           # Verbose output
+pytest -k "test_name"                # Run tests matching pattern
 ```
 
 ## Test File Organization
 
 **Location:**
-- Tests in `tests/` directory (separate from source)
-- Mirror module structure: `tests/test_output/test_validator.py`
+- Tests co-located in dedicated `tests/` directory at project root
+- Test modules mirror source structure: `tests/test_output/test_pdb_writer.py`
+- Integration tests in `tests/test_cli_integration.py`
 
 **Naming:**
-- Test files: `test_<module>.py`
-- Test classes: `Test<FeatureName>`
-- Test methods: `test_<scenario>`
+- Test files: `test_<module_name>.py`
+- Test classes: `Test<Feature>` (e.g., `TestValidateTemperature`, `TestRankCandidates`)
+- Test methods: `test_<scenario>_<expected_result>` (e.g., `test_accepts_valid_minimum_boundary`)
 
 **Structure:**
 ```
 tests/
 ├── __init__.py
-├── test_phase_mapping.py
 ├── test_validators.py
-├── test_structure_generation.py
 ├── test_ranking.py
+├── test_phase_mapping.py
+├── test_structure_generation.py
 ├── test_cli_integration.py
 └── test_output/
     ├── __init__.py
@@ -65,173 +53,6 @@ tests/
 ## Test Structure
 
 **Suite Organization:**
-```python
-"""Tests for phase mapping lookup functionality."""
-
-import subprocess
-import sys
-
-import pytest
-from quickice.phase_mapping.lookup import lookup_phase, IcePhaseLookup
-from quickice.phase_mapping.errors import UnknownPhaseError
-
-
-class TestLookupPhaseIceIh:
-    """Tests for Ice Ih (normal atmospheric ice) lookups."""
-
-    def test_lookup_atmospheric_near_melting(self):
-        """Temperature 273K, Pressure 0 MPa should return ice_ih."""
-        result = lookup_phase(273, 0)
-        assert result["phase_id"] == "ice_ih"
-        assert result["phase_name"] == "Ice Ih"
-        assert result["density"] == 0.9167
-        assert result["temperature"] == 273
-        assert result["pressure"] == 0
-
-    def test_lookup_normal_conditions(self):
-        """Temperature 250K, Pressure 100 MPa should return ice_ih."""
-        result = lookup_phase(250, 100)
-        assert result["phase_id"] == "ice_ih"
-        assert result["phase_name"] == "Ice Ih"
-```
-
-**Patterns:**
-- One test class per feature/function group
-- Docstrings describe what is being tested
-- Clear test names: `test_<function>_<scenario>`
-- Each test verifies one specific behavior
-
-## Mocking
-
-**Framework:**
-- No mocking framework detected
-- Real objects used (fixtures create test data)
-- Subprocess used for CLI integration tests
-
-**What to Mock:**
-- External dependencies (none detected in current tests)
-- File I/O uses temp files instead of mocking
-
-**What NOT to Mock:**
-- Domain objects (use fixtures)
-- Pure functions (test with real implementation)
-- Database/network calls (not present in this codebase)
-
-**CLI Integration Test Pattern:**
-```python
-def run_cli(*args: str) -> tuple[int, str, str]:
-    """Run quickice.py with given arguments."""
-    cmd = [sys.executable, str(QUICKICE_SCRIPT)] + list(args)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=10
-    )
-    return result.returncode, result.stdout, result.stderr
-
-
-class TestValidInputs:
-    """Test cases for valid CLI inputs."""
-
-    def test_valid_inputs_print_values(self):
-        """Valid inputs should print temperature, pressure, and molecules."""
-        returncode, stdout, stderr = run_cli(
-            "--temperature", "300",
-            "--pressure", "100",
-            "--nmolecules", "100"
-        )
-        
-        assert returncode == 0
-        assert "Temperature: 300.0K" in stdout
-        assert "Pressure: 100.0 MPa" in stdout
-        assert "Molecules: 100" in stdout
-```
-
-## Fixtures and Factories
-
-**Test Data:**
-- Use `@pytest.fixture` decorator for reusable test data
-- Fixtures defined at module level
-- Descriptive fixture names: `simple_candidate`, `ideal_candidate`, `candidate_set`
-
-**Pattern:**
-```python
-@pytest.fixture
-def simple_candidate():
-    """Create a simple candidate for testing.
-    
-    Creates a 1nm cubic cell with 4 water molecules.
-    """
-    positions = np.array([
-        # Molecule 1: O at origin, H's nearby
-        [0.0, 0.0, 0.0],    # O
-        [0.1, 0.0, 0.0],    # H
-        [-0.1, 0.0, 0.0],   # H
-        # Molecule 2: O at 0.28nm
-        [0.28, 0.0, 0.0],   # O
-        [0.38, 0.0, 0.0],   # H
-        [0.18, 0.0, 0.0],   # H
-        # ... more molecules
-    ])
-    atom_names = ['O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H']
-    cell = np.eye(3) * 1.0  # 1nm cubic cell
-    
-    return Candidate(
-        positions=positions,
-        atom_names=atom_names,
-        cell=cell,
-        nmolecules=4,
-        phase_id='ice_ih',
-        seed=1000,
-        metadata={'density': 0.9167}
-    )
-
-
-@pytest.fixture
-def candidate_set():
-    """Create a set of candidates for ranking tests."""
-    candidates = []
-    for i in range(5):
-        # Create candidates with varied positions
-        positions = create_positions(i)
-        candidates.append(Candidate(
-            positions=positions,
-            atom_names=['O', 'H', 'H'] * 4,
-            cell=np.eye(3) * 1.0,
-            nmolecules=4,
-            phase_id='ice_ih',
-            seed=1000 + i,
-            metadata={'density': 0.9167}
-        ))
-    return candidates
-```
-
-**Location:**
-- Fixtures defined at top of test file
-- Shared fixtures could go in `conftest.py` (not currently used)
-
-## Coverage
-
-**Requirements:**
-- No coverage target enforced
-- Comprehensive test coverage observed
-
-**View Coverage:**
-```bash
-pytest --cov=quickice --cov-report=html
-# Open htmlcov/index.html in browser
-```
-
-## Test Types
-
-**Unit Tests:**
-- Test individual functions in isolation
-- Use fixtures for test data
-- No external dependencies
-- Fast execution
-
-**Example from `test_validators.py`:**
 ```python
 class TestValidateTemperature:
     """Tests for temperature validation."""
@@ -249,36 +70,120 @@ class TestValidateTemperature:
         assert "temperature" in str(exc_info.value).lower()
 ```
 
-**Integration Tests:**
-- Test module interactions
-- Located in `test_cli_integration.py`
-- Use subprocess for CLI testing
+**Patterns:**
+- Class-based test organization with descriptive class names
+- Each test class tests one component/feature
+- Test methods named descriptively with docstrings
+- Group related tests in same class (e.g., `TestNormalizeScores`, `TestEnergyScore`, `TestRankCandidates`)
 
-**Example from `test_cli_integration.py`:**
+**Setup/Teardown:**
+- Use pytest fixtures for test data setup
+- No global setup/teardown detected
+- Fixtures defined at module level or within test classes
+
+## Mocking
+
+**Framework:** No mocking framework explicitly used in current tests
+
+**Patterns:**
+- Tests use real implementations (integration-style testing)
+- No `unittest.mock` or `pytest-mock` usage detected
+- Test fixtures create minimal test data objects
+
+**What to Mock:**
+- External services (not applicable to this codebase)
+- File I/O operations (use `tempfile` module for file tests)
+
+**What NOT to Mock:**
+- Internal module functions (test real implementation)
+- Data classes and simple functions
+
+## Fixtures and Factories
+
+**Test Data:**
 ```python
-class TestValidInputs:
-    """Test cases for valid CLI inputs."""
-
-    def test_valid_inputs_print_values(self):
-        """Valid inputs should print temperature, pressure, and molecules."""
-        returncode, stdout, stderr = run_cli(
-            "--temperature", "300",
-            "--pressure", "100",
-            "--nmolecules", "100"
-        )
-        
-        assert returncode == 0
-        assert "Temperature: 300.0K" in stdout
+@pytest.fixture
+def simple_candidate():
+    """Create a simple candidate for testing.
+    
+    Creates a 1nm cubic cell with 4 water molecules.
+    """
+    positions = np.array([
+        # Molecule 1: O at origin, H's nearby
+        [0.0, 0.0, 0.0],    # O
+        [0.1, 0.0, 0.0],    # H
+        [-0.1, 0.0, 0.0],   # H
+        # ... more molecules
+    ])
+    atom_names = ['O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H']
+    cell = np.eye(3) * 1.0  # 1nm cubic cell
+    return Candidate(
+        positions=positions,
+        atom_names=atom_names,
+        cell=cell,
+        nmolecules=4,
+        phase_id='ice_ih',
+        seed=1000,
+        metadata={'density': 0.9167}
+    )
 ```
 
+**Location:**
+- Fixtures defined at module level in test files
+- Shared fixtures within test classes for related tests
+- Phase-specific fixtures for different test scenarios (e.g., `phase_info_ice_ih`)
+
+## Coverage
+
+**Requirements:** No coverage target enforced
+
+**View Coverage:**
+```bash
+pytest --cov=quickice          # With pytest-cov plugin (not installed)
+pytest -v                      # Verbose output shows test counts
+```
+
+## Test Types
+
+**Unit Tests:**
+- Test individual functions in isolation
+- Located in `tests/test_<module>.py` files
+- Example: `tests/test_validators.py` tests input validation functions
+- Example: `tests/test_ranking.py` tests scoring functions
+
+**Integration Tests:**
+- Test module interactions
+- Located in `tests/test_structure_generation.py` (tests integration with GenIce)
+- Located in `tests/test_cli_integration.py` (tests full CLI flow)
+
 **E2E Tests:**
-- Not explicitly separated from integration tests
-- Full pipeline tests in `test_cli_integration.py`
+- CLI integration tests using subprocess
+- Example from `tests/test_cli_integration.py`:
+  ```python
+  def test_cli_ice_ih_output(self):
+      """CLI should show Ice Ih for T=273K, P=0MPa."""
+      result = subprocess.run(
+          [sys.executable, "quickice.py", "--temperature", "273", "--pressure", "0", "--nmolecules", "100"],
+          capture_output=True,
+          text=True,
+      )
+      assert result.returncode == 0
+      assert "Ice Ih" in result.stdout
+  ```
 
 ## Common Patterns
 
-**Exception Testing:**
+**Async Testing:**
+- Not applicable (synchronous codebase)
+
+**Error Testing:**
 ```python
+def test_rejects_negative_temperature(self):
+    """Temperature -1K should be rejected."""
+    with pytest.raises(ArgumentTypeError) as exc_info:
+        validate_temperature("-1")
+    assert "temperature" in str(exc_info.value).lower()
+
 def test_lookup_unknown_region_high_temp_low_pressure(self):
     """Temperature 500K, Pressure 500 MPa should raise UnknownPhaseError."""
     with pytest.raises(UnknownPhaseError) as exc_info:
@@ -287,52 +192,27 @@ def test_lookup_unknown_region_high_temp_low_pressure(self):
     assert "500" in str(exc_info.value)  # P value in message
 ```
 
+**Boundary Testing:**
+- Tests explicitly cover boundary conditions
+- Example: `test_accepts_valid_minimum_boundary`, `test_accepts_valid_maximum_boundary`
+- Example: `test_rejects_count_below_minimum`, `test_rejects_count_above_maximum`
+
 **Numerical Assertions:**
 ```python
-def test_supercell_100_molecules_ice1h(self):
-    """Target 100 molecules with ice1h (16 per unit cell) should return 2x2x2."""
-    supercell, actual = calculate_supercell(100, 16)
-    expected_matrix = np.array([[2, 0, 0], [0, 2, 0], [0, 0, 2]])
-    np.testing.assert_array_equal(supercell, expected_matrix)
-    assert actual == 128
+def test_normalize_scores_basic(self):
+    """Test basic normalization: [1, 2, 3] -> [0, 0.5, 1]."""
+    scores = [1.0, 2.0, 3.0]
+    result = normalize_scores(scores)
+    
+    np.testing.assert_allclose(result, [0.0, 0.5, 1.0])
+
+def test_energy_score_ideal_distance(self, ideal_candidate):
+    """Test that structure near ideal 0.276nm gives low score."""
+    score = energy_score(ideal_candidate)
+    assert score < 10.0  # Should be relatively low
 ```
 
-**Array/Structure Assertions:**
-```python
-def test_candidate_creation(self):
-    """Candidate should be creatable with all required fields."""
-    candidate = Candidate(
-        positions=positions,
-        atom_names=atom_names,
-        cell=cell,
-        nmolecules=1,
-        phase_id="ice_ih",
-        seed=42
-    )
-
-    assert candidate.nmolecules == 1
-    assert candidate.phase_id == "ice_ih"
-    np.testing.assert_array_equal(candidate.positions, positions)
-```
-
-**Fixture Usage in Tests:**
-```python
-class TestEnergyScore:
-    """Tests for energy_score function."""
-
-    def test_energy_score_returns_float(self, simple_candidate):
-        """Test that energy_score returns a float."""
-        result = energy_score(simple_candidate)
-        assert isinstance(result, float)
-
-    def test_energy_score_lower_better(self, simple_candidate, ideal_candidate):
-        """Test that better H-bond geometry gives lower score."""
-        score_simple = energy_score(simple_candidate)
-        score_ideal = energy_score(ideal_candidate)
-        assert score_ideal < score_simple
-```
-
-**File I/O Testing:**
+**File Testing:**
 ```python
 def test_creates_valid_pdb_file(self, simple_candidate):
     """Test that function creates a valid PDB file."""
@@ -342,55 +222,68 @@ def test_creates_valid_pdb_file(self, simple_candidate):
     try:
         write_pdb_with_cryst1(simple_candidate, filepath)
         
+        # Check file was created
         assert Path(filepath).exists()
         
+        # Read and verify basic structure
         with open(filepath, 'r') as f:
             content = f.read()
         
         assert 'CRYST1' in content
         assert 'ATOM' in content or 'HETATM' in content
-        assert 'END' in content
     finally:
         Path(filepath).unlink(missing_ok=True)
 ```
 
-**Parametrized Tests:**
-- Not currently used, but pytest.mark.parametrize is available
+## Test Organization Principles
 
-## Test Organization Guidelines
+**Requirement-Based Tests:**
+- Tests organized by requirements (e.g., `RANK-01`, `RANK-02`)
+- Example from `tests/test_ranking.py`:
+  ```python
+  class TestRequirements:
+      """Tests verifying all 4 ranking requirements."""
 
-**Naming Convention:**
-- Test class per feature: `Test<FeatureName>`
-- Test method describes scenario: `test_<function>_<scenario>`
-- Docstring describes what is being tested
+      def test_RANK_01_energy_ranking(self, candidate_set):
+          """RANK-01: Verify candidates have energy scores."""
+          result = rank_candidates(candidate_set)
+          for rc in result.ranked_candidates:
+              assert hasattr(rc, 'energy_score')
 
-**Test Grouping:**
-- Group related tests in classes
-- Use descriptive class names: `TestLookupPhaseIceIh`, `TestPolygonOverlapFixes`
-- Use sections in test files for different test groups
+      def test_RANK_02_density_scoring(self, candidate_set):
+          """RANK-02: Verify candidates have density scores."""
+          # ...
+  ```
 
-**Example Organization:**
-```python
-class TestLookupPhaseIceIh:
-    """Tests for Ice Ih (normal atmospheric ice) lookups."""
-    # Tests for Ice Ih...
+**Edge Case Testing:**
+- Dedicated test classes for edge cases
+- Example: `TestEdgeCases` class in `tests/test_ranking.py`
+- Tests for empty inputs, single values, infinity handling
 
+**Descriptive Test Names:**
+- Test names describe scenario and expected outcome
+- Pattern: `test_<function>_<scenario>_<expected>`
+- Example: `test_lookup_260_400_ice_v` (documents fixed bug)
 
-class TestLookupPhaseIceVii:
-    """Tests for Ice VII (high pressure, high temperature) lookups."""
-    # Tests for Ice VII...
+**Bug Regression Tests:**
+- Tests document specific bug fixes
+- Example from `tests/test_phase_mapping.py`:
+  ```python
+  class TestPolygonOverlapFixes:
+      """Tests that verify curve-based lookup fixes polygon overlap errors.
 
+      These tests document specific cases where the old polygon-based approach
+      had overlapping regions causing incorrect phase identification.
 
-class TestCurveBasedPhaseLookup:
-    """Comprehensive tests for curve-based phase lookup."""
-    # Tests for algorithm...
+      CRITICAL: These tests MUST pass to verify the curve-based approach works.
+      """
 
-
-class TestLookupPhaseUnknown:
-    """Tests for conditions outside known phase regions."""
-    # Tests for error cases...
-```
+      def test_lookup_260_400_ice_v(self):
+          """T=260K, P=400MPa should return ice_v (not ice_ii from overlap)."""
+          result = lookup_phase(260, 400)
+          assert result["phase_id"] == "ice_v"
+  ```
 
 ---
 
-*Testing analysis: 2026-03-30*
+*Testing analysis: 2026-03-31*
