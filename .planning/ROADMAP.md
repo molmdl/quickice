@@ -55,6 +55,14 @@
 
 **Dependencies:** None (foundation)
 
+**Plans:** 4 plans in 4 waves
+
+Plans:
+- [ ] 08-01-PLAN.md — Model + Worker Foundation (validators, workers)
+- [ ] 08-02-PLAN.md — View Layer (InputPanel, ProgressPanel)
+- [ ] 08-03-PLAN.md — ViewModel (state management, worker orchestration)
+- [ ] 08-04-PLAN.md — MainWindow (buttons, shortcuts, checkpoint for UI testing)
+
 **Success Criteria:**
 1. User can enter temperature value in textbox and see inline error message for invalid inputs (< 0 or > 500 K)
 2. User can enter pressure value in textbox and see inline error message for invalid inputs (< 0 or > 10000 bar)
