@@ -37,12 +37,13 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 
 ## Current State
 
-**Version:** v1.0 (shipped 2026-03-29)
-**Tech Stack:** Python, GenIce2, spglib, numpy, matplotlib
-**Code:** ~3,800 lines of Python
+**Version:** v1.1 (shipped 2026-03-31)
+**Tech Stack:** Python, GenIce2, spglib, numpy, matplotlib, scipy.spatial.cKDTree
+**Code:** ~7,151 lines of Python
 **Test Coverage:** 200+ tests passing
 **Output:** PDB files with CRYST1 records, optional phase diagram visualization
 **Phases Supported:** 12 (Ice Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X, XV)
+**Performance:** O(n log n) for large structures (KDTree optimization)
 
 ## Next Milestone Goals
 
@@ -76,6 +77,8 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 | Pre-trained model | Minimal resources, no training needed | ✓ Confirmed — vibe-based ranking works |
 | Curve-based phase lookup | Avoid polygon overlap errors | ✓ Confirmed — clean boundaries |
 | Extended to 12 phases | Comprehensive coverage | ✓ Confirmed — user value |
+| KDTree for neighbor search | O(n log n) performance | ✓ Confirmed — 50x faster for large structures |
+| Save/restore numpy state | GenIce compatibility | ✓ Confirmed — preserves reproducibility |
 
 ## Context
 
@@ -93,4 +96,4 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 
 ---
 
-*Last updated: 2026-03-29 after v2.0 milestone*
+*Last updated: 2026-03-31 after v1.1 milestone*

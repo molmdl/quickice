@@ -7,6 +7,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-03-29)
+- ✅ **v1.1 Hotfix** — Phase 7.1 (shipped 2026-03-31)
 
 ---
 
@@ -23,34 +24,58 @@
 - [x] Phase 5.1: Add Missing Ice Phases (3/3 plans) — completed 2026-03-27
 - [x] Phase 6: Documentation (2/2 plans) — completed 2026-03-28
 - [x] Phase 7: Audit & Correctness (5/5 plans) — completed 2026-03-28
-- [x] Phase 7.1: Fix Performance Issues & Critical Bugs (4/5 plans) — completed 2026-03-31
-  - [x] 7.1-01 — Fix lookup.py correctness bugs (C2, PH1, Q1) — completed 2026-03-30
-  - [x] 7.1-02 — Fix security and code quality issues (S2, S3, Q2) — completed 2026-03-30
-  - [x] 7.1-03 — Fix O(n²) pairwise distance calculations — completed 2026-03-30
-  - ⊘ 7.1-04 — Fix phase diagram performance (P2, P3) — discarded (speed already improved by 7.1-03)
-  - [x] 7.1-05 — Fix exception handling security (C1, H1) — completed 2026-03-31
-  - ⏸ 7.1-06 — Add literature citations (M4) — deferred (verify references first)
 
 **Full details:** [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
 
 </details>
 
+<details>
+<summary>✅ v1.1 Hotfix (Phase 7.1) — SHIPPED 2026-03-31</summary>
+
+- [x] Phase 7.1: Fix Performance & Critical Bugs (4/6 plans) — completed 2026-03-31
+  - 7.1-04 discarded (KDTree optimization sufficient)
+  - 7.1-06 deferred (verify references first)
+
+**Key fixes:**
+- Ice XV pressure range corrected (950-2100 MPa)
+- Ice Ic detection before Ice Ih fallback
+- Path traversal protection
+- O(n²)→O(n log n) KDTree optimization
+- Exception handling with proper logging
+
+**Full details:** [.planning/milestones/v1.1-ROADMAP.md](./milestones/v1.1-ROADMAP.md)
+
+</details>
+
+---
+
+## Next Milestone
+
+🚧 **v2.0 GUI Application** — Planned
+
+Target features:
+- Interactive phase diagram (click to select T,P)
+- Textbox input for options
+- Info window with citations for ice phases
+- 3D structure viewer (stick/ball + hydrogen bonds)
+- Save/export options
+
 ---
 
 ## Progress
 
-| Phase | Goal | Requirements | Status |
-|-------|------|--------------|--------|
-| 1 - Input Validation | Valid CLI flags | INPUT-01 to INPUT-04 | ✅ Complete |
-| 2 - Phase Mapping | T,P → polymorph | PHASE-01 to PHASE-03 | ✅ Complete |
-| 3 - Structure Generation | Valid GenIce output | GEN-01 to GEN-04 | ✅ Complete |
-| 4 - Ranking | Scored candidates | RANK-01 to RANK-04 | ✅ Complete |
-| 5 - Output | PDB files | OUT-01 to OUT-05 | ✅ Complete |
-| 5.1 - Missing Ice Phases | IX, XI, X, XV | Extended | ✅ Complete |
-| 6 - Documentation | User guides | DOC-01 to DOC-04 | ✅ Complete |
-| 7 - Audit & Correctness | Quality assurance | AUDIT-01 to AUDIT-05 | ✅ Complete |
-| 7.1 - Fix Performance & Bugs | Fix critical bugs + O(n²) perf | C2, S2, S3, PH1, C1 | ✅ Complete |
+| Phase | Milestone | Status | Completed |
+|-------|-----------|--------|-----------|
+| 1 - Input Validation | v1.0 | ✅ Complete | 2026-03-26 |
+| 2 - Phase Mapping | v1.0 | ✅ Complete | 2026-03-27 |
+| 3 - Structure Generation | v1.0 | ✅ Complete | 2026-03-26 |
+| 4 - Ranking | v1.0 | ✅ Complete | 2026-03-26 |
+| 5 - Output | v1.0 | ✅ Complete | 2026-03-27 |
+| 5.1 - Missing Ice Phases | v1.0 | ✅ Complete | 2026-03-27 |
+| 6 - Documentation | v1.0 | ✅ Complete | 2026-03-28 |
+| 7 - Audit & Correctness | v1.0 | ✅ Complete | 2026-03-28 |
+| 7.1 - Fix Performance & Bugs | v1.1 | ✅ Complete | 2026-03-31 |
 
 ---
 
-*Roadmap archived from v1.0 development. See milestones/ for full phase details.*
+*Roadmap last updated: 2026-03-31*
