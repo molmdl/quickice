@@ -1,0 +1,1 @@
+"""QuickIce GUI Application."""
