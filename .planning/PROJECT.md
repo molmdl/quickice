@@ -93,6 +93,7 @@ Generate plausible ice structure candidates quickly for a given set of thermodyn
 - **Output**: PDB format only
 - **Dependencies**: Only Python libraries in current conda environment
 - **Scope**: Water ice only, generation only
+- **Installation**: Do NOT auto-install dependencies. Add to env.yml, seek approval, wait for user to install.
 
 ---
 
