@@ -41,8 +41,14 @@ QuickIce uses:
 ### One-Time Setup
 
 ```bash
-# Create conda environment
+# Create conda environment (includes v2.0 GUI dependencies)
 conda env create -f env.yml
+```
+
+**v1 CLI only:** If you only need the command-line tool (no GUI), use the lighter environment:
+
+```bash
+conda env create -f env_v1.yml
 ```
 
 ### Setup Environment
