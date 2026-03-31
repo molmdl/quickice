@@ -28,11 +28,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Status | Planned - ready for execution |
+| Plan | 08-01 complete, 08-02 next |
+| Status | In progress - Model layer complete |
 | Plans | 4 plans in 4 waves |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** Phase 8 planned with 4-wave execution plan
+**Progress:** ░░░░░░░░░░░░░░░░░░░░ 2% (1 of ~50 plans across v2.0)
 
 ---
 
@@ -129,6 +130,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | All | Direct module import (not subprocess) | Preserves typed objects |
 | All | MVVM architecture | Clean separation of UI and logic |
 | All | QThread workers | Prevents UI freezing during computation |
+| 08-01 | Pressure in bar (not MPa) | More intuitive for users |
+| 08-01 | Max 216 molecules (not 100000) | Computational limit for interactive GUI |
+| 08-01 | Worker-object pattern | Proper Qt pattern for cancellable work |
+| 08-01 | Import modules inside run() | Avoids blocking main thread |
+
+---
+
+## Session Continuity
+
+**Last session:** 2026-03-31 12:43 UTC
+**Stopped at:** Completed 08-01-SUMMARY.md
+**Resume file:** None - next plan is 08-02
 
 ---
 
@@ -196,4 +209,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-03-31 - v2.0 roadmap created*
+*State updated: 2026-03-31 - Phase 08-01 complete (GUI Model Layer)*
