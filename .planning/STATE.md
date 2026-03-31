@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Plan | 08-02 complete, 08-03 next |
-| Status | In progress - Model and View layers complete |
+| Plan | 08-03 complete, 08-04 next |
+| Status | In progress - Model, View, and ViewModel layers complete |
 | Plans | 4 plans in 4 waves |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** ░░░░░░░░░░░░░░░░░░░░ 4% (2 of ~50 plans across v2.0)
+**Progress:** ░░░░░░░░░░░░░░░░░░░░ 6% (3 of ~50 plans across v2.0)
 
 ---
 
@@ -137,14 +137,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 08-02 | Validation on submit (not real-time) | Per CONTEXT.md requirements |
 | 08-02 | Inline error labels hidden by default | Clean UI, errors shown on validation failure |
 | 08-02 | ProgressPanel lifecycle state methods | Clear state management for generation flow |
+| 08-03 | ViewModel manages generation state | MVVM pattern: bridge between View and Model |
+| 08-03 | UI state via ui_enabled_changed signal | Enables/disables UI during generation |
+| 08-03 | Thread cleanup via deleteLater | Proper Qt memory management |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-03-31 12:58 UTC
-**Stopped at:** Completed 08-02-SUMMARY.md
-**Resume file:** None - next plan is 08-03
+**Last session:** 2026-03-31 13:09 UTC
+**Stopped at:** Completed 08-03-SUMMARY.md
+**Resume file:** None - next plan is 08-04
 
 ---
 
@@ -212,4 +215,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-03-31 - Phase 08-02 complete (GUI View Layer)*
+*State updated: 2026-03-31 - Phase 08-03 complete (GUI ViewModel Layer)*
