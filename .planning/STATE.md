@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 8 ready to start
+**Current Focus:** v2.0 GUI Application - Phase 8 complete, Phase 9 ready
 
 ---
 
@@ -28,18 +28,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Plan | 08-03 complete, 08-04 next |
-| Status | In progress - Model, View, and ViewModel layers complete |
-| Plans | 4 plans in 4 waves |
+| Plan | 08-04 complete - Phase 8 DONE |
+| Status | Phase complete - Ready for Phase 9 |
+| Plans | 4 plans in 4 waves (all complete) |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** ░░░░░░░░░░░░░░░░░░░░ 6% (3 of ~50 plans across v2.0)
+**Progress:** ████████░░░░░░░░░░░░ 8% (4 of ~50 plans across v2.0)
 
 ---
 
 ## v2.0 Phase Overview
 
-### Phase 8: GUI Infrastructure + Core Input (next)
+### Phase 8: GUI Infrastructure + Core Input (COMPLETE ✓)
 
 **Goal:** Users can enter temperature, pressure, and molecule count parameters and trigger ice structure generation with progress feedback
 
@@ -54,7 +54,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 - Error dialogs for failures
 - Keyboard shortcuts (Enter to generate, Escape to cancel)
 
-### Phase 9: Interactive Phase Diagram
+**Status:** Complete - all 4 plans executed
+
+### Phase 9: Interactive Phase Diagram (next)
 
 **Goal:** Users can visually select thermodynamic conditions by clicking on an interactive phase diagram
 
@@ -140,14 +142,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 08-03 | ViewModel manages generation state | MVVM pattern: bridge between View and Model |
 | 08-03 | UI state via ui_enabled_changed signal | Enables/disables UI during generation |
 | 08-03 | Thread cleanup via deleteLater | Proper Qt memory management |
+| 08-04 | QAction for keyboard shortcuts | Works globally in window |
+| 08-04 | Generate button as default | Enter key triggers generation |
+| 08-04 | QMessageBox.critical for errors | Per PROGRESS-04 requirement |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-03-31 13:09 UTC
-**Stopped at:** Completed 08-03-SUMMARY.md
-**Resume file:** None - next plan is 08-04
+**Last session:** 2026-03-31 21:27 UTC
+**Stopped at:** Completed 08-04-SUMMARY.md - Phase 8 COMPLETE
+**Resume file:** None - next phase is Phase 9
 
 ---
 
@@ -177,11 +182,11 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INPUT-01 | Phase 8 | Pending |
-| INPUT-02 | Phase 8 | Pending |
-| INPUT-03 | Phase 8 | Pending |
-| INPUT-04 | Phase 8 | Pending |
-| INPUT-05 | Phase 8 | Pending |
+| INPUT-01 | Phase 8 | Complete |
+| INPUT-02 | Phase 8 | Complete |
+| INPUT-03 | Phase 8 | Complete |
+| INPUT-04 | Phase 8 | Complete |
+| INPUT-05 | Phase 8 | Complete |
 | DIAGRAM-01 | Phase 9 | Pending |
 | DIAGRAM-02 | Phase 9 | Pending |
 | DIAGRAM-03 | Phase 9 | Pending |
@@ -191,10 +196,10 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | VIEWER-03 | Phase 10 | Pending |
 | VIEWER-04 | Phase 10 | Pending |
 | VIEWER-05 | Phase 10 | Pending |
-| PROGRESS-01 | Phase 8 | Pending |
-| PROGRESS-02 | Phase 8 | Pending |
-| PROGRESS-03 | Phase 8 | Pending |
-| PROGRESS-04 | Phase 8 | Pending |
+| PROGRESS-01 | Phase 8 | Complete |
+| PROGRESS-02 | Phase 8 | Complete |
+| PROGRESS-03 | Phase 8 | Complete |
+| PROGRESS-04 | Phase 8 | Complete |
 | EXPORT-01 | Phase 11 | Pending |
 | EXPORT-02 | Phase 11 | Pending |
 | EXPORT-03 | Phase 11 | Pending |
@@ -207,7 +212,7 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | ADVVIZ-03 | Phase 10 | Pending |
 | ADVVIZ-04 | Phase 10 | Pending |
 | ADVVIZ-05 | Phase 10 | Pending |
-| UX-01 | Phase 8 | Pending |
+| UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
 | PACKAGE-02 | Phase 12 | Pending |
 
@@ -215,4 +220,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-03-31 - Phase 08-03 complete (GUI ViewModel Layer)*
+*State updated: 2026-03-31 - Phase 08 complete (GUI Infrastructure + Core Input)*
