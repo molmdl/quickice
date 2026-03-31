@@ -27,13 +27,13 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Plan | 08-04 complete - Phase 8 DONE |
-| Status | Phase complete - Ready for Phase 9 |
-| Plans | 4 plans in 4 waves (all complete) |
+| Phase | Phase 9 - Interactive Phase Diagram |
+| Plan | 09-02 complete - Phase 9 in progress |
+| Status | In progress - Ready for 09-03 |
+| Plans | 2/3 plans in Phase 9 complete |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** ████████░░░░░░░░░░░░ 8% (4 of ~50 plans across v2.0)
+**Progress:** ████████░░░░░░░░░░░░ 8% (5 of ~50 plans across v2.0)
 
 ---
 
@@ -56,11 +56,19 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Status:** Complete - all 4 plans executed
 
-### Phase 9: Interactive Phase Diagram (next)
-
+### Phase 9: Interactive Phase Diagram (in progress)
 **Goal:** Users can visually select thermodynamic conditions by clicking on an interactive phase diagram
 
 **Requirements:** 4 (DIAGRAM-01 to DIAGRAM-04)
+
+**Key deliverables:**
+- PhaseDiagramWidget with 12-phase ice diagram
+- Hover for live T,P coordinates
+- Click to select coordinates and detect phase
+- MainWindow integration with split view layout
+- Diagram clicks populate input fields
+
+**Status:** 2/3 plans complete - Ready for manual testing (09-03)
 
 ### Phase 10: 3D Molecular Viewer
 
@@ -145,14 +153,19 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 08-04 | QAction for keyboard shortcuts | Works globally in window |
 | 08-04 | Generate button as default | Enter key triggers generation |
 | 08-04 | QMessageBox.critical for errors | Per PROGRESS-04 requirement |
+| 09-02 | Default molecule count 96 | Reasonable middle value from 4-216 range |
+| 09-02 | Temperature rounded to 1 decimal | Better readability for users |
+| 09-02 | Pressure rounded to 0 decimals | Simpler integer display |
+| 09-02 | Splitter sizing 60/40 | Balanced view for diagram and inputs |
+| 09-02 | Window minimum 800x500 | Accommodate both panels comfortably |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-03-31 21:27 UTC
-**Stopped at:** Completed 08-04-SUMMARY.md - Phase 8 COMPLETE
-**Resume file:** None - next phase is Phase 9
+**Last session:** 2026-04-01 17:15 UTC
+**Stopped at:** Completed 09-02-SUMMARY.md - Phase 9 in progress
+**Resume file:** None - next plan is 09-03
 
 ---
 
@@ -220,4 +233,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-03-31 - Phase 08 complete (GUI Infrastructure + Core Input)*
+*State updated: 2026-04-01 - Phase 09 plan 02 complete (Interactive Phase Diagram)*
