@@ -85,6 +85,13 @@ Plans:
 
 **Dependencies:** Phase 8 (input handling)
 
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 09-01-PLAN.md — Create PhaseDiagramWidget (matplotlib canvas, hover, click, phase detection)
+- [ ] 09-02-PLAN.md — Integrate into MainWindow (split view, input population)
+- [ ] 09-03-PLAN.md — Manual verification (GUI testing)
+
 **Success Criteria:**
 1. User can view 12-phase ice phase diagram in GUI with labeled regions
 2. User can click anywhere on phase diagram to select temperature and pressure coordinates
