@@ -9,11 +9,11 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Input & Controls
 
-- [ ] **INPUT-01**: User can enter temperature value in textbox with validation
-- [ ] **INPUT-02**: User can enter pressure value in textbox with validation
-- [ ] **INPUT-03**: User can enter molecule count in textbox with validation (max 216)
-- [ ] **INPUT-04**: User can click Generate button to trigger ice structure generation
-- [ ] **INPUT-05**: User sees inline error messages for invalid inputs
+- [x] **INPUT-01**: User can enter temperature value in textbox with validation
+- [x] **INPUT-02**: User can enter pressure value in textbox with validation
+- [x] **INPUT-03**: User can enter molecule count in textbox with validation (max 216)
+- [x] **INPUT-04**: User can click Generate button to trigger ice structure generation
+- [x] **INPUT-05**: User sees inline error messages for invalid inputs
 
 ### Interactive Phase Diagram
 
@@ -32,10 +32,10 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Progress & Feedback
 
-- [ ] **PROGRESS-01**: User sees progress bar during ice structure generation
-- [ ] **PROGRESS-02**: User sees status text indicating current operation
-- [ ] **PROGRESS-03**: User can cancel generation mid-process via Cancel button
-- [ ] **PROGRESS-04**: User sees error dialog when generation fails with details
+- [x] **PROGRESS-01**: User sees progress bar during ice structure generation
+- [x] **PROGRESS-02**: User sees status text indicating current operation
+- [x] **PROGRESS-03**: User can cancel generation mid-process via Cancel button
+- [x] **PROGRESS-04**: User sees error dialog when generation fails with details
 
 ### Save/Export
 
@@ -60,7 +60,7 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### User Experience
 
-- [ ] **UX-01**: User can use keyboard shortcuts (Enter to generate, Escape to cancel)
+- [x] **UX-01**: User can use keyboard shortcuts (Enter to generate, Escape to cancel)
 
 ### Packaging & Licensing
 
@@ -109,11 +109,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INPUT-01 | Phase 8 | Pending |
-| INPUT-02 | Phase 8 | Pending |
-| INPUT-03 | Phase 8 | Pending |
-| INPUT-04 | Phase 8 | Pending |
-| INPUT-05 | Phase 8 | Pending |
+| INPUT-01 | Phase 8 | Complete |
+| INPUT-02 | Phase 8 | Complete |
+| INPUT-03 | Phase 8 | Complete |
+| INPUT-04 | Phase 8 | Complete |
+| INPUT-05 | Phase 8 | Complete |
 | DIAGRAM-01 | Phase 9 | Pending |
 | DIAGRAM-02 | Phase 9 | Pending |
 | DIAGRAM-03 | Phase 9 | Pending |
@@ -123,10 +123,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEWER-03 | Phase 10 | Pending |
 | VIEWER-04 | Phase 10 | Pending |
 | VIEWER-05 | Phase 10 | Pending |
-| PROGRESS-01 | Phase 8 | Pending |
-| PROGRESS-02 | Phase 8 | Pending |
-| PROGRESS-03 | Phase 8 | Pending |
-| PROGRESS-04 | Phase 8 | Pending |
+| PROGRESS-01 | Phase 8 | Complete |
+| PROGRESS-02 | Phase 8 | Complete |
+| PROGRESS-03 | Phase 8 | Complete |
+| PROGRESS-04 | Phase 8 | Complete |
 | EXPORT-01 | Phase 11 | Pending |
 | EXPORT-02 | Phase 11 | Pending |
 | EXPORT-03 | Phase 11 | Pending |
@@ -139,7 +139,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADVVIZ-03 | Phase 10 | Pending |
 | ADVVIZ-04 | Phase 10 | Pending |
 | ADVVIZ-05 | Phase 10 | Pending |
-| UX-01 | Phase 8 | Pending |
+| UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
 | PACKAGE-02 | Phase 12 | Pending |
 
