@@ -28,10 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Status | Ready to start |
+| Status | Planned - ready for execution |
+| Plans | 4 plans in 4 waves |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** v1.1 complete - all phases shipped, roadmap created for v2.0
+**Progress:** Phase 8 planned with 4-wave execution plan
 
 ---
 
