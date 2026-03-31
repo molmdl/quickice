@@ -9,13 +9,14 @@ This module provides the MainWindow class that assembles all GUI components:
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-    QMessageBox, QApplication
+    QMessageBox, QApplication, QSplitter
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Slot
 
 from quickice.gui.view import InputPanel, ProgressPanel
 from quickice.gui.viewmodel import MainViewModel
+from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 
 
 class MainWindow(QMainWindow):
@@ -34,7 +35,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("QuickIce - Ice Structure Generator")
-        self.setMinimumSize(400, 450)
+        self.setMinimumSize(800, 500)
         
         # Create viewmodel
         self._viewmodel = MainViewModel(self)
@@ -45,20 +46,26 @@ class MainWindow(QMainWindow):
         self._setup_shortcuts()
     
     def _setup_ui(self):
-        """Setup UI components."""
-        # Central widget
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        layout.setContentsMargins(20, 20, 20, 20)
+        """Setup UI components with split view layout."""
+        # Create splitter for horizontal split view
+        splitter = QSplitter(Qt.Horizontal)
+        
+        # Left side: Phase diagram panel
+        self.diagram_panel = PhaseDiagramPanel()
+        splitter.addWidget(self.diagram_panel)
+        
+        # Right side: Input panel, progress panel, buttons
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(20, 20, 20, 20)
         
         # Input panel
         self.input_panel = InputPanel()
-        layout.addWidget(self.input_panel)
+        right_layout.addWidget(self.input_panel)
         
         # Progress panel
         self.progress_panel = ProgressPanel()
-        layout.addWidget(self.progress_panel)
+        right_layout.addWidget(self.progress_panel)
         
         # Buttons
         self.generate_btn = QPushButton("Generate")
@@ -66,17 +73,30 @@ class MainWindow(QMainWindow):
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setEnabled(False)
         
-        layout.addWidget(self.generate_btn)
-        layout.addWidget(self.cancel_btn)
+        right_layout.addWidget(self.generate_btn)
+        right_layout.addWidget(self.cancel_btn)
         
         # Stretch at bottom
-        layout.addStretch()
+        right_layout.addStretch()
+        
+        splitter.addWidget(right_widget)
+        
+        # Set initial sizes (diagram ~60%, inputs ~40%)
+        splitter.setSizes([400, 300])
+        
+        # Set splitter as central widget
+        self.setCentralWidget(splitter)
     
     def _setup_connections(self):
         """Setup signal/slot connections."""
         # Button connections
         self.generate_btn.clicked.connect(self._on_generate_clicked)
         self.cancel_btn.clicked.connect(self._on_cancel_clicked)
+        
+        # Diagram selection -> input panel
+        self.diagram_panel.diagram_canvas.coordinates_selected.connect(
+            self._on_diagram_selected
+        )
         
         # ViewModel connections - progress
         self._viewmodel.generation_progress.connect(self.progress_panel.update_progress)
@@ -180,6 +200,21 @@ class MainWindow(QMainWindow):
         self.generate_btn.setEnabled(enabled)
         self.cancel_btn.setEnabled(not enabled)
         self.input_panel.setEnabled(enabled)
+    
+    @Slot(float, float)
+    def _on_diagram_selected(self, temperature: float, pressure: float):
+        """Handle diagram selection - populate input fields.
+        
+        Args:
+            temperature: Temperature in Kelvin
+            pressure: Pressure in bar
+        """
+        # Set values in input panel with rounding
+        self.input_panel.set_values(
+            round(temperature, 1),
+            round(pressure),
+            96  # Default molecule count
+        )
 
 
 def run_app():
