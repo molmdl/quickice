@@ -1,227 +1,196 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-03-30
+**Analysis Date:** 2026-03-31
 
 ## Directory Layout
 
 ```
 quickice/
-├── quickice.py              # CLI entry point
-├── quickice/                # Main package
+├── quickice.py              # CLI entry point (user-facing script)
+├── quickice/                # Main Python package
 │   ├── __init__.py          # Package init, version
-│   ├── main.py              # Main orchestrator
-│   ├── cli/                 # CLI layer
-│   │   ├── __init__.py
-│   │   └── parser.py        # Argument parser
+│   ├── main.py              # Pipeline orchestration
+│   ├── cli/                 # Command-line interface
 │   ├── validation/          # Input validation
-│   │   ├── __init__.py
-│   │   └── validators.py    # Range validators
-│   ├── phase_mapping/       # Phase identification
-│   │   ├── __init__.py      # Exports
-│   │   ├── lookup.py        # Main lookup function
-│   │   ├── errors.py        # Custom exceptions
-│   │   ├── melting_curves.py # IAPWS melting equations
-│   │   ├── solid_boundaries.py # Solid-solid boundaries
-│   │   ├── triple_points.py # Triple point constants
-│   │   └── data/            # Data subpackage
-│   │       ├── __init__.py
-│   │       └── ice_boundaries.py
-│   ├── structure_generation/ # GenIce wrapper
-│   │   ├── __init__.py      # Exports
-│   │   ├── generator.py    # IceStructureGenerator class
-│   │   ├── mapper.py        # Phase ID → GenIce mapping
-│   │   ├── types.py         # Candidate, GenerationResult
-│   │   └── errors.py        # Custom exceptions
+│   ├── phase_mapping/       # T,P → ice phase lookup
+│   ├── structure_generation/# GenIce2 integration
 │   ├── ranking/             # Candidate scoring
-│   │   ├── __init__.py      # Exports
-│   │   ├── scorer.py        # Scoring functions
-│   │   └── types.py         # RankedCandidate, RankingResult
-│   └── output/              # Output generation
-│       ├── __init__.py      # Exports
-│       ├── orchestrator.py  # Main output coordinator
-│       ├── pdb_writer.py    # PDB file writer
-│       ├── validator.py     # Structure validation
-│       ├── phase_diagram.py # Diagram generation
-│       └── types.py         # OutputResult
+│   └── output/              # PDB/diagram output
 ├── tests/                   # Test suite
-│   ├── __init__.py
-│   ├── test_cli_integration.py
-│   ├── test_phase_mapping.py
-│   ├── test_structure_generation.py
-│   ├── test_ranking.py
-│   ├── test_validators.py
-│   └── test_output/         # Output tests
-│       ├── __init__.py
-│       ├── test_validator.py
-│       └── test_pdb_writer.py
 ├── docs/                    # Documentation
 ├── sample_output/           # Example output files
-├── .planning/               # Planning documents
-├── requirements-dev.txt     # Dev dependencies
-├── README.md               # Project readme
-└── env.yml                 # Conda environment
+├── .planning/               # Project planning documents
+├── env.yml                  # Conda environment specification
+├── requirements-dev.txt     # Development dependencies
+├── README.md                # Project documentation
+├── LICENSE                  # MIT license
+└── setup.sh                 # Environment setup script
 ```
 
 ## Directory Purposes
 
-**quickice/ (package root):**
-- Purpose: Main Python package
-- Contains: All modules organized by functional layer
-- Key files: `__init__.py` (version), `main.py` (orchestrator)
+**`quickice/`:**
+- Purpose: Main Python package containing all source code
+- Contains: Six submodules (cli, validation, phase_mapping, structure_generation, ranking, output)
+- Key files: `main.py` (orchestration), `__init__.py` (package metadata)
 
-**quickice/cli/:**
-- Purpose: Command-line interface
-- Contains: Argument parser configuration
-- Key files: `parser.py` (argparse setup)
+**`quickice/cli/`:**
+- Purpose: Command-line argument parsing
+- Contains: `parser.py` (argparse configuration)
+- Key files: `quickice/cli/parser.py`
 
-**quickice/validation/:**
-- Purpose: Input validation
-- Contains: Type validators for CLI arguments
-- Key files: `validators.py` (validate_temperature, validate_pressure, validate_nmolecules)
+**`quickice/validation/`:**
+- Purpose: Input validation logic
+- Contains: `validators.py` (type converters for argparse)
+- Key files: `quickice/validation/validators.py`
 
-**quickice/phase_mapping/:**
-- Purpose: Ice phase identification from T, P conditions
-- Contains: Phase lookup algorithm, boundary curves, triple points
-- Key files: `lookup.py` (lookup_phase function), `melting_curves.py` (IAPWS equations)
+**`quickice/phase_mapping/`:**
+- Purpose: Map temperature/pressure to ice phase
+- Contains: Phase lookup, melting curves, solid boundaries, triple points
+- Key files: `quickice/phase_mapping/lookup.py`, `quickice/phase_mapping/melting_curves.py`, `quickice/phase_mapping/solid_boundaries.py`
+- Data: `quickice/phase_mapping/data/` (ice boundary data)
 
-**quickice/structure_generation/:**
-- Purpose: Ice structure generation using GenIce
-- Contains: Generator class, phase-to-lattice mapping, types
-- Key files: `generator.py` (IceStructureGenerator), `mapper.py` (PHASE_TO_GENICE dict)
+**`quickice/structure_generation/`:**
+- Purpose: Generate ice structure candidates
+- Contains: GenIce wrapper, phase-to-lattice mapper, data types
+- Key files: `quickice/structure_generation/generator.py`, `quickice/structure_generation/mapper.py`, `quickice/structure_generation/types.py`
 
-**quickice/ranking/:**
-- Purpose: Candidate scoring and ranking
-- Contains: Energy, density, diversity scoring functions
-- Key files: `scorer.py` (rank_candidates, energy_score, density_score, diversity_score)
+**`quickice/ranking/`:**
+- Purpose: Score and rank candidates
+- Contains: Scoring functions, ranking algorithm, data types
+- Key files: `quickice/ranking/scorer.py`, `quickice/ranking/types.py`
 
-**quickice/output/:**
-- Purpose: File output and phase diagram generation
-- Contains: PDB writer, structure validator, diagram generator
-- Key files: `orchestrator.py` (output_ranked_candidates), `phase_diagram.py` (generate_phase_diagram)
+**`quickice/output/`:**
+- Purpose: Write output files and generate visualizations
+- Contains: PDB writer, validator, phase diagram generator, orchestrator
+- Key files: `quickice/output/orchestrator.py`, `quickice/output/pdb_writer.py`, `quickice/output/phase_diagram.py`
 
-**tests/:**
+**`tests/`:**
 - Purpose: Unit and integration tests
-- Contains: pytest test modules mirroring package structure
-- Key files: `test_structure_generation.py`, `test_phase_mapping.py`
+- Contains: Test files mirroring package structure
+- Key files: `tests/test_phase_mapping.py`, `tests/test_structure_generation.py`, `tests/test_ranking.py`, `tests/test_cli_integration.py`
+
+**`docs/`:**
+- Purpose: User documentation
+- Contains: CLI reference, ranking algorithm, design principles
+
+**`sample_output/`:**
+- Purpose: Example output files for users
+- Contains: Generated PDB files and phase diagrams
+
+**`.planning/`:**
+- Purpose: Project planning and phase documentation
+- Contains: Milestone docs, phase plans, codebase analysis
+- Key files: `.planning/codebase/` (this document)
 
 ## Key File Locations
 
 **Entry Points:**
-- `quickice.py`: CLI entry point (run with `python quickice.py`)
-- `quickice/main.py`: Main orchestration function `main()`
+- `quickice.py`: CLI entry point (what users run)
+- `quickice/main.py`: Pipeline orchestration function
 
 **Configuration:**
+- `env.yml`: Conda environment with all dependencies
 - `requirements-dev.txt`: Development dependencies (pytest)
-- `env.yml`: Conda environment specification
+- `setup.sh`: Environment activation script
 
 **Core Logic:**
-- `quickice/phase_mapping/lookup.py`: Phase identification algorithm (388 lines)
-- `quickice/structure_generation/generator.py`: Structure generation (269 lines)
-- `quickice/ranking/scorer.py`: Scoring functions (345 lines)
-- `quickice/output/orchestrator.py`: Output coordination (141 lines)
+- `quickice/phase_mapping/lookup.py`: Phase identification algorithm
+- `quickice/structure_generation/generator.py`: GenIce integration
+- `quickice/ranking/scorer.py`: Scoring functions
+- `quickice/output/orchestrator.py`: Output coordination
 
-**Data & Constants:**
-- `quickice/structure_generation/mapper.py`: PHASE_TO_GENICE mapping, UNIT_CELL_MOLECULES
-- `quickice/phase_mapping/triple_points.py`: Triple point coordinates
-- `quickice/phase_mapping/melting_curves.py`: IAPWS melting curve equations
-- `quickice/phase_mapping/solid_boundaries.py`: Solid-solid boundary equations
-
-**Types:**
-- `quickice/structure_generation/types.py`: Candidate, GenerationResult dataclasses
-- `quickice/ranking/types.py`: RankedCandidate, RankingResult dataclasses
-- `quickice/output/types.py`: OutputResult dataclass
+**Data Types:**
+- `quickice/structure_generation/types.py`: `Candidate`, `GenerationResult`
+- `quickice/ranking/types.py`: `RankedCandidate`, `RankingResult`
+- `quickice/output/types.py`: `OutputResult`
 
 **Testing:**
-- `tests/test_structure_generation.py`: Generator and mapper tests (567 lines)
 - `tests/test_phase_mapping.py`: Phase lookup tests
-- `tests/test_ranking.py`: Scoring function tests
+- `tests/test_structure_generation.py`: Generator tests
+- `tests/test_ranking.py`: Scoring tests
+- `tests/test_cli_integration.py`: End-to-end tests
 
 ## Naming Conventions
 
 **Files:**
-- Python modules: `snake_case.py` (e.g., `melting_curves.py`, `pdb_writer.py`)
-- Test files: `test_<module>.py` (e.g., `test_ranking.py`)
-- Package inits: `__init__.py` with module docstring
+- Python modules: lowercase with underscores (e.g., `melting_curves.py`, `solid_boundaries.py`)
+- Test files: `test_<module>.py` (e.g., `test_phase_mapping.py`)
+- Types files: `types.py` within each submodule
+- Error files: `errors.py` within each submodule
 
-**Functions:**
-- Public API: `snake_case` (e.g., `lookup_phase`, `generate_candidates`, `rank_candidates`)
-- Private helpers: `_leading_underscore` (e.g., `_build_result`, `_parse_gro`, `_calculate_oo_distances_pbc`)
-- Validators: `validate_<noun>` (e.g., `validate_temperature`)
+**Directories:**
+- Python packages: lowercase with underscores (e.g., `phase_mapping/`, `structure_generation/`)
+- Test directories: `tests/`, `test_output/` (mirrors package structure)
 
 **Classes:**
-- Class names: `PascalCase` (e.g., `IceStructureGenerator`, `IcePhaseLookup`, `Candidate`)
-- Exceptions: `<Name>Error` (e.g., `PhaseMappingError`, `UnknownPhaseError`, `StructureGenerationError`)
+- Data classes: PascalCase nouns (e.g., `Candidate`, `GenerationResult`, `RankingResult`)
+- Exception classes: PascalCase with "Error" suffix (e.g., `PhaseMappingError`, `UnknownPhaseError`)
+- Generator classes: PascalCase (e.g., `IceStructureGenerator`)
 
-**Variables:**
-- Local variables: `snake_case` (e.g., `phase_info`, `candidates`, `n_molecules`)
-- Constants: `UPPER_SNAKE_CASE` (e.g., `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`, `TRIPLE_POINTS`)
+**Functions:**
+- Public API: snake_case verbs (e.g., `lookup_phase`, `generate_candidates`, `rank_candidates`)
+- Private helpers: leading underscore (e.g., `_build_result`, `_parse_gro`)
+- Type converters: `validate_<name>` (e.g., `validate_temperature`)
 
-**Dataclasses:**
-- Field names: `snake_case` (e.g., `nmolecules`, `phase_id`, `was_rounded`)
-- No leading underscores for fields
+**Constants:**
+- Module-level: SCREAMING_SNAKE_CASE (e.g., `IDEAL_OO_DISTANCE`, `TRIPLE_POINTS`, `PHASE_COLORS`)
 
 ## Where to Add New Code
 
-**New Ice Phase:**
-- Phase mapping: Add entry to `PHASE_METADATA` in `quickice/phase_mapping/lookup.py`
-- Structure generation: Add mapping in `PHASE_TO_GENICE` in `quickice/structure_generation/mapper.py`
-- Output: Add color/label in `PHASE_COLORS`, `PHASE_LABELS` in `quickice/output/phase_diagram.py`
-- Boundary: Add boundary functions in `quickice/phase_mapping/solid_boundaries.py`
+**New Feature (e.g., new scoring metric):**
+- Primary code: `quickice/ranking/scorer.py` (add function)
+- Tests: `tests/test_ranking.py` (add test)
 
-**New Scoring Metric:**
-- Add scoring function in `quickice/ranking/scorer.py`
-- Add score fields to `RankedCandidate` in `quickice/ranking/types.py`
-- Update `rank_candidates()` to include new score
+**New Component/Module (e.g., new analysis stage):**
+- Implementation: Create new directory `quickice/<module_name>/`
+- Include: `__init__.py`, `types.py`, `errors.py`, main module file
+- Wire into pipeline: `quickice/main.py`
+
+**New Ice Phase Support:**
+- Phase mapping: `quickice/phase_mapping/lookup.py` (add to algorithm)
+- Metadata: `quickice/phase_mapping/lookup.py` (add to `PHASE_METADATA`)
+- GenIce mapping: `quickice/structure_generation/mapper.py` (add to `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`)
+- Phase diagram: `quickice/output/phase_diagram.py` (add to `PHASE_COLORS`, `PHASE_LABELS`, polygon builder)
 
 **New Output Format:**
-- Add writer function in `quickice/output/`
-- Export from `quickice/output/__init__.py`
-- Update `output_ranked_candidates()` in `quickice/output/orchestrator.py`
+- Writer: `quickice/output/` (add new writer module)
+- Wire into: `quickice/output/orchestrator.py`
+- Types: `quickice/output/types.py` (extend if needed)
 
-**New CLI Option:**
-- Add argument in `quickice/cli/parser.py`
-- Update `main()` in `quickice/main.py` to handle new option
+**Utilities:**
+- Shared helpers: Keep within the module that uses them
+- If truly cross-cutting: Create `quickice/utils/` module
 
-**New Test:**
-- Create test file in `tests/` mirroring module structure
-- Use pytest fixtures for common setup
-
-**New Utility:**
-- If used by multiple modules: Create new module in `quickice/`
-- If used locally: Add as private function in existing module
+**Tests:**
+- Unit tests: `tests/test_<module>.py`
+- Integration tests: `tests/test_<feature>_integration.py`
 
 ## Special Directories
 
-**.planning/:**
-- Purpose: Planning documents for GSD workflow
-- Contains: Phase plans, research notes, codebase analysis
+**`.planning/`:**
+- Purpose: GSD (Grok Sprint Development) planning documents
+- Contains: Milestone definitions, phase plans, codebase analysis
 - Generated: Yes (by GSD commands)
-- Committed: Yes (for reference)
+- Committed: Yes (for project history)
 
-**docs/:**
-- Purpose: Project documentation
-- Contains: User-facing documentation
-- Generated: No (manually maintained)
-- Committed: Yes
+**`output/`:**
+- Purpose: Default output directory for generated structures
+- Contains: PDB files, phase diagrams (created at runtime)
+- Generated: Yes
+- Committed: No (in `.gitignore`)
 
-**sample_output/:**
-- Purpose: Example output files for reference
-- Contains: Generated PDB files, phase diagrams
-- Generated: Yes (by running the tool)
-- Committed: Yes (for demonstration)
+**`sample_output/`:**
+- Purpose: Example output for documentation
+- Contains: Pre-generated example files
+- Generated: Yes (manually)
+- Committed: Yes (for user reference)
 
-**.pytest_cache/:**
-- Purpose: Pytest cache directory
-- Contains: Test cache files
-- Generated: Yes (automatically)
-- Committed: No (in .gitignore)
-
-**__pycache__/:**
+**`__pycache__/`:**
 - Purpose: Python bytecode cache
-- Contains: .pyc files
-- Generated: Yes (automatically)
-- Committed: No (in .gitignore)
+- Generated: Yes (automatically by Python)
+- Committed: No (in `.gitignore`)
 
 ---
 
-*Structure analysis: 2026-03-30*
+*Structure analysis: 2026-03-31*

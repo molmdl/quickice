@@ -1,201 +1,208 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-03-30
+**Analysis Date:** 2026-03-31
 
 ## Tech Debt
 
-### Large File: phase_diagram.py
-- **Issue:** Single file with 964 lines containing 12 polygon builder functions and complex rendering logic
-- **Files:** `quickice/output/phase_diagram.py`
-- **Impact:** Difficult to maintain, test, and understand; modifications to one polygon may affect others
-- **Fix approach:** Extract polygon builders into separate module, create polygon_factory.py with individual builder functions
+### Phase Diagram Polygon Complexity
+- **Issue:** Large monolithic file with intricate polygon calculations and hardcoded boundary values
+- **Files:** `quickice/output/phase_diagram.py` (965 lines)
+- **Impact:** Difficult to maintain, debug, and extend. Each phase polygon has unique boundary logic with hardcoded coordinates
+- **Fix approach:** 
+  - Extract polygon builders into separate functions per phase
+  - Consider configuration-driven boundary definitions
+  - Add unit tests for each polygon function
 
-### Duplicate Boundary Data
-- **Issue:** Phase boundary coordinates defined in multiple places (`ice_boundaries.py` and hardcoded in `phase_diagram.py` polygon builders)
-- **Files:** `quickice/phase_mapping/data/ice_boundaries.py`, `quickice/output/phase_diagram.py`
-- **Impact:** Risk of inconsistency between lookup boundaries and diagram rendering
-- **Fix approach:** Centralize all boundary data in ice_boundaries.py, import from single source
+### Unsupported Phases
+- **Issue:** GenIce2 doesn't support Ice IX, XI, X, XV (proton-ordered and symmetric phases)
+- **Files:** `quickice/structure_generation/mapper.py` (lines 10-19)
+- **Impact:** Users requesting these phases get `UnsupportedPhaseError`
+- **Fix approach:** 
+  - Document limitation clearly in CLI help
+  - Consider alternative structure generation methods for these phases
+  - Return informative error with suggestions
 
-### Exception Handling Patterns
-- **Issue:** Bare except handlers and silent pass statements in error handling
-- **Files:** `quickice/output/phase_diagram.py` (lines 148, 150, 229, 786)
-- **Impact:** Errors silently ignored during spline interpolation and IAPWS calls, may hide real issues
-- **Fix approach:** Add specific exception types with logging, avoid bare `except:` and `except Exception:`
-
-### Global Random State Manipulation
-- **Issue:** GenIce generator modifies global numpy random state
-- **Files:** `quickice/structure_generation/generator.py` (lines 84-111)
-- **Impact:** Potential for race conditions in concurrent execution, reproducibility issues
-- **Fix approach:** Use numpy Generator objects throughout, isolate random state changes
+### Input Range Limitations
+- **Issue:** Pressure validator limits to 10000 MPa, but phase diagram extends to 100000 MPa
+- **Files:** `quickice/validation/validators.py` (lines 56-58)
+- **Impact:** Users cannot use CLI for Ice X phase (>30000 MPa)
+- **Fix approach:** Update `validate_pressure()` to accept 0-100000 MPa range
 
 ## Known Bugs
 
-### Phase Diagram Polygon Gaps
-- **Symptoms:** Two triangular gaps exist in rendered phase diagram
-- **Files:** `quickice/output/phase_diagram.py` (polygon builder functions)
-- **Trigger:** Viewing diagram at specific T,P ranges
+### Phase Diagram Gaps
+- **Issue:** Minor triangular gaps exist in phase diagram polygon rendering
+- **Files:** `quickice/output/phase_diagram.py`
+- **Symptoms:** Small white gaps at II-IX-Ih and VI-XV-II triangle regions
+- **Trigger:** Rendering phase diagram with log scale pressure
 - **Workaround:** None documented
-- **Details from ISSUES.md:**
-  1. II-IX-Ih triangle gap between Ice II, Ice IX, and Ice Ih
-  2. VI-XV-II triangle gap between Ice VI, Ice XV, and Ice II
+- **Location:** Documented in `ISSUES.md` as remaining minor issues
 
-### Empty Returns in Polygon Builders
-- **Symptoms:** Unknown phase returns empty list instead of informative error
-- **Files:** `quickice/output/phase_diagram.py` (line 206)
-- **Trigger:** Passing unknown phase_id to `_build_phase_polygon_from_curves`
-- **Workaround:** None
-- **Fix approach:** Raise ValueError with list of valid phases
+### Empty Return on Unknown Phase
+- **Issue:** `_build_phase_polygon_from_curves()` returns empty list for unknown phase IDs
+- **Files:** `quickice/output/phase_diagram.py` (line 207)
+- **Symptoms:** Silent failure - phase not rendered without warning
+- **Trigger:** Passing unsupported phase ID to polygon builder
+- **Fix approach:** Log warning or raise exception for unknown phases
 
 ## Security Considerations
 
-### Path Traversal Protection (Good)
-- **Risk:** Output path could potentially escape working directory
-- **Files:** `quickice/output/orchestrator.py` (lines 48-56)
-- **Current mitigation:** Path traversal check ensures output is within CWD
-- **Recommendation:** None - implementation is secure
+### Input Validation
+- **Status:** ✓ PASS
+- **Current mitigation:** Temperature, pressure, and molecule count validated in `quickice/validation/validators.py`
+- **Coverage:** Numeric bounds checking, type validation, helpful error messages
+- **Risk:** Low - inputs sanitized before use
 
-### Input Validation (Good)
-- **Risk:** Invalid CLI inputs could cause unexpected behavior
-- **Files:** `quickice/validation/validators.py`
-- **Current mitigation:** Comprehensive validation with clear error messages
-- **Recommendation:** None - implementation is thorough
+### File Operations
+- **Status:** ✓ PASS
+- **Current mitigation:** Uses `pathlib.Path` for file operations, no shell command injection
+- **Risk:** Low - no arbitrary file paths from user input
 
-### Dependency Security
-- **Risk:** External dependencies (GenIce2, iapws, scipy) could have vulnerabilities
-- **Files:** `env.yml`
-- **Current mitigation:** No vulnerability scanning configured
-- **Recommendation:** Add pip-audit or safety to CI pipeline for dependency vulnerability checks
+### External Dependencies
+- **Risk:** GenIce2, spglib, scipy, shapely are trusted scientific computing libraries
+- **Impact:** Supply chain vulnerability if dependencies compromised
+- **Current mitigation:** None
+- **Recommendations:** Pin exact versions, use dependency scanning tools
 
 ## Performance Bottlenecks
 
-### Spline Interpolation Fallback
-- **Problem:** scipy dependency is optional but spline interpolation provides smoother curves
-- **Files:** `quickice/output/phase_diagram.py` (lines 139-154)
-- **Impact:** Falls back to direct sampling if scipy unavailable, curves may appear jagged
-- **Improvement path:** Make scipy required dependency or document performance difference
+### Supercell Neighbor Search
+- **Issue:** O(n log n) neighbor search for O-O distance calculations with 3x3x3 supercell
+- **Files:** `quickice/ranking/scorer.py` (lines 26-84), `quickice/output/validator.py` (lines 109-135)
+- **Problem:** For large systems (>1000 molecules), creates 27x larger supercell array
+- **Cause:** PBC handling requires supercell expansion
+- **Improvement path:** Use neighbor lists or cell lists for large systems
 
-### O(n log n) Neighbor Search
-- **Problem:** KD-tree neighbor search in scoring creates 3x3x3 supercell for PBC
-- **Files:** `quickice/ranking/scorer.py` (lines 57-67)
-- **Impact:** Memory overhead for supercell, may be slow for very large systems
-- **Improvement path:** Use minimum image convention directly, avoid supercell for large systems
-
-### Multiple Melting Curve Evaluations
-- **Problem:** Each phase diagram regeneration recalculates all melting curves
-- **Files:** `quickice/output/phase_diagram.py` (lines 98-167)
-- **Impact:** Unnecessary recomputation for static curves
-- **Improvement path:** Cache melting curve data or precompute at module load
+### Structure Generation Sequential Loop
+- **Issue:** Candidates generated sequentially in `_generate_single()` loop
+- **Files:** `quickice/structure_generation/generator.py` (lines 199-219)
+- **Problem:** Generating 10 candidates calls GenIce2 10 times sequentially
+- **Cause:** No parallelization in `generate_all()` method
+- **Improvement path:** Use multiprocessing or joblib for parallel generation
 
 ## Fragile Areas
 
-### Phase Lookup Boundary Logic
+### Phase Boundary Calculations
+- **Issue:** Complex hierarchical boundary checking with many edge cases
 - **Files:** `quickice/phase_mapping/lookup.py` (lines 154-358)
-- **Why fragile:** Complex conditional logic with many boundary checks; order of checks matters critically
-- **Safe modification:** Add new phases at appropriate priority level, never reorder existing checks
-- **Test coverage:** Extensive (test_phase_mapping.py has 100+ tests) but boundary edge cases are fragile
+- **Why fragile:** 
+  - 8 different phase regions with unique boundary conditions
+  - Hardcoded temperature/pressure thresholds throughout
+  - Order-dependent evaluation (first match wins)
+- **Safe modification:** 
+  - Add comprehensive unit tests for boundary conditions
+  - Document decision tree logic explicitly
+  - Consider decision table refactoring
 
-### Polygon Vertex Calculations
-- **Files:** `quickice/output/phase_diagram.py` (lines 209-667)
-- **Why fragile:** Hardcoded coordinates mixed with calculated boundaries; small changes can create gaps/overlaps
-- **Safe modification:** Test polygon rendering after any change to vertex coordinates
-- **Test coverage:** Limited - polygon visual verification requires manual inspection
+### Polygon Boundary Overlap Detection
+- **Issue:** Manual polygon construction to avoid overlaps requires precise coordinate calculation
+- **Files:** `quickice/output/phase_diagram.py` (lines 210-668)
+- **Why fragile:**
+  - Phase regions defined by boundary curves that must meet exactly
+  - Rendering order matters (sub-phases rendered after parent phases)
+  - Hardcoded offsets like `P_vi - 5.0` (line 300) are fragile
+- **Safe modification:**
+  - Add polygon overlap validation tests
+  - Use shapely operations for automatic boundary calculation
+  - Document all hardcoded offsets with comments
 
-### Triple Point Data
-- **Files:** `quickice/phase_mapping/triple_points.py`, `quickice/phase_mapping/__init__.py`
-- **Why fragile:** Scientific data from literature; coordinate values must match boundary functions exactly
-- **Safe modification:** Update triple points only with verified scientific data, update all dependent boundaries
-- **Test coverage:** Implicit via phase lookup tests
+### GenIce Integration
+- **Issue:** Global random state manipulation for reproducibility
+- **Files:** `quickice/structure_generation/generator.py` (lines 83-111)
+- **Why fragile:**
+  - `np.random.seed()` affects global state
+  - Must save/restore state to avoid side effects
+- **Safe modification:**
+  - Isolate random state in local generator
+  - Consider context manager for state management
 
 ## Scaling Limits
 
-### Molecule Count Validation
+### Molecule Count
 - **Current capacity:** 4 to 100,000 molecules
-- **Limit:** Upper limit from `validate_nmolecules` in `validators.py`
-- **Scaling path:** Increase upper bound for larger systems, consider memory implications
-
-### Pressure Range Extension
-- **Current capacity:** 0 to 10,000 MPa (10 GPa)
-- **Limit:** Pressure validator caps at 10 GPa, but Ice X boundary extends to 100 GPa
-- **Scaling path:** Extend `validate_pressure` to support Ice X conditions (0-100,000 MPa)
+- **Limit:** Validated in `quickice/validation/validators.py` (line 93)
+- **Scaling path:** Increase upper bound for larger systems (requires memory testing)
 
 ### Temperature Range
 - **Current capacity:** 0 to 500 K
-- **Limit:** Temperature validator caps at 500K
-- **Scaling path:** Extend if supporting supercritical water or very high temperature phases
+- **Limit:** Phase diagram extends to 500 K, but some phases exist at higher T
+- **Scaling path:** Extend IAPWS melting curves for higher temperatures
+
+### Pressure Range
+- **Current capacity:** 0 to 10,000 MPa in CLI (but phase diagram supports 0-100,000 MPa)
+- **Limit:** Input validator restricts to 10,000 MPa
+- **Scaling path:** Update validator to match phase diagram range
 
 ## Dependencies at Risk
 
-### GenIce2 (Critical)
-- **Risk:** External library for ice structure generation, actively maintained
-- **Impact:** Core functionality - cannot generate structures without it
-- **Mitigation:** Pin version in env.yml, monitor for updates
+### GenIce2
+- **Risk:** Core functionality depends on GenIce2 library
+- **Impact:** Structure generation would fail without it
+- **Location:** `quickice/structure_generation/generator.py` (lines 9-10)
+- **Alternative:** None identified - GenIce2 is specialized for ice structures
 
-### iapws (Critical)
-- **Risk:** External library for IAPWS water properties, mature and stable
-- **Impact:** Melting curve calculations depend on it
-- **Mitigation:** Pin version, IAPWS equations could be reimplemented if needed
+### IAPWS Library
+- **Risk:** Phase mapping depends on IAPWS R14-08 melting curves
+- **Impact:** Melting curve calculations would fail
+- **Location:** `quickice/phase_mapping/melting_curves.py`, `quickice/output/phase_diagram.py` (line 779)
+- **Alternative:** Implement IAPWS equations directly
 
-### scipy (Optional but Important)
-- **Risk:** Large dependency, optional for spline interpolation
-- **Impact:** Smoother phase diagram curves when available
-- **Mitigation:** Graceful fallback exists, consider making required for consistent output
-
-### matplotlib (Required for Diagrams)
-- **Risk:** Standard scientific plotting library, stable
-- **Impact:** Phase diagram generation requires it
-- **Mitigation:** Pin version, output generation should gracefully handle missing matplotlib
-
-### shapely (Required for Diagrams)
-- **Risk:** Geometry library used for polygon centroid calculation
-- **Impact:** Label placement on phase diagrams
-- **Mitigation:** Pin version
+### Shapely
+- **Risk:** Phase diagram rendering uses shapely for polygon operations
+- **Impact:** Polygon centroid calculation would fail
+- **Location:** `quickice/output/phase_diagram.py` (lines 698, 727)
+- **Alternative:** Implement centroid calculation manually
 
 ## Missing Critical Features
 
-### No Configuration File Support
-- **Problem:** All parameters hardcoded or passed via CLI
-- **Blocks:** User-defined settings persistence, batch processing configurations
-- **Files:** `quickice/cli/parser.py`
-- **Recommendation:** Add YAML/JSON config file support for reproducible runs
+### Test Coverage for Phase Diagram
+- **Problem:** No unit tests for `quickice/output/phase_diagram.py` (complex 965-line module)
+- **Files:** `quickice/output/phase_diagram.py`
+- **Risk:** Polygon boundary changes could introduce undetected overlaps or gaps
+- **Priority:** High
 
-### No Logging Configuration
-- **Problem:** Only warnings logged, no debug/info levels configurable
-- **Blocks:** Troubleshooting production issues, performance monitoring
-- **Files:** `quickice/main.py`, `quickice/output/orchestrator.py`
-- **Recommendation:** Add structured logging with configurable levels
+### Output Orchestrator Tests
+- **Problem:** No unit tests for `quickice/output/orchestrator.py`
+- **Files:** `quickice/output/orchestrator.py`
+- **Risk:** Output workflow changes could break end-to-end functionality
+- **Priority:** Medium
 
-### No Caching Mechanism
-- **Problem:** Each run regenerates all structures, no persistence
-- **Blocks:** Large molecule counts, iterative workflows
-- **Files:** `quickice/structure_generation/generator.py`
-- **Recommendation:** Add optional caching with hash-based file storage
+### Ice X, IX, XI, XV Structure Generation
+- **Problem:** Cannot generate structures for proton-ordered and symmetric phases
+- **Files:** `quickice/structure_generation/mapper.py`
+- **Risk:** Users requesting these phases receive error
+- **Priority:** Medium (depends on GenIce2 support)
 
 ## Test Coverage Gaps
 
-### CLI Module Untested
-- **What's not tested:** `quickice/cli/parser.py` argument parsing logic
-- **Files:** `quickice/cli/parser.py`
-- **Risk:** Argument parsing bugs may not be caught
-- **Priority:** Low - parser is simple, integration tests cover happy paths
-
-### Output Module Partially Tested
-- **What's not tested:** `quickice/output/orchestrator.py` error handling paths
-- **Files:** `quickice/output/orchestrator.py`, `tests/test_output/`
-- **Risk:** Error paths untested, may fail silently in production
-- **Priority:** Medium - add tests for error scenarios
-
-### Phase Diagram Visual Verification
-- **What's not tested:** Polygon rendering correctness, gap/overlap detection
+### Phase Diagram Polygon Tests
+- **What's not tested:** Polygon vertex calculations for all 12 phases
 - **Files:** `quickice/output/phase_diagram.py`
-- **Risk:** Visual bugs may go undetected until user inspection
-- **Priority:** Low - requires manual verification, polygon logic tested indirectly
+- **Risk:** Boundary changes could create undetected polygon overlaps/gaps
+- **Priority:** High
+- **Test files needed:** `tests/test_output/test_phase_diagram.py`
 
-### Performance Testing Absent
-- **What's not tested:** Large molecule counts, concurrent execution
-- **Files:** All modules
-- **Risk:** Performance regressions may go undetected
-- **Priority:** Medium - add benchmark tests for critical paths
+### Phase Lookup Boundary Cases
+- **What's not tested:** Edge cases at triple points, extreme pressures (>10 GPa)
+- **Files:** `quickice/phase_mapping/lookup.py`
+- **Risk:** Incorrect phase identification near boundaries
+- **Priority:** Medium
+- **Test locations:** `tests/test_phase_mapping.py` exists but needs edge case expansion
+
+### Scoring Validation
+- **What's not tested:** Energy score calculation correctness, density score accuracy
+- **Files:** `quickice/ranking/scorer.py`
+- **Risk:** Incorrect ranking could produce non-optimal structures
+- **Priority:** Medium
+- **Test locations:** `tests/test_ranking.py` exists
+
+### Output Validator Edge Cases
+- **What's not tested:** Space group validation failures, overlap detection edge cases
+- **Files:** `quickice/output/validator.py`
+- **Risk:** Invalid structures could pass validation
+- **Priority:** Medium
+- **Test locations:** `tests/test_output/test_validator.py` exists
 
 ---
 
-*Concerns audit: 2026-03-30*
+*Concerns audit: 2026-03-31*

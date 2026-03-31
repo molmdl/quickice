@@ -1,112 +1,130 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-30
+**Analysis Date:** 2026-03-31
 
 ## Languages
 
 **Primary:**
-- Python 3.14.3 - Main application code, CLI, all modules
+- Python 3.14.3 - Main application language (all source code in `quickice/` package)
 
 **Secondary:**
-- Shell (bash) - Setup scripts (`setup.sh`, `run_oc.sh`)
+- Shell (Bash) - Setup script (`setup.sh`) and run script (`run_oc.sh`)
 
 ## Runtime
 
 **Environment:**
-- Conda (Miniconda/Anaconda) - Environment management via `env.yml`
+- Conda (Miniconda/Anaconda) - Environment management
+- Environment name: `quickice`
 
 **Package Manager:**
-- pip (within conda environment)
-- Lockfile: Not present (uses conda environment specification)
+- pip (via conda) - Python package installation
+- Lockfile: Not present (env.yml specifies exact versions)
 
 ## Frameworks
 
 **Core:**
-- Click 8.3.1 - CLI argument parsing (`quickice/cli/parser.py`)
-- GenIce2 2.2.13.1 - Ice structure generation engine
-- GenIce-core 1.4.3 - Core lattice algorithms for GenIce
+- None (pure Python scientific application)
 
 **Testing:**
-- pytest >= 9.0.0 - Unit testing framework
+- pytest >= 9.0.0 - Unit testing framework (`requirements-dev.txt`)
 
-**Visualization:**
-- matplotlib >= 3.5 - Phase diagram generation (PNG/SVG output)
+**Build/Dev:**
+- No build system (source installation via PYTHONPATH)
+- No linter/formatter configuration detected
 
 ## Key Dependencies
 
 **Scientific Computing:**
-- numpy 2.4.3 - Array operations, coordinate transformations, distance calculations
-- scipy >= 1.8 - KDTree for neighbor search, spline interpolation for curves
-- shapely >= 2.0 - Polygon geometry for phase diagram regions
+- `numpy` 2.4.3 - Numerical arrays, matrix operations, coordinate handling
+- `scipy` >= 1.8 - Spatial algorithms (`cKDTree` for neighbor search), interpolation (`UnivariateSpline`)
+- `matplotlib` >= 3.5 - Phase diagram visualization (PNG/SVG output)
 
-**Domain-Specific:**
-- iapws >= 1.5.4 - IAPWS-95/97 water property standards (melting curves, saturation curves)
-- spglib 2.7.0 - Space group analysis for structure validation
-- networkx 3.6.1 - Graph operations (used by GenIce for hydrogen bond networks)
-- pairlist 0.6.4 - Neighbor list calculations
-- cycless 0.7 - Cycle detection in molecular structures
+**Molecular Structure Generation:**
+- `genice2` 2.2.13.1 - Ice structure generation with hydrogen bond networks
+- `genice-core` 1.4.3 - Core algorithms for GenIce
+- `pairlist` 0.6.4 - Pair list calculations
+- `cycless` 0.7 - Cycle detection for hydrogen bond networks
+- `graphstat` 0.3.3 - Graph statistics
 
-**Utilities:**
-- methodtools 0.4.7 - Method decorators
-- deprecated 1.3.1 / deprecation 2.1.0 - Deprecation warnings
-- six 1.17.0 - Python 2/3 compatibility
-- wrapt 2.1.2 / wirerope 1.0.0 - Wrapper utilities
-- openpyscad 0.5.0 - OpenSCAD integration (potential 3D output)
-- yaplotlib 0.1.3 - Visualization library
-- graphstat 0.3.3 - Graph statistics
+**Crystallography:**
+- `spglib` 2.7.0 - Space group analysis and crystal symmetry
+
+**Thermodynamics:**
+- `iapws` >= 1.5.4 - IAPWS-95 water/ice thermodynamic properties
+
+**Geometry/Graph:**
+- `shapely` >= 2.0 - Polygon geometry for phase diagram regions
+- `networkx` 3.6.1 - Graph algorithms
+
+**CLI:**
+- `click` 8.3.1 - Listed in dependencies (but `argparse` used directly in code)
+- `argparse` (stdlib) - Actual CLI argument parsing
 
 ## Configuration
 
 **Environment:**
-- Conda environment defined in `env.yml`
-- Environment name: `quickice`
-- No `.env` files - configuration via CLI arguments
-- Setup via `source setup.sh` which activates conda and exports PYTHONPATH
+- Conda environment file: `env.yml` - Defines all dependencies with versions
+- PYTHONPATH setup: `setup.sh` adds project root to Python path
+- No `.env` file required - pure Python application
 
 **Build:**
-- No build step required (pure Python)
-- Entry point: `quickice.py` (wrapper) or `quickice.main:main` (module)
+- No build configuration (install via conda env create)
+- Development installation: `source setup.sh` after conda env create
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.14+ required
-- Conda environment for dependency management
-- pytest for running tests
+- Linux (tested on Linux with libgcc, OpenMP support)
+- Conda (Miniconda or Anaconda)
+- Python 3.14 compatible environment
 
 **Production:**
-- Pure Python application - portable to any platform with Python 3.14+
-- No database or external service dependencies
-- File-based output (PDB files, PNG/SVG diagrams)
-- Can run as standalone CLI tool
+- Platform-independent Python application
+- Dependencies installable via pip (through conda)
+- No database or external service required
+- Output files written to local filesystem
 
-## External File Formats
+## Dependency Groups
 
-**Input:**
-- None (all inputs via CLI arguments)
+**Core Runtime (from env.yml pip section):**
+```
+click==8.3.1
+cycless==0.7
+deprecated==1.3.1
+deprecation==2.1.0
+genice-core==1.4.3
+genice2==2.2.13.1
+graphstat==0.3.3
+iapws>=1.5.4
+matplotlib>=3.5
+methodtools==0.4.7
+networkx==3.6.1
+numpy==2.4.3
+openpyscad==0.5.0
+pairlist==0.6.4
+scipy>=1.8
+shapely>=2.0
+six==1.17.0
+spglib==2.7.0
+wirerope==1.0.0
+wrapt==2.1.2
+yaplotlib==0.1.3
+```
 
-**Output:**
-- PDB (Protein Data Bank format) - Crystal structure files
-- PNG - Phase diagram raster images
-- SVG - Phase diagram vector images
-- TXT - Phase diagram data files
+**Development Only (from requirements-dev.txt):**
+```
+pytest>=9.0.0
+```
 
-**Intermediate:**
-- GRO (GROMACS format) - Internal GenIce format, parsed and converted to PDB
+## Version Constraints
 
-## Code Organization
+**Pinned Versions:**
+- Most packages use exact versions (e.g., `numpy==2.4.3`)
+- Scientific packages use minimum versions (`scipy>=1.8`, `matplotlib>=3.5`, `iapws>=1.5.4`)
 
-**Package Structure:**
-- `quickice.py` - CLI entry point
-- `quickice/` - Main package directory
-  - `main.py` - Workflow orchestration
-  - `cli/` - Command-line argument parsing
-  - `validation/` - Input validation
-  - `phase_mapping/` - T,P to ice polymorph lookup
-  - `structure_generation/` - GenIce2 integration
-  - `ranking/` - Candidate scoring
-  - `output/` - PDB writing and phase diagrams
+**Python Version:**
+- Python 3.14.3 (specific version in env.yml)
 
 ---
 
-*Stack analysis: 2026-03-30*
+*Stack analysis: 2026-03-31*
