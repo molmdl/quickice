@@ -47,7 +47,7 @@
 
 **Stack:** PySide6 6.11.0 + VTK 9.6.1 (MIT-compatible)
 
-### Phase 8: GUI Infrastructure + Core Input
+### Phase 8: GUI Infrastructure + Core Input ✅
 
 **Goal:** Users can enter temperature, pressure, and molecule count parameters and trigger ice structure generation with progress feedback
 
@@ -55,13 +55,13 @@
 
 **Dependencies:** None (foundation)
 
-**Plans:** 4 plans in 4 waves
+**Plans:** 4 plans in 4 waves — completed 2026-03-31
 
 Plans:
-- [ ] 08-01-PLAN.md — Model + Worker Foundation (validators, workers)
-- [ ] 08-02-PLAN.md — View Layer (InputPanel, ProgressPanel)
-- [ ] 08-03-PLAN.md — ViewModel (state management, worker orchestration)
-- [ ] 08-04-PLAN.md — MainWindow (buttons, shortcuts, checkpoint for UI testing)
+- [x] 08-01-PLAN.md — Model + Worker Foundation (validators, workers)
+- [x] 08-02-PLAN.md — View Layer (InputPanel, ProgressPanel)
+- [x] 08-03-PLAN.md — ViewModel (state management, worker orchestration)
+- [x] 08-04-PLAN.md — MainWindow (buttons, shortcuts, UI testing)
 
 **Success Criteria:**
 1. User can enter temperature value in textbox and see inline error message for invalid inputs (< 0 or > 500 K)
@@ -161,7 +161,7 @@ Plans:
 | 6 - Documentation | v1.0 | ✅ Complete | 2 |
 | 7 - Audit & Correctness | v1.0 | ✅ Complete | 5 |
 | 7.1 - Fix Performance & Bugs | v1.1 | ✅ Complete | 4 |
-| **8 - GUI Infrastructure** | v2.0 | 🔄 Planned | 10 |
+| **8 - GUI Infrastructure** | v2.0 | ✅ Complete | 10 |
 | **9 - Phase Diagram** | v2.0 | 🔄 Planned | 4 |
 | **10 - 3D Viewer** | v2.0 | 🔄 Planned | 10 |
 | **11 - Save/Export** | v2.0 | 🔄 Planned | 7 |
