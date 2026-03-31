@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 8 - GUI Infrastructure + Core Input |
-| Plan | 08-01 complete, 08-02 next |
-| Status | In progress - Model layer complete |
+| Plan | 08-02 complete, 08-03 next |
+| Status | In progress - Model and View layers complete |
 | Plans | 4 plans in 4 waves |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** ░░░░░░░░░░░░░░░░░░░░ 2% (1 of ~50 plans across v2.0)
+**Progress:** ░░░░░░░░░░░░░░░░░░░░ 4% (2 of ~50 plans across v2.0)
 
 ---
 
@@ -134,14 +134,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 08-01 | Max 216 molecules (not 100000) | Computational limit for interactive GUI |
 | 08-01 | Worker-object pattern | Proper Qt pattern for cancellable work |
 | 08-01 | Import modules inside run() | Avoids blocking main thread |
+| 08-02 | Validation on submit (not real-time) | Per CONTEXT.md requirements |
+| 08-02 | Inline error labels hidden by default | Clean UI, errors shown on validation failure |
+| 08-02 | ProgressPanel lifecycle state methods | Clear state management for generation flow |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-03-31 12:43 UTC
-**Stopped at:** Completed 08-01-SUMMARY.md
-**Resume file:** None - next plan is 08-02
+**Last session:** 2026-03-31 12:58 UTC
+**Stopped at:** Completed 08-02-SUMMARY.md
+**Resume file:** None - next plan is 08-03
 
 ---
 
@@ -209,4 +212,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-03-31 - Phase 08-01 complete (GUI Model Layer)*
+*State updated: 2026-03-31 - Phase 08-02 complete (GUI View Layer)*
