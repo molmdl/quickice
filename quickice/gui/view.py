@@ -50,7 +50,7 @@ class InputPanel(QWidget):
         # Pressure input
         self.pressure_label = QLabel("Pressure (MPa):")
         self.pressure_input = QLineEdit()
-        self.pressure_input.setPlaceholderText("Enter pressure (0-1000 MPa)")
+        self.pressure_input.setPlaceholderText("Enter pressure (0-10000 MPa)")
         self.pressure_error = QLabel()
         self.pressure_error.setStyleSheet("color: red;")
         self.pressure_error.setWordWrap(True)
