@@ -55,15 +55,22 @@ class PhaseDetector:
                 self._phase_polygons[phase_id] = ShapelyPolygon(vertices)
         
         # Build vapor polygon using IAPWS saturation curve
-        # Vapor region is below the liquid-vapor saturation curve
+        # Vapor region is BELOW the liquid-vapor saturation curve
+        # The polygon traces: bottom of graph → saturation curve → back along bottom
         try:
             from iapws import IAPWS97
             
             vapor_vertices = []
-            # Start at bottom-left: (273.16 K, 0.1 MPa)
-            vapor_vertices.append((273.16, 0.1))
             
-            # Follow saturation curve from 273.16K to 500K
+            # Start at bottom-left corner (50 K, P_min)
+            P_min = 0.0001  # Minimum pressure on graph (log scale)
+            vapor_vertices.append((50.0, P_min))
+            
+            # Go along bottom to the triple point temperature
+            vapor_vertices.append((273.16, P_min))
+            
+            # Trace up along the saturation curve from 273.16K to 500K
+            # The saturation curve is the UPPER boundary of the vapor region
             for T in np.linspace(273.16, 500, 50):
                 try:
                     st = IAPWS97(T=T, x=0)  # Saturated liquid
@@ -71,12 +78,13 @@ class PhaseDetector:
                 except Exception:
                     pass
             
-            # Close polygon: top-right (500K, saturation P), then along bottom back
-            if len(vapor_vertices) > 2:
-                vapor_vertices.append((500.0, 0.1))
-                # Back along bottom to start
-                vapor_vertices.append((273.16, 0.1))
-                
+            # From the end of saturation curve (500K, P_sat), go down to bottom
+            vapor_vertices.append((500.0, P_min))
+            
+            # Back along bottom to start
+            vapor_vertices.append((50.0, P_min))
+            
+            if len(vapor_vertices) > 3:
                 self._phase_polygons["vapor"] = ShapelyPolygon(vapor_vertices)
         except ImportError:
             pass  # IAPWS not available
@@ -101,11 +109,12 @@ class PhaseDetector:
         point = Point(temperature, pressure_mpa)
         
         # Check containment in ice phase polygons first
+        # Use covers() instead of contains() to include boundary points
         contained_phases: List[str] = []
         for phase_id, polygon in self._phase_polygons.items():
             if phase_id == "vapor":
                 continue  # Check vapor separately after ice phases
-            if polygon.contains(point):
+            if polygon.covers(point):  # covers() includes boundary points
                 contained_phases.append(phase_id)
         
         # If point is inside exactly one ice phase
@@ -118,9 +127,14 @@ class PhaseDetector:
             phase_short = PHASE_LABELS.get(contained_phases[0], contained_phases[0])
             return phase_short, False
         
+        # If point is on boundary of multiple phases (covers catches this)
+        if len(contained_phases) >= 2:
+            names = [PHASE_LABELS.get(p, p) for p in contained_phases[:2]]
+            return f"{names[0]}/{names[1]}", True
+        
         # Check if in vapor region
         if "vapor" in self._phase_polygons:
-            if self._phase_polygons["vapor"].contains(point):
+            if self._phase_polygons["vapor"].covers(point):  # covers() includes boundary points
                 return "Vapor", False
         
         # Check if on boundary (using buffer tolerance)
@@ -156,7 +170,8 @@ class PhaseDetector:
             distance = polygon.boundary.distance(point)
             if distance < self.BOUNDARY_TOLERANCE:
                 # Also verify point is inside or very close to polygon
-                if polygon.contains(point) or polygon.distance(point) < self.BOUNDARY_TOLERANCE:
+                # Use covers() to include boundary points
+                if polygon.covers(point) or polygon.distance(point) < self.BOUNDARY_TOLERANCE:
                     boundary_phases.append(phase_id)
         
         # If checking neighbors of an inside phase, ensure it's included
@@ -182,8 +197,10 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         Args:
             parent: Parent widget (optional)
         """
-        # Create figure with appropriate size
-        self.fig = Figure(figsize=(8, 5), dpi=100)
+        # Create figure sized to fit in split view (600x400px at 100 DPI)
+        # Window is ~800px wide, split 50/50, so diagram panel gets ~400px
+        # Figure at 6x4 inches = 600x400px, scales down to fit
+        self.fig = Figure(figsize=(6, 4), dpi=100)
         self.axes = self.fig.add_subplot(111)
         
         # Initialize parent
@@ -258,8 +275,10 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         )
         
         # Add "Vapor" label
+        # Position must be BELOW the saturation curve:
+        # At T=350K, P_sat=0.0417 MPa, so use P=0.02 MPa
         self.axes.text(
-            380, 0.25,  # T=380K, P=0.25 MPa (better position in vapor region)
+            350, 0.02,  # T=350K, P=0.02 MPa (below saturation curve)
             "Vapor",
             fontsize=12,
             fontweight='bold',
@@ -274,7 +293,8 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         self.axes.grid(True, linestyle='--', alpha=0.3, which='both')
         
         # Explicit margins to ensure labels are fully visible
-        self.fig.subplots_adjust(left=0.12, right=0.95, top=0.92, bottom=0.1)
+        # Left margin needs to be larger for log-scale y-axis labels
+        self.fig.subplots_adjust(left=0.15, right=0.98, top=0.92, bottom=0.12)
     
     def _plot_phase_region(self, phase_id: str):
         """Plot a single phase region with label at centroid.
