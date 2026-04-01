@@ -301,15 +301,21 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
         vertices.append((T, P_vi - 5.0))
     
     # At T=140K, IX ends. II continues down towards XV.
-    # From T=140K to T=100K: II at P just below VI boundary, but capped at P=950 (XV's lower)
+    # From T=140K to T=100K: II traces just below VI boundary
+    # (VI left edge goes from (218.95, 620) to (100, 1100))
+    # XV only exists at T <= 100K, so for T > 100K, II can extend up to VI boundary
     T_cold2 = np.linspace(140.0, 100.0, 5)
     for T in T_cold2[1:]:
         P_vi = 620.0 + 480.0 * (218.95 - T) / 118.95
-        # Cap at P=950 to avoid entering XV region
-        P = min(P_vi - 5.0, 950.0)
-        vertices.append((T, P))
+        vertices.append((T, P_vi - 5.0))
     
-    # At T=100K, II stops at P=950 (XV's lower boundary)
+    # At T=100K, II meets VI at P~1095 (VI's left boundary)
+    # But XV exists at T <= 100K, P=950-2100 MPa
+    # So II must stay at P <= 950 for T <= 100K
+    # This creates a vertical drop at T=100K from P~1095 to P=950
+    vertices.append((100.0, 950.0))
+    
+    # At T < 100K, II stays at P=950 (XV's lower boundary)
     # Go down to T=50K at P=950
     vertices.append((50.0, 950.0))
     
