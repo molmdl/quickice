@@ -14,7 +14,7 @@
       },
       "balanced": {
         "planning": "openrouter/z-ai/glm-5",
-        "execution": "openrouter/minimax/minimax-m2.5",
+        "execution": "openrouter/z-ai/glm-5",
         "verification": "openrouter/minimax/minimax-m2.5"
       },
       "budget": {
