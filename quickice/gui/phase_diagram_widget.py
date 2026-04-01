@@ -185,7 +185,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         # Add "Vapor" label
         self.axes.text(
-            460, 0.5,  # T=460K, P=0.5 MPa (vapor region, below saturation curve)
+            380, 0.25,  # T=380K, P=0.25 MPa (better position in vapor region)
             "Vapor",
             fontsize=12,
             fontweight='bold',
