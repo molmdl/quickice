@@ -307,3 +307,14 @@ class MolecularViewerWidget(QWidget):
             True if unit cell is shown, False otherwise
         """
         return self._show_unit_cell
+    
+    def zoom_to_fit(self) -> None:
+        """Zoom to fit structure in viewport.
+        
+        Alias for reset_camera() - resets camera to frame all actors.
+        Safe to call even when no candidate is loaded.
+        
+        Per ADVVIZ-02: User can click zoom-to-fit button to automatically 
+        frame the structure in viewport.
+        """
+        self.reset_camera()
