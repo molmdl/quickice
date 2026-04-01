@@ -325,6 +325,11 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     # Up to T=140K at P=400 (IX upper boundary)
     vertices.append((140.0, 400.0))
     
+    # IMPORTANT: Close the gap at T=140K by going to Ih-II boundary
+    # This ensures II touches the Ih-II boundary at T=140K before tracing back
+    P_at_140 = ih_ii_boundary(140.0)
+    vertices.append((140.0, P_at_140))
+    
     # Lower boundary: follow Ih-II boundary back to start
     T_vals = np.linspace(140.0, T1, 15)
     for T in T_vals[1:]:
