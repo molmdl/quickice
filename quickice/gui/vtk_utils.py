@@ -59,3 +59,70 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
     mol.SetLattice(candidate.cell.flatten().tolist())
     
     return mol
+
+
+def detect_hydrogen_bonds(
+    candidate: Candidate, max_distance: float = 0.25
+) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
+    """Detect hydrogen bonds from molecular geometry.
+    
+    Identifies H-bonds by finding hydrogen atoms that are close to oxygen atoms
+    from other water molecules. A hydrogen bond is assumed when the H...O 
+    distance is less than the threshold.
+    
+    Args:
+        candidate: A QuickIce Candidate containing atomic positions and metadata.
+        max_distance: Maximum H...O distance threshold in nanometers.
+                      Default 0.25 nm (2.5 Å) is typical for H-bonds.
+    
+    Returns:
+        List of (H_position, O_position) tuples for each detected H-bond.
+        Each position is a (x, y, z) tuple in nanometers.
+    
+    Note:
+        Water molecules follow the pattern [O, H, H, O, H, H, ...] where:
+        - Oxygen atoms are at indices 0, 3, 6, 9, ... (every 3rd starting at 0)
+        - Hydrogen atoms are at indices 1, 2, 4, 5, 7, 8, ...
+        - Each O has two bonded H atoms: O[i] bonded to H[i+1] and H[i+2]
+    """
+    positions = candidate.positions
+    nmolecules = candidate.nmolecules
+    
+    # Collect O and H atom positions with their indices
+    # O atoms: indices 0, 3, 6, ... (every 3rd atom starting at 0)
+    # H atoms: indices 1, 2, 4, 5, 7, 8, ... (remaining atoms)
+    o_positions = []  # [(index, position), ...]
+    h_positions = []  # [(index, position, parent_O_index), ...]
+    
+    for mol_idx in range(nmolecules):
+        # O atom index for this molecule
+        o_idx = mol_idx * 3
+        o_positions.append((o_idx, positions[o_idx]))
+        
+        # H atoms for this molecule
+        h1_idx = mol_idx * 3 + 1
+        h2_idx = mol_idx * 3 + 2
+        h_positions.append((h1_idx, positions[h1_idx], o_idx))
+        h_positions.append((h2_idx, positions[h2_idx], o_idx))
+    
+    # Detect H-bonds
+    hbonds = []
+    
+    for h_idx, h_pos, parent_o_idx in h_positions:
+        # Find O atoms that could form H-bonds with this H
+        for o_idx, o_pos in o_positions:
+            # Skip the parent O (same molecule, covalently bonded)
+            if o_idx == parent_o_idx:
+                continue
+            
+            # Calculate H...O distance
+            distance = np.linalg.norm(h_pos - o_pos)
+            
+            if distance < max_distance:
+                # H-bond detected: H...O
+                hbonds.append((
+                    tuple(float(h_pos[i]) for i in range(3)),
+                    tuple(float(o_pos[i]) for i in range(3))
+                ))
+    
+    return hbonds
