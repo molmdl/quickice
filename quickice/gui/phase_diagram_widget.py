@@ -109,7 +109,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
             parent: Parent widget (optional)
         """
         # Create figure with appropriate size
-        self.fig = Figure(figsize=(6, 5), dpi=100)
+        self.fig = Figure(figsize=(8, 5), dpi=100)
         self.axes = self.fig.add_subplot(111)
         
         # Initialize parent
@@ -199,8 +199,8 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         # Add grid
         self.axes.grid(True, linestyle='--', alpha=0.3, which='both')
         
-        # Tight layout
-        self.fig.tight_layout()
+        # Explicit margins to ensure labels are fully visible
+        self.fig.subplots_adjust(left=0.12, right=0.95, top=0.92, bottom=0.1)
     
     def _plot_phase_region(self, phase_id: str):
         """Plot a single phase region with label at centroid.
