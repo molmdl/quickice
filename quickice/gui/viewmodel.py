@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, Signal, QThread, Slot
 from typing import Optional
 
 from quickice.gui.workers import GenerationWorker, GenerationResult
+from quickice.ranking.types import RankingResult
 
 
 class MainViewModel(QObject):
@@ -23,7 +24,7 @@ class MainViewModel(QObject):
     # Signals for UI updates (View connects to these)
     generation_started = Signal()           # Emitted when generation starts
     generation_progress = Signal(int)       # Progress percentage (0-100)
-    generation_status = Signal(str)         # Status message
+    generation_status = Signal(str)        # Status message
     generation_complete = Signal(object)    # Emitted with result on success
     generation_error = Signal(str)          # Emitted with error message
     generation_cancelled = Signal()         # Emitted when cancelled
@@ -31,11 +32,16 @@ class MainViewModel(QObject):
     # UI state signals
     ui_enabled_changed = Signal(bool)       # True = UI enabled, False = generating
     
+    # Viewer state signals (Phase 10)
+    ranked_candidates_ready = Signal(object)  # Emitted with RankingResult
+    generation_log = Signal(str)               # Streaming log messages
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self._worker: Optional[GenerationWorker] = None
         self._thread: Optional[QThread] = None
         self._is_generating = False
+        self._last_ranking_result: Optional[RankingResult] = None
     
     def start_generation(self, temperature: float, pressure: float, nmolecules: int):
         """Start ice structure generation in background thread.
@@ -112,7 +118,12 @@ class MainViewModel(QObject):
         self.ui_enabled_changed.emit(True)  # Re-enable UI
         
         if result.success:
+            # Store the ranking result for viewer access
+            self._last_ranking_result = result.result
+            # Emit generation_complete for backward compatibility
             self.generation_complete.emit(result.result)
+            # Emit ranked_candidates_ready for viewer
+            self.ranked_candidates_ready.emit(result.result)
         else:
             self.generation_error.emit(result.error or "Unknown error")
     
@@ -129,3 +140,12 @@ class MainViewModel(QObject):
         self._is_generating = False
         self.ui_enabled_changed.emit(True)  # Re-enable UI
         self.generation_cancelled.emit()
+    
+    def get_last_ranking_result(self) -> Optional[RankingResult]:
+        """Get the most recent ranking result.
+        
+        Returns:
+            The last RankingResult from generation, or None if no generation
+            has completed successfully yet.
+        """
+        return self._last_ranking_result
