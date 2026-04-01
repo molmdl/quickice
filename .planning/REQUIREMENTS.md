@@ -17,10 +17,10 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Interactive Phase Diagram
 
-- [ ] **DIAGRAM-01**: User can view 12-phase ice diagram in GUI
-- [ ] **DIAGRAM-02**: User can click on phase diagram to select T,P coordinates
-- [ ] **DIAGRAM-03**: User sees selection indicator (crosshair/marker) at selected T,P
-- [ ] **DIAGRAM-04**: User sees phase name label when clicking on diagram region
+- [x] **DIAGRAM-01**: User can view 12-phase ice diagram in GUI
+- [x] **DIAGRAM-02**: User can click on phase diagram to select T,P coordinates
+- [x] **DIAGRAM-03**: User sees selection indicator (crosshair/marker) at selected T,P
+- [x] **DIAGRAM-04**: User sees phase name label when clicking on diagram region
 
 ### 3D Molecular Viewer
 
@@ -114,10 +114,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INPUT-03 | Phase 8 | Complete |
 | INPUT-04 | Phase 8 | Complete |
 | INPUT-05 | Phase 8 | Complete |
-| DIAGRAM-01 | Phase 9 | Pending |
-| DIAGRAM-02 | Phase 9 | Pending |
-| DIAGRAM-03 | Phase 9 | Pending |
-| DIAGRAM-04 | Phase 9 | Pending |
+| DIAGRAM-01 | Phase 9 | Complete |
+| DIAGRAM-02 | Phase 9 | Complete |
+| DIAGRAM-03 | Phase 9 | Complete |
+| DIAGRAM-04 | Phase 9 | Complete |
 | VIEWER-01 | Phase 10 | Pending |
 | VIEWER-02 | Phase 10 | Pending |
 | VIEWER-03 | Phase 10 | Pending |
