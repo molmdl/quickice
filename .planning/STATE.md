@@ -15,8 +15,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 **Current focus:** v2.0 GUI Application - Transforming CLI tool to desktop GUI
 
 **Tech stack for v2.0:**
-- PySide6 6.11.0 (LGPL, MIT-compatible)
-- VTK 9.6.1 (BSD-licensed)
+- PySide6 >= 6.9.3 (LGPL, MIT-compatible)
+- VTK >= 9.5.2 (BSD-licensed)
 - Matplotlib Qt backend
 - MVVM architecture with QThread workers
 
@@ -27,11 +27,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 9 - Interactive Phase Diagram |
-| Plan | 09-05 complete - Phase 9 COMPLETE |
-| Status | Complete - Ready for Phase 10 |
-
-**Next Phase:** Phase 10 - 3D Molecular Viewer (or Phase 13 for documentation after GUI)
+| Phase | Phase 10 - 3D Molecular Viewer |
+| Plan | CONTEXT.md created, dependencies installed |
+| Status | Ready for planning |
 
 **Progress:** ████████████░░░░░░ 12% (7 of ~55 plans across v2.0)
 
@@ -173,9 +171,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 16:35 UTC
-**Stopped at:** Phase 9 COMPLETE - user approved verification
-**Resume file:** None - ready for Phase 10
+**Last session:** 2026-04-01 17:00 UTC
+**Stopped at:** Phase 10 context gathered, dependencies installed
+**Resume file:** None - ready for /gsd-plan-phase 10
 
 ---
 
@@ -190,11 +188,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first.
 
 **Required for v2.0:**
-- PySide6 >= 6.11.0
-- VTK >= 9.6.1
+- PySide6 >= 6.9.3 — **installed**
+- VTK >= 9.5.2 — **installed**
 - matplotlib (existing)
 
-**Status:** Not yet added to env.yml - awaiting approval to proceed
+**Status:** All v2.0 dependencies installed
 
 ---
 
