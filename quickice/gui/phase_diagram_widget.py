@@ -81,6 +81,11 @@ class PhaseDetector:
         except ImportError:
             pass  # IAPWS not available
     
+    # Buffer tolerance for boundary detection (in coordinate units)
+    # Temperature tolerance: ~2 degrees K
+    # Pressure tolerance: handled via buffer on log-scale coordinates
+    BOUNDARY_TOLERANCE = 2.0
+    
     def detect_phase(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
         """Detect phase at given temperature and pressure.
         
@@ -105,6 +110,11 @@ class PhaseDetector:
         
         # If point is inside exactly one ice phase
         if len(contained_phases) == 1:
+            # Check if near boundary (for practical clicks)
+            near_boundary_phases = self._check_near_boundary(point, contained_phases[0])
+            if len(near_boundary_phases) >= 2:
+                names = [PHASE_LABELS.get(p, p) for p in near_boundary_phases]
+                return f"{names[0]}/{names[1]}", True
             phase_short = PHASE_LABELS.get(contained_phases[0], contained_phases[0])
             return phase_short, False
         
@@ -113,11 +123,8 @@ class PhaseDetector:
             if self._phase_polygons["vapor"].contains(point):
                 return "Vapor", False
         
-        # Check if on boundary (touching multiple phases)
-        boundary_phases: List[str] = []
-        for phase_id, polygon in self._phase_polygons.items():
-            if polygon.touches(point):
-                boundary_phases.append(phase_id)
+        # Check if on boundary (using buffer tolerance)
+        boundary_phases = self._check_near_boundary(point)
         
         if len(boundary_phases) >= 2:
             # Format as "Phase1/Phase2" if exactly 2 phases
@@ -128,6 +135,35 @@ class PhaseDetector:
         
         # No match - assume liquid region
         return "Liquid", False
+    
+    def _check_near_boundary(self, point: Point, inside_phase: Optional[str] = None) -> List[str]:
+        """Check if point is near the boundary of multiple phases.
+        
+        Args:
+            point: Shapely Point to check
+            inside_phase: If provided, check neighbors of this phase
+        
+        Returns:
+            List of phase IDs that are near the boundary
+        """
+        boundary_phases: List[str] = []
+        
+        # Create a small buffer around the point for boundary detection
+        buffered_point = point.buffer(self.BOUNDARY_TOLERANCE)
+        
+        for phase_id, polygon in self._phase_polygons.items():
+            # Check if the buffered point intersects the polygon boundary
+            distance = polygon.boundary.distance(point)
+            if distance < self.BOUNDARY_TOLERANCE:
+                # Also verify point is inside or very close to polygon
+                if polygon.contains(point) or polygon.distance(point) < self.BOUNDARY_TOLERANCE:
+                    boundary_phases.append(phase_id)
+        
+        # If checking neighbors of an inside phase, ensure it's included
+        if inside_phase and inside_phase not in boundary_phases:
+            boundary_phases.insert(0, inside_phase)
+        
+        return boundary_phases
 
 
 class PhaseDiagramCanvas(FigureCanvasQTAgg):
