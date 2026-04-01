@@ -42,7 +42,7 @@ def validate_pressure(value: str) -> Tuple[bool, str]:
     """Validate pressure input for GUI.
     
     IMPORTANT: This validator uses MPa units for consistency with phase diagram.
-    The valid range is 0-1000 MPa (covers all ice phases).
+    The valid range is 0-10000 MPa (matches CLI, covers all ice phases including Ice X).
     
     Args:
         value: String input from GUI text field
@@ -53,8 +53,8 @@ def validate_pressure(value: str) -> Tuple[bool, str]:
     Examples:
         >>> validate_pressure("100")
         (True, "")
-        >>> validate_pressure("1500")
-        (False, "Pressure must be between 0 and 1000 MPa")
+        >>> validate_pressure("50000")
+        (False, "Pressure must be between 0 and 10000 MPa")
         >>> validate_pressure("abc")
         (False, "Pressure must be a number")
     """
@@ -63,8 +63,8 @@ def validate_pressure(value: str) -> Tuple[bool, str]:
     except ValueError:
         return (False, "Pressure must be a number")
     
-    if pressure < 0 or pressure > 1000:
-        return (False, "Pressure must be between 0 and 1000 MPa")
+    if pressure < 0 or pressure > 10000:
+        return (False, "Pressure must be between 0 and 10000 MPa")
     
     return (True, "")
 

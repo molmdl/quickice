@@ -42,7 +42,7 @@ class MainViewModel(QObject):
         
         Args:
             temperature: Temperature in Kelvin (0-500)
-            pressure: Pressure in MPa (0-1000)
+            pressure: Pressure in MPa (0-10000)
             nmolecules: Number of molecules (4-216)
         """
         # Clean up any existing thread
