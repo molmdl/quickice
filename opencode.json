@@ -18,7 +18,7 @@
     "gsd-set-model": { "model": "github-copilot/gpt-5-mini" },
     "cp-gsd-planner": { "model": "openrouter/z-ai/glm-5" },
     "cp-gsd-plan-checker": { "model": "openrouter/minimax/minimax-m2.5" },
-    "cp-gsd-phase-researcher": { "model": "openrouter/minimax/minimax-m2.5" },
+    "cp-gsd-phase-researcher": { "model": "openrouter/z-ai/glm-5" },
     "cp-gsd-roadmapper": { "model": "openrouter/minimax/minimax-m2.5" },
     "cp-gsd-project-researcher": { "model": "openrouter/minimax/minimax-m2.5" },
     "cp-gsd-research-synthesizer": { "model": "openrouter/z-ai/glm-5" },
