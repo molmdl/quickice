@@ -207,12 +207,12 @@ class MainWindow(QMainWindow):
         
         Args:
             temperature: Temperature in Kelvin
-            pressure: Pressure in bar
+            pressure: Pressure in MPa
         """
         # Set values in input panel with rounding
         self.input_panel.set_values(
             round(temperature, 1),
-            round(pressure),
+            round(pressure, 2),  # Round to 2 decimals for MPa
             96  # Default molecule count
         )
 
