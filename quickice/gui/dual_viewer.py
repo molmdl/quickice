@@ -6,6 +6,7 @@ structure candidates in separate synchronized viewports.
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QShowEvent
 
 from vtkmodules.all import vtkCommand
 
@@ -52,12 +53,12 @@ class DualViewerWidget(QWidget):
         # Camera synchronization state
         self._syncing = False  # Guard flag to prevent feedback loops
         self._camera_sync_enabled = True  # Default synced per CONTEXT.md
+        self._camera_sync_setup = False  # Track if sync has been set up
         
         # Set up UI with two viewports
         self._setup_ui()
         
-        # Set up camera synchronization between viewers
-        self._setup_camera_sync()
+        # Camera sync will be set up on first show event (deferred)
     
     def _setup_ui(self) -> None:
         """Set up the dual viewport layout.
@@ -102,6 +103,19 @@ class DualViewerWidget(QWidget):
         # Store title labels for updates
         self._title1_label = title1_label
         self._title2_label = title2_label
+    
+    def showEvent(self, event):
+        """Handle show event - set up camera sync after widget is visible.
+        
+        Deferring camera sync until the first show event prevents VTK
+        from firing observers during initialization, which can cause crashes.
+        """
+        super().showEvent(event)
+        
+        # Set up camera sync on first show
+        if not self._camera_sync_setup:
+            self._setup_camera_sync()
+            self._camera_sync_setup = True
     
     def _setup_camera_sync(self) -> None:
         """Set up camera synchronization between the two viewers.
