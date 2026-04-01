@@ -89,10 +89,12 @@ class PhaseDetector:
         except ImportError:
             pass  # IAPWS not available
     
-    # Buffer tolerance for boundary detection (in coordinate units)
-    # Temperature tolerance: ~2 degrees K
-    # Pressure tolerance: handled via buffer on log-scale coordinates
-    BOUNDARY_TOLERANCE = 2.0
+    # Tolerance for boundary detection (pressure only)
+    # Uses relative tolerance: 5% of pressure with 0.01 MPa floor
+    #   - At P=0.1 MPa: tolerance = 0.01 MPa (avoids false boundary at low P)
+    #   - At P=100 MPa: tolerance = 5.0 MPa
+    #   - At P=1000 MPa: tolerance = 50.0 MPa (appropriate for high P)
+    BOUNDARY_TOLERANCE_PRESSURE_FRAC = 0.05
     
     def detect_phase(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
         """Detect phase at given temperature and pressure.
@@ -153,8 +155,13 @@ class PhaseDetector:
     def _check_near_boundary(self, point: Point, inside_phase: Optional[str] = None) -> List[str]:
         """Check if point is near the boundary of multiple phases.
         
+        Uses relative tolerance for pressure to handle both low and high pressure
+        regions correctly. At low pressure (P=0.1 MPa), a small absolute tolerance
+        avoids false boundary detection. At high pressure (P=1000 MPa), the relative
+        tolerance scales appropriately.
+        
         Args:
-            point: Shapely Point to check
+            point: Shapely Point to check (coordinates are T, P in MPa)
             inside_phase: If provided, check neighbors of this phase
         
         Returns:
@@ -162,16 +169,23 @@ class PhaseDetector:
         """
         boundary_phases: List[str] = []
         
-        # Create a small buffer around the point for boundary detection
-        buffered_point = point.buffer(self.BOUNDARY_TOLERANCE)
+        # Extract coordinates for relative tolerance calculation
+        pressure = point.y
+        
+        # Calculate pressure tolerance: relative with minimum floor
+        # At P=0.1 MPa: tol = max(0.01, 0.1*0.05) = 0.01 MPa
+        # At P=100 MPa: tol = max(0.01, 5.0) = 5.0 MPa
+        # At P=1000 MPa: tol = max(0.01, 50.0) = 50.0 MPa
+        # Use only pressure tolerance for distance (T tolerance doesn't apply to P)
+        tolerance = max(0.01, pressure * self.BOUNDARY_TOLERANCE_PRESSURE_FRAC)
         
         for phase_id, polygon in self._phase_polygons.items():
-            # Check if the buffered point intersects the polygon boundary
+            # Check if the point is near the polygon boundary
             distance = polygon.boundary.distance(point)
-            if distance < self.BOUNDARY_TOLERANCE:
+            if distance < tolerance:
                 # Also verify point is inside or very close to polygon
                 # Use covers() to include boundary points
-                if polygon.covers(point) or polygon.distance(point) < self.BOUNDARY_TOLERANCE:
+                if polygon.covers(point) or polygon.distance(point) < tolerance:
                     boundary_phases.append(phase_id)
         
         # If checking neighbors of an inside phase, ensure it's included
