@@ -71,7 +71,7 @@ None — discussion stayed within phase scope.
 <dependencies>
 ## Required Dependency
 
-- VTK >= 9.6.1 (BSD-licensed, MIT-compatible) — **added to env.yml**
+- VTK >= 9.6.0 (BSD-licensed, MIT-compatible) — **added to env.yml**
 
 </dependencies>
 
