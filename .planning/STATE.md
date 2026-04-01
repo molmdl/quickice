@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | CONTEXT.md created, dependencies installed |
-| Status | Ready for planning |
+| Plan | 01 complete, ready for 02 |
+| Status | In progress |
 
-**Progress:** ████████████░░░░░░ 12% (7 of ~55 plans across v2.0)
+**Progress:** ██████████████░░░░ 15% (8 of ~55 plans across v2.0)
 
 ---
 
@@ -166,14 +166,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 09-02 | Window minimum 800x500 | Accommodate both panels comfortably |
 | 09-04 | subplots_adjust for explicit margins | Ensures labels are fully visible without clipping |
 | 09-04 | Vapor label at (380K, 0.25 MPa) | Better position in visible vapor region |
+| 10-01 | Use vtkMolecule for molecular data | VTK handles rendering automatically, no manual geometry |
+| 10-01 | H-bond detection with 0.25 nm threshold | Typical H...O distance threshold (2.5 Å) |
+| 10-01 | vtkOutlineSource for unit cell | Simpler than transform approach for orthogonal cells |
+| 10-01 | Line stipple 0x0F0F for H-bonds | Medium dash pattern (4 on, 4 off) |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 17:00 UTC
-**Stopped at:** Phase 10 context gathered, dependencies installed
-**Resume file:** None - ready for /gsd-plan-phase 10
+**Last session:** 2026-04-01 15:05 UTC
+**Stopped at:** Completed 10-01-PLAN.md (VTK utilities)
+**Resume file:** None - ready for 10-02-PLAN.md
 
 ---
 
@@ -247,4 +251,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Phase 13 added (Documentation Update)*
+*State updated: 2026-04-01 - Completed 10-01 VTK utilities*

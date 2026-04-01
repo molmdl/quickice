@@ -113,7 +113,7 @@ Plans:
 **Plans:** 6 plans in 6 waves (sequential due to file dependencies)
 
 Plans:
-- [ ] 10-01-PLAN.md — VTK Utilities (molecule conversion, H-bond detection, actors)
+- [x] 10-01-PLAN.md — VTK Utilities (molecule conversion, H-bond detection, actors)
 - [ ] 10-02-PLAN.md — Basic Molecular Viewer Widget (VTK setup, ball-and-stick, mouse controls)
 - [ ] 10-03-PLAN.md — Visualization Toggles (representation, H-bonds, unit cell, zoom-fit)
 - [ ] 10-04-PLAN.md — Advanced Features (auto-rotation, color-by-property)
