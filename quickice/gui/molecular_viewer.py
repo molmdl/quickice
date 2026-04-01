@@ -366,3 +366,110 @@ class MolecularViewerWidget(QWidget):
             True if auto-rotation is running, False otherwise
         """
         return self._auto_rotating
+    
+    def set_ranked_candidate(self, ranked: RankedCandidate) -> None:
+        """Load a ranked candidate for property-based coloring.
+        
+        Stores the ranked candidate reference and loads its structure.
+        If color-by-property is active, re-applies the coloring.
+        
+        Args:
+            ranked: A RankedCandidate with energy/density scores
+        """
+        self._current_ranked_candidate = ranked
+        self.set_candidate(ranked.candidate)
+        
+        # Re-apply color mode if not CPK
+        if self._color_mode != "cpk":
+            self.set_color_by_property(self._color_mode)
+    
+    def set_color_by_property(self, mode: str) -> None:
+        """Color atoms by property (energy or density ranking).
+        
+        Args:
+            mode: One of "cpk" (default), "energy", or "density"
+        
+        Per ADVVIZ-05: User can color atoms by property (energy ranking 
+        or density ranking) to highlight favorable structures.
+        """
+        if mode not in ("cpk", "energy", "density"):
+            raise ValueError(f"Invalid color mode: {mode}. "
+                           f"Must be 'cpk', 'energy', or 'density'")
+        
+        self._color_mode = mode
+        
+        if mode == "cpk":
+            # Restore default element-based coloring
+            self._mapper.SetColorModeToDefault()
+            self._mapper.ScalarVisibilityOff()
+        else:
+            # Property-based coloring requires ranked candidate
+            if self._current_ranked_candidate is None:
+                # Can't color without ranking data, fall back to CPK
+                self._color_mode = "cpk"
+                self._mapper.SetColorModeToDefault()
+                self._mapper.ScalarVisibilityOff()
+            else:
+                self._apply_property_coloring(mode)
+        
+        self.render_window.Render()
+    
+    def _apply_property_coloring(self, mode: str) -> None:
+        """Apply property-based coloring to molecule atoms.
+        
+        Creates a scalar array with property values and configures
+        the mapper with a viridis-like colormap.
+        
+        Args:
+            mode: "energy" or "density"
+        """
+        # Get the molecule data
+        mol = self._mapper.GetInput()
+        if mol is None:
+            return
+        
+        # Create scalar array for coloring
+        scalar_array = vtkFloatArray()
+        scalar_array.SetName("PropertyRanking")
+        
+        # Get the property value to use
+        if mode == "energy":
+            # Lower energy = better rank = lower color value
+            # Normalize by using 1/rank (best rank 1 = value 1.0)
+            value = 1.0 / max(1, self._current_ranked_candidate.rank)
+        else:  # density
+            # Lower density deviation = better
+            value = 1.0 / max(1, self._current_ranked_candidate.rank)
+        
+        # All atoms in molecule get the same property value
+        # (coloring is per-candidate, not per-atom)
+        n_atoms = mol.GetNumberOfAtoms()
+        for _ in range(n_atoms):
+            scalar_array.InsertNextValue(value)
+        
+        # Add to molecule's atom data
+        mol.GetAtomData().AddArray(scalar_array)
+        
+        # Configure mapper for scalar coloring
+        self._mapper.ScalarVisibilityOn()
+        self._mapper.SetColorModeToMapScalars()
+        self._mapper.SelectColorArray("PropertyRanking")
+        self._mapper.SetScalarModeToUsePointFieldData()
+        
+        # Create viridis-like colormap (per CONTEXT.md)
+        ctf = vtkColorTransferFunction()
+        ctf.SetColorSpaceToDiverging()
+        # Dark purple (low value = good rank)
+        ctf.AddRGBPoint(0.0, 0.267, 0.004, 0.329)
+        # Yellow (high value = worse rank)
+        ctf.AddRGBPoint(1.0, 0.993, 0.906, 0.144)
+        
+        self._mapper.SetLookupTable(ctf)
+    
+    def get_color_mode(self) -> str:
+        """Return current color mode.
+        
+        Returns:
+            "cpk", "energy", or "density"
+        """
+        return self._color_mode
