@@ -356,18 +356,18 @@ class ViewerPanel(QWidget):
         """Toggle between ball-and-stick and stick representations."""
         if self.btn_representation.isChecked():
             self.btn_representation.setText("Ball-and-stick")
-            self.dual_viewer.viewer1.set_representation("ball-and-stick")
-            self.dual_viewer.viewer2.set_representation("ball-and-stick")
+            self.dual_viewer.viewer1.set_representation_mode("ball_and_stick")
+            self.dual_viewer.viewer2.set_representation_mode("ball_and_stick")
         else:
             self.btn_representation.setText("Stick")
-            self.dual_viewer.viewer1.set_representation("stick")
-            self.dual_viewer.viewer2.set_representation("stick")
+            self.dual_viewer.viewer1.set_representation_mode("stick")
+            self.dual_viewer.viewer2.set_representation_mode("stick")
     
     def _on_hbonds_toggled(self):
         """Toggle hydrogen bond visibility."""
         visible = self.btn_hbonds.isChecked()
-        self.dual_viewer.viewer1.set_hbonds_visible(visible)
-        self.dual_viewer.viewer2.set_hbonds_visible(visible)
+        self.dual_viewer.viewer1.set_hydrogen_bonds_visible(visible)
+        self.dual_viewer.viewer2.set_hydrogen_bonds_visible(visible)
     
     def _on_unit_cell_toggled(self):
         """Toggle unit cell box visibility."""
@@ -383,8 +383,8 @@ class ViewerPanel(QWidget):
     def _on_auto_rotate_toggled(self):
         """Toggle auto-rotation animation."""
         enabled = self.btn_auto_rotate.isChecked()
-        self.dual_viewer.viewer1.set_auto_rotate(enabled)
-        self.dual_viewer.viewer2.set_auto_rotate(enabled)
+        self.dual_viewer.viewer1.toggle_auto_rotation(enabled)
+        self.dual_viewer.viewer2.toggle_auto_rotation(enabled)
     
     def _on_color_changed(self, color_mode: str):
         """Change color-by-property mode."""
@@ -395,8 +395,8 @@ class ViewerPanel(QWidget):
             "Density": "density"
         }
         mode = mode_map.get(color_mode, "cpk")
-        self.dual_viewer.viewer1.set_color_mode(mode)
-        self.dual_viewer.viewer2.set_color_mode(mode)
+        self.dual_viewer.viewer1.set_color_by_property(mode)
+        self.dual_viewer.viewer2.set_color_by_property(mode)
     
     def show_placeholder(self):
         """Show placeholder text (before first generation)."""
