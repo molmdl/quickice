@@ -53,6 +53,33 @@ class PhaseDetector:
             if len(vertices) >= 3:
                 # Vertices are (T, P) in MPa
                 self._phase_polygons[phase_id] = ShapelyPolygon(vertices)
+        
+        # Build vapor polygon using IAPWS saturation curve
+        # Vapor region is below the liquid-vapor saturation curve
+        try:
+            from iapws import IAPWS97
+            
+            vapor_vertices = []
+            # Start at bottom-left: (273.16 K, 0.1 MPa)
+            vapor_vertices.append((273.16, 0.1))
+            
+            # Follow saturation curve from 273.16K to 500K
+            for T in np.linspace(273.16, 500, 50):
+                try:
+                    st = IAPWS97(T=T, x=0)  # Saturated liquid
+                    vapor_vertices.append((T, st.P))
+                except Exception:
+                    pass
+            
+            # Close polygon: top-right (500K, saturation P), then along bottom back
+            if len(vapor_vertices) > 2:
+                vapor_vertices.append((500.0, 0.1))
+                # Back along bottom to start
+                vapor_vertices.append((273.16, 0.1))
+                
+                self._phase_polygons["vapor"] = ShapelyPolygon(vapor_vertices)
+        except ImportError:
+            pass  # IAPWS not available
     
     def detect_phase(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
         """Detect phase at given temperature and pressure.
@@ -63,33 +90,44 @@ class PhaseDetector:
         
         Returns:
             Tuple of (phase_name, is_boundary)
-            - phase_name: Short form (e.g., "Ih") or "Multiple phases possible"
+            - phase_name: Short form (e.g., "Ih") or "Multiple phases possible" or "Vapor" or "Liquid"
             - is_boundary: True if point is on boundary line between phases
         """
         point = Point(temperature, pressure_mpa)
         
-        # Check containment in each phase polygon
+        # Check containment in ice phase polygons first
         contained_phases: List[str] = []
         for phase_id, polygon in self._phase_polygons.items():
+            if phase_id == "vapor":
+                continue  # Check vapor separately after ice phases
             if polygon.contains(point):
                 contained_phases.append(phase_id)
         
-        # If point is inside exactly one phase
+        # If point is inside exactly one ice phase
         if len(contained_phases) == 1:
             phase_short = PHASE_LABELS.get(contained_phases[0], contained_phases[0])
             return phase_short, False
         
-        # If point is on boundary (touching multiple phases)
+        # Check if in vapor region
+        if "vapor" in self._phase_polygons:
+            if self._phase_polygons["vapor"].contains(point):
+                return "Vapor", False
+        
+        # Check if on boundary (touching multiple phases)
         boundary_phases: List[str] = []
         for phase_id, polygon in self._phase_polygons.items():
             if polygon.touches(point):
                 boundary_phases.append(phase_id)
         
         if len(boundary_phases) >= 2:
+            # Format as "Phase1/Phase2" if exactly 2 phases
+            if len(boundary_phases) == 2:
+                names = [PHASE_LABELS.get(p, p) for p in boundary_phases]
+                return f"{names[0]}/{names[1]}", True
             return "Multiple phases possible", True
         
-        # No match (liquid region or outside diagram)
-        return None, False
+        # No match - assume liquid region
+        return "Liquid", False
 
 
 class PhaseDiagramCanvas(FigureCanvasQTAgg):
@@ -519,10 +557,17 @@ class PhaseDiagramPanel(QWidget):
                 "border-radius: 3px;"
             )
         elif phase_name:
-            self.info_label.setText(
-                f"Selected: Ice {phase_name}\n"
-                f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
-            )
+            # Handle Vapor and Liquid (not ice phases)
+            if phase_name in ("Vapor", "Liquid"):
+                self.info_label.setText(
+                    f"Selected: {phase_name}\n"
+                    f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
+                )
+            else:
+                self.info_label.setText(
+                    f"Selected: Ice {phase_name}\n"
+                    f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
+                )
             self.info_label.setStyleSheet(
                 "padding: 8px; "
                 "background-color: #d4edda; "
@@ -530,9 +575,9 @@ class PhaseDiagramPanel(QWidget):
                 "border-radius: 3px;"
             )
         else:
-            # No phase detected (liquid or outside diagram)
+            # No phase detected (should not reach here after adding Liquid)
             self.info_label.setText(
-                f"Liquid or outside diagram\n"
+                f"Unknown region\n"
                 f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
             )
             self.info_label.setStyleSheet(
