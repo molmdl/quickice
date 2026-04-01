@@ -4,10 +4,10 @@
   "agent": {
     "gsd-planner": { "model": "openrouter/z-ai/glm-5" },
     "gsd-plan-checker": { "model": "openrouter/minimax/minimax-m2.5" },
-    "gsd-phase-researcher": { "model": "openrouter/minimax/minimax-m2.5" },
+    "gsd-phase-researcher": { "model": "openrouter/z-ai/glm-5" },
     "gsd-roadmapper": { "model": "openrouter/minimax/minimax-m2.5" },
     "gsd-project-researcher": { "model": "openrouter/minimax/minimax-m2.5" },
-    "gsd-research-synthesizer": { "model": "openrouter/minimax/minimax-m2.5" },
+    "gsd-research-synthesizer": { "model": "openrouter/z-ai/glm-5" },
     "gsd-codebase-mapper": { "model": "openrouter/z-ai/glm-5" },
     "gsd-executor": { "model": "openrouter/z-ai/glm-5" },
     "gsd-debugger": { "model": "openrouter/minimax/minimax-m2.5" },
