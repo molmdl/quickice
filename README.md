@@ -45,12 +45,6 @@ QuickIce uses:
 conda env create -f env.yml
 ```
 
-**v1 CLI only:** If you only need the command-line tool (no GUI), use the lighter environment:
-
-```bash
-conda env create -f env_v1.yml
-```
-
 ### Setup Environment
 
 ```bash
@@ -190,14 +184,12 @@ For more details, see:
 
 ## Known Issues
 
-See [ISSUES.md](ISSUES.md) for known limitations and planned improvements.
-
 Key limitations:
 
 - Ranking uses distance-based energy estimates, not actual force field calculations
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
-- Generated structures require validation for production use
+- Not all the phases are supported (since we rely on the GenIce2 library)
 
 ## Project Structure
 

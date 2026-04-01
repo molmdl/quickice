@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Phase | Phase 9 - Interactive Phase Diagram |
 | Plan | 09-05 complete - Phase 9 COMPLETE |
 | Status | Complete - Ready for Phase 10 |
-| Plans | 5/5 plans in Phase 9 complete |
-| Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
+
+**Next Phase:** Phase 10 - 3D Molecular Viewer (or Phase 13 for documentation after GUI)
 
 **Progress:** ████████████░░░░░░ 12% (7 of ~55 plans across v2.0)
 
@@ -89,6 +89,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 **Goal:** Users receive standalone executable with all dependencies bundled
 
 **Requirements:** 2 (PACKAGE-01, PACKAGE-02)
+
+### Phase 13: Update README and Documentation After Finishing the GUI
+
+**Goal:** Users and developers have comprehensive, up-to-date documentation reflecting the v2.0 GUI application
+
+**Requirements:** 4 (documentation coverage)
 
 ---
 
@@ -173,6 +179,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ---
 
+## Roadmap Evolution
+
+- Phase 13 added: Update README and documentation after finishing the GUI
+
+---
+
 ## Dependencies to Install
 
 Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first.
@@ -237,4 +249,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Phase 09 COMPLETE (Interactive Phase Diagram)*
+*State updated: 2026-04-01 - Phase 13 added (Documentation Update)*
