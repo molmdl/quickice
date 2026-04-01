@@ -93,3 +93,96 @@ class DualViewerWidget(QWidget):
         # Store title labels for updates
         self._title1_label = title1_label
         self._title2_label = title2_label
+    
+    def set_candidates(self, ranked_candidates: list[RankedCandidate]) -> None:
+        """Load ranked candidates into the dual viewer.
+        
+        Stores the candidates and displays the default selections:
+        - Viewer 1: Rank #1 (index 0)
+        - Viewer 2: Rank #2 (index 1)
+        
+        Per CONTEXT.md: Default view shows rank #1 in Grid 1 and 
+        rank #2 in Grid 2.
+        
+        Args:
+            ranked_candidates: List of ranked candidates sorted by 
+                              combined_score (best first).
+        """
+        self._ranked_candidates = ranked_candidates
+        
+        # Default selection: index 0 for viewer1, index 1 for viewer2
+        self._selected_index1 = 0
+        self._selected_index2 = 1 if len(ranked_candidates) >= 2 else 0
+        
+        # Load candidates into viewers
+        if len(ranked_candidates) >= 1:
+            self.viewer1.set_ranked_candidate(ranked_candidates[0])
+            self._update_title(1, ranked_candidates[0])
+        
+        if len(ranked_candidates) >= 2:
+            self.viewer2.set_ranked_candidate(ranked_candidates[1])
+            self._update_title(2, ranked_candidates[1])
+        elif len(ranked_candidates) == 1:
+            # If only one candidate, show it in both viewers
+            self.viewer2.set_ranked_candidate(ranked_candidates[0])
+            self._update_title(2, ranked_candidates[0])
+        
+        # Emit signal with candidate count
+        self.candidates_loaded.emit(len(ranked_candidates))
+    
+    def set_candidate_for_viewer(self, viewer_index: int, candidate_index: int) -> None:
+        """Select which candidate to display in a specific viewer.
+        
+        This method enables MainWindow dropdown selectors to change
+        which candidate is shown in each viewport.
+        
+        Args:
+            viewer_index: 0 for viewer1 (left), 1 for viewer2 (right).
+            candidate_index: Index in the ranked_candidates list.
+        
+        Raises:
+            IndexError: If viewer_index not in [0, 1] or candidate_index
+                       out of bounds.
+        """
+        if viewer_index not in (0, 1):
+            raise IndexError(f"viewer_index must be 0 or 1, got {viewer_index}")
+        
+        if not self._ranked_candidates:
+            return
+        
+        if candidate_index < 0 or candidate_index >= len(self._ranked_candidates):
+            raise IndexError(
+                f"candidate_index {candidate_index} out of range "
+                f"[0, {len(self._ranked_candidates) - 1}]"
+            )
+        
+        viewer = self.viewer1 if viewer_index == 0 else self.viewer2
+        selected_index_attr = "_selected_index1" if viewer_index == 0 else "_selected_index2"
+        
+        # Update selected index
+        setattr(self, selected_index_attr, candidate_index)
+        
+        # Load candidate into viewer
+        candidate = self._ranked_candidates[candidate_index]
+        viewer.set_ranked_candidate(candidate)
+        
+        # Update title
+        self._update_title(viewer_index + 1, candidate)
+    
+    def get_candidate_count(self) -> int:
+        """Return the number of loaded candidates.
+        
+        Returns:
+            Number of ranked candidates available for display.
+        """
+        return len(self._ranked_candidates)
+    
+    def _update_title(self, viewer_num: int, candidate: RankedCandidate) -> None:
+        """Update viewer title with rank and score info.
+        
+        Args:
+            viewer_num: 1 for left viewer, 2 for right viewer.
+            candidate: The candidate being displayed.
+        """
+        title_label = self._title1_label if viewer_num == 1 else self._title2_label
+        title_label.setText(f"Candidate {viewer_num} (Rank #{candidate.rank})")
