@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 9 - Interactive Phase Diagram |
-| Plan | 09-02 complete - Phase 9 in progress |
-| Status | In progress - Ready for 09-03 |
-| Plans | 2/3 plans in Phase 9 complete |
+| Plan | 09-04 complete - Phase 9 in progress |
+| Status | In progress - Ready for 09-03 or 09-05 |
+| Plans | 3/5 plans in Phase 9 complete |
 | Previous milestone | v1.1 (Phase 7.1 - shipped 2026-03-31) |
 
-**Progress:** ████████░░░░░░░░░░░░ 8% (5 of ~50 plans across v2.0)
+**Progress:** █████████░░░░░░░░░░░ 10% (6 of ~50 plans across v2.0)
 
 ---
 
@@ -68,7 +68,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 - MainWindow integration with split view layout
 - Diagram clicks populate input fields
 
-**Status:** 2/3 plans complete - Ready for manual testing (09-03)
+**Status:** 3/5 plans complete - Ready for 09-03 or 09-05
 
 ### Phase 10: 3D Molecular Viewer
 
@@ -158,14 +158,16 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 09-02 | Pressure rounded to 0 decimals | Simpler integer display |
 | 09-02 | Splitter sizing 60/40 | Balanced view for diagram and inputs |
 | 09-02 | Window minimum 800x500 | Accommodate both panels comfortably |
+| 09-04 | subplots_adjust for explicit margins | Ensures labels are fully visible without clipping |
+| 09-04 | Vapor label at (380K, 0.25 MPa) | Better position in visible vapor region |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 17:15 UTC
-**Stopped at:** Completed 09-02-SUMMARY.md - Phase 9 in progress
-**Resume file:** None - next plan is 09-03
+**Last session:** 2026-04-01 08:06 UTC
+**Stopped at:** Completed 09-04-SUMMARY.md - Phase 9 in progress
+**Resume file:** None - next plan is 09-03 or 09-05
 
 ---
 
@@ -233,4 +235,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Phase 09 plan 02 complete (Interactive Phase Diagram)*
+*State updated: 2026-04-01 - Phase 09 plan 04 complete (Interactive Phase Diagram)*
