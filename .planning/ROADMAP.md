@@ -116,8 +116,8 @@ Plans:
 - [x] 10-01-PLAN.md — VTK Utilities (molecule conversion, H-bond detection, actors)
 - [x] 10-02-PLAN.md — Basic Molecular Viewer Widget (VTK setup, ball-and-stick, mouse controls)
 - [x] 10-03-PLAN.md — Visualization Toggles (representation, H-bonds, unit cell, zoom-fit)
-- [ ] 10-04-PLAN.md — Advanced Features (auto-rotation, color-by-property)
-- [ ] 10-05-PLAN.md — Dual Viewport Comparison (synchronized cameras, selectors)
+- [x] 10-04-PLAN.md — Advanced Features (auto-rotation, color-by-property)
+- [x] 10-05-PLAN.md — Dual Viewport Comparison (synchronized cameras, selectors)
 - [ ] 10-06-PLAN.md — MainWindow Integration (layout, toolbar, info panel)
 
 **Success Criteria:**

@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 04 complete, ready for 05 |
+| Plan | 05 complete, ready for 06 |
 | Status | In progress |
 
 **Progress:** ████████████████░░░ 20% (11 of ~55 plans across v2.0)
@@ -179,14 +179,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 10-04 | Auto-rotation at ~10°/sec via QTimer | Per CONTEXT.md presentation quality |
 | 10-04 | Viridis colormap for property coloring | Per CONTEXT.md scientific standard |
 | 10-04 | Property coloring falls back to CPK | No crash when no ranked candidate |
+| 10-05 | Dual viewport QHBoxLayout (1 row, 2 grids) | Per CONTEXT.md "always dual view" |
+| 10-05 | Camera sync via ModifiedEvent observer | Per RESEARCH.md Pattern 6 |
+| 10-05 | Guard flag prevents camera sync recursion | Prevents infinite feedback loop |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 15:20 UTC
-**Stopped at:** Completed 10-04-PLAN.md (Advanced Features)
-**Resume file:** None - ready for 10-05-PLAN.md
+**Last session:** 2026-04-01 15:24 UTC
+**Stopped at:** Completed 10-05-PLAN.md (Dual Viewer Widget)
+**Resume file:** None - ready for 10-06-PLAN.md
 
 ---
 
@@ -250,7 +253,7 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | ADVVIZ-01 | Phase 10 | Complete |
 | ADVVIZ-02 | Phase 10 | Complete |
 | ADVVIZ-03 | Phase 10 | Complete |
-| ADVVIZ-04 | Phase 10 | Pending |
+| ADVVIZ-04 | Phase 10 | Complete |
 | ADVVIZ-05 | Phase 10 | Complete |
 | UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
@@ -260,4 +263,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Completed 10-04 Advanced Features*
+*State updated: 2026-04-01 - Completed 10-05 Dual Viewer Widget*
