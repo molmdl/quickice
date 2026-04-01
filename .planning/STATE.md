@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 01 complete, ready for 02 |
+| Plan | 02 complete, ready for 03 |
 | Status | In progress |
 
-**Progress:** ██████████████░░░░ 15% (8 of ~55 plans across v2.0)
+**Progress:** ███████████████░░░░ 16% (9 of ~55 plans across v2.0)
 
 ---
 
@@ -170,14 +170,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 10-01 | H-bond detection with 0.25 nm threshold | Typical H...O distance threshold (2.5 Å) |
 | 10-01 | vtkOutlineSource for unit cell | Simpler than transform approach for orthogonal cells |
 | 10-01 | Line stipple 0x0F0F for H-bonds | Medium dash pattern (4 on, 4 off) |
+| 10-02 | Ball-and-stick default via UseBallAndStickSettings() | Per VIEWER-02 requirement |
+| 10-02 | TrackballCamera interactor style | Standard 3D mouse controls |
+| 10-02 | Dark blue background (0.1, 0.2, 0.4) | Good contrast for molecules |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 15:05 UTC
-**Stopped at:** Completed 10-01-PLAN.md (VTK utilities)
-**Resume file:** None - ready for 10-02-PLAN.md
+**Last session:** 2026-04-01 15:13 UTC
+**Stopped at:** Completed 10-02-PLAN.md (MolecularViewerWidget)
+**Resume file:** None - ready for 10-03-PLAN.md
 
 ---
 
