@@ -142,6 +142,14 @@ Plans:
 
 **Dependencies:** Phase 9 (phase diagram), Phase 10 (3D viewer)
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 11-01-PLAN.md — Export Module (PDBExporter, DiagramExporter, ViewportExporter)
+- [ ] 11-02-PLAN.md — Help Icons + Phase Info Signal (tooltips, phase_info_ready)
+- [ ] 11-03-PLAN.md — MainWindow Integration (menu bar, wiring, phase info display)
+- [ ] 11-04-PLAN.md — User Verification (manual GUI testing)
+
 **Success Criteria:**
 1. User can save generated PDB file via native file save dialog with .pdb extension
 2. User can save phase diagram image to file (PNG or SVG format)
@@ -149,7 +157,7 @@ Plans:
 4. User can open info window displaying citations and references for the selected ice phase
 5. User sees tooltip with phase information (density, structure type) when hovering over phase regions
 6. User sees help tooltips on UI elements when hovering over question mark icons
-7. User can view in-app markdown manual/documentation for application usage
+7. User can view in-app markdown manual/documentation for application usage (deferred to Phase 13)
 
 ---
 
@@ -222,4 +230,4 @@ Plans:
 
 ---
 
-*Roadmap last updated: 2026-04-01*
+*Roadmap last updated: 2026-04-02*
