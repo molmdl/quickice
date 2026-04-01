@@ -12,9 +12,26 @@ from PySide6.QtWidgets import (
     QPushButton, QComboBox, QToolButton, QTextEdit
 )
 from PySide6.QtCore import Signal, Qt
+import os
 
 from quickice.gui.validators import validate_temperature, validate_pressure, validate_nmolecules
-from quickice.gui.dual_viewer import DualViewerWidget
+
+# Check if VTK is available (may fail in remote/indirect rendering environments)
+_VTK_AVAILABLE = False
+try:
+    # Test if we can create a basic VTK render window
+    # This will fail in environments with indirect rendering (SSH X11 forwarding)
+    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
+        # Likely SSH X11 forwarding - check for direct rendering
+        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
+    else:
+        # Local display or forced - assume VTK works
+        _VTK_AVAILABLE = True
+    
+    if _VTK_AVAILABLE:
+        from quickice.gui.dual_viewer import DualViewerWidget
+except Exception:
+    _VTK_AVAILABLE = False
 
 
 class InputPanel(QWidget):
@@ -261,12 +278,17 @@ class ViewerPanel(QWidget):
     Per ADVVIZ-05: User can color atoms by property (energy/density ranking).
     
     Per CONTEXT.md: Toolbar directly above 3D viewport (not main toolbar).
+    
+    Falls back to placeholder message if VTK is unavailable (e.g., remote SSH with
+    indirect rendering).
     """
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._vtk_available = _VTK_AVAILABLE
         self._setup_ui()
-        self._setup_connections()
+        if self._vtk_available:
+            self._setup_connections()
     
     def _setup_ui(self):
         """Set up the viewer panel layout with toolbar and dual viewer."""
@@ -317,9 +339,25 @@ class ViewerPanel(QWidget):
         
         layout.addLayout(toolbar_layout)
         
-        # Dual viewer widget
-        self.dual_viewer = DualViewerWidget()
-        layout.addWidget(self.dual_viewer)
+        # Dual viewer widget or fallback
+        if self._vtk_available:
+            self.dual_viewer = DualViewerWidget()
+            layout.addWidget(self.dual_viewer)
+        else:
+            # Fallback: show message that 3D viewer requires local display
+            fallback_label = QLabel(
+                "3D Molecular Viewer requires a local display.\n\n"
+                "If running remotely, clone to your local machine\n"
+                "or use QUICKICE_FORCE_VTK=true to override.\n\n"
+                "The rest of the application works normally."
+            )
+            fallback_label.setAlignment(Qt.AlignCenter)
+            fallback_label.setStyleSheet(
+                "font-size: 14px; color: #666; background-color: #f0f0f0; "
+                "padding: 20px; border: 1px solid #ccc; border-radius: 4px;"
+            )
+            layout.addWidget(fallback_label)
+            self.dual_viewer = None  # No viewer available
         
         # Placeholder label (shown before first generation)
         self.placeholder = QLabel("Click Generate to view structure")
@@ -334,6 +372,16 @@ class ViewerPanel(QWidget):
     
     def _setup_connections(self):
         """Connect toolbar buttons to viewer methods."""
+        if not self._vtk_available:
+            # Disable toolbar buttons when VTK not available
+            self.btn_representation.setEnabled(False)
+            self.btn_hbonds.setEnabled(False)
+            self.btn_unit_cell.setEnabled(False)
+            self.btn_zoom_fit.setEnabled(False)
+            self.btn_auto_rotate.setEnabled(False)
+            self.color_dropdown.setEnabled(False)
+            return
+        
         # Representation toggle
         self.btn_representation.clicked.connect(self._on_representation_toggled)
         
@@ -354,6 +402,9 @@ class ViewerPanel(QWidget):
     
     def _on_representation_toggled(self):
         """Toggle between ball-and-stick and stick representations."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         if self.btn_representation.isChecked():
             self.btn_representation.setText("Ball-and-stick")
             self.dual_viewer.viewer1.set_representation_mode("ball_and_stick")
@@ -365,29 +416,44 @@ class ViewerPanel(QWidget):
     
     def _on_hbonds_toggled(self):
         """Toggle hydrogen bond visibility."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         visible = self.btn_hbonds.isChecked()
         self.dual_viewer.viewer1.set_hydrogen_bonds_visible(visible)
         self.dual_viewer.viewer2.set_hydrogen_bonds_visible(visible)
     
     def _on_unit_cell_toggled(self):
         """Toggle unit cell box visibility."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         visible = self.btn_unit_cell.isChecked()
         self.dual_viewer.viewer1.set_unit_cell_visible(visible)
         self.dual_viewer.viewer2.set_unit_cell_visible(visible)
     
     def _on_zoom_fit(self):
         """Zoom to fit structure in both viewports."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         self.dual_viewer.viewer1.zoom_to_fit()
         self.dual_viewer.viewer2.zoom_to_fit()
     
     def _on_auto_rotate_toggled(self):
         """Toggle auto-rotation animation."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         enabled = self.btn_auto_rotate.isChecked()
         self.dual_viewer.viewer1.toggle_auto_rotation(enabled)
         self.dual_viewer.viewer2.toggle_auto_rotation(enabled)
     
     def _on_color_changed(self, color_mode: str):
         """Change color-by-property mode."""
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
         # Map dropdown text to viewer method
         mode_map = {
             "CPK": "cpk",
@@ -401,7 +467,8 @@ class ViewerPanel(QWidget):
     def show_placeholder(self):
         """Show placeholder text (before first generation)."""
         self._placeholder_visible = True
-        self.dual_viewer.hide()
+        if self._vtk_available and self.dual_viewer is not None:
+            self.dual_viewer.hide()
         self.placeholder.show()
         # Add placeholder to layout if not already added
         if self.placeholder.parent() != self:
@@ -411,11 +478,20 @@ class ViewerPanel(QWidget):
         """Hide placeholder and show viewer (after first generation)."""
         self._placeholder_visible = False
         self.placeholder.hide()
-        self.dual_viewer.show()
+        if self._vtk_available and self.dual_viewer is not None:
+            self.dual_viewer.show()
     
     def is_placeholder_visible(self) -> bool:
         """Check if placeholder is currently visible."""
         return self._placeholder_visible
+    
+    def is_vtk_available(self) -> bool:
+        """Check if VTK 3D viewer is available.
+        
+        Returns:
+            True if VTK is working, False if fallback mode is active.
+        """
+        return self._vtk_available
 
 
 class InfoPanel(QWidget):

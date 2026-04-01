@@ -206,15 +206,25 @@ class MainWindow(QMainWindow):
         # Hide placeholder and show viewer
         self.viewer_panel.hide_placeholder()
         
-        # Load candidates into dual viewer
-        if hasattr(result, 'ranked_candidates') and result.ranked_candidates:
-            self.viewer_panel.dual_viewer.set_candidates(result.ranked_candidates)
-            
-            # Log to info panel
+        # Load candidates into dual viewer (if VTK available)
+        if self.viewer_panel.is_vtk_available():
+            if hasattr(result, 'ranked_candidates') and result.ranked_candidates:
+                self.viewer_panel.dual_viewer.set_candidates(result.ranked_candidates)
+                
+                # Log to info panel
+                self.info_panel.append_log(
+                    f"\nLoaded {len(result.ranked_candidates)} candidate(s) into viewer"
+                )
+                self.info_panel.append_log("Rank #1 shown in left viewport, Rank #2 in right")
+        else:
+            # VTK not available - show message in log
             self.info_panel.append_log(
-                f"\nLoaded {len(result.ranked_candidates)} candidate(s) into viewer"
+                f"\nGenerated {len(result.ranked_candidates) if hasattr(result, 'ranked_candidates') else 0} candidate(s)"
             )
-            self.info_panel.append_log("Rank #1 shown in left viewport, Rank #2 in right")
+            self.info_panel.append_log(
+                "3D viewer unavailable in remote environment. "
+                "Clone to local machine for full visualization."
+            )
     
     @Slot(str)
     def _on_generation_error(self, error_msg: str):
