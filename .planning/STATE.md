@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 03 complete, ready for 04 |
+| Plan | 04 complete, ready for 05 |
 | Status | In progress |
 
-**Progress:** ████████████████░░░ 18% (10 of ~55 plans across v2.0)
+**Progress:** ████████████████░░░ 20% (11 of ~55 plans across v2.0)
 
 ---
 
@@ -176,14 +176,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 10-03 | H-bonds default visible per CONTEXT.md | User can view H-bonds as dashed lines |
 | 10-03 | Unit cell default hidden per CONTEXT.md | "Non-intrusive" wireframe box |
 | 10-03 | zoom_to_fit() delegates to reset_camera() | Simpler toolbar integration |
+| 10-04 | Auto-rotation at ~10°/sec via QTimer | Per CONTEXT.md presentation quality |
+| 10-04 | Viridis colormap for property coloring | Per CONTEXT.md scientific standard |
+| 10-04 | Property coloring falls back to CPK | No crash when no ranked candidate |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 15:15 UTC
-**Stopped at:** Completed 10-03-PLAN.md (Visualization Toggles)
-**Resume file:** None - ready for 10-04-PLAN.md
+**Last session:** 2026-04-01 15:20 UTC
+**Stopped at:** Completed 10-04-PLAN.md (Advanced Features)
+**Resume file:** None - ready for 10-05-PLAN.md
 
 ---
 
@@ -246,9 +249,9 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | INFO-04 | Phase 11 | Pending |
 | ADVVIZ-01 | Phase 10 | Complete |
 | ADVVIZ-02 | Phase 10 | Complete |
-| ADVVIZ-03 | Phase 10 | Pending |
+| ADVVIZ-03 | Phase 10 | Complete |
 | ADVVIZ-04 | Phase 10 | Pending |
-| ADVVIZ-05 | Phase 10 | Pending |
+| ADVVIZ-05 | Phase 10 | Complete |
 | UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
 | PACKAGE-02 | Phase 12 | Pending |
@@ -257,4 +260,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Completed 10-01 VTK utilities*
+*State updated: 2026-04-01 - Completed 10-04 Advanced Features*
