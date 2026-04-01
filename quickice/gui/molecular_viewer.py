@@ -473,3 +473,18 @@ class MolecularViewerWidget(QWidget):
             "cpk", "energy", or "density"
         """
         return self._color_mode
+    
+    def get_viewer_state(self) -> dict:
+        """Return all current viewer state for UI synchronization.
+        
+        Returns:
+            Dictionary with all toggle states and current mode settings.
+            Used by MainWindow toolbar to sync button states.
+        """
+        return {
+            "representation_mode": self._representation_mode,
+            "show_hydrogen_bonds": self._show_hydrogen_bonds,
+            "show_unit_cell": self._show_unit_cell,
+            "auto_rotating": self._auto_rotating,
+            "color_mode": self._color_mode,
+        }
