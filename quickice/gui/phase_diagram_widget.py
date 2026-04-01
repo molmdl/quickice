@@ -54,21 +54,18 @@ class PhaseDetector:
                 # Vertices are (T, P) in MPa
                 self._phase_polygons[phase_id] = ShapelyPolygon(vertices)
     
-    def detect_phase(self, temperature: float, pressure_bar: float) -> Tuple[Optional[str], bool]:
+    def detect_phase(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
         """Detect phase at given temperature and pressure.
         
         Args:
             temperature: Temperature in Kelvin
-            pressure_bar: Pressure in bar (1 bar = 0.1 MPa)
+            pressure_mpa: Pressure in MPa (polygons use MPa)
         
         Returns:
             Tuple of (phase_name, is_boundary)
             - phase_name: Short form (e.g., "Ih") or "Multiple phases possible"
             - is_boundary: True if point is on boundary line between phases
         """
-        # Convert bar to MPa for polygon lookup (polygons built with MPa)
-        pressure_mpa = pressure_bar * 0.1
-        
         point = Point(temperature, pressure_mpa)
         
         # Check containment in each phase polygon
@@ -137,11 +134,11 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         # Set axis limits
         self.axes.set_xlim(50, 500)  # Temperature in Kelvin
-        self.axes.set_ylim(0.1, 100000)  # Pressure in bar (log scale: 0.1 to 100k bar)
+        self.axes.set_ylim(0.01, 10000)  # Pressure in MPa (log scale: 0.01 to 10000 MPa)
         
         # Labels and title
         self.axes.set_xlabel("Temperature (K)", fontsize=12, fontweight='bold')
-        self.axes.set_ylabel("Pressure (bar)", fontsize=12, fontweight='bold')
+        self.axes.set_ylabel("Pressure (MPa)", fontsize=12, fontweight='bold')
         self.axes.set_title("Ice Phase Diagram", fontsize=14, fontweight='bold')
         
         # Define phases to plot (in order, back to front for proper layering)
@@ -248,10 +245,9 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
             T_curve, P_curve_mpa = _sample_melting_curve(curve_name, n_points=200)
             
             if len(T_curve) > 0:
-                # Convert MPa to bar for display
-                P_curve_bar = P_curve_mpa * 10.0
+                # Data is already in MPa
                 self.axes.plot(
-                    T_curve, P_curve_bar,
+                    T_curve, P_curve_mpa,
                     color=color,
                     linewidth=2.0,
                     linestyle='-',
@@ -270,8 +266,8 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
             for T in lv_T:
                 try:
                     st = IAPWS97(T=T, x=0)  # Saturated liquid
-                    # Convert MPa to bar
-                    lv_P.append(st.P * 10.0)
+                    # IAPWS returns MPa
+                    lv_P.append(st.P)
                 except Exception:
                     pass
             
@@ -308,11 +304,10 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         for tp_name, tp_label in triple_point_names:
             tp_T, tp_P_mpa = get_triple_point(tp_name)
-            # Convert MPa to bar
-            tp_P_bar = tp_P_mpa * 10.0
+            # Data is already in MPa
             
             self.axes.plot(
-                tp_T, tp_P_bar,
+                tp_T, tp_P_mpa,
                 'o',  # Circle marker
                 markersize=4,
                 markerfacecolor='black',
@@ -322,7 +317,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
             )
             
             # Add label
-            if tp_P_bar < 1.0:
+            if tp_P_mpa < 1.0:
                 # For very low pressure, position label to the right
                 self.axes.text(
                     tp_T + 5, 0.3,
@@ -336,7 +331,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
                 )
             else:
                 self.axes.text(
-                    tp_T, tp_P_bar * 1.15,
+                    tp_T, tp_P_mpa * 1.15,
                     tp_label,
                     fontsize=7,
                     ha='left',
@@ -371,13 +366,13 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
             return
         
         temperature = event.xdata
-        pressure_bar = event.ydata  # Already in bar from axes
+        pressure_mpa = event.ydata  # Already in MPa from axes
         
         # Place marker at clicked position
-        self.set_marker(temperature, pressure_bar)
+        self.set_marker(temperature, pressure_mpa)
         
         # Emit signal with selected coordinates
-        self.coordinates_selected.emit(temperature, pressure_bar)
+        self.coordinates_selected.emit(temperature, pressure_mpa)
     
     def set_marker(self, temperature: float, pressure: float):
         """Place a red circle marker at the specified coordinates.
@@ -386,7 +381,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         Args:
             temperature: Temperature in Kelvin
-            pressure: Pressure in bar
+            pressure: Pressure in MPa
         """
         # Remove existing marker if present
         if self._marker is not None:
@@ -406,17 +401,17 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         # Redraw
         self.draw_idle()
     
-    def detect_phase_at(self, temperature: float, pressure_bar: float) -> Tuple[Optional[str], bool]:
+    def detect_phase_at(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
         """Detect ice phase at given coordinates.
         
         Args:
             temperature: Temperature in Kelvin
-            pressure_bar: Pressure in bar
+            pressure_mpa: Pressure in MPa
         
         Returns:
             Tuple of (phase_name, is_boundary) from PhaseDetector
         """
-        return self._phase_detector.detect_phase(temperature, pressure_bar)
+        return self._phase_detector.detect_phase(temperature, pressure_mpa)
 
 
 class PhaseDiagramPanel(QWidget):
@@ -476,7 +471,7 @@ class PhaseDiagramPanel(QWidget):
             
             # Update info label with current coordinates
             self.info_label.setText(
-                f"T = {temperature:.1f} K, P = {pressure:.1f} bar"
+                f"T = {temperature:.1f} K, P = {pressure:.1f} MPa"
             )
             self.info_label.setStyleSheet(
                 "padding: 8px; "
@@ -493,7 +488,7 @@ class PhaseDiagramPanel(QWidget):
         
         Args:
             temperature: Temperature in Kelvin
-            pressure: Pressure in bar
+            pressure: Pressure in MPa
         """
         # Detect phase at selected coordinates
         phase_name, is_boundary = self.diagram_canvas.detect_phase_at(temperature, pressure)
@@ -502,7 +497,7 @@ class PhaseDiagramPanel(QWidget):
         if is_boundary:
             self.info_label.setText(
                 f"⚠️ {phase_name}\n"
-                f"(T = {temperature:.1f} K, P = {pressure:.1f} bar)"
+                f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
             )
             self.info_label.setStyleSheet(
                 "padding: 8px; "
@@ -513,7 +508,7 @@ class PhaseDiagramPanel(QWidget):
         elif phase_name:
             self.info_label.setText(
                 f"Selected: Ice {phase_name}\n"
-                f"(T = {temperature:.1f} K, P = {pressure:.1f} bar)"
+                f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
             )
             self.info_label.setStyleSheet(
                 "padding: 8px; "
@@ -525,7 +520,7 @@ class PhaseDiagramPanel(QWidget):
             # No phase detected (liquid or outside diagram)
             self.info_label.setText(
                 f"Liquid or outside diagram\n"
-                f"(T = {temperature:.1f} K, P = {pressure:.1f} bar)"
+                f"(T = {temperature:.1f} K, P = {pressure:.1f} MPa)"
             )
             self.info_label.setStyleSheet(
                 "padding: 8px; "
