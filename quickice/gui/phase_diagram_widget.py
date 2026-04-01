@@ -622,6 +622,25 @@ class PhaseDiagramPanel(QWidget):
                 "border: 1px solid #ddd; "
                 "border-radius: 3px;"
             )
+    
+    def set_coordinates(self, temperature: float, pressure: float):
+        """Set marker position programmatically from external input.
+        
+        This creates bidirectional binding: typing in input fields
+        updates the diagram marker.
+        
+        Args:
+            temperature: Temperature in Kelvin
+            pressure: Pressure in MPa
+        """
+        # Set marker on canvas
+        self.diagram_canvas.set_marker(temperature, pressure)
+        
+        # Detect phase and update info label
+        phase_name, is_boundary = self.diagram_canvas.detect_phase_at(temperature, pressure)
+        
+        # Reuse the _on_coordinates_selected logic for label update
+        self._on_coordinates_selected(temperature, pressure)
 
 
 # Convenience exports

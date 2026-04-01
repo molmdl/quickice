@@ -98,6 +98,10 @@ class MainWindow(QMainWindow):
             self._on_diagram_selected
         )
         
+        # Input field changes -> diagram marker (bidirectional binding)
+        self.input_panel.temp_input.textChanged.connect(self._on_input_changed)
+        self.input_panel.pressure_input.textChanged.connect(self._on_input_changed)
+        
         # ViewModel connections - progress
         self._viewmodel.generation_progress.connect(self.progress_panel.update_progress)
         self._viewmodel.generation_status.connect(self.progress_panel.update_status)
@@ -215,6 +219,22 @@ class MainWindow(QMainWindow):
             round(pressure, 2),  # Round to 2 decimals for MPa
             96  # Default molecule count
         )
+    
+    @Slot()
+    def _on_input_changed(self):
+        """Handle input field changes - update diagram marker.
+        
+        This creates bidirectional binding: typing in input fields
+        updates the diagram marker position.
+        """
+        try:
+            temp = float(self.input_panel.temp_input.text())
+            pressure = float(self.input_panel.pressure_input.text())
+            # Only update if values are in valid range
+            if 50 <= temp <= 500 and 0.1 <= pressure <= 10000:
+                self.diagram_panel.set_coordinates(temp, pressure)
+        except (ValueError, TypeError):
+            pass  # Invalid input, don't update marker
 
 
 def run_app():
