@@ -77,7 +77,7 @@ Plans:
 
 ---
 
-### Phase 9: Interactive Phase Diagram
+### Phase 9: Interactive Phase Diagram 🔄
 
 **Goal:** Users can visually select thermodynamic conditions by clicking on an interactive phase diagram
 
@@ -85,12 +85,14 @@ Plans:
 
 **Dependencies:** Phase 8 (input handling)
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 5 plans in 4 waves (2 gap closure plans added)
 
 Plans:
-- [ ] 09-01-PLAN.md — Create PhaseDiagramWidget (matplotlib canvas, hover, click, phase detection)
-- [ ] 09-02-PLAN.md — Integrate into MainWindow (split view, input population)
+- [x] 09-01-PLAN.md — Create PhaseDiagramWidget (matplotlib canvas, hover, click, phase detection)
+- [x] 09-02-PLAN.md — Integrate into MainWindow (split view, input population)
 - [ ] 09-03-PLAN.md — Manual verification (GUI testing)
+- [ ] 09-04-PLAN.md — GAP CLOSURE: Fix diagram layout (wider figure, label placement)
+- [ ] 09-05-PLAN.md — GAP CLOSURE: Fix phase detection (vapor region, boundary handling, input binding)
 
 **Success Criteria:**
 1. User can view 12-phase ice phase diagram in GUI with labeled regions
