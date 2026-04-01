@@ -57,12 +57,12 @@ class GenerationWorker(QObject):
         
         Args:
             temperature: Temperature in Kelvin (0-500)
-            pressure: Pressure in BAR (0-10000), will be converted to MPa for API
+            pressure: Pressure in MPa (0-1000)
             nmolecules: Number of water molecules (4-216)
         """
         super().__init__()
         self._temperature = temperature
-        self._pressure = pressure  # in bar
+        self._pressure = pressure  # in MPa (no conversion needed)
         self._nmolecules = nmolecules
         self._is_cancelled = False
     
@@ -70,7 +70,7 @@ class GenerationWorker(QObject):
         """Execute generation - runs in separate thread.
         
         This method imports modules internally to avoid blocking the main thread
-        during import operations. Pressure is converted from bar to MPa for API calls.
+        during import operations. Pressure is already in MPa (no conversion needed).
         """
         try:
             # Check for cancellation at start
@@ -78,8 +78,8 @@ class GenerationWorker(QObject):
                 self.cancelled.emit()
                 return
             
-            # Convert bar to MPa for API calls (1 bar = 0.1 MPa)
-            pressure_mpa = self._pressure * 0.1
+            # Pressure is already in MPa (no conversion needed)
+            pressure_mpa = self._pressure
             
             self.status.emit("Looking up ice phase...")
             self.progress.emit(10)
