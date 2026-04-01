@@ -197,10 +197,11 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         Args:
             parent: Parent widget (optional)
         """
-        # Create figure sized to fit in split view (600x400px at 100 DPI)
-        # Window is ~800px wide, split 50/50, so diagram panel gets ~400px
-        # Figure at 6x4 inches = 600x400px, scales down to fit
-        self.fig = Figure(figsize=(6, 4), dpi=100)
+        # Create figure sized to fit in split view
+        # CLI uses (12, 10) inches, we use similar aspect ratio but scaled
+        # for the split view. Window is ~800px wide, split gives ~400px to diagram.
+        # Figure at 10x6 inches = 1000x600px at 100 DPI, scales down to fit.
+        self.fig = Figure(figsize=(10, 6), dpi=100)
         self.axes = self.fig.add_subplot(111)
         
         # Initialize parent
@@ -275,10 +276,10 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         )
         
         # Add "Vapor" label
-        # Position must be BELOW the saturation curve:
-        # At T=350K, P_sat=0.0417 MPa, so use P=0.02 MPa
+        # Position: T=460K, P=0.5 MPa (same as CLI, below saturation curve)
+        # At T=460K, P_sat=1.17 MPa, so P=0.5 MPa is in vapor region
         self.axes.text(
-            350, 0.02,  # T=350K, P=0.02 MPa (below saturation curve)
+            460, 0.5,  # T=460K, P=0.5 MPa (same as CLI)
             "Vapor",
             fontsize=12,
             fontweight='bold',
