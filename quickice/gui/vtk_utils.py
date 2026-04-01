@@ -6,7 +6,14 @@ hydrogen bonds and unit cell visualization.
 """
 
 import numpy as np
-from vtkmodules.all import vtkMolecule
+from vtkmodules.all import (
+    vtkMolecule,
+    vtkActor,
+    vtkPolyData,
+    vtkPoints,
+    vtkCellArray,
+    vtkPolyDataMapper,
+)
 
 from quickice.structure_generation.types import Candidate
 
@@ -126,3 +133,59 @@ def detect_hydrogen_bonds(
                 ))
     
     return hbonds
+
+
+def create_hbond_actor(
+    hbond_pairs: list[tuple[tuple[float, float, float], tuple[float, float, float]]]
+) -> vtkActor:
+    """Create a VTK actor for hydrogen bond visualization as dashed lines.
+    
+    Builds a vtkPolyData object with line segments for each H-bond and
+    applies dashed line styling using VTK's built-in stipple pattern support.
+    
+    Args:
+        hbond_pairs: List of (point1, point2) tuples where each point is 
+                     (x, y, z) coordinates in nanometers.
+    
+    Returns:
+        A vtkActor configured with gray color and dashed line styling.
+    
+    Note:
+        Uses VTK's hardware-accelerated line stippling - do NOT manually
+        draw dashes. The stipple pattern 0x0F0F creates a medium dash
+        (4 bits on, 4 bits off, repeated).
+    """
+    # Create points and line cells
+    points = vtkPoints()
+    lines = vtkCellArray()
+    
+    for p1, p2 in hbond_pairs:
+        # Insert the two endpoints
+        id1 = points.InsertNextPoint(p1[0], p1[1], p1[2])
+        id2 = points.InsertNextPoint(p2[0], p2[1], p2[2])
+        
+        # Create a line cell connecting the two points
+        lines.InsertNextCell(2)
+        lines.InsertCellPoint(id1)
+        lines.InsertCellPoint(id2)
+    
+    # Build the polydata
+    polydata = vtkPolyData()
+    polydata.SetPoints(points)
+    polydata.SetLines(lines)
+    
+    # Create mapper
+    mapper = vtkPolyDataMapper()
+    mapper.SetInputData(polydata)
+    
+    # Create actor
+    actor = vtkActor()
+    actor.SetMapper(mapper)
+    
+    # Set visual properties per CONTEXT.md
+    actor.GetProperty().SetColor(0.6, 0.6, 0.6)  # Gray color
+    actor.GetProperty().SetLineStipplePattern(0x0F0F)  # Medium dash (4 on, 4 off)
+    actor.GetProperty().SetLineStippleRepeatFactor(2)  # Scale pattern 2x
+    actor.GetProperty().SetLineWidth(1.5)
+    
+    return actor
