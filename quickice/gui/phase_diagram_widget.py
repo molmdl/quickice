@@ -197,11 +197,9 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         Args:
             parent: Parent widget (optional)
         """
-        # Create figure sized to fit in split view
-        # CLI uses (12, 10) inches, we use similar aspect ratio but scaled
-        # for the split view. Window is ~800px wide, split gives ~400px to diagram.
-        # Figure at 10x6 inches = 1000x600px at 100 DPI, scales down to fit.
-        self.fig = Figure(figsize=(10, 6), dpi=100)
+        # Create figure with wider aspect ratio for split view
+        # Wider than CLI (12, 10) to fit in 600px wide panel while keeping short height
+        self.fig = Figure(figsize=(14, 8), dpi=100)
         self.axes = self.fig.add_subplot(111)
         
         # Initialize parent
