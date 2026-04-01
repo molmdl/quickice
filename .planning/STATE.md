@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 10 3D Molecular Viewer ready
+**Current Focus:** v2.0 GUI Application - Phase 10 remote testing done, starting Phase 11
 
 ---
 
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 05 complete, ready for 06 |
-| Status | In progress |
+| Phase | Phase 10 - 3D Molecular Viewer (remote testing done) |
+| Plan | 06 executed, awaiting local verification |
+| Status | Checkpoint - Phase 11 planning starting |
 
 **Progress:** ████████████████░░░ 20% (11 of ~55 plans across v2.0)
 
@@ -187,9 +187,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 15:24 UTC
-**Stopped at:** Completed 10-05-PLAN.md (Dual Viewer Widget)
-**Resume file:** None - ready for 10-06-PLAN.md
+**Last session:** 2026-04-02
+**Stopped at:** Phase 10-06 remote testing complete, layout fix committed (a42c0d6)
+**Resume file:** .planning/phases/10-3d-molecular-viewer/.continue-here.md (awaiting local test)
+**Next:** Plan Phase 11 (Save/Export + Information)
 
 ---
 
@@ -263,4 +264,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-01 - Completed 10-05 Dual Viewer Widget*
+*State updated: 2026-04-02 - Phase 10 remote testing complete, starting Phase 11*
