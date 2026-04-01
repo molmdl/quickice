@@ -90,7 +90,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md — Create PhaseDiagramWidget (matplotlib canvas, hover, click, phase detection)
 - [x] 09-02-PLAN.md — Integrate into MainWindow (split view, input population)
-- [ ] 09-03-PLAN.md — Manual verification (GUI testing) — pending user acceptance
+- [x] 09-03-PLAN.md — Manual verification (GUI testing) — user approved
 - [x] 09-04-PLAN.md — GAP CLOSURE: Fix diagram layout (wider figure, label placement)
 - [x] 09-05-PLAN.md — GAP CLOSURE: Fix phase detection (vapor region, boundary handling, input binding)
 
@@ -171,7 +171,7 @@ Plans:
 | 7 - Audit & Correctness | v1.0 | ✅ Complete | 5 |
 | 7.1 - Fix Performance & Bugs | v1.1 | ✅ Complete | 4 |
 | **8 - GUI Infrastructure** | v2.0 | ✅ Complete | 10 |
-| **9 - Phase Diagram** | v2.0 | 🔄 Planned | 4 |
+| **9 - Phase Diagram** | v2.0 | ✅ Complete | 4 |
 | **10 - 3D Viewer** | v2.0 | 🔄 Planned | 10 |
 | **11 - Save/Export** | v2.0 | 🔄 Planned | 7 |
 | **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
