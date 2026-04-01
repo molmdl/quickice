@@ -48,9 +48,9 @@ class InputPanel(QWidget):
         layout.addSpacing(10)
         
         # Pressure input
-        self.pressure_label = QLabel("Pressure (bar):")
+        self.pressure_label = QLabel("Pressure (MPa):")
         self.pressure_input = QLineEdit()
-        self.pressure_input.setPlaceholderText("Enter pressure (0-10000 bar)")
+        self.pressure_input.setPlaceholderText("Enter pressure (0-1000 MPa)")
         self.pressure_error = QLabel()
         self.pressure_error.setStyleSheet("color: red;")
         self.pressure_error.setWordWrap(True)
@@ -130,7 +130,7 @@ class InputPanel(QWidget):
         """Get validated pressure value.
         
         Returns:
-            Pressure in bar
+            Pressure in MPa
             
         Note:
             Should only be called after validate_all() returns True
@@ -153,7 +153,7 @@ class InputPanel(QWidget):
         
         Args:
             temperature: Temperature in Kelvin
-            pressure: Pressure in bar
+            pressure: Pressure in MPa
             nmolecules: Number of molecules
         """
         self.temp_input.setText(str(temperature))

@@ -134,7 +134,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         # Set axis limits
         self.axes.set_xlim(50, 500)  # Temperature in Kelvin
-        self.axes.set_ylim(0.01, 10000)  # Pressure in MPa (log scale: 0.01 to 10000 MPa)
+        self.axes.set_ylim(0.1, 100000)  # Pressure in MPa (log scale: 0.1 to 100000 MPa)
         
         # Labels and title
         self.axes.set_xlabel("Temperature (K)", fontsize=12, fontweight='bold')
@@ -172,8 +172,21 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         # Add "Liquid" label
         self.axes.text(
-            340, 50,  # T=340K, P=50 bar
+            340, 50,  # T=340K, P=50 MPa
             "Liquid",
+            fontsize=12,
+            fontweight='bold',
+            ha='center',
+            va='center',
+            color='black',
+            alpha=0.8,
+            zorder=5,
+        )
+        
+        # Add "Vapor" label
+        self.axes.text(
+            460, 0.5,  # T=460K, P=0.5 MPa (vapor region, below saturation curve)
+            "Vapor",
             fontsize=12,
             fontweight='bold',
             ha='center',
