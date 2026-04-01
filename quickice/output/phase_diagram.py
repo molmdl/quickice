@@ -65,6 +65,7 @@ PHASE_LABELS = {
     "ice_x": "X",
     "ice_xv": "XV",
     "liquid": "Liquid",
+    "vapor": "Vapor",
 }
 
 # Phase display names (long form)
