@@ -46,6 +46,7 @@ class MolecularViewerWidget(QWidget):
         # State tracking (initialized by _setup_molecule_actor)
         self._molecule_actor: vtkActor | None = None
         self._current_candidate: Candidate | None = None
+        self._representation_mode: str = "ball_and_stick"
         
         # Set up VTK rendering pipeline
         self._setup_vtk()
@@ -168,3 +169,34 @@ class MolecularViewerWidget(QWidget):
         or when the widget needs to be refreshed.
         """
         self.render_window.Render()
+    
+    def set_representation_mode(self, mode: str) -> None:
+        """Switch between ball-and-stick and stick representation modes.
+        
+        Args:
+            mode: Either "ball_and_stick" or "stick"
+        
+        Per VIEWER-03: User can switch between ball-and-stick and stick-only 
+        representations. Stick mode ("liquorice") shows uniform thickness tubes 
+        for bonds without distinct atom balls.
+        """
+        if mode not in ("ball_and_stick", "stick"):
+            raise ValueError(f"Invalid representation mode: {mode}. "
+                             f"Must be 'ball_and_stick' or 'stick'")
+        
+        self._representation_mode = mode
+        
+        if mode == "ball_and_stick":
+            self._mapper.UseBallAndStickSettings()
+        else:  # stick
+            self._mapper.UseLiquoriceStickSettings()
+        
+        self.render_window.Render()
+    
+    def get_representation_mode(self) -> str:
+        """Return current representation mode.
+        
+        Returns:
+            "ball_and_stick" or "stick"
+        """
+        return self._representation_mode
