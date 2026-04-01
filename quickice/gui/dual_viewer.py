@@ -7,6 +7,8 @@ structure candidates in separate synchronized viewports.
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Signal
 
+from vtkmodules.all import vtkCommand
+
 from quickice.gui.molecular_viewer import MolecularViewerWidget
 from quickice.ranking.types import RankedCandidate
 
@@ -47,8 +49,15 @@ class DualViewerWidget(QWidget):
         self._selected_index1: int = 0
         self._selected_index2: int = 1
         
+        # Camera synchronization state
+        self._syncing = False  # Guard flag to prevent feedback loops
+        self._camera_sync_enabled = True  # Default synced per CONTEXT.md
+        
         # Set up UI with two viewports
         self._setup_ui()
+        
+        # Set up camera synchronization between viewers
+        self._setup_camera_sync()
     
     def _setup_ui(self) -> None:
         """Set up the dual viewport layout.
@@ -93,6 +102,76 @@ class DualViewerWidget(QWidget):
         # Store title labels for updates
         self._title1_label = title1_label
         self._title2_label = title2_label
+    
+    def _setup_camera_sync(self) -> None:
+        """Set up camera synchronization between the two viewers.
+        
+        Per CONTEXT.md: Synchronized cameras - rotate/zoom in one mirrors
+        the other for easy comparison.
+        
+        Uses VTK observer pattern on the interactor's ModifiedEvent.
+        Guard flag prevents infinite recursion (camera1 modified -> sync to
+        camera2 -> camera2 modified -> sync to camera1).
+        """
+        # Get interactors from both viewers
+        interactor1 = self.viewer1.render_window.GetInteractor()
+        interactor2 = self.viewer2.render_window.GetInteractor()
+        
+        # Add observers for camera modifications
+        interactor1.AddObserver(vtkCommand.ModifiedEvent, 
+                                self._on_viewer1_camera_changed)
+        interactor2.AddObserver(vtkCommand.ModifiedEvent, 
+                                self._on_viewer2_camera_changed)
+    
+    def _on_viewer1_camera_changed(self, obj, event) -> None:
+        """Callback when viewer1's camera is modified.
+        
+        Syncs viewer2's camera to match viewer1's camera.
+        Guard flag prevents infinite recursion.
+        """
+        if self._syncing or not self._camera_sync_enabled:
+            return
+        
+        self._syncing = True
+        camera1 = self.viewer1.renderer.GetActiveCamera()
+        camera2 = self.viewer2.renderer.GetActiveCamera()
+        camera2.DeepCopy(camera1)
+        self.viewer2.render_window.Render()
+        self._syncing = False
+    
+    def _on_viewer2_camera_changed(self, obj, event) -> None:
+        """Callback when viewer2's camera is modified.
+        
+        Syncs viewer1's camera to match viewer2's camera.
+        Guard flag prevents infinite recursion.
+        """
+        if self._syncing or not self._camera_sync_enabled:
+            return
+        
+        self._syncing = True
+        camera1 = self.viewer1.renderer.GetActiveCamera()
+        camera2 = self.viewer2.renderer.GetActiveCamera()
+        camera1.DeepCopy(camera2)
+        self.viewer1.render_window.Render()
+        self._syncing = False
+    
+    def set_camera_sync_enabled(self, enabled: bool) -> None:
+        """Toggle camera synchronization on/off.
+        
+        Args:
+            enabled: True to enable sync, False to disable
+        
+        Per CONTEXT.md: Camera synchronization enabled by default.
+        """
+        self._camera_sync_enabled = enabled
+    
+    def is_camera_sync_enabled(self) -> bool:
+        """Return whether camera synchronization is enabled.
+        
+        Returns:
+            True if sync enabled, False otherwise
+        """
+        return self._camera_sync_enabled
     
     def set_candidates(self, ranked_candidates: list[RankedCandidate]) -> None:
         """Load ranked candidates into the dual viewer.
