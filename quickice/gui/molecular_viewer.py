@@ -15,7 +15,11 @@ from vtkmodules.all import (
 )
 
 from quickice.structure_generation.types import Candidate
-from quickice.gui.vtk_utils import candidate_to_vtk_molecule
+from quickice.gui.vtk_utils import (
+    candidate_to_vtk_molecule,
+    detect_hydrogen_bonds,
+    create_hbond_actor,
+)
 
 
 class MolecularViewerWidget(QWidget):
@@ -47,6 +51,10 @@ class MolecularViewerWidget(QWidget):
         self._molecule_actor: vtkActor | None = None
         self._current_candidate: Candidate | None = None
         self._representation_mode: str = "ball_and_stick"
+        
+        # Hydrogen bond visualization (default visible per CONTEXT.md)
+        self._hbond_actor: vtkActor | None = None
+        self._show_hydrogen_bonds: bool = True
         
         # Set up VTK rendering pipeline
         self._setup_vtk()
@@ -131,6 +139,10 @@ class MolecularViewerWidget(QWidget):
         # Set input to mapper
         self._mapper.SetInputData(mol)
         
+        # Re-create hydrogen bonds if visible
+        if self._show_hydrogen_bonds:
+            self.set_hydrogen_bonds_visible(True)
+        
         # Auto-fit structure in viewport
         self.reset_camera()
         
@@ -158,6 +170,11 @@ class MolecularViewerWidget(QWidget):
         if self._molecule_actor is not None:
             self.renderer.RemoveActor(self._molecule_actor)
             self._molecule_actor = None
+        
+        # Remove H-bond actor if it exists
+        if self._hbond_actor is not None:
+            self.renderer.RemoveActor(self._hbond_actor)
+            self._hbond_actor = None
         
         # Render the cleared scene
         self.render_window.Render()
@@ -200,3 +217,44 @@ class MolecularViewerWidget(QWidget):
             "ball_and_stick" or "stick"
         """
         return self._representation_mode
+    
+    def set_hydrogen_bonds_visible(self, visible: bool) -> None:
+        """Toggle hydrogen bond visualization as dashed lines.
+        
+        Args:
+            visible: True to show H-bonds, False to hide
+        
+        Per VIEWER-05: User can view hydrogen bonds displayed as dashed 
+        lines between neighboring molecules.
+        """
+        self._show_hydrogen_bonds = visible
+        
+        if visible and self._current_candidate is not None:
+            # Detect H-bonds from current structure
+            hbonds = detect_hydrogen_bonds(self._current_candidate)
+            
+            # Remove old actor if exists
+            if self._hbond_actor is not None:
+                self.renderer.RemoveActor(self._hbond_actor)
+            
+            # Create and add new actor if H-bonds detected
+            if hbonds:
+                self._hbond_actor = create_hbond_actor(hbonds)
+                self.renderer.AddActor(self._hbond_actor)
+            else:
+                self._hbond_actor = None
+        
+        elif not visible and self._hbond_actor is not None:
+            # Remove H-bond actor
+            self.renderer.RemoveActor(self._hbond_actor)
+            self._hbond_actor = None
+        
+        self.render_window.Render()
+    
+    def get_hydrogen_bonds_visible(self) -> bool:
+        """Return whether hydrogen bonds are visible.
+        
+        Returns:
+            True if H-bonds are shown, False otherwise
+        """
+        return self._show_hydrogen_bonds
