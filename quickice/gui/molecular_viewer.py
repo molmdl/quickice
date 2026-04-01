@@ -19,6 +19,7 @@ from quickice.gui.vtk_utils import (
     candidate_to_vtk_molecule,
     detect_hydrogen_bonds,
     create_hbond_actor,
+    create_unit_cell_actor,
 )
 
 
@@ -55,6 +56,10 @@ class MolecularViewerWidget(QWidget):
         # Hydrogen bond visualization (default visible per CONTEXT.md)
         self._hbond_actor: vtkActor | None = None
         self._show_hydrogen_bonds: bool = True
+        
+        # Unit cell visualization (default hidden per CONTEXT.md "non-intrusive")
+        self._unit_cell_actor: vtkActor | None = None
+        self._show_unit_cell: bool = False
         
         # Set up VTK rendering pipeline
         self._setup_vtk()
@@ -143,6 +148,10 @@ class MolecularViewerWidget(QWidget):
         if self._show_hydrogen_bonds:
             self.set_hydrogen_bonds_visible(True)
         
+        # Re-create unit cell if visible
+        if self._show_unit_cell:
+            self.set_unit_cell_visible(True)
+        
         # Auto-fit structure in viewport
         self.reset_camera()
         
@@ -175,6 +184,11 @@ class MolecularViewerWidget(QWidget):
         if self._hbond_actor is not None:
             self.renderer.RemoveActor(self._hbond_actor)
             self._hbond_actor = None
+        
+        # Remove unit cell actor if it exists
+        if self._unit_cell_actor is not None:
+            self.renderer.RemoveActor(self._unit_cell_actor)
+            self._unit_cell_actor = None
         
         # Render the cleared scene
         self.render_window.Render()
@@ -258,3 +272,38 @@ class MolecularViewerWidget(QWidget):
             True if H-bonds are shown, False otherwise
         """
         return self._show_hydrogen_bonds
+    
+    def set_unit_cell_visible(self, visible: bool) -> None:
+        """Toggle unit cell boundary box visualization.
+        
+        Args:
+            visible: True to show unit cell, False to hide
+        
+        Per ADVVIZ-01: User can toggle unit cell boundary box to 
+        visualize the simulation cell.
+        """
+        self._show_unit_cell = visible
+        
+        if visible and self._current_candidate is not None:
+            # Remove old actor if exists
+            if self._unit_cell_actor is not None:
+                self.renderer.RemoveActor(self._unit_cell_actor)
+            
+            # Create and add new actor
+            self._unit_cell_actor = create_unit_cell_actor(self._current_candidate.cell)
+            self.renderer.AddActor(self._unit_cell_actor)
+        
+        elif not visible and self._unit_cell_actor is not None:
+            # Remove unit cell actor
+            self.renderer.RemoveActor(self._unit_cell_actor)
+            self._unit_cell_actor = None
+        
+        self.render_window.Render()
+    
+    def get_unit_cell_visible(self) -> bool:
+        """Return whether unit cell box is visible.
+        
+        Returns:
+            True if unit cell is shown, False otherwise
+        """
+        return self._show_unit_cell
