@@ -13,6 +13,7 @@ from vtkmodules.all import (
     vtkPoints,
     vtkCellArray,
     vtkPolyDataMapper,
+    vtkOutlineSource,
 )
 
 from quickice.structure_generation.types import Candidate
@@ -187,5 +188,49 @@ def create_hbond_actor(
     actor.GetProperty().SetLineStipplePattern(0x0F0F)  # Medium dash (4 on, 4 off)
     actor.GetProperty().SetLineStippleRepeatFactor(2)  # Scale pattern 2x
     actor.GetProperty().SetLineWidth(1.5)
+    
+    return actor
+
+
+def create_unit_cell_actor(cell: np.ndarray) -> vtkActor:
+    """Create a wireframe box actor for the simulation unit cell.
+    
+    Creates a vtkOutlineSource-based actor that renders the unit cell
+    boundaries as a non-intrusive wireframe box.
+    
+    Args:
+        cell: (3, 3) numpy array of cell vectors [a, b, c] in nanometers.
+              Each row is a lattice vector.
+    
+    Returns:
+        A vtkActor configured with subtle gray color and thin lines.
+    
+    Note:
+        For orthogonal cells (typical of ice structures), the bounds are
+        calculated directly from the diagonal components. Non-orthogonal
+        cells would require a transform, but ice structures are typically
+        close to orthogonal.
+    """
+    # Calculate cell dimensions (length of each lattice vector)
+    # For orthogonal cells, these are simply the box dimensions
+    a_len = np.linalg.norm(cell[0])
+    b_len = np.linalg.norm(cell[1])
+    c_len = np.linalg.norm(cell[2])
+    
+    # Create outline source (wireframe box from origin)
+    outline = vtkOutlineSource()
+    outline.SetBounds(0.0, a_len, 0.0, b_len, 0.0, c_len)
+    
+    # Create mapper
+    mapper = vtkPolyDataMapper()
+    mapper.SetInputConnection(outline.GetOutputPort())
+    
+    # Create actor
+    actor = vtkActor()
+    actor.SetMapper(mapper)
+    
+    # Set visual properties per CONTEXT.md ("subtle gray")
+    actor.GetProperty().SetColor(0.5, 0.5, 0.5)  # Subtle gray
+    actor.GetProperty().SetLineWidth(1.0)
     
     return actor
