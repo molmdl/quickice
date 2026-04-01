@@ -110,6 +110,16 @@ Plans:
 
 **Dependencies:** Phase 8 (threading for background generation)
 
+**Plans:** 6 plans in 6 waves (sequential due to file dependencies)
+
+Plans:
+- [ ] 10-01-PLAN.md — VTK Utilities (molecule conversion, H-bond detection, actors)
+- [ ] 10-02-PLAN.md — Basic Molecular Viewer Widget (VTK setup, ball-and-stick, mouse controls)
+- [ ] 10-03-PLAN.md — Visualization Toggles (representation, H-bonds, unit cell, zoom-fit)
+- [ ] 10-04-PLAN.md — Advanced Features (auto-rotation, color-by-property)
+- [ ] 10-05-PLAN.md — Dual Viewport Comparison (synchronized cameras, selectors)
+- [ ] 10-06-PLAN.md — MainWindow Integration (layout, toolbar, info panel)
+
 **Success Criteria:**
 1. User can view generated ice structure in 3D viewport (VTK-based) after generation completes
 2. User can view ball-and-stick molecular representation with oxygen atoms red and hydrogen atoms white
