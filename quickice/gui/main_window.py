@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("QuickIce - Ice Structure Generator")
-        self.setMinimumSize(1000, 500)
+        self.setMinimumSize(1300, 600)
         
         # Create viewmodel
         self._viewmodel = MainViewModel(self)
@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
         
         splitter.addWidget(right_widget)
         
-        # Set initial sizes (diagram 600px for 1.2:1 aspect ratio, inputs 400px)
-        splitter.setSizes([600, 400])
+        # Set initial sizes (diagram 550px, right panel 750px for dual viewer)
+        splitter.setSizes([550, 750])
         
         # Set splitter as central widget
         self.setCentralWidget(splitter)
