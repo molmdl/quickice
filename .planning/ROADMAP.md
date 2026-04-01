@@ -157,6 +157,20 @@ Plans:
 
 ---
 
+### Phase 13: Update README and Documentation After Finishing the GUI
+
+**Goal:** Users and developers have comprehensive, up-to-date documentation reflecting the v2.0 GUI application
+
+**Dependencies:** Phase 12 (all GUI features complete and packaged)
+
+**Success Criteria:**
+1. User can read updated README with accurate v2.0 installation and usage instructions
+2. User can access in-app documentation reflecting current GUI features
+3. Developer can find updated API documentation for all v2.0 components
+4. User sees accurate screenshots and examples in documentation matching current UI
+
+---
+
 ## Progress
 
 | Phase | Milestone | Status | Requirements |
@@ -175,6 +189,7 @@ Plans:
 | **10 - 3D Viewer** | v2.0 | 🔄 Planned | 10 |
 | **11 - Save/Export** | v2.0 | 🔄 Planned | 7 |
 | **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
+| **13 - Documentation Update** | v2.0 | 🔄 Planned | 4 |
 
 ---
 
@@ -196,4 +211,4 @@ Plans:
 
 ---
 
-*Roadmap last updated: 2026-03-31*
+*Roadmap last updated: 2026-04-01*
