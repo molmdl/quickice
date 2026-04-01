@@ -3,6 +3,9 @@
 This module provides the MainWindow class that assembles all GUI components:
 - InputPanel for temperature, pressure, and molecule count inputs
 - ProgressPanel for progress bar and status text
+- PhaseDiagramPanel for interactive phase diagram
+- ViewerPanel for 3D molecular visualization
+- InfoPanel for generation log output
 - Generate/Cancel buttons
 - Keyboard shortcuts (Enter to generate, Escape to cancel)
 """
@@ -14,7 +17,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Slot
 
-from quickice.gui.view import InputPanel, ProgressPanel
+from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 
@@ -54,7 +57,7 @@ class MainWindow(QMainWindow):
         self.diagram_panel = PhaseDiagramPanel()
         splitter.addWidget(self.diagram_panel)
         
-        # Right side: Input panel, progress panel, buttons
+        # Right side: Input panel, progress panel, viewer, buttons
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(20, 20, 20, 20)
@@ -67,6 +70,14 @@ class MainWindow(QMainWindow):
         self.progress_panel = ProgressPanel()
         right_layout.addWidget(self.progress_panel)
         
+        # Viewer panel (3D molecular viewer with toolbar)
+        self.viewer_panel = ViewerPanel()
+        right_layout.addWidget(self.viewer_panel, stretch=1)  # Give viewer extra space
+        
+        # Info panel (collapsible log output)
+        self.info_panel = InfoPanel()
+        right_layout.addWidget(self.info_panel)
+        
         # Buttons
         self.generate_btn = QPushButton("Generate")
         self.generate_btn.setDefault(True)  # Responds to Enter key when focused
@@ -76,9 +87,6 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self.generate_btn)
         right_layout.addWidget(self.cancel_btn)
         
-        # Stretch at bottom
-        right_layout.addStretch()
-        
         splitter.addWidget(right_widget)
         
         # Set initial sizes (diagram 600px for 1.2:1 aspect ratio, inputs 400px)
@@ -86,6 +94,9 @@ class MainWindow(QMainWindow):
         
         # Set splitter as central widget
         self.setCentralWidget(splitter)
+        
+        # Show placeholder before first generation
+        self.viewer_panel.show_placeholder()
     
     def _setup_connections(self):
         """Setup signal/slot connections."""
@@ -111,6 +122,12 @@ class MainWindow(QMainWindow):
         self._viewmodel.generation_complete.connect(self._on_generation_complete)
         self._viewmodel.generation_error.connect(self._on_generation_error)
         self._viewmodel.generation_cancelled.connect(self._on_generation_cancelled)
+        
+        # ViewModel connections - viewer
+        self._viewmodel.ranked_candidates_ready.connect(self._on_candidates_ready)
+        
+        # ViewModel connections - log
+        self._viewmodel.generation_status.connect(self.info_panel.append_log)
         
         # UI state connections
         self._viewmodel.ui_enabled_changed.connect(self._on_ui_enabled_changed)
@@ -169,13 +186,35 @@ class MainWindow(QMainWindow):
     def _on_generation_started(self):
         """Handle generation started."""
         self.progress_panel.set_generating()
+        self.info_panel.clear_log()
+        self.info_panel.append_log("Starting ice structure generation...")
     
     @Slot(object)
     def _on_generation_complete(self, result):
         """Handle generation complete."""
         self.progress_panel.set_complete()
         self.input_panel.clear_errors()
-        # Future: Pass result to 3D viewer (Phase 10)
+        # Result is passed to _on_candidates_ready via ranked_candidates_ready signal
+    
+    @Slot(object)
+    def _on_candidates_ready(self, result):
+        """Handle ranked candidates ready for display.
+        
+        Args:
+            result: RankingResult containing ranked_candidates list
+        """
+        # Hide placeholder and show viewer
+        self.viewer_panel.hide_placeholder()
+        
+        # Load candidates into dual viewer
+        if hasattr(result, 'ranked_candidates') and result.ranked_candidates:
+            self.viewer_panel.dual_viewer.set_candidates(result.ranked_candidates)
+            
+            # Log to info panel
+            self.info_panel.append_log(
+                f"\nLoaded {len(result.ranked_candidates)} candidate(s) into viewer"
+            )
+            self.info_panel.append_log("Rank #1 shown in left viewport, Rank #2 in right")
     
     @Slot(str)
     def _on_generation_error(self, error_msg: str):
@@ -204,6 +243,7 @@ class MainWindow(QMainWindow):
         self.generate_btn.setEnabled(enabled)
         self.cancel_btn.setEnabled(not enabled)
         self.input_panel.setEnabled(enabled)
+        self.viewer_panel.setEnabled(enabled)
     
     @Slot(float, float)
     def _on_diagram_selected(self, temperature: float, pressure: float):
