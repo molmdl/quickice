@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 02 complete, ready for 03 |
+| Plan | 03 complete, ready for 04 |
 | Status | In progress |
 
-**Progress:** ███████████████░░░░ 16% (9 of ~55 plans across v2.0)
+**Progress:** ████████████████░░░ 18% (10 of ~55 plans across v2.0)
 
 ---
 
@@ -173,14 +173,17 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 10-02 | Ball-and-stick default via UseBallAndStickSettings() | Per VIEWER-02 requirement |
 | 10-02 | TrackballCamera interactor style | Standard 3D mouse controls |
 | 10-02 | Dark blue background (0.1, 0.2, 0.4) | Good contrast for molecules |
+| 10-03 | H-bonds default visible per CONTEXT.md | User can view H-bonds as dashed lines |
+| 10-03 | Unit cell default hidden per CONTEXT.md | "Non-intrusive" wireframe box |
+| 10-03 | zoom_to_fit() delegates to reset_camera() | Simpler toolbar integration |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-01 15:13 UTC
-**Stopped at:** Completed 10-02-PLAN.md (MolecularViewerWidget)
-**Resume file:** None - ready for 10-03-PLAN.md
+**Last session:** 2026-04-01 15:15 UTC
+**Stopped at:** Completed 10-03-PLAN.md (Visualization Toggles)
+**Resume file:** None - ready for 10-04-PLAN.md
 
 ---
 
@@ -226,10 +229,10 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | DIAGRAM-03 | Phase 9 | Complete |
 | DIAGRAM-04 | Phase 9 | Complete |
 | VIEWER-01 | Phase 10 | Pending |
-| VIEWER-02 | Phase 10 | Pending |
-| VIEWER-03 | Phase 10 | Pending |
+| VIEWER-02 | Phase 10 | Complete |
+| VIEWER-03 | Phase 10 | Complete |
 | VIEWER-04 | Phase 10 | Pending |
-| VIEWER-05 | Phase 10 | Pending |
+| VIEWER-05 | Phase 10 | Complete |
 | PROGRESS-01 | Phase 8 | Complete |
 | PROGRESS-02 | Phase 8 | Complete |
 | PROGRESS-03 | Phase 8 | Complete |
@@ -241,8 +244,8 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | INFO-02 | Phase 11 | Pending |
 | INFO-03 | Phase 11 | Pending |
 | INFO-04 | Phase 11 | Pending |
-| ADVVIZ-01 | Phase 10 | Pending |
-| ADVVIZ-02 | Phase 10 | Pending |
+| ADVVIZ-01 | Phase 10 | Complete |
+| ADVVIZ-02 | Phase 10 | Complete |
 | ADVVIZ-03 | Phase 10 | Pending |
 | ADVVIZ-04 | Phase 10 | Pending |
 | ADVVIZ-05 | Phase 10 | Pending |
