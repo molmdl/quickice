@@ -5,6 +5,7 @@ molecular structures using VTK with PySide6 Qt integration.
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtCore import QTimer
 
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vtkmodules.all import (
@@ -12,9 +13,12 @@ from vtkmodules.all import (
     vtkInteractorStyleTrackballCamera,
     vtkMoleculeMapper,
     vtkActor,
+    vtkColorTransferFunction,
+    vtkFloatArray,
 )
 
 from quickice.structure_generation.types import Candidate
+from quickice.ranking.types import RankedCandidate
 from quickice.gui.vtk_utils import (
     candidate_to_vtk_molecule,
     detect_hydrogen_bonds,
@@ -60,6 +64,16 @@ class MolecularViewerWidget(QWidget):
         # Unit cell visualization (default hidden per CONTEXT.md "non-intrusive")
         self._unit_cell_actor: vtkActor | None = None
         self._show_unit_cell: bool = False
+        
+        # Auto-rotation animation (per ADVVIZ-03)
+        self._auto_rotating: bool = False
+        self._rotation_timer = QTimer(self)
+        self._rotation_timer.timeout.connect(self._rotate_step)
+        self._degrees_per_tick = 10.0 * 0.016  # ~10°/sec at 60 FPS per CONTEXT.md
+        
+        # Color-by-property mapping (per ADVVIZ-05)
+        self._color_mode: str = "cpk"  # Default: standard CPK colors
+        self._current_ranked_candidate: RankedCandidate | None = None
         
         # Set up VTK rendering pipeline
         self._setup_vtk()
@@ -318,3 +332,37 @@ class MolecularViewerWidget(QWidget):
         frame the structure in viewport.
         """
         self.reset_camera()
+    
+    def _rotate_step(self) -> None:
+        """Perform one rotation step for auto-rotation animation.
+        
+        Called by QTimer at ~60 FPS. Rotates camera azimuthally by a small
+        amount to create smooth presentation-quality rotation.
+        """
+        camera = self.renderer.GetActiveCamera()
+        camera.Azimuth(self._degrees_per_tick)
+        self.render_window.Render()
+    
+    def toggle_auto_rotation(self, enabled: bool) -> None:
+        """Toggle animated auto-rotation of the structure.
+        
+        Args:
+            enabled: True to start auto-rotation, False to stop
+        
+        Per ADVVIZ-03: User can toggle animated auto-rotation of the 
+        structure for presentation. Rotation is slow & smooth (~10°/sec).
+        """
+        if enabled and not self._auto_rotating:
+            self._auto_rotating = True
+            self._rotation_timer.start(16)  # ~60 FPS
+        elif not enabled and self._auto_rotating:
+            self._auto_rotating = False
+            self._rotation_timer.stop()
+    
+    def is_auto_rotating(self) -> bool:
+        """Return whether auto-rotation is currently active.
+        
+        Returns:
+            True if auto-rotation is running, False otherwise
+        """
+        return self._auto_rotating
