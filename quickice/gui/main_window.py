@@ -443,7 +443,16 @@ class MainWindow(QMainWindow):
         if left_success:
             vtk_widget_right = self.viewer_panel.dual_viewer.viewer2.vtk_widget
             self._viewport_exporter.capture_viewport(vtk_widget_right, "right")
-    
+
+    @Slot()
+    def _on_help(self):
+        """Open quick reference help dialog.
+
+        Per INFO-04: Modal dialog with keyboard shortcuts and workflow summary.
+        """
+        dlg = QuickReferenceDialog(self)
+        dlg.exec()
+
     @Slot(str, float, float)
     def _on_phase_info(self, phase_id: str, T: float, P: float):
         """Display phase information in log panel when user clicks diagram.
