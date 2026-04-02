@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 12 - Packaging & Distribution |
-| Plan | Ready to begin |
-| Status | Phase 11 verified complete (with deferred items), awaiting Phase 12 |
-| Last activity | 2026-04-02 - Phase 11 verification passed |
+| Phase | Phase 13 - Update README and Documentation |
+| Plan | Ready to begin (5 plans created) |
+| Status | Phase 11 verified complete, Phase 13 ready for execution (before Phase 12) |
+| Last activity | 2026-04-03 - Phase 13 planning complete |
 
 **Progress:** ████████████████████ 97% (56 of 58 plans across v2.0)
 
@@ -239,9 +239,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 **Last session:** 2026-04-02
 **Stopped at:** Phase 11 verification complete
 **Next steps:**
-1. Run `/gsd-plan-phase 12` to plan Packaging & Distribution phase
-2. Execute Phase 12
-3. Then Phase 13 (Documentation Update)
+1. Run `/gsd-execute-phase 13` to update documentation with OS requirements
+2. Execute Phase 12 to package standalone executable with docs
 
 ---
 
