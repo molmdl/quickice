@@ -218,36 +218,49 @@ class MolecularViewerWidget(QWidget):
         self.render_window.Render()
     
     def set_representation_mode(self, mode: str) -> None:
-        """Switch between ball-and-stick and stick representation modes.
+        """Switch between VDW, ball-and-stick, and stick representation modes.
         
         Args:
-            mode: Either "ball_and_stick" or "stick"
+            mode: One of "vdw", "ball_and_stick", or "stick"
         
-        Per VIEWER-03: User can switch between ball-and-stick and stick-only 
-        representations. Stick mode ("liquorice") shows uniform thickness tubes 
-        for bonds without distinct atom balls.
+        Per VIEWER-03: User can switch between representation modes.
+        - VDW: Space-filling van der Waals spheres (full size)
+        - Ball-and-stick: Small spheres connected by visible cylinders
+        - Stick: Only cylinders (bonds), no atom spheres
         """
-        if mode not in ("ball_and_stick", "stick"):
+        if mode not in ("vdw", "ball_and_stick", "stick"):
             raise ValueError(f"Invalid representation mode: {mode}. "
-                             f"Must be 'ball_and_stick' or 'stick'")
+                             f"Must be 'vdw', 'ball_and_stick', or 'stick'")
         
         self._representation_mode = mode
         
-        if mode == "ball_and_stick":
+        if mode == "vdw":
+            # Space-filling VDW spheres (full size)
+            self._mapper.UseVDWSpheresSettings()
+            # VDW spheres at full scale (1.0)
+            self._mapper.SetAtomicRadiusTypeToVDWRadius()
+            self._mapper.SetAtomicRadiusScaleFactor(1.0)
+            self._mapper.SetBondRadius(0.05)
+            # Show atoms
+            self._mapper.RenderAtomsOn()
+        elif mode == "ball_and_stick":
+            # Ball-and-stick: small spheres with visible bonds
             self._mapper.UseBallAndStickSettings()
             # Use VDW-based radii with smaller scale for visibility
-            # AtomicRadiusScaleFactor 0.15 gives good atom visibility
-            # BondRadius 0.05 gives thin bonds to see H-bonds clearly
+            self._mapper.SetAtomicRadiusTypeToVDWRadius()
             self._mapper.SetAtomicRadiusScaleFactor(0.15)
             self._mapper.SetBondRadius(0.05)
+            # Show atoms
+            self._mapper.RenderAtomsOn()
         else:  # stick
+            # Stick mode: only cylinders (bonds), no atom spheres
             self._mapper.UseLiquoriceStickSettings()
-            # Use VDW radii instead of UnitRadius to maintain O/H size distinction
-            # This prevents "pure red thick object" by keeping size difference
-            # Very small atoms (0.05) and thin bonds (0.05) for stick mode
+            # Use VDW radii to maintain O/H size distinction
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            self._mapper.SetAtomicRadiusScaleFactor(0.05)
+            self._mapper.SetAtomicRadiusScaleFactor(0.1)  # Small but visible
             self._mapper.SetBondRadius(0.05)
+            # Hide atoms completely - show only bonds
+            self._mapper.RenderAtomsOff()
         
         self.render_window.Render()
     
@@ -255,7 +268,7 @@ class MolecularViewerWidget(QWidget):
         """Return current representation mode.
         
         Returns:
-            "ball_and_stick" or "stick"
+            "vdw", "ball_and_stick", or "stick"
         """
         return self._representation_mode
     
