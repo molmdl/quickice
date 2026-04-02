@@ -573,7 +573,8 @@ class HelpIcon(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setCursor(Qt.WhatsThisCursor)
         self.setToolTip(help_text)
-        self.setAttribute(Qt.WA_ToolTip, True)  # Enable tooltip display
+        # Enable tooltip display (WA_ToolTip is in Qt.WidgetAttribute enum)
+        self.setAttribute(Qt.WidgetAttribute.WA_ToolTip, True)
 
 
 class InfoPanel(QWidget):
