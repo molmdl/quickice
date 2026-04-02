@@ -9,7 +9,7 @@ This module provides the UI panel components that users interact with:
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QProgressBar,
-    QPushButton, QComboBox, QToolButton, QTextEdit
+    QPushButton, QComboBox, QToolButton, QTextEdit, QToolTip
 )
 from PySide6.QtCore import Signal, Qt
 import os
@@ -551,6 +551,7 @@ class HelpIcon(QLabel):
     def __init__(self, help_text: str, parent=None):
         super().__init__(parent)
         
+        self._help_text = help_text
         self.setText("?")
         self.setStyleSheet("""
             QLabel {
@@ -573,6 +574,16 @@ class HelpIcon(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setCursor(Qt.WhatsThisCursor)
         self.setToolTip(help_text)
+    
+    def enterEvent(self, event):
+        """Show tooltip on mouse enter."""
+        super().enterEvent(event)
+        # Manually show tooltip at cursor position
+        QToolTip.showText(
+            self.mapToGlobal(self.rect().bottomRight()),
+            self._help_text,
+            self
+        )
 
 
 class InfoPanel(QWidget):
