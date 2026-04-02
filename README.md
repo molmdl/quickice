@@ -34,6 +34,19 @@ QuickIce uses:
 
 ## Installation
 
+### System Requirements
+
+**Linux:**
+- GLIBC 2.28 or higher (Ubuntu 20.04+, Debian 10+, Rocky/RHEL 8+)
+- 64-bit architecture
+- OpenGL support for 3D visualization
+
+**Windows:**
+- Windows 10 or 11 (64-bit)
+- OpenGL support for 3D visualization
+
+**Note:** The GUI requires Qt 6.10.2, which needs GLIBC 2.28+ on Linux. Older distributions (Ubuntu 18.04, Mint 19.1, CentOS 7) are not supported. See [OS Requirements Analysis](.planning/os_req.md) for details.
+
 ### Prerequisites
 
 - Conda (Miniconda or Anaconda)
