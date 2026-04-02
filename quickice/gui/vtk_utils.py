@@ -149,33 +149,53 @@ def create_hbond_actor(
     """Create a VTK actor for hydrogen bond visualization as dashed lines.
     
     Builds a vtkPolyData object with line segments for each H-bond and
-    applies dashed line styling using VTK's built-in stipple pattern support.
+    creates manual dashed lines by splitting each H-bond into short segments.
+    This workaround is needed because VTK's OpenGL2 backend does not support
+    SetLineStipplePattern (only legacy OpenGL).
     
     Args:
         hbond_pairs: List of (point1, point2) tuples where each point is 
                      (x, y, z) coordinates in nanometers.
     
     Returns:
-        A vtkActor configured with gray color and dashed line styling.
+        A vtkActor configured with cyan color and dashed line styling.
     
     Note:
-        Uses VTK's hardware-accelerated line stippling - do NOT manually
-        draw dashes. The stipple pattern 0x0F0F creates a medium dash
-        (4 bits on, 4 bits off, repeated).
+        Uses manual dash creation by splitting each line into segments.
+        Dash pattern: 8 segments with alternating on/off (dash length ~0.01 nm).
     """
     # Create points and line cells
     points = vtkPoints()
     lines = vtkCellArray()
     
+    # Dash parameters
+    num_dashes = 8  # Number of dash segments per line
+    dash_ratio = 0.5  # Fraction of each segment that is visible (dash length)
+    
     for p1, p2 in hbond_pairs:
-        # Insert the two endpoints
-        id1 = points.InsertNextPoint(p1[0], p1[1], p1[2])
-        id2 = points.InsertNextPoint(p2[0], p2[1], p2[2])
+        # Create dashed line by splitting into segments
+        p1_arr = np.array(p1)
+        p2_arr = np.array(p2)
+        direction = p2_arr - p1_arr
         
-        # Create a line cell connecting the two points
-        lines.InsertNextCell(2)
-        lines.InsertCellPoint(id1)
-        lines.InsertCellPoint(id2)
+        for i in range(num_dashes):
+            # Calculate start and end of this dash segment
+            t_start = i / num_dashes
+            t_end = (i + dash_ratio) / num_dashes
+            
+            # Only draw if this is a "dash" (not a gap)
+            if i % 2 == 0:
+                dash_start = p1_arr + direction * t_start
+                dash_end = p1_arr + direction * t_end
+                
+                # Insert the two endpoints
+                id1 = points.InsertNextPoint(dash_start[0], dash_start[1], dash_start[2])
+                id2 = points.InsertNextPoint(dash_end[0], dash_end[1], dash_end[2])
+                
+                # Create a line cell connecting the two points
+                lines.InsertNextCell(2)
+                lines.InsertCellPoint(id1)
+                lines.InsertCellPoint(id2)
     
     # Build the polydata
     polydata = vtkPolyData()
@@ -190,10 +210,8 @@ def create_hbond_actor(
     actor = vtkActor()
     actor.SetMapper(mapper)
     
-    # Set visual properties per CONTEXT.md
-    actor.GetProperty().SetColor(0.6, 0.6, 0.6)  # Gray color
-    actor.GetProperty().SetLineStipplePattern(0x0F0F)  # Medium dash (4 on, 4 off)
-    actor.GetProperty().SetLineStippleRepeatFactor(2)  # Scale pattern 2x
+    # Set visual properties: cyan color for distinction from regular bonds
+    actor.GetProperty().SetColor(0.0, 0.8, 0.8)  # Cyan color
     actor.GetProperty().SetLineWidth(1.5)
     
     return actor

@@ -200,11 +200,12 @@ class ViewportExporter:
         """
         self.parent = parent_widget
     
-    def capture_viewport(self, vtk_widget) -> bool:
+    def capture_viewport(self, vtk_widget, viewport_name: str = "") -> bool:
         """Capture and save 3D viewport to image file.
         
         Args:
             vtk_widget: QVTKRenderWindowInteractor to capture
+            viewport_name: Optional viewport identifier (e.g., "left", "right") for unique filename
             
         Returns:
             True if export succeeded, False if cancelled or failed
@@ -215,11 +216,17 @@ class ViewportExporter:
         - ReadFrontBufferOff() for offscreen buffer
         - JPEG quality: 95
         """
+        # Generate default filename with viewport identifier if provided
+        if viewport_name:
+            default_filename = f"ice_structure_{viewport_name}.png"
+        else:
+            default_filename = "ice_structure.png"
+        
         # Show save dialog with PNG and JPEG options
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self.parent,
             "Save Viewport Image",
-            "ice_structure.png",
+            default_filename,
             "PNG Image (*.png);;JPEG Image (*.jpg);;All Files (*)",
             "PNG Image (*.png)"
         )
