@@ -4,7 +4,7 @@ This module provides the DualViewerWidget class for displaying multiple
 structure candidates in separate synchronized viewports.
 """
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QComboBox
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QShowEvent
 
@@ -64,15 +64,15 @@ class DualViewerWidget(QWidget):
         """Set up the dual viewport layout.
         
         Creates a horizontal layout with two columns, each containing
-        a title label and a MolecularViewerWidget. Equal stretch factors
-        ensure balanced sizing.
+        a candidate selector dropdown and a MolecularViewerWidget.
+        Equal stretch factors ensure balanced sizing.
         """
         # Main horizontal layout (1 row, 2 grids per CONTEXT.md)
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
         
-        # Column 1: Candidate 1 viewer
+        # Column 1: Candidate selector + viewer
         column1_layout = QVBoxLayout()
         column1_layout.setContentsMargins(0, 0, 0, 0)
         column1_layout.setSpacing(0)
@@ -81,12 +81,17 @@ class DualViewerWidget(QWidget):
         title1_label.setStyleSheet("font-weight: bold; padding: 4px;")
         column1_layout.addWidget(title1_label)
         
+        # Candidate selector for left viewer
+        self.candidate_selector1 = QComboBox()
+        self.candidate_selector1.setMinimumWidth(120)
+        column1_layout.addWidget(self.candidate_selector1)
+        
         self.viewer1 = MolecularViewerWidget()
         column1_layout.addWidget(self.viewer1)
         
         main_layout.addLayout(column1_layout, stretch=1)
         
-        # Column 2: Candidate 2 viewer
+        # Column 2: Candidate selector + viewer
         column2_layout = QVBoxLayout()
         column2_layout.setContentsMargins(0, 0, 0, 0)
         column2_layout.setSpacing(0)
@@ -94,6 +99,11 @@ class DualViewerWidget(QWidget):
         title2_label = QLabel("Candidate 2")
         title2_label.setStyleSheet("font-weight: bold; padding: 4px;")
         column2_layout.addWidget(title2_label)
+        
+        # Candidate selector for right viewer
+        self.candidate_selector2 = QComboBox()
+        self.candidate_selector2.setMinimumWidth(120)
+        column2_layout.addWidget(self.candidate_selector2)
         
         self.viewer2 = MolecularViewerWidget()
         column2_layout.addWidget(self.viewer2)
@@ -103,6 +113,10 @@ class DualViewerWidget(QWidget):
         # Store title labels for updates
         self._title1_label = title1_label
         self._title2_label = title2_label
+        
+        # Connect selector signals
+        self.candidate_selector1.currentIndexChanged.connect(self._on_selector1_changed)
+        self.candidate_selector2.currentIndexChanged.connect(self._on_selector2_changed)
     
     def showEvent(self, event):
         """Handle show event - set up camera sync after widget is visible.
@@ -279,3 +293,60 @@ class DualViewerWidget(QWidget):
         """
         title_label = self._title1_label if viewer_num == 1 else self._title2_label
         title_label.setText(f"Candidate {viewer_num} (Rank #{candidate.rank})")
+    
+    def _on_selector1_changed(self, index: int) -> None:
+        """Handle left candidate selector dropdown change.
+        
+        Args:
+            index: The selected index in the candidate_selector1 dropdown
+        """
+        if index < 0 or not self._ranked_candidates:
+            return
+        
+        try:
+            self.set_candidate_for_viewer(0, index)
+        except IndexError:
+            pass  # Invalid index, ignore
+    
+    def _on_selector2_changed(self, index: int) -> None:
+        """Handle right candidate selector dropdown change.
+        
+        Args:
+            index: The selected index in the candidate_selector2 dropdown
+        """
+        if index < 0 or not self._ranked_candidates:
+            return
+        
+        try:
+            self.set_candidate_for_viewer(1, index)
+        except IndexError:
+            pass  # Invalid index, ignore
+    
+    def update_selectors(self, candidates: list[RankedCandidate]) -> None:
+        """Update candidate selector dropdowns with available candidates.
+        
+        Left selector defaults to Rank 1 (index 0).
+        Right selector defaults to Rank 2 (index 1) if available.
+        
+        Args:
+            candidates: List of RankedCandidate objects
+        """
+        # Update left selector
+        self.candidate_selector1.blockSignals(True)
+        self.candidate_selector1.clear()
+        for rc in candidates:
+            self.candidate_selector1.addItem(f"Rank {rc.rank} ({rc.candidate.phase_id})")
+        if len(candidates) >= 1:
+            self.candidate_selector1.setCurrentIndex(0)
+        self.candidate_selector1.blockSignals(False)
+        
+        # Update right selector
+        self.candidate_selector2.blockSignals(True)
+        self.candidate_selector2.clear()
+        for rc in candidates:
+            self.candidate_selector2.addItem(f"Rank {rc.rank} ({rc.candidate.phase_id})")
+        if len(candidates) >= 2:
+            self.candidate_selector2.setCurrentIndex(1)
+        elif len(candidates) >= 1:
+            self.candidate_selector2.setCurrentIndex(0)
+        self.candidate_selector2.blockSignals(False)
