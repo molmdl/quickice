@@ -207,6 +207,13 @@ class MainWindow(QMainWindow):
         save_viewport_action = file_menu.addAction("Save Viewport...")
         save_viewport_action.setShortcut("Ctrl+Alt+S")
         save_viewport_action.triggered.connect(self._on_save_viewport)
+        
+        # Help menu
+        help_menu = menubar.addMenu("Help")
+        
+        # Quick Reference action
+        quick_ref_action = help_menu.addAction("Quick Reference")
+        quick_ref_action.triggered.connect(self._on_help)
     
     @Slot()
     def _on_generate_clicked(self):
