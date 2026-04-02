@@ -233,8 +233,12 @@ class MolecularViewerWidget(QWidget):
         
         if mode == "ball_and_stick":
             self._mapper.UseBallAndStickSettings()
+            # Restore ball size for ball-and-stick mode
+            self._mapper.SetAtomicRadiusScaleFactor(0.3)
         else:  # stick
             self._mapper.UseLiquoriceStickSettings()
+            # Use much smaller radius for stick mode - atoms shown as small points
+            self._mapper.SetAtomicRadiusScaleFactor(0.1)
         
         self.render_window.Render()
     
