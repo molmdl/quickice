@@ -509,6 +509,24 @@ class ViewerPanel(QWidget):
         if self._vtk_available and self.dual_viewer is not None:
             return self.dual_viewer.candidate_selector1.currentIndex()
         return 0
+    
+    def get_selected_candidate_index_left(self) -> int:
+        """Get the index of the currently selected candidate in left viewer.
+        
+        Returns:
+            Index in the ranked_candidates list (0-based)
+        """
+        return self.get_selected_candidate_index()
+    
+    def get_selected_candidate_index_right(self) -> int:
+        """Get the index of the currently selected candidate in right viewer.
+        
+        Returns:
+            Index in the ranked_candidates list (0-based)
+        """
+        if self._vtk_available and self.dual_viewer is not None:
+            return self.dual_viewer.candidate_selector2.currentIndex()
+        return 0
 
 
 class HelpIcon(QLabel):

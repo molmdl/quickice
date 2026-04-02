@@ -184,10 +184,18 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("File")
         
-        # Save PDB action
-        save_pdb_action = file_menu.addAction("Save PDB...")
-        save_pdb_action.setShortcut("Ctrl+S")
-        save_pdb_action.triggered.connect(self._on_save_pdb)
+        # Save PDB from Left Viewer action
+        save_pdb_left_action = file_menu.addAction("Save PDB (Left Viewer)...")
+        save_pdb_left_action.setShortcut("Ctrl+S")
+        save_pdb_left_action.triggered.connect(self._on_save_pdb_left)
+        
+        # Save PDB from Right Viewer action
+        save_pdb_right_action = file_menu.addAction("Save PDB (Right Viewer)...")
+        save_pdb_right_action.setShortcut("Ctrl+Shift+S")
+        save_pdb_right_action.triggered.connect(self._on_save_pdb_right)
+        
+        # Separator
+        file_menu.addSeparator()
         
         # Save Diagram action
         save_diagram_action = file_menu.addAction("Save Diagram...")
@@ -196,7 +204,7 @@ class MainWindow(QMainWindow):
         
         # Save Viewport action
         save_viewport_action = file_menu.addAction("Save Viewport...")
-        save_viewport_action.setShortcut("Ctrl+Shift+S")
+        save_viewport_action.setShortcut("Ctrl+Alt+S")
         save_viewport_action.triggered.connect(self._on_save_viewport)
     
     @Slot()
@@ -351,8 +359,8 @@ class MainWindow(QMainWindow):
             pass  # Invalid input, don't update marker
     
     @Slot()
-    def _on_save_pdb(self):
-        """Handle Save PDB menu action.
+    def _on_save_pdb_left(self):
+        """Handle Save PDB (Left Viewer) menu action.
         
         Per EXPORT-01: User can save generated PDB file via native file save dialog.
         """
@@ -364,8 +372,30 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Data", "No candidates available to save.")
             return
         
-        # Get selected candidate from dropdown
-        selected_idx = self.viewer_panel.get_selected_candidate_index()
+        # Get selected candidate from left viewer dropdown
+        selected_idx = self.viewer_panel.get_selected_candidate_index_left()
+        if selected_idx < 0 or selected_idx >= len(self._current_result.ranked_candidates):
+            selected_idx = 0  # Fallback to rank 1
+        
+        ranked = self._current_result.ranked_candidates[selected_idx]
+        self._pdb_exporter.export_candidate(ranked, self._current_T, self._current_P)
+    
+    @Slot()
+    def _on_save_pdb_right(self):
+        """Handle Save PDB (Right Viewer) menu action.
+        
+        Per EXPORT-01: User can save generated PDB file via native file save dialog.
+        """
+        if not self._current_result or not hasattr(self._current_result, 'ranked_candidates'):
+            QMessageBox.warning(self, "No Data", "Generate a structure first before saving.")
+            return
+        
+        if not self._current_result.ranked_candidates:
+            QMessageBox.warning(self, "No Data", "No candidates available to save.")
+            return
+        
+        # Get selected candidate from right viewer dropdown
+        selected_idx = self.viewer_panel.get_selected_candidate_index_right()
         if selected_idx < 0 or selected_idx >= len(self._current_result.ranked_candidates):
             selected_idx = 0  # Fallback to rank 1
         
