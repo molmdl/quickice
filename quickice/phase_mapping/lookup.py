@@ -20,7 +20,11 @@ from quickice.phase_mapping.errors import UnknownPhaseError
 
 # Phase metadata (from IAPWS R14-08 and LSBU Water Phase Data)
 PHASE_METADATA = {
-    "ice_ih": {"name": "Ice Ih", "density": 0.9167},
+    "ice_ih": {
+        "name": "Ice Ih",
+        "density": 0.9167,
+        "density_note": "Density varies with temperature and pressure. Value shown is at reference conditions (273.15 K, 0.101325 MPa). See IAPWS Revised Supplementary Release on the Equation of State for Ice Ih (2023) for complete equation of state."
+    },
     "ice_ic": {"name": "Ice Ic", "density": 0.92},
     "ice_ii": {"name": "Ice II", "density": 1.18},
     "ice_iii": {"name": "Ice III", "density": 1.16},

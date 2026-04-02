@@ -478,9 +478,22 @@ class MainWindow(QMainWindow):
             print(f"[DEBUG] PHASE_METADATA lookup returned: {meta}")
             phase_name = meta.get("name", phase_id)
             density = meta.get("density", "Unknown")
+            density_note = meta.get("density_note")
             
             self.info_panel.append_log(f"Phase: {phase_name}")
             self.info_panel.append_log(f"Density: {density} g/cm³")
+            if density_note:
+                # Word wrap the note for display
+                words = density_note.split()
+                line = ""
+                for word in words:
+                    if len(line) + len(word) + 1 <= 60:
+                        line = f"{line} {word}".strip()
+                    else:
+                        self.info_panel.append_log(f"  {line}")
+                        line = word
+                if line:
+                    self.info_panel.append_log(f"  {line}")
             self.info_panel.append_log(f"Structure: {_get_structure_type(phase_id_full)}")
             self.info_panel.append_log(f"")
             self.info_panel.append_log(f"Citation:")
