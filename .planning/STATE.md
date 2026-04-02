@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 10 issues discovered during Phase 11 testing, fixes committed
+**Current Focus:** v2.0 GUI Application - Phase 10 complete, ready for Phase 11
 
 ---
 
@@ -27,13 +27,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 10 - 3D Molecular Viewer |
-| Plan | 06 of 6 (verification pending) |
-| Status | Fixes committed for 3 issues found during testing |
-| Last activity | 2026-04-02 - Fixed SetLattice, placeholder window, candidate selector |
-| Blocked | Phase 11 verification blocked by Phase 10 issues |
+| Phase | Phase 11 - Save/Export + Information |
+| Plan | Ready to begin |
+| Status | Phase 10 verified complete, awaiting Phase 11 planning |
+| Last activity | 2026-04-02 - Phase 10 verification passed |
 
-**Progress:** ██████████████████░░ 90% (49 of 54 plans across v2.0)
+**Progress:** ███████████████████░ 95% (55 of 58 plans across v2.0)
 
 ---
 
@@ -72,24 +71,31 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Status:** Complete - 5/5 plans executed, user approved verification
 
-### Phase 10: 3D Molecular Viewer
+### Phase 10: 3D Molecular Viewer (COMPLETE ✓)
 
 **Goal:** Users can view and interact with generated ice structures in a 3D viewport
 
-**Requirements:** 10 (VIEWER-01 to VIEWER-05, ADVVIZ-01 to ADVVIZ-05)
+**Requirements:** 9 (VIEWER-01 to VIEWER-05, ADVVIZ-01 to ADVVIZ-04)
 
-### Phase 10: 3D Molecular Viewer
+**Key deliverables:**
+- VTK-based molecular viewer with ball-and-stick rendering
+- Representation toggle (VDW, Ball-and-stick, Stick)
+- H-bond dashed line visualization
+- Unit cell wireframe box
+- Auto-rotation animation
+- Dual viewport for candidate comparison
+- Camera synchronization between viewports
+- Toolbar integration with MainWindow
+- Collapsible info panel for logs
 
-**Goal:** Users can view and interact with generated ice structures in a 3D viewport
+**Note:** ADVVIZ-05 (color-by-property) not implemented per user decision.
 
-**Requirements:** 10 (VIEWER-01 to VIEWER-05, ADVVIZ-01 to ADVVIZ-05)
+**Status:** Complete - all 6 plans executed, verification passed
 
-**Status:** Fixes committed for 3 issues, awaiting re-verification
-
-**Issues Found During Testing (2026-04-02):**
-1. Separate empty window showing "click generate to display" — Fixed (`5523596`)
-2. TypeError in SetLattice preventing 3D render — Fixed (`f78ef60`)
-3. Candidate selector not connected to dual viewer — Fixed (`5523596`)
+**Issues Fixed:**
+- SetLattice TypeError (vtkMatrix3x3 requirement)
+- Separate empty window (QLabel parent)
+- Candidate selector connection
 
 ### Phase 11: Save/Export + Information
 
@@ -97,7 +103,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Requirements:** 7 (EXPORT-01 to EXPORT-03, INFO-01 to INFO-04)
 
-**Status:** Verification blocked — cannot test viewport export until Phase 10 3D viewer works
+**Status:** Ready to begin - Phase 10 complete, no blockers
 
 ### Phase 12: Packaging
 
@@ -216,12 +222,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Phase 10 issues discovered during Phase 11 testing, fixes committed
-**Fixes committed:** `f78ef60` (SetLattice), `5523596` (placeholder + selector)
+**Stopped at:** Phase 10 verification complete
 **Next steps:**
-1. Run `/gsd-debug 10` to verify fixes before formal verification
-2. After debug confirms fixes work, run `/gsd-execute-phase 10` for re-verification
-3. Then `/gsd-execute-phase 11` for Phase 11 verification
+1. Run `/gsd-plan-phase 11` to plan Save/Export + Information phase
+2. Execute Phase 11
+3. Then Phase 12 (Packaging) and Phase 13 (Documentation)
 
 ---
 
@@ -266,33 +271,22 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | DIAGRAM-02 | Phase 9 | Complete |
 | DIAGRAM-03 | Phase 9 | Complete |
 | DIAGRAM-04 | Phase 9 | Complete |
-| VIEWER-01 | Phase 10 | Pending |
+| VIEWER-01 | Phase 10 | Complete |
 | VIEWER-02 | Phase 10 | Complete |
 | VIEWER-03 | Phase 10 | Complete |
-| VIEWER-04 | Phase 10 | Pending |
+| VIEWER-04 | Phase 10 | Complete |
 | VIEWER-05 | Phase 10 | Complete |
-| PROGRESS-01 | Phase 8 | Complete |
-| PROGRESS-02 | Phase 8 | Complete |
-| PROGRESS-03 | Phase 8 | Complete |
-| PROGRESS-04 | Phase 8 | Complete |
-| EXPORT-01 | Phase 11 | Pending |
-| EXPORT-02 | Phase 11 | Pending |
-| EXPORT-03 | Phase 11 | Pending |
-| INFO-01 | Phase 11 | Pending |
-| INFO-02 | Phase 11 | Pending |
-| INFO-03 | Phase 11 | Pending |
-| INFO-04 | Phase 11 | Pending |
 | ADVVIZ-01 | Phase 10 | Complete |
 | ADVVIZ-02 | Phase 10 | Complete |
 | ADVVIZ-03 | Phase 10 | Complete |
 | ADVVIZ-04 | Phase 10 | Complete |
-| ADVVIZ-05 | Phase 10 | Complete |
+| ADVVIZ-05 | Phase 10 | NOT IMPLEMENTED |
 | UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
 | PACKAGE-02 | Phase 12 | Pending |
 
-**Coverage:** 33/33 requirements mapped ✓
+**Coverage:** 32/33 requirements mapped (ADVVIZ-05 not implemented) ✓
 
 ---
 
-*State updated: 2026-04-02 - Phase 10 issues discovered during Phase 11 testing, fixes committed*
+*State updated: 2026-04-02 - Phase 10 verified complete, moving to Phase 11*

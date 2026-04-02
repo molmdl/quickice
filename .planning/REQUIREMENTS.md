@@ -24,11 +24,11 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### 3D Molecular Viewer
 
-- [ ] **VIEWER-01**: User can view generated ice structure in 3D viewport (VTK-based)
-- [ ] **VIEWER-02**: User can view ball-and-stick molecular representation (O=red, H=white)
-- [ ] **VIEWER-03**: User can switch to stick representation mode
-- [ ] **VIEWER-04**: User can zoom, pan, and rotate 3D structure with mouse controls
-- [ ] **VIEWER-05**: User can view hydrogen bonds as dashed lines between molecules
+- [x] **VIEWER-01**: User can view generated ice structure in 3D viewport (VTK-based)
+- [x] **VIEWER-02**: User can view ball-and-stick molecular representation (O=red, H=white)
+- [x] **VIEWER-03**: User can switch to stick representation mode
+- [x] **VIEWER-04**: User can zoom, pan, and rotate 3D structure with mouse controls
+- [x] **VIEWER-05**: User can view hydrogen bonds as dashed lines between molecules
 
 ### Progress & Feedback
 
@@ -52,11 +52,11 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Advanced Visualization
 
-- [ ] **ADVVIZ-01**: User can toggle unit cell boundary box display
-- [ ] **ADVVIZ-02**: User can click zoom-to-fit to frame structure in viewport
-- [ ] **ADVVIZ-03**: User can toggle animated auto-rotation of structure
-- [ ] **ADVVIZ-04**: User can view multiple candidates side-by-side for comparison
-- [ ] **ADVVIZ-05**: User can color atoms by property (energy/density ranking)
+- [x] **ADVVIZ-01**: User can toggle unit cell boundary box display
+- [x] **ADVVIZ-02**: User can click zoom-to-fit to frame structure in viewport
+- [x] **ADVVIZ-03**: User can toggle animated auto-rotation of structure
+- [x] **ADVVIZ-04**: User can view multiple candidates side-by-side for comparison
+- [ ] **ADVVIZ-05**: User can color atoms by property (energy/density ranking) — NOT IMPLEMENTED
 
 ### User Experience
 
@@ -118,11 +118,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIAGRAM-02 | Phase 9 | Complete |
 | DIAGRAM-03 | Phase 9 | Complete |
 | DIAGRAM-04 | Phase 9 | Complete |
-| VIEWER-01 | Phase 10 | Pending |
-| VIEWER-02 | Phase 10 | Pending |
-| VIEWER-03 | Phase 10 | Pending |
-| VIEWER-04 | Phase 10 | Pending |
-| VIEWER-05 | Phase 10 | Pending |
+| VIEWER-01 | Phase 10 | Complete |
+| VIEWER-02 | Phase 10 | Complete |
+| VIEWER-03 | Phase 10 | Complete |
+| VIEWER-04 | Phase 10 | Complete |
+| VIEWER-05 | Phase 10 | Complete |
 | PROGRESS-01 | Phase 8 | Complete |
 | PROGRESS-02 | Phase 8 | Complete |
 | PROGRESS-03 | Phase 8 | Complete |
@@ -134,11 +134,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFO-02 | Phase 11 | Pending |
 | INFO-03 | Phase 11 | Pending |
 | INFO-04 | Phase 11 | Pending |
-| ADVVIZ-01 | Phase 10 | Pending |
-| ADVVIZ-02 | Phase 10 | Pending |
-| ADVVIZ-03 | Phase 10 | Pending |
-| ADVVIZ-04 | Phase 10 | Pending |
-| ADVVIZ-05 | Phase 10 | Pending |
+| ADVVIZ-01 | Phase 10 | Complete |
+| ADVVIZ-02 | Phase 10 | Complete |
+| ADVVIZ-03 | Phase 10 | Complete |
+| ADVVIZ-04 | Phase 10 | Complete |
+| ADVVIZ-05 | Phase 10 | NOT IMPLEMENTED |
 | UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | Pending |
 | PACKAGE-02 | Phase 12 | Pending |

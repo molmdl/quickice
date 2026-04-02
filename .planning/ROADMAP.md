@@ -102,15 +102,15 @@ Plans:
 
 ---
 
-### Phase 10: 3D Molecular Viewer
+### Phase 10: 3D Molecular Viewer ✅
 
 **Goal:** Users can view and interact with generated ice structures in a 3D viewport with multiple visualization options
 
-**Requirements:** VIEWER-01, VIEWER-02, VIEWER-03, VIEWER-04, VIEWER-05, ADVVIZ-01, ADVVIZ-02, ADVVIZ-03, ADVVIZ-04, ADVVIZ-05
+**Requirements:** VIEWER-01, VIEWER-02, VIEWER-03, VIEWER-04, VIEWER-05, ADVVIZ-01, ADVVIZ-02, ADVVIZ-03, ADVVIZ-04
 
 **Dependencies:** Phase 8 (threading for background generation)
 
-**Plans:** 6 plans in 6 waves (sequential due to file dependencies)
+**Plans:** 6 plans in 6 waves — completed 2026-04-02
 
 Plans:
 - [x] 10-01-PLAN.md — VTK Utilities (molecule conversion, H-bond detection, actors)
@@ -118,7 +118,9 @@ Plans:
 - [x] 10-03-PLAN.md — Visualization Toggles (representation, H-bonds, unit cell, zoom-fit)
 - [x] 10-04-PLAN.md — Advanced Features (auto-rotation, color-by-property)
 - [x] 10-05-PLAN.md — Dual Viewport Comparison (synchronized cameras, selectors)
-- [ ] 10-06-PLAN.md — MainWindow Integration (layout, toolbar, info panel)
+- [x] 10-06-PLAN.md — MainWindow Integration (layout, toolbar, info panel)
+
+**Note:** ADVVIZ-05 (color-by-property) not implemented per user decision.
 
 **Success Criteria:**
 1. User can view generated ice structure in 3D viewport (VTK-based) after generation completes
@@ -130,7 +132,7 @@ Plans:
 7. User can click zoom-to-fit button to automatically frame the structure in viewport
 8. User can toggle animated auto-rotation of the structure for presentation
 9. User can view multiple structure candidates side-by-side in separate viewports for comparison
-10. User can color atoms by property (energy ranking or density ranking) to highlight favorable structures
+10. User can color atoms by property (energy ranking or density ranking) to highlight favorable structures — NOT IMPLEMENTED
 
 ---
 
@@ -205,7 +207,7 @@ Plans:
 | 7.1 - Fix Performance & Bugs | v1.1 | ✅ Complete | 4 |
 | **8 - GUI Infrastructure** | v2.0 | ✅ Complete | 10 |
 | **9 - Phase Diagram** | v2.0 | ✅ Complete | 4 |
-| **10 - 3D Viewer** | v2.0 | 🔄 Planned | 10 |
+| **10 - 3D Viewer** | v2.0 | ✅ Complete | 9 |
 | **11 - Save/Export** | v2.0 | 🔄 Planned | 7 |
 | **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
 | **13 - Documentation Update** | v2.0 | 🔄 Planned | 4 |
@@ -226,7 +228,7 @@ Plans:
 | User Experience | 1 | Phase 8 |
 | Packaging & Licensing | 2 | Phase 12 |
 
-**Total v2.0 Requirements:** 33
+**Total v2.0 Requirements:** 32 (ADVVIZ-05 not implemented)
 
 ---
 
