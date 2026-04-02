@@ -19,7 +19,7 @@ gaps: []
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | User can find system requirements in README | ✓ VERIFIED | README.md lines 37-48: System Requirements section with Linux GLIBC 2.28+ and Windows 10/11 |
+| 1 | User can find system requirements in README | ✓ VERIFIED | README.md lines 37-48: System Requirements section with Linux GLIBC 2.28+ requirements (Windows section removed per user edit - not tested/implemented yet) |
 | 2 | User can find GUI launch instructions in README | ✓ VERIFIED | README.md lines 74-86: GUI Usage section with `python -m quickice.gui` command |
 | 3 | User can find detailed GUI documentation | ✓ VERIFIED | docs/gui-guide.md (221 lines) comprehensive documentation covering all v2.0 GUI features |
 | 4 | User can access quick reference from GUI Help menu | ✓ VERIFIED | main_window.py line 212-216: Help menu with Quick Reference action, wired to _on_help slot (line 448-454) |
@@ -59,7 +59,7 @@ None - all verification is programmatic.
 
 No gaps found. All must-haves verified:
 
-1. **System requirements** - Documented in README with Linux (GLIBC 2.28+) and Windows (10/11) requirements
+1. **System requirements** - Documented in README with Linux (GLIBC 2.28+) requirements; Windows section removed to avoid confusion (not tested/implemented yet)
 2. **GUI launch instructions** - Provided in README with `python -m quickice.gui` command
 3. **Comprehensive GUI documentation** - docs/gui-guide.md covers all v2.0 features (input panel, phase diagram, 3D viewer, export options, shortcuts, troubleshooting)
 4. **In-app quick reference** - Help → Quick Reference menu opens modal dialog with shortcuts and workflow
