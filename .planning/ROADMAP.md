@@ -188,6 +188,14 @@ Plans:
 
 **Dependencies:** Phase 12 (all GUI features complete and packaged)
 
+**Plans:** 4 plans in 3 waves — ready for execution
+
+Plans:
+- [ ] 13-01-PLAN.md — Update README.md with GUI mentions
+- [ ] 13-02-PLAN.md — Create docs/images/ and docs/gui-guide.md
+- [ ] 13-03-PLAN.md — Create QuickReferenceDialog class (INFO-04)
+- [ ] 13-04-PLAN.md — Add Help menu to MainWindow and wire dialog
+
 **Success Criteria:**
 1. User can read updated README with accurate v2.0 installation and usage instructions
 2. User can access in-app documentation reflecting current GUI features
@@ -214,7 +222,7 @@ Plans:
 | **10 - 3D Viewer** | v2.0 | ✅ Complete | 9 |
 | **11 - Save/Export** | v2.0 | ✅ Complete | 7 (5 complete, 2 deferred) |
 | **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
-| **13 - Documentation Update** | v2.0 | 🔄 Planned | 4 |
+| **13 - Documentation Update** | v2.0 | 📋 Plans Created | 4 |
 
 ---
 
