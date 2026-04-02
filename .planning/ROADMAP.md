@@ -136,30 +136,34 @@ Plans:
 
 ---
 
-### Phase 11: Save/Export + Information
+### Phase 11: Save/Export + Information ✅
 
 **Goal:** Users can export results to standard formats and access scientific information about ice phases
 
-**Requirements:** EXPORT-01, EXPORT-02, EXPORT-03, INFO-01, INFO-02, INFO-03, INFO-04
+**Requirements:** EXPORT-01, EXPORT-02, EXPORT-03, INFO-01, INFO-03 (INFO-02 and INFO-04 deferred)
 
 **Dependencies:** Phase 9 (phase diagram), Phase 10 (3D viewer)
 
-**Plans:** 4 plans in 3 waves
+**Plans:** 4 plans in 3 waves — completed 2026-04-02
 
 Plans:
-- [ ] 11-01-PLAN.md — Export Module (PDBExporter, DiagramExporter, ViewportExporter)
-- [ ] 11-02-PLAN.md — Help Icons + Phase Info Signal (tooltips, phase_info_ready)
-- [ ] 11-03-PLAN.md — MainWindow Integration (menu bar, wiring, phase info display)
-- [ ] 11-04-PLAN.md — User Verification (manual GUI testing)
+- [x] 11-01-PLAN.md — Export Module (PDBExporter, DiagramExporter, ViewportExporter)
+- [x] 11-02-PLAN.md — Help Icons + Phase Info Signal (tooltips, phase_info_ready)
+- [x] 11-03-PLAN.md — MainWindow Integration (menu bar, wiring, phase info display)
+- [x] 11-04-PLAN.md — User Verification (manual GUI testing)
+
+**Notes:**
+- INFO-02 (phase hover tooltip) deferred per design decision — existing T,P display sufficient
+- INFO-04 (in-app manual) deferred to Phase 13 (documentation update)
 
 **Success Criteria:**
-1. User can save generated PDB file via native file save dialog with .pdb extension
-2. User can save phase diagram image to file (PNG or SVG format)
-3. User can save 3D viewport as image (PNG format)
-4. User can open info window displaying citations and references for the selected ice phase
-5. User sees tooltip with phase information (density, structure type) when hovering over phase regions
-6. User sees help tooltips on UI elements when hovering over question mark icons
-7. User can view in-app markdown manual/documentation for application usage (deferred to Phase 13)
+1. ✓ User can save generated PDB file via native file save dialog with .pdb extension
+2. ✓ User can save phase diagram image to file (PNG or SVG format)
+3. ✓ User can save 3D viewport as image (PNG format)
+4. ✓ User can open info window displaying citations and references for the selected ice phase
+5. User sees tooltip with phase information (density, structure type) when hovering over phase regions — DEFERRED
+6. ✓ User sees help tooltips on UI elements when hovering over question mark icons
+7. User can view in-app markdown manual/documentation for application usage — DEFERRED to Phase 13
 
 ---
 
@@ -208,7 +212,7 @@ Plans:
 | **8 - GUI Infrastructure** | v2.0 | ✅ Complete | 10 |
 | **9 - Phase Diagram** | v2.0 | ✅ Complete | 4 |
 | **10 - 3D Viewer** | v2.0 | ✅ Complete | 9 |
-| **11 - Save/Export** | v2.0 | 🔄 Planned | 7 |
+| **11 - Save/Export** | v2.0 | ✅ Complete | 7 (5 complete, 2 deferred) |
 | **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
 | **13 - Documentation Update** | v2.0 | 🔄 Planned | 4 |
 
