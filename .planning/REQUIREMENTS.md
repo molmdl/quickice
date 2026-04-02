@@ -48,7 +48,7 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 - [x] **INFO-01**: User can view info window with citations/references for selected ice phase
 - [ ] **INFO-02**: User sees phase information tooltip on hover (density, structure type) — DEFERRED
 - [x] **INFO-03**: User sees help tooltips on UI elements (question mark icons)
-- [ ] **INFO-04**: User can view in-app markdown manual/documentation — DEFERRED to Phase 13
+- [x] **INFO-04**: User can view in-app manual/documentation via Help menu (QuickReferenceDialog) — Phase 13
 
 ### Advanced Visualization
 
@@ -133,7 +133,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFO-01 | Phase 11 | Complete |
 | INFO-02 | Phase 11 | Deferred |
 | INFO-03 | Phase 11 | Complete |
-| INFO-04 | Phase 11 | Deferred |
+| INFO-04 | Phase 13 | Complete |
 | ADVVIZ-01 | Phase 10 | Complete |
 | ADVVIZ-02 | Phase 10 | Complete |
 | ADVVIZ-03 | Phase 10 | Complete |
