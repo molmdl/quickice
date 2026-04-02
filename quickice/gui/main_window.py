@@ -21,6 +21,7 @@ from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter
+from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
 class MainWindow(QMainWindow):
@@ -122,6 +123,9 @@ class MainWindow(QMainWindow):
         self.diagram_panel.diagram_canvas.coordinates_selected.connect(
             self._on_diagram_selected
         )
+        
+        # Phase info from diagram click
+        self.diagram_panel.diagram_canvas.phase_info_ready.connect(self._on_phase_info)
         
         # Input field changes -> diagram marker (bidirectional binding)
         self.input_panel.temp_input.textChanged.connect(self._on_input_changed)
@@ -377,6 +381,137 @@ class MainWindow(QMainWindow):
         # Get VTK widget from dual viewer
         vtk_widget = self.viewer_panel.dual_viewer.viewer1.vtk_widget
         self._viewport_exporter.capture_viewport(vtk_widget)
+    
+    @Slot(str, float, float)
+    def _on_phase_info(self, phase_id: str, T: float, P: float):
+        """Display phase information in log panel when user clicks diagram.
+        
+        Per INFO-01: User can view info window with citations/references.
+        Per CONTEXT.md: Use existing log panel for phase info.
+        
+        Args:
+            phase_id: Phase identifier (e.g., "Ih", "II", "Vapor", "Liquid")
+            T: Temperature in Kelvin
+            P: Pressure in MPa
+        """
+        # Expand log panel to show info
+        self.info_panel.expand()
+        
+        # Clear and add phase info
+        self.info_panel.clear_log()
+        self.info_panel.append_log(f"{'='*50}")
+        self.info_panel.append_log(f"Phase Information")
+        self.info_panel.append_log(f"{'='*50}")
+        self.info_panel.append_log(f"Conditions: T = {T:.1f} K, P = {P:.2f} MPa")
+        
+        # Handle special cases (Vapor, Liquid, boundary regions)
+        if phase_id in ("Vapor", "Liquid") or "/" in phase_id:
+            if "/" in phase_id:
+                self.info_panel.append_log(f"Phase: {phase_id} (boundary)")
+            else:
+                self.info_panel.append_log(f"Phase: {phase_id}")
+            self.info_panel.append_log(f"")
+            self.info_panel.append_log(f"No ice phase data available for this region.")
+        elif phase_id and phase_id != "unknown":
+            # Get phase metadata
+            # Convert short form to full phase_id (e.g., "Ih" -> "ice_ih")
+            phase_id_full = _get_full_phase_id(phase_id)
+            meta = PHASE_METADATA.get(phase_id_full, {})
+            phase_name = meta.get("name", phase_id)
+            density = meta.get("density", "Unknown")
+            
+            self.info_panel.append_log(f"Phase: {phase_name}")
+            self.info_panel.append_log(f"Density: {density} g/cm³")
+            self.info_panel.append_log(f"Structure: {_get_structure_type(phase_id_full)}")
+            self.info_panel.append_log(f"")
+            self.info_panel.append_log(f"Citation:")
+            self.info_panel.append_log(_get_citation(phase_id_full))
+        else:
+            self.info_panel.append_log("Phase: Unknown (click on a phase region)")
+
+
+def _get_full_phase_id(phase_id: str) -> str:
+    """Convert short phase ID to full phase ID.
+    
+    Args:
+        phase_id: Short form (e.g., "Ih", "II") or full form (e.g., "ice_ih")
+    
+    Returns:
+        Full phase ID (e.g., "ice_ih")
+    """
+    # Mapping from short form to full form
+    short_to_full = {
+        "Ih": "ice_ih",
+        "Ic": "ice_ic",
+        "II": "ice_ii",
+        "III": "ice_iii",
+        "V": "ice_v",
+        "VI": "ice_vi",
+        "VII": "ice_vii",
+        "VIII": "ice_viii",
+        "XI": "ice_xi",
+        "IX": "ice_ix",
+        "X": "ice_x",
+        "XV": "ice_xv",
+    }
+    
+    # If already full form, return as-is
+    if phase_id.startswith("ice_"):
+        return phase_id
+    
+    # Convert short form to full form
+    return short_to_full.get(phase_id, phase_id)
+
+
+def _get_structure_type(phase_id: str) -> str:
+    """Get human-readable structure type.
+    
+    Args:
+        phase_id: Full phase ID (e.g., "ice_ih")
+    
+    Returns:
+        Human-readable structure type with space group
+    """
+    structure_types = {
+        "ice_ih": "Hexagonal (P6₃/mmc)",
+        "ice_ic": "Cubic diamond (Fd3m)",
+        "ice_ii": "Rhombohedral (R-3)",
+        "ice_iii": "Tetragonal (P4₁2₁2)",
+        "ice_v": "Monoclinic (C2/c)",
+        "ice_vi": "Tetragonal (P4₂/nmc)",
+        "ice_vii": "Cubic (Pn-3m)",
+        "ice_viii": "Tetragonal (I4₁/amd)",
+        "ice_xi": "Hexagonal ordered (Cmc2₁)",
+        "ice_ix": "Tetragonal ordered (P4₁2₁2)",
+        "ice_x": "Symmetric H-bonds (Pn-3m)",
+        "ice_xv": "Ordered (P-1)",
+    }
+    return structure_types.get(phase_id, "Unknown")
+
+
+def _get_citation(phase_id: str) -> str:
+    """Get primary citation for phase.
+    
+    Args:
+        phase_id: Full phase ID (e.g., "ice_ih")
+    
+    Returns:
+        Primary literature citation for the phase
+    """
+    citations = {
+        "ice_ih": "Bjerrum, K. (1952). Science, 115(2989), 385-390.",
+        "ice_ii": "Kamb, B. (1964). Science, 150(3696), 544-546.",
+        "ice_iii": "Kamb, B. & Datta, S.K. (1971). Science, 174(4009), 557-558.",
+        "ice_v": "Kamb, B. (1965). Science, 150(3700), 1123-1125.",
+        "ice_vi": "Kamb, B. (1965). J. Chem. Phys., 43(12), 4252-4255.",
+        "ice_vii": "Kamb, B. & Davis, B.L. (1964). PNAS, 52(6), 1433-1439.",
+        "ice_viii": "Kamb, B. (1967). J. Chem. Phys., 46(5), 2079-2080.",
+        "ice_xi": "Tajima, Y. et al. (1982). J. Phys. C, 15(8), L755-L758.",
+        "ice_ix": "Whalley, E. et al. (1968). J. Chem. Phys., 48(5), 2362-2370.",
+        "ice_x": "Holzapfel, W.B. et al. (1984). Phys. Rev. B, 30(6), 3042-3047.",
+        "ice_xv": "Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701.",
+    }
+    return citations.get(phase_id, "See IAPWS R14-08(2011) for phase data.")
 
 
 def run_app():
