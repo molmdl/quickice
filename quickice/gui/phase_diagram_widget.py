@@ -220,34 +220,31 @@ class PhaseDetector:
         return distance < tolerance
     
     def _find_adjacent_phase(self, point: Point, inside_phase: str) -> Optional[str]:
-        """Find an adjacent phase that the point is also near.
+        """Find an adjacent phase that the point is also inside or on the boundary of.
         
         Used when a point is inside one phase but near its boundary,
         to detect if we should show "Phase1/Phase2" for boundary clicks.
+        
+        A true boundary click means the point is:
+        1. Near the boundary of the inside_phase (checked by caller via _is_near_boundary)
+        2. AND also inside, on the boundary, or touching another phase
         
         Args:
             point: Shapely Point to check (coordinates are T, P in MPa)
             inside_phase: The phase the point is inside
         
         Returns:
-            Phase ID of adjacent phase if point is near its boundary, else None
+            Phase ID of adjacent phase if point is also inside/on boundary, else None
         """
-        # Use a small tolerance for detecting true boundary clicks
-        # This is smaller than the tolerance used for _check_near_boundary
-        # because we want to be more precise about what counts as "on the boundary"
-        tolerance = 10.0  # MPa
-        
         for phase_id, polygon in self._phase_polygons.items():
             if phase_id == inside_phase or phase_id == "vapor":
                 continue
             
-            # Check if point is near this phase's boundary
-            # AND either inside this phase OR within tolerance of it
-            distance_to_boundary = polygon.boundary.distance(point)
-            if distance_to_boundary < tolerance:
-                # Check if point is inside or very close to this phase
-                if polygon.covers(point) or polygon.distance(point) < tolerance:
-                    return phase_id
+            # Check if point is also inside or on the boundary of this phase
+            # Using covers() to include boundary points
+            # Using touches() to catch exact boundary/triple point clicks
+            if polygon.covers(point) or polygon.touches(point):
+                return phase_id
         
         return None
     

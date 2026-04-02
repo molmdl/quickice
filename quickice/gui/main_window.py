@@ -535,7 +535,7 @@ def _get_citation(phase_id: str) -> str:
         "ice_viii": "Kuhs, W.F. et al. (1984). J. Chem. Phys., 81(8), 3612-3623. DOI: 10.1063/1.448109",
         "ice_xi": "Jackson, S.M. et al. (1997). J. Phys. Chem. B, 101, 6142.\nFan, X. et al. (2010). Comput. Mater. Sci., 49, S170-S175.",
         "ice_ix": "Londono, J.D. et al. (1993). J. Chem. Phys., 98(6), 4878-4888. DOI: 10.1063/1.464942",
-        "ice_x": "Holzapfel, W.B. et al. (1984). Phys. Rev. B, 30(6), 3042-3047. DOI: 10.1103/PhysRevB.30.3042",
+        "ice_x": "Symmetric hydrogen-bond ice at extreme pressure. See IAPWS R14-08(2011) for phase boundaries.",
         "ice_xv": "Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701. DOI: 10.1103/PhysRevLett.103.105701",
     }
     return citations.get(phase_id, "See IAPWS R14-08(2011) for phase data.")
