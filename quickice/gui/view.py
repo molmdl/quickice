@@ -569,16 +569,33 @@ class ViewerPanel(QWidget):
         return self._vtk_available
     
     def update_candidate_selector(self, candidates: list):
-        """Update candidate selector dropdown with available candidates.
+        """Update candidate selector dropdowns with available candidates.
+        
+        Both left and right selectors are populated. Left defaults to Rank 1,
+        right defaults to Rank 2 (if available).
         
         Args:
             candidates: List of RankedCandidate objects
         """
+        # Update left selector and default to Rank 1 (index 0)
         self.candidate_selector.clear()
         for rc in candidates:
             self.candidate_selector.addItem(
                 f"Rank {rc.rank} ({rc.candidate.phase_id})"
             )
+        if len(candidates) >= 1:
+            self.candidate_selector.setCurrentIndex(0)
+        
+        # Update right selector and default to Rank 2 (index 1)
+        self.candidate_selector2.clear()
+        for rc in candidates:
+            self.candidate_selector2.addItem(
+                f"Rank {rc.rank} ({rc.candidate.phase_id})"
+            )
+        if len(candidates) >= 2:
+            self.candidate_selector2.setCurrentIndex(1)
+        elif len(candidates) >= 1:
+            self.candidate_selector2.setCurrentIndex(0)
     
     def get_selected_candidate_index(self) -> int:
         """Get the index of the currently selected candidate.
