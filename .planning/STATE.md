@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 13 - Update README and Documentation |
-| Plan | Ready to begin (5 plans created) |
-| Status | Phase 11 verified complete, Phase 13 ready for execution (before Phase 12) |
-| Last activity | 2026-04-03 - Phase 13 planning complete |
+| Plan | 1 of 5 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-02 - Completed 13-01-PLAN.md |
 
-**Progress:** ████████████████████ 97% (56 of 58 plans across v2.0)
+**Progress:** ████████████████████ 98% (57 of 58 plans across v2.0)
 
 ---
 
@@ -231,16 +231,20 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 11-04 | Candidate selector as QComboBox | Independent of viewport for export |
 | 10-06 | vtkMatrix3x3 for SetLattice | VTK API requires matrix object, not list |
 | 10-06 | QLabel with parent to prevent top-level window | Fixes separate empty window issue |
+| 13-01 | System Requirements before installation | Prevent failed installs on old Linux |
+| 13-01 | GUI as supplementary (brief sections) | Maintain CLI-first documentation |
+| 13-01 | Link to separate gui-guide.md | Detailed GUI documentation in dedicated file |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-02
-**Stopped at:** Phase 11 verification complete
+**Last session:** 2026-04-02 17:48:14 UTC
+**Stopped at:** Completed 13-01-PLAN.md
 **Next steps:**
-1. Run `/gsd-execute-phase 13` to update documentation with OS requirements
-2. Execute Phase 12 to package standalone executable with docs
+1. Continue Phase 13 with plans 13-02 through 13-05
+2. Phase 13-02 creates docs/images/ and actual screenshot
+3. Phase 12 packaging after Phase 13 documentation complete
 
 ---
 
