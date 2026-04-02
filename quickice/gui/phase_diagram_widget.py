@@ -121,12 +121,17 @@ class PhaseDetector:
         
         # If point is inside exactly one ice phase
         if len(contained_phases) == 1:
-            # Check if near boundary (for practical clicks)
-            near_boundary_phases = self._check_near_boundary(point, contained_phases[0])
-            if len(near_boundary_phases) >= 2:
-                names = [PHASE_LABELS.get(p, p) for p in near_boundary_phases]
-                return f"{names[0]}/{names[1]}", True
-            phase_short = PHASE_LABELS.get(contained_phases[0], contained_phases[0])
+            inside_phase = contained_phases[0]
+            # Check if near boundary of this phase
+            if self._is_near_boundary(point, inside_phase):
+                # Check if any other phase is also nearby (adjacent phase)
+                adjacent_phase = self._find_adjacent_phase(point, inside_phase)
+                if adjacent_phase:
+                    names = [PHASE_LABELS.get(inside_phase, inside_phase),
+                             PHASE_LABELS.get(adjacent_phase, adjacent_phase)]
+                    return f"{names[0]}/{names[1]}", True
+            # Not near boundary or no adjacent phase found
+            phase_short = PHASE_LABELS.get(inside_phase, inside_phase)
             return phase_short, False
         
         # If point is on boundary of multiple phases (covers catches this)
@@ -139,60 +144,144 @@ class PhaseDetector:
             if self._phase_polygons["vapor"].covers(point):  # covers() includes boundary points
                 return "Vapor", False
         
-        # Check if on boundary (using buffer tolerance)
-        boundary_phases = self._check_near_boundary(point)
-        
-        if len(boundary_phases) >= 2:
-            # Format as "Phase1/Phase2" if exactly 2 phases
-            if len(boundary_phases) == 2:
-                names = [PHASE_LABELS.get(p, p) for p in boundary_phases]
-                return f"{names[0]}/{names[1]}", True
-            return "Multiple phases possible", True
+        # Not inside any ice phase - check if near any phase boundary
+        # (This handles points just outside phase regions)
+        near_phase = self._find_nearest_phase(point)
+        if near_phase:
+            phase_short = PHASE_LABELS.get(near_phase, near_phase)
+            return phase_short, False
         
         # No match - assume liquid region
         return "Liquid", False
     
     def _check_near_boundary(self, point: Point, inside_phase: Optional[str] = None) -> List[str]:
-        """Check if point is near the boundary of multiple phases.
+        """Check if point is near the boundary of the phase it's inside.
         
-        Uses relative tolerance for pressure to handle both low and high pressure
-        regions correctly. At low pressure (P=0.1 MPa), a small absolute tolerance
-        avoids false boundary detection. At high pressure (P=1000 MPa), the relative
-        tolerance scales appropriately.
+        Only checks the boundary of the phase the point is inside, not all phases.
+        This prevents false boundary detection at high pressures where adjacent
+        phases are close but the point is clearly inside one phase.
+        
+        Uses fixed tolerance in pressure space (5 MPa) which works well across
+        the entire phase diagram. Logarithmic pressure scale means visual boundary
+        clicks need different treatment than Euclidean distance.
         
         Args:
             point: Shapely Point to check (coordinates are T, P in MPa)
-            inside_phase: If provided, check neighbors of this phase
+            inside_phase: The phase the point is inside (only check this phase's boundary)
         
         Returns:
-            List of phase IDs that are near the boundary
+            List of phase IDs that are near the boundary (only the inside_phase if near boundary)
         """
-        boundary_phases: List[str] = []
+        if inside_phase is None:
+            # No phase to check - return empty
+            return []
         
-        # Extract coordinates for relative tolerance calculation
-        pressure = point.y
+        if inside_phase not in self._phase_polygons:
+            return [inside_phase]
         
-        # Calculate pressure tolerance: relative with minimum floor
-        # At P=0.1 MPa: tol = max(0.01, 0.1*0.05) = 0.01 MPa
-        # At P=100 MPa: tol = max(0.01, 5.0) = 5.0 MPa
-        # At P=1000 MPa: tol = max(0.01, 50.0) = 50.0 MPa
-        # Use only pressure tolerance for distance (T tolerance doesn't apply to P)
-        tolerance = max(0.01, pressure * self.BOUNDARY_TOLERANCE_PRESSURE_FRAC)
+        # Fixed tolerance: 5 MPa in pressure space
+        # This is appropriate because:
+        # 1. Phase diagram uses log(P) scale, so visual "middle" is meaningful
+        # 2. At low P (1 MPa), 5 MPa is significant distance
+        # 3. At high P (10000 MPa), 5 MPa is tiny on log scale
+        # 4. Most phase boundaries are sharp curves, not wide regions
+        tolerance = 5.0  # MPa
+        
+        polygon = self._phase_polygons[inside_phase]
+        
+        # Calculate distance to the boundary of the phase we're inside
+        distance = polygon.boundary.distance(point)
+        
+        if distance < tolerance:
+            # Point is near the boundary of the phase it's inside
+            # Return just this phase - the caller will check if multiple phases
+            # contain the point (handled by covers() in detect_phase)
+            return [inside_phase]
+        
+        # Point is not near boundary - return empty list
+        return []
+    
+    def _is_near_boundary(self, point: Point, phase_id: str, tolerance: float = 10.0) -> bool:
+        """Check if point is near the boundary of a specific phase.
+        
+        Args:
+            point: Shapely Point to check (coordinates are T, P in MPa)
+            phase_id: Phase identifier to check
+            tolerance: Distance tolerance in Euclidean (T, P) space
+        
+        Returns:
+            True if point is within tolerance of the phase boundary
+        """
+        if phase_id not in self._phase_polygons:
+            return False
+        
+        polygon = self._phase_polygons[phase_id]
+        distance = polygon.boundary.distance(point)
+        return distance < tolerance
+    
+    def _find_adjacent_phase(self, point: Point, inside_phase: str) -> Optional[str]:
+        """Find an adjacent phase that the point is also near.
+        
+        Used when a point is inside one phase but near its boundary,
+        to detect if we should show "Phase1/Phase2" for boundary clicks.
+        
+        Args:
+            point: Shapely Point to check (coordinates are T, P in MPa)
+            inside_phase: The phase the point is inside
+        
+        Returns:
+            Phase ID of adjacent phase if point is near its boundary, else None
+        """
+        # Use a small tolerance for detecting true boundary clicks
+        # This is smaller than the tolerance used for _check_near_boundary
+        # because we want to be more precise about what counts as "on the boundary"
+        tolerance = 10.0  # MPa
         
         for phase_id, polygon in self._phase_polygons.items():
-            # Check if the point is near the polygon boundary
-            distance = polygon.boundary.distance(point)
-            if distance < tolerance:
-                # Also verify point is inside or very close to polygon
-                # Use covers() to include boundary points
+            if phase_id == inside_phase or phase_id == "vapor":
+                continue
+            
+            # Check if point is near this phase's boundary
+            # AND either inside this phase OR within tolerance of it
+            distance_to_boundary = polygon.boundary.distance(point)
+            if distance_to_boundary < tolerance:
+                # Check if point is inside or very close to this phase
                 if polygon.covers(point) or polygon.distance(point) < tolerance:
-                    boundary_phases.append(phase_id)
+                    return phase_id
         
-        # If checking neighbors of an inside phase, ensure it's included
-        if inside_phase and inside_phase not in boundary_phases:
-            boundary_phases.insert(0, inside_phase)
+        return None
+    
+    def _find_nearest_phase(self, point: Point) -> Optional[str]:
+        """Find the nearest phase to a point that's not inside any phase.
         
-        return boundary_phases
+        Used for points in the liquid region that might be close to a phase boundary.
+        
+        Args:
+            point: Shapely Point to check (coordinates are T, P in MPa)
+        
+        Returns:
+            Phase ID of nearest phase if within reasonable distance, else None
+        """
+        min_distance = float('inf')
+        nearest_phase = None
+        
+        # Maximum distance to consider a point "near" a phase
+        # This is larger than boundary tolerance because we're outside all phases
+        max_distance = 20.0  # MPa
+        
+        for phase_id, polygon in self._phase_polygons.items():
+            if phase_id == "vapor":
+                continue
+            
+            distance = polygon.distance(point)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_phase = phase_id
+        
+        if min_distance < max_distance:
+            return nearest_phase
+        
+        return None
 
 
 class PhaseDiagramCanvas(FigureCanvasQTAgg):
