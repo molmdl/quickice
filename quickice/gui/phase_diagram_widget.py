@@ -205,6 +205,9 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
     # Signal emitted when user clicks on diagram
     coordinates_selected = Signal(float, float)  # (temperature, pressure)
     
+    # Signal emitted when phase info is available
+    phase_info_ready = Signal(str, float, float)  # (phase_id, T, P)
+    
     def __init__(self, parent=None):
         """Initialize the canvas with phase diagram rendering.
         
@@ -493,6 +496,12 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
         
         # Emit signal with selected coordinates
         self.coordinates_selected.emit(temperature, pressure_mpa)
+        
+        # Detect phase at click location and emit phase info
+        phase_name, is_boundary = self._phase_detector.detect_phase(temperature, pressure_mpa)
+        # Use phase_name if available, otherwise "unknown"
+        phase_id = phase_name if phase_name else "unknown"
+        self.phase_info_ready.emit(phase_id, temperature, pressure_mpa)
     
     def set_marker(self, temperature: float, pressure: float):
         """Place a red circle marker at the specified coordinates.
