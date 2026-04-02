@@ -64,11 +64,13 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
         mol.AppendBond(o_idx, h2_idx, 1)
     
     # Set unit cell lattice from the (3, 3) cell matrix
-    # VTK expects a vtkMatrix3x3 with row-major layout, vectors as columns
+    # VTK expects a vtkMatrix3x3 with lattice vectors as COLUMNS
+    # Our candidate.cell has vectors as ROWS, so we need to transpose
     lattice_matrix = vtkMatrix3x3()
+    cell_transposed = candidate.cell.T  # Transpose: rows -> columns
     for i in range(3):
         for j in range(3):
-            lattice_matrix.SetElement(i, j, float(candidate.cell[i, j]))
+            lattice_matrix.SetElement(i, j, float(cell_transposed[i, j]))
     mol.SetLattice(lattice_matrix)
     
     return mol
