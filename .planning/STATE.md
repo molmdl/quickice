@@ -27,11 +27,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 10 - 3D Molecular Viewer (remote testing done) |
-| Plan | 06 executed, awaiting local verification |
-| Status | Checkpoint - Phase 11 planning starting |
+| Phase | Phase 11 - Save/Export + Information |
+| Plan | 02 of 4 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-02 - Completed 11-02-PLAN.md |
 
-**Progress:** ████████████████░░░ 20% (11 of ~55 plans across v2.0)
+**Progress:** █████████████████░░░ 89% (48 of 54 plans across v2.0)
 
 ---
 
@@ -182,15 +183,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 10-05 | Dual viewport QHBoxLayout (1 row, 2 grids) | Per CONTEXT.md "always dual view" |
 | 10-05 | Camera sync via ModifiedEvent observer | Per RESEARCH.md Pattern 6 |
 | 10-05 | Guard flag prevents camera sync recursion | Prevents infinite feedback loop |
+| 11-02 | QLabel as base for HelpIcon | Simple, lightweight, native Qt tooltip support |
+| 11-02 | Inline help text in InputPanel | QHBoxLayout for label rows keeps help icon adjacent |
+| 11-02 | Phase info emitted on every click | Immediate feedback for user interaction |
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Phase 10-06 remote testing complete, layout fix committed (a42c0d6)
-**Resume file:** .planning/phases/10-3d-molecular-viewer/.continue-here.md (awaiting local test)
-**Next:** Plan Phase 11 (Save/Export + Information)
+**Stopped at:** Completed 11-02-PLAN.md
+**Resume file:** None
+**Next:** 11-03-PLAN.md (MainWindow Integration)
 
 ---
 
@@ -264,4 +268,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-02 - Phase 10 remote testing complete, starting Phase 11*
+*State updated: 2026-04-02 - Phase 11 Plan 02 complete*
