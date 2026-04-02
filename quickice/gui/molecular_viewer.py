@@ -26,6 +26,11 @@ from quickice.gui.vtk_utils import (
     create_unit_cell_actor,
 )
 
+# Unit conversion: VTK periodic table provides radii in Angstroms (Å),
+# but QuickIce positions are in nanometers (nm).
+# Multiply all radius scale factors by this to convert Å → nm.
+ANGSTROM_TO_NM = 0.1
+
 
 class MolecularViewerWidget(QWidget):
     """VTK-based 3D molecular viewer widget for ice structure visualization.
@@ -129,9 +134,11 @@ class MolecularViewerWidget(QWidget):
         self._mapper = vtkMoleculeMapper()
         self._mapper.UseBallAndStickSettings()
         
-        # Use VTK defaults for proper visibility
-        self._mapper.SetAtomicRadiusScaleFactor(0.30)  # VTK default
-        self._mapper.SetBondRadius(0.075)  # VTK default
+        # Apply unit conversion: VTK radii are in Å, positions are in nm
+        # VTK default 0.30 in Å system → 0.03 in nm system
+        self._mapper.SetAtomicRadiusScaleFactor(0.30 * ANGSTROM_TO_NM)
+        # VTK default 0.075 in Å system → 0.0075 in nm system
+        self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
         
         # Create actor with the mapper
         self._molecule_actor = vtkActor()
@@ -237,29 +244,33 @@ class MolecularViewerWidget(QWidget):
             # Space-filling VDW spheres - use VTK defaults for proper sizing
             self._mapper.UseVDWSpheresSettings()
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            # Use VTK default scale 1.0, but reduce to 0.5 to prevent complete overlap
-            # At scale 1.0, O radius = 1.55 Å, so two Os touch at 3.1 Å
-            # Ice O-O distance ~2.76 Å, so scale 0.89 would just touch
-            # Use 0.5 for clear separation between neighboring atoms
-            self._mapper.SetAtomicRadiusScaleFactor(0.5)
-            self._mapper.SetBondRadius(0.075)  # VTK default
+            # VTK default scale 1.0 would touch neighbors at 3.1 Å distance,
+            # but ice O-O distance ~2.76 Å. Use scale 0.5 for clear separation.
+            # Convert Å → nm: 0.5 × 0.1 = 0.05
+            self._mapper.SetAtomicRadiusScaleFactor(0.5 * ANGSTROM_TO_NM)
+            # Bond radius also needs unit conversion
+            self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
             # Show atoms
             self._mapper.RenderAtomsOn()
         elif mode == "ball_and_stick":
             # Ball-and-stick: use VTK defaults for proper sphere/bond ratio
             self._mapper.UseBallAndStickSettings()
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            self._mapper.SetAtomicRadiusScaleFactor(0.30)  # VTK default
-            self._mapper.SetBondRadius(0.075)  # VTK default
+            # VTK default 0.30 in Å system, convert to nm: 0.30 × 0.1 = 0.03
+            self._mapper.SetAtomicRadiusScaleFactor(0.30 * ANGSTROM_TO_NM)
+            # VTK default 0.075 in Å system, convert to nm: 0.075 × 0.1 = 0.0075
+            self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
             # Show atoms
             self._mapper.RenderAtomsOn()
         else:  # stick
             # Stick mode: equal sphere and bond radii for gap-free joints
             self._mapper.UseLiquoriceStickSettings()
             self._mapper.SetAtomicRadiusTypeToUnitRadius()
-            # VTK default for Liquorice: scale=0.15, bond=0.15 (equal!)
-            self._mapper.SetAtomicRadiusScaleFactor(0.15)
-            self._mapper.SetBondRadius(0.15)  # Match sphere size for seamless joints
+            # VTK default 0.15 for LiquoriceStick (equal to bond radius)
+            # Convert Å → nm: 0.15 × 0.1 = 0.015
+            self._mapper.SetAtomicRadiusScaleFactor(0.15 * ANGSTROM_TO_NM)
+            # Match sphere size for seamless joints (also converted)
+            self._mapper.SetBondRadius(0.15 * ANGSTROM_TO_NM)
             # Show atoms (with UnitRadius, all atoms same size)
             self._mapper.RenderAtomsOn()
         
