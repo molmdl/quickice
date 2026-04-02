@@ -426,16 +426,25 @@ class ViewerPanel(QWidget):
             self.btn_representation.setText("VDW")
             self.dual_viewer.viewer1.set_representation_mode("vdw")
             self.dual_viewer.viewer2.set_representation_mode("vdw")
+            # VDW mode: hide H-bonds (they're not needed for space-filling view)
+            self.btn_hbonds.setChecked(False)
+            self.btn_hbonds.setEnabled(False)
+            self.dual_viewer.viewer1.set_hydrogen_bonds_visible(False)
+            self.dual_viewer.viewer2.set_hydrogen_bonds_visible(False)
         elif current_text == "VDW":
             # Switch to Stick
             self.btn_representation.setText("Stick")
             self.dual_viewer.viewer1.set_representation_mode("stick")
             self.dual_viewer.viewer2.set_representation_mode("stick")
+            # Re-enable H-bonds toggle (but don't auto-enable)
+            self.btn_hbonds.setEnabled(True)
         else:  # Stick
             # Switch to Ball-and-stick
             self.btn_representation.setText("Ball-and-stick")
             self.dual_viewer.viewer1.set_representation_mode("ball_and_stick")
             self.dual_viewer.viewer2.set_representation_mode("ball_and_stick")
+            # Re-enable H-bonds toggle (but don't auto-enable)
+            self.btn_hbonds.setEnabled(True)
     
     def _on_hbonds_toggled(self):
         """Toggle hydrogen bond visibility."""

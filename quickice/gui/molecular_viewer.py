@@ -245,9 +245,9 @@ class MolecularViewerWidget(QWidget):
             self._mapper.UseVDWSpheresSettings()
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
             # VTK default scale 1.0 would touch neighbors at 3.1 Å distance,
-            # but ice O-O distance ~2.76 Å. Use scale 0.5 for clear separation.
-            # Convert Å → nm: 0.5 × 0.1 = 0.05
-            self._mapper.SetAtomicRadiusScaleFactor(0.5 * ANGSTROM_TO_NM)
+            # but ice O-O distance ~2.76 Å. Use scale 0.8 for space-filling.
+            # Convert Å → nm: 0.8 × 0.1 = 0.08
+            self._mapper.SetAtomicRadiusScaleFactor(0.8 * ANGSTROM_TO_NM)
             # Bond radius also needs unit conversion
             self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
             # Show atoms
@@ -256,8 +256,9 @@ class MolecularViewerWidget(QWidget):
             # Ball-and-stick: use VTK defaults for proper sphere/bond ratio
             self._mapper.UseBallAndStickSettings()
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            # VTK default 0.30 in Å system, convert to nm: 0.30 × 0.1 = 0.03
-            self._mapper.SetAtomicRadiusScaleFactor(0.30 * ANGSTROM_TO_NM)
+            # VTK default 0.30 in Å system, reduce to 0.25 for smaller spheres
+            # Convert Å → nm: 0.25 × 0.1 = 0.025
+            self._mapper.SetAtomicRadiusScaleFactor(0.25 * ANGSTROM_TO_NM)
             # VTK default 0.075 in Å system, convert to nm: 0.075 × 0.1 = 0.0075
             self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
             # Show atoms
