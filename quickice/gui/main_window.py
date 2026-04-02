@@ -332,6 +332,51 @@ class MainWindow(QMainWindow):
                 self.diagram_panel.set_coordinates(temp, pressure)
         except (ValueError, TypeError):
             pass  # Invalid input, don't update marker
+    
+    @Slot()
+    def _on_save_pdb(self):
+        """Handle Save PDB menu action.
+        
+        Per EXPORT-01: User can save generated PDB file via native file save dialog.
+        """
+        if not self._current_result or not hasattr(self._current_result, 'ranked_candidates'):
+            QMessageBox.warning(self, "No Data", "Generate a structure first before saving.")
+            return
+        
+        if not self._current_result.ranked_candidates:
+            QMessageBox.warning(self, "No Data", "No candidates available to save.")
+            return
+        
+        # Save top-ranked candidate (rank 1)
+        ranked = self._current_result.ranked_candidates[0]
+        self._pdb_exporter.export_candidate(ranked, self._current_T, self._current_P)
+    
+    @Slot()
+    def _on_save_diagram(self):
+        """Handle Save Diagram menu action.
+        
+        Per EXPORT-02: User can save phase diagram as PNG or SVG image file.
+        """
+        figure = self.diagram_panel.diagram_canvas.figure
+        self._diagram_exporter.export_diagram(figure)
+    
+    @Slot()
+    def _on_save_viewport(self):
+        """Handle Save Viewport menu action.
+        
+        Per EXPORT-03: User can save 3D viewport screenshot as PNG image.
+        """
+        if not self.viewer_panel.is_vtk_available():
+            QMessageBox.warning(self, "Not Available", "3D viewer not available in remote environment.")
+            return
+        
+        if self.viewer_panel.is_placeholder_visible():
+            QMessageBox.warning(self, "No Data", "Generate a structure first before saving viewport.")
+            return
+        
+        # Get VTK widget from dual viewer
+        vtk_widget = self.viewer_panel.dual_viewer.viewer1.vtk_widget
+        self._viewport_exporter.capture_viewport(vtk_widget)
 
 
 def run_app():
