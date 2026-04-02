@@ -21,6 +21,7 @@ from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter
+from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
