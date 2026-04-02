@@ -12,7 +12,7 @@ This module provides the MainWindow class that assembles all GUI components:
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-    QMessageBox, QApplication, QSplitter
+    QMessageBox, QApplication, QSplitter, QMenuBar, QMenu
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Slot
@@ -20,6 +20,7 @@ from PySide6.QtCore import Qt, Slot
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter
 
 
 class MainWindow(QMainWindow):
@@ -43,10 +44,23 @@ class MainWindow(QMainWindow):
         # Create viewmodel
         self._viewmodel = MainViewModel(self)
         
+        # Export handlers
+        self._pdb_exporter = PDBExporter(self)
+        self._diagram_exporter = DiagramExporter(self)
+        self._viewport_exporter = ViewportExporter(self)
+        
+        # Store current generation result for export
+        self._current_result = None
+        self._current_T = 0.0
+        self._current_P = 0.0
+        
         # Setup UI
         self._setup_ui()
         self._setup_connections()
         self._setup_shortcuts()
+        
+        # Create menu bar (after shortcuts so it appears in proper order)
+        self._create_menu_bar()
     
     def _setup_ui(self):
         """Setup UI components with split view layout."""
@@ -155,6 +169,32 @@ class MainWindow(QMainWindow):
         cancel_action.triggered.connect(self._on_cancel_clicked)
         self.addAction(cancel_action)
     
+    def _create_menu_bar(self):
+        """Create menu bar with File menu.
+        
+        Per must_haves: Menu bar with File menu containing Save PDB, 
+        Save Diagram, and Save Viewport actions.
+        """
+        menubar = self.menuBar()
+        
+        # File menu
+        file_menu = menubar.addMenu("File")
+        
+        # Save PDB action
+        save_pdb_action = file_menu.addAction("Save PDB...")
+        save_pdb_action.setShortcut("Ctrl+S")
+        save_pdb_action.triggered.connect(self._on_save_pdb)
+        
+        # Save Diagram action
+        save_diagram_action = file_menu.addAction("Save Diagram...")
+        save_diagram_action.setShortcut("Ctrl+D")
+        save_diagram_action.triggered.connect(self._on_save_diagram)
+        
+        # Save Viewport action
+        save_viewport_action = file_menu.addAction("Save Viewport...")
+        save_viewport_action.setShortcut("Ctrl+Shift+S")
+        save_viewport_action.triggered.connect(self._on_save_viewport)
+    
     @Slot()
     def _on_generate_clicked(self):
         """Handle Generate button click."""
@@ -169,6 +209,10 @@ class MainWindow(QMainWindow):
         temperature = self.input_panel.get_temperature()
         pressure = self.input_panel.get_pressure()
         nmolecules = self.input_panel.get_nmolecules()
+        
+        # Store current generation parameters for export
+        self._current_T = temperature
+        self._current_P = pressure
         
         # Reset progress
         self.progress_panel.reset()
@@ -203,6 +247,9 @@ class MainWindow(QMainWindow):
         Args:
             result: RankingResult containing ranked_candidates list
         """
+        # Store result for export
+        self._current_result = result
+        
         # Hide placeholder and show viewer
         self.viewer_panel.hide_placeholder()
         
