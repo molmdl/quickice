@@ -353,16 +353,23 @@ class ViewerPanel(QWidget):
         # Color-by dropdown
         toolbar_layout.addWidget(QLabel("Color:"))
         self.color_dropdown = QComboBox()
-        self.color_dropdown.addItems(["CPK", "Energy", "Density"])
+        self.color_dropdown.addItems(["CPK"])
         toolbar_layout.addWidget(self.color_dropdown)
         
         toolbar_layout.addStretch()
         
-        # Candidate selector (for export) - shows "Rank 1 (Ih)", "Rank 2 (II)", etc.
-        toolbar_layout.addWidget(QLabel("Export:"))
+        # Candidate selectors (for export) - one for each viewer
+        # Left viewer selector
+        toolbar_layout.addWidget(QLabel("Left:"))
         self.candidate_selector = QComboBox()
         self.candidate_selector.setMinimumWidth(120)
         toolbar_layout.addWidget(self.candidate_selector)
+        
+        # Right viewer selector
+        toolbar_layout.addWidget(QLabel("Right:"))
+        self.candidate_selector2 = QComboBox()
+        self.candidate_selector2.setMinimumWidth(120)
+        toolbar_layout.addWidget(self.candidate_selector2)
         
         layout.addLayout(toolbar_layout)
         
@@ -410,6 +417,7 @@ class ViewerPanel(QWidget):
             self.btn_auto_rotate.setEnabled(False)
             self.color_dropdown.setEnabled(False)
             self.candidate_selector.setEnabled(False)
+            self.candidate_selector2.setEnabled(False)
             return
         
         # Representation toggle
@@ -430,8 +438,9 @@ class ViewerPanel(QWidget):
         # Color-by dropdown
         self.color_dropdown.currentTextChanged.connect(self._on_color_changed)
         
-        # Candidate selector for export
+        # Candidate selectors for left and right viewers
         self.candidate_selector.currentIndexChanged.connect(self._on_candidate_selected)
+        self.candidate_selector2.currentIndexChanged.connect(self._on_candidate_selected_2)
     
     def _on_representation_toggled(self):
         """Toggle between ball-and-stick and stick representations."""
@@ -489,9 +498,7 @@ class ViewerPanel(QWidget):
         
         # Map dropdown text to viewer method
         mode_map = {
-            "CPK": "cpk",
-            "Energy": "energy",
-            "Density": "density"
+            "CPK": "cpk"
         }
         mode = mode_map.get(color_mode, "cpk")
         self.dual_viewer.viewer1.set_color_by_property(mode)
@@ -501,7 +508,6 @@ class ViewerPanel(QWidget):
         """Handle candidate selector dropdown change.
         
         Updates the left viewport (viewer1) to show the selected candidate.
-        The right viewport keeps showing rank #2.
         
         Args:
             index: The selected index in the candidate_selector dropdown
@@ -514,6 +520,25 @@ class ViewerPanel(QWidget):
         
         try:
             self.dual_viewer.set_candidate_for_viewer(0, index)
+        except IndexError:
+            pass  # Invalid index, ignore
+    
+    def _on_candidate_selected_2(self, index: int):
+        """Handle right candidate selector dropdown change.
+        
+        Updates the right viewport (viewer2) to show the selected candidate.
+        
+        Args:
+            index: The selected index in the candidate_selector2 dropdown
+        """
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
+        if index < 0:
+            return
+        
+        try:
+            self.dual_viewer.set_candidate_for_viewer(1, index)
         except IndexError:
             pass  # Invalid index, ignore
     
