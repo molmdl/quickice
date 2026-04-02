@@ -65,7 +65,14 @@ class InputPanel(QWidget):
         self.temp_error.setWordWrap(True)
         self.temp_error.hide()
         
-        layout.addWidget(self.temp_label)
+        # Temperature label row with help icon
+        temp_header = QHBoxLayout()
+        temp_header.addWidget(self.temp_label)
+        temp_header.addWidget(HelpIcon(
+            "Temperature in Kelvin (0-500 K). Enter the temperature at which to generate ice structure."
+        ))
+        temp_header.addStretch()
+        layout.addLayout(temp_header)
         layout.addWidget(self.temp_input)
         layout.addWidget(self.temp_error)
         layout.addSpacing(10)
@@ -79,7 +86,14 @@ class InputPanel(QWidget):
         self.pressure_error.setWordWrap(True)
         self.pressure_error.hide()
         
-        layout.addWidget(self.pressure_label)
+        # Pressure label row with help icon
+        pressure_header = QHBoxLayout()
+        pressure_header.addWidget(self.pressure_label)
+        pressure_header.addWidget(HelpIcon(
+            "Pressure in MPa (0-10000 MPa). Enter the pressure at which to generate ice structure."
+        ))
+        pressure_header.addStretch()
+        layout.addLayout(pressure_header)
         layout.addWidget(self.pressure_input)
         layout.addWidget(self.pressure_error)
         layout.addSpacing(10)
@@ -93,7 +107,14 @@ class InputPanel(QWidget):
         self.mol_error.setWordWrap(True)
         self.mol_error.hide()
         
-        layout.addWidget(self.mol_label)
+        # Molecule count label row with help icon
+        mol_header = QHBoxLayout()
+        mol_header.addWidget(self.mol_label)
+        mol_header.addWidget(HelpIcon(
+            "Number of water molecules (4-216). More molecules = larger structure but slower generation."
+        ))
+        mol_header.addStretch()
+        layout.addLayout(mol_header)
         layout.addWidget(self.mol_input)
         layout.addWidget(self.mol_error)
         layout.addStretch()
