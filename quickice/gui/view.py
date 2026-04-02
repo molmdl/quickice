@@ -350,26 +350,7 @@ class ViewerPanel(QWidget):
         self.btn_auto_rotate.setChecked(False)
         toolbar_layout.addWidget(self.btn_auto_rotate)
         
-        # Color-by dropdown
-        toolbar_layout.addWidget(QLabel("Color:"))
-        self.color_dropdown = QComboBox()
-        self.color_dropdown.addItems(["CPK"])
-        toolbar_layout.addWidget(self.color_dropdown)
-        
         toolbar_layout.addStretch()
-        
-        # Candidate selectors (for export) - one for each viewer
-        # Left viewer selector
-        toolbar_layout.addWidget(QLabel("Left:"))
-        self.candidate_selector = QComboBox()
-        self.candidate_selector.setMinimumWidth(120)
-        toolbar_layout.addWidget(self.candidate_selector)
-        
-        # Right viewer selector
-        toolbar_layout.addWidget(QLabel("Right:"))
-        self.candidate_selector2 = QComboBox()
-        self.candidate_selector2.setMinimumWidth(120)
-        toolbar_layout.addWidget(self.candidate_selector2)
         
         layout.addLayout(toolbar_layout)
         
@@ -415,9 +396,6 @@ class ViewerPanel(QWidget):
             self.btn_unit_cell.setEnabled(False)
             self.btn_zoom_fit.setEnabled(False)
             self.btn_auto_rotate.setEnabled(False)
-            self.color_dropdown.setEnabled(False)
-            self.candidate_selector.setEnabled(False)
-            self.candidate_selector2.setEnabled(False)
             return
         
         # Representation toggle
@@ -434,13 +412,6 @@ class ViewerPanel(QWidget):
         
         # Auto-rotate toggle
         self.btn_auto_rotate.clicked.connect(self._on_auto_rotate_toggled)
-        
-        # Color-by dropdown
-        self.color_dropdown.currentTextChanged.connect(self._on_color_changed)
-        
-        # Candidate selectors for left and right viewers
-        self.candidate_selector.currentIndexChanged.connect(self._on_candidate_selected)
-        self.candidate_selector2.currentIndexChanged.connect(self._on_candidate_selected_2)
     
     def _on_representation_toggled(self):
         """Toggle between ball-and-stick and stick representations."""
@@ -491,57 +462,6 @@ class ViewerPanel(QWidget):
         self.dual_viewer.viewer1.toggle_auto_rotation(enabled)
         self.dual_viewer.viewer2.toggle_auto_rotation(enabled)
     
-    def _on_color_changed(self, color_mode: str):
-        """Change color-by-property mode."""
-        if not self._vtk_available or self.dual_viewer is None:
-            return
-        
-        # Map dropdown text to viewer method
-        mode_map = {
-            "CPK": "cpk"
-        }
-        mode = mode_map.get(color_mode, "cpk")
-        self.dual_viewer.viewer1.set_color_by_property(mode)
-        self.dual_viewer.viewer2.set_color_by_property(mode)
-    
-    def _on_candidate_selected(self, index: int):
-        """Handle candidate selector dropdown change.
-        
-        Updates the left viewport (viewer1) to show the selected candidate.
-        
-        Args:
-            index: The selected index in the candidate_selector dropdown
-        """
-        if not self._vtk_available or self.dual_viewer is None:
-            return
-        
-        if index < 0:
-            return
-        
-        try:
-            self.dual_viewer.set_candidate_for_viewer(0, index)
-        except IndexError:
-            pass  # Invalid index, ignore
-    
-    def _on_candidate_selected_2(self, index: int):
-        """Handle right candidate selector dropdown change.
-        
-        Updates the right viewport (viewer2) to show the selected candidate.
-        
-        Args:
-            index: The selected index in the candidate_selector2 dropdown
-        """
-        if not self._vtk_available or self.dual_viewer is None:
-            return
-        
-        if index < 0:
-            return
-        
-        try:
-            self.dual_viewer.set_candidate_for_viewer(1, index)
-        except IndexError:
-            pass  # Invalid index, ignore
-    
     def show_placeholder(self):
         """Show placeholder text (before first generation)."""
         self._placeholder_visible = True
@@ -571,39 +491,24 @@ class ViewerPanel(QWidget):
     def update_candidate_selector(self, candidates: list):
         """Update candidate selector dropdowns with available candidates.
         
-        Both left and right selectors are populated. Left defaults to Rank 1,
-        right defaults to Rank 2 (if available).
+        Delegates to DualViewerWidget to update its internal selectors.
+        Left defaults to Rank 1, right defaults to Rank 2 (if available).
         
         Args:
             candidates: List of RankedCandidate objects
         """
-        # Update left selector and default to Rank 1 (index 0)
-        self.candidate_selector.clear()
-        for rc in candidates:
-            self.candidate_selector.addItem(
-                f"Rank {rc.rank} ({rc.candidate.phase_id})"
-            )
-        if len(candidates) >= 1:
-            self.candidate_selector.setCurrentIndex(0)
-        
-        # Update right selector and default to Rank 2 (index 1)
-        self.candidate_selector2.clear()
-        for rc in candidates:
-            self.candidate_selector2.addItem(
-                f"Rank {rc.rank} ({rc.candidate.phase_id})"
-            )
-        if len(candidates) >= 2:
-            self.candidate_selector2.setCurrentIndex(1)
-        elif len(candidates) >= 1:
-            self.candidate_selector2.setCurrentIndex(0)
+        if self._vtk_available and self.dual_viewer is not None:
+            self.dual_viewer.update_selectors(candidates)
     
     def get_selected_candidate_index(self) -> int:
-        """Get the index of the currently selected candidate.
+        """Get the index of the currently selected candidate in left viewer.
         
         Returns:
             Index in the ranked_candidates list (0-based)
         """
-        return self.candidate_selector.currentIndex()
+        if self._vtk_available and self.dual_viewer is not None:
+            return self.dual_viewer.candidate_selector1.currentIndex()
+        return 0
 
 
 class HelpIcon(QLabel):
