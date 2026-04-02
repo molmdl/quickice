@@ -23,7 +23,7 @@ PHASE_METADATA = {
     "ice_ih": {
         "name": "Ice Ih",
         "density": 0.9167,
-        "density_note": "Density varies with temperature and pressure. Value shown is at reference conditions (273.15 K, 0.101325 MPa). See IAPWS Revised Supplementary Release on the Equation of State for Ice Ih (2023) for complete equation of state."
+        "density_note": "Density varies with temperature and pressure. Value shown is at reference conditions (273.15 K, 0.101325 MPa). See IAPWS R10-06(2009): Revised Release on the Equation of State 2006 for H2O Ice Ih for complete equation of state (https://www.iapws.org/release/Ice-2009.html)."
     },
     "ice_ic": {"name": "Ice Ic", "density": 0.92},
     "ice_ii": {"name": "Ice II", "density": 1.18},

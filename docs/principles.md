@@ -185,10 +185,10 @@ GenIce2 is used for structure generation:
 
 ### IAPWS R14-08
 
-Phase boundaries are based on the IAPWS Release on the Equation of State for Ice Ih (R14-08):
+Phase boundaries are based on the IAPWS Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance (R14-08):
 
 - Document: https://www.iapws.org/relguide/MeltSub.html
-- Provides melting curves and thermodynamic properties for Ice Ih
+- Provides melting curves for ice phases (Ih, III, V, VI, VII) and sublimation curve
 
 ### spglib
 
