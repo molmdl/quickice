@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 11 bug fixes applied, awaiting user verification
+**Current Focus:** v2.0 GUI Application - Phase 10 issues discovered during Phase 11 testing, fixes committed
 
 ---
 
@@ -27,10 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 11 - Save/Export + Information |
-| Plan | 04 of 4 in current phase |
-| Status | Awaiting user verification of bug fixes |
-| Last activity | 2026-04-02 - Fixed 4 issues, updated citations from GenIce2 |
+| Phase | Phase 10 - 3D Molecular Viewer |
+| Plan | 06 of 6 (verification pending) |
+| Status | Fixes committed for 3 issues found during testing |
+| Last activity | 2026-04-02 - Fixed SetLattice, placeholder window, candidate selector |
+| Blocked | Phase 11 verification blocked by Phase 10 issues |
 
 **Progress:** ██████████████████░░ 90% (49 of 54 plans across v2.0)
 
@@ -77,11 +78,26 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Requirements:** 10 (VIEWER-01 to VIEWER-05, ADVVIZ-01 to ADVVIZ-05)
 
+### Phase 10: 3D Molecular Viewer
+
+**Goal:** Users can view and interact with generated ice structures in a 3D viewport
+
+**Requirements:** 10 (VIEWER-01 to VIEWER-05, ADVVIZ-01 to ADVVIZ-05)
+
+**Status:** Fixes committed for 3 issues, awaiting re-verification
+
+**Issues Found During Testing (2026-04-02):**
+1. Separate empty window showing "click generate to display" — Fixed (`5523596`)
+2. TypeError in SetLattice preventing 3D render — Fixed (`f78ef60`)
+3. Candidate selector not connected to dual viewer — Fixed (`5523596`)
+
 ### Phase 11: Save/Export + Information
 
 **Goal:** Users can export results to standard formats and access scientific information
 
 **Requirements:** 7 (EXPORT-01 to EXPORT-03, INFO-01 to INFO-04)
+
+**Status:** Verification blocked — cannot test viewport export until Phase 10 3D viewer works
 
 ### Phase 12: Packaging
 
@@ -192,15 +208,20 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 11-03 | Citations from GenIce2 README | Correct citations matching GenIce2 source |
 | 11-04 | HelpIcon manual tooltip via enterEvent | Stylesheet interferes with auto-tooltip |
 | 11-04 | Candidate selector as QComboBox | Independent of viewport for export |
+| 10-06 | vtkMatrix3x3 for SetLattice | VTK API requires matrix object, not list |
+| 10-06 | QLabel with parent to prevent top-level window | Fixes separate empty window issue |
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Phase 11 bug fixes applied (commits 101c330, 60d3ba3, cbeaa02, 01d2eda, 1c4bfde)
-**Resume file:** .planning/phases/11-save-export-information/.continue-here.md
-**Next:** User verification of fixes, then complete 11-04-SUMMARY.md
+**Stopped at:** Phase 10 issues discovered during Phase 11 testing, fixes committed
+**Fixes committed:** `f78ef60` (SetLattice), `5523596` (placeholder + selector)
+**Next steps:**
+1. Run `/gsd-debug 10` to verify fixes before formal verification
+2. After debug confirms fixes work, run `/gsd-execute-phase 10` for re-verification
+3. Then `/gsd-execute-phase 11` for Phase 11 verification
 
 ---
 
@@ -274,4 +295,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-02 - Phase 11 bug fixes applied, citations updated from GenIce2*
+*State updated: 2026-04-02 - Phase 10 issues discovered during Phase 11 testing, fixes committed*
