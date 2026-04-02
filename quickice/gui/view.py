@@ -358,6 +358,12 @@ class ViewerPanel(QWidget):
         
         toolbar_layout.addStretch()
         
+        # Candidate selector (for export) - shows "Rank 1 (Ih)", "Rank 2 (II)", etc.
+        toolbar_layout.addWidget(QLabel("Export:"))
+        self.candidate_selector = QComboBox()
+        self.candidate_selector.setMinimumWidth(120)
+        toolbar_layout.addWidget(self.candidate_selector)
+        
         layout.addLayout(toolbar_layout)
         
         # Dual viewer widget or fallback
@@ -513,6 +519,26 @@ class ViewerPanel(QWidget):
             True if VTK is working, False if fallback mode is active.
         """
         return self._vtk_available
+    
+    def update_candidate_selector(self, candidates: list):
+        """Update candidate selector dropdown with available candidates.
+        
+        Args:
+            candidates: List of RankedCandidate objects
+        """
+        self.candidate_selector.clear()
+        for rc in candidates:
+            self.candidate_selector.addItem(
+                f"Rank {rc.rank} ({rc.candidate.phase_id})"
+            )
+    
+    def get_selected_candidate_index(self) -> int:
+        """Get the index of the currently selected candidate.
+        
+        Returns:
+            Index in the ranked_candidates list (0-based)
+        """
+        return self.candidate_selector.currentIndex()
 
 
 class HelpIcon(QLabel):
@@ -547,6 +573,7 @@ class HelpIcon(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setCursor(Qt.WhatsThisCursor)
         self.setToolTip(help_text)
+        self.setAttribute(Qt.WA_ToolTip, True)  # Enable tooltip display
 
 
 class InfoPanel(QWidget):
