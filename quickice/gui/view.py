@@ -322,10 +322,9 @@ class ViewerPanel(QWidget):
         toolbar_layout.setContentsMargins(4, 4, 4, 4)
         toolbar_layout.setSpacing(8)
         
-        # Representation toggle: Ball-and-stick / Stick
+        # Representation mode button (cycles through 3 modes: VDW -> Ball-and-stick -> Stick)
         self.btn_representation = QPushButton("Ball-and-stick")
-        self.btn_representation.setCheckable(True)
-        self.btn_representation.setChecked(True)  # Ball-and-stick is default
+        self.btn_representation.setCheckable(False)  # Not a toggle, cycles through modes
         toolbar_layout.addWidget(self.btn_representation)
         
         # H-bonds toggle (default checked per 10-03)
@@ -414,18 +413,29 @@ class ViewerPanel(QWidget):
         self.btn_auto_rotate.clicked.connect(self._on_auto_rotate_toggled)
     
     def _on_representation_toggled(self):
-        """Toggle between ball-and-stick and stick representations."""
+        """Cycle through VDW, Ball-and-stick, and Stick representations."""
         if not self._vtk_available or self.dual_viewer is None:
             return
         
-        if self.btn_representation.isChecked():
-            self.btn_representation.setText("Ball-and-stick")
-            self.dual_viewer.viewer1.set_representation_mode("ball_and_stick")
-            self.dual_viewer.viewer2.set_representation_mode("ball_and_stick")
-        else:
+        # Get current mode from button text
+        current_text = self.btn_representation.text()
+        
+        # Cycle through modes: Ball-and-stick -> VDW -> Stick -> Ball-and-stick
+        if current_text == "Ball-and-stick":
+            # Switch to VDW
+            self.btn_representation.setText("VDW")
+            self.dual_viewer.viewer1.set_representation_mode("vdw")
+            self.dual_viewer.viewer2.set_representation_mode("vdw")
+        elif current_text == "VDW":
+            # Switch to Stick
             self.btn_representation.setText("Stick")
             self.dual_viewer.viewer1.set_representation_mode("stick")
             self.dual_viewer.viewer2.set_representation_mode("stick")
+        else:  # Stick
+            # Switch to Ball-and-stick
+            self.btn_representation.setText("Ball-and-stick")
+            self.dual_viewer.viewer1.set_representation_mode("ball_and_stick")
+            self.dual_viewer.viewer2.set_representation_mode("ball_and_stick")
     
     def _on_hbonds_toggled(self):
         """Toggle hydrogen bond visibility."""
