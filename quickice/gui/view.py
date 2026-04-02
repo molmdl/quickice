@@ -387,11 +387,13 @@ class ViewerPanel(QWidget):
             self.dual_viewer = None  # No viewer available
         
         # Placeholder label (shown before first generation)
-        self.placeholder = QLabel("Click Generate to view structure")
+        self.placeholder = QLabel("Click Generate to view structure", self)
         self.placeholder.setAlignment(Qt.AlignCenter)
         self.placeholder.setStyleSheet(
             "font-size: 16px; color: #666; background-color: #f0f0f0;"
         )
+        # Add to layout immediately but hidden (prevents top-level window issue)
+        layout.addWidget(self.placeholder)
         self.placeholder.hide()  # Hidden by default, shown when no candidates
         
         # Stack placeholder on top of viewer (will handle visibility logic in MainWindow)
@@ -407,6 +409,7 @@ class ViewerPanel(QWidget):
             self.btn_zoom_fit.setEnabled(False)
             self.btn_auto_rotate.setEnabled(False)
             self.color_dropdown.setEnabled(False)
+            self.candidate_selector.setEnabled(False)
             return
         
         # Representation toggle
@@ -426,6 +429,9 @@ class ViewerPanel(QWidget):
         
         # Color-by dropdown
         self.color_dropdown.currentTextChanged.connect(self._on_color_changed)
+        
+        # Candidate selector for export
+        self.candidate_selector.currentIndexChanged.connect(self._on_candidate_selected)
     
     def _on_representation_toggled(self):
         """Toggle between ball-and-stick and stick representations."""
@@ -491,16 +497,33 @@ class ViewerPanel(QWidget):
         self.dual_viewer.viewer1.set_color_by_property(mode)
         self.dual_viewer.viewer2.set_color_by_property(mode)
     
+    def _on_candidate_selected(self, index: int):
+        """Handle candidate selector dropdown change.
+        
+        Updates the left viewport (viewer1) to show the selected candidate.
+        The right viewport keeps showing rank #2.
+        
+        Args:
+            index: The selected index in the candidate_selector dropdown
+        """
+        if not self._vtk_available or self.dual_viewer is None:
+            return
+        
+        if index < 0:
+            return
+        
+        try:
+            self.dual_viewer.set_candidate_for_viewer(0, index)
+        except IndexError:
+            pass  # Invalid index, ignore
+    
     def show_placeholder(self):
         """Show placeholder text (before first generation)."""
         self._placeholder_visible = True
         if self._vtk_available and self.dual_viewer is not None:
             self.dual_viewer.hide()
         self.placeholder.show()
-        # Add placeholder to layout if not already added
-        if self.placeholder.parent() != self:
-            self.layout().addWidget(self.placeholder)
-    
+
     def hide_placeholder(self):
         """Hide placeholder and show viewer (after first generation)."""
         self._placeholder_visible = False
