@@ -207,6 +207,7 @@ QuickIce supports 12 ice polymorphs plus liquid water:
 For more details, see:
 
 - **[CLI Reference](docs/cli-reference.md)** - Complete command-line documentation
+- **[GUI Guide](docs/gui-guide.md)** - QuickIce v2.0 graphical interface documentation
 - **[Ranking Algorithm](docs/ranking.md)** - How candidates are scored and ranked
 - **[Design Principles](docs/principles.md)** - Project architecture and decisions
 
