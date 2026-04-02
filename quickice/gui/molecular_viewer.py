@@ -130,9 +130,9 @@ class MolecularViewerWidget(QWidget):
         self._mapper.UseBallAndStickSettings()
         
         # Set appropriate ball and bond sizes for visibility
-        # Smaller spheres (0.15) and thin bonds (0.05) to show H-bonds clearly
-        self._mapper.SetAtomicRadiusScaleFactor(0.15)
-        self._mapper.SetBondRadius(0.05)
+        # Smaller spheres (0.12) and thin bonds (0.03) to show H-bonds clearly
+        self._mapper.SetAtomicRadiusScaleFactor(0.12)
+        self._mapper.SetBondRadius(0.03)
         
         # Create actor with the mapper
         self._molecule_actor = vtkActor()
@@ -235,32 +235,33 @@ class MolecularViewerWidget(QWidget):
         self._representation_mode = mode
         
         if mode == "vdw":
-            # Space-filling VDW spheres (full size)
+            # Space-filling VDW spheres (touching but not completely overlapping)
             self._mapper.UseVDWSpheresSettings()
-            # VDW spheres at full scale (1.0)
+            # VDW spheres at 0.85 scale - atoms touch but structure remains visible
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            self._mapper.SetAtomicRadiusScaleFactor(1.0)
-            self._mapper.SetBondRadius(0.05)
+            self._mapper.SetAtomicRadiusScaleFactor(0.85)
+            self._mapper.SetBondRadius(0.03)
             # Show atoms
             self._mapper.RenderAtomsOn()
         elif mode == "ball_and_stick":
-            # Ball-and-stick: small spheres with visible bonds
+            # Ball-and-stick: small spheres with clearly visible bonds
             self._mapper.UseBallAndStickSettings()
-            # Use VDW-based radii with smaller scale for visibility
+            # Use VDW-based radii with scale 0.12 for clear bond visibility
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            self._mapper.SetAtomicRadiusScaleFactor(0.15)
-            self._mapper.SetBondRadius(0.05)
+            self._mapper.SetAtomicRadiusScaleFactor(0.12)
+            self._mapper.SetBondRadius(0.03)
             # Show atoms
             self._mapper.RenderAtomsOn()
         else:  # stick
-            # Stick mode: only cylinders (bonds), no atom spheres
+            # Stick mode: thin bonds with small spheres at atom positions to fill gaps
             self._mapper.UseLiquoriceStickSettings()
             # Use VDW radii to maintain O/H size distinction
             self._mapper.SetAtomicRadiusTypeToVDWRadius()
-            self._mapper.SetAtomicRadiusScaleFactor(0.1)  # Small but visible
-            self._mapper.SetBondRadius(0.05)
-            # Hide atoms completely - show only bonds
-            self._mapper.RenderAtomsOff()
+            # Small but visible spheres (0.08) to fill gaps where bonds meet
+            self._mapper.SetAtomicRadiusScaleFactor(0.08)
+            self._mapper.SetBondRadius(0.03)
+            # Show small spheres at atom positions (NOT RenderAtomsOff - that creates gaps)
+            self._mapper.RenderAtomsOn()
         
         self.render_window.Render()
     
