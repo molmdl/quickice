@@ -14,6 +14,7 @@ from vtkmodules.all import (
     vtkCellArray,
     vtkPolyDataMapper,
     vtkOutlineSource,
+    vtkMatrix3x3,
 )
 
 from quickice.structure_generation.types import Candidate
@@ -63,8 +64,12 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
         mol.AppendBond(o_idx, h2_idx, 1)
     
     # Set unit cell lattice from the (3, 3) cell matrix
-    # Flatten the matrix for VTK: [a0, a1, a2, b0, b1, b2, c0, c1, c2]
-    mol.SetLattice(candidate.cell.flatten().tolist())
+    # VTK expects a vtkMatrix3x3 with row-major layout, vectors as columns
+    lattice_matrix = vtkMatrix3x3()
+    for i in range(3):
+        for j in range(3):
+            lattice_matrix.SetElement(i, j, float(candidate.cell[i, j]))
+    mol.SetLattice(lattice_matrix)
     
     return mol
 
