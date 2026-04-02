@@ -8,7 +8,7 @@ Condition-based ice structure candidate generation from thermodynamic conditions
 
 **What is QuickIce?**
 
-QuickIce is a command-line tool that generates plausible ice crystal structure candidates for given thermodynamic conditions. Given a temperature (K) and pressure (MPa), it:
+QuickIce is a command-line tool with an optional GUI that generates plausible ice crystal structure candidates for given thermodynamic conditions. Given a temperature (K) and pressure (MPa), it:
 
 1. **Identifies the ice polymorph** that would form under those conditions (Ice Ih, Ice Ic, Ice II, III, V, VI, VII, VIII, IX, X, XI, XV, or Liquid)
 2. **Generates candidate structures** using GenIce2 with appropriate lattice parameters
