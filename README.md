@@ -71,6 +71,18 @@ source setup.sh
 python quickice.py --help
 ```
 
+### GUI Usage
+
+QuickIce v2.0 includes an optional GUI application. To launch:
+
+```bash
+python -m quickice.gui
+```
+
+For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
+
+<!-- TODO: Add standalone executable instructions after Phase 12 packaging -->
+
 ## Quick Start
 
 ### Basic Usage
