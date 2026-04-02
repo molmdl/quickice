@@ -173,7 +173,9 @@ Plans:
 
 **Requirements:** PACKAGE-01, PACKAGE-02
 
-**Dependencies:** All previous phases (8-11 must be complete)
+**Dependencies:** Phase 13 (documentation complete for packaging)
+
+**Note:** Phase 13 documentation will be included in the standalone distribution.
 
 **Success Criteria:**
 1. User can download/run standalone executable that launches QuickIce GUI without requiring Python installation
@@ -186,12 +188,14 @@ Plans:
 
 **Goal:** Users and developers have comprehensive, up-to-date documentation reflecting the v2.0 GUI application
 
-**Dependencies:** Phase 12 (all GUI features complete and packaged)
+**Dependencies:** Phase 11 (GUI features complete, ready for screenshots)
 
-**Plans:** 4 plans in 3 waves — ready for execution
+**Note:** Executing before Phase 12 allows documentation to be packaged with standalone executable.
+
+**Plans:** 5 plans in 3 waves — ready for execution
 
 Plans:
-- [ ] 13-01-PLAN.md — Update README.md with GUI mentions
+- [ ] 13-01-PLAN.md — Update README.md with GUI mentions and OS requirements
 - [ ] 13-02-PLAN.md — Create docs/images/ and docs/gui-guide.md
 - [ ] 13-03-PLAN.md — Create QuickReferenceDialog class (INFO-04)
 - [ ] 13-04-PLAN.md — Add Help menu to MainWindow and wire dialog
