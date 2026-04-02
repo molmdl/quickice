@@ -514,24 +514,29 @@ def _get_structure_type(phase_id: str) -> str:
 def _get_citation(phase_id: str) -> str:
     """Get primary citation for phase.
     
+    Citations are from GenIce2 (https://github.com/genice-dev/GenIce2).
+    
     Args:
         phase_id: Full phase ID (e.g., "ice_ih")
     
     Returns:
         Primary literature citation for the phase
     """
+    # Citations from GenIce2 README and citations.json
+    # https://github.com/genice-dev/GenIce2
     citations = {
-        "ice_ih": "Bjerrum, K. (1952). Science, 115(2989), 385-390.",
-        "ice_ii": "Kamb, B. (1964). Science, 150(3696), 544-546.",
-        "ice_iii": "Kamb, B. & Datta, S.K. (1971). Science, 174(4009), 557-558.",
-        "ice_v": "Kamb, B. (1965). Science, 150(3700), 1123-1125.",
-        "ice_vi": "Kamb, B. (1965). J. Chem. Phys., 43(12), 4252-4255.",
-        "ice_vii": "Kamb, B. & Davis, B.L. (1964). PNAS, 52(6), 1433-1439.",
-        "ice_viii": "Kamb, B. (1967). J. Chem. Phys., 46(5), 2079-2080.",
-        "ice_xi": "Tajima, Y. et al. (1982). J. Phys. C, 15(8), L755-L758.",
-        "ice_ix": "Whalley, E. et al. (1968). J. Chem. Phys., 48(5), 2362-2370.",
-        "ice_x": "Holzapfel, W.B. et al. (1984). Phys. Rev. B, 30(6), 3042-3047.",
-        "ice_xv": "Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701.",
+        "ice_ih": "Hexagonal ice Ih (most common ice). No specific citation required.",
+        "ice_ic": "Vos, W.L. et al. (1993). Phys. Rev. Lett., 71(19), 3150-3153. DOI: 10.1103/PhysRevLett.71.3150",
+        "ice_ii": "Kamb, B. (1964). Acta Cryst., 17, 1437-1449. DOI: 10.1107/S0365110X64003457\nKamb, B. et al. (2003). J. Chem. Phys., 55, 1934-1945.",
+        "ice_iii": "Petrenko, V.F. & Whitworth, R.W. (1999). Physics of Ice, Table 11.2.",
+        "ice_v": "Monoclinic ice V. No specific citation in GenIce2.",
+        "ice_vi": "Petrenko, V.F. & Whitworth, R.W. (1999). Physics of Ice, Table 11.2.",
+        "ice_vii": "High-pressure ice VII. No specific citation in GenIce2.",
+        "ice_viii": "Kuhs, W.F. et al. (1984). J. Chem. Phys., 81(8), 3612-3623. DOI: 10.1063/1.448109",
+        "ice_xi": "Jackson, S.M. et al. (1997). J. Phys. Chem. B, 101, 6142.\nFan, X. et al. (2010). Comput. Mater. Sci., 49, S170-S175.",
+        "ice_ix": "Londono, J.D. et al. (1993). J. Chem. Phys., 98(6), 4878-4888. DOI: 10.1063/1.464942",
+        "ice_x": "Holzapfel, W.B. et al. (1984). Phys. Rev. B, 30(6), 3042-3047. DOI: 10.1103/PhysRevB.30.3042",
+        "ice_xv": "Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701. DOI: 10.1103/PhysRevLett.103.105701",
     }
     return citations.get(phase_id, "See IAPWS R14-08(2011) for phase data.")
 
