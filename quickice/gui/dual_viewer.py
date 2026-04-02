@@ -84,6 +84,7 @@ class DualViewerWidget(QWidget):
         # Candidate selector for left viewer
         self.candidate_selector1 = QComboBox()
         self.candidate_selector1.setMinimumWidth(120)
+        self.candidate_selector1.setToolTip("Select candidate to view in left viewport")
         column1_layout.addWidget(self.candidate_selector1)
         
         self.viewer1 = MolecularViewerWidget()
@@ -103,6 +104,7 @@ class DualViewerWidget(QWidget):
         # Candidate selector for right viewer
         self.candidate_selector2 = QComboBox()
         self.candidate_selector2.setMinimumWidth(120)
+        self.candidate_selector2.setToolTip("Select candidate to view in right viewport")
         column2_layout.addWidget(self.candidate_selector2)
         
         self.viewer2 = MolecularViewerWidget()
