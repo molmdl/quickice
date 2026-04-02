@@ -257,21 +257,34 @@ class MainWindow(QMainWindow):
         # Hide placeholder and show viewer
         self.viewer_panel.hide_placeholder()
         
+        # Log candidate rankings with scores (CLI-style output)
+        self.info_panel.append_log("\n" + "="*50)
+        self.info_panel.append_log("Ranked Candidates")
+        self.info_panel.append_log("="*50)
+        
+        if hasattr(result, 'ranked_candidates') and result.ranked_candidates:
+            for rc in result.ranked_candidates:
+                self.info_panel.append_log(
+                    f"  Rank {rc.rank}: {rc.candidate.phase_id} | "
+                    f"energy={rc.energy_score:.3f} density={rc.density_score:.3f} "
+                    f"combined={rc.combined_score:.3f}"
+                )
+            self.info_panel.append_log("")
+            
+            # Update candidate selector in viewer panel
+            self.viewer_panel.update_candidate_selector(result.ranked_candidates)
+        
         # Load candidates into dual viewer (if VTK available)
         if self.viewer_panel.is_vtk_available():
             if hasattr(result, 'ranked_candidates') and result.ranked_candidates:
                 self.viewer_panel.dual_viewer.set_candidates(result.ranked_candidates)
                 
-                # Log to info panel
+                # Log viewer info
                 self.info_panel.append_log(
-                    f"\nLoaded {len(result.ranked_candidates)} candidate(s) into viewer"
+                    f"Rank #1 shown in left viewport, Rank #2 in right"
                 )
-                self.info_panel.append_log("Rank #1 shown in left viewport, Rank #2 in right")
         else:
             # VTK not available - show message in log
-            self.info_panel.append_log(
-                f"\nGenerated {len(result.ranked_candidates) if hasattr(result, 'ranked_candidates') else 0} candidate(s)"
-            )
             self.info_panel.append_log(
                 "3D viewer unavailable in remote environment. "
                 "Clone to local machine for full visualization."
@@ -351,8 +364,12 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Data", "No candidates available to save.")
             return
         
-        # Save top-ranked candidate (rank 1)
-        ranked = self._current_result.ranked_candidates[0]
+        # Get selected candidate from dropdown
+        selected_idx = self.viewer_panel.get_selected_candidate_index()
+        if selected_idx < 0 or selected_idx >= len(self._current_result.ranked_candidates):
+            selected_idx = 0  # Fallback to rank 1
+        
+        ranked = self._current_result.ranked_candidates[selected_idx]
         self._pdb_exporter.export_candidate(ranked, self._current_T, self._current_P)
     
     @Slot()
@@ -404,6 +421,9 @@ class MainWindow(QMainWindow):
         self.info_panel.append_log(f"{'='*50}")
         self.info_panel.append_log(f"Conditions: T = {T:.1f} K, P = {P:.2f} MPa")
         
+        # Debug: Log the phase_id being processed
+        print(f"[DEBUG] _on_phase_info called with phase_id='{phase_id}'")
+        
         # Handle special cases (Vapor, Liquid, boundary regions)
         if phase_id in ("Vapor", "Liquid") or "/" in phase_id:
             if "/" in phase_id:
@@ -416,7 +436,9 @@ class MainWindow(QMainWindow):
             # Get phase metadata
             # Convert short form to full phase_id (e.g., "Ih" -> "ice_ih")
             phase_id_full = _get_full_phase_id(phase_id)
+            print(f"[DEBUG] Converted to phase_id_full='{phase_id_full}'")
             meta = PHASE_METADATA.get(phase_id_full, {})
+            print(f"[DEBUG] PHASE_METADATA lookup returned: {meta}")
             phase_name = meta.get("name", phase_id)
             density = meta.get("density", "Unknown")
             
