@@ -129,8 +129,10 @@ class MolecularViewerWidget(QWidget):
         self._mapper = vtkMoleculeMapper()
         self._mapper.UseBallAndStickSettings()
         
-        # Set reasonable ball size for visibility
-        self._mapper.SetAtomicRadiusScaleFactor(0.3)
+        # Set appropriate ball and bond sizes for visibility
+        # Smaller spheres (0.15) and thin bonds (0.05) to show H-bonds clearly
+        self._mapper.SetAtomicRadiusScaleFactor(0.15)
+        self._mapper.SetBondRadius(0.05)
         
         # Create actor with the mapper
         self._molecule_actor = vtkActor()
@@ -233,12 +235,19 @@ class MolecularViewerWidget(QWidget):
         
         if mode == "ball_and_stick":
             self._mapper.UseBallAndStickSettings()
-            # Restore ball size for ball-and-stick mode
-            self._mapper.SetAtomicRadiusScaleFactor(0.3)
+            # Use VDW-based radii with smaller scale for visibility
+            # AtomicRadiusScaleFactor 0.15 gives good atom visibility
+            # BondRadius 0.05 gives thin bonds to see H-bonds clearly
+            self._mapper.SetAtomicRadiusScaleFactor(0.15)
+            self._mapper.SetBondRadius(0.05)
         else:  # stick
             self._mapper.UseLiquoriceStickSettings()
-            # Use much smaller radius for stick mode - atoms shown as small points
-            self._mapper.SetAtomicRadiusScaleFactor(0.1)
+            # Use VDW radii instead of UnitRadius to maintain O/H size distinction
+            # This prevents "pure red thick object" by keeping size difference
+            # Very small atoms (0.05) and thin bonds (0.05) for stick mode
+            self._mapper.SetAtomicRadiusTypeToVDWRadius()
+            self._mapper.SetAtomicRadiusScaleFactor(0.05)
+            self._mapper.SetBondRadius(0.05)
         
         self.render_window.Render()
     
