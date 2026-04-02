@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 11 - Save/Export + Information |
-| Plan | 02 of 4 in current phase |
+| Plan | 03 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-02 - Completed 11-02-PLAN.md |
+| Last activity | 2026-04-02 - Completed 11-03-PLAN.md |
 
-**Progress:** █████████████████░░░ 89% (48 of 54 plans across v2.0)
+**Progress:** ██████████████████░░ 90% (49 of 54 plans across v2.0)
 
 ---
 
@@ -186,15 +186,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 11-02 | QLabel as base for HelpIcon | Simple, lightweight, native Qt tooltip support |
 | 11-02 | Inline help text in InputPanel | QHBoxLayout for label rows keeps help icon adjacent |
 | 11-02 | Phase info emitted on every click | Immediate feedback for user interaction |
+| 11-03 | Store generation params in MainWindow | Enables export handlers to access current data |
+| 11-03 | Phase info in log panel (not separate window) | Per CONTEXT.md repurpose existing components |
+| 11-03 | Helper functions for structure/citation | Enables scientific information display |
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Completed 11-02-PLAN.md
+**Stopped at:** Completed 11-03-PLAN.md
 **Resume file:** None
-**Next:** 11-03-PLAN.md (MainWindow Integration)
+**Next:** 11-04-PLAN.md (User Verification)
 
 ---
 
@@ -268,4 +271,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-02 - Phase 11 Plan 02 complete*
+*State updated: 2026-04-02 - Phase 11 Plan 03 complete*
