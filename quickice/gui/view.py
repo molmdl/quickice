@@ -494,6 +494,40 @@ class ViewerPanel(QWidget):
         return self._vtk_available
 
 
+class HelpIcon(QLabel):
+    """Question mark icon that shows tooltip on hover.
+    
+    Per RESEARCH.md Pattern 4: QToolTip with Question Mark Icon.
+    Per CONTEXT.md: Tooltip triggered by hovering over ? icon.
+    """
+    
+    def __init__(self, help_text: str, parent=None):
+        super().__init__(parent)
+        
+        self.setText("?")
+        self.setStyleSheet("""
+            QLabel {
+                color: #666;
+                font-weight: bold;
+                font-size: 11px;
+                border: 1px solid #999;
+                border-radius: 8px;
+                padding: 2px;
+                min-width: 16px;
+                max-width: 16px;
+                min-height: 16px;
+                max-height: 16px;
+            }
+            QLabel:hover {
+                background-color: #e0e0e0;
+                color: #333;
+            }
+        """)
+        self.setAlignment(Qt.AlignCenter)
+        self.setCursor(Qt.WhatsThisCursor)
+        self.setToolTip(help_text)
+
+
 class InfoPanel(QWidget):
     """Collapsible panel for displaying generation log output.
     
