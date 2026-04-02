@@ -386,6 +386,8 @@ class MainWindow(QMainWindow):
         """Handle Save Viewport menu action.
         
         Per EXPORT-03: User can save 3D viewport screenshot as PNG image.
+        
+        Exports both viewports with unique filenames (left/right) to avoid conflicts.
         """
         if not self.viewer_panel.is_vtk_available():
             QMessageBox.warning(self, "Not Available", "3D viewer not available in remote environment.")
@@ -395,9 +397,14 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Data", "Generate a structure first before saving viewport.")
             return
         
-        # Get VTK widget from dual viewer
-        vtk_widget = self.viewer_panel.dual_viewer.viewer1.vtk_widget
-        self._viewport_exporter.capture_viewport(vtk_widget)
+        # Export left viewport (viewer1)
+        vtk_widget_left = self.viewer_panel.dual_viewer.viewer1.vtk_widget
+        left_success = self._viewport_exporter.capture_viewport(vtk_widget_left, "left")
+        
+        # Export right viewport (viewer2) if left export succeeded
+        if left_success:
+            vtk_widget_right = self.viewer_panel.dual_viewer.viewer2.vtk_widget
+            self._viewport_exporter.capture_viewport(vtk_widget_right, "right")
     
     @Slot(str, float, float)
     def _on_phase_info(self, phase_id: str, T: float, P: float):

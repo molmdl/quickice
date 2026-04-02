@@ -10,7 +10,7 @@
     "gsd-research-synthesizer": { "model": "openrouter/z-ai/glm-5" },
     "gsd-codebase-mapper": { "model": "openrouter/z-ai/glm-5" },
     "gsd-executor": { "model": "openrouter/z-ai/glm-5" },
-    "gsd-debugger": { "model": "openrouter/minimax/minimax-m2.5" },
+    "gsd-debugger": { "model": "openrouter/z-ai/glm-5" },
     "gsd-verifier": { "model": "openrouter/minimax/minimax-m2.5" },
     "gsd-integration-checker": { "model": "openrouter/minimax/minimax-m2.5" },
     "gsd-set-profile": { "model": "github-copilot/gpt-5-mini" },
