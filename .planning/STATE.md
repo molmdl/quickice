@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 13 - Update README and Documentation |
-| Plan | 3 of 5 in current phase |
+| Plan | 4 of 5 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-02 - Completed 13-03-PLAN.md |
+| Last activity | 2026-04-02 - Completed 13-04-PLAN.md |
 
 **Progress:** ████████████████████ 100% (58 of 58 plans across v2.0)
 
@@ -236,16 +236,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 13-01 | Link to separate gui-guide.md | Detailed GUI documentation in dedicated file |
 | 13-02 | Screenshot placeholders before Phase 12 | Enable early documentation before screenshots exist |
 | 13-03 | Use QDialog (modal) for QuickReferenceDialog | Per CONTEXT.md requirement, not panel or F1 shortcut |
+| 13-04 | Use QDialog.exec() for modal dialog | Per INFO-04 requirement, blocks parent until closed |
+| 13-04 | Help menu after File menu | Standard UI convention, logical menu ordering |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-02 17:57:30 UTC
-**Stopped at:** Completed 13-03-PLAN.md
+**Last session:** 2026-04-02 18:05:08 UTC
+**Stopped at:** Completed 13-04-PLAN.md
 **Next steps:**
-1. Continue Phase 13 with plans 13-04 and 13-05
-2. 13-04 will integrate QuickReferenceDialog into MainWindow
+1. Continue Phase 13 with plan 13-05
+2. 13-05 will be the final plan in Phase 13
 3. Phase 12 packaging after Phase 13 documentation complete
 
 ---
