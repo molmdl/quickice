@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 10 complete, ready for Phase 11
+**Current Focus:** v2.0 GUI Application - Phase 11 complete, ready for Phase 12
 
 ---
 
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
-| Phase | Phase 11 - Save/Export + Information |
+| Phase | Phase 12 - Packaging & Distribution |
 | Plan | Ready to begin |
-| Status | Phase 10 verified complete, awaiting Phase 11 planning |
-| Last activity | 2026-04-02 - Phase 10 verification passed |
+| Status | Phase 11 verified complete (with deferred items), awaiting Phase 12 |
+| Last activity | 2026-04-02 - Phase 11 verification passed |
 
-**Progress:** ███████████████████░ 95% (55 of 58 plans across v2.0)
+**Progress:** ████████████████████ 97% (56 of 58 plans across v2.0)
 
 ---
 
@@ -97,19 +97,34 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 - Separate empty window (QLabel parent)
 - Candidate selector connection
 
-### Phase 11: Save/Export + Information
+### Phase 11: Save/Export + Information (COMPLETE ✓)
 
 **Goal:** Users can export results to standard formats and access scientific information
 
 **Requirements:** 7 (EXPORT-01 to EXPORT-03, INFO-01 to INFO-04)
 
-**Status:** Ready to begin - Phase 10 complete, no blockers
+**Key deliverables:**
+- PDBExporter with native file dialog, overwrite protection
+- DiagramExporter for PNG/SVG phase diagram images
+- ViewportExporter for 3D scene screenshots
+- Menu bar with File menu and keyboard shortcuts (Ctrl+S, Ctrl+D, Ctrl+Shift+S)
+- HelpIcon class for input field tooltips
+- Phase info display in log panel with citations
+- Candidate selector for export selection
 
-### Phase 12: Packaging
+**Notes:**
+- INFO-02 (hover tooltip) deferred — existing T,P display sufficient
+- INFO-04 (in-app manual) deferred to Phase 13
+
+**Status:** Complete - 4/4 plans executed, verification passed (5/7 must-haves, 2 deferred by design)
+
+### Phase 12: Packaging & Distribution
 
 **Goal:** Users receive standalone executable with all dependencies bundled
 
 **Requirements:** 2 (PACKAGE-01, PACKAGE-02)
+
+**Status:** Ready to begin - Phase 11 complete, no blockers
 
 ### Phase 13: Update README and Documentation After Finishing the GUI
 
@@ -222,11 +237,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Phase 10 verification complete
+**Stopped at:** Phase 11 verification complete
 **Next steps:**
-1. Run `/gsd-plan-phase 11` to plan Save/Export + Information phase
-2. Execute Phase 11
-3. Then Phase 12 (Packaging) and Phase 13 (Documentation)
+1. Run `/gsd-plan-phase 12` to plan Packaging & Distribution phase
+2. Execute Phase 12
+3. Then Phase 13 (Documentation Update)
 
 ---
 
@@ -289,4 +304,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-02 - Phase 10 verified complete, moving to Phase 11*
+*State updated: 2026-04-02 - Phase 11 verified complete (with deferred items), moving to Phase 12*

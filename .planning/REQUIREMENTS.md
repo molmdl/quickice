@@ -39,16 +39,16 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Save/Export
 
-- [ ] **EXPORT-01**: User can save generated PDB file via file save dialog
-- [ ] **EXPORT-02**: User can save phase diagram image (PNG/SVG)
-- [ ] **EXPORT-03**: User can save 3D scene image from viewport
+- [x] **EXPORT-01**: User can save generated PDB file via file save dialog
+- [x] **EXPORT-02**: User can save phase diagram image (PNG/SVG)
+- [x] **EXPORT-03**: User can save 3D scene image from viewport
 
 ### Information & Education
 
-- [ ] **INFO-01**: User can view info window with citations/references for selected ice phase
-- [ ] **INFO-02**: User sees phase information tooltip on hover (density, structure type)
-- [ ] **INFO-03**: User sees help tooltips on UI elements (question mark icons)
-- [ ] **INFO-04**: User can view in-app markdown manual/documentation
+- [x] **INFO-01**: User can view info window with citations/references for selected ice phase
+- [ ] **INFO-02**: User sees phase information tooltip on hover (density, structure type) — DEFERRED
+- [x] **INFO-03**: User sees help tooltips on UI elements (question mark icons)
+- [ ] **INFO-04**: User can view in-app markdown manual/documentation — DEFERRED to Phase 13
 
 ### Advanced Visualization
 
@@ -127,13 +127,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROGRESS-02 | Phase 8 | Complete |
 | PROGRESS-03 | Phase 8 | Complete |
 | PROGRESS-04 | Phase 8 | Complete |
-| EXPORT-01 | Phase 11 | Pending |
-| EXPORT-02 | Phase 11 | Pending |
-| EXPORT-03 | Phase 11 | Pending |
-| INFO-01 | Phase 11 | Pending |
-| INFO-02 | Phase 11 | Pending |
-| INFO-03 | Phase 11 | Pending |
-| INFO-04 | Phase 11 | Pending |
+| EXPORT-01 | Phase 11 | Complete |
+| EXPORT-02 | Phase 11 | Complete |
+| EXPORT-03 | Phase 11 | Complete |
+| INFO-01 | Phase 11 | Complete |
+| INFO-02 | Phase 11 | Deferred |
+| INFO-03 | Phase 11 | Complete |
+| INFO-04 | Phase 11 | Deferred |
 | ADVVIZ-01 | Phase 10 | Complete |
 | ADVVIZ-02 | Phase 10 | Complete |
 | ADVVIZ-03 | Phase 10 | Complete |
@@ -150,4 +150,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-03-31 after initial definition*
+*Last updated: 2026-04-02 after Phase 11 completion*
