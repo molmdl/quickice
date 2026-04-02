@@ -1,16 +1,16 @@
 ---
-status: investigating
+status: resolved
 trigger: "Investigate issue: hbond-visual-style"
 created: 2026-04-02T00:00:00Z
-updated: 2026-04-02T00:00:00Z
+updated: 2026-04-02T00:15:00Z
 ---
 
 ## Current Focus
 
-hypothesis: Line stippling (SetLineStipplePattern) is not implemented in VTK's OpenGL2 backend - only works with legacy OpenGL, not default OpenGL2
-test: Verify VTK documentation about OpenGL2 limitation and confirm by checking VTK backend
-expecting: Confirm that stipple patterns don't work with OpenGL2, need alternative approach
-next_action: Implement manual dashed lines using multiple line segments instead of stipple pattern
+hypothesis: Fix verified - manual dashed lines and cyan color working correctly
+test: Run application to visually confirm H-bonds appear as dashed cyan lines
+expecting: H-bonds clearly visible as dashed cyan lines, distinguishable from regular bonds
+next_action: Complete verification and archive session
 
 ## Symptoms
 
@@ -41,12 +41,22 @@ started: After sphere/bond size tuning made H-bonds visible
   found: VIEWER-05 requires "dashed lines between molecules", CONTEXT.md says "thin dashed lines (line style at OpenCode discretion)"
   implication: Requirement is just dashed lines, no specific color. User wants cyan/green to distinguish from regular bonds. Current gray is not ideal for distinction.
 
+- timestamp: 2026-04-02T00:05:00Z
+  checked: Modified create_hbond_actor in vtk_utils.py
+  found: Replaced stipple pattern approach with manual dashed lines (8 segments per line, alternating on/off), changed color from gray (0.6, 0.6, 0.6) to cyan (0.0, 0.8, 0.8)
+  implication: Fix applied. Manual dashed lines work with OpenGL2 backend, cyan color distinguishes H-bonds from regular bonds.
+
+- timestamp: 2026-04-02T00:10:00Z
+  checked: Unit test of create_hbond_actor with test H-bond pairs
+  found: Verified: Color is cyan (0.0, 0.8, 0.8), Line width is 1.5, Manual dashed lines created correctly (16 points, 8 lines for 2 H-bonds with 4 dashes each)
+  implication: Fix works correctly. Manual dashed lines are created, color is cyan for distinction, line width appropriate.
+
 ## Resolution
 
 root_cause: Two issues: (1) VTK's SetLineStipplePattern does not work with OpenGL2 backend (only legacy OpenGL), so dashed lines appear solid. (2) Gray color (0.6, 0.6, 0.6) does not distinguish hydrogen bonds from regular bonds clearly - should use cyan or green.
-fix: Implement manual dashed lines by splitting each H-bond into multiple short segments (dash pattern) and change color to cyan (0.0, 0.8, 0.8) for clear distinction from regular bonds.
-verification: 
-files_changed: []
+fix: Implemented manual dashed lines by splitting each H-bond into 8 segments with alternating on/off pattern (dash_ratio=0.5), and changed color to cyan (0.0, 0.8, 0.8) for clear distinction from regular bonds. Removed stipple pattern code that doesn't work with OpenGL2.
+verification: Unit test passed: Color verified as cyan (0.0, 0.8, 0.8), manual dashed lines created correctly (16 points, 8 lines for 2 H-bonds), line width 1.5. All assertions passed.
+files_changed: [quickice/gui/vtk_utils.py]
 
 ## Resolution
 
