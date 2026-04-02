@@ -9,6 +9,11 @@ This module provides exporter classes for saving user work to standard file form
 from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.figure import Figure
+from vtkmodules.all import (
+    vtkWindowToImageFilter,
+    vtkPNGWriter,
+    vtkJPEGWriter,
+)
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
@@ -176,5 +181,105 @@ class DiagramExporter:
                 self.parent,
                 "Export Error",
                 f"Failed to save diagram image:\n\n{str(e)}"
+            )
+            return False
+
+
+class ViewportExporter:
+    """Handle 3D viewport screenshot export to PNG or JPEG.
+    
+    Per RESEARCH.md Pitfall 1: MUST call render_window.Render() before capture.
+    Per RESEARCH.md Pitfall 5: Use SetScale(2) for higher resolution.
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize viewport exporter.
+        
+        Args:
+            parent_widget: Parent widget for dialog centering
+        """
+        self.parent = parent_widget
+    
+    def capture_viewport(self, vtk_widget) -> bool:
+        """Capture and save 3D viewport to image file.
+        
+        Args:
+            vtk_widget: QVTKRenderWindowInteractor to capture
+            
+        Returns:
+            True if export succeeded, False if cancelled or failed
+            
+        Per RESEARCH.md Pattern 3:
+        - Force render before capture to avoid black images
+        - Use SetScale(2) for 2x resolution
+        - ReadFrontBufferOff() for offscreen buffer
+        - JPEG quality: 95
+        """
+        # Show save dialog with PNG and JPEG options
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Save Viewport Image",
+            "ice_structure.png",
+            "PNG Image (*.png);;JPEG Image (*.jpg);;All Files (*)",
+            "PNG Image (*.png)"
+        )
+        
+        if not filepath:
+            return False
+        
+        path = Path(filepath)
+        
+        # Determine format from selected filter or extension
+        if 'JPEG' in selected_filter or path.suffix.lower() in ('.jpg', '.jpeg'):
+            path = path.with_suffix('.jpg')
+            use_jpeg = True
+        else:
+            path = path.with_suffix('.png')
+            use_jpeg = False
+        
+        # Check for overwrite
+        if path.exists():
+            reply = QMessageBox.question(
+                self.parent,
+                "Overwrite File?",
+                f"File '{path.name}' already exists. Overwrite?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return False
+        
+        # Capture viewport using VTK
+        try:
+            render_window = vtk_widget.GetRenderWindow()
+            
+            # CRITICAL: Force render before capture to avoid black images
+            render_window.Render()
+            
+            # Create window-to-image filter
+            window_to_image = vtkWindowToImageFilter()
+            window_to_image.SetInput(render_window)
+            window_to_image.SetScale(2)  # 2x resolution for better quality
+            window_to_image.ReadFrontBufferOff()  # Use offscreen buffer
+            window_to_image.Update()
+            
+            # Write image using appropriate writer
+            if use_jpeg:
+                writer = vtkJPEGWriter()
+                writer.SetQuality(95)
+            else:
+                writer = vtkPNGWriter()
+            
+            writer.SetFileName(str(path))
+            writer.SetInputConnection(window_to_image.GetOutputPort())
+            writer.Write()
+            
+            return True
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self.parent,
+                "Export Error",
+                f"Failed to save viewport image:\n\n{str(e)}"
             )
             return False
