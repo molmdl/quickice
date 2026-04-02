@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation  
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface  
-**Current Focus:** v2.0 GUI Application - Phase 10 remote testing done, starting Phase 11
+**Current Focus:** v2.0 GUI Application - Phase 11 bug fixes applied, awaiting user verification
 
 ---
 
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 11 - Save/Export + Information |
-| Plan | 03 of 4 in current phase |
-| Status | In progress |
-| Last activity | 2026-04-02 - Completed 11-03-PLAN.md |
+| Plan | 04 of 4 in current phase |
+| Status | Awaiting user verification of bug fixes |
+| Last activity | 2026-04-02 - Fixed 4 issues, updated citations from GenIce2 |
 
 **Progress:** ██████████████████░░ 90% (49 of 54 plans across v2.0)
 
@@ -189,15 +189,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 11-03 | Store generation params in MainWindow | Enables export handlers to access current data |
 | 11-03 | Phase info in log panel (not separate window) | Per CONTEXT.md repurpose existing components |
 | 11-03 | Helper functions for structure/citation | Enables scientific information display |
+| 11-03 | Citations from GenIce2 README | Correct citations matching GenIce2 source |
+| 11-04 | HelpIcon manual tooltip via enterEvent | Stylesheet interferes with auto-tooltip |
+| 11-04 | Candidate selector as QComboBox | Independent of viewport for export |
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-02
-**Stopped at:** Completed 11-03-PLAN.md
-**Resume file:** None
-**Next:** 11-04-PLAN.md (User Verification)
+**Stopped at:** Phase 11 bug fixes applied (commits 101c330, 60d3ba3, cbeaa02, 01d2eda, 1c4bfde)
+**Resume file:** .planning/phases/11-save-export-information/.continue-here.md
+**Next:** User verification of fixes, then complete 11-04-SUMMARY.md
 
 ---
 
@@ -271,4 +274,4 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 
 ---
 
-*State updated: 2026-04-02 - Phase 11 Plan 03 complete*
+*State updated: 2026-04-02 - Phase 11 bug fixes applied, citations updated from GenIce2*
