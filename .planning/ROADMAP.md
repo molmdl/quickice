@@ -186,7 +186,7 @@ Plans:
 **Success Criteria:**
 1. User can download/run standalone executable that launches QuickIce GUI without requiring Python installation
 2. License compatibility audit confirms all bundled libraries (PySide6, VTK, GenIce2) are legally compatible with MIT license
-3. All dependency versions pinned to exact versions (`=x.y.z`) in env.yml for reproducibility and security
+3. All dependency versions pinned to exact versions (`=x.y.z`) in environment.yml for reproducibility and security
 
 ---
 
