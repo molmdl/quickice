@@ -58,7 +58,7 @@ def main():
     print("Expected: T=260K, P=400MPa returns Ice V (ice_v)")
     print("-"*60)
     ret, out, err = run_test("Ice V lookup", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(260, 400)['phase_id'])\"",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(260, 400)['phase_id'])\"",
         "ice_v")
     passed = "ice_v" in out
     results.append(("Test #8: Ice V", passed))
@@ -70,7 +70,7 @@ def main():
     print("Expected: T=240K, P=220MPa returns Ice III (ice_iii)")
     print("-"*60)
     ret, out, err = run_test("Ice III lookup", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(240, 220)['phase_id'])\"",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(240, 220)['phase_id'])\"",
         "ice_iii")
     passed = "ice_iii" in out
     results.append(("Test #9: Ice III", passed))
@@ -82,7 +82,7 @@ def main():
     print("Expected: T=400K, P=2000MPa returns Liquid (UnknownPhaseError)")
     print("-"*60)
     ret, out, err = run_test("Ice VII below melt", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(400, 2000)\" 2>&1",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(400, 2000)\" 2>&1",
         "UnknownPhaseError")
     passed = "UnknownPhaseError" in out or "Liquid" in out
     results.append(("Test #10: VII below melt", passed))
@@ -94,7 +94,7 @@ def main():
     print("Expected: T=400K, P=3000MPa returns Ice VII (ice_vii)")
     print("-"*60)
     ret, out, err = run_test("Ice VII above melt", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(400, 3000)['phase_id'])\"",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(400, 3000)['phase_id'])\"",
         "ice_vii")
     passed = "ice_vii" in out
     results.append(("Test #11: VII above melt", passed))
@@ -106,7 +106,7 @@ def main():
     print("Expected: T=500K, P=4500MPa returns Liquid (UnknownPhaseError)")
     print("-"*60)
     ret, out, err = run_test("VII melt curve direction", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(500, 4500)\" 2>&1",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(500, 4500)\" 2>&1",
         "UnknownPhaseError")
     passed = "UnknownPhaseError" in out or "Liquid" in out
     results.append(("Test #12: VII melt direction", passed))
@@ -118,7 +118,7 @@ def main():
     print("Expected: Generates 10 candidates")
     print("-"*60)
     ret, out, err = run_test("Structure generation", 
-        "cd /share/home/nglokwan/quickice && python quickice.py -T 250 -P 100 -N 64 --no-diagram -o /tmp/uat_test_13 2>&1",
+        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 64 --no-diagram -o /tmp/uat_test_13 2>&1",
         "10 candidates")
     passed = ret == 0 and ("10 candidates" in out or "Generated" in out)
     results.append(("Test #13: Structure gen", passed))
@@ -149,7 +149,7 @@ def main():
     print("Expected: PNG phase diagram generated")
     print("-"*60)
     ret, out, err = run_test("Phase diagram", 
-        "cd /share/home/nglokwan/quickice && python quickice.py -T 250 -P 100 -N 64 -o /tmp/uat_test_16 2>&1",
+        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 64 -o /tmp/uat_test_16 2>&1",
         "phase_diagram.png")
     passed = ret == 0
     if Path("/tmp/uat_test_16/phase_diagram.png").exists():
@@ -174,7 +174,7 @@ def main():
     print("Expected: Can disable phase diagram")
     print("-"*60)
     ret, out, err = run_test("--no-diagram", 
-        "cd /share/home/nglokwan/quickice && python quickice.py -T 250 -P 100 -N 32 --no-diagram -o /tmp/uat_test_18 2>&1",
+        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 32 --no-diagram -o /tmp/uat_test_18 2>&1",
         "no diagram")
     passed = ret == 0
     results.append(("Test #18: --no-diagram", passed))
@@ -186,7 +186,7 @@ def main():
     print("Expected: T=50K, P=10MPa returns Ice XI (ice_xi)")
     print("-"*60)
     ret, out, err = run_test("Ice XI lookup", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(50, 10)['phase_id'])\"",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(50, 10)['phase_id'])\"",
         "ice_xi")
     passed = "ice_xi" in out
     results.append(("Test #19: Ice XI", passed))
@@ -198,7 +198,7 @@ def main():
     print("Expected: T=300K, P=50000MPa returns Ice X (ice_x)")
     print("-"*60)
     ret, out, err = run_test("Ice X lookup", 
-        "cd /share/home/nglokwan/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(300, 50000)['phase_id'])\"",
+        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(300, 50000)['phase_id'])\"",
         "ice_x")
     passed = "ice_x" in out
     results.append(("Test #20: Ice X", passed))
@@ -217,7 +217,7 @@ def main():
     print("Running UAT Test #22: README Exists")
     print("Expected: README.md exists")
     print("-"*60)
-    passed = Path("/share/home/nglokwan/quickice/README.md").exists()
+    passed = Path("~/quickice/README.md").exists()
     print(f"README.md exists: {passed}")
     results.append(("Test #22: README", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
@@ -227,7 +227,7 @@ def main():
     print("Running UAT Test #23: Documentation Exists")
     print("Expected: docs/ folder with cli-reference.md, ranking.md, principles.md")
     print("-"*60)
-    docs = Path("/share/home/nglokwan/quickice/docs")
+    docs = Path("~/quickice/docs")
     cli_ref = docs / "cli-reference.md"
     ranking = docs / "ranking.md"
     principles = docs / "principles.md"
@@ -244,7 +244,7 @@ def main():
     print("Expected: pytest runs and all tests pass")
     print("-"*60)
     ret, out, err = run_test("pytest", 
-        "cd /share/home/nglokwan/quickice && python -m pytest tests/ -v --tb=short 2>&1 | tail -20",
+        "cd ~/quickice && python -m pytest tests/ -v --tb=short 2>&1 | tail -20",
         "passed")
     passed = ret == 0 and "passed" in out
     print(out[-500:] if len(out) > 500 else out)
