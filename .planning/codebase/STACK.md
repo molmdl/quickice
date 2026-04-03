@@ -1,130 +1,93 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-31
+**Analysis Date:** 2026-04-04
 
 ## Languages
 
 **Primary:**
-- Python 3.14.3 - Main application language (all source code in `quickice/` package)
+- Python 3.14.3 - Main application language (from conda-forge)
 
 **Secondary:**
-- Shell (Bash) - Setup script (`setup.sh`) and run script (`run_oc.sh`)
+- Shell (Bash) - Environment setup scripts (`setup.sh`, `run_oc.sh`)
 
 ## Runtime
 
 **Environment:**
-- Conda (Miniconda/Anaconda) - Environment management
+- Conda (Miniconda/Anaconda) - Package and environment management
 - Environment name: `quickice`
 
 **Package Manager:**
-- pip (via conda) - Python package installation
-- Lockfile: Not present (env.yml specifies exact versions)
+- Conda - Primary dependency management via `environment.yml`
+- pip - Secondary for pip-only packages
+- Lockfile: Not present (uses conda environment export)
 
 ## Frameworks
 
 **Core:**
-- None (pure Python scientific application)
+- PySide6 >= 6.9.3 - Qt-based GUI framework for desktop application
+- VTK >= 9.5.2 - 3D visualization and molecular rendering engine
 
 **Testing:**
-- pytest >= 9.0.0 - Unit testing framework (`requirements-dev.txt`)
+- pytest >= 9.0.0 - Test runner and assertion framework
 
 **Build/Dev:**
-- No build system (source installation via PYTHONPATH)
-- No linter/formatter configuration detected
+- PyInstaller >= 6.0 - Standalone executable packaging for distribution
 
 ## Key Dependencies
 
 **Scientific Computing:**
-- `numpy` 2.4.3 - Numerical arrays, matrix operations, coordinate handling
-- `scipy` >= 1.8 - Spatial algorithms (`cKDTree` for neighbor search), interpolation (`UnivariateSpline`)
-- `matplotlib` >= 3.5 - Phase diagram visualization (PNG/SVG output)
+- numpy 2.4.3 - Array operations and numerical computing
+- scipy >= 1.8 - Scientific algorithms (cKDTree, interpolation, spline fitting)
+- matplotlib >= 3.5 - Phase diagram visualization and plotting
+- networkx 3.6.1 - Graph algorithms (for GenIce internal use)
 
-**Molecular Structure Generation:**
-- `genice2` 2.2.13.1 - Ice structure generation with hydrogen bond networks
-- `genice-core` 1.4.3 - Core algorithms for GenIce
-- `pairlist` 0.6.4 - Pair list calculations
-- `cycless` 0.7 - Cycle detection for hydrogen bond networks
-- `graphstat` 0.3.3 - Graph statistics
+**Domain-Specific:**
+- genice2 2.2.13.1 - Ice crystal structure generation engine
+- genice-core 1.4.3 - Core algorithms for GenIce
+- iapws >= 1.5.4 - IAPWS-95 validated water/ice thermophysical properties
+- spglib 2.7.0 - Crystal symmetry analysis and space group operations
+- shapely >= 2.0 - Geometry operations for phase diagram polygons
 
-**Crystallography:**
-- `spglib` 2.7.0 - Space group analysis and crystal symmetry
+**Molecular Simulation Utilities:**
+- pairlist 0.6.4 - Neighbor list calculations
+- cycless 0.7 - Cycle detection in molecular networks
+- graphstat 0.3.3 - Graph statistics utilities
+- openpyscad 0.5.0 - OpenSCAD integration (for potential 3D model export)
+- yaplotlib 0.1.3 - Yet another plotting library
 
-**Thermodynamics:**
-- `iapws` >= 1.5.4 - IAPWS-95 water/ice thermodynamic properties
-
-**Geometry/Graph:**
-- `shapely` >= 2.0 - Polygon geometry for phase diagram regions
-- `networkx` 3.6.1 - Graph algorithms
-
-**CLI:**
-- `click` 8.3.1 - Listed in dependencies (but `argparse` used directly in code)
-- `argparse` (stdlib) - Actual CLI argument parsing
+**Standard Library Extensions:**
+- click 8.3.1 - CLI argument parsing (used alongside argparse)
+- deprecated 1.3.1 / deprecation 2.1.0 - Deprecation warnings for API evolution
 
 ## Configuration
 
 **Environment:**
-- Conda environment file: `env.yml` - Defines all dependencies with versions
-- PYTHONPATH setup: `setup.sh` adds project root to Python path
-- No `.env` file required - pure Python application
+- Conda environment defined in `environment.yml`
+- Activation required via `source setup.sh` for each new shell
+- PYTHONPATH must include project root for package imports
 
 **Build:**
-- No build configuration (install via conda env create)
-- Development installation: `source setup.sh` after conda env create
+- PyInstaller spec: `quickice-gui.spec`
+- GitHub Actions: `.github/workflows/build-windows.yml`
+
+**Development Dependencies:**
+- Defined in `requirements-dev.txt`:
+  - pytest >= 9.0.0
+  - pyinstaller >= 6.0
 
 ## Platform Requirements
 
 **Development:**
-- Linux (tested on Linux with libgcc, OpenMP support)
-- Conda (Miniconda or Anaconda)
-- Python 3.14 compatible environment
+- Linux: GLIBC 2.28+ (Ubuntu 20.04+, Debian 10+, Rocky/RHEL 8+)
+- 64-bit architecture
+- OpenGL support for VTK 3D rendering
+- Qt 6.10.2 requires modern GLIBC
 
 **Production:**
-- Platform-independent Python application
-- Dependencies installable via pip (through conda)
-- No database or external service required
-- Output files written to local filesystem
-
-## Dependency Groups
-
-**Core Runtime (from env.yml pip section):**
-```
-click==8.3.1
-cycless==0.7
-deprecated==1.3.1
-deprecation==2.1.0
-genice-core==1.4.3
-genice2==2.2.13.1
-graphstat==0.3.3
-iapws>=1.5.4
-matplotlib>=3.5
-methodtools==0.4.7
-networkx==3.6.1
-numpy==2.4.3
-openpyscad==0.5.0
-pairlist==0.6.4
-scipy>=1.8
-shapely>=2.0
-six==1.17.0
-spglib==2.7.0
-wirerope==1.0.0
-wrapt==2.1.2
-yaplotlib==0.1.3
-```
-
-**Development Only (from requirements-dev.txt):**
-```
-pytest>=9.0.0
-```
-
-## Version Constraints
-
-**Pinned Versions:**
-- Most packages use exact versions (e.g., `numpy==2.4.3`)
-- Scientific packages use minimum versions (`scipy>=1.8`, `matplotlib>=3.5`, `iapws>=1.5.4`)
-
-**Python Version:**
-- Python 3.14.3 (specific version in env.yml)
+- Desktop application (CLI and GUI modes)
+- Standalone Windows executable via PyInstaller packaging
+- Cross-platform Python source distribution
 
 ---
 
-*Stack analysis: 2026-03-31*
+*Stack analysis: 2026-04-04*
