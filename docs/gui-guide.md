@@ -87,7 +87,8 @@ Clicking on a phase region displays scientific information in the log panel:
 - Crystal system
 - Validated references (GenIce2, IAPWS)
 
-![Phase Diagram](images/phase-diagram.png)
+<img src="images/phase-diagram.png" width="50%">
+
 *Interactive phase diagram with clickable regions*
 
 ## 3D Molecular Viewer
@@ -120,10 +121,12 @@ Use the toolbar to switch between:
 - **Auto-rotate**: Toggle continuous rotation for presentations
 - **Zoom to fit**: Reset camera to frame entire structure
 
-![3D Viewer](images/3d-viewer.png)
+<img src="images/3d-viewer.png" width="30%">
+
 *Single viewport showing ice structure with ball-and-stick representation*
 
-![Dual Viewport](images/dual-viewport.png)
+<img src="images/dual-viewport.png" width="50%">
+
 *Dual viewport comparison of top two candidates*
 
 ## Export Options
@@ -149,7 +152,8 @@ The File menu provides multiple export formats:
 - Format: PNG
 - Captures current view (useful for presentations)
 
-![Export Menu](images/export-menu.png)
+<img src="images/expor-menu" width="20%">
+
 *File menu with export options*
 
 ## Keyboard Shortcuts
