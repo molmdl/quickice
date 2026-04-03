@@ -302,11 +302,18 @@ class ViewerPanel(QWidget):
     
     Falls back to placeholder message if VTK is unavailable (e.g., remote SSH with
     indirect rendering).
+    
+    Candidate selectors are always available (even without VTK) to allow
+    model selection for PDB export on remote environments.
     """
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self._vtk_available = _VTK_AVAILABLE
+        # Standalone candidate selectors for remote mode
+        self._candidates: list = []  # Store candidates for selector updates
+        self._selected_index_left: int = 0
+        self._selected_index_right: int = 1
         self._setup_ui()
         if self._vtk_available:
             self._setup_connections()
@@ -353,6 +360,39 @@ class ViewerPanel(QWidget):
         
         layout.addLayout(toolbar_layout)
         
+        # Candidate selector row (for remote mode when VTK unavailable)
+        # These are standalone selectors that work without the 3D viewer
+        selector_layout = QHBoxLayout()
+        selector_layout.setContentsMargins(4, 2, 4, 4)
+        selector_layout.setSpacing(8)
+        
+        selector_layout.addWidget(QLabel("Left export:"))
+        self.standalone_selector_left = QComboBox()
+        self.standalone_selector_left.setMinimumWidth(120)
+        self.standalone_selector_left.setToolTip("Select candidate for left PDB export")
+        selector_layout.addWidget(self.standalone_selector_left)
+        
+        selector_layout.addSpacing(20)
+        
+        selector_layout.addWidget(QLabel("Right export:"))
+        self.standalone_selector_right = QComboBox()
+        self.standalone_selector_right.setMinimumWidth(120)
+        self.standalone_selector_right.setToolTip("Select candidate for right PDB export")
+        selector_layout.addWidget(self.standalone_selector_right)
+        
+        selector_layout.addStretch()
+        
+        # Show selector row only when VTK unavailable
+        self._selector_row_widget = QWidget()
+        self._selector_row_widget.setLayout(selector_layout)
+        if self._vtk_available:
+            self._selector_row_widget.hide()  # Hide when VTK available (use dual viewer's selectors)
+        layout.addWidget(self._selector_row_widget)
+        
+        # Connect standalone selector signals
+        self.standalone_selector_left.currentIndexChanged.connect(self._on_standalone_selector_left_changed)
+        self.standalone_selector_right.currentIndexChanged.connect(self._on_standalone_selector_right_changed)
+        
         # Dual viewer widget or fallback
         if self._vtk_available:
             self.dual_viewer = DualViewerWidget()
@@ -363,7 +403,7 @@ class ViewerPanel(QWidget):
                 "3D Molecular Viewer requires a local display.\n\n"
                 "If running remotely, clone to your local machine\n"
                 "or use QUICKICE_FORCE_VTK=true to override.\n\n"
-                "The rest of the application works normally."
+                "Use the dropdowns above to select models for PDB export."
             )
             fallback_label.setAlignment(Qt.AlignCenter)
             fallback_label.setStyleSheet(
@@ -411,6 +451,24 @@ class ViewerPanel(QWidget):
         
         # Auto-rotate toggle
         self.btn_auto_rotate.clicked.connect(self._on_auto_rotate_toggled)
+    
+    def _on_standalone_selector_left_changed(self, index: int) -> None:
+        """Handle left standalone selector dropdown change.
+        
+        Args:
+            index: The selected index in the standalone_selector_left dropdown
+        """
+        if index >= 0:
+            self._selected_index_left = index
+    
+    def _on_standalone_selector_right_changed(self, index: int) -> None:
+        """Handle right standalone selector dropdown change.
+        
+        Args:
+            index: The selected index in the standalone_selector_right dropdown
+        """
+        if index >= 0:
+            self._selected_index_right = index
     
     def _on_representation_toggled(self):
         """Cycle through VDW, Ball-and-stick, and Stick representations."""
@@ -510,12 +568,39 @@ class ViewerPanel(QWidget):
     def update_candidate_selector(self, candidates: list):
         """Update candidate selector dropdowns with available candidates.
         
-        Delegates to DualViewerWidget to update its internal selectors.
-        Left defaults to Rank 1, right defaults to Rank 2 (if available).
+        Delegates to DualViewerWidget to update its internal selectors when VTK available,
+        and updates standalone selectors for remote mode.
+        Left defaults to Rank 1 (index 0).
+        Right defaults to Rank 2 (index 1) if available.
         
         Args:
             candidates: List of RankedCandidate objects
         """
+        self._candidates = candidates
+        
+        # Always update standalone selectors (they work in both modes)
+        self.standalone_selector_left.blockSignals(True)
+        self.standalone_selector_left.clear()
+        for rc in candidates:
+            self.standalone_selector_left.addItem(f"Rank {rc.rank} ({rc.candidate.phase_id})")
+        if len(candidates) >= 1:
+            self.standalone_selector_left.setCurrentIndex(0)
+            self._selected_index_left = 0
+        self.standalone_selector_left.blockSignals(False)
+        
+        self.standalone_selector_right.blockSignals(True)
+        self.standalone_selector_right.clear()
+        for rc in candidates:
+            self.standalone_selector_right.addItem(f"Rank {rc.rank} ({rc.candidate.phase_id})")
+        if len(candidates) >= 2:
+            self.standalone_selector_right.setCurrentIndex(1)
+            self._selected_index_right = 1
+        elif len(candidates) >= 1:
+            self.standalone_selector_right.setCurrentIndex(0)
+            self._selected_index_right = 0
+        self.standalone_selector_right.blockSignals(False)
+        
+        # Also update dual viewer's selectors when VTK available
         if self._vtk_available and self.dual_viewer is not None:
             self.dual_viewer.update_selectors(candidates)
     
@@ -525,9 +610,7 @@ class ViewerPanel(QWidget):
         Returns:
             Index in the ranked_candidates list (0-based)
         """
-        if self._vtk_available and self.dual_viewer is not None:
-            return self.dual_viewer.candidate_selector1.currentIndex()
-        return 0
+        return self.get_selected_candidate_index_left()
     
     def get_selected_candidate_index_left(self) -> int:
         """Get the index of the currently selected candidate in left viewer.
@@ -535,7 +618,10 @@ class ViewerPanel(QWidget):
         Returns:
             Index in the ranked_candidates list (0-based)
         """
-        return self.get_selected_candidate_index()
+        if self._vtk_available and self.dual_viewer is not None:
+            return self.dual_viewer.candidate_selector1.currentIndex()
+        # Use standalone selector for remote mode
+        return self._selected_index_left
     
     def get_selected_candidate_index_right(self) -> int:
         """Get the index of the currently selected candidate in right viewer.
@@ -545,7 +631,8 @@ class ViewerPanel(QWidget):
         """
         if self._vtk_available and self.dual_viewer is not None:
             return self.dual_viewer.candidate_selector2.currentIndex()
-        return 0
+        # Use standalone selector for remote mode
+        return self._selected_index_right
 
 
 class HelpIcon(QLabel):
