@@ -177,6 +177,12 @@ Plans:
 
 **Note:** Phase 13 documentation will be included in the standalone distribution.
 
+**Plans:** 2 plans in 2 waves
+
+Plans:
+- [ ] 12-01-PLAN.md — Add PyInstaller dependency, collect licenses, create Windows workflow
+- [ ] 12-02-PLAN.md — Build Linux executable and assemble distribution tarball
+
 **Success Criteria:**
 1. User can download/run standalone executable that launches QuickIce GUI without requiring Python installation
 2. License compatibility audit confirms all bundled libraries (PySide6, VTK, GenIce2) are legally compatible with MIT license
