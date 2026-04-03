@@ -3,6 +3,9 @@ name: Build Windows Executable
 on:
   workflow_dispatch:  # Manual trigger only
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
