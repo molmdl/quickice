@@ -1,12 +1,19 @@
 ---
 phase: 12-packaging
-verified: 2026-04-04T02:02:00Z
+verified: 2026-04-04T02:30:00Z
 status: gaps_found
 score: 2/3 requirements verified
+re_verification: true
+previous_status: gaps_found
+previous_score: 2/3
+gaps_closed:
+  - "BSD-3-Clause license expanded from 11 lines to 30 lines (full text)"
+gaps_remaining:
+  - "Standalone executable not built (Plan 12-02 intentionally skipped)"
 gaps:
   - truth: "Users receive a standalone executable with all dependencies bundled"
     status: partial
-    reason: "Build infrastructure created (environment-build.yml, build-windows.yml) but no actual executable was produced in this phase. Plan 12-02 was intentionally skipped."
+    reason: "Build infrastructure created (environment-build.yml, build-windows.yml) but no actual executable was produced. Plan 12-02 was intentionally skipped."
     artifacts:
       - path: "environment-build.yml"
         issue: "Created with PyInstaller and cross-platform deps - ✓ SUBSTANTIATE"
@@ -24,7 +31,7 @@ gaps:
 
 **Verified:** 2026-04-04
 **Status:** gaps_found (partial)
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — after gap closure (Plan 12-05)
 
 ## Goal Achievement
 
@@ -41,13 +48,28 @@ gaps:
 
 **Score:** 5/6 truths verified
 
+### Re-verification Results
+
+**Gap 1: BSD-3-Clause license (CLOSED ✓)**
+
+- Previous: Only 11 lines (short template)
+- Current: 30 lines (complete BSD-3-Clause text)
+- Evidence: `licenses/BSD-3-Clause.txt` now contains full license text from NumPy repository
+- Status: **FIXED** in Plan 12-05
+
+**Gap 2: Standalone executable (REMAINS)**
+
+- Status: Intentionally skipped (Plan 12-02)
+- Reason: Screenshots pending, 3D viewer untested
+- Build infrastructure exists but not executed
+
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
 | `.planning/env_dev.yml` | Contains pyinstaller | ✓ VERIFIED | Line 267: `pyinstaller==6.19.0` |
 | `licenses/LGPL-3.0.txt` | Qt license (100+ lines) | ✓ VERIFIED | 165 lines - full LGPL-3.0 license |
-| `licenses/BSD-3-Clause.txt` | BSD-3-Clause license | ⚠️ THIN | 11 lines - template only, not full text |
+| `licenses/BSD-3-Clause.txt` | BSD-3-Clause license | ✓ VERIFIED | 30 lines - complete license text (was 11) |
 | `licenses/PSF-2.0.txt` | PSF-2.0 license | ✓ VERIFIED | 47 lines - complete |
 | `licenses/MIT.txt` | MIT license | ✓ VERIFIED | 21 lines - complete |
 | `environment.yml` | Exact version pins | ✓ VERIFIED | All Python packages pinned to =x.y.z or ==x.y.z |
@@ -60,6 +82,7 @@ gaps:
 |------|-----|-----|--------|---------|
 | `.planning/env_dev.yml` | PyInstaller | pip install | ✓ WIRED | pyinstaller==6.19.0 present in pip deps |
 | PySide6 | LGPL-3.0.txt | license file | ✓ WIRED | LGPL-3.0.txt exists in licenses/ |
+| VTK/NumPy/SciPy | BSD-3-Clause.txt | license file | ✓ WIRED | BSD-3-Clause.txt now has full text |
 | `environment-build.yml` | GitHub Actions | conda env create | ✓ WIRED | workflow uses environment-build.yml |
 | build-windows.yml | PyInstaller | pyinstaller command | ✓ WIRED | workflow runs pyinstaller command |
 
@@ -68,14 +91,12 @@ gaps:
 | Requirement | Status | Blocking Issue |
 |-------------|--------|----------------|
 | PACKAGE-01: User receives standalone bundled executable | ✗ FAILED | No .exe produced - Plan 12-02 skipped |
-| PACKAGE-02: License compatibility audit | ✓ SATISFIED | License files collected for all deps |
+| PACKAGE-02: License compatibility audit | ✓ SATISFIED | License files collected for all deps (BSD-3-Clause now complete) |
 | PACKAGE-03: All dependency versions pinned | ✓ SATISFIED | All packages have exact pins in environment.yml |
 
 ### Anti-Patterns Found
 
-| File | Pattern | Severity | Impact |
-|------|---------|----------|--------|
-| `licenses/BSD-3-Clause.txt` | Short template (11 lines) | ⚠️ Warning | May not satisfy full license compliance - typical BSD-3-Clause is longer |
+None.
 
 ### Human Verification Required
 
@@ -98,22 +119,22 @@ gaps:
 
 ### Gaps Summary
 
-**Gap 1: No standalone executable produced**
+**Gap 1: BSD-3-Clause license (CLOSED ✓)**
+
+- Fixed in Plan 12-05
+- Changed from 11-line template to 30-line complete license text
+- Sources from NumPy repository
+
+**Gap 2: No standalone executable produced (REMAINS - INTENTIONALLY SKIPPED)**
 
 - **Reason:** Plan 12-02 (build executable with PyInstaller) was intentionally skipped due to pending screenshots and untested 3D viewer
 - **What exists:** Build infrastructure (environment-build.yml, build-windows.yml)
 - **What's missing:** Actual .exe file and distribution package
 - **Impact:** PACKAGE-01 requirement not fully satisfied - users cannot "receive" an executable yet
-- **Plan needed:** Execute Plan 12-02 or create new plan to build and release executable
-
-**Gap 2: BSD-3-Clause license may be incomplete**
-
-- **Reason:** Only 11 lines (short template), not full license text
-- **What exists:** Basic BSD-3-Clause template text
-- **What's missing:** Complete license text from official source
-- **Impact:** May not satisfy full license compliance for VTK, NumPy, SciPy
+- **Plan needed:** Execute Plan 12-02 or create new plan to build and release executable (deferred)
 
 ---
 
 _Verified: 2026-04-04_
+_Re-verified: 2026-04-04 (after Plan 12-05 gap closure)_
 _Verifier: OpenCode (gsd-verifier)_
