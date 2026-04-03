@@ -171,16 +171,17 @@ Plans:
 
 **Goal:** Users receive a standalone executable with all dependencies bundled, with verified license compliance
 
-**Requirements:** PACKAGE-01, PACKAGE-02
+**Requirements:** PACKAGE-01, PACKAGE-02, PACKAGE-03
 
 **Dependencies:** Phase 13 (documentation complete for packaging)
 
 **Note:** Phase 13 documentation will be included in the standalone distribution.
 
-**Plans:** 2 plans in 2 waves
+**Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 12-01-PLAN.md — Add PyInstaller dependency, collect licenses, create Windows workflow
+- [x] 12-01-PLAN.md — Add PyInstaller dependency, collect licenses, create Windows workflow
+- [ ] 12-03-PLAN.md — Pin all dependency versions to exact versions in environment.yml
 - [ ] 12-02-PLAN.md — Build Linux executable and assemble distribution tarball
 
 **Success Criteria:**
@@ -231,7 +232,7 @@ Plans:
 | **9 - Phase Diagram** | v2.0 | ✅ Complete | 4 |
 | **10 - 3D Viewer** | v2.0 | ✅ Complete | 9 |
 | **11 - Save/Export** | v2.0 | ✅ Complete | 7 (5 complete, 2 deferred) |
-| **12 - Packaging** | v2.0 | 🔄 Planned | 2 |
+| **12 - Packaging** | v2.0 | 🔄 Planned | 3 |
 | **13 - Documentation Update** | v2.0 | ✅ Complete | 4 |
 
 ---
@@ -248,9 +249,9 @@ Plans:
 | Save/Export | 3 | Phase 11 |
 | Information & Education | 4 | Phase 11 |
 | User Experience | 1 | Phase 8 |
-| Packaging & Licensing | 2 | Phase 12 |
+| Packaging & Licensing | 3 | Phase 12 |
 
-**Total v2.0 Requirements:** 32 (ADVVIZ-05 not implemented)
+**Total v2.0 Requirements:** 33 (ADVVIZ-05 not implemented)
 
 ---
 
