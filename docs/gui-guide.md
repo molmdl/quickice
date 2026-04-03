@@ -125,7 +125,7 @@ Use the toolbar to switch between:
 
 *Single viewport showing ice structure with ball-and-stick representation*
 
-<img src="images/dual-viewport.png" width="50%">
+<img src="images/dual-viewport.png" width="80%">
 
 *Dual viewport comparison of top two candidates*
 
@@ -152,7 +152,7 @@ The File menu provides multiple export formats:
 - Format: PNG
 - Captures current view (useful for presentations)
 
-<img src="images/expor-menu" width="20%">
+<img src="images/export-menu" width="20%">
 
 *File menu with export options*
 
@@ -197,8 +197,6 @@ The GUI requires GLIBC 2.28 or higher due to Qt 6.10.2.
 ```bash
 ldd --version | head -1
 ```
-
-See [OS Requirements Analysis](../.planning/os_req.md) for technical details.
 
 ### "3D viewer unavailable in remote environment"
 
