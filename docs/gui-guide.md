@@ -204,6 +204,8 @@ VTK requires local display support. If running on a remote server:
 - Clone the repository to your local machine
 - Run the GUI locally for full 3D visualization
 
+In some cases, it is possible to use `QUICKICE_FORCE_VTK=true` to override the check and run the GUI remotely.
+
 ### Generation takes too long
 
 - Reduce molecule count (try 96 instead of 216)
