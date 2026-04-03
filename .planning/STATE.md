@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 12 - Packaging & Distribution |
-| Plan | 1 of 2 in current phase |
+| Plan | 2 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-03 - Completed 12-01-PLAN.md |
+| Last activity | 2026-04-04 - Completed 12-03-PLAN.md |
 
-**Progress:** ████████████████████ 100% (61 of 62 plans across v2.0)
+**Progress:** ████████████████████ 97% (63 of 65 plans across v2.0)
 
 ---
 
@@ -252,16 +252,19 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 12-01 | License files from SPDX repository | Plain text format (opensource.org returned HTML) |
 | 12-01 | Windows workflow with manual trigger | User-controlled execution, not auto-triggered |
 | 12-01 | PyInstaller --onedir mode | Faster startup, easier debugging than --onefile |
+| 12-03 | Conda packages with single = | Standard conda version pinning format |
+| 12-03 | Pip packages with == | Standard pip version pinning format |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-03
-**Stopped at:** Completed 12-01-PLAN.md
+**Last session:** 2026-04-04
+**Stopped at:** Completed 12-03-PLAN.md
 **Next steps:**
-1. Run `/gsd-execute-phase 12-02` to build Linux executable
-2. Create distribution tarball for v2.0.0 release
+1. Run `/gsd-execute-phase 12-04` to create Windows build workflow
+2. Run `/gsd-execute-phase 12-02` to build Linux executable and create tarball
+3. Release v2.0.0
 
 ---
 
@@ -319,9 +322,10 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | UX-01 | Phase 8 | Complete |
 | PACKAGE-01 | Phase 12 | In Progress |
 | PACKAGE-02 | Phase 12 | Pending |
+| PACKAGE-03 | Phase 12 | Complete |
 
-**Coverage:** 32/33 requirements mapped (ADVVIZ-05 not implemented) ✓
+**Coverage:** 33/34 requirements mapped (ADVVIZ-05 not implemented) ✓
 
 ---
 
-*State updated: 2026-04-03 - Completed 12-01-PLAN.md (packaging infrastructure)*
+*State updated: 2026-04-04 - Completed 12-03-PLAN.md (dependency version pinning)*
