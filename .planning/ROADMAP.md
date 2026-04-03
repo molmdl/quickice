@@ -8,7 +8,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-03-29)
 - ✅ **v1.1 Hotfix** — Phase 7.1 (shipped 2026-03-31)
-- 🚧 **v2.0 GUI Application** — Phases 8-12 (in progress)
+- ✅ **v2.0 GUI Application** — Phases 8-13 (complete)
 
 ---
 
@@ -167,7 +167,7 @@ Plans:
 
 ---
 
-### Phase 12: Packaging & Distribution ⚠️ Partial
+### Phase 12: Packaging & Distribution ✅ Complete
 
 **Goal:** Users receive a standalone executable with all dependencies bundled, with verified license compliance
 
@@ -177,19 +177,19 @@ Plans:
 
 **Note:** Phase 13 documentation will be included in the standalone distribution.
 
-**Plans:** 5 plans (3 complete, 1 deferred, 1 gap closure)
+**Plans:** 5 plans (all complete)
 
 Plans:
 - [x] 12-01-PLAN.md — Verify dev environment + collect licenses
+- [x] 12-02-PLAN.md — Build Linux executable with PyInstaller
 - [x] 12-03-PLAN.md — Pin all dependency versions to exact versions in environment.yml
 - [x] 12-04-PLAN.md — Create cross-platform build env + Windows GitHub Actions workflow
 - [x] 12-05-PLAN.md — GAP CLOSURE: Fix BSD-3-Clause license (30 lines from NumPy)
-- [ ] 12-02-PLAN.md — DEFERRED: Build Linux executable (pending: screenshots, 3D viewer test)
 
-**Verification:** 2/3 requirements satisfied (PACKAGE-01 deferred, PACKAGE-02 ✓, PACKAGE-03 ✓)
+**Verification:** 3/3 requirements satisfied (PACKAGE-01 ✓, PACKAGE-02 ✓, PACKAGE-03 ✓)
 
 **Success Criteria:**
-1. User can download/run standalone executable that launches QuickIce GUI without requiring Python installation — ⚠️ DEFERRED
+1. User can download/run standalone executable that launches QuickIce GUI without requiring Python installation — ✓ COMPLETE (quickice-v2.0.0-linux-x86_64.tar.gz)
 2. License compatibility audit confirms all bundled libraries (PySide6, VTK, GenIce2) are legally compatible with MIT license — ✓ COMPLETE
 3. All dependency versions pinned to exact versions (`=x.y.z`) in environment.yml for reproducibility and security — ✓ COMPLETE
 
