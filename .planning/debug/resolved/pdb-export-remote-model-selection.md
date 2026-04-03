@@ -61,8 +61,3 @@ verification: |
      - Right selector defaults to Rank 2 (index 1)
      - Items are populated correctly with "Rank X (phase_id)" format
 files_changed: [quickice/gui/view.py]
-
-root_cause: 
-fix: 
-verification: 
-files_changed: []
