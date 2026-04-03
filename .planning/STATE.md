@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 12 - Packaging & Distribution |
-| Plan | Ready to begin (2 plans required) |
-| Status | Phase 13 verified complete, Phase 12 ready for execution |
-| Last activity | 2026-04-03 - Phase 13 complete |
+| Plan | 1 of 2 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-03 - Completed 12-01-PLAN.md |
 
-**Progress:** ████████████████████ 100% (60 of 60 plans across v2.0)
+**Progress:** ████████████████████ 100% (61 of 62 plans across v2.0)
 
 ---
 
@@ -248,16 +248,20 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 13-03 | Use QDialog (modal) for QuickReferenceDialog | Per CONTEXT.md requirement, not panel or F1 shortcut |
 | 13-04 | Use QDialog.exec() for modal dialog | Per INFO-04 requirement, blocks parent until closed |
 | 13-04 | Help menu after File menu | Standard UI convention, logical menu ordering |
+| 12-01 | PyInstaller as dev-only dependency | Users building executable install dev dependencies separately |
+| 12-01 | License files from SPDX repository | Plain text format (opensource.org returned HTML) |
+| 12-01 | Windows workflow with manual trigger | User-controlled execution, not auto-triggered |
+| 12-01 | PyInstaller --onedir mode | Faster startup, easier debugging than --onefile |
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-03
-**Stopped at:** Phase 13 verified complete
+**Stopped at:** Completed 12-01-PLAN.md
 **Next steps:**
-1. Run `/gsd-plan-phase 12` to plan packaging phase
-2. Execute Phase 12 to create standalone executable with bundled documentation
+1. Run `/gsd-execute-phase 12-02` to build Linux executable
+2. Create distribution tarball for v2.0.0 release
 
 ---
 
@@ -313,11 +317,11 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | ADVVIZ-04 | Phase 10 | Complete |
 | ADVVIZ-05 | Phase 10 | NOT IMPLEMENTED |
 | UX-01 | Phase 8 | Complete |
-| PACKAGE-01 | Phase 12 | Pending |
+| PACKAGE-01 | Phase 12 | In Progress |
 | PACKAGE-02 | Phase 12 | Pending |
 
 **Coverage:** 32/33 requirements mapped (ADVVIZ-05 not implemented) ✓
 
 ---
 
-*State updated: 2026-04-03 - Phase 13 verified complete, ready for Phase 12 packaging*
+*State updated: 2026-04-03 - Completed 12-01-PLAN.md (packaging infrastructure)*
