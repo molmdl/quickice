@@ -147,7 +147,7 @@ Validation:
 ```
 
 See [sample_output](sample_output) for files generated with this example (ice Ih at 273K and 1atm).
-``
+
 
 ### CLI Options
 
