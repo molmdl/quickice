@@ -46,7 +46,7 @@ dependencies:
       - methodtools==0.4.7
       - matplotlib>=3.5
       - networkx==3.6.1
-      - numpy==2.4.3
+      - numpy==2.4.4
       - openpyscad==0.5.0
       - pairlist==0.6.4
       - scipy>=1.8
