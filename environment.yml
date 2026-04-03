@@ -32,8 +32,8 @@ dependencies:
   - wheel=0.46.3=py314h06a4308_0
   - xz=5.8.2=h448239c_0
   - zstd=1.5.7=h11fc155_0
-  - pyside6>=6.9.3
-  - vtk>=9.5.2
+  - pyside6=6.10.2
+  - vtk=9.5.2
   - pip:
       - click==8.3.1
       - cycless==0.7
