@@ -64,9 +64,9 @@ Requirements for v2.0 GUI application. Each maps to roadmap phases.
 
 ### Packaging & Licensing
 
-- [ ] **PACKAGE-01**: User receives standalone bundled executable with all dependencies
-- [ ] **PACKAGE-02**: License compatibility audit confirms bundling is legally compliant
-- [ ] **PACKAGE-03**: All dependency versions pinned to exact versions (`=x.y.z`) in environment.yml for reproducibility and security
+- [x] **PACKAGE-01**: User receives standalone bundled executable with all dependencies
+- [x] **PACKAGE-02**: License compatibility audit confirms bundling is legally compliant
+- [x] **PACKAGE-03**: All dependency versions pinned to exact versions (`=x.y.z`) in environment.yml for reproducibility and security
 
 ## v2.1 Requirements
 
@@ -152,4 +152,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-04-02 after Phase 11 completion*
+*Last updated: 2026-04-04 after Phase 12 completion*
