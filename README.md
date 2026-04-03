@@ -1,6 +1,7 @@
 # QuickIce
 
 > **Experimental** - This is a "pure vibe coding project" created as a coding exercise. No physics simulations are performed. Results are plausible candidates, not validated structures.
+> While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
 Condition-based ice structure candidate generation from thermodynamic conditions (temperature and pressure).
 
