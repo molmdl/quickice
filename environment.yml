@@ -44,7 +44,7 @@ dependencies:
       - graphstat==0.3.3
       - iapws>=1.5.4
       - methodtools==0.4.7
-      - matplotlib>=3.5
+      - matplotlib>=3.10.8
       - networkx==3.6.1
       - numpy==2.4.3
       - openpyscad==0.5.0
