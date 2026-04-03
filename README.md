@@ -1,7 +1,10 @@
 # QuickIce
 
-> **Experimental** - This is a "pure vibe coding project" created as a coding exercise. No physics simulations are performed. Results are plausible candidates, not validated structures.
-> While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
+> **Experimental** 
+>
+> - This is a "pure vibe coding project" created as a coding exercise. No physics simulations are performed. Results are plausible candidates, not validated structures.
+>
+> - While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
 Condition-based ice structure candidate generation from thermodynamic conditions (temperature and pressure).
 
@@ -216,6 +219,7 @@ Key limitations:
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
 - Not all the phases are supported (since we rely on the GenIce2 library)
+- Only pure water ice is supported
 
 ## Project Structure
 
@@ -225,13 +229,14 @@ quickice/
 ├── quickice/            # Main package
 │   ├── main.py          # Workflow orchestration
 │   ├── cli/             # Command-line parsing
+│   ├── gui/             # Graphical User Interface
 │   ├── validation/      # Input validation
 │   ├── phase_mapping/   # T,P → ice polymorph lookup
 │   ├── structure_generation/  # GenIce2 integration
 │   ├── ranking/         # Candidate scoring
-│   └── output/          # PDB writing and diagrams
-├── output/              # Default output directory
-├── requirements-dev.txt # Development dependencies
+├── sample_output/       # Sample CLI output directory
+├── environment.yml      # Conda environment file
+├── setup.sh             # Environment file to source in a new shell
 └── README.md            # This file
 ```
 

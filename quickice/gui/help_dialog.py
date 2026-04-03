@@ -71,8 +71,8 @@ class QuickReferenceDialog(QDialog):
         layout.addWidget(self._create_section_label("More Information"))
         refs_text = QLabel(
             "• Click phase regions in diagram to see scientific references\n"
-            "• <a href='https://github.com/genice-dev/GenIce2'>GenIce2 repository</a>\n"
-            "• <a href='https://www.iapws.org'>IAPWS (water standards)</a>"
+            "• GenIce2 repository: https://github.com/genice-dev/GenIce2\n"
+            "• IAPWS (water standards): https://www.iapws.org"
         )
         refs_text.setOpenExternalLinks(True)
         refs_text.setWordWrap(True)
