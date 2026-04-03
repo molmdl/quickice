@@ -152,7 +152,7 @@ The File menu provides multiple export formats:
 - Format: PNG
 - Captures current view (useful for presentations)
 
-<img src="images/export-menu.png" width="20%">
+<img src="images/export-menu.png" width="50%">
 
 *File menu with export options*
 
