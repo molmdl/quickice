@@ -1,21 +1,21 @@
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                            306 │
-│Messages                                          7,454 │
-│Days                                                  8 │
+│Sessions                                            349 │
+│Messages                                          8,370 │
+│Days                                                  9 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                      $138.90 │
-│Avg Cost/Day                                     $17.36 │
-│Avg Tokens/Session                                 1.2M │
-│Median Tokens/Session                            772.0K │
-│Input                                             91.0M │
-│Output                                             3.0M │
-│Cache Read                                       256.4M │
+│Total Cost                                      $157.84 │
+│Avg Cost/Day                                     $17.54 │
+│Avg Tokens/Session                                 1.1M │
+│Median Tokens/Session                            755.6K │
+│Input                                            103.8M │
+│Output                                             3.3M │
+│Cache Read                                       283.5M │
 │Cache Write                                        2.1M │
 └────────────────────────────────────────────────────────┘
 
@@ -23,20 +23,20 @@
 │                      MODEL USAGE                       │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5                                  │
-│  Messages                                        5,346 │
-│  Input Tokens                                    84.9M │
-│  Output Tokens                                    3.2M │
-│  Cache Read                                     202.1M │
+│  Messages                                        6,088 │
+│  Input Tokens                                    97.4M │
+│  Output Tokens                                    3.5M │
+│  Cache Read                                     227.6M │
 │  Cache Write                                         0 │
-│  Cost                                        $135.4470 │
+│  Cost                                        $154.1640 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/minimax/minimax-m2.5                        │
-│  Messages                                          928 │
-│  Input Tokens                                     5.3M │
-│  Output Tokens                                  532.4K │
-│  Cache Read                                      28.7M │
+│  Messages                                        1,017 │
+│  Input Tokens                                     5.6M │
+│  Output Tokens                                  578.7K │
+│  Cache Read                                      30.4M │
 │  Cache Write                                         0 │
-│  Cost                                          $3.0840 │
+│  Cost                                          $3.2977 │
 ├────────────────────────────────────────────────────────┤
 │ opencode/big-pickle                                    │
 │  Messages                                          561 │
@@ -59,16 +59,16 @@
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 3761 (41.3%)   │
-│ read               ████████████         2403 (26.4%)   │
-│ edit               ██████               1204 (13.2%)   │
-│ write              ██                   435 ( 4.8%)    │
-│ glob               ██                   389 ( 4.3%)    │
-│ webfetch           █                    252 ( 2.8%)    │
-│ task               █                    234 ( 2.6%)    │
-│ grep               █                    215 ( 2.4%)    │
-│ question           █                    203 ( 2.2%)    │
-│ todowrite          █                      5 ( 0.1%)    │
+│ bash               ████████████████████ 4377 (42.2%)   │
+│ read               ████████████         2702 (26.1%)   │
+│ edit               ██████               1345 (13.0%)   │
+│ write              ██                   472 ( 4.6%)    │
+│ glob               ██                   441 ( 4.3%)    │
+│ webfetch           █                    274 ( 2.6%)    │
+│ task               █                    269 ( 2.6%)    │
+│ grep               █                    251 ( 2.4%)    │
+│ question           █                    223 ( 2.2%)    │
+│ todowrite          █                      5 ( 0.0%)    │
 │ websearch          █                      4 ( 0.0%)    │
 │ skill              █                      1 ( 0.0%)    │
 └────────────────────────────────────────────────────────┘
