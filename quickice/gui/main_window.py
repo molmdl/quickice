@@ -594,7 +594,7 @@ def _get_citation(phase_id: str) -> str:
     citations = {
         "ice_ih": "Hexagonal ice Ih (most common ice). No specific citation required.",
         "ice_ic": "Vos, W.L. et al. (1993). Phys. Rev. Lett., 71(19), 3150-3153. DOI: 10.1103/PhysRevLett.71.3150",
-        "ice_ii": "Kamb, B. (1964). Acta Cryst., 17, 1437-1449. DOI: 10.1107/S0365110X64003457\nKamb, B. et al. (2003). J. Chem. Phys., 55, 1934-1945.",
+        "ice_ii": "Kamb, B. (1964). Acta Cryst., 17, 1437-1449. DOI: 10.1107/S0365110X64003553\nKamb, B. et al. (2003). J. Chem. Phys., 55, 1934-1945.",
         "ice_iii": "Petrenko, V.F. & Whitworth, R.W. (1999). Physics of Ice, Table 11.2.",
         "ice_v": "Monoclinic ice V. No specific citation in GenIce2.",
         "ice_vi": "Petrenko, V.F. & Whitworth, R.W. (1999). Physics of Ice, Table 11.2.",
