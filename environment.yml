@@ -50,7 +50,7 @@ dependencies:
       - openpyscad==0.5.0
       - pairlist==0.6.4
       - scipy>=1.8
-      - shapely>=2.0
+      - shapely>=2.1.2
       - six==1.17.0
       - spglib==2.7.0
       - wirerope==1.0.0
