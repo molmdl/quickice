@@ -1,0 +1,56 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: quickice
+          environment-file: environment.yml
+      
+      - name: Install PyInstaller
+        shell: bash -l {0}
+        run: |
+          conda activate quickice
+          pip install pyinstaller>=6.0
+      
+      - name: Build executable
+        shell: bash -l {0}
+        run: |
+          conda activate quickice
+          pyinstaller --name quickice-gui --windowed --onedir quickice/gui/__main__.py
+      
+      - name: Copy licenses
+        shell: bash -l {0}
+        run: |
+          cp -r licenses dist/quickice-gui/
+      
+      - name: Copy documentation
+        shell: bash -l {0}
+        run: |
+          cp README.md dist/quickice-gui/
+          cp LICENSE dist/quickice-gui/
+          mkdir -p dist/quickice-gui/docs
+          cp docs/gui-guide.md dist/quickice-gui/docs/ 2>/dev/null || echo "gui-guide.md not found, skipping"
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quickice-gui-windows
+          path: dist/quickice-gui
+          retention-days: 30
