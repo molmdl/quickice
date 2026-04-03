@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 12 - Packaging & Distribution |
-| Plan | 4 of 5 complete (12-02 deferred) |
-| Status | Partial - executable build pending |
-| Last activity | 2026-04-04 - Gap closure: fixed BSD-3-Clause license |
+| Plan | 5 of 5 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-04 - Completed 12-02: Linux executable built and tarball assembled |
 
-**Progress:** ████████████████████ 100% (65 of 66 plans across v2.0, 1 deferred)
+**Progress:** ████████████████████ 100% (66 of 66 plans across v2.0)
 
 ---
 
@@ -118,7 +118,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Status:** Complete - 4/4 plans executed, verification passed (5/7 must-haves, 2 deferred by design)
 
-### Phase 12: Packaging & Distribution (PARTIAL ⚠️)
+### Phase 12: Packaging & Distribution (COMPLETE ✓)
 
 **Goal:** Users receive standalone executable with all dependencies bundled, with verified license compliance
 
@@ -130,9 +130,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 - All dependency versions pinned to exact versions
 - Cross-platform build environment (environment-build.yml)
 - Windows GitHub Actions workflow
+- Linux executable tarball (quickice-v2.0.0-linux-x86_64.tar.gz, 286MB)
 
-**Status:** Partial - 4 of 5 plans complete, 12-02 deferred (pending: screenshots, 3D viewer test)
-**Verification:** 2/3 requirements satisfied (PACKAGE-02 ✓, PACKAGE-03 ✓, PACKAGE-01 deferred)
+**Status:** Complete - 5/5 plans executed
+**Verification:** 3/3 requirements satisfied (PACKAGE-01 ✓, PACKAGE-02 ✓, PACKAGE-03 ✓)
 
 ### Phase 13: Update README and Documentation After Finishing the GUI (COMPLETE ✓)
 
@@ -260,6 +261,8 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 12-01 | License files from SPDX repository | Plain text format (opensource.org returned HTML) |
 | 12-01 | Windows workflow with manual trigger | User-controlled execution, not auto-triggered |
 | 12-01 | PyInstaller --onedir mode | Faster startup, easier debugging than --onefile |
+| 12-02 | Use collect_all() hook for bundling | Comprehensive package collection including data files |
+| 12-02 | Include all license files in tarball | Full license compliance for distribution |
 | 12-03 | Conda packages with single = | Standard conda version pinning format |
 | 12-03 | Pip packages with == | Standard pip version pinning format |
 | 12-04 | Separate build environment file | Avoids Linux-specific libraries for cross-platform builds |
@@ -270,12 +273,10 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Session Continuity
 
 **Last session:** 2026-04-04
-**Stopped at:** Phase 12 partial - gap closure complete (BSD-3-Clause license fixed)
+**Stopped at:** Phase 12 complete - Linux executable built, tarball assembled
 **Next steps:**
-1. Complete screenshots and test 3D viewer
-2. Run `/gsd-execute-phase 12-02` to build Linux executable
-3. (Optional) Run Windows workflow on GitHub Actions for Windows executable
-4. Release v2.0.0
+1. (Optional) Run Windows workflow on GitHub Actions for Windows executable
+2. Release v2.0.0
 
 ---
 
@@ -331,12 +332,12 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | ADVVIZ-04 | Phase 10 | Complete |
 | ADVVIZ-05 | Phase 10 | NOT IMPLEMENTED |
 | UX-01 | Phase 8 | Complete |
-| PACKAGE-01 | Phase 12 | Deferred (executable build pending) |
+| PACKAGE-01 | Phase 12 | Complete |
 | PACKAGE-02 | Phase 12 | Complete |
 | PACKAGE-03 | Phase 12 | Complete |
 
-**Coverage:** 33/34 requirements mapped (ADVVIZ-05 not implemented, PACKAGE-01 deferred) ✓
+**Coverage:** 34/34 requirements mapped (ADVVIZ-05 not implemented) ✓
 
 ---
 
-*State updated: 2026-04-04 - Phase 12 partial (gap closure: BSD-3-Clause license fixed, executable build deferred)*
+*State updated: 2026-04-04 - Phase 12 complete (Linux executable built and tarball assembled)*
