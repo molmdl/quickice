@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 |-------|-------|
 | Milestone | v2.0 (GUI Application) |
 | Phase | Phase 12 - Packaging & Distribution |
-| Plan | 2 of 4 in current phase |
+| Plan | 3 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-04 - Completed 12-03-PLAN.md |
+| Last activity | 2026-04-03 - Completed 12-04-PLAN.md |
 
-**Progress:** ████████████████████ 97% (63 of 65 plans across v2.0)
+**Progress:** ████████████████████▏ 98% (64 of 65 plans across v2.0)
 
 ---
 
@@ -254,17 +254,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 | 12-01 | PyInstaller --onedir mode | Faster startup, easier debugging than --onefile |
 | 12-03 | Conda packages with single = | Standard conda version pinning format |
 | 12-03 | Pip packages with == | Standard pip version pinning format |
+| 12-04 | Separate build environment file | Avoids Linux-specific libraries for cross-platform builds |
+| 12-04 | Manual trigger workflow | User-controlled Windows build execution |
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-04
-**Stopped at:** Completed 12-03-PLAN.md
+**Last session:** 2026-04-03
+**Stopped at:** Completed 12-04-PLAN.md
 **Next steps:**
-1. Run `/gsd-execute-phase 12-04` to create Windows build workflow
-2. Run `/gsd-execute-phase 12-02` to build Linux executable and create tarball
-3. Release v2.0.0
+1. Run `/gsd-execute-phase 12-02` to build Linux executable and create tarball
+2. Release v2.0.0
 
 ---
 
@@ -320,12 +321,12 @@ Per project constraint: Do NOT auto-install. Add to env.yml, seek approval first
 | ADVVIZ-04 | Phase 10 | Complete |
 | ADVVIZ-05 | Phase 10 | NOT IMPLEMENTED |
 | UX-01 | Phase 8 | Complete |
-| PACKAGE-01 | Phase 12 | In Progress |
-| PACKAGE-02 | Phase 12 | Pending |
+| PACKAGE-01 | Phase 12 | Complete |
+| PACKAGE-02 | Phase 12 | Complete |
 | PACKAGE-03 | Phase 12 | Complete |
 
 **Coverage:** 33/34 requirements mapped (ADVVIZ-05 not implemented) ✓
 
 ---
 
-*State updated: 2026-04-04 - Completed 12-03-PLAN.md (dependency version pinning)*
+*State updated: 2026-04-03 - Completed 12-04-PLAN.md (cross-platform build environment)*

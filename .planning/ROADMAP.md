@@ -182,7 +182,7 @@ Plans:
 Plans:
 - [x] 12-01-PLAN.md — Verify dev environment + collect licenses
 - [x] 12-03-PLAN.md — Pin all dependency versions to exact versions in environment.yml
-- [ ] 12-04-PLAN.md — Create cross-platform build env + Windows GitHub Actions workflow
+- [x] 12-04-PLAN.md — Create cross-platform build env + Windows GitHub Actions workflow
 - [ ] 12-02-PLAN.md — Build Linux executable and assemble distribution tarball
 
 **Success Criteria:**
