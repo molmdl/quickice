@@ -34,7 +34,6 @@ jobs:
         run: |
           mkdir -p dist/package
           cp -r dist/quickice-gui dist/package/
-          cp -r dist/_internal dist/package/
           cp README.md dist/package/
           cp LICENSE dist/package/
           mkdir -p dist/package/docs
