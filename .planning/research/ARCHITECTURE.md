@@ -420,7 +420,7 @@ class DiagramService:
 - [PyQt Threading Best Practices](https://doc.qt.io/qtforpython-6/overviews/qthread.html) — Official Qt documentation
 - [Qt Model/View Programming](https://doc.qt.io/qt-6/model-view-programming.html) — MVVM pattern reference
 - [Matplotlib in Qt](https://matplotlib.org/stable/gallery/user_interfaces/embedding_in_qt_sgskip.html) — Interactive plots in PyQt
-- [QuickIce Existing Modules](file:///share/home/nglokwan/quickice/quickice/) — Current pipeline implementation
+- [QuickIce Existing Modules](file://~/quickice/quickice/) — Current pipeline implementation
 
 ---
 

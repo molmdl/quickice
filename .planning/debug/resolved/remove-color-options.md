@@ -26,7 +26,7 @@ started: Reported on Debian 12 testing of 3D viewer
 
 - timestamp: 2026-04-02T19:00:00Z
   checked: grep for color.*scheme in codebase
-  found: Found color_dropdown in /share/home/nglokwan/quickice/quickice/gui/view.py:356 with ["CPK", "Energy", "Density"]
+  found: Found color_dropdown in ~/quickice/quickice/gui/view.py:356 with ["CPK", "Energy", "Density"]
   implication: This is where the dropdown options are defined
 
 - timestamp: 2026-04-02T19:00:00Z
@@ -45,4 +45,4 @@ root_cause: Color dropdown defined with unnecessary Energy and Density options t
 fix: Removed "Energy" and "Density" from dropdown items (line 356) and mode_map (lines 491-493)
 verification: Verified by reading the modified code - dropdown now shows only CPK option
 files_changed: 
-- /share/home/nglokwan/quickice/quickice/gui/view.py: Removed Energy and Density options from color dropdown
+- ~/quickice/quickice/gui/view.py: Removed Energy and Density options from color dropdown

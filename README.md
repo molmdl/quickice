@@ -51,7 +51,7 @@ QuickIce uses:
 
 ```bash
 # Create conda environment (includes v2.0 GUI dependencies)
-conda env create -f env.yml
+conda env create -f envronment.yml
 ```
 
 ### Setup Environment
