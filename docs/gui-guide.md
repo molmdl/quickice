@@ -18,7 +18,7 @@ The QuickIce GUI provides an intuitive visual interface for:
 python -m quickice.gui
 ```
 
-<!-- TODO: Update with standalone executable instructions after Phase 12 -->
+For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 ### Main Window Layout
 

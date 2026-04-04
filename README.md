@@ -84,7 +84,7 @@ For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
 ![QuickIce GUI](docs/images/quickice-gui.png)
 *QuickIce GUI showing interactive phase diagram and dual 3D molecular viewer*
 
-<!-- TODO: Add standalone executable instructions after Phase 12 packaging -->
+For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 ## Quick Start
 
