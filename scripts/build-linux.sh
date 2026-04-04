@@ -17,7 +17,7 @@ echo "=== Building QuickIce v2.0.0 Linux Executable ==="
 # Check if in correct conda environment
 if [[ "$CONDA_DEFAULT_ENV" != "quickice" ]]; then
     echo "ERROR: Please activate the quickice conda environment first:"
-    echo "  conda activate quickice"
+    echo "  source setup.sh"
     exit 1
 fi
 
