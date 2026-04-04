@@ -23,11 +23,7 @@ jobs:
       - name: Build executable
         shell: bash -el {0}
         run: |
-          pyinstaller --name quickice-gui \
-                      --onedir \
-                      --noconsole \
-                      --clean \
-                      quickice/gui/__main__.py
+          pyinstaller quickice-gui.spec
       
       - name: Copy documentation and licenses
         shell: bash
