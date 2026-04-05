@@ -17,6 +17,7 @@ from vtkmodules.all import (
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
+from quickice.structure_generation.types import Candidate
 
 
 class PDBExporter:
@@ -289,4 +290,70 @@ class ViewportExporter:
                 "Export Error",
                 f"Failed to save viewport image:\n\n{str(e)}"
             )
+            return False
+
+
+class GROMACSExporter:
+    """Handle GROMACS file export (.gro, .top, .itp).
+    
+    Per plan 14-02: Single export action generates all three files.
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize GROMACS exporter.
+        
+        Args:
+            parent_widget: Parent widget for dialog centering
+        """
+        self.parent = parent_widget
+    
+    def export_gromacs(self, candidate: Candidate) -> bool:
+        """Export ice structure to GROMACS format.
+        
+        Args:
+            candidate: Candidate with positions, atom_names, cell, nmolecules
+            
+        Returns:
+            True if export succeeded
+        """
+        # Show save dialog for .gro file
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Export for GROMACS",
+            "ice_structure.gro",
+            "GRO Files (*.gro);;All Files (*)",
+            "GRO Files (*.gro)"
+        )
+        
+        if not filepath:
+            return False
+        
+        # Ensure .gro extension
+        path = Path(filepath)
+        if path.suffix.lower() != '.gro':
+            path = path.with_suffix('.gro')
+        
+        # Generate companion filenames
+        base = path.with_suffix('')
+        top_path = base.with_suffix('.top')
+        itp_path = base.with_suffix('.itp')
+        
+        try:
+            # Write .gro file using gromacs_writer
+            from quickice.output.gromacs_writer import write_gro_file
+            write_gro_file(candidate, str(path))
+            
+            # Write .top file
+            from quickice.output.gromacs_writer import write_top_file
+            write_top_file(candidate, str(top_path))
+            
+            # Copy .itp file from data directory
+            import shutil
+            from quickice.output.gromacs_writer import get_tip4p_itp_path
+            itp_source = get_tip4p_itp_path()
+            shutil.copy(itp_source, itp_path)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
             return False

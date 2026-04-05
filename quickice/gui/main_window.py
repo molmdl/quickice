@@ -20,7 +20,7 @@ from PySide6.QtCore import Qt, Slot
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
-from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
@@ -50,6 +50,7 @@ class MainWindow(QMainWindow):
         self._pdb_exporter = PDBExporter(self)
         self._diagram_exporter = DiagramExporter(self)
         self._viewport_exporter = ViewportExporter(self)
+        self._gromacs_exporter = GROMACSExporter(self)
         
         # Store current generation result for export
         self._current_result = None
@@ -207,6 +208,14 @@ class MainWindow(QMainWindow):
         save_viewport_action = file_menu.addAction("Save Viewport...")
         save_viewport_action.setShortcut("Ctrl+Alt+S")
         save_viewport_action.triggered.connect(self._on_save_viewport)
+        
+        # Separator before Export for GROMACS
+        file_menu.addSeparator()
+        
+        # Export for GROMACS action
+        export_gromacs_action = file_menu.addAction("Export for GROMACS...")
+        export_gromacs_action.setShortcut("Ctrl+G")
+        export_gromacs_action.triggered.connect(self._on_export_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -443,6 +452,28 @@ class MainWindow(QMainWindow):
         if left_success:
             vtk_widget_right = self.viewer_panel.dual_viewer.viewer2.vtk_widget
             self._viewport_exporter.capture_viewport(vtk_widget_right, "right")
+    
+    @Slot()
+    def _on_export_gromacs(self):
+        """Handle Export for GROMACS menu action.
+        
+        Per plan 14-02: Single action exports .gro, .top, and .itp files.
+        """
+        if not self._current_result or not hasattr(self._current_result, 'ranked_candidates'):
+            QMessageBox.warning(self, "No Data", "Generate a structure first.")
+            return
+        
+        if not self._current_result.ranked_candidates:
+            QMessageBox.warning(self, "No Data", "No candidates available.")
+            return
+        
+        # Get selected candidate from viewer
+        selected_idx = self.viewer_panel.get_selected_candidate_index_left()
+        if selected_idx < 0 or selected_idx >= len(self._current_result.ranked_candidates):
+            selected_idx = 0
+        
+        ranked = self._current_result.ranked_candidates[selected_idx]
+        self._gromacs_exporter.export_gromacs(ranked.candidate)
 
     @Slot()
     def _on_help(self):
