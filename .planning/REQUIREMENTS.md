@@ -39,14 +39,14 @@ Requirements for GROMACS simulation workflow support.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GRO-01 | Phase 14 | Pending |
-| GRO-02 | Phase 14 | Pending |
-| GRO-03 | Phase 14 | Pending |
-| GRO-04 | Phase 14 | Pending |
-| GRO-05 | Phase 14 | Pending |
-| GRO-06 | Phase 14 | Pending |
-| GRO-07 | Phase 14 | Pending |
-| GRO-08 | Phase 14 | Pending |
+| GRO-01 | Phase 14 | Complete |
+| GRO-02 | Phase 14 | Complete |
+| GRO-03 | Phase 14 | Complete |
+| GRO-04 | Phase 14 | Complete |
+| GRO-05 | Phase 14 | Complete |
+| GRO-06 | Phase 14 | Complete |
+| GRO-07 | Phase 14 | Complete |
+| GRO-08 | Phase 14 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 8 total
@@ -55,4 +55,4 @@ Requirements for GROMACS simulation workflow support.
 
 ---
 *Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition*
+*Last updated: 2026-04-06 after phase 14 verification*
