@@ -52,7 +52,7 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 **Plan list:**
 - [x] 14-01-PLAN.md — GROMACS file writers and resource bundling
 - [x] 14-02-PLAN.md — Add GROMACS export to GUI
-- [ ] 14-03-PLAN.md — Add GROMACS export to CLI
+- [x] 14-03-PLAN.md — Add GROMACS export to CLI
 
 ---
 
