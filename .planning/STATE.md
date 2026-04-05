@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** v2.1 GROMACS Export — defining requirements
+**Current focus:** v2.1 GROMACS Export — phase complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 |-------|-------|
 | Milestone | v2.1 GROMACS Export |
 | Phase | 14 of 14 (GROMACS Export) |
-| Plan | 1 of 2 in current phase |
-| Status | In progress |
-| Last activity | 2026-04-05 — Completed 14-01-PLAN.md |
+| Plan | 2 of 2 (complete) |
+| Status | Phase complete |
+| Last activity | 2026-04-06 — Completed 14-02-PLAN.md |
 
-**Progress:** ████████░░ 50% (1 of 2 plans in phase)
+**Progress:** ██████████ 100% (2 of 2 plans in phase)
 
 ---
 
@@ -101,4 +101,4 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-05 — Completed 14-01-PLAN.md*
+*State updated: 2026-04-06 — Completed 14-02-PLAN.md*

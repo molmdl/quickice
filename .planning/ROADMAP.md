@@ -1,6 +1,6 @@
 # Milestone v2.1: GROMACS Export
 
-**Status:** IN PROGRESS
+**Status:** COMPLETE
 **Phases:** 14
 **Total Requirements:** 8
 
@@ -36,14 +36,14 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GRO-01: .gro coordinate export | Phase 14 | Pending |
-| GRO-02: .top topology export | Phase 14 | Pending |
-| GRO-03: Bundle tip4p-ice.itp | Phase 14 | Pending |
-| GRO-04: 4-point water coords | Phase 14 | Pending |
-| GRO-05: Proper moleculetype | Phase 14 | Pending |
-| GRO-06: GROMACS validation | Phase 14 | Pending |
-| GRO-07: Export menu option | Phase 14 | Pending |
-| GRO-08: All three files | Phase 14 | Pending |
+| GRO-01: .gro coordinate export | Phase 14 | Complete |
+| GRO-02: .top topology export | Phase 14 | Complete |
+| GRO-03: Bundle tip4p-ice.itp | Phase 14 | Complete |
+| GRO-04: 4-point water coords | Phase 14 | Complete |
+| GRO-05: Proper moleculetype | Phase 14 | Complete |
+| GRO-06: GROMACS validation | Phase 14 | Complete |
+| GRO-07: Export menu option | Phase 14 | Complete |
+| GRO-08: All three files | Phase 14 | Complete |
 
 **Coverage:** 8/8 requirements mapped ✓
 
@@ -51,7 +51,7 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 
 **Plan list:**
 - [x] 14-01-PLAN.md — GROMACS file writers and resource bundling
-- [ ] 14-02-PLAN.md — Add GROMACS export to GUI
+- [x] 14-02-PLAN.md — Add GROMACS export to GUI
 
 ---
 
