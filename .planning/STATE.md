@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** Milestone v2.0 complete — plan next with `/gsd-new-milestone`
+**Current Focus:** v2.1 GROMACS Export — defining requirements
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** v2.0 shipped — ready for next milestone planning
+**Current focus:** v2.1 GROMACS Export — defining requirements
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,13 +27,22 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.0 shipped |
+| Milestone | v2.1 GROMACS Export |
 | Phase | — |
 | Plan | — |
-| Status | Ready for next milestone |
-| Last activity | 2026-04-04 — v2.0 GUI Application complete |
+| Status | Defining requirements |
+| Last activity | 2026-04-05 — v2.1 milestone started |
 
-**Progress:** ████████████████████ 100% (66 of 66 plans across all milestones)
+**Progress:** ░░░░░░░░░░░░░░░░░░░░ 0% (0 of X plans)
+
+---
+
+## Queued Milestones
+
+| Version | Feature | Status |
+|---------|---------|--------|
+| v2.5 | Seawater Phase Diagram | Requirements defined |
+| v3.0 | Liquid-Solid Interface | Requirements defined |
 
 ---
 
@@ -92,4 +101,4 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-04 — v2.0 milestone complete*
+*State updated: 2026-04-05 — v2.1 milestone started*

@@ -40,7 +40,20 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ### Active
 
-(None — v2.0 shipped. Plan next milestone with `/gsd-new-milestone`)
+**v2.1 GROMACS Export (Current Milestone):**
+- [ ] Generate .top topology file for ice structures
+- [ ] Bundle tip4p-ice.itp force field file
+- [ ] Export .gro coordinates via GenIce2
+- [ ] Valid GROMACS input file generation
+
+**v2.5 Seawater Phase Diagram (Queued):**
+- [ ] Salinity-Temperature phase diagram widget
+- [ ] Freezing point depression calculation (IAPWS-08)
+- [ ] Na+ and Cl- ions in output structure
+
+**v3.0 Liquid-Solid Interface (Queued):**
+- [ ] Rule-based ice-water interface assembly
+- [ ] Combined ice + liquid layer generation
 
 ### Out of Scope
 
@@ -63,9 +76,17 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 **Phases Supported:** 12 (Ice Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X, XV)
 **Distribution:** Standalone executable (quickice-v2.0.0-linux-x86_64.tar.gz, 299 MB)
 
-## Next Milestone Goals
+## Current Milestone: v2.1 GROMACS Export
 
-(None defined — use `/gsd-new-milestone` to define v2.1 or v3.0 goals)
+**Goal:** Enable direct GROMACS simulation workflow from QuickIce.
+
+**Target features:**
+- GROMACS .top topology file generation
+- Bundled tip4p-ice.itp force field
+- .gro coordinate export (via GenIce2)
+- Valid gmx input files
+
+**Queued milestones:** v2.5 (Seawater), v3.0 (Interface)
 
 ---
 
@@ -104,4 +125,4 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ---
 
-*Last updated: 2026-04-04 after v2.0 milestone*
+*Last updated: 2026-04-05 after v2.1 milestone started*
