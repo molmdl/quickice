@@ -8,6 +8,7 @@ from quickice.phase_mapping import lookup_phase, UnknownPhaseError
 from quickice.structure_generation import generate_candidates
 from quickice.ranking import rank_candidates
 from quickice.output import output_ranked_candidates
+from quickice.output.gromacs_writer import write_gro_file, write_top_file
 
 
 def main() -> int:
@@ -59,6 +60,25 @@ def main() -> int:
         for rc in ranking_result.ranked_candidates[:5]:
             print(f"{rc.rank:<6}{rc.energy_score:<12.4f}{rc.density_score:<12.4f}{rc.diversity_score:<12.4f}{rc.combined_score:<12.4f}")
         print("-" * 70)
+        
+        # Export GROMACS files if requested
+        if args.gromacs:
+            output_path = Path(args.output)
+            output_path.mkdir(parents=True, exist_ok=True)
+            
+            for rc in ranking_result.ranked_candidates:
+                candidate = rc.candidate
+                gro_filename = f"{candidate.phase_id}_{rc.rank}.gro"
+                gro_filepath = output_path / gro_filename
+                write_gro_file(candidate, str(gro_filepath))
+                
+                # Write .top file only for first candidate
+                if rc.rank == 1:
+                    top_filepath = output_path / f"{candidate.phase_id}_1.top"
+                    write_top_file(candidate, str(top_filepath))
+                    print(f"Exported GROMACS files: {gro_filename}, {candidate.phase_id}_1.top")
+            
+            print(f"  GROMACS files written to: {args.output}")
         
         # Output PDB files and phase diagram
         output_result = output_ranked_candidates(
