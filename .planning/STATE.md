@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.1 GROMACS Export |
-| Phase | — |
-| Plan | — |
-| Status | Defining requirements |
-| Last activity | 2026-04-05 — v2.1 milestone started |
+| Phase | 14 of 14 (GROMACS Export) |
+| Plan | 1 of 2 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-05 — Completed 14-01-PLAN.md |
 
-**Progress:** ░░░░░░░░░░░░░░░░░░░░ 0% (0 of X plans)
+**Progress:** ████████░░ 50% (1 of 2 plans in phase)
 
 ---
 
@@ -101,4 +101,4 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-05 — v2.1 milestone started*
+*State updated: 2026-04-05 — Completed 14-01-PLAN.md*
