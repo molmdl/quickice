@@ -72,6 +72,14 @@ Examples:
     )
     
     parser.add_argument(
+        "--gromacs",
+        "-g",
+        action="store_true",
+        default=False,
+        help="Export GROMACS format (.gro, .top files)"
+    )
+    
+    parser.add_argument(
         "--version",
         "-V",
         action="version",
@@ -94,6 +102,7 @@ def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
             - nmolecules: int (4-100000)
             - output: str (output directory path, default: "output")
             - no_diagram: bool (if True, skip diagram generation)
+            - gromacs: bool (if True, export GROMACS format)
             
     Raises:
         SystemExit: If arguments are invalid or missing
