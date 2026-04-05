@@ -19,6 +19,14 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     nmol = candidate.nmolecules
     n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW
     
+    # Bounds check: ensure positions array is large enough
+    expected_atoms = nmol * 4
+    if len(candidate.positions) < expected_atoms:
+        raise ValueError(
+            f"positions has {len(candidate.positions)} atoms but "
+            f"nmolecules={nmol} needs {expected_atoms} (4 atoms per water)"
+        )
+    
     with open(filepath, 'w') as f:
         # Title line
         f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
@@ -26,15 +34,6 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
         # Number of atoms
         f.write(f"{n_atoms:5d}\n")
         
-        # Atom lines: residue num, residue name, atom name, atom num, x, y, z
-        # GROMACS .gro format (no velocities):
-        #   resnr(5), resname(5), atomname(5), atomnr(5), x(9), y(9), z(9)
-        # Total: 47 characters per line
-        # Reference: tip4p.gro uses f9.3 for coordinates (1 space + 8 digits = 9)
-        atom_num = 0
-        for mol_idx in range(nmol):
-            base_idx = mol_idx * 4  # O, H1, H2, MW order
-            
         # Atom lines: residue num, residue name, atom name, atom num, x, y, z
         # GROMACS .gro format (no velocities):
         #   resnr(5), resname(5), atomname(5), atomnr(5), x(8), y(8), z(8)

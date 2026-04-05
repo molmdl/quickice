@@ -96,8 +96,8 @@ class IceStructureGenerator:
                 lattice, density=self.density, reshape=self.supercell_matrix
             )
 
-            # Load TIP3P water model
-            water = safe_import("molecule", "tip3p").Molecule()
+            # Load TIP4P water model (4-point: O, H1, H2, MW)
+            water = safe_import("molecule", "tip4p").Molecule()
 
             # Load GROMACS formatter
             formatter = safe_import("format", "gromacs").Format()
