@@ -1,119 +1,292 @@
-# Project Research Summary
+# Project Research Summary: QuickIce v3 Milestone Exploration
 
-**Project:** QuickIce v2.0 — Adding GUI with interactive phase diagram and 3D molecular viewer  
-**Domain:** Cross-platform desktop GUI application for scientific visualization  
-**Researched:** 2026-03-31  
-**Confidence:** HIGH
+**Project:** QuickIce — Post-v2.0 Feature Research  
+**Domain:** Scientific visualization / Computational chemistry  
+**Researched:** 2026-04-05  
+**Confidence:** HIGH (verified via official documentation and standards)
 
 ---
 
 ## Executive Summary
 
-QuickIce v2.0 transforms the existing CLI tool into a cross-platform desktop GUI application with interactive phase diagram and 3D molecular visualization. Research confirms that scientific GUI applications in this domain consistently use Qt-based frameworks (PyQt6/PySide6) paired with VTK for 3D rendering. The recommended approach is **PySide6 (LGPL)** with **VTK 9.6.x** — this maintains MIT license compatibility while providing mature, well-documented libraries that support Python 3.14.
+This research synthesizes three potential feature directions for QuickIce's next milestone: GROMACS output support, seawater/saltwater ice phase diagrams, and liquid-solid interface generation. All three features are technically feasible and leverage existing dependencies, with no new external libraries required for MVP implementations.
 
-The critical insight from architecture research is that the GUI must call existing Python modules directly (not invoke the CLI as subprocess), preserving the existing CLI business logic while adding a presentation layer using MVVM pattern. The biggest risks are UI freezing during computation (must use QThread workers), 3D rendering performance at scale (VTK handles 216 molecules well), and cross-platform path handling (use pathlib throughout).
+**Recommended approach:** Implement features in order of increasing complexity — seawater phase diagram first (v2.1, lowest effort), GROMACS support second (v2.2), and interface generation last (v2.5/v3.0). This sequencing allows users to benefit from simpler features while the more complex interface generation matures. The critical risk across all features is validation — generated outputs must be scientifically meaningful, not just visually correct.
+
+**Key insight:** All three features share a common architectural pattern — new service layer modules that integrate into the existing MVVM architecture without modifying core generation logic. This keeps the codebase maintainable and allows incremental delivery.
 
 ---
 
 ## Key Findings
 
-### Recommended Stack
+### Feature 1: GROMACS Output Support (STACK_GROMACS.md)
 
-**Core technologies:**
-- **PySide6 6.11.0** — Primary GUI framework (LGPL, MIT-compatible) — industry standard for cross-platform desktop apps with Python 3.14 support
-- **VTK 9.6.1** — 3D rendering engine (BSD-licensed) — proven in scientific visualization, excellent Qt integration via `vtkQt`
-- **Matplotlib Qt backend** — Existing library reused for interactive phase diagram via `matplotlib.backends.backend_qtagg`
-- **GenIce2** — Preserved (MIT licensed, fully compatible)
+**Complexity:** 3/5 (MODERATE)  
+**Estimated Effort:** ~38 hours (~5 days)  
+**Confidence:** HIGH
 
-**License note:** Using PyQt6 would require QuickIce to become GPL-compatible or purchase a commercial license. PySide6 with LGPL is recommended to maintain MIT licensing.
+GenIce2 already produces GROMACS `.gro` coordinate files, but NOT `.top` topology files. QuickIce must generate topology files from scratch using the TIP4P-ICE force field parameters (published values from Abascal et al. 2005).
 
-### Expected Features
+**Core requirements:**
+- Generate `.top` topology file with proper GROMACS format
+- Bundle `tip4p-ice.itp` force field file as application resource
+- Integrate into existing export menu with UI controls
+- Validate files can be loaded by GROMACS
 
-**Must have (table stakes):**
-- Temperature/pressure/molecule count inputs with validation — core parameters
-- Generate button with progress bar — primary action trigger
-- Phase diagram display (static image initially) — visual T,P→phase mapping
-- Click-to-select on phase diagram — intuitive input method
-- Basic 3D viewer with ball-and-stick representation — display generated structures
-- Zoom/pan/rotate controls — explore 3D structures
-- Save PDB file — export generated structure
+**Technical findings:**
+- GenIce2 provides `.gro` output natively (`-f gromacs` flag)
+- TIP4P-ICE is NOT built into GROMACS; custom `.itp` required
+- All parameters verified from primary literature (Vega group publications)
 
-**Should have (competitive):**
-- Phase info window with citations — scientific credibility
-- Stick representation mode — alternative visualization
-- Hydrogen bond visualization — shows ice hydrogen network
-- Help tooltips — reduces learning curve
-
-**Defer (v2+):**
-- Markdown manual viewer — nice to have, not essential
-- Recent calculations history — session-based is fine for MVP
-- Multiple structure comparison — requires multiple viewports
-
-### Architecture Approach
-
-The recommended architecture is **Model-View-ViewModel (MVVM)** with a dedicated backend service layer wrapping existing CLI modules. The GUI calls existing Python modules directly (phase_mapping, structure_generation, ranking) rather than invoking the CLI as a subprocess — this preserves typed objects and avoids fragile output parsing.
-
-Key components:
-1. **View Layer (PySide6)** — Main window, input panel, phase diagram widget, 3D viewer widget
-2. **ViewModel Layer** — MainViewModel, DiagramViewModel, ViewerViewModel for UI state and commands
-3. **PipelineService** — Async wrapper for generation pipeline with progress callbacks
-4. **DiagramService** — Interactive phase diagram with click selection
-5. **ViewerService** — 3D molecular structure rendering with VTK
-
-### Critical Pitfalls
-
-1. **UI Freezing During Computation** — GenIce generation blocks the main thread; must use QThread with worker objects for background processing
-2. **3D Rendering Performance** — 216 water molecules (648 atoms) can stress naive rendering; use VTK's batch rendering with sphere/cylinder impostors
-3. **Cross-Platform File Path Handling** — Hardcoded paths fail on Windows; use `pathlib.Path` for all file operations
-4. **State Synchronization** — Interactive phase diagram and 3D viewer must stay synchronized; implement proper signal/slot mechanisms
-5. **Progress Feedback Errors** — Progress callbacks must be thread-safe; use Qt signals, update every 100-500ms
+**Dependencies:** None new — GenIce2, NumPy already in environment
 
 ---
 
-## Implications for Roadmap
+### Feature 2: Seawater Ice Phase Diagram (FEATURES_SEAWATER.md)
 
-Based on research, suggested phase structure:
+**Complexity:** 2/5 (LOW-MEDIUM)  
+**Estimated Effort:** ~20-30 hours (~3-4 days)  
+**Confidence:** HIGH
 
-### Phase 1: GUI Infrastructure + Core Input
-**Rationale:** Establishes the foundation all other phases depend on. Without the main window, input handling, and basic service layer, nothing else works.
-**Delivers:** PySide6 main window with input fields, validation, Generate button, basic progress display
-**Addresses:** Temperature/pressure/N inputs, input validation, Generate button
-**Avoids:** UI freezing (threading infrastructure built from start)
+The IAPWS library (already installed: `iapws==1.5.5`) provides full IAPWS-08 seawater thermodynamics including freezing point calculations. The key finding is that seawater ice is fundamentally different from pure water ice — it's a single phase (Ice Ih) with brine pockets, not multiple high-pressure polymorphs.
 
-### Phase 2: Phase Diagram Integration
-**Rationale:** The phase diagram is the primary visual interface and depends on having the input system working
-**Delivers:** Interactive phase diagram widget with click-to-select, T,P field updates from clicks
-**Addresses:** Phase diagram display, click to select T,P, current selection indicator
-**Avoids:** Coordinate mapping pitfalls by using matplotlib's built-in transforms
+**Core requirements:**
+- New S-T (Salinity-Temperature) phase diagram widget
+- Freezing curve calculation via IAPWS `_Tf()` function
+- Single phase region (Ice Ih + brine) vs liquid seawater
+- New tab in GUI (separate axes from T-P pure water diagram)
 
-### Phase 3: 3D Molecular Viewer
-**Rationale:** The main differentiator — users need to visualize generated ice structures. Requires VTK integration and threading working correctly.
-**Delivers:** VTK-based 3D viewer with ball-and-stick, zoom/pan/rotate, hydrogen bond visualization
-**Addresses:** 3D viewport, ball-and-stick, zoom/pan/rotate, H-bond visualization
-**Avoids:** Rendering performance issues by using VTK batch rendering
+**Technical findings:**
+- Seawater ice has NO high-pressure polymorphs at ocean conditions (<100 MPa)
+- Valid salinity range: 0-12% (covers all natural seawater)
+- IAPWS-08 is the authoritative international standard
+- Different visualization: S-T axes, single freezing curve
 
-### Phase 4: Save/Export + Polish
-**Rationale:** Users need to export results; also addresses minor UI polish items
-**Delivers:** Save PDB dialog, export phase diagram, theme toggle, help tooltips
-**Addresses:** Save PDB, Save phase diagram, Dark/light theme
-**Avoids:** Cross-platform path issues (pathlib used throughout), export mismatch (same render settings for display and export)
+**Dependencies:** None new — `iapws==1.5.5` already installed
 
-### Phase Ordering Rationale
+---
 
-- Phase 1 first: All other phases build on GUI infrastructure and threading
-- Phase 2 before 3: Phase diagram is the input method; 3D viewer is output visualization
-- Phase 3 complexity: 3D rendering is the most technically challenging — handled after simpler features work
-- Phase 4 last: Export is a "nice to have" that completes the workflow
+### Feature 3: Liquid-Solid Interface Generation (ARCHITECTURE_INTERFACE.md)
 
-### Research Flags
+**Complexity:** 3/5 (MODERATE)  
+**Estimated Effort:** ~9-14 days (~70-100 hours)  
+**Confidence:** MEDIUM
 
-Phases likely needing deeper research during planning:
-- **Phase 3 (3D Viewer):** VTK + PySide6 integration has standard patterns but needs phase-specific implementation for molecular rendering; may need to research ball-and-stick actor construction
-- **Phase 1 (Threading):** GenIce progress callbacks may need wrapper implementation to report granular progress
+GenIce2 does NOT support interface generation — it's purely an ice crystal generator. Three approaches exist: rule-based assembly (recommended for MVP), pre-generated configuration library, or MD-based relaxation (avoid for now).
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** PySide6 basic window + form is well-documented
-- **Phase 2:** Matplotlib Qt integration is standard pattern
+**Core requirements:**
+- New `InterfaceGenerator` service module
+- Liquid water configuration generator
+- Interface assembly and validation logic
+- VTK visualization enhancements (phase coloring, boundary plane)
+
+**Technical findings:**
+- Must NOT modify GenIce2; build interface as post-processing layer
+- Rule-based assembly sufficient for visualization use case
+- May need validation testing for physical reasonableness
+- Existing VTK viewer can be extended for phase differentiation
+
+**Dependencies:** None new — GenIce2, NumPy, VTK already in environment
+
+---
+
+## Version Recommendations
+
+### v2.1: Seawater Phase Diagram
+
+**Rationale:** Lowest complexity, leverages existing library, adds immediate user value for ocean science users. Well-defined scope with authoritative data source (IAPWS-08).
+
+**Delivers:**
+- Salinity-Temperature phase diagram tab
+- Freezing point depression curve
+- Phase region labels (Sea Ice vs Liquid Seawater)
+- Click interaction with phase info display
+
+**Estimated timeline:** 3-4 days  
+**Risk level:** LOW
+
+---
+
+### v2.2: GROMACS Export
+
+**Rationale:** Moderate complexity, serves computational chemistry users who need simulation-ready files. Builds on existing GenIce integration.
+
+**Delivers:**
+- GROMACS `.top` topology file generation
+- Bundled `tip4p-ice.itp` force field file
+- Export menu integration
+- GROMACS validation testing
+
+**Estimated timeline:** 5 days  
+**Risk level:** MEDIUM (validation needed)
+
+---
+
+### v2.5: Interface Generation (MVP)
+
+**Rationale:** Higher complexity, requires new service layer. Rule-based assembly provides core functionality without MD complexity. Could be v3.0 if scope expands.
+
+**Delivers:**
+- Ice-water interface structure generation
+- Rule-based assembly combining ice + liquid layers
+- Phase-colored VTK visualization
+- Basic interface orientation controls
+
+**Estimated timeline:** 2-3 weeks  
+**Risk level:** MEDIUM (needs validation testing)
+
+---
+
+### v3.0: Enhanced Features (Future)
+
+Potential v3.0 enhancements depending on user feedback:
+- Configuration library for pre-generated interface structures
+- MD relaxation option for interface generation
+- Extended water models beyond TIP4P-ICE
+- 3D S-T-P surface visualization
+- Brine pocket fraction modeling
+
+---
+
+## Complexity Comparison Matrix
+
+| Feature | Complexity | Effort | Dependencies | Risk | User Value |
+|---------|------------|--------|--------------|------|------------|
+| Seawater Phase Diagram | 2/5 | 3-4 days | None | LOW | HIGH (ocean science) |
+| GROMACS Export | 3/5 | 5 days | None | MEDIUM | HIGH (simulation) |
+| Interface Generation | 3/5 | 2-3 weeks | None | MEDIUM | MEDIUM (visualization) |
+
+---
+
+## Effort Breakdown
+
+### Seawater Phase Diagram (~25 hours)
+
+| Task | Hours | Notes |
+|------|-------|-------|
+| Core logic (S-T lookup) | 2 | Wrapper around `_Tf()` |
+| Phase diagram widget | 10 | New widget, S-T axes |
+| GUI tab integration | 5 | Standard pattern |
+| Export functionality | 3 | Reuse existing export |
+| Testing | 5 | Unit + integration |
+| **Total** | **25** | |
+
+### GROMACS Export (~38 hours)
+
+| Task | Hours | Notes |
+|------|-------|-------|
+| Research finalization | 2 | Verify TIP4P-ICE params |
+| Create tip4p-ice.itp file | 4 | Encode force field |
+| Implement .top generator | 16 | Python module |
+| Integrate with export menu | 8 | UI integration |
+| Testing with GROMACS | 8 | Validate files work |
+| **Total** | **38** | |
+
+### Interface Generation (~90 hours)
+
+| Task | Hours | Notes |
+|------|-------|-------|
+| Interface module development | 16 | Core generation logic |
+| Liquid generator module | 12 | Water configuration |
+| Worker/ViewModel integration | 8 | Standard patterns |
+| VTK visualization updates | 12 | Phase coloring |
+| UI controls | 8 | New input controls |
+| Testing & validation | 20 | Physical reasonableness |
+| Documentation | 14 | User guide updates |
+| **Total** | **90** | |
+
+---
+
+## Dependencies Analysis
+
+### New Dependencies Required: NONE
+
+All three features can be implemented using existing packages:
+
+| Package | Version | Used By |
+|---------|---------|---------|
+| genice2 | 2.2.13.1 | GROMACS, Interface |
+| iapws | 1.5.5 | Seawater |
+| numpy | (existing) | All features |
+| vtk | 9.5.2 | Interface visualization |
+| PySide6 | 6.10.2 | All UI work |
+
+### Optional Future Dependencies
+
+| Package | Purpose | Recommended For |
+|---------|---------|------------------|
+| mdanalysis | File validation | Post-MVP GROMACS |
+| openmm | MD relaxation | v3.0 Interface |
+
+---
+
+## Architecture Implications
+
+### Existing MVVM Pattern Extends Cleanly
+
+All three features follow the same architectural pattern:
+
+```
+FeatureXService (new module)
+    │
+    ├── Encapsulates feature logic
+    ├── Called by ViewModel
+    └── Returns typed result objects
+```
+
+### New Modules Required
+
+| Module | Location | Responsibility |
+|--------|----------|----------------|
+| `gromacs_export.py` | `export/` | .top file generation |
+| `seawater_diagram.py` | `diagrams/` | S-T phase diagram widget |
+| `interface_generator.py` | `structure_generation/` | Ice-water assembly |
+| `liquid_generator.py` | `structure_generation/` | Liquid water config |
+
+### ViewModel Additions
+
+Each feature needs:
+- New signal (e.g., `seawater_generation_complete`)
+- New method (e.g., `start_seawater_generation()`)
+- New worker class (runs in QThread)
+
+---
+
+## Critical Pitfalls
+
+### 1. GROMACS Validation (MEDIUM Severity)
+**Risk:** Generated `.top` files may not load correctly in GROMACS.  
+**Prevention:** Test with actual GROMACS installation, validate atom naming conventions.
+
+### 2. Interface Physical Reasonableness (MEDIUM Severity)
+**Risk:** Rule-based interfaces may have unrealistic hydrogen bonding at boundaries.  
+**Prevention:** Compare with published MD simulation snapshots; add validation tests.
+
+### 3. Seawater Axis Confusion (LOW Severity)
+**Risk:** Users may expect T-P diagram but get S-T diagram instead.  
+**Prevention:** Clear labels, tooltips, documentation explaining the difference.
+
+### 4. Performance with Dense Sampling (LOW Severity)
+**Risk:** Dense S-T grids may slow down rendering.  
+**Prevention:** Use vectorized numpy operations, lazy evaluation.
+
+---
+
+## Recommendations for Milestone Scoping
+
+### Recommended Release Schedule
+
+| Version | Feature | Timeline | Cumulative |
+|---------|---------|----------|------------|
+| v2.1 | Seawater Phase Diagram | Week 1-2 | 2 weeks |
+| v2.2 | GROMACS Export | Week 3-4 | 4 weeks |
+| v2.5 | Interface Generation MVP | Week 5-7 | 7 weeks |
+
+### Alternative: Single v3.0 Release
+
+Bundle all features into v3.0 (estimated 7-8 weeks total). This delays user value but creates a more significant release.
+
+**Recommendation:** Incremental releases preferred — users benefit from each feature immediately.
 
 ---
 
@@ -121,37 +294,58 @@ Phases with standard patterns (skip research-phase):
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All packages verified for Python 3.14; PySide6/VTK versions confirmed from PyPI (2026-03-30/26) |
-| Features | MEDIUM-HIGH | Based on scientific visualization tool patterns (OVITO, Avogadro); some features inferred |
-| Architecture | HIGH | MVVM + threading patterns well-documented; direct module import recommended |
-| Pitfalls | MEDIUM-HIGH | Common patterns for CLI-to-GUI transition; some pitfalls are preventive |
+| GROMACS Technical | HIGH | GenIce2 capabilities verified; format documented |
+| GROMACS Parameters | HIGH | TIP4P-ICE from primary literature |
+| Seawater Technical | HIGH | IAPWS-08 is authoritative standard |
+| Seawater Feasibility | HIGH | Single function call for freezing point |
+| Interface Technical | MEDIUM | Approaches identified, implementation details need refinement |
+| Interface Validation | LOW | Need domain expert review for physical reasonableness |
 
-**Overall confidence:** HIGH
+**Overall confidence:** MEDIUM-HIGH
 
-### Gaps to Address
+---
 
-- **GenIce progress callbacks:** Not confirmed if GenIce exposes progress hooks; may need to wrap and estimate progress based on known generation steps
-- **VTK molecular rendering specifics:** Need to verify exact API for ball-and-stick with colors (O=red, H=white) at implementation time
-- **Phase diagram boundary data:** Need to confirm existing `quickice/phase_mapping` exports boundary data in structured format for interactive plotting
+## Gaps to Address
+
+| Gap | How to Address | Priority |
+|-----|----------------|----------|
+| Interface validation criteria | Consult with domain expert or compare to MD literature | HIGH |
+| GROMACS user testing | Recruit beta testers from computational chemistry users | MEDIUM |
+| Seawater user personas | Survey ocean science users for expected use cases | LOW |
+| Performance benchmarks | Test with various molecule counts | LOW |
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- PySide6: https://pypi.org/project/PySide6/ — Version 6.11.0 (2026-03-23), Python 3.14 explicit support
-- VTK: https://pypi.org/project/vtk/ — Version 9.6.1 (2026-03-26), cp314 wheels available
-- PyQt Threading Documentation: https://doc.qt.io/qtforpython-6/overviews/qthread.html — Official Qt threading patterns
+
+1. **GenIce2 PyPI** — https://pypi.org/project/genice2/ — GROMACS .gro format support verified
+2. **GROMACS Manual** — https://manual.gromacs.org/current/reference-manual/topologies/topology-file-formats.html — .top format specification
+3. **IAPWS-08 Standard** — http://www.iapws.org/relguide/Seawater.html — Seawater thermodynamics
+4. **IAPWS Python Library** — https://pypi.org/project/iapws/ — Implementation
+5. **TIP4P-ICE Publication** — Abascal et al., J. Chem. Phys. 122, 234511 (2005) — Force field parameters
 
 ### Secondary (MEDIUM confidence)
-- OVITO (https://www.ovito.org/) — Scientific visualization tool patterns
-- Avogadro (https://github.com/avogadro/avogadro) — Molecular editor reference
-- Matplotlib Qt backend: https://matplotlib.org/stable/gallery/user_interfaces/embedding_in_qt_sgskip.html
 
-### Tertiary (LOW confidence)
-- GenIce2: https://github.com/genice-dev/GenIce2 — Verified MIT license, but progress callback API not deeply researched
+6. **TIP4P-ICE in GROMACS** — González & Abascal, JCTC 14, 3674 (2018)
+7. **Sea Ice Wikipedia** — https://en.wikipedia.org/wiki/Sea_ice — Phase behavior
+8. **Phases of Ice Wikipedia** — https://en.wikipedia.org/wiki/Phases_of_ice — Pressure thresholds
+
+### Tertiary (MEDIUM confidence)
+
+9. **QuickIce Architecture** — Existing codebase patterns (MVVM, threading, VTK)
 
 ---
 
-*Research completed: 2026-03-31*
-*Ready for roadmap: yes*
+## Open Questions
+
+1. **Interface validation:** Should we engage domain experts for review, or rely on comparison with published structures?
+2. **GROMACS testing:** Can users provide GROMACS installations for validation, or is offline file validation sufficient?
+3. **Seawater UI:** Should seawater diagram be a tab, or integrated into the existing phase diagram?
+4. **Version numbering:** Should interface generation be v2.5 (small increment) or v3.0 (major)?
+
+---
+
+*Research completed: 2026-04-05*  
+*Ready for milestone definition: yes*
