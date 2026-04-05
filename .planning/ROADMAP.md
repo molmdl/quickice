@@ -47,6 +47,12 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 
 **Coverage:** 8/8 requirements mapped ✓
 
+**Plans:** 2 plans
+
+**Plan list:**
+- [ ] 14-01-PLAN.md — GROMACS file writers and resource bundling
+- [ ] 14-02-PLAN.md — Add GROMACS export to GUI
+
 ---
 
 ## Technical Notes
