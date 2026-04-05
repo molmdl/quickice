@@ -55,6 +55,7 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 - TIP4P-ICE force field parameters from Abascal et al. 2005
 - Custom .itp file required (not built into GROMACS)
 - Topology generation requires parsing ice structure to extract molecules
+- `[ atomtypes ]` handling: uncomment with defaults for self-contained .itp (Option A)
 
 ---
 

@@ -18,6 +18,14 @@ Requirements for GROMACS simulation workflow support.
 - [ ] **GRO-07**: Export menu provides "Export for GROMACS" option
 - [ ] **GRO-08**: Export generates all three files (.gro, .top, .itp) in one action
 
+**Note on tip4p-ice.itp (GRO-03):**
+- `[ atomtypes ]` section is commented out in provided file
+- Handling depends on force field context:
+  - **Option A**: Uncomment with defaults (self-contained .itp, no additional ff needed)
+  - **Option B**: Insert into user-provided ffnonbonded.itp
+  - **Option C**: Bundle complete ff folder
+- Default for v2.1: Option A (self-contained)
+
 ## Out of Scope
 
 | Feature | Reason |
