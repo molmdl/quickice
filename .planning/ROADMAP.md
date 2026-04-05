@@ -1,6 +1,6 @@
 # Milestone v2.1: GROMACS Export
 
-**Status:** COMPLETE
+**Status:** GAP CLOSURE
 **Phases:** 14
 **Total Requirements:** 8
 
@@ -47,12 +47,15 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 
 **Coverage:** 8/8 requirements mapped ✓
 
-**Plans:** 3 plans
+**Plans:** 6 plans (3 complete, 3 gap closure)
 
 **Plan list:**
 - [x] 14-01-PLAN.md — GROMACS file writers and resource bundling
 - [x] 14-02-PLAN.md — Add GROMACS export to GUI
 - [x] 14-03-PLAN.md — Add GROMACS export to CLI
+- [ ] 14-04-PLAN.md — Fix PDB residue numbering and molecule count documentation
+- [ ] 14-05-PLAN.md — Add candidate selection for GROMACS export
+- [ ] 14-06-PLAN.md — Add GROMACS export to in-app help
 
 ---
 
