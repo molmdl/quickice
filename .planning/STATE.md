@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 |-------|-------|
 | Milestone | v2.1 GROMACS Export |
 | Phase | 14 of 14 (GROMACS Export) |
-| Plan | 2 of 2 (complete) |
+| Plan | 3 of 3 (complete) |
 | Status | Phase complete |
-| Last activity | 2026-04-06 — Completed 14-02-PLAN.md |
+| Last activity | 2026-04-06 — Completed 14-03-PLAN.md |
 
-**Progress:** ██████████ 100% (2 of 2 plans in phase)
+**Progress:** ██████████ 100% (3 of 3 plans in phase)
 
 ---
 
@@ -87,6 +87,7 @@ Full decision log: .planning/PROJECT.md
 | VTK for 3D | ✓ Full interactivity |
 | PyInstaller bundling | ✓ Linux executable |
 | Exact version pinning | ✓ All deps =x.y.z |
+| TIP4P water model | ✓ GROMACS compatible (4-point) |
 
 ---
 
@@ -101,4 +102,4 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-06 — Completed 14-02-PLAN.md*
+*State updated: 2026-04-06 — Completed 14-03-PLAN.md*
