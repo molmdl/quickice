@@ -27,33 +27,48 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
         f.write(f"{n_atoms:5d}\n")
         
         # Atom lines: residue num, residue name, atom name, atom num, x, y, z
-        # Format: i5, a5, a5, i5, 3f8.3 (positions in nm)
+        # GROMACS .gro format (no velocities):
+        #   resnr(5), resname(5), atomname(5), atomnr(5), x(9), y(9), z(9)
+        # Total: 47 characters per line
+        # Reference: tip4p.gro uses f9.3 for coordinates (1 space + 8 digits = 9)
         atom_num = 0
         for mol_idx in range(nmol):
             base_idx = mol_idx * 4  # O, H1, H2, MW order
             
-            # Oxygen (OW1)
+        # Atom lines: residue num, residue name, atom name, atom num, x, y, z
+        # GROMACS .gro format (no velocities):
+        #   resnr(5), resname(5), atomname(5), atomnr(5), x(8), y(8), z(8)
+        # Total: 44 characters per line
+        atom_num = 0
+        for mol_idx in range(nmol):
+            base_idx = mol_idx * 4  # O, H1, H2, MW order
+            
+            # Oxygen (OW)
             atom_num += 1
             pos = candidate.positions[base_idx]
-            f.write(f"{mol_idx+1:5d}SOL    OW1 {atom_num:5d}"
+            f.write(f"{mol_idx+1:5d}SOL  "
+                    f"   OW{atom_num:5d}"
                     f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
             # Hydrogen 1 (HW1)
             atom_num += 1
             pos = candidate.positions[base_idx + 1]
-            f.write(f"{mol_idx+1:5d}SOL    HW1 {atom_num:5d}"
+            f.write(f"{mol_idx+1:5d}SOL  "
+                    f"  HW1{atom_num:5d}"
                     f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
             # Hydrogen 2 (HW2)
             atom_num += 1
             pos = candidate.positions[base_idx + 2]
-            f.write(f"{mol_idx+1:5d}SOL    HW2 {atom_num:5d}"
+            f.write(f"{mol_idx+1:5d}SOL  "
+                    f"  HW2{atom_num:5d}"
                     f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
             # Massless virtual site (MW)
             atom_num += 1
             pos = candidate.positions[base_idx + 3]
-            f.write(f"{mol_idx+1:5d}SOL    MW  {atom_num:5d}"
+            f.write(f"{mol_idx+1:5d}SOL  "
+                    f"   MW{atom_num:5d}"
                     f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
         
         # Box vectors (triclinic: v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y))
