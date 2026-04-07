@@ -2,11 +2,11 @@
 from PyInstaller.utils.hooks import collect_all
 
 # Collect all data files, binaries, and hidden imports from packages
-datas = []
+datas = [('quickice/data', 'quickice/data')]
 binaries = []
 hiddenimports = []
 
-for pkg in ['quickice', 'iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', 'shapely', 'networkx', 'spglib']:
+for pkg in ['iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', 'shapely', 'networkx', 'spglib']:
     try:
         tmp_ret = collect_all(pkg)
         datas += tmp_ret[0]
