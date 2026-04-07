@@ -79,6 +79,18 @@ class QuickReferenceDialog(QDialog):
         refs_text.setWordWrap(True)
         layout.addWidget(refs_text)
         
+        # Important notes section
+        layout.addWidget(self._create_section_label("Important Notes"))
+        notes_text = QLabel(
+            "• Actual molecule count may differ from requested to satisfy\n"
+            "  crystal structure symmetry constraints\n"
+            "• GROMACS export generates .gro, .top, and .itp files\n"
+            "• TIP4P-ICE water model used for GROMACS compatibility\n"
+            "• Select candidate in viewer before exporting for best results"
+        )
+        notes_text.setWordWrap(True)
+        layout.addWidget(notes_text)
+        
         # Standard OK button
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
