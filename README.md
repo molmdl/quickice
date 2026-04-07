@@ -202,6 +202,46 @@ QuickIce supports 12 ice polymorphs plus liquid water:
 
 **Note:** These are approximate ranges. Phase boundaries depend on both T and P simultaneously.
 
+## GROMACS Export
+
+QuickIce can export ice structures as GROMACS input files for molecular dynamics simulations.
+
+### Exported Files
+
+- **`.gro`** — GROMACS coordinate file with 4-point water (O, H1, H2, MW)
+- **`.top`** — Topology file with `[ moleculetype ]`, `[ atoms ]`, `[ bonds ]` directives
+- **`tip4p-ice.itp`** — Force field parameters for TIP4P-ICE water model
+
+### CLI Usage
+
+```bash
+python quickice.py --temperature 250 --pressure 100 --nmolecules 128 --gromacs --output ice_gro
+```
+
+The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to select which ranked candidate to export (1-based, default: 1).
+
+### GUI Usage
+
+1. Generate structures normally (enter T, P, N and click Generate)
+2. Menu → **File → Export for GROMACS** (Ctrl+G)
+3. Select candidate from the dropdown (left viewport selection)
+4. Files are saved to the output directory
+
+### Water Model: TIP4P-ICE
+
+The TIP4P-ICE water model is optimized for ice simulations:
+
+```
+Abascal, J. L. F., Sanz, E., García Fernández, R., & Vega, C. (2005). 
+A potential model for the study of ices and amorphous water: TIP4P/Ice. 
+Journal of Chemical Physics, 122(23), 234511. 
+DOI: https://doi.org/10.1063/1.1931662
+```
+
+### Molecule Count
+
+The molecule count input specifies a **minimum** number of molecules. GenIce2 creates supercells to satisfy space group symmetry, so the actual count may be higher. For example, requesting 216 molecules might produce 432 (2× supercell) depending on the ice phase.
+
 ## Documentation
 
 For more details, see:
