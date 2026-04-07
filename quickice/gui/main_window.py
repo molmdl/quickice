@@ -475,10 +475,24 @@ class MainWindow(QMainWindow):
         ranked = self._current_result.ranked_candidates[selected_idx]
         
         # Get T and P from input panel
-        T = self.input_panel.temperature_spinbox.value()
-        P = self.input_panel.pressure_spinbox.value()
+        T = self.input_panel.get_temperature()
+        P = self.input_panel.get_pressure()
         
-        self._gromacs_exporter.export_gromacs(ranked, T, P)
+        success = self._gromacs_exporter.export_gromacs(ranked, T, P)
+        
+        # Show success message with water model information
+        if success:
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"GROMACS files exported successfully.\n\n"
+                f"Water model: TIP4P-ICE\n"
+                f"(Abascal et al. 2005, DOI: 10.1063/1.1931662)\n\n"
+                f"Files generated:\n"
+                f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.gro\n"
+                f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.top\n"
+                f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.itp"
+            )
 
     @Slot()
     def _on_help(self):
