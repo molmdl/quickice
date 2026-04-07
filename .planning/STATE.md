@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v2.1.1 Phase Diagram Data Update |
 | Phase | 15 |
-| Plan | 03 of 04 |
-| Status | In progress |
-| Last activity | 2026-04-07 — Completed 15-03-PLAN.md |
+| Plan | 04 of 04 |
+| Status | Phase complete |
+| Last activity | 2026-04-07 — Completed 15-04-PLAN.md |
 
-**Progress:** ███████░░░ 75% (Phase 15)
+**Progress:** ██████████ 100% (Phase 15 complete)
 
 ---
 
@@ -113,6 +113,8 @@ Full decision log: .planning/PROJECT.md
 | Exact version pinning | ✓ All deps =x.y.z |
 | TIP4P-ICE water model | ✓ GROMACS compatible |
 | Single export action | ✓ .gro/.top/.itp together |
+| Algorithm thresholds match TP values | ✓ Correct phase identification |
+| Docstrings cite data sources | ✓ Scientific traceability |
 
 ---
 
@@ -132,9 +134,9 @@ Full decision log: .planning/PROJECT.md
 ## Session Continuity
 
 **Last session:** 2026-04-07
-**Completed:** Plans 15-01, 15-02, 15-03 (all committed)
-**Next:** Execute 15-04-PLAN.md (final plan for Phase 15)
+**Completed:** All Phase 15 plans (15-01, 15-02, 15-03, 15-04)
+**Next:** Phase 15 complete. Ready for next milestone planning.
 
 ---
 
-*State updated: 2026-04-07 — Completed 15-03-PLAN.md*
+*State updated: 2026-04-07 — Completed Phase 15*
