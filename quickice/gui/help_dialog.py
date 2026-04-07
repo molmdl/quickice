@@ -48,6 +48,7 @@ class QuickReferenceDialog(QDialog):
             "Ctrl+S — Save PDB (left viewer)\n"
             "Ctrl+Shift+S — Save PDB (right viewer)\n"
             "Ctrl+D — Save phase diagram\n"
+            "Ctrl+G — Export for GROMACS\n"
             "Ctrl+Alt+S — Save viewport screenshot"
         )
         shortcuts_text.setTextInteractionFlags(
