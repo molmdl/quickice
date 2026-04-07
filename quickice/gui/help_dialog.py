@@ -87,7 +87,6 @@ class QuickReferenceDialog(QDialog):
             "• GROMACS export generates .gro, .top, and .itp files\n"
             "• TIP4P-ICE water model used for GROMACS compatibility\n"
             "• GROMACS export uses candidate selected in left viewport dropdown\n"
-            "• TIP4P-ICE itp credit: bbs.keinsci.com/thread-32973"
         )
         notes_text.setWordWrap(True)
         layout.addWidget(notes_text)

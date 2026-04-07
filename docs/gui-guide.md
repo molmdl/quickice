@@ -168,7 +168,7 @@ QuickIce v2.1 adds direct GROMACS export for molecular dynamics simulations.
 - `.itp` — Force field parameters for TIP4P-ICE water model
 
 **Candidate Selection:**
-Use the dropdown selector (left viewport) to choose which ranked candidate to export. The selector shows "Rank N (phase)" for each available structure.
+Use the dropdown selector (left viewport) to choose which ranked candidate to export to gromacs. The selector shows "Rank N (phase)" for each available structure.
 
 **Water Model:**
 All GROMACS exports use the **TIP4P-ICE** water model, optimized for ice simulations with proper hydrogen bonding and density properties.

@@ -224,7 +224,7 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 
 1. Generate structures normally (enter T, P, N and click Generate)
 2. Menu → **File → Export for GROMACS** (Ctrl+G)
-3. Select candidate from the dropdown (left viewport selection)
+3. Select candidate from the dropdown (left viewport selection to choose the one exported for gromacs)
 4. Files are saved to the output directory
 
 ### Water Model: TIP4P-ICE
