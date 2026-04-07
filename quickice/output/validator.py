@@ -41,9 +41,13 @@ def validate_space_group(
     positions_cartesian = candidate.positions * 10.0
 
     # Map atom names to atomic numbers
-    atom_name_to_number = {"O": 8, "H": 1}
+    # Support both TIP3P (O, H) and TIP4P (OW, HW1, HW2, MW) naming
+    atom_name_to_number = {
+        "O": 8, "H": 1,  # TIP3P
+        "OW": 8, "HW1": 1, "HW2": 1, "MW": 0,  # TIP4P (MW is massless virtual site)
+    }
     atom_types = np.array(
-        [atom_name_to_number[name] for name in candidate.atom_names]
+        [atom_name_to_number.get(name, 0) for name in candidate.atom_names]
     )
 
     # Convert Cartesian positions to fractional coordinates
@@ -91,13 +95,19 @@ def check_atomic_overlap(
     Note:
         Candidate positions and cell are in nm, converted to Angstrom internally.
         Uses a 3x3x3 supercell approach for PBC handling.
+        Excludes virtual sites (MW) from overlap check.
     """
     # Handle edge cases
     if len(candidate.positions) <= 1:
         return False
 
+    # Filter out virtual sites (MW) - they don't represent real atoms
+    real_atom_indices = [i for i, name in enumerate(candidate.atom_names) if name != 'MW']
+    if len(real_atom_indices) <= 1:
+        return False
+
     # Convert from nm to Angstrom
-    positions = candidate.positions * 10.0
+    positions = candidate.positions[real_atom_indices] * 10.0
     cell = candidate.cell * 10.0
     
     n_atoms = len(positions)
