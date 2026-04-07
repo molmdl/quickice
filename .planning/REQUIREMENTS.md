@@ -9,14 +9,14 @@ Requirements for GROMACS simulation workflow support.
 
 ### GROMACS Export
 
-- [ ] **GRO-01**: User can export current structure as .gro coordinate file
-- [ ] **GRO-02**: User can export current structure as .top topology file
-- [ ] **GRO-03**: tip4p-ice.itp force field file is bundled as application resource
-- [ ] **GRO-04**: Generated .gro file contains 4-point water coordinates (O, H1, H2, MW)
-- [ ] **GRO-05**: Generated .top file includes proper moleculetype directive
-- [ ] **GRO-06**: Exported files pass GROMACS validation (gmx check)
-- [ ] **GRO-07**: Export menu provides "Export for GROMACS" option
-- [ ] **GRO-08**: Export generates all three files (.gro, .top, .itp) in one action
+- [x] **GRO-01**: User can export current structure as .gro coordinate file
+- [x] **GRO-02**: User can export current structure as .top topology file
+- [x] **GRO-03**: tip4p-ice.itp force field file is bundled as application resource
+- [x] **GRO-04**: Generated .gro file contains 4-point water coordinates (O, H1, H2, MW)
+- [x] **GRO-05**: Generated .top file includes proper moleculetype directive
+- [x] **GRO-06**: Exported files pass GROMACS validation (gmx check)
+- [x] **GRO-07**: Export menu provides "Export for GROMACS" option
+- [x] **GRO-08**: Export generates all three files (.gro, .top, .itp) in one action
 
 **Note on tip4p-ice.itp (GRO-03):**
 - `[ atomtypes ]` section is commented out in provided file
@@ -55,4 +55,4 @@ Requirements for GROMACS simulation workflow support.
 
 ---
 *Requirements defined: 2026-04-05*
-*Last updated: 2026-04-06 after phase 14 verification*
+*Last updated: 2026-04-07 after phase 14 gap closure verification*
