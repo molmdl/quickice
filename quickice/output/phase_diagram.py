@@ -297,45 +297,46 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     """
     vertices = []
     
-    # Start at Ih-II-III triple point
+    # Get all triple points first
     T1, P1 = get_triple_point("Ih_II_III")
+    T2, P2 = get_triple_point("II_III_V")
+    T3, P3 = get_triple_point("II_V_VI")
+    
+    # Start at Ih-II-III triple point
     vertices.append((T1, P1))
     
     # II-III boundary to II-III-V triple point
-    T_vals = np.linspace(T1, 248.85, 10)
+    T_vals = np.linspace(T1, T2, 10)
     for T in T_vals[1:]:
         P = ii_iii_boundary(T)
         vertices.append((T, P))
     
-    # II-III-V triple point (248.85 K, 344.3 MPa)
-    T2, P2 = get_triple_point("II_III_V")
+    # II-III-V triple point
     vertices.append((T2, P2))
     
     # II-V boundary to II-V-VI triple point
-    T_vals = np.linspace(T2, 218.95, 10)
+    T_vals = np.linspace(T2, T3, 10)
     for T in T_vals[1:]:
         P = ii_v_boundary(T)
         vertices.append((T, P))
     
-    # II-V-VI triple point (218.95 K, 620.0 MPa)
-    T3, P3 = get_triple_point("II_V_VI")
+    # II-V-VI triple point
     vertices.append((T3, P3))
     
     # Cold edge: II traces just BELOW VI boundary
-    # VI's left edge: from (218.95, 620) to (100, 1100)
-    # Line equation: P = 620 + 480 * (218.95 - T) / 118.95
-    T_cold = np.linspace(218.95, 140.0, 10)
+    # VI's left edge: from II-V-VI TP to (100, 1100)
+    # Line equation: P = P3 + (1100 - P3) * (T3 - T) / (T3 - 100)
+    T_cold = np.linspace(T3, 140.0, 10)
     for T in T_cold[1:]:
-        P_vi = 620.0 + 480.0 * (218.95 - T) / 118.95
+        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
         vertices.append((T, P_vi - 5.0))
     
     # At T=140K, IX ends. II continues down towards XV.
     # From T=140K to T=100K: II traces just below VI boundary
-    # (VI left edge goes from (218.95, 620) to (100, 1100))
     # XV only exists at T <= 100K, so for T > 100K, II can extend up to VI boundary
     T_cold2 = np.linspace(140.0, 100.0, 5)
     for T in T_cold2[1:]:
-        P_vi = 620.0 + 480.0 * (218.95 - T) / 118.95
+        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
         vertices.append((T, P_vi - 5.0))
     
     # At T=100K, II meets VI at P~1095 (VI's left boundary)
