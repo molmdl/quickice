@@ -103,9 +103,10 @@ python quickice.py -T 250 -P 100 -N 128 --gromacs --output ice_gro
 When this flag is set, QuickIce exports three files:
 - `.gro` — GROMACS coordinate file with 4-point water coordinates
 - `.top` — Topology file with moleculetype, atoms, and bonds sections
-- `tip4p-ice.itp` — TIP4P-ICE force field parameters
+- `.itp` — TIP4P-ICE force field parameters
 
 **Water model:** TIP4P-ICE (optimized for ice simulations)
+Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346
 
 **Note:** The molecule count specifies a *minimum* number. GenIce2 creates supercells to satisfy crystal symmetry, so actual count may be higher (e.g., 2× the minimum for some phases).
 
@@ -350,3 +351,5 @@ Input values are outside the valid range. Check the validation rules above.
 
 - [Ranking Methodology](./ranking.md) - How candidates are scored and ranked
 - [Principles](./principles.md) - QuickIce philosophy and approach
+- [TIP4P-ice Reference](https://doi.org/10.1063/1.1931662) - TIP4P-ice reference
+

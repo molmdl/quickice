@@ -3,7 +3,6 @@
 These validators return tuple[bool, str] for inline error display in the GUI.
 They differ from CLI validators in:
 - Return (is_valid, error_message) tuples instead of raising exceptions
-- Pressure uses BAR units (0-10000 bar) instead of MPa
 - Molecule count max is 216 (GUI limit) instead of 100000 (CLI limit)
 """
 

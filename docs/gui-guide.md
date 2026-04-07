@@ -165,13 +165,14 @@ QuickIce v2.1 adds direct GROMACS export for molecular dynamics simulations.
 **Exported Files:**
 - `.gro` — GROMACS coordinate file with 4-point water (O, H1, H2, MW)
 - `.top` — Topology file with `[ moleculetype ]`, `[ atoms ]`, `[ bonds ]` directives
-- `tip4p-ice.itp` — Force field parameters for TIP4P-ICE water model
+- `.itp` — Force field parameters for TIP4P-ICE water model
 
 **Candidate Selection:**
 Use the dropdown selector (left viewport) to choose which ranked candidate to export. The selector shows "Rank N (phase)" for each available structure.
 
 **Water Model:**
 All GROMACS exports use the **TIP4P-ICE** water model, optimized for ice simulations with proper hydrogen bonding and density properties.
+Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346
 
 **Note:** The molecule count input specifies a *minimum* number of molecules. GenIce2 creates supercells to satisfy crystal symmetry requirements, so the actual molecule count may be higher. For example, requesting 216 molecules might produce 432 (a 2× supercell) depending on the ice phase.
 
@@ -242,3 +243,4 @@ In some cases, it is possible to use `QUICKICE_FORCE_VTK=true` to override the c
 - **[Ranking Algorithm](ranking.md)** - How candidates are scored
 - **[GenIce2](https://github.com/genice-dev/GenIce2)** - Structure generation library
 - **[IAPWS](https://www.iapws.org)** - Water/ice thermodynamic standards
+- **[TIP4P-ice Reference](https://doi.org/10.1063/1.1931662)** - TIP4P-ice reference

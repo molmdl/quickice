@@ -210,7 +210,7 @@ QuickIce can export ice structures as GROMACS input files for molecular dynamics
 
 - **`.gro`** — GROMACS coordinate file with 4-point water (O, H1, H2, MW)
 - **`.top`** — Topology file with `[ moleculetype ]`, `[ atoms ]`, `[ bonds ]` directives
-- **`tip4p-ice.itp`** — Force field parameters for TIP4P-ICE water model
+- **`.itp`** — Force field parameters for TIP4P-ICE water model
 
 ### CLI Usage
 

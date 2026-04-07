@@ -1,3 +1,4 @@
+;Credit: file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346
 ;Created by Tian Lu (sobereva@sina.com)
 ;To use this tip4p-ice.itp, you must also add below lines into [ atomtypes ] of ffnonbonded.itp under AMBER forcefield
 ;[ atomtypes ]

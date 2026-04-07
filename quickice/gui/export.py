@@ -24,7 +24,7 @@ class PDBExporter:
     """Handle PDB file export with proper dialogs and validation.
     
     Per CONTEXT.md:
-    - Default filename: {phase}_{T}K_{P}bar_c{candidate_num}.pdb
+    - Default filename: {phase}_{T}K_{P}MPa_c{candidate_num}.pdb
     - Prompt before overwriting
     """
     
@@ -42,19 +42,19 @@ class PDBExporter:
         Args:
             ranked_candidate: RankedCandidate with candidate structure and metadata
             T: Temperature in Kelvin
-            P: Pressure in bar (will be converted to bar for filename)
+            P: Pressure in MPa (will be converted to MPa for filename)
             
         Returns:
             True if export succeeded, False if cancelled or failed
             
         Per CONTEXT.md:
-        - Default filename format: {phase}_{T}K_{P}bar_c{candidate_num}.pdb
+        - Default filename format: {phase}_{T}K_{P}MPa_c{candidate_num}.pdb
         - Overwrite behavior: Prompt before overwriting
         """
         # Generate default filename
         phase_id = ranked_candidate.candidate.phase_id or "ice"
         rank = ranked_candidate.rank
-        default_name = f"{phase_id}_{T:.0f}K_{P:.0f}bar_c{rank}.pdb"
+        default_name = f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.pdb"
         
         # Show save dialog
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -313,19 +313,19 @@ class GROMACSExporter:
         Args:
             ranked_candidate: RankedCandidate with candidate structure and metadata
             T: Temperature in Kelvin
-            P: Pressure in bar
+            P: Pressure in MPa
 
         Returns:
             True if export succeeded
 
         Per CONTEXT.md:
-        - Default filename format: {phase}_{T}K_{P}bar_c{rank}.gro
+        - Default filename format: {phase}_{T}K_{P}MPa_c{rank}.gro
         - Generates companion .top and .itp files
         """
         # Generate default filename with rank/T/P info
         phase_id = ranked_candidate.candidate.phase_id or "ice"
         rank = ranked_candidate.rank
-        default_name = f"{phase_id}_{T:.0f}K_{P:.0f}bar_c{rank}.gro"
+        default_name = f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.gro"
 
         # Extract candidate from RankedCandidate
         candidate = ranked_candidate.candidate

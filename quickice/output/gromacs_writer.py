@@ -100,9 +100,10 @@ def write_top_file(candidate: Candidate, filepath: str) -> None:
         f.write("; TIP4P-ICE water model\n\n")
         
         # [ defaults ] - force field defaults
+        f.write("; Defaults compitable with the Amber forcefield\n")
         f.write("[ defaults ]\n")
         f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
-        f.write("1         2           yes        1.0      1.0\n\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - define custom atom types for TIP4P-ICE
         f.write("[ atomtypes ]\n")
