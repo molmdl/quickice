@@ -20,6 +20,14 @@ This bugfix milestone corrects phase diagram triple point data per IAPWS R14-08(
 
 **Dependencies:** None (standalone data fix)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — Update triple points in both files (DATA-01 to DATA-08)
+- [ ] 15-02-PLAN.md — Add Ice Ic polygon builder and registration (NEW-01, NEW-02)
+- [ ] 15-03-PLAN.md — Update PHASE_POLYGONS and MELTING_CURVE_COEFFICIENTS (CODE-01, CODE-02)
+- [ ] 15-04-PLAN.md — Update documentation comments (CODE-03, CODE-04)
+
 **Requirements:**
 - DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07, DATA-08
 - NEW-01, NEW-02
