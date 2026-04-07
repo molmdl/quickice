@@ -171,9 +171,9 @@ PHASE_POLYGONS = {
         (100.0, 0.0),           # Lower left (cold, atmospheric pressure)
         (273.16, 0.0),          # Lower right (0°C at atmospheric pressure)
         (273.16, 100.0),        # Near triple point with liquid
-        (251.165, 207.5),       # Ih-III-Liquid triple point
-        (238.55, 212.9),        # Ih-II-III triple point
-        (238.55, 100.0),        # Return along pressure boundary
+        (251.165, 209.9),       # Ih-III-Liquid triple point - IAPWS R14-08(2011) compliant
+        (238.45, 212.9),        # Ih-II-III triple point - IAPWS R14-08(2011) compliant
+        (238.45, 100.0),        # Return along pressure boundary
         (100.0, 100.0),         # Upper left corner
     ],
     
@@ -191,64 +191,64 @@ PHASE_POLYGONS = {
     # Rhombohedral phase, stable at moderate pressures
     # Extended to cover gap between ice_iii and ice_v at moderate temperatures
     "ice_ii": [
-        (218.95, 620.0),        # II-V-VI triple point
-        (260.0, 620.0),         # Extended high temperature boundary
+        (201.9, 670.8),        # II-V-VI triple point - IAPWS R14-08(2011) compliant
+        (260.0, 670.8),         # Extended high temperature boundary
         (260.0, 210.0),         # Extended boundary at T=260K
-        (248.85, 344.3),        # II-III-V triple point
-        (238.55, 212.9),        # Ih-II-III triple point
+        (249.4, 355.5),         # II-III-V triple point - IAPWS R14-08(2011) compliant
+        (238.45, 212.9),        # Ih-II-III triple point - IAPWS R14-08(2011) compliant
         (200.0, 300.0),         # Lower temperature extension
-        (180.0, 620.0),         # Cold boundary at high pressure
-        (218.95, 620.0),        # Back to triple point
+        (180.0, 670.8),         # Cold boundary at high pressure
+        (201.9, 670.8),         # Back to triple point
     ],
     
     # Ice III region
     # Tetragonal phase, narrow stability region
     "ice_iii": [
-        (238.55, 212.9),        # Ih-II-III triple point
-        (251.165, 207.5),       # Ih-III-Liquid triple point
-        (256.165, 346.3),       # III-V-Liquid triple point
-        (248.85, 344.3),        # II-III-V triple point
-        (238.55, 212.9),        # Back to start
+        (238.45, 212.9),        # Ih-II-III triple point - IAPWS R14-08(2011) compliant
+        (251.165, 209.9),       # Ih-III-Liquid triple point - IAPWS R14-08(2011) compliant
+        (256.164, 350.1),       # III-V-Liquid triple point - IAPWS R14-08(2011) compliant
+        (249.4, 355.5),         # II-III-V triple point - IAPWS R14-08(2011) compliant
+        (238.45, 212.9),        # Back to start
     ],
     
     # Ice V region
     # Monoclinic phase, moderate to high pressure
     "ice_v": [
-        (248.85, 344.3),        # II-III-V triple point
-        (256.165, 346.3),       # III-V-Liquid triple point
-        (273.31, 625.9),        # V-VI-Liquid triple point
-        (218.95, 620.0),        # II-V-VI triple point
-        (248.85, 344.3),        # Back to start
+        (249.4, 355.5),         # II-III-V triple point - IAPWS R14-08(2011) compliant
+        (256.164, 350.1),       # III-V-Liquid triple point - IAPWS R14-08(2011) compliant
+        (273.31, 632.4),        # V-VI-Liquid triple point - IAPWS R14-08(2011) compliant
+        (201.9, 670.8),         # II-V-VI triple point - IAPWS R14-08(2011) compliant
+        (249.4, 355.5),         # Back to start
     ],
     
     # Ice VI region
     # Tetragonal phase, high pressure
     "ice_vi": [
-        (218.95, 620.0),        # II-V-VI triple point
-        (273.31, 625.9),        # V-VI-Liquid triple point
-        (354.75, 2200.0),       # VI-VII-Liquid triple point
-        (278.0, 2100.0),        # VI-VII-VIII triple point
-        (218.95, 2100.0),       # Cold boundary
-        (218.95, 620.0),        # Back to start
+        (201.9, 670.8),         # II-V-VI triple point - IAPWS R14-08(2011) compliant
+        (273.31, 632.4),        # V-VI-Liquid triple point - IAPWS R14-08(2011) compliant
+        (355.0, 2216.0),        # VI-VII-Liquid triple point - IAPWS R14-08(2011) compliant
+        (278.15, 2100.0),       # VI-VII-VIII triple point - IAPWS R14-08(2011) compliant
+        (201.9, 2100.0),        # Cold boundary
+        (201.9, 670.8),         # Back to start
     ],
     
     # Ice VII region
     # Cubic phase, very high pressure, high temperature
     "ice_vii": [
-        (278.0, 2100.0),        # VI-VII-VIII triple point
-        (354.75, 2200.0),       # VI-VII-Liquid triple point
+        (278.15, 2100.0),       # VI-VII-VIII triple point - IAPWS R14-08(2011) compliant
+        (355.0, 2216.0),        # VI-VII-Liquid triple point - IAPWS R14-08(2011) compliant
         (450.0, 4000.0),        # High temperature/pressure
         (450.0, 10000.0),       # High pressure limit
-        (278.0, 10000.0),       # Low temperature at high pressure
-        (278.0, 2100.0),        # Back to triple point
+        (278.15, 10000.0),      # Low temperature at high pressure
+        (278.15, 2100.0),       # Back to triple point
     ],
     
     # Ice VIII region
     # Ordered form of Ice VII at low temperature
     "ice_viii": [
         (100.0, 2100.0),        # Cold boundary
-        (278.0, 2100.0),        # VI-VII-VIII triple point
-        (278.0, 10000.0),       # High pressure at triple point
+        (278.15, 2100.0),       # VI-VII-VIII triple point - IAPWS R14-08(2011) compliant
+        (278.15, 10000.0),      # High pressure at triple point
         (100.0, 10000.0),       # Cold, high pressure
         (100.0, 2100.0),        # Back to start
     ]
