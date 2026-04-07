@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** Planning v2.5 Seawater Phase Diagram
+**Current Focus:** Planning v2.1.1 Phase Diagram Data Update
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** Planning v2.5 Seawater Phase Diagram
+**Current focus:** Planning v2.1.1 Phase Diagram Data Update
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.5 Seawater Phase Diagram |
+| Milestone | v2.1.1 Phase Diagram Data Update |
 | Phase | Not started |
 | Plan | Not started |
-| Status | Ready to plan |
-| Last activity | 2026-04-07 — v2.1 milestone archived, tag v2.1 created |
+| Status | Defining requirements |
+| Last activity | 2026-04-08 — v2.1.1 + v3 milestone started |
 
 **Progress:** ░░░░░░░░░░ 0% (next milestone)
 
@@ -41,8 +41,8 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 | Version | Feature | Status |
 |---------|---------|--------|
-| v2.5 | Seawater Phase Diagram | Requirements defined |
-| v3.0 | Liquid-Solid Interface | Requirements defined |
+| v2.1.1 | Phase Diagram Data Update | Requirements defining |
+| v3 | Seawater + Interface | Queued |
 
 ---
 
@@ -126,4 +126,4 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-07 — v2.1 archived, ready for v2.5 planning*
+*State updated: 2026-04-08 — v2.1.1 milestone started*

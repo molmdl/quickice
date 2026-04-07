@@ -82,16 +82,28 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 **Distribution:** Standalone executable
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
 
-## Next Milestone: v2.5 Seawater Phase Diagram
+## Current Milestone: v2.1.1 Phase Diagram Data Update
 
-**Goal:** Extend phase diagram to support seawater systems.
+**Goal:** Fix phase diagram triple point data per IAPWS R14-08(2011) and Journaux et al. (2019, 2020)
 
 **Target features:**
-- Salinity-Temperature phase diagram widget
-- Freezing point depression calculation (IAPWS-08)
-- Na+ and Cl- ions in output structure
+- Update 32 triple point values across 3 source files
+- Add Ice Ic polygon (new metastable phase region)
+- Update tests and comments
 
-**Queued milestones:** v3.0 (Liquid-Solid Interface)
+**Queued milestone:** v3 (Combined Seawater + Interface)
+
+---
+
+## Next Milestone: v3 Seawater + Interface
+
+**Goal:** Combined milestone for seawater phase diagram and liquid-solid interface generation
+
+**Target features:**
+- Seawater S-T phase diagram (2-phase: sea ice vs liquid seawater)
+- Liquid-solid interface structure generation
+- Replace nmol input with boxsize/mode/seed/thickness controls
+- Use GROMACS tip4p.gro for liquid water layer
 
 ---
 
@@ -132,4 +144,4 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ---
 
-*Last updated: 2026-04-07 after v2.1 milestone complete*
+*Last updated: 2026-04-08 after v2.1.1 + v3 milestone planning started*
