@@ -73,17 +73,30 @@ def main() -> int:
             output_path = Path(args.output)
             output_path.mkdir(parents=True, exist_ok=True)
             
-            for rc in ranking_result.ranked_candidates:
+            # Filter candidates if --candidate specified
+            candidates_to_export = ranking_result.ranked_candidates
+            if args.candidate is not None:
+                candidates_to_export = [
+                    rc for rc in ranking_result.ranked_candidates 
+                    if rc.rank == args.candidate
+                ]
+                if not candidates_to_export:
+                    print(f"Warning: Candidate rank {args.candidate} not found. "
+                          f"Available: 1-{len(ranking_result.ranked_candidates)}")
+            
+            for rc in candidates_to_export:
                 candidate = rc.candidate
                 gro_filename = f"{candidate.phase_id}_{rc.rank}.gro"
                 gro_filepath = output_path / gro_filename
                 write_gro_file(candidate, str(gro_filepath))
                 
-                # Write .top file only for first candidate
-                if rc.rank == 1:
-                    top_filepath = output_path / f"{candidate.phase_id}_1.top"
+                # Write .top file only for first exported candidate
+                if rc == candidates_to_export[0]:
+                    top_filepath = output_path / f"{candidate.phase_id}_{rc.rank}.top"
                     write_top_file(candidate, str(top_filepath))
-                    print(f"Exported GROMACS files: {gro_filename}, {candidate.phase_id}_1.top")
+                    print(f"Exported GROMACS files: {gro_filename}, {candidate.phase_id}_{rc.rank}.top")
+                else:
+                    print(f"Exported GROMACS file: {gro_filename}")
             
             print(f"  GROMACS files written to: {args.output}")
         
