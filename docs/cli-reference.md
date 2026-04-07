@@ -97,13 +97,17 @@ Export structure in GROMACS format (.gro, .top, .itp files).
 
 **Usage:**
 ```bash
+# Export all candidates with shared top/itp files
 python quickice.py -T 250 -P 100 -N 128 --gromacs --output ice_gro
+
+# Export specific ranked candidate
+python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
 ```
 
-When this flag is set, QuickIce exports three files:
-- `.gro` — GROMACS coordinate file with 4-point water coordinates
-- `.top` — Topology file with moleculetype, atoms, and bonds sections
-- `.itp` — TIP4P-ICE force field parameters
+When this flag is set, QuickIce exports:
+- **One `.gro` file per candidate** — `ice_ih_1.gro`, `ice_ih_2.gro`, etc. (coordinates differ per candidate)
+- **Single `.top` file** — `ice_ih.top` (topology is identical for all candidates)
+- **Single `.itp` file** — `tip4p_ice.itp` (force field is identical for all candidates)
 
 **Water model:** TIP4P-ICE (optimized for ice simulations)
 Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346

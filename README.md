@@ -208,17 +208,24 @@ QuickIce can export ice structures as GROMACS input files for molecular dynamics
 
 ### Exported Files
 
-- **`.gro`** — GROMACS coordinate file with 4-point water (O, H1, H2, MW)
-- **`.top`** — Topology file with `[ moleculetype ]`, `[ atoms ]`, `[ bonds ]` directives
-- **`.itp`** — Force field parameters for TIP4P-ICE water model
+When exporting with `--gromacs`:
+- **`.gro` files** — One per candidate (coordinates differ): `ice_ih_1.gro`, `ice_ih_2.gro`, etc.
+- **`.top` file** — Single file (topology identical for all): `ice_ih.top`
+- **`.itp` file** — Single file (force field identical for all): `tip4p_ice.itp`
+
+This avoids duplicate top/itp files since all candidates use the same TIP4P-ICE water model.
 
 ### CLI Usage
 
 ```bash
-python quickice.py --temperature 250 --pressure 100 --nmolecules 128 --gromacs --output ice_gro
+# Export all 10 candidates (10 .gro files + 1 .top + 1 .itp)
+python quickice.py -T 250 -P 100 -N 128 --gromacs --output ice_gro
+
+# Export specific ranked candidate (1 .gro + 1 .top + 1 .itp)
+python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
 ```
 
-The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to select which ranked candidate to export (1-based, default: 1).
+The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to select which ranked candidate to export (1-based, default: exports all candidates).
 
 ### GUI Usage
 
