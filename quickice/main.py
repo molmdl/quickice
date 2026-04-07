@@ -46,6 +46,13 @@ def main() -> int:
         )
         print(f"Generated {len(gen_result.candidates)} candidates")
         
+        # Warn if actual molecule count differs from requested
+        if gen_result.was_rounded:
+            print(f"Note: Actual molecule count ({gen_result.actual_nmolecules}) differs from "
+                  f"requested ({gen_result.requested_nmolecules})")
+            print(f"      This ensures valid crystal structure symmetry.")
+            print()
+        
         # Rank candidates by energy, density, diversity
         ranking_result = rank_candidates(
             candidates=gen_result.candidates
