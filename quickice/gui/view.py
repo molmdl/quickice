@@ -99,9 +99,9 @@ class InputPanel(QWidget):
         layout.addSpacing(10)
         
         # Molecule count input
-        self.mol_label = QLabel("Number of molecules:")
+        self.mol_label = QLabel("Minimum number of molecules:")
         self.mol_input = QLineEdit()
-        self.mol_input.setPlaceholderText("Enter count (4-216)")
+        self.mol_input.setPlaceholderText("Min count (4-216, actual may be higher)")
         self.mol_error = QLabel()
         self.mol_error.setStyleSheet("color: red;")
         self.mol_error.setWordWrap(True)
@@ -111,7 +111,7 @@ class InputPanel(QWidget):
         mol_header = QHBoxLayout()
         mol_header.addWidget(self.mol_label)
         mol_header.addWidget(HelpIcon(
-            "Number of water molecules (4-216). More molecules = larger structure but slower generation."
+            "Minimum number of water molecules (4-216). Actual count may be higher due to crystal symmetry. More molecules = larger structure but slower generation."
         ))
         mol_header.addStretch()
         layout.addLayout(mol_header)
