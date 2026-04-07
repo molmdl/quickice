@@ -72,20 +72,21 @@ def write_pdb_with_cryst1(candidate: Candidate, filepath: str) -> None:
         cryst1_line = f"CRYST1{a:9.3f}{b:9.3f}{c:9.3f}{alpha:7.2f}{beta:7.2f}{gamma:7.2f}  1\n"
         f.write(cryst1_line)
         
-        # Verify that positions match expected atom count (3 atoms per water molecule)
-        expected_atoms = candidate.nmolecules * 3
-        if len(positions_angstrom) != expected_atoms:
+        # Detect atoms per water molecule from actual positions
+        # TIP3P has 3 atoms (O, H, H), TIP4P has 4 atoms (O, H, H, MW)
+        atoms_per_water = len(positions_angstrom) // candidate.nmolecules
+        if len(positions_angstrom) % candidate.nmolecules != 0:
             raise ValueError(
-                f"positions has {len(positions_angstrom)} atoms but "
-                f"nmolecules={candidate.nmolecules} needs {expected_atoms} (3 atoms per water)"
+                f"positions has {len(positions_angstrom)} atoms which is not divisible by "
+                f"nmolecules={candidate.nmolecules}"
             )
         
         # Write ATOM records
         # Format: HETATM serial(5) atom_name(4) resName(3) chain(1) resSeq(4) x(8.3) y(8.3) z(8.3) occ(6.2) temp(6.2) element(2)
-        # Each water molecule (O, H, H) gets its own residue number
+        # Each water molecule (O, H, H, [MW]) gets its own residue number
         for i, (pos, atom_name) in enumerate(zip(positions_angstrom, candidate.atom_names)):
             serial = i + 1
-            residue_num = (i // 3) + 1  # 3 atoms per water molecule
+            residue_num = (i // atoms_per_water) + 1  # atoms_per_water atoms per water molecule
             x, y, z = pos
             
             # Atom name: left-aligned in columns 13-16 (4 chars total)
