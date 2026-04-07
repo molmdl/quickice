@@ -43,7 +43,8 @@ def _calculate_oo_distances_pbc(
         Array of O-O distances within cutoff
     """
     # Extract O positions (oxygen atoms by name, works for both TIP3P and TIP4P)
-    o_indices = [i for i, name in enumerate(atom_names) if name == 'O']
+    # TIP3P: 'O', TIP4P: 'OW'
+    o_indices = [i for i, name in enumerate(atom_names) if name in ('O', 'OW')]
     
     if len(o_indices) < 2:
         return np.array([])
