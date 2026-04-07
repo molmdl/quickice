@@ -91,6 +91,43 @@ Use this flag when you only need the PDB output files and want to save time.
 
 ---
 
+### `--gromacs`, `-g`
+
+Export structure in GROMACS format (.gro, .top, .itp files).
+
+**Usage:**
+```bash
+python quickice.py -T 250 -P 100 -N 128 --gromacs --output ice_gro
+```
+
+When this flag is set, QuickIce exports three files:
+- `.gro` — GROMACS coordinate file with 4-point water coordinates
+- `.top` — Topology file with moleculetype, atoms, and bonds sections
+- `tip4p-ice.itp` — TIP4P-ICE force field parameters
+
+**Water model:** TIP4P-ICE (optimized for ice simulations)
+
+**Note:** The molecule count specifies a *minimum* number. GenIce2 creates supercells to satisfy crystal symmetry, so actual count may be higher (e.g., 2× the minimum for some phases).
+
+---
+
+### `--candidate`, `-c`
+
+Select which ranked candidate to export for GROMACS (1-based index).
+
+**Usage:**
+```bash
+# Export the top-ranked candidate (default)
+python quickice.py -T 250 -P 100 -N 128 --gromacs
+
+# Export the second-ranked candidate
+python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
+```
+
+Default: 1 (top-ranked structure)
+
+---
+
 ### `--version`, `-V`
 
 Display the current QuickIce version.
