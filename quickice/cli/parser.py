@@ -78,6 +78,14 @@ Examples:
         default=False,
         help="Export GROMACS format (.gro, .top files)"
     )
+
+    parser.add_argument(
+        "--candidate",
+        "-c",
+        type=int,
+        default=None,
+        help="Export specific candidate rank (1-10). Only used with --gromacs. Default: export all"
+    )
     
     parser.add_argument(
         "--version",
@@ -103,6 +111,7 @@ def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
             - output: str (output directory path, default: "output")
             - no_diagram: bool (if True, skip diagram generation)
             - gromacs: bool (if True, export GROMACS format)
+            - candidate: Optional[int] (candidate rank to export, only with --gromacs)
             
     Raises:
         SystemExit: If arguments are invalid or missing
