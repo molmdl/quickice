@@ -2,17 +2,17 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** Planning v2.1.1 Phase Diagram Data Update
+**Current Focus:** Phase 15 - Phase Diagram Data Update
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-04)
+See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** Planning v2.1.1 Phase Diagram Data Update
+**Current focus:** Phase 15 - Phase Diagram Data Update
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,21 +28,32 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.1.1 Phase Diagram Data Update |
-| Phase | Not started |
+| Phase | 15 |
 | Plan | Not started |
-| Status | Defining requirements |
-| Last activity | 2026-04-08 — v2.1.1 + v3 milestone started |
+| Status | Ready for planning |
+| Last activity | 2026-04-08 — Roadmap created |
 
-**Progress:** ░░░░░░░░░░ 0% (next milestone)
+**Progress:** ░░░░░░░░░░ 0% (Phase 15)
 
 ---
 
-## Queued Milestones
+## Current Phase Details
 
-| Version | Feature | Status |
-|---------|---------|--------|
-| v2.1.1 | Phase Diagram Data Update | Requirements defining |
-| v3 | Seawater + Interface | Queued |
+### Phase 15: Phase Diagram Data Update
+
+**Goal:** Users receive accurate ice phase predictions based on IAPWS R14-08(2011) compliant thermodynamic data
+
+**Requirements (14):**
+- DATA-01 through DATA-08 (triple point updates)
+- NEW-01, NEW-02 (Ice Ic phase region)
+- CODE-01 through CODE-04 (code updates)
+
+**Success Criteria:**
+1. Phase lookup returns correct ice phase for any (T,P) input using updated triple point data
+2. Ice Ic phase is available for metastable conditions (50-150K, 0-100 MPa)
+3. All existing tests pass with corrected triple point values
+4. New test validates Ice Ic region boundaries work correctly
+5. Phase diagram boundaries reflect updated data accurately
 
 ---
 
@@ -114,16 +125,16 @@ Full decision log: .planning/PROJECT.md
 - v1 Requirements: [.planning/milestones/v1-REQUIREMENTS.md](./milestones/v1-REQUIREMENTS.md)
 - v2 Requirements: [.planning/milestones/v2.0-REQUIREMENTS.md](./milestones/v2.0-REQUIREMENTS.md)
 - v2.1 Requirements: [.planning/milestones/v2.1-REQUIREMENTS.md](./milestones/v2.1-REQUIREMENTS.md)
-- v2.1 Audit: [.planning/milestones/v2.1-MILESTONE-AUDIT.md](./milestones/v2.1-MILESTONE-AUDIT.md)
+- v2.1.1 Requirements: .planning/REQUIREMENTS.md
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-07
-**Completed:** v2.1 GROMACS Export milestone archived, tagged v2.1
-**Resume file:** None
+**Last session:** 2026-04-08
+**Completed:** v2.1.1 roadmap created, Phase 15 defined
+**Next:** Ready for planning Phase 15
 
 ---
 
-*State updated: 2026-04-08 — v2.1.1 milestone started*
+*State updated: 2026-04-08 — v2.1.1 roadmap created*
