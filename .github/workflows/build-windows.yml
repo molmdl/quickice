@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p dist/package
           cp -r dist/quickice-gui dist/package/
-          cp README.md dist/package/
+          cp README.md README_bin.md dist/package/
           cp LICENSE dist/package/
           mkdir -p dist/package/docs
-          cp docs/gui-guide.md dist/package/docs/
+          cp -r docs/gui-guide.md docs/principles.md docs/ranking.md docs/images dist/package/docs/
           cp -r licenses dist/package/
       
       - name: Create distribution
