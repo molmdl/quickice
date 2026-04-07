@@ -347,10 +347,10 @@ class GROMACSExporter:
         if path.suffix.lower() != '.gro':
             path = path.with_suffix('.gro')
         
-        # Generate companion filenames
-        base = path.with_suffix('')
-        top_path = base.with_suffix('.top')
-        itp_path = base.with_suffix('.itp')
+        # Generate companion filenames using stem (handles dots in filename correctly)
+        # stem = filename without .gro extension (e.g., ice_ih_195K_1.36MPa_c5)
+        top_path = path.with_name(path.stem + '.top')
+        itp_path = path.with_name(path.stem + '.itp')
         
         try:
             # Write .gro file using gromacs_writer
