@@ -1,6 +1,6 @@
 # Milestone v2.1: GROMACS Export
 
-**Status:** COMPLETE
+**Status:** GAP CLOSURE
 **Phases:** 14
 **Total Requirements:** 8
 **Completion Date:** 2026-04-07
@@ -48,7 +48,7 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 
 **Coverage:** 8/8 requirements mapped ✓
 
-**Plans:** 6 plans (all complete)
+**Plans:** 8 plans (6 complete, 2 gap closure)
 
 **Plan list:**
 - [x] 14-01-PLAN.md — GROMACS file writers and resource bundling
@@ -57,6 +57,14 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 - [x] 14-04-PLAN.md — Fix PDB residue numbering and molecule count documentation
 - [x] 14-05-PLAN.md — Add candidate selection for GROMACS export
 - [x] 14-06-PLAN.md — Add GROMACS export to in-app help
+- [ ] 14-07-PLAN.md — Fix GROMACS export crash and clarify water model (Wave 1)
+- [ ] 14-08-PLAN.md — Update documentation and GUI labels (Wave 2)
+
+**Gap Closure Items:**
+1. CRITICAL: Fix AttributeError crash in GROMACS export (temperature_spinbox missing)
+2. Clarify water model selection (TIP4P-ICE) in GUI
+3. Add TIP4P-ICE reference citation to README/docs
+4. Update "Number of molecules" label to "Minimum number of molecules"
 
 ---
 
