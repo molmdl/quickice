@@ -15,6 +15,14 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     Args:
         candidate: Candidate object with positions, atom_names, cell, nmolecules
         filepath: Output file path for .gro file
+    
+    Note:
+        candidate.nmolecules may differ from the user's requested count due to
+        crystal structure constraints. GenIce2 creates supercells to satisfy
+        space group symmetry, so the actual count can be larger. For example:
+          - ice Ih with requested nmol=216 may generate 432 molecules (2× supercell)
+          - ice Ih with requested nmol=4 may generate 16 molecules (4× supercell)
+        This is expected behavior and ensures the structure is physically valid.
     """
     nmol = candidate.nmolecules
     n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW
