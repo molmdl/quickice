@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** v2.1 GROMACS Export — gap closure
+**Current Focus:** v2.1 GROMACS Export — COMPLETE
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** v2.1 GROMACS Export — gap closure in progress
+**Current focus:** v2.1 GROMACS Export — MILESTONE COMPLETE
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 | Field | Value |
 |-------|-------|
 | Milestone | v2.1 GROMACS Export |
-| Phase | 14 of 14 (GROMACS Export) |
-| Plan | 7 of 8 complete |
-| Status | In progress |
-| Last activity | 2026-04-07 — Completed 14-07-PLAN.md |
+| Phase | 14 of 14 (COMPLETE) |
+| Plan | 8 of 8 complete |
+| Status | Milestone complete |
+| Last activity | 2026-04-07 — All plans verified, milestone complete |
 
-**Progress:** ██████████ 87% (7 of 8 plans in phase)
+**Progress:** ██████████ 100% (8 of 8 plans in phase)
 
 ---
 
@@ -47,6 +47,19 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ---
 
 ## Milestone History
+
+### v2.1 GROMACS Export (Shipped 2026-04-07)
+
+**Phases:** 14 (8 plans)
+**Key features:**
+- GROMACS export (.gro, .top, .itp files)
+- TIP4P-ICE water model (4-point)
+- CLI --gromacs flag and GUI Ctrl+G export
+- Complete documentation with academic citation
+- Fixed AttributeError crash in export dialog
+- Clear GUI labeling for molecule count
+
+**Archive:** [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 
 ### v2.0 GUI Application (Shipped 2026-04-04)
 
@@ -88,6 +101,7 @@ Full decision log: .planning/PROJECT.md
 | PyInstaller bundling | ✓ Linux executable |
 | Exact version pinning | ✓ All deps =x.y.z |
 | TIP4P water model | ✓ GROMACS compatible (4-point) |
+| TIP4P-ICE force field | ✓ Abascal et al. 2005 |
 
 ---
 
@@ -96,18 +110,20 @@ Full decision log: .planning/PROJECT.md
 - v1.0: [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
 - v1.1: [.planning/milestones/v1.1-ROADMAP.md](./milestones/v1.1-ROADMAP.md)
 - v2.0: [.planning/milestones/v2.0-ROADMAP.md](./milestones/v2.0-ROADMAP.md)
+- v2.1: [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 - v1 Requirements: [.planning/milestones/v1-REQUIREMENTS.md](./milestones/v1-REQUIREMENTS.md)
 - v2 Requirements: [.planning/milestones/v2.0-REQUIREMENTS.md](./milestones/v2.0-REQUIREMENTS.md)
+- v2.1 Requirements: [.planning/REQUIREMENTS.md](./REQUIREMENTS.md)
 - v2 Audit: [.planning/milestones/v2.0-MILESTONE-AUDIT.md](./milestones/v2.0-MILESTONE-AUDIT.md)
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-04-07 09:55:34 UTC
-**Stopped at:** Completed 14-07-PLAN.md
+**Last session:** 2026-04-07
+**Completed:** v2.1 GROMACS Export milestone
 **Resume file:** None
 
 ---
 
-*State updated: 2026-04-07 — Completed 14-07-PLAN.md*
+*State updated: 2026-04-07 — v2.1 GROMACS Export milestone complete*
