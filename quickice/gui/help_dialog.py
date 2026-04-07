@@ -63,7 +63,7 @@ class QuickReferenceDialog(QDialog):
             "2. Click on phase diagram OR type values directly\n"
             "3. Press Enter or click Generate button\n"
             "4. View ranked candidates in dual 3D viewer\n"
-            "5. Use File menu to export PDB, diagram, or screenshots"
+            "5. Use File menu to export PDB, GROMACS files, diagram, or screenshots"
         )
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)
