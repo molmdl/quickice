@@ -473,7 +473,12 @@ class MainWindow(QMainWindow):
             selected_idx = 0
         
         ranked = self._current_result.ranked_candidates[selected_idx]
-        self._gromacs_exporter.export_gromacs(ranked.candidate)
+        
+        # Get T and P from input panel
+        T = self.input_panel.temperature_spinbox.value()
+        P = self.input_panel.pressure_spinbox.value()
+        
+        self._gromacs_exporter.export_gromacs(ranked, T, P)
 
     @Slot()
     def _on_help(self):
