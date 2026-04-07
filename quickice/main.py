@@ -75,7 +75,8 @@ def main() -> int:
             
             # Filter candidates if --candidate specified
             candidates_to_export = ranking_result.ranked_candidates
-            if args.candidate is not None:
+            specific_candidate = args.candidate is not None
+            if specific_candidate:
                 candidates_to_export = [
                     rc for rc in ranking_result.ranked_candidates 
                     if rc.rank == args.candidate
@@ -85,26 +86,37 @@ def main() -> int:
                           f"Available: 1-{len(ranking_result.ranked_candidates)}")
             
             exported_files = []
+            
+            # Write .gro files for all exported candidates
             for rc in candidates_to_export:
                 candidate = rc.candidate
-                # Use consistent filename base for all files (gro, top, itp)
                 base_name = f"{candidate.phase_id}_{rc.rank}"
                 gro_filepath = output_path / f"{base_name}.gro"
                 write_gro_file(candidate, str(gro_filepath))
                 exported_files.append(f"{base_name}.gro")
+            
+            # Write .top and .itp only once (they're identical for all candidates)
+            # Use the first candidate for phase_id reference
+            if candidates_to_export:
+                first_candidate = candidates_to_export[0].candidate
+                phase_id = first_candidate.phase_id
                 
-                # Write .top and .itp files for each candidate
-                top_filepath = output_path / f"{base_name}.top"
-                write_top_file(candidate, str(top_filepath))
-                exported_files.append(f"{base_name}.top")
+                # Write single .top file
+                top_filename = f"{phase_id}.top"
+                top_filepath = output_path / top_filename
+                write_top_file(first_candidate, str(top_filepath))
                 
-                # Copy .itp file from data directory
+                # Copy .itp file from data directory (single copy)
                 import shutil
                 from quickice.output.gromacs_writer import get_tip4p_itp_path
                 itp_source = get_tip4p_itp_path()
-                itp_filepath = output_path / f"{base_name}.itp"
+                itp_filename = "tip4p_ice.itp"
+                itp_filepath = output_path / itp_filename
                 shutil.copy(itp_source, itp_filepath)
-                exported_files.append(f"{base_name}.itp")
+                
+                # Add to exported list after .gro files
+                exported_files.append(top_filename)
+                exported_files.append(itp_filename)
             
             print(f"\nExported GROMACS files:")
             for f in exported_files[:6]:
