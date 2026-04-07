@@ -6,7 +6,7 @@ datas = []
 binaries = []
 hiddenimports = []
 
-for pkg in ['iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', 'shapely', 'networkx', 'spglib']:
+for pkg in ['quickice', 'iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', 'shapely', 'networkx', 'spglib']:
     try:
         tmp_ret = collect_all(pkg)
         datas += tmp_ret[0]
