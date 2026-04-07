@@ -27,9 +27,9 @@ Plans:
 - [x] 15-02-PLAN.md — Add Ice Ic polygon builder and registration (NEW-01, NEW-02)
 - [x] 15-03-PLAN.md — Update PHASE_POLYGONS and MELTING_CURVE_COEFFICIENTS (CODE-01, CODE-02)
 - [x] 15-04-PLAN.md — Update documentation comments (CODE-03, CODE-04)
-- [ ] 15-05-PLAN.md — Fix Ice Ic polygon boundaries (Gap closure: Ice XI overlap)
-- [ ] 15-06-PLAN.md — Add Ice Ic to CLI export (Gap closure: CLI rendering)
-- [ ] 15-07-PLAN.md — Fix hardcoded old triple point values (Gap closure: polygon consistency)
+- [x] 15-05-PLAN.md — Fix Ice Ic polygon boundaries (Gap closure: Ice XI overlap)
+- [x] 15-06-PLAN.md — Add Ice Ic to CLI export (Gap closure: CLI rendering)
+- [x] 15-07-PLAN.md — Fix hardcoded old triple point values (Gap closure: polygon consistency)
 
 **Requirements:**
 - DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07, DATA-08
@@ -50,7 +50,7 @@ Plans:
 
 | Phase | Goal | Status | Requirements |
 |-------|------|--------|--------------|
-| 15 | Phase Diagram Data Update | Pending | 14 mapped |
+| 15 | Phase Diagram Data Update | Complete | 14 mapped |
 
 ---
 
