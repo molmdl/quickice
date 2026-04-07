@@ -120,22 +120,35 @@ Phase: Ice Ih (ice_ih)
 Density: 0.9167 g/cm³
 
 Generated 10 candidates
+Note: Actual molecule count (432) differs from requested (216)
+      This ensures valid crystal structure symmetry.
+
 Ranked 10 candidates
 
 Ranking scores (lower combined = better):
 ----------------------------------------------------------------------
 Rank  Energy      Density     Diversity   Combined    
 ----------------------------------------------------------------------
-1     0.0898      0.0008      1.0000      1.0000      
-2     0.0899      0.0008      1.0000      1.0353      
-3     0.0900      0.0008      1.0000      1.0839      
-4     0.0900      0.0008      1.0000      1.1040      
-5     0.0901      0.0008      1.0000      1.1179      
+1     0.0813      0.0008      1.0000      1.0000      
+2     0.0815      0.0008      1.0000      1.0956      
+3     0.0816      0.0008      1.0000      1.1764      
+4     0.0817      0.0008      1.0000      1.2007      
+5     0.0817      0.0008      1.0000      1.2073      
 ----------------------------------------------------------------------
+
+Exported GROMACS files:
+  - ice_ih_1.gro
+  - ice_ih_2.gro
+  - ice_ih_3.gro
+  - ice_ih_4.gro
+  - ice_ih_5.gro
+  - ice_ih_6.gro
+  - ... and 6 more
+  Directory: sample_output
 
 Output:
   PDB files: 10
-  Directory: /tmp/sample_output
+  Directory: sample_output
     - ice_candidate_01.pdb
     - ice_candidate_02.pdb
     - ice_candidate_03.pdb
