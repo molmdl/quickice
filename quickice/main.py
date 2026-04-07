@@ -84,21 +84,34 @@ def main() -> int:
                     print(f"Warning: Candidate rank {args.candidate} not found. "
                           f"Available: 1-{len(ranking_result.ranked_candidates)}")
             
+            exported_files = []
             for rc in candidates_to_export:
                 candidate = rc.candidate
-                gro_filename = f"{candidate.phase_id}_{rc.rank}.gro"
-                gro_filepath = output_path / gro_filename
+                # Use consistent filename base for all files (gro, top, itp)
+                base_name = f"{candidate.phase_id}_{rc.rank}"
+                gro_filepath = output_path / f"{base_name}.gro"
                 write_gro_file(candidate, str(gro_filepath))
+                exported_files.append(f"{base_name}.gro")
                 
-                # Write .top file only for first exported candidate
-                if rc == candidates_to_export[0]:
-                    top_filepath = output_path / f"{candidate.phase_id}_{rc.rank}.top"
-                    write_top_file(candidate, str(top_filepath))
-                    print(f"Exported GROMACS files: {gro_filename}, {candidate.phase_id}_{rc.rank}.top")
-                else:
-                    print(f"Exported GROMACS file: {gro_filename}")
+                # Write .top and .itp files for each candidate
+                top_filepath = output_path / f"{base_name}.top"
+                write_top_file(candidate, str(top_filepath))
+                exported_files.append(f"{base_name}.top")
+                
+                # Copy .itp file from data directory
+                import shutil
+                from quickice.output.gromacs_writer import get_tip4p_itp_path
+                itp_source = get_tip4p_itp_path()
+                itp_filepath = output_path / f"{base_name}.itp"
+                shutil.copy(itp_source, itp_filepath)
+                exported_files.append(f"{base_name}.itp")
             
-            print(f"  GROMACS files written to: {args.output}")
+            print(f"\nExported GROMACS files:")
+            for f in exported_files[:6]:
+                print(f"  - {f}")
+            if len(exported_files) > 6:
+                print(f"  - ... and {len(exported_files) - 6} more")
+            print(f"  Directory: {args.output}")
         
         # Output PDB files and phase diagram
         output_result = output_ranked_candidates(
