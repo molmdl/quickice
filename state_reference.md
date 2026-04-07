@@ -6,3 +6,6 @@
     - https://en.wikipedia.org/wiki/Phases_of_ice#/media/File:Phase_diagram_of_water.svg 
     - https://en.wikipedia.org/wiki/Phases_of_ice#/media/File:Water_phase_diagram_extended_to_negative_pressurs.png
 4. LSBU Water Phase Data: https://ergodic.ugr.es/termo/lecciones/water1.html
+5. Information and data on  vitroid.github.io:
+    - https://vitroid.github.io/water-science/water/water_structure_science.html
+    - https://vitroid.github.io/water-science/water/water_phase_diagram.html
