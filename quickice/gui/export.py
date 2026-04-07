@@ -307,20 +307,34 @@ class GROMACSExporter:
         """
         self.parent = parent_widget
     
-    def export_gromacs(self, candidate: Candidate) -> bool:
+    def export_gromacs(self, ranked_candidate: RankedCandidate, T: float, P: float) -> bool:
         """Export ice structure to GROMACS format.
-        
+
         Args:
-            candidate: Candidate with positions, atom_names, cell, nmolecules
-            
+            ranked_candidate: RankedCandidate with candidate structure and metadata
+            T: Temperature in Kelvin
+            P: Pressure in bar
+
         Returns:
             True if export succeeded
+
+        Per CONTEXT.md:
+        - Default filename format: {phase}_{T}K_{P}bar_c{rank}.gro
+        - Generates companion .top and .itp files
         """
+        # Generate default filename with rank/T/P info
+        phase_id = ranked_candidate.candidate.phase_id or "ice"
+        rank = ranked_candidate.rank
+        default_name = f"{phase_id}_{T:.0f}K_{P:.0f}bar_c{rank}.gro"
+
+        # Extract candidate from RankedCandidate
+        candidate = ranked_candidate.candidate
+
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self.parent,
             "Export for GROMACS",
-            "ice_structure.gro",
+            default_name,
             "GRO Files (*.gro);;All Files (*)",
             "GRO Files (*.gro)"
         )
