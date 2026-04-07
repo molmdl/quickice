@@ -2,7 +2,12 @@
 Curve-based ice phase lookup.
 
 Determines ice phase by evaluating boundary curves, not polygon containment.
-Uses IAPWS R14-08 melting curves and linear interpolation for solid-solid boundaries.
+Uses IAPWS R14-08(2011) melting curves and linear interpolation for solid-solid boundaries.
+
+Triple point data sources:
+- IAPWS R14-08(2011) for melting curve reference points
+- Journaux et al. (2019, 2020) for II-III-V and II-V-VI triple points
+- LSBU Water Phase Data for additional triple point values
 
 This approach eliminates polygon overlap errors by directly evaluating which
 boundary curves the (T,P) point is above or below.
@@ -102,7 +107,7 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
            
         2. Ice VI region (between V-VI and VI-VII boundaries)
            - T >= 218.95K (extends from II-V-VI triple point)
-           - P > 620 MPa
+           - P > 620 MPa (approximately, varies with T)
            - Check VI-VII boundary for T > 278K
            
         3. Ice V region (between II-V and V-VI boundaries)
@@ -117,13 +122,13 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
            - Checked before Ice II since conditions overlap
            
         4. Ice II region (below Ih-II-III triple point)
-           - T < 248.85K (max temp at II-III-V triple point)
+           - T < 249.4K (max temp at II-III-V triple point)
            - P > 200 MPa
-           - Above Ih-II boundary (T < 238.55K) or
-           - Above II-III boundary (T >= 238.55K)
+           - Above Ih-II boundary (T < 238.45K) or
+           - Above II-III boundary (T >= 238.45K)
            
         5. Ice III region (narrow wedge)
-           - T in [238.55, 256.165]K
+           - T in [238.45, 256.164]K (narrow wedge)
            - P > 200 MPa
            - Between II-III and III-V boundaries
            
@@ -283,10 +288,10 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
             return _build_result(phase_id, T, P)
     
     # 4. Ice II region
-    # Ice II: T(100-248.85K at high P), P(200-620 MPa)
+    # Ice II: T(100-249.4K at high P), P(200-670 MPa)
     # The II region has two parts: above and below the Ih-II-III triple point
-    if T < 248.85 and P > 200:
-        if T >= 238.55:
+    if T < 249.4 and P > 200:
+        if T >= 238.45:
             # Above Ih-II-III triple point
             # Check II-III boundary
             P_ii_iii = ii_iii_boundary(T)
@@ -295,7 +300,7 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
                 phase_id = "ice_ii"
                 return _build_result(phase_id, T, P)
         else:
-            # Below Ih-II-III triple point (T < 238.55K)
+            # Below Ih-II-III triple point (T < 238.45K)
             # Check Ih-II boundary
             P_ih_ii = ih_ii_boundary(T)
             if P > P_ih_ii:
@@ -304,18 +309,18 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
                 return _build_result(phase_id, T, P)
     
     # 5. Ice III region (narrow wedge)
-    # Ice III: T(238.55-256.165K), P(207.5-346.3 MPa)
+    # Ice III: T(238.45-256.164K), P(~210-350 MPa)
     # This is a narrow region between II-III and III-V boundaries
-    if 238.55 <= T <= 256.165 and P > 200:
+    if 238.45 <= T <= 256.164 and P > 200:
         # Check boundaries to determine if in Ice III region
-        if T <= 248.85:
+        if T <= 249.4:
             # Check II-III boundary (lower P boundary of Ice III)
             P_ii_iii = ii_iii_boundary(T)
             if P < P_ii_iii:
                 # Below II-III boundary = Ice III
                 phase_id = "ice_iii"
                 return _build_result(phase_id, T, P)
-        if T >= 248.85:
+        if T >= 249.4:
             # Check III-V boundary (upper P boundary of Ice III)
             P_iii_v = iii_v_boundary(T)
             if P < P_iii_v:
@@ -331,7 +336,7 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         return _build_result(phase_id, T, P)
     
     # 6. Ice Ih region
-    # Ice Ih: T(100-273.16K), P(0-207.5 MPa at T=251.165K)
+    # Ice Ih: T(100-273.16K), P(0-209.9 MPa at T=251.165K)
     # The Ih melting curve is the upper P boundary
     if T <= 273.16:
         try:
