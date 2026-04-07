@@ -1,142 +1,124 @@
 # Coding Conventions
 
-**Analysis Date:** 2025-04-04
-
-## Language & Version
-
-**Primary:** Python 3.10+ - Modern syntax features used throughout
-
-**Key Features Used:**
-- Modern type hint syntax: `list[str]`, `dict[str, Any]` (not `List[str]`, `Dict[str, Any]`)
-- Union types with `|` operator
-- `match` statements where appropriate
-- Dataclasses with `field(default_factory=...)`
+**Analysis Date:** 2026-04-07
 
 ## Naming Patterns
 
 **Files:**
-- Snake_case: `phase_mapping.py`, `structure_generation.py`
-- Test files: `test_<module>.py` (e.g., `test_validators.py`)
-- Private modules: None observed
+- Python modules use `snake_case`: `phase_mapping.py`, `pdb_writer.py`, `melting_curves.py`
+- Test files prefixed with `test_`: `test_validators.py`, `test_ranking.py`
+- Package directories use `snake_case`: `quickice/`, `phase_mapping/`, `structure_generation/`
 
 **Functions:**
-- Snake_case: `validate_temperature()`, `lookup_phase()`, `calculate_supercell()`
-- Private functions: Prefix underscore `_calculate_oo_distances_pbc()`
-- Validator functions: `validate_<noun>()` pattern
+- `snake_case` for all functions: `validate_temperature()`, `lookup_phase()`, `calculate_supercell()`
+- Private methods prefixed with underscore: `_generate_single()`, `_parse_gro()`, `_calculate_oo_distances_pbc()`
+- Factory functions prefixed with `create_` or `get_`: `create_parser()`, `get_arguments()`, `get_genice_lattice_name()`
 
 **Variables:**
-- Snake_case: `temperature`, `pressure`, `nmolecules`
-- Constants: UPPER_SNAKE_CASE: `IDEAL_OO_DISTANCE`, `OO_CUTOFF`, `AVOGADRO`
+- `snake_case` for variables: `nmolecules`, `phase_info`, `supercell_matrix`
+- Constants in `UPPER_SNAKE_CASE`: `IDEAL_OO_DISTANCE`, `OO_CUTOFF`, `TRIPLE_POINTS`, `PHASE_TO_GENICE`
 
 **Types/Classes:**
-- PascalCase: `Candidate`, `GenerationResult`, `RankedCandidate`
-- Exception classes: `<Name>Error` pattern: `UnknownPhaseError`, `UnsupportedPhaseError`
-- Dataclasses for data containers
+- `PascalCase` for classes: `Candidate`, `GenerationResult`, `IceStructureGenerator`, `UnknownPhaseError`
+- Dataclasses used for data containers: `Candidate`, `GenerationResult`, `RankedCandidate`, `RankingResult`
+- Exception classes suffixed with `Error`: `PhaseMappingError`, `UnknownPhaseError`, `StructureGenerationError`, `UnsupportedPhaseError`
 
-**Module Constants:**
-```python
-# Module-level constants in UPPER_SNAKE_CASE
-IDEAL_OO_DISTANCE = 0.276  # nm
-OO_CUTOFF = 0.35  # nm
-AVOGADRO = 6.022e23  # molecules/mol
-```
+**Type Annotations:**
+- Modern Python 3.14 syntax: `list[str]`, `dict[str, Any]`, `tuple[np.ndarray, list[str], np.ndarray]`
+- Return type annotations on all public functions: `-> float`, `-> dict[str, Any]`, `-> GenerationResult`
+- Optional types use `| None`: `temperature: float = None`, `weights: dict[str, float] | None = None`
 
 ## Code Style
 
 **Formatting:**
-- No external formatter detected (no .prettierrc, .editorconfig, biome.json)
-- Indentation: 4 spaces
-- Line length: ~100 characters observed
-- Trailing commas in multi-line collections
+- No formal formatter config detected (no .prettierrc, .editorconfig, biome.json)
+- 4-space indentation (Python standard)
+- Line length appears to follow PEP 8 conventions
+- Blank lines between class methods, after import blocks
 
 **Linting:**
-- No ESLint/Pylint configuration detected
-- Rely on pytest for validation
+- No formal linter config detected (no .flake8, .pylintrc, pyproject.toml linting section)
+- Code follows PEP 8 conventions organically
+
+**Imports:**
+- Standard library imports first
+- Third-party imports second (numpy, pytest, scipy, etc.)
+- Local imports last
+- Absolute imports preferred: `from quickice.phase_mapping import lookup_phase`
+- Import grouping with blank lines between sections
 
 ## Import Organization
 
 **Order:**
-1. Standard library imports
-2. Third-party imports
-3. Local application imports
+1. Standard library: `import sys`, `from pathlib import Path`, `from argparse import ArgumentTypeError`
+2. Third-party packages: `import numpy as np`, `import pytest`, `from scipy.spatial import cKDTree`
+3. Local modules: `from quickice.structure_generation.types import Candidate`
 
-**Example from `quickice/ranking/scorer.py`:**
-```python
-import numpy as np
-from collections import Counter
-from scipy.spatial import cKDTree
-
-from quickice.structure_generation.types import Candidate
-from quickice.ranking.types import RankedCandidate, RankingResult
-```
-
-**Path Imports:**
-- Use relative imports within package: `from .types import Candidate`
-- Use absolute imports for cross-module: `from quickice.structure_generation.types import Candidate`
+**Path Aliases:**
+- None detected - all imports use full module paths
+- Package structure allows clean imports: `from quickice.ranking import rank_candidates`
 
 ## Error Handling
 
 **Custom Exceptions:**
-- Base exception per module: `PhaseMappingError`, `StructureGenerationError`
-- Specific exceptions inherit from base: `UnknownPhaseError(PhaseMappingError)`
-
-**Pattern from `quickice/phase_mapping/errors.py`:**
+- Base exception classes for each module domain:
+  - `quickice/phase_mapping/errors.py`: `PhaseMappingError`, `UnknownPhaseError`
+  - `quickice/structure_generation/errors.py`: `StructureGenerationError`, `UnsupportedPhaseError`
+- Exception classes include contextual attributes:
 ```python
-class PhaseMappingError(Exception):
-    def __init__(
-        self,
-        message: str,
-        temperature: float = None,
-        pressure: float = None
-    ):
+class UnknownPhaseError(PhaseMappingError):
+    def __init__(self, message: str, temperature: float = None, pressure: float = None):
         self.temperature = temperature
         self.pressure = pressure
-        # Build detailed message with context
-        parts = [message]
-        if temperature is not None and pressure is not None:
-            parts.append(f"Given: T={temperature}K, P={pressure}MPa")
-        super().__init__(" | ".join(parts))
 ```
 
-**Raising Exceptions:**
+**Error Messages:**
+- Descriptive error messages with context: `"Temperature must be between 0 and 500K, got {temp}K"`
+- Include user input in error messages for debugging
+- CLI validators raise `ArgumentTypeError` for argparse integration
+
+**Exception Handling:**
+- Wrap external library errors with custom exceptions:
 ```python
-# In validators - use ArgumentTypeError for CLI
-from argparse import ArgumentTypeError
+except Exception as e:
+    raise StructureGenerationError(
+        f"Failed to generate ice structure ({type(e).__name__}): {e}"
+    ) from e
+```
 
-raise ArgumentTypeError(f"Temperature must be between 0 and 500K, got {temp}K")
-
-# In library code - use custom exceptions
-raise UnknownPhaseError(
-    "No ice phase found for given conditions",
-    temperature=T,
-    pressure=P,
-)
+- Main entry points catch and format exceptions:
+```python
+except UnknownPhaseError as e:
+    print(f"Error: {e}", file=sys.stderr)
+    return 1
 ```
 
 ## Logging
 
-**Pattern:** `print()` statements for CLI output, no structured logging detected
+**Framework:** No logging framework detected - uses `print()` statements
 
-**CLI Output Pattern from `quickice/main.py`:**
+**Patterns:**
+- User-facing output via `print()`:
 ```python
-print("QuickIce - Ice structure generation")
-print()
 print(f"Temperature: {args.temperature}K")
-print(f"Pressure: {args.pressure} MPa")
-print(f"Molecules: {args.nmolecules}")
-
-# Error output to stderr
-print(f"Error: {e}", file=sys.stderr)
+print(f"Phase: {phase_info['phase_name']} ({phase_info['phase_id']})")
 ```
+- Errors printed to stderr: `print(f"Error: {e}", file=sys.stderr)`
+- Progress indicators during generation: `print(f"Generated {len(gen_result.candidates)} candidates")`
 
 ## Comments
 
 **When to Comment:**
-- Module-level docstrings explaining purpose
-- Function docstrings for all public functions
-- Inline comments explaining non-obvious calculations or physical constants
+- Module-level docstrings for all modules
+- Function/method docstrings for all public APIs
+- Inline comments for non-obvious calculations or unit conversions:
+```python
+# Convert from nm³ to cm³ (1 nm³ = 1e-21 cm³)
+volume_cm3 = volume_nm3 * 1e-21
+```
 
-**Docstring Format (Google-style):**
+**Docstrings:**
+- Google-style docstrings throughout:
 ```python
 def validate_temperature(value: str) -> float:
     """Validate temperature input.
@@ -149,161 +131,79 @@ def validate_temperature(value: str) -> float:
         
     Raises:
         ArgumentTypeError: If value is not numeric or outside valid range
-        
-    Example:
-        >>> validate_temperature("300")
-        300.0
     """
 ```
 
-**Note sections for important caveats:**
+- Examples in docstrings where helpful:
 ```python
-def energy_score(candidate: Candidate) -> float:
-    """Calculate energy score based on O-O distance deviation from ideal.
-    
-    Note:
-        This is NOT an actual energy calculation - it's a heuristic based on
-        O-O distance statistics. For real energies, use MD simulations with
-        appropriate force fields.
-    """
+"""
+Example:
+    >>> from quickice.phase_mapping import lookup_phase
+    >>> phase_info = lookup_phase(273, 0)  # Ice Ih
+    >>> result = generate_candidates(phase_info, nmolecules=100)
+"""
+```
+
+- Module-level docstrings describe purpose:
+```python
+"""GenIce-based ice structure generator.
+
+This module provides the IceStructureGenerator class that wraps GenIce's API
+to generate physically valid ice structures with diverse hydrogen bond networks.
+"""
 ```
 
 ## Function Design
 
-**Size:** Functions typically 10-50 lines; longer functions have clear sections
+**Size:** Functions typically 10-50 lines, complex functions up to ~100 lines
 
 **Parameters:**
-- Use type hints for all parameters
-- Default values for optional parameters
-- Use `| None` for optional types
+- Type-hinted parameters with defaults for optional args
+- Dictionary inputs for complex configurations: `phase_info: dict`
+- Optional parameters with clear defaults: `n_candidates: int = 10`, `symprec: float = 1e-4`
 
 **Return Values:**
-- Single return type preferred
-- Use dataclasses for complex return values
-- Return `dict` for dynamic structures
+- Dataclasses for structured returns: `GenerationResult`, `RankingResult`, `OutputResult`
+- Tuple unpacking for multiple values: `-> tuple[np.ndarray, list[str], np.ndarray]`
+- Consistent return patterns: validators return validated value or raise exception
 
-**Example signature:**
-```python
-def rank_candidates(
-    candidates: list[Candidate],
-    weights: dict[str, float] | None = None
-) -> RankingResult:
-```
+**Function Naming Patterns:**
+- Validators: `validate_*`, `check_*`
+- Calculators: `calculate_*`
+- Generators: `generate_*`
+- Writers: `write_*`
+- Lookups: `lookup_*`, `get_*`
 
 ## Module Design
 
 **Exports:**
-- Use `__all__` in `__init__.py` for explicit public API
-- Export types, errors, and main functions
-
-**Pattern from `quickice/ranking/__init__.py`:**
+- Explicit `__all__` in all `__init__.py` files:
 ```python
-from quickice.ranking.types import RankedCandidate, RankingResult
-from quickice.ranking.scorer import (
-    rank_candidates,
-    energy_score,
-    density_score,
-    diversity_score,
-    normalize_scores,
-)
-
 __all__ = [
-    "RankedCandidate",
-    "RankingResult",
-    "rank_candidates",
-    "energy_score",
-    "density_score",
-    "diversity_score",
-    "normalize_scores",
+    "lookup_phase",
+    "IcePhaseLookup",
+    "PhaseMappingError",
+    "UnknownPhaseError",
+    # ...
 ]
 ```
 
-**File Organization:**
-- `types.py`: Data structures and types
-- `errors.py`: Custom exceptions
-- `<domain>.py`: Main functionality
-- `__init__.py`: Public API exports
+**Barrel Files:**
+- `__init__.py` files re-export public API from submodules
+- Clean import paths: `from quickice.ranking import rank_candidates`
+- Types, errors, and functions organized in separate files within modules
 
-## Type Annotations
+**Module Structure:**
+- `types.py`: Dataclasses for data containers
+- `errors.py`: Custom exception classes
+- Main functionality in module-specific files (e.g., `scorer.py`, `generator.py`, `lookup.py`)
+- Constants defined at module level or in dedicated `data/` submodules
 
-**Modern Python 3.10+ Syntax:**
-```python
-# Use built-in generics
-def lookup_phase(temperature: float, pressure: float) -> dict[str, Any]:
-    ...
-
-# Use | for unions
-def get_arguments(args: list[str] | None = None) -> argparse.Namespace:
-    ...
-
-# Use dataclass for structured data
-@dataclass
-class Candidate:
-    positions: np.ndarray
-    atom_names: list[str]
-    cell: np.ndarray
-    nmolecules: int
-    phase_id: str
-    seed: int
-    metadata: dict[str, Any] = field(default_factory=dict)
-```
-
-## Data Structures
-
-**Dataclasses for Data Containers:**
-- Use `@dataclass` decorator
-- Use `field(default_factory=dict)` for mutable defaults
-- Include docstring with Attributes section
-
-```python
-@dataclass
-class GenerationResult:
-    """Result of generating multiple candidates.
-
-    Attributes:
-        candidates: List of generated Candidate objects
-        requested_nmolecules: Number of molecules requested by user
-        actual_nmolecules: Actual number generated (may differ due to supercell)
-        phase_id: Phase identifier
-        phase_name: Human-readable phase name
-        density: Density in g/cm³
-        was_rounded: True if actual_nmolecules != requested_nmolecules
-    """
-    candidates: list[Candidate]
-    requested_nmolecules: int
-    actual_nmolecules: int
-    phase_id: str
-    phase_name: str
-    density: float
-    was_rounded: bool
-```
-
-## Constants
-
-**Physical Constants:**
-```python
-IDEAL_OO_DISTANCE = 0.276  # nm - ideal O-O distance in ice (H-bond length)
-OO_CUTOFF = 0.35  # nm - cutoff for H-bond detection
-AVOGADRO = 6.022e23  # molecules/mol
-WATER_MASS = 18.01528  # g/mol
-```
-
-**Mapping Constants:**
-```python
-PHASE_TO_GENICE = {
-    "ice_ih": "ice1h",
-    "ice_ic": "ice1c",
-    "ice_ii": "ice2",
-    ...
-}
-
-UNIT_CELL_MOLECULES = {
-    "ice1h": 16,
-    "ice1c": 8,
-    ...
-}
-```
+**Private Members:**
+- Internal functions prefixed with underscore
+- Private methods for implementation details
+- Module-level constants can be public if part of API
 
 ---
 
-*Convention analysis: 2025-04-04*
+*Convention analysis: 2026-04-07*

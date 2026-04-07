@@ -1,126 +1,135 @@
 # External Integrations
 
-**Analysis Date:** 2026-04-04
+**Analysis Date:** 2026-04-07
 
 ## APIs & External Services
 
-**Scientific Libraries (Embedded):**
-
-### GenIce2
-- Service: Ice crystal structure generation
-  - Purpose: Generates hydrogen-disordered ice structures with valid H-bond networks
-  - SDK/Client: `genice2.plugin.safe_import()` + `genice2.genice.GenIce`
-  - Integration: Wrapped in `quickice/structure_generation/generator.py`
-  - Usage: Called with lattice name, density, supercell matrix, water model (TIP3P), formatter (GROMACS)
-  - Repository: https://github.com/genice-dev/GenIce2
-  - Paper: "GenIce: Hydrogen-disordered ice structures by combinatorial generation", J. Comput. Chem. 2017
-
-### IAPWS (International Association for Properties of Water and Steam)
-- Service: Validated thermophysical property equations
-  - Purpose: IAPWS-95 melting curves, saturation curves, triple point data
-  - SDK/Client: `iapws.IAPWS97` class
-  - Integration: Used in `quickice/phase_mapping/melting_curves.py` and `quickice/output/phase_diagram.py`
-  - Auth: None (scientific standard, open equations)
-  - Reference: IAPWS R14-08(2011) - Melting and Sublimation Curves
-
-### spglib
-- Service: Crystal symmetry analysis
-  - Purpose: Space group detection, symmetry operations
-  - SDK/Client: `spglib` Python package
-  - Integration: Available for structure validation
+**None** - QuickIce is a fully local desktop application with no external API calls.
 
 ## Data Storage
 
 **Databases:**
-- None - Application is stateless
+- None - No database connections
 
 **File Storage:**
 - Local filesystem only
-  - Output: PDB molecular structure files
-  - Output: PNG/SVG phase diagram images
-  - Output: Text data files with boundary curves
-  - Location: Configurable via `--output` flag (default: `output/`)
+- Output directory configurable via `--output` CLI flag (default: `output/`)
+- Bundled data files in `quickice/data/`:
+  - `tip4p-ice.itp` - GROMACS TIP4P-ICE water model topology
+  - `tip4p.gro` - Reference TIP4P structure
 
 **Caching:**
-- None - Each run generates fresh structures
+- None - All computation is performed on-demand
+
+## Third-Party Libraries (Local Integration)
+
+**IAPWS (iapws 1.5.5):**
+- Purpose: Water/steam thermodynamic properties
+- Usage: Liquid water region calculation in phase diagrams
+- Location: `quickice/output/phase_diagram.py`, `quickice/gui/phase_diagram_widget.py`
+- Import: `from iapws import IAPWS97`
+- No external network calls - uses local IAPWS equations
+
+**GenIce2 (genice2 2.2.13.1):**
+- Purpose: Ice crystal structure generation
+- Usage: Generate ice polymorph lattices with hydrogen bond networks
+- Location: `quickice/structure_generation/generator.py`
+- Imports:
+  - `from genice2.plugin import safe_import`
+  - `from genice2.genice import GenIce`
+- Supported phases: Ih, Ic, II, III, V, VI, VII, VIII
+- Water models: TIP4P (4-point water with massless virtual site)
+- Formatters: GROMACS format output
+- No external network calls - pure local computation
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- None - Local desktop application
-  - No user accounts
-  - No network authentication
+- None - No authentication required (local desktop application)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None - Console/stderr output only
+- None - Errors printed to stderr/console
 
 **Logs:**
-- Python logging module (basic usage)
-  - Configured per-module with `logging.debug()`, `logging.warning()`
-  - No centralized logging infrastructure
+- Console output (print statements)
+- No structured logging framework
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- GitHub repository: Source distribution
-- GitHub Actions: Windows executable builds
-  - Workflow: `.github/workflows/build-windows.yml`
-  - Trigger: Manual (workflow_dispatch)
-  - Artifact: `quickice-gui-windows` (30-day retention)
+- N/A - Desktop application
 
 **CI Pipeline:**
-- GitHub Actions for Windows builds
-  - Python 3.14 setup
-  - Miniconda environment creation from `environment.yml`
-  - PyInstaller packaging with `--windowed --onedir`
-  - Artifact upload
+- GitHub Actions (manual trigger only)
+- Workflow: `.github/workflows/build-windows.yml`
+- Trigger: `workflow_dispatch` (manual)
+- Steps:
+  1. Checkout code
+  2. Setup Miniconda with `environment-build.yml`
+  3. Build executable with PyInstaller
+  4. Package documentation and licenses
+  5. Create ZIP artifact
+- Artifact: `quickice-v2.0.0-windows-x86_64.zip`
 
-**Release Distribution:**
-- GitHub Releases (manual process)
-- Standalone Windows executable with bundled dependencies
+**Dependency Updates:**
+- Dependabot: Weekly conda/pip updates
+- Auto-merge: Disabled (`open-pull-requests-limit: 0`)
 
 ## Environment Configuration
 
 **Required env vars:**
-- `PYTHONPATH` - Must include project root for package imports
-- Set via: `source setup.sh`
+- None - No environment variables required for core functionality
 
-**Conda environment:**
-- Environment name: `quickice`
-- Created from: `environment.yml`
+**Optional env vars:**
+- `DISPLAY` - X11 display (checked for VTK availability)
+- `QUICKICE_FORCE_VTK` - Force VTK usage in headless environments
 
 **Secrets location:**
-- None - No secrets required for this application
+- None - No secrets or credentials
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- None - Desktop application
+- None
 
 **Outgoing:**
-- None - Desktop application
+- None
 
-## Plugin Architecture
+## Molecular Simulation Integration
 
-**GenIce Plugin System:**
-- GenIce2 uses a plugin architecture for lattices, water models, and formatters
-- QuickIce imports plugins dynamically:
-  ```python
-  lattice = safe_import("lattice", "ice_ih").Lattice()
-  water = safe_import("molecule", "tip3p").Molecule()
-  formatter = safe_import("format", "gromacs").Format()
-  ```
-- Available lattices: ice_ih, ice_ic, ice_ii, ice_iii, ice_v, ice_vi, ice_vii, ice_viii, ice_ix, ice_xi, ice_xv
+**GROMACS Compatibility:**
+- Output formats: `.gro` (coordinates), `.top` (topology), `.itp` (molecule definition)
+- Water model: TIP4P-ICE (4-point water model for ice simulations)
+- Force field: Amber-compatible defaults
+- Location: `quickice/output/gromacs_writer.py`
 
-## Third-Party Licenses
+**PDB Format:**
+- Standard Protein Data Bank format
+- Location: `quickice/output/pdb_writer.py`
 
-**Bundled in `licenses/` directory:**
-- VTK license
-- Qt/PySide6 license
-- Other dependency licenses (for distribution compliance)
+## Data Files (Bundled)
+
+**Phase Mapping Data:**
+- `quickice/phase_mapping/data/ice_phases.json` - Phase metadata
+- `quickice/phase_mapping/ice_boundaries.py` - Solid-solid boundary data (embedded)
+
+**Molecular Data:**
+- `quickice/data/tip4p-ice.itp` - GROMACS TIP4P-ICE topology
+- `quickice/data/tip4p.gro` - Reference structure
+
+## Scientific Standards Used
+
+**IAPWS Standards (local implementation):**
+- IAPWS R14-08(2011) - Melting curves for ice phases
+- IAPWS R10-06(2009) - Equation of state for Ice Ih
+- Location: `quickice/phase_mapping/melting_curves.py`
+
+**Triple Point Data:**
+- Embedded in code: `quickice/phase_mapping/triple_points.py`
+- Source: IAPWS and scientific literature
 
 ---
 
-*Integration audit: 2026-04-04*
+*Integration audit: 2026-04-07*
