@@ -204,8 +204,33 @@ def _build_phase_polygon_from_curves(phase_id: str) -> List[Tuple[float, float]]
         return _build_ice_x_polygon()
     elif phase_id == "ice_xv":
         return _build_ice_xv_polygon()
+    elif phase_id == "ice_ic":
+        return _build_ice_ic_polygon()
     else:
         return []
+
+
+def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
+    """Ice Ic region: metastable cubic ice at low temperature and pressure.
+    
+    Ice Ic (cubic ice) is metastable with respect to Ice Ih but can form
+    at very low temperatures (50-150 K) and low pressures (0-100 MPa).
+    This is a simplified rectangular region for the metastable phase.
+    
+    Note: Ice Ic is checked as a fallback in lookup_phase() when no other
+    phase matches. The polygon here is for diagram visualization only.
+    
+    Returns:
+        List of (T, P) tuples forming the polygon boundary
+    """
+    vertices = [
+        (50.0, 0.1),      # Lower-left corner (cold, low P)
+        (150.0, 0.1),     # Lower-right corner (T=150K upper limit)
+        (150.0, 100.0),   # Upper-right corner (P=100 MPa upper limit)
+        (50.0, 100.0),    # Upper-left corner
+        (50.0, 0.1),      # Close polygon
+    ]
+    return vertices
 
 
 def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
