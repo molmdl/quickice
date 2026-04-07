@@ -12,7 +12,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -23,7 +23,7 @@ jobs:
       - name: Build executable
         shell: bash -el {0}
         run: |
-          pyinstaller quickice-gui.spec
+          pyinstaller --clean quickice-gui.spec
       
       - name: Copy documentation and licenses
         shell: bash
