@@ -214,8 +214,8 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
     """Ice Ic region: metastable cubic ice at low temperature and pressure.
     
     Ice Ic (cubic ice) is metastable with respect to Ice Ih but can form
-    at very low temperatures (50-150 K) and low pressures (0-100 MPa).
-    This is a simplified rectangular region for the metastable phase.
+    at very low temperatures (72-150 K) and low pressures (0-100 MPa).
+    The lower boundary at 72K avoids overlap with Ice XI which is stable below 72K.
     
     Note: Ice Ic is checked as a fallback in lookup_phase() when no other
     phase matches. The polygon here is for diagram visualization only.
@@ -223,12 +223,14 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
     Returns:
         List of (T, P) tuples forming the polygon boundary
     """
+    # Lower boundary at 72K to avoid overlap with Ice XI (which exists below 72K)
+    # Ice XI upper limit: Ih_XI_Vapor triple point at (72.0, 0.0001) MPa
     vertices = [
-        (50.0, 0.1),      # Lower-left corner (cold, low P)
+        (72.0, 0.1),      # Lower-left corner (above Ice XI)
         (150.0, 0.1),     # Lower-right corner (T=150K upper limit)
         (150.0, 100.0),   # Upper-right corner (P=100 MPa upper limit)
-        (50.0, 100.0),    # Upper-left corner
-        (50.0, 0.1),      # Close polygon
+        (72.0, 100.0),    # Upper-left corner
+        (72.0, 0.1),      # Close polygon
     ]
     return vertices
 
@@ -255,14 +257,16 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
         except ValueError as e:
             logging.debug(f"Melting pressure calculation failed at T={T}K: {e}")
     
-    # Ih-III-Liquid triple point (251.165 K, 207.5 MPa)
-    vertices.append((251.165, 207.5))
+    # Ih-III-Liquid triple point
+    T_ih3l, P_ih3l = get_triple_point("Ih_III_Liquid")
+    vertices.append((T_ih3l, P_ih3l))
     
-    # Ih-II-III triple point (238.55 K, 212.9 MPa)
-    vertices.append((238.55, 212.9))
+    # Ih-II-III triple point
+    T_ih23, P_ih23 = get_triple_point("Ih_II_III")
+    vertices.append((T_ih23, P_ih23))
     
     # Ih-II boundary from TP down to T=72K (where XI takes over)
-    T_vals = np.linspace(238.55, 72.0, 20)
+    T_vals = np.linspace(T_ih23, 72.0, 20)
     for T in T_vals:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
@@ -747,17 +751,18 @@ def generate_phase_diagram(
     # Define phases to plot (in order, back to front for proper layering)
     # Sub-phases (XI, IX, XV) should be rendered AFTER their parent phases
     phases_to_plot = [
-        "ice_x",      # NEW: highest pressure
+        "ice_x",      # highest pressure
         "ice_viii",
         "ice_vii", 
         "ice_vi",
-        "ice_xv",     # NEW: ordered VI (rendered AFTER VI so it appears on top)
+        "ice_xv",     # ordered VI (rendered AFTER VI so it appears on top)
         "ice_v",
         "ice_ii",
-        "ice_ix",     # NEW: ordered III (rendered AFTER II so it appears on top)
+        "ice_ix",     # ordered III (rendered AFTER II so it appears on top)
         "ice_iii",
         "ice_ih",
-        "ice_xi",     # NEW: ordered Ih (rendered AFTER Ih so it appears on top)
+        "ice_xi",     # ordered Ih (rendered AFTER Ih so it appears on top)
+        "ice_ic",     # metastable cubic ice (rendered LAST so it appears on top of XI/Ih)
     ]
     
     # Plot each phase region using curve-based boundaries
