@@ -8,14 +8,17 @@ issues:
     issue: "Ice Ic does not appear in exported phase diagram"
     severity: medium
     impact: "CLI users cannot visualize Ice Ic phase region"
+    status: "FIXED in Plan 15-06"
   - component: GUI phase diagram
     issue: "Ice Ic polygon overlaps with Ice XI"
     severity: high
     impact: "Visual confusion, incorrect phase region boundaries"
-  - component: Ice Ic boundary
-    issue: "Upper pressure boundary (100 MPa) may be incorrect"
+    status: "FIXED in Plan 15-05 (lower boundary now 72K)"
+  - component: Ice Ic upper boundary
+    issue: "Upper pressure boundary (100 MPa) is scientifically incorrect"
     severity: high
-    impact: "Ice Ic region extends beyond correct thermodynamic range"
+    impact: "Ice Ic region incorrectly truncated, should extend to ~200 MPa to match Ice Ih"
+    status: "NEEDS FIX"
 ---
 
 # Phase 15: User Acceptance Testing Report
@@ -88,11 +91,21 @@ issues:
 
 ### Issue 3: Upper Pressure Boundary Incorrect
 
-**Likely cause:** 100 MPa upper limit may not match actual metastable range
+**Likely cause:** 100 MPa upper limit is arbitrary, not scientifically validated
 - Ice Ic is metastable with respect to Ice Ih
-- At higher pressures, Ice Ic transforms to other phases
-- Need to verify the 100 MPa upper limit against scientific literature
-- May need to lower upper pressure boundary or add phase transition logic
+- At T=72-150K, Ice Ih exists at P≈196-210 MPa (along Ih-II boundary)
+- Ice Ic could exist as metastable in the same region where Ice Ih is stable
+- The 100 MPa limit incorrectly truncates the Ice Ic region
+
+**Scientific evidence:**
+- Ice Ih polygon shows upper boundary at ~196-210 MPa for T=72-150K
+- Ice Ic should extend to the same pressure range (up to Ih-II boundary)
+- No thermodynamic reason for 100 MPa limit
+
+**Recommended fix:**
+- Update Ice Ic polygon upper pressure boundary from 100 MPa to ~200 MPa
+- Use Ih-II boundary as the upper limit (same as Ice Ih)
+- This reflects that Ice Ic can exist metastably wherever Ice Ih is stable
 
 ## Recommended Fixes
 
@@ -110,19 +123,26 @@ issues:
 - Current polygon: 50-150K, 0-100 MPa
 - Proposed polygon: 72-150K, 0-100 MPa (after Ice XI check)
 
-### Fix 3: Verify and Adjust Upper Pressure Boundary
+### Fix 3: Update Upper Pressure Boundary to Match Ice Ih
 
-**File:** `quickice/output/phase_diagram.py` and/or `quickice/phase_mapping/lookup.py`
-**Action:** 
-1. Research correct metastable pressure range for Ice Ic
-2. Update polygon vertices to match correct thermodynamic range
-3. Add phase transition boundaries if needed
+**File:** `quickice/output/phase_diagram.py`
+**Action:**
+1. Update `_build_ice_ic_polygon()` to use ~200 MPa upper pressure boundary
+2. Ice Ih exists at P≈196-210 MPa for T=72-150K (along Ih-II boundary)
+3. Ice Ic (metastable) should extend to same pressure range
+4. Proposed polygon: 72-150K, 0.1-200 MPa (approximate, matching Ih-II boundary)
+
+**Scientific justification:**
+- Ice Ic is metastable relative to Ice Ih
+- No defined thermodynamic upper pressure boundary
+- Should exist wherever Ice Ih is stable (up to Ih-II transition)
+- This is the scientifically correct approach
 
 ## Priority
 
-1. **High:** Fix Ice Ic/Ice XI overlap (confusing for users)
-2. **High:** Verify and fix upper pressure boundary (scientific accuracy)
-3. **Medium:** Fix CLI export to include Ice Ic
+1. **High:** Fix Ice Ic upper pressure boundary to ~200 MPa (scientific accuracy)
+2. ~~High: Fix Ice Ic/Ice XI overlap~~ ✓ FIXED (Plan 15-05)
+3. ~~Medium: Fix CLI export to include Ice Ic~~ ✓ FIXED (Plan 15-06)
 
 ---
 
