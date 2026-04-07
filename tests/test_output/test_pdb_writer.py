@@ -67,11 +67,14 @@ def triclinic_candidate():
         [0.15, 0.2, 0.7]
     ])
     
+    # 1 water molecule: O, H, H
     positions = np.array([
-        [0.1, 0.1, 0.1],
+        [0.1, 0.1, 0.1],  # Oxygen
+        [0.15, 0.15, 0.1],  # Hydrogen 1
+        [0.05, 0.15, 0.1],  # Hydrogen 2
     ])
     
-    atom_names = ["O"]
+    atom_names = ["O", "H", "H"]
     
     return Candidate(
         positions=positions,
@@ -328,6 +331,61 @@ class TestWritePdbWithCryst1:
             assert abs(alpha - 90.0) > 1.0
             assert abs(beta - 90.0) > 1.0
             assert abs(gamma - 90.0) > 1.0
+        finally:
+            Path(filepath).unlink(missing_ok=True)
+    
+    def test_residue_numbering_increments_per_molecule(self, simple_candidate):
+        """Test that residue numbers increment for each water molecule."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
+            filepath = f.name
+        
+        try:
+            # Create candidate with 2 water molecules
+            positions = np.array([
+                [0.1, 0.1, 0.1],   # Molecule 1: O
+                [0.15, 0.15, 0.1], # Molecule 1: H1
+                [0.05, 0.15, 0.1], # Molecule 1: H2
+                [0.3, 0.3, 0.3],   # Molecule 2: O
+                [0.35, 0.35, 0.3], # Molecule 2: H1
+                [0.25, 0.35, 0.3], # Molecule 2: H2
+            ])
+            atom_names = ["O", "H", "H", "O", "H", "H"]
+            
+            candidate = Candidate(
+                positions=positions,
+                atom_names=atom_names,
+                cell=simple_candidate.cell.copy(),
+                nmolecules=2,
+                phase_id="test_phase",
+                seed=1,
+                metadata={}
+            )
+            
+            write_pdb_with_cryst1(candidate, filepath)
+            
+            with open(filepath, 'r') as f:
+                lines = f.readlines()
+            
+            # Extract residue numbers from HETATM lines
+            residue_numbers = []
+            for line in lines:
+                if line.startswith('HETATM'):
+                    # Residue number is in columns 23-26 (1-indexed, so 22-26 in 0-indexed)
+                    res_seq = int(line[22:26].strip())
+                    residue_numbers.append(res_seq)
+            
+            # Should have 6 atoms with residue numbers
+            assert len(residue_numbers) == 6
+            
+            # Molecule 1 atoms (O, H, H) should have residue 1
+            assert residue_numbers[0] == 1  # O of molecule 1
+            assert residue_numbers[1] == 1  # H1 of molecule 1
+            assert residue_numbers[2] == 1  # H2 of molecule 1
+            
+            # Molecule 2 atoms (O, H, H) should have residue 2
+            assert residue_numbers[3] == 2  # O of molecule 2
+            assert residue_numbers[4] == 2  # H1 of molecule 2
+            assert residue_numbers[5] == 2  # H2 of molecule 2
         finally:
             Path(filepath).unlink(missing_ok=True)
 

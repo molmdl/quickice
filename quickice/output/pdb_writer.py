@@ -72,10 +72,20 @@ def write_pdb_with_cryst1(candidate: Candidate, filepath: str) -> None:
         cryst1_line = f"CRYST1{a:9.3f}{b:9.3f}{c:9.3f}{alpha:7.2f}{beta:7.2f}{gamma:7.2f}  1\n"
         f.write(cryst1_line)
         
+        # Verify that positions match expected atom count (3 atoms per water molecule)
+        expected_atoms = candidate.nmolecules * 3
+        if len(positions_angstrom) != expected_atoms:
+            raise ValueError(
+                f"positions has {len(positions_angstrom)} atoms but "
+                f"nmolecules={candidate.nmolecules} needs {expected_atoms} (3 atoms per water)"
+            )
+        
         # Write ATOM records
         # Format: HETATM serial(5) atom_name(4) resName(3) chain(1) resSeq(4) x(8.3) y(8.3) z(8.3) occ(6.2) temp(6.2) element(2)
+        # Each water molecule (O, H, H) gets its own residue number
         for i, (pos, atom_name) in enumerate(zip(positions_angstrom, candidate.atom_names)):
             serial = i + 1
+            residue_num = (i // 3) + 1  # 3 atoms per water molecule
             x, y, z = pos
             
             # Atom name: left-aligned in columns 13-16 (4 chars total)
@@ -92,7 +102,7 @@ def write_pdb_with_cryst1(candidate: Candidate, filepath: str) -> None:
             # Build ATOM line following PDB specification
             # Using HETATM for water molecules (non-standard residues)
             # Format: HETATM serial(5) space(1) atom_name(4) resName(3) chain(1) resSeq(4) ...
-            line = f"HETATM{serial:5d} {formatted_name}HOH A   1    {x:8.3f}{y:8.3f}{z:8.3f}  1.00  0.00          {element:>2s}\n"
+            line = f"HETATM{serial:5d} {formatted_name}HOH A{residue_num:4d}    {x:8.3f}{y:8.3f}{z:8.3f}  1.00  0.00          {element:>2s}\n"
             f.write(line)
         
         # Write END record
