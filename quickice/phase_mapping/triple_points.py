@@ -1,7 +1,11 @@
 """
 Triple point coordinates for ice phase boundaries.
 
-All values from IAPWS R14-08(2011) and LSBU Water Phase Data.
+Primary sources:
+- IAPWS R14-08(2011): Triple point temperatures/pressures for Ice Ih, III, V, VI, VII
+- Journaux et al. (2019, 2020): II-III-V and II-V-VI triple points (high pressure phases)
+- LSBU Water Phase Data: Additional reference values and verification
+
 T = Temperature in Kelvin, P = Pressure in MPa
 
 Additional phases (XI, IX, X, XV) from literature:
@@ -14,14 +18,14 @@ Additional phases (XI, IX, X, XV) from literature:
 from typing import Tuple, Dict
 
 TRIPLE_POINTS: Dict[str, Tuple[float, float]] = {
-    "Ih_III_Liquid": (251.165, 207.5),
-    "Ih_II_III": (238.55, 212.9),
-    "II_III_V": (248.85, 344.3),
-    "III_V_Liquid": (256.165, 346.3),
-    "II_V_VI": (218.95, 620.0),
-    "V_VI_Liquid": (273.31, 625.9),
-    "VI_VII_Liquid": (354.75, 2200.0),
-    "VI_VII_VIII": (278.0, 2100.0),
+    "Ih_III_Liquid": (251.165, 209.9),
+    "Ih_II_III": (238.45, 212.9),
+    "II_III_V": (249.4, 355.5),
+    "III_V_Liquid": (256.164, 350.1),
+    "II_V_VI": (201.9, 670.8),
+    "V_VI_Liquid": (273.31, 632.4),
+    "VI_VII_Liquid": (355.0, 2216.0),
+    "VI_VII_VIII": (278.15, 2100.0),
     # Additional phases (XI, IX, X, XV)
     "Ih_XI_Vapor": (72.0, 0.0001),  # Ice XI triple point at ~72K, essentially atmospheric
     "III_IX_Transition": (140.0, 300.0),  # Ice IX forms from Ice III cooling below 140K
