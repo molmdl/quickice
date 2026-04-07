@@ -65,7 +65,7 @@ Question mark icons (?) next to each field provide context-sensitive help. Hover
 
 ## Interactive Phase Diagram
 
-The left panel displays a phase diagram showing the 12 supported ice polymorphs plus liquid water and vapor regions.
+The left panel displays a phase diagram showing ice phase regions. QuickIce can generate structures for 8 ice polymorphs (Ih, Ic, II, III, V, VI, VII, VIII); the diagram also shows regions for Ice IX, X, XI, XV, liquid water, and vapor for reference.
 
 ### Selecting Conditions
 

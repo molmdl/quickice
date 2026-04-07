@@ -14,7 +14,7 @@ Condition-based ice structure candidate generation from thermodynamic conditions
 
 QuickIce is a command-line tool with an optional GUI that generates plausible ice crystal structure candidates for given thermodynamic conditions. Given a temperature (K) and pressure (MPa), it:
 
-1. **Identifies the ice polymorph** that would form under those conditions (Ice Ih, Ice Ic, Ice II, III, V, VI, VII, VIII, IX, X, XI, XV, or Liquid)
+1. **Identifies the ice polymorph** that would form under those conditions (Ice Ih, Ice Ic, Ice II, III, V, VI, VII, or VIII)
 2. **Generates candidate structures** using GenIce2 with appropriate lattice parameters
 3. **Ranks candidates** by energy estimate, density match, and structural diversity
 4. **Outputs PDB files** and a phase diagram visualization
@@ -198,7 +198,7 @@ python quickice.py -T 200 -P 500 -N 128 --no-diagram
 
 ## Supported Ice Phases
 
-QuickIce supports 12 ice polymorphs plus liquid water:
+QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations):
 
 | Phase | Name | Pressure Range | Temperature Range |
 |-------|------|----------------|-------------------|
@@ -210,12 +210,10 @@ QuickIce supports 12 ice polymorphs plus liquid water:
 | Ice VI | Tetragonal | ~600-2000 MPa | 250-350K |
 | Ice VII | Cubic | > 2000 MPa | 273-350K |
 | Ice VIII | Ordered VII | > 2000 MPa | < 273K |
-| Ice IX | Ordered III | ~200-400 MPa | < 140K |
-| Ice X | Symmetric | > 30000 MPa | All T |
-| Ice XI | Ordered Ih | Low pressure | < 72K |
-| Ice XV | Ordered VI | ~1100 MPa | 80-108K |
 
 **Note:** These are approximate ranges. Phase boundaries depend on both T and P simultaneously.
+
+**Not supported:** Ice IX, Ice X, Ice XI, Ice XV, and liquid water (no GenIce2 lattices available).
 
 ## GROMACS Export
 
@@ -282,7 +280,7 @@ Key limitations:
 - Ranking uses distance-based energy estimates, not actual force field calculations
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
-- Not all the phases are supported (since we rely on the GenIce2 library)
+- **Only 8 ice phases supported** (Ih, Ic, II, III, V, VI, VII, VIII) — Ice IX, X, XI, XV and liquid water lack GenIce2 lattice implementations
 - Only pure water ice is supported
 
 ## Project Structure

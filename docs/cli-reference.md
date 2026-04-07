@@ -147,7 +147,7 @@ python quickice.py --version
 
 ## Ice Phase Examples
 
-QuickIce supports 12 ice polymorphs. Below are example commands for generating structures in different ice phases:
+QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations). Below are example commands for generating structures in different ice phases:
 
 ### Ice Ih (Hexagonal Ice)
 
@@ -245,51 +245,7 @@ python quickice.py -T 200 -P 2500 -N 100
 
 ---
 
-### Ice IX
-
-Proton-ordered form of Ice III.
-
-```bash
-python quickice.py -T 130 -P 280 -N 100
-```
-
-**Phase region:** Moderate pressure (200-400 MPa), very low temperature (< 140K)
-
----
-
-### Ice X
-
-Symmetric hydrogen bonds at extreme pressure.
-
-```bash
-python quickice.py -T 300 -P 35000 -N 100
-```
-
-**Phase region:** Extreme pressure (> 30000 MPa / 30 GPa)
-
----
-
-### Ice XI
-
-Proton-ordered form of Ice Ih, stable at very low temperatures.
-
-```bash
-python quickice.py -T 60 -P 0.1 -N 100
-```
-
-**Phase region:** Low pressure (< 200 MPa), very low temperature (< 72K)
-
----
-
-### Ice XV
-
-Proton-ordered form of Ice VI.
-
-```bash
-python quickice.py -T 100 -P 1100 -N 100
-```
-
-**Phase region:** Moderate-high pressure (1000-1500 MPa), low temperature (80-108K)
+**Note:** Ice IX, Ice X, Ice XI, and Ice XV are not supported (no GenIce2 lattice implementations available).
 
 ---
 
