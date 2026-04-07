@@ -18,9 +18,9 @@
         "verification": "openrouter/minimax/minimax-m2.5"
       },
       "budget": {
-        "planning": "openrouter/minimax/minimax-m2.5",
-        "execution": "openrouter/z-ai/glm-5",
-        "verification": "openrouter/minimax/minimax-m2.5"
+        "planning": "opencode/big-pickle",
+        "execution": "opencode/big-pickle",
+        "verification": "opencode/big-pickle"
       }
     },
     "custom_overrides": {
