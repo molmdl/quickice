@@ -217,6 +217,14 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
     at very low temperatures (72-150 K) and low pressures (0-100 MPa).
     The lower boundary at 72K avoids overlap with Ice XI which is stable below 72K.
     
+    Note: The 100 MPa upper pressure boundary is a simplified approximation.
+    Ice Ic metastable range varies with temperature and can extend to ~200 MPa
+    at lower temperatures. For visualization purposes, we use 100 MPa as a
+    conservative upper limit. Users should consult primary literature for
+    precise thermodynamic boundaries:
+    - Murray & Bertram (2007): Ice Ic formation conditions
+    - Malkin et al. (2012): Ice polymorph metastability
+    
     Note: Ice Ic is checked as a fallback in lookup_phase() when no other
     phase matches. The polygon here is for diagram visualization only.
     
@@ -460,9 +468,9 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     # This is where VI meets XV (XV is rendered on top at T < 100K)
     vertices.append((100.0, 1100.0))
     
-    # Back to II-V-VI TP - follow boundary from (100, 1100) to (218.95, 620)
+    # Back to II-V-VI TP - close polygon
     # This creates the cold edge that doesn't overlap XV
-    vertices.append((T1, P1))  # Back to II-V-VI TP (218.95, 620)
+    vertices.append((T1, P1))  # Back to II-V-VI TP
     
     return vertices
 
