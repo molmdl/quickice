@@ -170,6 +170,8 @@ See [sample_output](sample_output) for files generated with this example (ice Ih
 | `--pressure` | `-P` | Yes | Pressure in MPa (0-10000 MPa) |
 | `--nmolecules` | `-N` | Yes | Number of water molecules (4-100000) |
 | `--output` | `-o` | No | Output directory (default: `output`) |
+| `--gromacs` | `-g` | No | Export GROMACS format (.gro, .top, .itp) |
+| `--candidate` | `-c` | No | Export specific candidate rank (with `-g`) |
 | `--no-diagram` | | No | Disable phase diagram generation |
 | `--version` | `-V` | No | Show version number |
 | `--help` | `-h` | No | Show help message |

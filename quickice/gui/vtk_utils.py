@@ -43,19 +43,32 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
     mol.Initialize()
     
     # Map atom names to atomic numbers
-    atomic_numbers = {"O": 8, "H": 1}
+    # Support both TIP3P (O, H) and TIP4P (OW, HW1, HW2, MW) naming
+    # MW is a massless virtual site (atomic number 0), skip it for visualization
+    atomic_numbers = {
+        "O": 8, "H": 1,  # TIP3P
+        "OW": 8, "HW1": 1, "HW2": 1,  # TIP4P real atoms
+        "MW": None,  # TIP4P virtual site - skip
+    }
     
-    # Add atoms
+    # Add atoms (skip virtual sites like MW)
     atom_indices = []
     for i, (name, pos) in enumerate(zip(candidate.atom_names, candidate.positions)):
-        atomic_num = atomic_numbers[name]
+        atomic_num = atomic_numbers.get(name)
+        if atomic_num is None:
+            continue  # Skip virtual sites
         idx = mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
         atom_indices.append(idx)
     
-    # Add O-H bonds: Water molecules have pattern [O, H, H, O, H, H, ...]
-    # For each water molecule (indices i, i+1, i+2), add bonds from O to both H
+    # Add O-H bonds for each water molecule
+    # TIP4P has MW (virtual site) which we skip, so atom_indices contains
+    # only visible atoms: [OW, HW1, HW2, OW, HW1, HW2, ...] = 3 per water
+    # TIP3P is [O, H, H, O, H, H, ...] = 3 per water
+    # Either way, we have 3 visible atoms per water molecule
     num_water_molecules = candidate.nmolecules
     for mol_idx in range(num_water_molecules):
+        # Each water has 3 visible atoms (O + 2H), regardless of TIP3P/TIP4P
+        # atom_indices contains only visible atoms in order
         o_idx = atom_indices[mol_idx * 3]
         h1_idx = atom_indices[mol_idx * 3 + 1]
         h2_idx = atom_indices[mol_idx * 3 + 2]
