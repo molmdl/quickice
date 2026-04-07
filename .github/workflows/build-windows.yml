@@ -23,6 +23,7 @@ jobs:
       - name: Build executable
         shell: bash -el {0}
         run: |
+          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
           pyinstaller --clean quickice-gui.spec
       
       - name: Copy documentation and licenses
@@ -44,7 +45,7 @@ jobs:
           mv quickice-v2.1.0-windows-x86_64.zip ../
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-executable
           path: quickice-v2.1.0-windows-x86_64.zip
