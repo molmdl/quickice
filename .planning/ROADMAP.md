@@ -57,7 +57,7 @@ Enable direct GROMACS simulation workflow from QuickIce by generating valid .gro
 - [x] 14-04-PLAN.md — Fix PDB residue numbering and molecule count documentation
 - [x] 14-05-PLAN.md — Add candidate selection for GROMACS export
 - [x] 14-06-PLAN.md — Add GROMACS export to in-app help
-- [ ] 14-07-PLAN.md — Fix GROMACS export crash and clarify water model (Wave 1)
+- [x] 14-07-PLAN.md — Fix GROMACS export crash and clarify water model (Wave 1)
 - [ ] 14-08-PLAN.md — Update documentation and GUI labels (Wave 2)
 
 **Gap Closure Items:**
