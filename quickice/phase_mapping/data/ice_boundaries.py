@@ -2,19 +2,22 @@
 Ice phase boundaries using reference data from multiple sources.
 
 This module defines curved phase boundaries for ice polymorphs using:
-- Triple point coordinates from LSBU Water Phase Data
+- Triple point coordinates from IAPWS R14-08(2011) and Journaux et al. (2019, 2020)
 - Melting curve equations from IAPWS R14-08(2011) where applicable
 - Phase polygon vertices derived from triple points and melting curves
 
-Data Sources (from state_reference.md):
+Data Sources:
     1. GenIce2 Python Library: https://pypi.org/project/genice2/
     2. IAPWS Python Library: https://pypi.org/project/iapws/
     3. Wikipedia Phase Diagram: https://en.wikipedia.org/wiki/Phases_of_ice
     4. LSBU Water Phase Data: https://ergodic.ugr.es/termo/lecciones/water1.html
+    5. IAPWS R14-08(2011): http://www.iapws.org/release/MeltIce.pdf
+    6. Journaux et al. (2019): J. Geophys. Res.: Planets, DOI: 10.1029/2019JE006176
+    7. Journaux et al. (2020): Space Science Review, 7:216
 
 Note: IAPWS R14-08(2011) covers Ice Ih equation of state specifically.
       Triple point values for ice phases II, III, V, VI, VII, VIII are
-      primarily sourced from LSBU/Wikipedia reference tables.
+      sourced from IAPWS, LSBU/Wikipedia, and Journaux et al. (2019, 2020).
 """
 
 # =============================================================================
@@ -106,7 +109,7 @@ MELTING_CURVE_COEFFICIENTS = {
         "T_max": 251.165,
         "equation": "simon_glatzel",
         "T_ref": 251.165,       # Ih-III-Liquid triple point T
-        "P_ref": 207.5,         # Ih-III-Liquid triple point P (MPa)
+        "P_ref": 209.9,         # Ih-III-Liquid triple point P (MPa) - IAPWS R14-08(2011) compliant
         "A": -150.0,            # Pressure coefficient (MPa)
         "c": 12.0,              # Simon exponent
         "description": "Ice III melting curve (tetragonal ice)"
@@ -119,7 +122,7 @@ MELTING_CURVE_COEFFICIENTS = {
         "T_max": 256.165,
         "equation": "simon_glatzel",
         "T_ref": 256.165,       # III-V-Liquid triple point T
-        "P_ref": 346.3,         # III-V-Liquid triple point P (MPa)
+        "P_ref": 350.1,         # III-V-Liquid triple point P (MPa) - IAPWS R14-08(2011) compliant
         "A": -50.0,             # Pressure coefficient (MPa)
         "c": 15.0,              # Simon exponent (steep curve)
         "description": "Ice V melting curve (monoclinic ice)"
@@ -132,7 +135,7 @@ MELTING_CURVE_COEFFICIENTS = {
         "T_max": 354.75,
         "equation": "simon_glatzel",
         "T_ref": 354.75,        # VI-VII-Liquid triple point T
-        "P_ref": 2200.0,        # VI-VII-Liquid triple point P (MPa)
+        "P_ref": 2216.0,        # VI-VII-Liquid triple point P (MPa) - IAPWS R14-08(2011) compliant
         "A": 1700.0,            # Pressure coefficient (MPa) - fitted to V-VI-Liquid TP
         "c": 10.0,              # Simon exponent
         "description": "Ice VI melting curve (tetragonal ice)"
@@ -146,8 +149,8 @@ MELTING_CURVE_COEFFICIENTS = {
         "T_max": 500.0,
         "equation": "simon_glatzel",
         "T_ref": 354.75,        # VI-VII-Liquid triple point T
-        "P_ref": 2200.0,        # VI-VII-Liquid triple point P (MPa)
-        "A": 2200.0,            # Pressure coefficient (MPa) - positive (P increases with T)
+        "P_ref": 2216.0,        # VI-VII-Liquid triple point P (MPa) - IAPWS R14-08(2011) compliant
+        "A": 2216.0,            # Pressure coefficient (MPa) - positive (P increases with T)
         "c": 5.0,               # Simon exponent
         "description": "Ice VII melting curve (cubic ice)"
     }
