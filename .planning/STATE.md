@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 |-------|-------|
 | Milestone | v2.1 GROMACS Export |
 | Phase | 14 of 14 (GROMACS Export) |
-| Plan | 5 of 6 complete |
-| Status | In progress |
-| Last activity | 2026-04-07 — Completed 14-05-PLAN.md |
+| Plan | 6 of 6 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-07 — Completed 14-06-PLAN.md |
 
-**Progress:** ██████████ 100% (5 of 6 plans in phase)
+**Progress:** ██████████ 100% (6 of 6 plans in phase)
 
 ---
 
@@ -102,4 +102,12 @@ Full decision log: .planning/PROJECT.md
 
 ---
 
-*State updated: 2026-04-07 — Completed 14-05-PLAN.md*
+## Session Continuity
+
+**Last session:** 2026-04-07 09:18:32 UTC
+**Stopped at:** Completed 14-06-PLAN.md
+**Resume file:** None
+
+---
+
+*State updated: 2026-04-07 — Completed 14-06-PLAN.md*
