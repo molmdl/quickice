@@ -28,14 +28,15 @@ The main window is divided into two sections:
 
 ### Basic Workflow
 
+![QuickIce GUI](images/quickice-gui.png)
+*Main QuickIce GUI window with phase diagram and 3D viewer*
+
 1. Enter temperature (K), pressure (MPa), and molecule count
 2. Click on the phase diagram OR type values directly
 3. Press Enter or click the Generate button
 4. View ranked candidates in the dual 3D viewer
 5. Export PDB files, diagram images, or viewport screenshots
 
-![QuickIce GUI](images/quickice-gui.png)
-*Main QuickIce GUI window with phase diagram and 3D viewer*
 
 ## Input Panel
 
@@ -65,6 +66,11 @@ Question mark icons (?) next to each field provide context-sensitive help. Hover
 
 ## Interactive Phase Diagram
 
+<img src="images/phase-diagram.png" width="50%">
+
+*Interactive phase diagram with clickable regions*
+
+
 The left panel displays a phase diagram showing ice phase regions. QuickIce can generate structures for 8 ice polymorphs (Ih, Ic, II, III, V, VI, VII, VIII); the diagram also shows regions for Ice IX, X, XI, XV, liquid water, and vapor for reference.
 
 ### Selecting Conditions
@@ -87,12 +93,15 @@ Clicking on a phase region displays scientific information in the log panel:
 - Crystal system
 - Validated references (GenIce2, IAPWS)
 
-<img src="images/phase-diagram.png" width="50%">
-
-*Interactive phase diagram with clickable regions*
-
 ## 3D Molecular Viewer
 
+<img src="images/3d-viewer.png" width="30%">
+
+*Single viewport showing ice structure with ball-and-stick representation*
+
+<img src="images/dual-viewport.png" width="80%">
+
+*Dual viewport comparison of top two candidates*
 The main viewing area displays generated ice structures in a VTK-powered 3D viewport.
 
 ### Dual Viewport Layout
@@ -121,15 +130,13 @@ Use the toolbar to switch between:
 - **Auto-rotate**: Toggle continuous rotation for presentations
 - **Zoom to fit**: Reset camera to frame entire structure
 
-<img src="images/3d-viewer.png" width="30%">
-
-*Single viewport showing ice structure with ball-and-stick representation*
-
-<img src="images/dual-viewport.png" width="80%">
-
-*Dual viewport comparison of top two candidates*
 
 ## Export Options
+
+<img src="images/export-menu.png" width="50%">
+
+*File menu with export options*
+
 
 The File menu provides multiple export formats:
 
@@ -151,10 +158,6 @@ The File menu provides multiple export formats:
 - **Ctrl+Alt+S**: Export 3D viewport screenshot
 - Format: PNG
 - Captures current view (useful for presentations)
-
-<img src="images/export-menu.png" width="50%">
-
-*File menu with export options*
 
 ### Export for GROMACS
 
