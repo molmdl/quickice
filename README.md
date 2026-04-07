@@ -238,6 +238,8 @@ Journal of Chemical Physics, 122(23), 234511.
 DOI: https://doi.org/10.1063/1.1931662
 ```
 
+Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346
+
 ### Molecule Count
 
 The molecule count input specifies a **minimum** number of molecules. GenIce2 creates supercells to satisfy space group symmetry, so the actual count may be higher. For example, requesting 216 molecules might produce 432 (2× supercell) depending on the ice phase.
