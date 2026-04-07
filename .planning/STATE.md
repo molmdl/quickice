@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v2.1.1 Phase Diagram Data Update |
 | Phase | 15 |
-| Plan | Not started |
-| Status | Ready for planning |
-| Last activity | 2026-04-08 — Roadmap created |
+| Plan | 02 of 04 |
+| Status | In progress |
+| Last activity | 2026-04-07 — Completed 15-02-PLAN.md |
 
-**Progress:** ░░░░░░░░░░ 0% (Phase 15)
+**Progress:** █████░░░░░ 50% (Phase 15)
 
 ---
 
@@ -131,10 +131,10 @@ Full decision log: .planning/PROJECT.md
 
 ## Session Continuity
 
-**Last session:** 2026-04-08
-**Completed:** v2.1.1 roadmap created, Phase 15 defined
-**Next:** Ready for planning Phase 15
+**Last session:** 2026-04-07
+**Completed:** Plans 15-01, 15-02, 15-03 (commits exist, metadata pending for 01/03)
+**Next:** Execute 15-04-PLAN.md or create missing SUMMARY files for 15-01/15-03
 
 ---
 
-*State updated: 2026-04-08 — v2.1.1 roadmap created*
+*State updated: 2026-04-07 — Completed 15-02-PLAN.md*

@@ -30,49 +30,50 @@ TRIPLE_POINTS = {
     # Ice Ih - Ice III - Liquid triple point
     "ih_iii_liquid": {
         "T": 251.165,
-        "P": 207.5,
+        "P": 209.9,
         "description": "Triple point: Ice Ih, Ice III, Liquid water"
     },
     # Ice Ih - Ice II - Ice III triple point
     "ih_ii_iii": {
-        "T": 238.55,
+        "T": 238.45,
         "P": 212.9,
         "description": "Triple point: Ice Ih, Ice II, Ice III"
     },
     # Ice II - Ice III - Ice V triple point
-    # Source: LSBU Water Phase Data (ergodic.ugr.es/termo/lecciones/water1.html)
+    # Source: Journaux et al. (2019) - DOI: 10.1029/2019JE006176
     "ii_iii_v": {
-        "T": 248.85,  # Corrected from 249.65 to match LSBU reference
-        "P": 344.3,
+        "T": 249.4,
+        "P": 355.5,
         "description": "Triple point: Ice II, Ice III, Ice V"
     },
     # Ice III - Ice V - Liquid triple point
     "iii_v_liquid": {
-        "T": 256.165,
-        "P": 346.3,
+        "T": 256.164,
+        "P": 350.1,
         "description": "Triple point: Ice III, Ice V, Liquid water"
     },
     # Ice II - Ice V - Ice VI triple point
+    # Source: Journaux et al. (2019) - DOI: 10.1029/2019JE006176
     "ii_v_vi": {
-        "T": 218.95,
-        "P": 620.0,
+        "T": 201.9,
+        "P": 670.8,
         "description": "Triple point: Ice II, Ice V, Ice VI"
     },
     # Ice V - Ice VI - Liquid triple point
     "v_vi_liquid": {
         "T": 273.31,
-        "P": 625.9,
+        "P": 632.4,
         "description": "Triple point: Ice V, Ice VI, Liquid water"
     },
     # Ice VI - Ice VII - Liquid triple point
     "vi_vii_liquid": {
-        "T": 354.75,
-        "P": 2200.0,
+        "T": 355.0,
+        "P": 2216.0,
         "description": "Triple point: Ice VI, Ice VII, Liquid water"
     },
     # Ice VI - Ice VII - Ice VIII triple point
     "vi_vii_viii": {
-        "T": 278.0,
+        "T": 278.15,
         "P": 2100.0,
         "description": "Triple point: Ice VI, Ice VII, Ice VIII"
     }
