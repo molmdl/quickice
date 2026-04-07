@@ -38,13 +38,18 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 - ✓ License compliance audit (MIT-compatible) — v2.0
 - ✓ Exact version pinning for all dependencies — v2.0
 
-### Active
+### Validated
 
-**v2.1 GROMACS Export (Current Milestone):**
-- [ ] Generate .top topology file for ice structures
-- [ ] Bundle tip4p-ice.itp force field file
-- [ ] Export .gro coordinates via GenIce2
-- [ ] Valid GROMACS input file generation
+**v2.1 GROMACS Export:**
+- ✓ GROMACS .gro coordinate file export — v2.1
+- ✓ GROMACS .top topology file export — v2.1
+- ✓ Bundled tip4p-ice.itp force field — v2.1
+- ✓ 4-point water coordinates (TIP4P-ICE) — v2.1
+- ✓ GUI export with Ctrl+G shortcut — v2.1
+- ✓ CLI --gromacs and --candidate flags — v2.1
+- ✓ Complete documentation with academic citation — v2.1
+
+### Active
 
 **v2.5 Seawater Phase Diagram (Queued):**
 - [ ] Salinity-Temperature phase diagram widget
@@ -68,25 +73,25 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ## Current State
 
-**Version:** v2.0 (shipped 2026-04-04)
+**Version:** v2.1 (shipped 2026-04-07)
 **Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, matplotlib
-**Code:** 10,992 lines of Python
+**Code:** ~8,700 lines of Python (test files excluded)
 **Test Coverage:** 200+ tests passing
-**Output:** PDB files with CRYST1 records, PNG/SVG exports, 3D viewport captures
-**Phases Supported:** 12 (Ice Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X, XV)
-**Distribution:** Standalone executable (quickice-v2.0.0-linux-x86_64.tar.gz, 299 MB)
+**Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
+**Phases Supported:** 8 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
+**Distribution:** Standalone executable
+**Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
 
-## Current Milestone: v2.1 GROMACS Export
+## Next Milestone: v2.5 Seawater Phase Diagram
 
-**Goal:** Enable direct GROMACS simulation workflow from QuickIce.
+**Goal:** Extend phase diagram to support seawater systems.
 
 **Target features:**
-- GROMACS .top topology file generation
-- Bundled tip4p-ice.itp force field
-- .gro coordinate export (via GenIce2)
-- Valid gmx input files
+- Salinity-Temperature phase diagram widget
+- Freezing point depression calculation (IAPWS-08)
+- Na+ and Cl- ions in output structure
 
-**Queued milestones:** v2.5 (Seawater), v3.0 (Interface)
+**Queued milestones:** v3.0 (Liquid-Solid Interface)
 
 ---
 
@@ -106,6 +111,8 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 | VTK for 3D viewer | Industry standard, MIT-compatible | ✓ Confirmed — full 3D interactivity |
 | PyInstaller bundling | Standalone distribution | ✓ Confirmed — Linux executable complete |
 | Exact version pinning | Reproducibility, security | ✓ Confirmed — all deps =x.y.z |
+| TIP4P-ICE water model | GROMACS compatibility | ✓ Confirmed — 4-point coordinates |
+| Single export action | Simplified workflow | ✓ Confirmed — .gro/.top/.itp together |
 
 ## Context
 
@@ -125,4 +132,4 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ---
 
-*Last updated: 2026-04-05 after v2.1 milestone started*
+*Last updated: 2026-04-07 after v2.1 milestone complete*

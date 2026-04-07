@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** v2.1 GROMACS Export — COMPLETE
+**Current Focus:** Planning v2.5 Seawater Phase Diagram
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** v2.1 GROMACS Export — MILESTONE COMPLETE
+**Current focus:** Planning v2.5 Seawater Phase Diagram
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,13 +27,13 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.1 GROMACS Export |
-| Phase | 14 of 14 (COMPLETE) |
-| Plan | 8 of 8 complete |
-| Status | Milestone complete |
-| Last activity | 2026-04-07 — All plans verified, milestone complete |
+| Milestone | v2.5 Seawater Phase Diagram |
+| Phase | Not started |
+| Plan | Not started |
+| Status | Ready to plan |
+| Last activity | 2026-04-07 — v2.1 milestone archived, tag v2.1 created |
 
-**Progress:** ██████████ 100% (8 of 8 plans in phase)
+**Progress:** ░░░░░░░░░░ 0% (next milestone)
 
 ---
 
@@ -100,8 +100,8 @@ Full decision log: .planning/PROJECT.md
 | VTK for 3D | ✓ Full interactivity |
 | PyInstaller bundling | ✓ Linux executable |
 | Exact version pinning | ✓ All deps =x.y.z |
-| TIP4P water model | ✓ GROMACS compatible (4-point) |
-| TIP4P-ICE force field | ✓ Abascal et al. 2005 |
+| TIP4P-ICE water model | ✓ GROMACS compatible |
+| Single export action | ✓ .gro/.top/.itp together |
 
 ---
 
@@ -113,17 +113,17 @@ Full decision log: .planning/PROJECT.md
 - v2.1: [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 - v1 Requirements: [.planning/milestones/v1-REQUIREMENTS.md](./milestones/v1-REQUIREMENTS.md)
 - v2 Requirements: [.planning/milestones/v2.0-REQUIREMENTS.md](./milestones/v2.0-REQUIREMENTS.md)
-- v2.1 Requirements: [.planning/REQUIREMENTS.md](./REQUIREMENTS.md)
-- v2 Audit: [.planning/milestones/v2.0-MILESTONE-AUDIT.md](./milestones/v2.0-MILESTONE-AUDIT.md)
+- v2.1 Requirements: [.planning/milestones/v2.1-REQUIREMENTS.md](./milestones/v2.1-REQUIREMENTS.md)
+- v2.1 Audit: [.planning/milestones/v2.1-MILESTONE-AUDIT.md](./milestones/v2.1-MILESTONE-AUDIT.md)
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-07
-**Completed:** v2.1 GROMACS Export milestone
+**Completed:** v2.1 GROMACS Export milestone archived, tagged v2.1
 **Resume file:** None
 
 ---
 
-*State updated: 2026-04-07 — v2.1 GROMACS Export milestone complete*
+*State updated: 2026-04-07 — v2.1 archived, ready for v2.5 planning*
