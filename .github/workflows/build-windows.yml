@@ -41,11 +41,11 @@ jobs:
         shell: bash
         run: |
           cd dist
-          7z a -tzip quickice-v2.1.0-windows-x86_64.zip package/
-          mv quickice-v2.1.0-windows-x86_64.zip ../
+          7z a -tzip quickice-v2.1.1-windows-x86_64.zip package/
+          mv quickice-v2.1.1-windows-x86_64.zip ../
       
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: windows-executable
-          path: quickice-v2.1.0-windows-x86_64.zip
+          path: quickice-v2.1.1-windows-x86_64.zip
