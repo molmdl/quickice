@@ -40,6 +40,13 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ### Validated
 
+**v2.1.1 Phase Diagram Data Update:**
+- ✓ Triple point data corrected to IAPWS R14-08(2011) compliant values — v2.1.1
+- ✓ II-III-V and II-V-VI triple points per Journaux et al. (2019, 2020) — v2.1.1
+- ✓ Ice Ic metastable phase region (72-150K, 0-204 MPa) — v2.1.1
+- ✓ Zero polygon overlaps across all 12 ice phases — v2.1.1
+- ✓ Metastability documentation with literature citations — v2.1.1
+
 **v2.1 GROMACS Export:**
 - ✓ GROMACS .gro coordinate file export — v2.1
 - ✓ GROMACS .top topology file export — v2.1
@@ -73,27 +80,15 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ## Current State
 
-**Version:** v2.1 (shipped 2026-04-07)
+**Version:** v2.1.1 (shipped 2026-04-08)
 **Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, matplotlib
-**Code:** ~8,700 lines of Python (test files excluded)
-**Test Coverage:** 200+ tests passing
+**Code:** ~8,472 lines of Python (test files excluded)
+**Test Coverage:** 62 tests passing
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
-**Phases Supported:** 8 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
+**Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
 **Distribution:** Standalone executable
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
-
-## Current Milestone: v2.1.1 Phase Diagram Data Update
-
-**Goal:** Fix phase diagram triple point data per IAPWS R14-08(2011) and Journaux et al. (2019, 2020)
-
-**Target features:**
-- Update 32 triple point values across 3 source files
-- Add Ice Ic polygon (new metastable phase region)
-- Update tests and comments
-
-**Queued milestone:** v3 (Combined Seawater + Interface)
-
----
+**Thermodynamic Data:** IAPWS R14-08(2011), Journaux et al. (2019, 2020)
 
 ## Next Milestone: v3 Seawater + Interface
 
@@ -125,6 +120,11 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 | Exact version pinning | Reproducibility, security | ✓ Confirmed — all deps =x.y.z |
 | TIP4P-ICE water model | GROMACS compatibility | ✓ Confirmed — 4-point coordinates |
 | Single export action | Simplified workflow | ✓ Confirmed — .gro/.top/.itp together |
+| IAPWS/Journaux data sources | Scientific accuracy | ✓ Confirmed — all triple points verified |
+| Ice Ic lower boundary at 72K | Avoid Ice XI overlap | ✓ Confirmed — zero polygon overlaps |
+| Ice Ic upper pressure ~204 MPa | Ih-II curve boundary | ✓ Confirmed — scientifically accurate |
+| Ice Ih bounded at T=150K | Avoid Ice Ic overlap | ✓ Confirmed — clean phase regions |
+| Metastability documentation | Scientific transparency | ✓ Confirmed — literature citations added |
 
 ## Context
 
@@ -144,4 +144,4 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ---
 
-*Last updated: 2026-04-08 after v2.1.1 + v3 milestone planning started*
+*Last updated: 2026-04-08 after v2.1.1 milestone completion*

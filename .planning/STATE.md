@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** Phase 15 - Phase Diagram Data Update
+**Current Focus:** Planning next milestone
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** Phase 15 - Phase Diagram Data Update
+**Current focus:** Planning next milestone (v3 Seawater + Interface)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,37 +27,29 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.1.1 Phase Diagram Data Update |
-| Phase | 15 |
-| Plan | 09 of 09 (gap closure complete) |
-| Status | Milestone complete |
-| Last activity | 2026-04-08 — Completed gap closure plan 15-09 (Ice Ih/Ic polygon overlap fix) |
+| Milestone | v2.1.1 complete, planning next |
+| Phase | Not started |
+| Plan | Not started |
+| Status | Ready to plan next milestone |
+| Last activity | 2026-04-08 — v2.1.1 milestone complete and archived |
 
-**Progress:** ██████████ 100% (Milestone v2.1.1 complete with gap closure)
-
----
-
-## Current Phase Details
-
-### Phase 15: Phase Diagram Data Update
-
-**Goal:** Users receive accurate ice phase predictions based on IAPWS R14-08(2011) compliant thermodynamic data
-
-**Requirements (14):**
-- DATA-01 through DATA-08 (triple point updates)
-- NEW-01, NEW-02 (Ice Ic phase region)
-- CODE-01 through CODE-04 (code updates)
-
-**Success Criteria:**
-1. Phase lookup returns correct ice phase for any (T,P) input using updated triple point data
-2. Ice Ic phase is available for metastable conditions (50-150K, 0-100 MPa)
-3. All existing tests pass with corrected triple point values
-4. New test validates Ice Ic region boundaries work correctly
-5. Phase diagram boundaries reflect updated data accurately
+**Progress:** ██████████ 100% (Milestone v2.1.1 shipped)
 
 ---
 
 ## Milestone History
+
+### v2.1.1 Phase Diagram Data Update (Shipped 2026-04-08)
+
+**Phase:** 15 (9 plans)
+**Key features:**
+- Corrected 32 triple point values per IAPWS R14-08(2011) and Journaux et al. (2019, 2020)
+- Added Ice Ic metastable phase region (72-150K, 0-204 MPa)
+- Fixed all polygon overlaps (zero area overlaps across all phases)
+- Added metastability documentation with literature citations
+- Maintained 62/62 tests passing with corrected thermodynamic data
+
+**Archive:** [.planning/milestones/v2.1.1-ROADMAP.md](./milestones/v2.1.1-ROADMAP.md)
 
 ### v2.1 GROMACS Export (Shipped 2026-04-07)
 
@@ -113,11 +105,11 @@ Full decision log: .planning/PROJECT.md
 | Exact version pinning | ✓ All deps =x.y.z |
 | TIP4P-ICE water model | ✓ GROMACS compatible |
 | Single export action | ✓ .gro/.top/.itp together |
-| Algorithm thresholds match TP values | ✓ Correct phase identification |
-| Docstrings cite data sources | ✓ Scientific traceability |
-| Ice Ic upper boundary | ✓ Ih-II curve (~196-204 MPa) |
-| Ice Ih/Ic polygon separation | ✓ Ih bounded at T=150K, no overlap |
-| Ice Ic metastability note | ✓ Added to info panel citation |
+| IAPWS/Journaux data sources | ✓ Scientific accuracy |
+| Ice Ic lower boundary at 72K | ✓ Zero polygon overlaps |
+| Ice Ic upper pressure ~204 MPa | ✓ Scientifically accurate |
+| Ice Ih bounded at T=150K | ✓ Clean phase regions |
+| Metastability documentation | ✓ Literature citations |
 
 ---
 
@@ -127,19 +119,20 @@ Full decision log: .planning/PROJECT.md
 - v1.1: [.planning/milestones/v1.1-ROADMAP.md](./milestones/v1.1-ROADMAP.md)
 - v2.0: [.planning/milestones/v2.0-ROADMAP.md](./milestones/v2.0-ROADMAP.md)
 - v2.1: [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
+- v2.1.1: [.planning/milestones/v2.1.1-ROADMAP.md](./milestones/v2.1.1-ROADMAP.md)
 - v1 Requirements: [.planning/milestones/v1-REQUIREMENTS.md](./milestones/v1-REQUIREMENTS.md)
 - v2 Requirements: [.planning/milestones/v2.0-REQUIREMENTS.md](./milestones/v2.0-REQUIREMENTS.md)
 - v2.1 Requirements: [.planning/milestones/v2.1-REQUIREMENTS.md](./milestones/v2.1-REQUIREMENTS.md)
-- v2.1.1 Requirements: .planning/REQUIREMENTS.md
+- v2.1.1 Requirements: [.planning/milestones/v2.1.1-REQUIREMENTS.md](./milestones/v2.1.1-REQUIREMENTS.md)
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-08
-**Completed:** All Phase 15 plans including gap closure (15-01 through 15-09)
-**Next:** v2.1.1 milestone complete. Ready for milestone archival.
+**Completed:** v2.1.1 milestone complete and archived
+**Next:** Start v3 milestone planning with `/gsd-new-milestone`
 
 ---
 
-*State updated: 2026-04-08 — v2.1.1 milestone complete with Ice Ih/Ic polygon overlap fix*
+*State updated: 2026-04-08 — v2.1.1 milestone complete and archived*
