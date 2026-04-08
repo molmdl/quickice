@@ -265,13 +265,18 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
 def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
     """Ice Ih region: low pressure, bounded by melting curve and Ih-II boundary.
     
-    Ih exists from T=100K to melting, and meets XI at T~72K boundary.
+    Ih exists from T=150K to melting. Ice Ic (metastable) occupies T=72-150K region.
+    At T < 72K, Ice XI is the stable phase.
+    
+    Note: Ice Ic is metastable with respect to Ice Ih and occupies the T=72-150K
+    region at pressures below the Ih-II boundary. To avoid polygon overlap, Ice Ih
+    polygon starts at T=150K where Ice Ic region ends.
     """
     vertices = []
     
     # Lower boundary: P ≈ 0 (atmospheric)
-    # Start at T=100K (lowest stable for Ih above XI)
-    vertices.append((100.0, 0.1))
+    # Start at T=150K (Ice Ic occupies T=72-150K)
+    vertices.append((150.0, 0.1))
     
     # Ih melting curve from 251.165K to 273.16K
     T_vals = np.linspace(251.165, 273.16, 20)
@@ -292,24 +297,20 @@ def _build_ice_ih_polygon() -> List[Tuple[float, float]]:
     T_ih23, P_ih23 = get_triple_point("Ih_II_III")
     vertices.append((T_ih23, P_ih23))
     
-    # Ih-II boundary from TP down to T=72K (where XI takes over)
-    T_vals = np.linspace(T_ih23, 72.0, 20)
+    # Ih-II boundary from TP down to T=150K (where Ice Ic region starts)
+    # Note: We stop at T=150K to avoid overlap with Ice Ic polygon (T=72-150K)
+    T_vals = np.linspace(T_ih23, 150.0, 15)
     for T in T_vals:
         P = ih_ii_boundary(T)
         vertices.append((T, P))
     
-    # Close back to start: go vertically down to P=0.1, then along bottom to (100, 0.1)
-    # This avoids crossing the Ih-II boundary path
-    T_end = vertices[-1][0]  # T=72
-    P_end = vertices[-1][1]  # P~196
+    # Close polygon: go vertically down from (150, P_Ih_II_at_150K) to (150, 0.1)
+    # This creates the right edge of the polygon at T=150K
+    P_at_150 = ih_ii_boundary(150.0)
+    vertices.append((150.0, P_at_150))
     
-    # Vertical line from (72, ~196) down to (72, 0.1)
-    vertices.append((T_end, 0.1))
-    
-    # Horizontal line from (72, 0.1) to (100, 0.1)
-    T_bottom = np.linspace(72.0, 100.0, 5)
-    for T in T_bottom[1:]:
-        vertices.append((T, 0.1))
+    # Close back to start at (150, 0.1)
+    vertices.append((150.0, 0.1))
     
     return vertices
 
