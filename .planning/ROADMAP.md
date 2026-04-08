@@ -58,7 +58,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Add configuration controls UI (mode selector, box dimensions, mode-specific panels)
+- [x] 17-01-PLAN.md — Add configuration controls UI (mode selector, box dimensions, mode-specific panels)
 - [ ] 17-02-PLAN.md — Add validation methods and data access for configuration
 
 **Success Criteria:**
@@ -161,7 +161,7 @@ Plans:
 | Phase | Goal | Status | Requirements |
 |-------|------|--------|--------------|
 | 16 | Tab Infrastructure | Complete | WF-01, WF-02, WF-03, WF-04 |
-| 17 | Configuration Controls | Pending | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
+| 17 | Configuration Controls | In progress | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
 | 18 | Structure Generation | Pending | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Pending | VIS-01, VIS-02, VIS-03, VIS-04 |
 | 20 | Export | Pending | EXP-01, EXP-02, EXP-03 |
