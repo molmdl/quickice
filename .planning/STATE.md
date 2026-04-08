@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | 17 (Configuration Controls) - Complete |
-| Plan | 02 complete (2/2 plans) |
-| Status | Phase complete |
-| Last activity | 2026-04-08 — Completed 17-02-PLAN.md |
+| Phase | 18 (Structure Generation) - In progress |
+| Plan | 01 complete (1/4 plans) |
+| Status | In progress |
+| Last activity | 2026-04-08 — Completed 18-01-PLAN.md |
 
-**Progress:** █████░░░░░ 50% (4/8 plans complete in v3.0)
+**Progress:** ██████░░░░ 62% (5/8 plans complete in v3.0)
 
 ---
 
@@ -109,6 +109,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Validate before generate signal | ✓ Prevents invalid configurations |
 | Mode-specific validation | ✓ Only validate relevant parameters |
 | Configuration dict with mode params | ✓ Clean data access pattern |
+| All coordinates in nm internally | ✓ Å only for UI display |
+| Overlap threshold 0.25 nm default | ✓ 2.5 Å for O-O distance |
+| scipy cKDTree boxsize for PBC | ✓ Automatic periodic boundary handling |
+| Ice atoms first in positions | ✓ water atoms follow, ice_atom_count marks boundary |
+| Atom counts NOT normalized | ✓ ice=3, water=4 atoms/mol (export concern) |
 
 ### Roadmap Evolution
 
@@ -133,10 +138,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 14:54
-**Completed:** 17-02-PLAN.md (Validation methods and data access)
-**Next:** 18-01-PLAN.md (Interface generation logic)
+**Last session:** 2026-04-08 17:24
+**Completed:** 18-01-PLAN.md (Interface generation foundation)
+**Next:** 18-02-PLAN.md (Slab mode implementation)
 
 ---
 
-*State updated: 2026-04-08 — Phase 17 complete*
+*State updated: 2026-04-08 — Plan 18-01 complete*
