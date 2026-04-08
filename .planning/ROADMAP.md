@@ -20,7 +20,7 @@ This bugfix milestone corrects phase diagram triple point data per IAPWS R14-08(
 
 **Dependencies:** None (standalone data fix)
 
-**Plans:** 8 plans (4 initial + 4 gap closure)
+**Plans:** 9 plans (4 initial + 5 gap closure)
 
 Plans:
 - [x] 15-01-PLAN.md — Update triple points in both files (DATA-01 to DATA-08)
@@ -31,6 +31,7 @@ Plans:
 - [x] 15-06-PLAN.md — Add Ice Ic to CLI export (Gap closure: CLI rendering)
 - [x] 15-07-PLAN.md — Fix hardcoded old triple point values (Gap closure: polygon consistency)
 - [x] 15-08-PLAN.md — Fix Ice Ic upper pressure boundary (Gap closure: scientific accuracy)
+- [x] 15-09-PLAN.md — Fix Ice Ih/Ic polygon overlap and add metastability note (Gap closure: UAT)
 
 **Requirements:**
 - DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07, DATA-08
