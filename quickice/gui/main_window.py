@@ -448,7 +448,8 @@ class MainWindow(QMainWindow):
     def _on_interface_generation_started(self):
         """Handle interface generation started."""
         self.interface_panel.set_generating(True)
-        self.interface_panel.hide_placeholder()
+        # Keep placeholder visible during generation
+        # (viewer will replace it when structure is ready)
     
     @Slot(object)
     def _on_interface_generation_complete(self, result):
@@ -470,6 +471,10 @@ class MainWindow(QMainWindow):
             self.interface_panel.append_log("=" * 50)
         
         self.interface_panel.append_log(f"\nInterface generation complete.")
+        
+        # Display structure in 3D viewer
+        self.interface_panel._interface_viewer.set_interface_structure(result)
+        self.interface_panel.hide_placeholder()
     
     @Slot(str)
     def _on_interface_generation_error(self, error_msg: str):
