@@ -214,16 +214,22 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
     """Ice Ic region: metastable cubic ice at low temperature and pressure.
     
     Ice Ic (cubic ice) is metastable with respect to Ice Ih but can form
-    at very low temperatures (72-150 K) and low pressures (0-100 MPa).
-    The lower boundary at 72K avoids overlap with Ice XI which is stable below 72K.
+    at very low temperatures (72-150 K) at pressures up to the Ih-II boundary.
     
-    Note: The 100 MPa upper pressure boundary is a simplified approximation.
-    Ice Ic metastable range varies with temperature and can extend to ~200 MPa
-    at lower temperatures. For visualization purposes, we use 100 MPa as a
-    conservative upper limit. Users should consult primary literature for
-    precise thermodynamic boundaries:
+    The upper pressure boundary follows the Ih-II boundary (~196-204 MPa),
+    reflecting that Ice Ic can exist metastably wherever Ice Ih is stable.
+    
+    Scientific basis:
+    - Ice Ic is metastable with respect to Ice Ih
+    - At T=72K: Ih-II boundary is ~196 MPa
+    - At T=150K: Ih-II boundary is ~204 MPa
+    - Ice Ic can persist metastably in the same T-P region as Ice Ih
+    - Lower boundary at 72K avoids overlap with Ice XI (stable below 72K)
+    
+    References:
     - Murray & Bertram (2007): Ice Ic formation conditions
     - Malkin et al. (2012): Ice polymorph metastability
+    - IAPWS R14-08(2011): Ih-II thermodynamic boundary
     
     Note: Ice Ic is checked as a fallback in lookup_phase() when no other
     phase matches. The polygon here is for diagram visualization only.
@@ -232,14 +238,27 @@ def _build_ice_ic_polygon() -> List[Tuple[float, float]]:
         List of (T, P) tuples forming the polygon boundary
     """
     # Lower boundary at 72K to avoid overlap with Ice XI (which exists below 72K)
-    # Ice XI upper limit: Ih_XI_Vapor triple point at (72.0, 0.0001) MPa
-    vertices = [
-        (72.0, 0.1),      # Lower-left corner (above Ice XI)
-        (150.0, 0.1),     # Lower-right corner (T=150K upper limit)
-        (150.0, 100.0),   # Upper-right corner (P=100 MPa upper limit)
-        (72.0, 100.0),    # Upper-left corner
-        (72.0, 0.1),      # Close polygon
-    ]
+    # Upper boundary follows Ih-II boundary (Ice Ic is metastable where Ice Ih is stable)
+    vertices = []
+    
+    # Bottom edge: from (72, 0.1) to (150, 0.1)
+    vertices.append((72.0, 0.1))
+    vertices.append((150.0, 0.1))
+    
+    # Right edge: from (150, 0.1) to (150, P_Ih_II_at_150K)
+    # Upper pressure at T=150K using Ih-II boundary
+    P_upper_150 = ih_ii_boundary(150.0)
+    vertices.append((150.0, P_upper_150))
+    
+    # Top edge: trace Ih-II boundary from T=150K down to T=72K
+    T_vals = np.linspace(150.0, 72.0, 20)
+    for T in T_vals:
+        P = ih_ii_boundary(T)
+        vertices.append((T, P))
+    
+    # Close polygon back to start
+    vertices.append((72.0, 0.1))
+    
     return vertices
 
 
