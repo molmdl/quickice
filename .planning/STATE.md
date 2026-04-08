@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | 17 (Configuration Controls) - In progress |
-| Plan | 01 complete (1/2 plans) |
-| Status | In progress |
-| Last activity | 2026-04-08 — Completed 17-01-PLAN.md |
+| Phase | 17 (Configuration Controls) - Complete |
+| Plan | 02 complete (2/2 plans) |
+| Status | Phase complete |
+| Last activity | 2026-04-08 — Completed 17-02-PLAN.md |
 
-**Progress:** ████░░░░░░ 40% (3/4 plans complete in v3.0)
+**Progress:** █████░░░░░ 50% (4/8 plans complete in v3.0)
 
 ---
 
@@ -106,6 +106,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Thickness/diameter 0.5-50 nm | ✓ Layer/cavity sizes |
 | Seed 1-999999 | ✓ Wide reproducibility range |
 | Piece mode informational label | ✓ Dimensions derived from candidate |
+| Validate before generate signal | ✓ Prevents invalid configurations |
+| Mode-specific validation | ✓ Only validate relevant parameters |
+| Configuration dict with mode params | ✓ Clean data access pattern |
 
 ### Roadmap Evolution
 
@@ -130,10 +133,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 14:22
-**Completed:** 17-01-PLAN.md (Configuration controls UI)
-**Next:** 17-02-PLAN.md (Validation methods and data access)
+**Last session:** 2026-04-08 14:54
+**Completed:** 17-02-PLAN.md (Validation methods and data access)
+**Next:** 18-01-PLAN.md (Interface generation logic)
 
 ---
 
-*State updated: 2026-04-08 — Phase 17 in progress*
+*State updated: 2026-04-08 — Phase 17 complete*
