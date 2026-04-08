@@ -589,3 +589,54 @@ class InterfacePanel(QWidget):
         self.ice_thickness_error.hide()
         self.water_thickness_error.hide()
         self.pocket_diameter_error.hide()
+    
+    def get_configuration(self) -> dict:
+        """Get validated configuration values.
+        
+        Returns:
+            Dictionary with configuration parameters:
+            - mode: str ("slab", "pocket", or "piece")
+            - box_x, box_y, box_z: float (nm)
+            - seed: int
+            - For slab mode: ice_thickness, water_thickness (float, nm)
+            - For pocket mode: pocket_diameter (float, nm), pocket_shape (str)
+            - For piece mode: no additional params (dimensions from candidate)
+        
+        Note:
+            Should only be called after validate_configuration() returns True
+        """
+        # Map display text to mode identifier
+        mode_map = {"Slab": "slab", "Pocket": "pocket", "Piece": "piece"}
+        current_mode = mode_map[self.mode_combo.currentText()]
+        
+        config = {
+            "mode": current_mode,
+            "box_x": self.box_x_input.value(),
+            "box_y": self.box_y_input.value(),
+            "box_z": self.box_z_input.value(),
+            "seed": self.seed_input.value(),
+        }
+        
+        # Mode-specific parameters
+        if current_mode == "slab":
+            config["ice_thickness"] = self.ice_thickness_input.value()
+            config["water_thickness"] = self.water_thickness_input.value()
+        
+        elif current_mode == "pocket":
+            config["pocket_diameter"] = self.pocket_diameter_input.value()
+            config["pocket_shape"] = self.pocket_shape_combo.currentText().lower()
+        
+        # Piece mode uses candidate dimensions (no additional params needed)
+        
+        return config
+    
+    def update_piece_info(self, candidate_size: tuple[float, float, float]) -> None:
+        """Update piece mode info label with candidate dimensions.
+        
+        Args:
+            candidate_size: (x, y, z) dimensions in nanometers from selected candidate
+        """
+        x, y, z = candidate_size
+        self.piece_info_label.setText(
+            f"Candidate dimensions: {x:.2f} × {y:.2f} × {z:.2f} nm"
+        )
