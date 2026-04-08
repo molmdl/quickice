@@ -26,6 +26,12 @@ This milestone adds ice-water interface generation capability with a two-tab wor
 - WF-03: Selected ice candidate from Tab 1 is used as input for Tab 2
 - WF-04: Tab 2 generates exactly one interface structure (not 10 candidates)
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — Refactor MainWindow to QTabWidget, create InterfacePanel
+- [ ] 16-02-PLAN.md — Wire candidate dropdown, refresh button, preserve tab state
+
 **Success Criteria:**
 
 1. User sees two tabs in the application main window
