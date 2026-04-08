@@ -179,6 +179,9 @@ class MainWindow(QMainWindow):
         
         # UI state connections
         self._viewmodel.ui_enabled_changed.connect(self._on_ui_enabled_changed)
+        
+        # Tab 2 (Interface Construction) connections
+        self.interface_panel.refresh_requested.connect(self._on_refresh_candidates)
     
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts.
@@ -366,6 +369,21 @@ class MainWindow(QMainWindow):
     def _on_generation_cancelled(self):
         """Handle generation cancelled."""
         self.progress_panel.set_cancelled()
+    
+    @Slot()
+    def _on_refresh_candidates(self):
+        """Refresh candidates in Tab 2 from Tab 1's current candidates."""
+        result = self._viewmodel.get_last_ranking_result()
+        if result and hasattr(result, 'ranked_candidates'):
+            self.interface_panel.update_candidates(result.ranked_candidates)
+            if result.ranked_candidates:
+                self.interface_panel.append_log(f"Candidates refreshed: {len(result.ranked_candidates)} available")
+            else:
+                self.interface_panel.append_log("No candidates available")
+        else:
+            # No candidates exist
+            self.interface_panel.update_candidates([])
+            self.interface_panel.append_log("No candidates available")
     
     @Slot(bool)
     def _on_ui_enabled_changed(self, enabled: bool):
