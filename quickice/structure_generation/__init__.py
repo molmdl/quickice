@@ -7,6 +7,7 @@ and GenIce lattice names, including supercell calculation logic.
 from quickice.structure_generation.errors import (
     StructureGenerationError,
     UnsupportedPhaseError,
+    InterfaceGenerationError,
 )
 from quickice.structure_generation.mapper import (
     PHASE_TO_GENICE,
@@ -14,25 +15,48 @@ from quickice.structure_generation.mapper import (
     calculate_supercell,
     get_genice_lattice_name,
 )
-from quickice.structure_generation.types import Candidate, GenerationResult
+from quickice.structure_generation.types import (
+    Candidate,
+    GenerationResult,
+    InterfaceConfig,
+    InterfaceStructure,
+)
 from quickice.structure_generation.generator import (
     IceStructureGenerator,
     generate_candidates,
+)
+from quickice.structure_generation.water_filler import (
+    load_water_template,
+    tile_structure,
+    fill_region_with_water,
+)
+from quickice.structure_generation.overlap_resolver import (
+    detect_overlaps,
+    remove_overlapping_molecules,
 )
 
 __all__ = [
     # Types
     "Candidate",
     "GenerationResult",
+    "InterfaceConfig",
+    "InterfaceStructure",
     # Errors
     "StructureGenerationError",
     "UnsupportedPhaseError",
+    "InterfaceGenerationError",
     # Mapper functions
     "get_genice_lattice_name",
     "calculate_supercell",
     # Generator
     "IceStructureGenerator",
     "generate_candidates",
+    # Water filling and overlap resolution
+    "load_water_template",
+    "tile_structure",
+    "fill_region_with_water",
+    "detect_overlaps",
+    "remove_overlapping_molecules",
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",

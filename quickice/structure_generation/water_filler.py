@@ -1,0 +1,212 @@
+"""Water template loading and structure tiling for interface generation.
+
+This module provides utilities to load the bundled TIP4P water template
+(tip4p.gro), tile structures to fill target regions using cell periodicity,
+and fill arbitrary rectangular regions with water molecules.
+"""
+
+import math
+from pathlib import Path
+from typing import Optional
+
+import numpy as np
+
+# Number of atoms per TIP4P water molecule (OW, HW1, HW2, MW)
+ATOMS_PER_WATER_MOLECULE = 4
+
+# Module-level cache for water template (never changes)
+_water_template_cache: Optional[tuple[np.ndarray, list[str], np.ndarray]] = None
+
+
+def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
+    """Load the bundled TIP4P water template from tip4p.gro.
+
+    Reads and parses the GRO file following the same format as
+    IceStructureGenerator._parse_gro(). Results are cached at module
+    level since the template never changes.
+
+    Returns:
+        Tuple of (positions, atom_names, box_dims):
+            - positions: (864, 3) atom positions in nm
+            - atom_names: 864 entries ["OW", "HW1", "HW2", "MW", ...]
+            - box_dims: [1.86824, 1.86824, 1.86824] box dimensions in nm
+    """
+    global _water_template_cache
+
+    if _water_template_cache is not None:
+        return _water_template_cache
+
+    # Locate the bundled tip4p.gro file
+    gro_path = Path(__file__).parent.parent / "data" / "tip4p.gro"
+
+    with open(gro_path, "r") as f:
+        gro_string = f.read()
+
+    # Parse GRO format (same logic as IceStructureGenerator._parse_gro)
+    lines = gro_string.strip().split("\n")
+
+    # Parse number of atoms
+    n_atoms = int(lines[1])
+
+    # Parse atom positions and names
+    positions = np.zeros((n_atoms, 3), dtype=float)
+    atom_names = []
+
+    for i in range(n_atoms):
+        line = lines[2 + i]
+        atom_name = line[10:15].strip()
+        atom_names.append(atom_name)
+
+        x = float(line[20:28])
+        y = float(line[28:36])
+        z = float(line[36:44])
+        positions[i] = [x, y, z]
+
+    # Parse cell dimensions (last line)
+    cell_line = lines[-1].split()
+    if len(cell_line) == 3:
+        # Orthogonal box
+        box_dims = np.array([float(v) for v in cell_line])
+    else:
+        # Non-orthogonal box - extract diagonal for v3.0
+        box_dims = np.array([float(cell_line[0]), float(cell_line[1]), float(cell_line[2])])
+
+    # Cache the result
+    _water_template_cache = (positions, atom_names, box_dims)
+
+    return positions, atom_names, box_dims
+
+
+def tile_structure(
+    positions: np.ndarray,
+    cell_dims: np.ndarray,
+    target_region: np.ndarray,
+) -> tuple[np.ndarray, int]:
+    """Tile a structure to fill a target rectangular region using cell periodicity.
+
+    Replicates the input structure by shifting copies along each axis to
+    cover the target region. Atoms that fall outside the target region are
+    filtered out. Positions are wrapped into the target region using modulo.
+
+    Works for ice (3 atoms/molecule from GenIce) or water (4 atoms/molecule
+    from tip4p.gro). The caller is responsible for replicating atom_names.
+
+    Args:
+        positions: (N, 3) atom positions in nm.
+        cell_dims: [a, b, c] cell dimensions in nm (orthogonal box diagonal).
+            We only support orthogonal boxes for v3.0.
+        target_region: [lx, ly, lz] target region dimensions in nm.
+
+    Returns:
+        Tuple of (tiled_positions, n_molecules):
+            - tiled_positions: (M, 3) positions of atoms within target region
+            - n_molecules: number of molecules in the tiled result
+    """
+    if len(positions) == 0:
+        return np.zeros((0, 3), dtype=float), 0
+
+    lx, ly, lz = target_region
+    a, b, c = cell_dims
+
+    # Calculate tiling counts (ceil to ensure full coverage)
+    nx = math.ceil(lx / a) if a > 0 else 1
+    ny = math.ceil(ly / b) if b > 0 else 1
+    nz = math.ceil(lz / c) if c > 0 else 1
+
+    # Collect all tiled copies
+    all_positions = []
+    for ix in range(nx):
+        for iy in range(ny):
+            for iz in range(nz):
+                offset = np.array([ix * a, iy * b, iz * c])
+                shifted = positions + offset
+                all_positions.append(shifted)
+
+    # Stack all copies
+    all_positions = np.vstack(all_positions)
+
+    # Filter positions strictly inside target region
+    # Use a tiny tolerance for floating point edge cases
+    tol = 1e-10
+    mask_x = all_positions[:, 0] < lx - tol
+    mask_y = all_positions[:, 1] < ly - tol
+    mask_z = all_positions[:, 2] < lz - tol
+    keep_mask = mask_x & mask_y & mask_z
+
+    filtered = all_positions[keep_mask]
+
+    if len(filtered) == 0:
+        return np.zeros((0, 3), dtype=float), 0
+
+    # Wrap positions into target region using modulo
+    # This handles edge cases where atoms fall exactly on box boundary
+    tiled_positions = filtered % target_region
+
+    # Calculate number of molecules based on original structure ratio
+    n_original_atoms = len(positions)
+    n_tiled_atoms = len(tiled_positions)
+
+    # Derive atoms_per_molecule from original count
+    # Try common values: 3 (GenIce ice) or 4 (TIP4P water)
+    if n_original_atoms % 3 == 0 and n_original_atoms % 4 != 0:
+        atoms_per_molecule = 3
+    elif n_original_atoms % 4 == 0 and n_original_atoms % 3 != 0:
+        atoms_per_molecule = 4
+    elif n_original_atoms % 4 == 0 and n_original_atoms % 3 == 0:
+        # Ambiguous (e.g., 12 atoms = 4*3 or 3*4)
+        # Default to 4 for water since this module is primarily for water tiling
+        atoms_per_molecule = 4
+    else:
+        # Fallback: assume whole structure is one molecule
+        atoms_per_molecule = n_original_atoms
+
+    n_molecules = n_tiled_atoms // atoms_per_molecule
+
+    return tiled_positions, n_molecules
+
+
+def fill_region_with_water(
+    region_dims: np.ndarray,
+    overlap_threshold_nm: float = 0.25,
+) -> tuple[np.ndarray, list[str], int]:
+    """Fill a rectangular region with TIP4P water molecules.
+
+    Convenience function that loads the water template, tiles it into
+    the specified region, and returns positions, atom names, and
+    molecule count.
+
+    Args:
+        region_dims: [lx, ly, lz] region dimensions in nm.
+        overlap_threshold_nm: O-O overlap threshold in nm (default 0.25 nm = 2.5 Å).
+            Used for informational purposes; actual overlap removal is done
+            by the caller using overlap_resolver functions.
+
+    Returns:
+        Tuple of (positions, atom_names, nmolecules):
+            - positions: (N, 3) water atom positions in nm
+            - atom_names: list of atom names ["OW", "HW1", "HW2", "MW", ...]
+            - nmolecules: number of water molecules in the region
+    """
+    # Load water template
+    template_positions, template_atom_names, template_box = load_water_template()
+
+    # Tile water into the target region
+    tiled_positions, n_molecules = tile_structure(
+        template_positions, template_box, region_dims
+    )
+
+    if n_molecules == 0:
+        return tiled_positions, [], 0
+
+    # Replicate atom names for each tile copy
+    # The tile_structure function filters atoms, so we need to know
+    # how many complete molecules we have
+    n_atoms = n_molecules * ATOMS_PER_WATER_MOLECULE
+
+    # Trim positions to exact molecule boundaries (in case of rounding)
+    tiled_positions = tiled_positions[:n_atoms]
+
+    # Replicate atom names: one template's worth per molecule
+    all_atom_names = template_atom_names * n_molecules
+
+    return tiled_positions, all_atom_names, n_molecules
