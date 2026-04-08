@@ -17,7 +17,7 @@ from vtkmodules.all import (
     vtkMatrix3x3,
 )
 
-from quickice.structure_generation.types import Candidate
+from quickice.structure_generation.types import Candidate, InterfaceStructure
 
 
 def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
@@ -270,5 +270,147 @@ def create_unit_cell_actor(cell: np.ndarray) -> vtkActor:
     # Set visual properties per CONTEXT.md ("subtle gray")
     actor.GetProperty().SetColor(0.5, 0.5, 0.5)  # Subtle gray
     actor.GetProperty().SetLineWidth(1.0)
+    
+    return actor
+
+
+def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, vtkMolecule]:
+    """Convert an InterfaceStructure into separate ice and water VTK molecules.
+    
+    Splits the combined interface structure into two vtkMolecule objects for
+    phase-distinct visualization: one for ice atoms (cyan) and one for water
+    atoms (cornflower blue).
+    
+    Args:
+        iface: An InterfaceStructure containing combined ice + water atoms.
+               Ice atoms come first, followed by water atoms.
+               ice_atom_count marks the boundary between phases.
+    
+    Returns:
+        A tuple of (ice_mol, water_mol) where:
+        - ice_mol: vtkMolecule with ice atoms (O, H, H pattern, 3 per molecule)
+        - water_mol: vtkMolecule with water atoms (OW, HW1, HW2, MW pattern, 
+                     but MW virtual sites are skipped, so 3 visible per molecule)
+    
+    Note:
+        MW (massless virtual site) atoms are skipped during conversion as they
+        are not visualized. The ice_atom_count includes ALL atoms including MW,
+        so the boundary check must happen BEFORE skipping MW.
+    """
+    ice_mol = vtkMolecule()
+    water_mol = vtkMolecule()
+    
+    # CRITICAL: Initialize before adding atoms (VTK requirement)
+    ice_mol.Initialize()
+    water_mol.Initialize()
+    
+    # Map atom names to atomic numbers (same pattern as candidate_to_vtk_molecule)
+    atomic_numbers = {
+        "O": 8, "H": 1,  # Ice atoms (TIP3P-style)
+        "OW": 8, "HW1": 1, "HW2": 1,  # Water atoms (TIP4P real atoms)
+        "MW": None,  # TIP4P virtual site - skip
+    }
+    
+    # Track indices in each molecule for bond creation
+    ice_indices = []
+    water_indices = []
+    
+    # Add atoms to appropriate molecule, skipping MW virtual sites
+    for i, (name, pos) in enumerate(zip(iface.atom_names, iface.positions)):
+        atomic_num = atomic_numbers.get(name)
+        
+        # Skip MW virtual sites (atomic_num is None)
+        if atomic_num is None:
+            continue
+        
+        # CRITICAL: Check ice/water boundary BEFORE skipping MW
+        # ice_atom_count counts ALL atoms including MW in the raw array
+        if i < iface.ice_atom_count:
+            # Ice atom
+            idx = ice_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
+            ice_indices.append(idx)
+        else:
+            # Water atom
+            idx = water_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
+            water_indices.append(idx)
+    
+    # Add bonds for ice molecules
+    # Ice uses 3 visible atoms per molecule (O, H, H) - no MW to skip
+    for mol_idx in range(iface.ice_nmolecules):
+        o_idx = ice_indices[mol_idx * 3]
+        h1_idx = ice_indices[mol_idx * 3 + 1]
+        h2_idx = ice_indices[mol_idx * 3 + 2]
+        # Single bond (bond order 1) for both O-H bonds
+        ice_mol.AppendBond(o_idx, h1_idx, 1)
+        ice_mol.AppendBond(o_idx, h2_idx, 1)
+    
+    # Add bonds for water molecules
+    # Water uses 4 atoms per molecule (OW, HW1, HW2, MW) but MW is skipped
+    # So we have 3 visible atoms per molecule in water_indices
+    for mol_idx in range(iface.water_nmolecules):
+        o_idx = water_indices[mol_idx * 3]
+        h1_idx = water_indices[mol_idx * 3 + 1]
+        h2_idx = water_indices[mol_idx * 3 + 2]
+        # Single bond (bond order 1) for both O-H bonds
+        water_mol.AppendBond(o_idx, h1_idx, 1)
+        water_mol.AppendBond(o_idx, h2_idx, 1)
+    
+    # Do NOT set lattice on either molecule (interface structures use create_unit_cell_actor instead)
+    
+    return ice_mol, water_mol
+
+
+def create_bond_lines_actor(
+    bond_pairs: list[tuple[tuple[float, float, float], tuple[float, float, float]]],
+    color_rgb: tuple[float, float, float],
+    line_width: float = 1.5
+) -> vtkActor:
+    """Create a VTK actor for rendering bonds as 2D lines (not 3D cylinders).
+    
+    Creates a vtkPolyData with line cells connecting bond pairs. This provides
+    lightweight bond visualization compared to the vtkMoleculeMapper's 3D cylinders.
+    
+    Args:
+        bond_pairs: List of ((x1, y1, z1), (x2, y2, z2)) tuples in nanometers.
+        color_rgb: RGB color tuple (r, g, b) with values in [0, 1].
+        line_width: Width of the lines in pixels. Default 1.5.
+    
+    Returns:
+        A vtkActor configured with the specified color and line width.
+    
+    Note:
+        Similar to create_hbond_actor but WITHOUT the dash splitting.
+        Used for regular O-H bonds in the interface visualization.
+    """
+    # Create points and line cells
+    points = vtkPoints()
+    lines = vtkCellArray()
+    
+    for p1, p2 in bond_pairs:
+        # Insert the two endpoints
+        id1 = points.InsertNextPoint(p1[0], p1[1], p1[2])
+        id2 = points.InsertNextPoint(p2[0], p2[1], p2[2])
+        
+        # Create a line cell connecting the two points
+        lines.InsertNextCell(2)
+        lines.InsertCellPoint(id1)
+        lines.InsertCellPoint(id2)
+    
+    # Build the polydata
+    polydata = vtkPolyData()
+    polydata.SetPoints(points)
+    polydata.SetLines(lines)
+    
+    # Create mapper
+    mapper = vtkPolyDataMapper()
+    mapper.SetInputData(polydata)
+    
+    # Create actor
+    actor = vtkActor()
+    actor.SetMapper(mapper)
+    
+    # Set visual properties
+    actor.GetProperty().SetColor(*color_rgb)
+    actor.GetProperty().SetLineWidth(line_width)
     
     return actor
