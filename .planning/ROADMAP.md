@@ -94,9 +94,12 @@ Plans:
 4. Atom overlaps at ice-water boundary are detected and resolved (minimum O-O distance ~2.5 Å)
 5. Periodic boundary conditions maintain structural continuity across box edges
 
-**Research Flag:**
+**Plans:** 3 plans
 
-> Piece mode shape control: Current MVP uses cube/box shape. Research needed on whether to support sphere, cylinder, or irregular shapes. Decision deferred to Phase 18 planning.
+Plans:
+- [ ] 18-01-PLAN.md — Foundation layer (types, water filler, overlap resolver)
+- [ ] 18-02-PLAN.md — Mode implementations (slab, pocket, piece) + interface builder
+- [ ] 18-03-PLAN.md — GUI integration (worker, ViewModel, MainWindow wiring)
 
 ---
 
