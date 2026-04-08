@@ -12,7 +12,8 @@ This module provides the MainWindow class that assembles all GUI components:
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-    QMessageBox, QApplication, QSplitter, QMenuBar, QMenu
+    QMessageBox, QApplication, QSplitter, QMenuBar, QMenu,
+    QTabWidget
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Slot
@@ -22,6 +23,7 @@ from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
+from quickice.gui.interface_panel import InterfacePanel
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
@@ -66,8 +68,21 @@ class MainWindow(QMainWindow):
         self._create_menu_bar()
     
     def _setup_ui(self):
-        """Setup UI components with split view layout."""
-        # Create splitter for horizontal split view
+        """Setup UI components with two-tab layout.
+        
+        Tab 1: Ice Generation (existing functionality)
+        Tab 2: Interface Construction (new in v3.0)
+        """
+        # Create tab widget as central container
+        tab_widget = QTabWidget()
+        
+        # === Tab 1: Ice Generation ===
+        # Wrap existing content in a QWidget for Tab 1
+        tab1_widget = QWidget()
+        tab1_layout = QVBoxLayout(tab1_widget)
+        tab1_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create splitter for horizontal split view (Phase Diagram + Right panels)
         splitter = QSplitter(Qt.Horizontal)
         
         # Left side: Phase diagram panel
@@ -109,8 +124,21 @@ class MainWindow(QMainWindow):
         # Set initial sizes (diagram 550px, right panel 750px for dual viewer)
         splitter.setSizes([550, 750])
         
-        # Set splitter as central widget
-        self.setCentralWidget(splitter)
+        # Add splitter to Tab 1 layout
+        tab1_layout.addWidget(splitter)
+        
+        # === Tab 2: Interface Construction ===
+        self.interface_panel = InterfacePanel()
+        
+        # Add tabs to tab widget
+        tab_widget.addTab(tab1_widget, "Ice Generation")
+        tab_widget.addTab(self.interface_panel, "Interface Construction")
+        
+        # Set Tab 1 as default on startup
+        tab_widget.setCurrentIndex(0)
+        
+        # Set tab widget as central widget
+        self.setCentralWidget(tab_widget)
         
         # Show placeholder before first generation
         self.viewer_panel.show_placeholder()
