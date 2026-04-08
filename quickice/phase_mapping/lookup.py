@@ -347,12 +347,15 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
                 return _build_result(phase_id, T, P)
         except ValueError:
             # Outside Ih melting curve range (T < 251.165K)
-            # Check Ice Ic first (metastable, T < 150K, low P)
-            if T < 150 and P < 100:
-                phase_id = "ice_ic"
-                return _build_result(phase_id, T, P)
+            # Check Ice Ic (metastable, T <= 150K)
+            # Ice Ic upper boundary follows Ih-II boundary (~196-204 MPa)
+            if T <= 150:
+                P_ih_ii = ih_ii_boundary(T)
+                if P < P_ih_ii:
+                    phase_id = "ice_ic"
+                    return _build_result(phase_id, T, P)
             # Default fallback to Ice Ih for other low-T, low-P conditions
-            if P < 200:
+            if P < ih_ii_boundary(T):
                 phase_id = "ice_ih"
                 return _build_result(phase_id, T, P)
     
