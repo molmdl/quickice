@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
         Tab 2: Interface Construction (new in v3.0)
         """
         # Create tab widget as central container
-        tab_widget = QTabWidget()
+        self.tab_widget = QTabWidget()
         
         # === Tab 1: Ice Generation ===
         # Wrap existing content in a QWidget for Tab 1
@@ -131,14 +131,14 @@ class MainWindow(QMainWindow):
         self.interface_panel = InterfacePanel()
         
         # Add tabs to tab widget
-        tab_widget.addTab(tab1_widget, "Ice Generation")
-        tab_widget.addTab(self.interface_panel, "Interface Construction")
+        self.tab_widget.addTab(tab1_widget, "Ice Generation")
+        self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         
         # Set Tab 1 as default on startup
-        tab_widget.setCurrentIndex(0)
+        self.tab_widget.setCurrentIndex(0)
         
         # Set tab widget as central widget
-        self.setCentralWidget(tab_widget)
+        self.setCentralWidget(self.tab_widget)
         
         # Show placeholder before first generation
         self.viewer_panel.show_placeholder()
@@ -179,6 +179,9 @@ class MainWindow(QMainWindow):
         
         # UI state connections
         self._viewmodel.ui_enabled_changed.connect(self._on_ui_enabled_changed)
+        
+        # Tab change handling - preserve state during tab switches
+        self.tab_widget.currentChanged.connect(self._on_tab_changed)
         
         # Tab 2 (Interface Construction) connections
         self.interface_panel.refresh_requested.connect(self._on_refresh_candidates)
@@ -384,6 +387,21 @@ class MainWindow(QMainWindow):
             # No candidates exist
             self.interface_panel.update_candidates([])
             self.interface_panel.append_log("No candidates available")
+    
+    @Slot(int)
+    def _on_tab_changed(self, index: int):
+        """Handle tab switch - preserve state.
+        
+        Qt widgets automatically preserve their state, so no explicit
+        saving/loading is needed. This handler exists for future
+        extensibility (e.g., logging tab changes).
+        
+        Args:
+            index: New tab index (0 = Ice Generation, 1 = Interface Construction)
+        """
+        # Qt preserves all widget state automatically
+        # No explicit state saving needed - widgets maintain their own state
+        pass
     
     @Slot(bool)
     def _on_ui_enabled_changed(self, enabled: bool):
