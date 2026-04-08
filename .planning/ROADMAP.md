@@ -29,8 +29,8 @@ This milestone adds ice-water interface generation capability with a two-tab wor
 **Plans:** 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Refactor MainWindow to QTabWidget, create InterfacePanel
-- [ ] 16-02-PLAN.md — Wire candidate dropdown, refresh button, preserve tab state
+- [x] 16-01-PLAN.md — Refactor MainWindow to QTabWidget, create InterfacePanel
+- [x] 16-02-PLAN.md — Wire candidate dropdown, refresh button, preserve tab state
 
 **Success Criteria:**
 
@@ -138,7 +138,7 @@ Plans:
 
 | Phase | Goal | Status | Requirements |
 |-------|------|--------|--------------|
-| 16 | Tab Infrastructure | Pending | WF-01, WF-02, WF-03, WF-04 |
+| 16 | Tab Infrastructure | Complete | WF-01, WF-02, WF-03, WF-04 |
 | 17 | Configuration Controls | Pending | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
 | 18 | Structure Generation | Pending | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Pending | VIS-01, VIS-02, VIS-03, VIS-04 |

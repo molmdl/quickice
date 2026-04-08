@@ -20,10 +20,10 @@ Three geometry modes: slab, pocket, piece.
 
 ### Tab Workflow
 
-- [ ] **WF-01**: Application has two tabs: Ice Generation (existing) and Interface Construction (new)
-- [ ] **WF-02**: Tab 1 functionality unchanged — generate ice candidates, select one
-- [ ] **WF-03**: Selected ice candidate from Tab 1 is used as input for Tab 2
-- [ ] **WF-04**: Tab 2 generates exactly one interface structure (not 10 candidates)
+- [x] **WF-01**: Application has two tabs: Ice Generation (existing) and Interface Construction (new)
+- [x] **WF-02**: Tab 1 functionality unchanged — generate ice candidates, select one
+- [x] **WF-03**: Selected ice candidate from Tab 1 is used as input for Tab 2
+- [x] **WF-04**: Tab 2 generates exactly one interface structure (not 10 candidates)
 
 ### Interface Configuration (Tab 2)
 
@@ -78,10 +78,10 @@ Three geometry modes: slab, pocket, piece.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WF-01 | Phase 16 | Pending |
-| WF-02 | Phase 16 | Pending |
-| WF-03 | Phase 16 | Pending |
-| WF-04 | Phase 16 | Pending |
+| WF-01 | Phase 16 | Complete |
+| WF-02 | Phase 16 | Complete |
+| WF-03 | Phase 16 | Complete |
+| WF-04 | Phase 16 | Complete |
 | CFG-01 | Phase 17 | Pending |
 | CFG-02 | Phase 17 | Pending |
 | CFG-03 | Phase 17 | Pending |
@@ -111,4 +111,4 @@ Three geometry modes: slab, pocket, piece.
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 — Roadmap created, traceability added*
+*Last updated: 2026-04-08 — Phase 16 complete (WF-01, WF-02, WF-03, WF-04)*
