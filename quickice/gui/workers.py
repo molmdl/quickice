@@ -127,3 +127,99 @@ class GenerationWorker(QObject):
             error_result = GenerationResult(success=False, error=str(e))
             self.error.emit(str(e))
             self.finished.emit(error_result)
+
+
+@dataclass
+class InterfaceGenerationResult:
+    """Result from interface generation worker.
+    
+    Attributes:
+        success: Whether generation completed successfully
+        result: The InterfaceStructure on success
+        error: Error message on failure
+    """
+    success: bool
+    result: Optional[Any] = None  # InterfaceStructure on success
+    error: Optional[str] = None
+
+
+class InterfaceGenerationWorker(QObject):
+    """Worker for running interface structure generation in background thread.
+    
+    Follows the same pattern as GenerationWorker: QObject with run method,
+    NOT subclassing QThread. Imports inside run() for thread safety.
+    
+    Signals:
+        progress: Emitted with percentage (0-100)
+        status: Emitted with status message
+        finished: Emitted with InterfaceGenerationResult on completion
+        error: Emitted with error message on failure
+        cancelled: Emitted when cancellation is confirmed
+    
+    Usage:
+        worker = InterfaceGenerationWorker(candidate, config)
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        thread.start()
+    """
+    
+    progress = Signal(int)
+    status = Signal(str)
+    finished = Signal(object)   # InterfaceGenerationResult
+    error = Signal(str)
+    cancelled = Signal()
+    
+    def __init__(self, candidate, config):
+        """Initialize the interface generation worker.
+        
+        Args:
+            candidate: Candidate object from Tab 1
+            config: InterfaceConfig with generation parameters
+        """
+        super().__init__()
+        self._candidate = candidate
+        self._config = config
+    
+    def run(self):
+        """Execute interface generation - runs in separate thread.
+        
+        Imports inside run() to avoid blocking main thread.
+        """
+        try:
+            if QThread.currentThread().isInterruptionRequested():
+                self.cancelled.emit()
+                return
+            
+            self.status.emit("Validating configuration...")
+            self.progress.emit(10)
+            
+            # Import inside run() for thread safety
+            from quickice.structure_generation import generate_interface
+            from quickice.structure_generation.errors import InterfaceGenerationError
+            
+            self.status.emit("Generating interface structure...")
+            self.progress.emit(30)
+            
+            # Run generation
+            result = generate_interface(self._candidate, self._config)
+            
+            self.progress.emit(90)
+            self.status.emit("Complete")
+            self.progress.emit(100)
+            
+            gen_result = InterfaceGenerationResult(success=True, result=result)
+            self.finished.emit(gen_result)
+            
+        except InterfaceGenerationError as e:
+            error_result = InterfaceGenerationResult(success=False, error=str(e))
+            self.error.emit(str(e))
+            self.finished.emit(error_result)
+        except Exception as e:
+            error_result = InterfaceGenerationResult(
+                success=False, 
+                error=f"Interface generation failed ({type(e).__name__}): {e}"
+            )
+            self.error.emit(error_result.error)
+            self.finished.emit(error_result)

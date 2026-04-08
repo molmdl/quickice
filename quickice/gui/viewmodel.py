@@ -36,12 +36,27 @@ class MainViewModel(QObject):
     ranked_candidates_ready = Signal(object)  # Emitted with RankingResult
     generation_log = Signal(str)               # Streaming log messages
     
+    # Interface generation signals (Tab 2)
+    interface_generation_started = Signal()
+    interface_generation_progress = Signal(int)
+    interface_generation_status = Signal(str)
+    interface_generation_complete = Signal(object)  # InterfaceStructure
+    interface_generation_error = Signal(str)
+    interface_generation_cancelled = Signal()
+    interface_ui_enabled_changed = Signal(bool)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self._worker: Optional[GenerationWorker] = None
         self._thread: Optional[QThread] = None
         self._is_generating = False
         self._last_ranking_result: Optional[RankingResult] = None
+        
+        # Interface generation state (Tab 2)
+        self._interface_worker = None  # InterfaceGenerationWorker
+        self._interface_thread: Optional[QThread] = None
+        self._is_interface_generating = False
+        self._last_interface_result = None  # Stores InterfaceStructure
     
     def start_generation(self, temperature: float, pressure: float, nmolecules: int):
         """Start ice structure generation in background thread.
@@ -149,3 +164,104 @@ class MainViewModel(QObject):
             has completed successfully yet.
         """
         return self._last_ranking_result
+    
+    # === Interface Generation Methods (Tab 2) ===
+    
+    def start_interface_generation(self, candidate, config):
+        """Start interface structure generation in background thread.
+        
+        Args:
+            candidate: Candidate object from Tab 1
+            config: InterfaceConfig with generation parameters
+        """
+        # Import here to avoid circular imports
+        from quickice.gui.workers import InterfaceGenerationWorker
+        
+        # Clean up any existing thread
+        if self._interface_thread and self._interface_thread.isRunning():
+            self._interface_thread.requestInterruption()
+            self._interface_thread.quit()
+            self._interface_thread.wait()
+        
+        # Create worker
+        self._interface_worker = InterfaceGenerationWorker(candidate, config)
+        
+        # Create thread
+        self._interface_thread = QThread()
+        self._interface_worker.moveToThread(self._interface_thread)
+        
+        # Connect signals
+        self._interface_thread.started.connect(self._interface_worker.run)
+        self._interface_worker.progress.connect(self._on_interface_progress)
+        self._interface_worker.status.connect(self._on_interface_status)
+        self._interface_worker.finished.connect(self._on_interface_finished)
+        self._interface_worker.error.connect(self._on_interface_error)
+        self._interface_worker.cancelled.connect(self._on_interface_cancelled)
+        
+        # Cleanup
+        self._interface_thread.finished.connect(self._interface_worker.deleteLater)
+        self._interface_thread.finished.connect(self._interface_thread.deleteLater)
+        
+        # Update state
+        self._is_interface_generating = True
+        self.interface_ui_enabled_changed.emit(False)
+        self.interface_generation_started.emit()
+        
+        # Start thread
+        self._interface_thread.start()
+    
+    def cancel_interface_generation(self):
+        """Cancel running interface generation."""
+        if self._interface_thread and self._interface_thread.isRunning():
+            self._interface_thread.requestInterruption()
+            self._interface_thread.quit()
+            self._interface_thread.wait()
+        
+        self._is_interface_generating = False
+        self.interface_ui_enabled_changed.emit(True)
+        self.interface_generation_cancelled.emit()
+    
+    def get_last_interface_result(self):
+        """Get the most recent interface generation result.
+        
+        Returns:
+            The last InterfaceStructure from generation, or None.
+        """
+        return self._last_interface_result
+    
+    def is_interface_generating(self) -> bool:
+        """Check if interface generation is in progress."""
+        return self._is_interface_generating
+    
+    # === Interface Worker signal handlers ===
+    
+    @Slot(int)
+    def _on_interface_progress(self, value: int):
+        self.interface_generation_progress.emit(value)
+    
+    @Slot(str)
+    def _on_interface_status(self, text: str):
+        self.interface_generation_status.emit(text)
+    
+    @Slot(object)
+    def _on_interface_finished(self, result):
+        self._is_interface_generating = False
+        self.interface_ui_enabled_changed.emit(True)
+        
+        if result.success:
+            self._last_interface_result = result.result
+            self.interface_generation_complete.emit(result.result)
+        else:
+            self.interface_generation_error.emit(result.error or "Unknown error")
+    
+    @Slot(str)
+    def _on_interface_error(self, error_msg: str):
+        self._is_interface_generating = False
+        self.interface_ui_enabled_changed.emit(True)
+        self.interface_generation_error.emit(error_msg)
+    
+    @Slot()
+    def _on_interface_cancelled(self):
+        self._is_interface_generating = False
+        self.interface_ui_enabled_changed.emit(True)
+        self.interface_generation_cancelled.emit()
