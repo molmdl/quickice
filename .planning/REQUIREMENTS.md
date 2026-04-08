@@ -36,13 +36,13 @@ Three geometry modes: slab, pocket, piece.
 
 ### Structure Generation
 
-- [ ] **GEN-01**: Slab mode generates ice layer + water layer sandwich with correct densities
-- [ ] **GEN-02**: Pocket mode generates water cavity inside ice matrix
-- [ ] **GEN-03**: Piece mode generates ice crystal embedded in water box
-- [ ] **GEN-04**: Ice structure comes from GenIce2 via selected candidate (Tab 1)
-- [ ] **GEN-05**: Water structure comes from bundled quickice/data/tip4p.gro
-- [ ] **GEN-06**: Interface assembly detects and resolves atom overlaps at boundaries
-- [ ] **GEN-07**: Periodic boundary conditions are properly handled
+- [x] **GEN-01**: Slab mode generates ice layer + water layer sandwich with correct densities
+- [x] **GEN-02**: Pocket mode generates water cavity inside ice matrix
+- [x] **GEN-03**: Piece mode generates ice crystal embedded in water box
+- [x] **GEN-04**: Ice structure comes from GenIce2 via selected candidate (Tab 1)
+- [x] **GEN-05**: Water structure comes from bundled quickice/data/tip4p.gro
+- [x] **GEN-06**: Interface assembly detects and resolves atom overlaps at boundaries
+- [x] **GEN-07**: Periodic boundary conditions are properly handled
 
 ### Visualization (Tab 2)
 
@@ -88,13 +88,13 @@ Three geometry modes: slab, pocket, piece.
 | CFG-04 | Phase 17 | Complete |
 | CFG-05 | Phase 17 | Complete |
 | CFG-06 | Phase 17 | Complete |
-| GEN-01 | Phase 18 | Pending |
-| GEN-02 | Phase 18 | Pending |
-| GEN-03 | Phase 18 | Pending |
-| GEN-04 | Phase 18 | Pending |
-| GEN-05 | Phase 18 | Pending |
-| GEN-06 | Phase 18 | Pending |
-| GEN-07 | Phase 18 | Pending |
+| GEN-01 | Phase 18 | Complete |
+| GEN-02 | Phase 18 | Complete |
+| GEN-03 | Phase 18 | Complete |
+| GEN-04 | Phase 18 | Complete |
+| GEN-05 | Phase 18 | Complete |
+| GEN-06 | Phase 18 | Complete |
+| GEN-07 | Phase 18 | Complete |
 | VIS-01 | Phase 19 | Pending |
 | VIS-02 | Phase 19 | Pending |
 | VIS-03 | Phase 19 | Pending |
@@ -111,4 +111,4 @@ Three geometry modes: slab, pocket, piece.
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 — Phase 17 complete (CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06)*
+*Last updated: 2026-04-09 — Phase 18 complete (GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07)*

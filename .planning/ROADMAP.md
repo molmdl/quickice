@@ -97,9 +97,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 18-01-PLAN.md — Foundation layer (types, water filler, overlap resolver)
-- [ ] 18-02-PLAN.md — Mode implementations (slab, pocket, piece) + interface builder
-- [ ] 18-03-PLAN.md — GUI integration (worker, ViewModel, MainWindow wiring)
+- [x] 18-01-PLAN.md — Foundation layer (types, water filler, overlap resolver)
+- [x] 18-02-PLAN.md — Mode implementations (slab, pocket, piece) + interface builder
+- [x] 18-03-PLAN.md — GUI integration (worker, ViewModel, MainWindow wiring)
 
 ---
 
@@ -165,7 +165,7 @@ Plans:
 |-------|------|--------|--------------|
 | 16 | Tab Infrastructure | Complete | WF-01, WF-02, WF-03, WF-04 |
 | 17 | Configuration Controls | Complete | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
-| 18 | Structure Generation | Pending | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
+| 18 | Structure Generation | Complete | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Pending | VIS-01, VIS-02, VIS-03, VIS-04 |
 | 20 | Export | Pending | EXP-01, EXP-02, EXP-03 |
 | 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Pending | TBD |
