@@ -107,3 +107,125 @@ def validate_nmolecules(value: str) -> Tuple[bool, str]:
         return (False, "Molecule count must be between 4 and 216")
     
     return (True, "")
+
+
+def validate_box_dimension(value: str) -> Tuple[bool, str]:
+    """Validate box dimension input for GUI.
+    
+    Args:
+        value: String input from GUI text field
+        
+    Returns:
+        Tuple of (is_valid, error_message). error_message is empty string on success.
+        
+    Examples:
+        >>> validate_box_dimension("5.0")
+        (True, "")
+        >>> validate_box_dimension("0.1")
+        (False, "Box dimension must be between 0.5 and 100 nm")
+        >>> validate_box_dimension("abc")
+        (False, "Box dimension must be a number")
+    """
+    try:
+        dim = float(value)
+    except ValueError:
+        return (False, "Box dimension must be a number")
+    
+    if dim < 0.5 or dim > 100.0:
+        return (False, "Box dimension must be between 0.5 and 100 nm")
+    
+    return (True, "")
+
+
+def validate_thickness(value: str) -> Tuple[bool, str]:
+    """Validate thickness input for GUI.
+    
+    Args:
+        value: String input from GUI text field
+        
+    Returns:
+        Tuple of (is_valid, error_message). error_message is empty string on success.
+        
+    Examples:
+        >>> validate_thickness("3.0")
+        (True, "")
+        >>> validate_thickness("100")
+        (False, "Thickness must be between 0.5 and 50 nm")
+        >>> validate_thickness("abc")
+        (False, "Thickness must be a number")
+    """
+    try:
+        thick = float(value)
+    except ValueError:
+        return (False, "Thickness must be a number")
+    
+    if thick < 0.5 or thick > 50.0:
+        return (False, "Thickness must be between 0.5 and 50 nm")
+    
+    return (True, "")
+
+
+def validate_pocket_diameter(value: str) -> Tuple[bool, str]:
+    """Validate pocket diameter input for GUI.
+    
+    Args:
+        value: String input from GUI text field
+        
+    Returns:
+        Tuple of (is_valid, error_message). error_message is empty string on success.
+        
+    Examples:
+        >>> validate_pocket_diameter("2.0")
+        (True, "")
+        >>> validate_pocket_diameter("100")
+        (False, "Diameter must be between 0.5 and 50 nm")
+        >>> validate_pocket_diameter("abc")
+        (False, "Diameter must be a number")
+    """
+    try:
+        diam = float(value)
+    except ValueError:
+        return (False, "Diameter must be a number")
+    
+    if diam < 0.5 or diam > 50.0:
+        return (False, "Diameter must be between 0.5 and 50 nm")
+    
+    return (True, "")
+
+
+def validate_seed(value: str) -> Tuple[bool, str]:
+    """Validate random seed input for GUI.
+    
+    Args:
+        value: String input from GUI text field
+        
+    Returns:
+        Tuple of (is_valid, error_message). error_message is empty string on success.
+        
+    Examples:
+        >>> validate_seed("42")
+        (True, "")
+        >>> validate_seed("4.5")
+        (False, "Seed must be an integer between 1 and 999999")
+        >>> validate_seed("0")
+        (False, "Seed must be an integer between 1 and 999999")
+        >>> validate_seed("abc")
+        (False, "Seed must be an integer")
+    """
+    # Check if it's a float first (reject floats like "4.5")
+    try:
+        float_val = float(value)
+    except ValueError:
+        return (False, "Seed must be an integer")
+    
+    # Check if the float representation differs from integer (e.g., 4.5 != 4)
+    if float_val != int(float_val):
+        return (False, "Seed must be an integer between 1 and 999999")
+    
+    # Convert to int
+    seed = int(float_val)
+    
+    if seed < 1 or seed > 999999:
+        return (False, "Seed must be an integer between 1 and 999999")
+    
+    return (True, "")
