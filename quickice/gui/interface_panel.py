@@ -20,6 +20,7 @@ from quickice.gui.validators import (
     validate_box_dimension, validate_thickness, 
     validate_pocket_diameter, validate_seed
 )
+from quickice.gui.interface_viewer import InterfaceViewerWidget
 
 
 class InterfacePanel(QWidget):
@@ -366,16 +367,25 @@ class InterfacePanel(QWidget):
         
         layout.addSpacing(10)
         
-        # Placeholder label (shown initially, hidden after generation)
+        # Viewer stack: placeholder (page 0) and 3D viewer (page 1)
+        self._viewer_stack = QStackedWidget()
+        
+        # Page 0: Placeholder text
         self.placeholder_label = QLabel(
-            "Select a candidate and click Generate Interface"
+            "Generate a structure to visualize"
         )
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setStyleSheet(
             "font-size: 14px; color: #666; background-color: #f0f0f0; "
             "padding: 30px; border: 1px solid #ccc; border-radius: 4px;"
         )
-        layout.addWidget(self.placeholder_label, stretch=1)
+        self._viewer_stack.addWidget(self.placeholder_label)
+        
+        # Page 1: 3D interface viewer
+        self._interface_viewer = InterfaceViewerWidget()
+        self._viewer_stack.addWidget(self._interface_viewer)
+        
+        layout.addWidget(self._viewer_stack, stretch=1)
         
         layout.addStretch()
     
@@ -499,11 +509,11 @@ class InterfacePanel(QWidget):
     
     def show_placeholder(self) -> None:
         """Show placeholder message in main area."""
-        self.placeholder_label.show()
+        self._viewer_stack.setCurrentIndex(0)
     
     def hide_placeholder(self) -> None:
-        """Hide placeholder message after generation."""
-        self.placeholder_label.hide()
+        """Hide placeholder, show 3D viewer."""
+        self._viewer_stack.setCurrentIndex(1)
     
     def append_log(self, message: str) -> None:
         """Append message to info panel log.
