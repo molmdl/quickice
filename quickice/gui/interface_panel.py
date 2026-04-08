@@ -49,6 +49,124 @@ class InterfacePanel(QWidget):
         self._setup_ui()
         self._setup_connections()
     
+    def _create_slab_panel(self) -> QWidget:
+        """Create slab-specific parameter panel.
+        
+        Returns:
+            QGroupBox with ice thickness and water thickness inputs.
+        """
+        group = QGroupBox("Slab Parameters")
+        layout = QFormLayout()
+        
+        # Ice thickness row
+        ice_row = QHBoxLayout()
+        self.ice_thickness_input = QDoubleSpinBox()
+        self.ice_thickness_input.setSuffix(" nm")
+        self.ice_thickness_input.setRange(0.5, 50.0)
+        self.ice_thickness_input.setDecimals(2)
+        self.ice_thickness_input.setSingleStep(0.5)
+        self.ice_thickness_input.setValue(3.0)
+        self.ice_thickness_input.setToolTip("Thickness of ice layer in nanometers")
+        ice_row.addWidget(QLabel("Ice thickness:"))
+        ice_row.addWidget(HelpIcon("Thickness of ice layer in nanometers"))
+        ice_row.addWidget(self.ice_thickness_input)
+        ice_row.addStretch()
+        
+        self.ice_thickness_error = QLabel()
+        self.ice_thickness_error.setStyleSheet("color: red;")
+        self.ice_thickness_error.hide()
+        
+        layout.addRow(ice_row)
+        layout.addRow(self.ice_thickness_error)
+        
+        # Water thickness row
+        water_row = QHBoxLayout()
+        self.water_thickness_input = QDoubleSpinBox()
+        self.water_thickness_input.setSuffix(" nm")
+        self.water_thickness_input.setRange(0.5, 50.0)
+        self.water_thickness_input.setDecimals(2)
+        self.water_thickness_input.setSingleStep(0.5)
+        self.water_thickness_input.setValue(3.0)
+        self.water_thickness_input.setToolTip("Thickness of liquid water layer in nanometers")
+        water_row.addWidget(QLabel("Water thickness:"))
+        water_row.addWidget(HelpIcon("Thickness of liquid water layer in nanometers"))
+        water_row.addWidget(self.water_thickness_input)
+        water_row.addStretch()
+        
+        self.water_thickness_error = QLabel()
+        self.water_thickness_error.setStyleSheet("color: red;")
+        self.water_thickness_error.hide()
+        
+        layout.addRow(water_row)
+        layout.addRow(self.water_thickness_error)
+        
+        group.setLayout(layout)
+        return group
+    
+    def _create_pocket_panel(self) -> QWidget:
+        """Create pocket-specific parameter panel.
+        
+        Returns:
+            QGroupBox with pocket diameter and shape inputs.
+        """
+        group = QGroupBox("Pocket Parameters")
+        layout = QFormLayout()
+        
+        # Pocket diameter row
+        diameter_row = QHBoxLayout()
+        self.pocket_diameter_input = QDoubleSpinBox()
+        self.pocket_diameter_input.setSuffix(" nm")
+        self.pocket_diameter_input.setRange(0.5, 50.0)
+        self.pocket_diameter_input.setDecimals(2)
+        self.pocket_diameter_input.setSingleStep(0.5)
+        self.pocket_diameter_input.setValue(2.0)
+        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nanometers")
+        diameter_row.addWidget(QLabel("Pocket diameter:"))
+        diameter_row.addWidget(HelpIcon("Diameter of water cavity in nanometers"))
+        diameter_row.addWidget(self.pocket_diameter_input)
+        diameter_row.addStretch()
+        
+        self.pocket_diameter_error = QLabel()
+        self.pocket_diameter_error.setStyleSheet("color: red;")
+        self.pocket_diameter_error.hide()
+        
+        layout.addRow(diameter_row)
+        layout.addRow(self.pocket_diameter_error)
+        
+        # Pocket shape row
+        shape_row = QHBoxLayout()
+        self.pocket_shape_combo = QComboBox()
+        self.pocket_shape_combo.addItems(["Sphere", "Ellipsoid"])
+        self.pocket_shape_combo.setToolTip("Shape of water cavity: sphere or ellipsoid")
+        shape_row.addWidget(QLabel("Pocket shape:"))
+        shape_row.addWidget(HelpIcon("Shape of water cavity: sphere or ellipsoid"))
+        shape_row.addWidget(self.pocket_shape_combo)
+        shape_row.addStretch()
+        
+        layout.addRow(shape_row)
+        
+        group.setLayout(layout)
+        return group
+    
+    def _create_piece_panel(self) -> QWidget:
+        """Create piece-specific parameter panel.
+        
+        Returns:
+            QGroupBox with informational label about candidate-derived dimensions.
+        """
+        group = QGroupBox("Piece Parameters")
+        layout = QFormLayout()
+        
+        # Informational label
+        self.piece_info_label = QLabel("Ice piece dimensions will be derived from selected candidate")
+        self.piece_info_label.setStyleSheet("color: #666; font-style: italic;")
+        self.piece_info_label.setWordWrap(True)
+        
+        layout.addRow(self.piece_info_label)
+        
+        group.setLayout(layout)
+        return group
+    
     def _setup_ui(self):
         """Set up UI components with vertical layout.
         
@@ -155,8 +273,11 @@ class InterfacePanel(QWidget):
         
         layout.addSpacing(15)
         
-        # Mode-specific controls (populated in Task 3)
+        # Mode-specific controls
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self._create_slab_panel())
+        self.stacked_widget.addWidget(self._create_pocket_panel())
+        self.stacked_widget.addWidget(self._create_piece_panel())
         layout.addWidget(self.stacked_widget)
         
         layout.addSpacing(15)
@@ -220,6 +341,9 @@ class InterfacePanel(QWidget):
     
     def _setup_connections(self):
         """Connect internal signals to slots."""
+        # Mode selector to stacked widget
+        self.mode_combo.currentIndexChanged.connect(self.stacked_widget.setCurrentIndex)
+        
         # Dropdown selection change
         self.candidate_dropdown.currentIndexChanged.connect(self._on_candidate_changed)
         
