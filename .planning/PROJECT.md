@@ -58,14 +58,17 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ### Active
 
-**v2.5 Seawater Phase Diagram (Queued):**
-- [ ] Salinity-Temperature phase diagram widget
-- [ ] Freezing point depression calculation (IAPWS-08)
-- [ ] Na+ and Cl- ions in output structure
+**v3.0 Interface Generation:**
+- [ ] Interface geometry modes (slab, ice-in-water, water-in-ice)
+- [ ] New input controls (boxsize, mode, seed, thickness)
+- [ ] Liquid water from bundled tip4p.gro
+- [ ] Phase-distinct VTK visualization
+- [ ] Interface structure export
 
-**v3.0 Liquid-Solid Interface (Queued):**
-- [ ] Rule-based ice-water interface assembly
-- [ ] Combined ice + liquid layer generation
+**v2.5 Seawater Phase Diagram (Deferred):**
+- Salinity-Temperature phase diagram widget
+- Freezing point depression calculation (IAPWS-08)
+- Na+ and Cl- ions in output structure
 
 ### Out of Scope
 
@@ -90,15 +93,16 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
 **Thermodynamic Data:** IAPWS R14-08(2011), Journaux et al. (2019, 2020)
 
-## Next Milestone: v3 Seawater + Interface
+## Current Milestone: v3.0 Interface Generation
 
-**Goal:** Combined milestone for seawater phase diagram and liquid-solid interface generation
+**Goal:** Generate ice-water interface structures with 3 geometry modes and new input controls
 
 **Target features:**
-- Seawater S-T phase diagram (2-phase: sea ice vs liquid seawater)
-- Liquid-solid interface structure generation
-- Replace nmol input with boxsize/mode/seed/thickness controls
-- Use GROMACS tip4p.gro for liquid water layer
+- Interface geometry modes: slab, ice-in-water, water-in-ice
+- New controls: boxsize, mode, seed, ice_thickness, water_thickness (replacing nmol)
+- Liquid water from bundled GROMACS tip4p.gro
+- VTK visualization with phase distinction
+- Export: PDB + GROMACS (.gro/.top/.itp)
 
 ---
 
@@ -144,4 +148,4 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ---
 
-*Last updated: 2026-04-08 after v2.1.1 milestone completion*
+*Last updated: 2026-04-08 after v3.0 milestone started*

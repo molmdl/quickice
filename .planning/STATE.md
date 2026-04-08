@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates quickly with intuitive visual interface
-**Current Focus:** Planning next milestone
+**Current Focus:** v3.0 Interface Generation
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Generate plausible ice structure candidates quickly with intuitive visual interface
 
-**Current focus:** Planning next milestone (v3 Seawater + Interface)
+**Current focus:** v3.0 Interface Generation — 3 geometry modes + new input controls
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,13 +27,13 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v2.1.1 complete, planning next |
+| Milestone | v3.0 Interface Generation |
 | Phase | Not started |
 | Plan | Not started |
-| Status | Ready to plan next milestone |
-| Last activity | 2026-04-08 — v2.1.1 milestone complete and archived |
+| Status | Researching domain ecosystem |
+| Last activity | 2026-04-08 — v3.0 milestone started |
 
-**Progress:** ██████████ 100% (Milestone v2.1.1 shipped)
+**Progress:** ░░░░░░░░░░ 0% (Researching)
 
 ---
 
@@ -54,48 +54,26 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 ### v2.1 GROMACS Export (Shipped 2026-04-07)
 
 **Phases:** 14 (8 plans)
-**Key features:**
-- GROMACS export (.gro, .top, .itp files)
-- TIP4P-ICE water model (4-point)
-- CLI --gromacs flag and GUI Ctrl+G export
-- Complete documentation with academic citation
-- Fixed AttributeError crash in export dialog
-- Clear GUI labeling for molecule count
-
 **Archive:** [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 
 ### v2.0 GUI Application (Shipped 2026-04-04)
 
 **Phases:** 8-13 (28 plans)
-**Code:** 10,992 lines Python
-**Key features:**
-- PySide6 GUI with MVVM architecture
-- Interactive 12-phase ice diagram
-- VTK 3D molecular viewer with dual viewport
-- Export: PDB, PNG, SVG
-- Standalone Linux executable
-
 **Archive:** [.planning/milestones/v2.0-ROADMAP.md](./milestones/v2.0-ROADMAP.md)
 
 ### v1.1 Hotfix (Shipped 2026-03-31)
-
-**Phase:** 7.1 - Fix Performance & Critical Bugs
-**Plans:** 4 of 6
 
 **Archive:** [.planning/milestones/v1.1-ROADMAP.md](./milestones/v1.1-ROADMAP.md)
 
 ### v1.0 MVP (Shipped 2026-03-29)
 
-**Phases:** 1-7 (30+ plans)
-**Code:** ~7,151 lines Python
-
 **Archive:** [.planning/milestones/v1-ROADMAP.md](./milestones/v1-ROADMAP.md)
 
 ---
 
-## Key Decisions Summary
+## Accumulated Context
 
-Full decision log: .planning/PROJECT.md
+### Decisions Carried Forward
 
 | Decision | Outcome |
 |----------|---------|
@@ -107,9 +85,10 @@ Full decision log: .planning/PROJECT.md
 | Single export action | ✓ .gro/.top/.itp together |
 | IAPWS/Journaux data sources | ✓ Scientific accuracy |
 | Ice Ic lower boundary at 72K | ✓ Zero polygon overlaps |
-| Ice Ic upper pressure ~204 MPa | ✓ Scientifically accurate |
-| Ice Ih bounded at T=150K | ✓ Clean phase regions |
-| Metastability documentation | ✓ Literature citations |
+
+### Blockers
+
+(None)
 
 ---
 
@@ -120,10 +99,6 @@ Full decision log: .planning/PROJECT.md
 - v2.0: [.planning/milestones/v2.0-ROADMAP.md](./milestones/v2.0-ROADMAP.md)
 - v2.1: [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 - v2.1.1: [.planning/milestones/v2.1.1-ROADMAP.md](./milestones/v2.1.1-ROADMAP.md)
-- v1 Requirements: [.planning/milestones/v1-REQUIREMENTS.md](./milestones/v1-REQUIREMENTS.md)
-- v2 Requirements: [.planning/milestones/v2.0-REQUIREMENTS.md](./milestones/v2.0-REQUIREMENTS.md)
-- v2.1 Requirements: [.planning/milestones/v2.1-REQUIREMENTS.md](./milestones/v2.1-REQUIREMENTS.md)
-- v2.1.1 Requirements: [.planning/milestones/v2.1.1-REQUIREMENTS.md](./milestones/v2.1.1-REQUIREMENTS.md)
 
 ---
 
@@ -131,8 +106,8 @@ Full decision log: .planning/PROJECT.md
 
 **Last session:** 2026-04-08
 **Completed:** v2.1.1 milestone complete and archived
-**Next:** Start v3 milestone planning with `/gsd-new-milestone`
+**Next:** Research domain for v3.0 Interface Generation
 
 ---
 
-*State updated: 2026-04-08 — v2.1.1 milestone complete and archived*
+*State updated: 2026-04-08 — v3.0 milestone started, researching*
