@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 ## Current Position
 
 | Field | Value |
-|-------|-------|
-| Milestone | v3.0 Interface Generation |
-| Phase | 18 (Structure Generation) - In progress |
-| Plan | 02 complete (2/4 plans) |
-| Status | In progress |
-| Last activity | 2026-04-08 — Completed 18-02-PLAN.md |
+| |-------|-------|
+| | Milestone | v3.0 Interface Generation |
+| | Phase | 18 (Structure Generation) - In progress |
+| | Plan | 03 complete (3/4 plans) |
+| | Status | In progress |
+| | Last activity | 2026-04-09 — Completed 18-03-PLAN.md |
 
 **Progress:** ███████░░ 75% (6/8 plans complete in v3.0)
 
@@ -119,6 +119,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Pre-validation before generation | ✓ validate_interface_config checks before expensive operations |
 | v3.0 spherical pockets only | ✓ Ellipsoid support planned for future |
 | v3.0 orthogonal boxes only | ✓ Triclinic support planned for future |
+| InterfaceGenerationWorker pattern | ✓ Same as GenerationWorker for Tab 1 |
+| Thread-safe imports in run() | ✓ Avoid blocking main thread |
+| InterfaceStructure stored in ViewModel | ✓ For Phase 19 visualization and Phase 20 export |
 
 ### Roadmap Evolution
 
@@ -143,10 +146,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 17:44
-**Completed:** 18-02-PLAN.md (Interface assembly modes)
-**Next:** 18-03-PLAN.md (if exists) or next phase
+**Last session:** 2026-04-09 17:56
+**Completed:** 18-03-PLAN.md (GUI generation flow)
+**Next:** 18-04-PLAN.md (if exists) or next phase
 
 ---
 
-*State updated: 2026-04-08 — Plan 18-02 complete*
+*State updated: 2026-04-09 — Plan 18-03 complete*
