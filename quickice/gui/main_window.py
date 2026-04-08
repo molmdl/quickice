@@ -59,6 +59,9 @@ class MainWindow(QMainWindow):
         self._current_T = 0.0
         self._current_P = 0.0
         
+        # Store current interface result for export
+        self._current_interface_result = None
+        
         # Setup UI
         self._setup_ui()
         self._setup_connections()
@@ -185,6 +188,19 @@ class MainWindow(QMainWindow):
         
         # Tab 2 (Interface Construction) connections
         self.interface_panel.refresh_requested.connect(self._on_refresh_candidates)
+        
+        # Tab 2 (Interface Construction) generation connections
+        self.interface_panel.generate_requested.connect(self._on_interface_generate)
+        
+        # ViewModel interface generation signals
+        self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
+        self._viewmodel.interface_generation_progress.connect(self.interface_panel.progress_panel.update_progress)
+        self._viewmodel.interface_generation_status.connect(self.interface_panel.progress_panel.update_status)
+        self._viewmodel.interface_generation_status.connect(self.interface_panel.append_log)
+        self._viewmodel.interface_generation_complete.connect(self._on_interface_generation_complete)
+        self._viewmodel.interface_generation_error.connect(self._on_interface_generation_error)
+        self._viewmodel.interface_generation_cancelled.connect(self._on_interface_generation_cancelled)
+        self._viewmodel.interface_ui_enabled_changed.connect(self._on_interface_ui_enabled_changed)
     
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts.
@@ -387,6 +403,97 @@ class MainWindow(QMainWindow):
             # No candidates exist
             self.interface_panel.update_candidates([])
             self.interface_panel.append_log("No candidates available")
+    
+    # === Interface Generation Handlers (Tab 2) ===
+    
+    @Slot(int)
+    def _on_interface_generate(self, candidate_index: int):
+        """Handle Generate Interface button click from Tab 2.
+        
+        Args:
+            candidate_index: Index of selected candidate in ranked candidates list
+        """
+        from quickice.structure_generation.types import InterfaceConfig
+        
+        # Get the ranked candidates result
+        ranking_result = self._viewmodel.get_last_ranking_result()
+        if not ranking_result or not hasattr(ranking_result, 'ranked_candidates'):
+            self.interface_panel.append_log("No candidates available. Generate ice in Tab 1 first.")
+            return
+        
+        if candidate_index < 0 or candidate_index >= len(ranking_result.ranked_candidates):
+            self.interface_panel.append_log("Invalid candidate selection.")
+            return
+        
+        # Get selected candidate
+        ranked = ranking_result.ranked_candidates[candidate_index]
+        candidate = ranked.candidate
+        
+        # Get configuration from InterfacePanel
+        config_dict = self.interface_panel.get_configuration()
+        config = InterfaceConfig.from_dict(config_dict)
+        
+        # Reset progress and log
+        self.interface_panel.progress_panel.reset()
+        self.interface_panel.progress_panel.set_generating()
+        self.interface_panel.clear_log()
+        self.interface_panel.append_log(f"Starting {config.mode} interface generation...")
+        self.interface_panel.append_log(f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm")
+        self.interface_panel.append_log(f"  Candidate: {candidate.phase_id} ({candidate.nmolecules} molecules)")
+        
+        # Start generation via ViewModel
+        self._viewmodel.start_interface_generation(candidate, config)
+    
+    @Slot()
+    def _on_interface_generation_started(self):
+        """Handle interface generation started."""
+        self.interface_panel.set_generating(True)
+        self.interface_panel.hide_placeholder()
+    
+    @Slot(object)
+    def _on_interface_generation_complete(self, result):
+        """Handle interface generation complete.
+        
+        Args:
+            result: InterfaceStructure from generation
+        """
+        self._current_interface_result = result
+        
+        # Update progress
+        self.interface_panel.progress_panel.set_complete()
+        self.interface_panel.set_generating(False)
+        
+        # Log the generation report
+        if result.report:
+            self.interface_panel.append_log("\n" + "=" * 50)
+            self.interface_panel.append_log(result.report)
+            self.interface_panel.append_log("=" * 50)
+        
+        self.interface_panel.append_log(f"\nInterface generation complete.")
+    
+    @Slot(str)
+    def _on_interface_generation_error(self, error_msg: str):
+        """Handle interface generation error."""
+        self.interface_panel.progress_panel.set_error(error_msg)
+        self.interface_panel.set_generating(False)
+        
+        QMessageBox.critical(
+            self,
+            "Interface Generation Error",
+            f"Failed to generate interface structure:\n\n{error_msg}",
+            QMessageBox.StandardButton.Ok
+        )
+    
+    @Slot()
+    def _on_interface_generation_cancelled(self):
+        """Handle interface generation cancelled."""
+        self.interface_panel.progress_panel.set_cancelled()
+        self.interface_panel.set_generating(False)
+    
+    @Slot(bool)
+    def _on_interface_ui_enabled_changed(self, enabled: bool):
+        """Handle Tab 2 UI enabled/disabled state change."""
+        self.interface_panel.set_generating(not enabled)
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
