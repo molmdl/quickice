@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
 | Phase | 18 (Structure Generation) - In progress |
-| Plan | 01 complete (1/4 plans) |
+| Plan | 02 complete (2/4 plans) |
 | Status | In progress |
-| Last activity | 2026-04-08 — Completed 18-01-PLAN.md |
+| Last activity | 2026-04-08 — Completed 18-02-PLAN.md |
 
-**Progress:** ██████░░░░ 62% (5/8 plans complete in v3.0)
+**Progress:** ███████░░ 75% (6/8 plans complete in v3.0)
 
 ---
 
@@ -114,6 +114,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | scipy cKDTree boxsize for PBC | ✓ Automatic periodic boundary handling |
 | Ice atoms first in positions | ✓ water atoms follow, ice_atom_count marks boundary |
 | Atom counts NOT normalized | ✓ ice=3, water=4 atoms/mol (export concern) |
+| Ice never modified (except pocket cavity) | ✓ Only water removed for overlap resolution |
+| Fill-and-trim pattern for all modes | ✓ tile water → detect overlaps → remove overlapping water |
+| Pre-validation before generation | ✓ validate_interface_config checks before expensive operations |
+| v3.0 spherical pockets only | ✓ Ellipsoid support planned for future |
+| v3.0 orthogonal boxes only | ✓ Triclinic support planned for future |
 
 ### Roadmap Evolution
 
@@ -138,10 +143,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 17:24
-**Completed:** 18-01-PLAN.md (Interface generation foundation)
-**Next:** 18-02-PLAN.md (Slab mode implementation)
+**Last session:** 2026-04-08 17:44
+**Completed:** 18-02-PLAN.md (Interface assembly modes)
+**Next:** 18-03-PLAN.md (if exists) or next phase
 
 ---
 
-*State updated: 2026-04-08 — Plan 18-01 complete*
+*State updated: 2026-04-08 — Plan 18-02 complete*
