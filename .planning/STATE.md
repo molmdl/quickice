@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | 16 (Tab Infrastructure) - Complete |
-| Plan | 02 complete (Phase finished) |
-| Status | Ready for Phase 17 |
-| Last activity | 2026-04-08 — Completed 16-02-PLAN.md |
+| Phase | 17 (Configuration Controls) - In progress |
+| Plan | 01 complete (1/2 plans) |
+| Status | In progress |
+| Last activity | 2026-04-08 — Completed 17-01-PLAN.md |
 
-**Progress:** ████░░░░░░ 40% (2/5 plans complete)
+**Progress:** ████░░░░░░ 40% (3/4 plans complete in v3.0)
 
 ---
 
@@ -41,13 +41,14 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ### v3.0 Interface Generation (Active)
 
-**Phases:** 16-20 (5 phases)
+**Phases:** 16-21 (6 phases)
 **Key features:**
 - Tab infrastructure: Ice Generation + Interface Construction tabs
 - Configuration controls: mode, boxsize, thickness, seed inputs
 - Structure generation: slab/pocket/piece modes with collision detection
 - Visualization: phase-distinct coloring in single VTK viewer
 - Export: GROMACS files with phase distinction (chain A=ice, chain B=water)
+- Documentation: readme, in-app help, tab 2 tooltips
 
 ### v2.1.1 Phase Diagram Data Update (Shipped 2026-04-08)
 
@@ -100,6 +101,15 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Manual "Refresh candidates" button | ✓ User control over Tab 2 sync |
 | Tab 2 keeps old candidates | ✓ Intentional behavior until refresh |
 | Qt widget state preservation | ✓ Automatic state management |
+| Slab/Pocket/Piece as mode options | ✓ Standard interface geometries |
+| Box dimensions 0.5-100 nm | ✓ Typical simulation scale |
+| Thickness/diameter 0.5-50 nm | ✓ Layer/cavity sizes |
+| Seed 1-999999 | ✓ Wide reproducibility range |
+| Piece mode informational label | ✓ Dimensions derived from candidate |
+
+### Roadmap Evolution
+
+- Phase 21 added: Update readme, docs, in-app help, tab 2 tooltip help
 
 ### Blockers
 
@@ -120,10 +130,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 13:15
-**Completed:** 16-02-PLAN.md (Inter-tab wiring complete)
-**Next:** Phase 17 Configuration Controls (next phase in roadmap)
+**Last session:** 2026-04-08 14:22
+**Completed:** 17-01-PLAN.md (Configuration controls UI)
+**Next:** 17-02-PLAN.md (Validation methods and data access)
 
 ---
 
-*State updated: 2026-04-08 — Phase 16 complete*
+*State updated: 2026-04-08 — Phase 17 in progress*
