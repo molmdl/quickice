@@ -55,6 +55,12 @@ Plans:
 - CFG-05: For piece mode: user can input ice piece dimensions (uses selected candidate size as reference)
 - CFG-06: User can input random seed for reproducibility
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Add configuration controls UI (mode selector, box dimensions, mode-specific panels)
+- [ ] 17-02-PLAN.md — Add validation methods and data access for configuration
+
 **Success Criteria:**
 
 1. User can select interface mode from dropdown (slab, pocket, or piece)
@@ -134,6 +140,22 @@ Plans:
 
 ---
 
+### Phase 21: Update Readme, Docs, In-App Help, Tab 2 Tooltip Help
+
+**Goal:** [To be planned]
+
+**Dependencies:** Phase 20
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 21 to break down)
+
+**Details:**
+[To be added during planning]
+
+---
+
 ## Progress
 
 | Phase | Goal | Status | Requirements |
@@ -143,6 +165,7 @@ Plans:
 | 18 | Structure Generation | Pending | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Pending | VIS-01, VIS-02, VIS-03, VIS-04 |
 | 20 | Export | Pending | EXP-01, EXP-02, EXP-03 |
+| 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Pending | TBD |
 
 ---
 
