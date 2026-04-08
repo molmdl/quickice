@@ -50,3 +50,96 @@ class GenerationResult:
     phase_name: str
     density: float
     was_rounded: bool
+
+
+@dataclass
+class InterfaceConfig:
+    """Configuration for interface generation.
+
+    Captures all generation parameters from the UI.
+
+    Attributes:
+        mode: Interface mode ("slab", "pocket", or "piece")
+        box_x: Box X dimension in nm
+        box_y: Box Y dimension in nm
+        box_z: Box Z dimension in nm
+        seed: Random seed for reproducibility
+        ice_thickness: Ice layer thickness in nm (slab mode)
+        water_thickness: Water layer thickness in nm (slab mode)
+        pocket_diameter: Cavity diameter in nm (pocket mode)
+        pocket_shape: Cavity shape (pocket mode)
+        overlap_threshold: O-O distance threshold in nm (default 0.25 nm = 2.5 Å)
+    """
+
+    mode: str
+    box_x: float
+    box_y: float
+    box_z: float
+    seed: int
+    ice_thickness: float = 0.0
+    water_thickness: float = 0.0
+    pocket_diameter: float = 0.0
+    pocket_shape: str = "sphere"
+    overlap_threshold: float = 0.25  # 0.25 nm = 2.5 Å
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "InterfaceConfig":
+        """Create InterfaceConfig from dictionary.
+
+        Maps the dict from InterfacePanel.get_configuration() to dataclass fields.
+
+        Args:
+            d: Dictionary with configuration parameters
+
+        Returns:
+            InterfaceConfig instance
+        """
+        return cls(
+            mode=d["mode"],
+            box_x=d["box_x"],
+            box_y=d["box_y"],
+            box_z=d["box_z"],
+            seed=d["seed"],
+            ice_thickness=d.get("ice_thickness", 0.0),
+            water_thickness=d.get("water_thickness", 0.0),
+            pocket_diameter=d.get("pocket_diameter", 0.0),
+            pocket_shape=d.get("pocket_shape", "sphere"),
+            # overlap_threshold not exposed in UI, use default
+            overlap_threshold=0.25,
+        )
+
+
+@dataclass
+class InterfaceStructure:
+    """Result of interface structure generation.
+
+    Stores combined ice + water positions with phase distinction.
+
+    Attributes:
+        positions: (N_atoms, 3) combined ice + water atom positions in nm.
+            Ice atoms come FIRST, then water atoms.
+        atom_names: Atom names for all atoms (ice names then water names)
+        cell: (3, 3) box cell vectors in nm
+        ice_atom_count: Number of ice atoms (marks split between ice and water)
+        water_atom_count: Number of water atoms
+        ice_nmolecules: Number of ice molecules
+        water_nmolecules: Number of water molecules
+        mode: Interface mode used
+        report: gmx solvate-like generation report string
+
+    Note:
+        Ice candidates from GenIce use 3 atoms per molecule (O, H, H).
+        Water from tip4p.gro uses 4 atoms per molecule (OW, HW1, HW2, MW).
+        The InterfaceStructure stores them combined with ice_atom_count marking
+        the boundary. Do NOT normalize atom counts—that is an export concern.
+    """
+
+    positions: np.ndarray
+    atom_names: list[str]
+    cell: np.ndarray
+    ice_atom_count: int
+    water_atom_count: int
+    ice_nmolecules: int
+    water_nmolecules: int
+    mode: str
+    report: str
