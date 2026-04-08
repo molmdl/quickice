@@ -3,14 +3,14 @@
 # Boundary type: Curved (IAPWS Simon-Glatzel melting curves)
 #
 # TRIPLE POINTS
-# Ih_III_Liquid: T=251.165 K, P=207.5 MPa
-# Ih_II_III: T=238.55 K, P=212.9 MPa
-# II_III_V: T=248.85 K, P=344.3 MPa
-# III_V_Liquid: T=256.165 K, P=346.3 MPa
-# II_V_VI: T=218.95 K, P=620.0 MPa
-# V_VI_Liquid: T=273.31 K, P=625.9 MPa
-# VI_VII_Liquid: T=354.75 K, P=2200.0 MPa
-# VI_VII_VIII: T=278.0 K, P=2100.0 MPa
+# Ih_III_Liquid: T=251.165 K, P=209.9 MPa
+# Ih_II_III: T=238.45 K, P=212.9 MPa
+# II_III_V: T=249.4 K, P=355.5 MPa
+# III_V_Liquid: T=256.164 K, P=350.1 MPa
+# II_V_VI: T=201.9 K, P=670.8 MPa
+# V_VI_Liquid: T=273.31 K, P=632.4 MPa
+# VI_VII_Liquid: T=355.0 K, P=2216.0 MPa
+# VI_VII_VIII: T=278.15 K, P=2100.0 MPa
 # Ih_XI_Vapor: T=72.0 K, P=0.0001 MPa
 # III_IX_Transition: T=140.0 K, P=300.0 MPa
 # VII_X_Transition: T=300.0 K, P=30000.0 MPa
