@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | 16 (Tab Infrastructure) |
-| Plan | 01 complete |
-| Status | Phase in progress |
-| Last activity | 2026-04-08 — Completed 16-01-PLAN.md |
+| Phase | 16 (Tab Infrastructure) - Complete |
+| Plan | 02 complete (Phase finished) |
+| Status | Ready for Phase 17 |
+| Last activity | 2026-04-08 — Completed 16-02-PLAN.md |
 
-**Progress:** ██░░░░░░░░ 20% (1/5 plans complete)
+**Progress:** ████░░░░░░ 40% (2/5 plans complete)
 
 ---
 
@@ -97,6 +97,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Ice Ic lower boundary at 72K | ✓ Zero polygon overlaps |
 | Tab-based workflow | ✓ Two tabs for v3.0 |
 | Collision detection | ✓ Mandatory for interface generation |
+| Manual "Refresh candidates" button | ✓ User control over Tab 2 sync |
+| Tab 2 keeps old candidates | ✓ Intentional behavior until refresh |
+| Qt widget state preservation | ✓ Automatic state management |
 
 ### Blockers
 
@@ -117,10 +120,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-08 13:09
-**Completed:** 16-01-PLAN.md (Tab Infrastructure foundation)
-**Next:** Continue Phase 16 or start next plan in roadmap
+**Last session:** 2026-04-08 13:15
+**Completed:** 16-02-PLAN.md (Inter-tab wiring complete)
+**Next:** Phase 17 Configuration Controls (next phase in roadmap)
 
 ---
 
-*State updated: 2026-04-08 — Phase 16 Plan 01 complete*
+*State updated: 2026-04-08 — Phase 16 complete*
