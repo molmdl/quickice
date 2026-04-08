@@ -12,7 +12,7 @@
 
 set -e
 
-echo "=== Building QuickIce v2.0.0 Linux Executable ==="
+echo "=== Building QuickIce v2.1.1 Linux Executable ==="
 
 # Check if in correct conda environment
 if [[ "$CONDA_DEFAULT_ENV" != "quickice" ]]; then
