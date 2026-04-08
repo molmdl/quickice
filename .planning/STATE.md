@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v2.1.1 Phase Diagram Data Update |
 | Phase | 15 |
-| Plan | 08 of 08 (gap closure complete) |
+| Plan | 09 of 09 (gap closure complete) |
 | Status | Milestone complete |
-| Last activity | 2026-04-08 — Completed gap closure plan 15-08 (Ice Ic upper boundary) |
+| Last activity | 2026-04-08 — Completed gap closure plan 15-09 (Ice Ih/Ic polygon overlap fix) |
 
 **Progress:** ██████████ 100% (Milestone v2.1.1 complete with gap closure)
 
@@ -116,6 +116,8 @@ Full decision log: .planning/PROJECT.md
 | Algorithm thresholds match TP values | ✓ Correct phase identification |
 | Docstrings cite data sources | ✓ Scientific traceability |
 | Ice Ic upper boundary | ✓ Ih-II curve (~196-204 MPa) |
+| Ice Ih/Ic polygon separation | ✓ Ih bounded at T=150K, no overlap |
+| Ice Ic metastability note | ✓ Added to info panel citation |
 
 ---
 
@@ -135,9 +137,9 @@ Full decision log: .planning/PROJECT.md
 ## Session Continuity
 
 **Last session:** 2026-04-08
-**Completed:** All Phase 15 plans including gap closure (15-01 through 15-08)
+**Completed:** All Phase 15 plans including gap closure (15-01 through 15-09)
 **Next:** v2.1.1 milestone complete. Ready for milestone archival.
 
 ---
 
-*State updated: 2026-04-08 — v2.1.1 milestone complete with Ice Ic upper boundary fix*
+*State updated: 2026-04-08 — v2.1.1 milestone complete with Ice Ih/Ic polygon overlap fix*
