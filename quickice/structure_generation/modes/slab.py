@@ -1,0 +1,158 @@
+"""Slab mode: ice-water-ice sandwich along Z-axis.
+
+Creates a three-layer structure:
+- Bottom ice: Z = [0, ice_thickness]
+- Water: Z = [ice_thickness, ice_thickness + water_thickness]
+- Top ice: Z = [ice_thickness + water_thickness, box_z]
+"""
+
+import numpy as np
+
+from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
+from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
+from quickice.structure_generation.overlap_resolver import (
+    detect_overlaps,
+    remove_overlapping_molecules,
+)
+
+
+def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
+    """Assemble ice-water-ice slab interface structure.
+
+    The ice-water-ice sandwich is stacked along the Z-axis. Ice layers are
+    tiled from the candidate ice structure, water fills the middle region,
+    and overlapping water molecules are removed.
+
+    Args:
+        candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
+        config: Interface configuration with mode, box dimensions, thicknesses, etc.
+
+    Returns:
+        InterfaceStructure with combined ice + water positions.
+        Ice atoms come FIRST, then water atoms.
+
+    Raises:
+        InterfaceGenerationError: If generation fails.
+    """
+    # Get ice cell diagonal dimensions (orthogonal boxes only for v3.0)
+    ice_cell_dims = np.array([
+        candidate.cell[0, 0],
+        candidate.cell[1, 1],
+        candidate.cell[2, 2]
+    ])
+
+    # Box dimensions
+    box_dims = np.array([config.box_x, config.box_y, config.box_z])
+
+    # Tile ice for bottom layer: fill [box_x, box_y, ice_thickness]
+    bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
+        candidate.positions,
+        ice_cell_dims,
+        np.array([config.box_x, config.box_y, config.ice_thickness])
+    )
+
+    # Tile ice for top layer: same target region, then shift Z
+    top_ice_positions, top_ice_nmolecules = tile_structure(
+        candidate.positions,
+        ice_cell_dims,
+        np.array([config.box_x, config.box_y, config.ice_thickness])
+    )
+    # Shift top layer to Z = [ice_thickness + water_thickness, box_z]
+    top_ice_positions = top_ice_positions.copy()
+    top_ice_positions[:, 2] += config.ice_thickness + config.water_thickness
+
+    # Combine ice positions (bottom + top)
+    if len(bottom_ice_positions) > 0 and len(top_ice_positions) > 0:
+        combined_ice_positions = np.vstack([bottom_ice_positions, top_ice_positions])
+    elif len(bottom_ice_positions) > 0:
+        combined_ice_positions = bottom_ice_positions
+    elif len(top_ice_positions) > 0:
+        combined_ice_positions = top_ice_positions
+    else:
+        combined_ice_positions = np.zeros((0, 3), dtype=float)
+
+    total_ice_nmolecules = bottom_ice_nmolecules + top_ice_nmolecules
+
+    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
+    ice_atom_names = ["O", "H", "H"] * total_ice_nmolecules
+
+    # Fill water in middle region: [box_x, box_y, water_thickness]
+    water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
+        np.array([config.box_x, config.box_y, config.water_thickness]),
+        config.overlap_threshold
+    )
+
+    # Shift water to Z = [ice_thickness, ice_thickness + water_thickness]
+    if len(water_positions) > 0:
+        water_positions = water_positions.copy()
+        water_positions[:, 2] += config.ice_thickness
+
+    # Detect overlaps between ice O and water O
+    # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule)
+    # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule)
+    if len(combined_ice_positions) > 0 and len(water_positions) > 0:
+        ice_o_positions = combined_ice_positions[::3]
+        water_o_positions = water_positions[::4]
+
+        overlapping_mol_indices = detect_overlaps(
+            ice_o_positions,
+            water_o_positions,
+            box_dims,
+            config.overlap_threshold
+        )
+    else:
+        overlapping_mol_indices = set()
+
+    # Remove overlapping water molecules (atoms_per_molecule=4 for TIP4P)
+    if overlapping_mol_indices:
+        trimmed_water_positions, water_nmolecules = remove_overlapping_molecules(
+            water_positions,
+            overlapping_mol_indices,
+            atoms_per_molecule=4
+        )
+        # Trim atom names to match
+        water_atom_names = water_atom_names[:water_nmolecules * 4]
+    else:
+        trimmed_water_positions = water_positions
+
+    # Combine all positions: ice FIRST, then water
+    if len(combined_ice_positions) > 0 and len(trimmed_water_positions) > 0:
+        all_positions = np.vstack([combined_ice_positions, trimmed_water_positions])
+    elif len(combined_ice_positions) > 0:
+        all_positions = combined_ice_positions
+    elif len(trimmed_water_positions) > 0:
+        all_positions = trimmed_water_positions
+    else:
+        all_positions = np.zeros((0, 3), dtype=float)
+
+    # Combine atom names
+    all_atom_names = ice_atom_names + water_atom_names
+
+    # Compute counts
+    ice_atom_count = len(combined_ice_positions)
+    water_atom_count = len(trimmed_water_positions)
+
+    # Build cell matrix
+    cell = np.diag([config.box_x, config.box_y, config.box_z])
+
+    # Build report (gmx solvate convention: molecules present, not removed)
+    total_molecules = total_ice_nmolecules + water_nmolecules
+    report = (
+        f"Generated slab interface structure\n"
+        f"  Ice molecules: {total_ice_nmolecules}\n"
+        f"  Water molecules: {water_nmolecules}\n"
+        f"  Total molecules: {total_molecules}\n"
+        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
+    )
+
+    return InterfaceStructure(
+        positions=all_positions,
+        atom_names=all_atom_names,
+        cell=cell,
+        ice_atom_count=ice_atom_count,
+        water_atom_count=water_atom_count,
+        ice_nmolecules=total_ice_nmolecules,
+        water_nmolecules=water_nmolecules,
+        mode="slab",
+        report=report
+    )
