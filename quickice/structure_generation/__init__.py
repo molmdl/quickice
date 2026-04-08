@@ -25,6 +25,10 @@ from quickice.structure_generation.generator import (
     IceStructureGenerator,
     generate_candidates,
 )
+from quickice.structure_generation.interface_builder import (
+    generate_interface,
+    validate_interface_config,
+)
 from quickice.structure_generation.water_filler import (
     load_water_template,
     tile_structure,
@@ -51,6 +55,9 @@ __all__ = [
     # Generator
     "IceStructureGenerator",
     "generate_candidates",
+    # Interface generation
+    "generate_interface",
+    "validate_interface_config",
     # Water filling and overlap resolution
     "load_water_template",
     "tile_structure",
