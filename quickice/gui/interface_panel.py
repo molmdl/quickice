@@ -16,6 +16,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 
 from quickice.gui.view import ProgressPanel, InfoPanel, HelpIcon
+from quickice.gui.validators import (
+    validate_box_dimension, validate_thickness, 
+    validate_pocket_diameter, validate_seed
+)
 
 
 class InterfacePanel(QWidget):
@@ -256,6 +260,31 @@ class InterfacePanel(QWidget):
         box_row.addStretch()
         layout.addLayout(box_row)
         
+        # Box dimension error labels (hidden by default)
+        self.box_x_error = QLabel()
+        self.box_x_error.setStyleSheet("color: red;")
+        self.box_x_error.setWordWrap(True)
+        self.box_x_error.hide()
+        
+        self.box_y_error = QLabel()
+        self.box_y_error.setStyleSheet("color: red;")
+        self.box_y_error.setWordWrap(True)
+        self.box_y_error.hide()
+        
+        self.box_z_error = QLabel()
+        self.box_z_error.setStyleSheet("color: red;")
+        self.box_z_error.setWordWrap(True)
+        self.box_z_error.hide()
+        
+        box_errors_layout = QHBoxLayout()
+        box_errors_layout.addWidget(self.box_x_error)
+        box_errors_layout.addSpacing(10)
+        box_errors_layout.addWidget(self.box_y_error)
+        box_errors_layout.addSpacing(10)
+        box_errors_layout.addWidget(self.box_z_error)
+        box_errors_layout.addStretch()
+        layout.addLayout(box_errors_layout)
+        
         layout.addSpacing(10)
         
         # Random seed row
@@ -270,6 +299,17 @@ class InterfacePanel(QWidget):
         seed_row.addWidget(self.seed_input)
         seed_row.addStretch()
         layout.addLayout(seed_row)
+        
+        # Seed error label (hidden by default)
+        self.seed_error = QLabel()
+        self.seed_error.setStyleSheet("color: red;")
+        self.seed_error.setWordWrap(True)
+        self.seed_error.hide()
+        
+        seed_error_layout = QHBoxLayout()
+        seed_error_layout.addWidget(self.seed_error)
+        seed_error_layout.addStretch()
+        layout.addLayout(seed_error_layout)
         
         layout.addSpacing(15)
         
@@ -475,3 +515,77 @@ class InterfacePanel(QWidget):
         Convenience method for MainWindow to collapse log panel.
         """
         self.info_panel.collapse()
+    
+    def validate_configuration(self) -> bool:
+        """Validate all configuration inputs, show inline errors, return overall validity.
+        
+        Validates:
+        - Box dimensions (X, Y, Z)
+        - Random seed
+        - Mode-specific parameters based on selected mode
+        
+        Returns:
+            True if all inputs are valid, False otherwise
+        """
+        valid = True
+        
+        # Box dimensions
+        for dim_input, error_label, dim_name in [
+            (self.box_x_input, self.box_x_error, "X"),
+            (self.box_y_input, self.box_y_error, "Y"),
+            (self.box_z_input, self.box_z_error, "Z")
+        ]:
+            valid_dim, dim_err = validate_box_dimension(str(dim_input.value()))
+            error_label.setText(dim_err)
+            error_label.setVisible(not valid_dim)
+            if not valid_dim:
+                valid = False
+        
+        # Random seed
+        valid_seed, seed_err = validate_seed(str(self.seed_input.value()))
+        self.seed_error.setText(seed_err)
+        self.seed_error.setVisible(not valid_seed)
+        if not valid_seed:
+            valid = False
+        
+        # Mode-specific validation
+        current_mode = self.mode_combo.currentText()
+        if current_mode == "Slab":
+            # Ice thickness
+            valid_ice, ice_err = validate_thickness(str(self.ice_thickness_input.value()))
+            self.ice_thickness_error.setText(ice_err)
+            self.ice_thickness_error.setVisible(not valid_ice)
+            if not valid_ice:
+                valid = False
+            
+            # Water thickness
+            valid_water, water_err = validate_thickness(str(self.water_thickness_input.value()))
+            self.water_thickness_error.setText(water_err)
+            self.water_thickness_error.setVisible(not valid_water)
+            if not valid_water:
+                valid = False
+        
+        elif current_mode == "Pocket":
+            # Pocket diameter
+            valid_diam, diam_err = validate_pocket_diameter(str(self.pocket_diameter_input.value()))
+            self.pocket_diameter_error.setText(diam_err)
+            self.pocket_diameter_error.setVisible(not valid_diam)
+            if not valid_diam:
+                valid = False
+        
+        # Piece mode has no editable inputs (dimensions from candidate)
+        
+        return valid
+    
+    def clear_configuration_errors(self) -> None:
+        """Clear all configuration error messages."""
+        # Shared errors
+        self.box_x_error.hide()
+        self.box_y_error.hide()
+        self.box_z_error.hide()
+        self.seed_error.hide()
+        
+        # Mode-specific errors
+        self.ice_thickness_error.hide()
+        self.water_thickness_error.hide()
+        self.pocket_diameter_error.hide()
