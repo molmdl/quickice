@@ -113,14 +113,20 @@ Plans:
 - VIS-01: Single VTK viewer displays the interface structure (not dual viewport)
 - VIS-02: Bond rendering uses lines (not ball-and-stick) for performance
 - VIS-03: Ice region atoms render in one color, liquid water in different color
-- VIS-04: Hydrogen bonds display as dashed lines across interface boundary
+- VIS-04: Hydrogen bonds display as dashed lines across interface boundary (OVERRIDDEN by CONTEXT: H-bonds hidden in Tab 2)
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — VTK conversion utilities + InterfaceViewerWidget
+- [ ] 19-02-PLAN.md — GUI integration + signal wiring + human verification
 
 **Success Criteria:**
 
 1. Single VTK viewer displays the complete interface structure
 2. Molecular bonds render as lines (not ball-and-stick) for performance with large systems
-3. Ice molecules render in one distinct color (e.g., cyan), water molecules in another (e.g., blue)
-4. Hydrogen bonds display as dashed lines, including across the ice-water boundary
+3. Ice molecules render in one distinct color (cyan), water molecules in another (cornflower blue)
+4. Hydrogen bonds are hidden in Tab 2 (per CONTEXT override — water makes them too messy)
 
 ---
 
@@ -166,7 +172,7 @@ Plans:
 | 16 | Tab Infrastructure | Complete | WF-01, WF-02, WF-03, WF-04 |
 | 17 | Configuration Controls | Complete | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
 | 18 | Structure Generation | Complete | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
-| 19 | Visualization | Pending | VIS-01, VIS-02, VIS-03, VIS-04 |
+| 19 | Visualization | In Progress | VIS-01, VIS-02, VIS-03, VIS-04 |
 | 20 | Export | Pending | EXP-01, EXP-02, EXP-03 |
 | 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Pending | TBD |
 
