@@ -27,12 +27,12 @@ Three geometry modes: slab, pocket, piece.
 
 ### Interface Configuration (Tab 2)
 
-- [ ] **CFG-01**: User can select interface mode: slab, pocket, or piece
-- [ ] **CFG-02**: User can input box size in nanometers
-- [ ] **CFG-03**: For slab mode: user can input ice layer thickness (nm) and water layer thickness (nm)
-- [ ] **CFG-04**: For pocket mode: user can input pocket size (diameter in nm) and shape (sphere/ellipse)
-- [ ] **CFG-05**: For piece mode: user can input ice piece dimensions (uses selected candidate size as reference)
-- [ ] **CFG-06**: User can input random seed for reproducibility
+- [x] **CFG-01**: User can select interface mode: slab, pocket, or piece
+- [x] **CFG-02**: User can input box size in nanometers
+- [x] **CFG-03**: For slab mode: user can input ice layer thickness (nm) and water layer thickness (nm)
+- [x] **CFG-04**: For pocket mode: user can input pocket size (diameter in nm) and shape (sphere/ellipse)
+- [x] **CFG-05**: For piece mode: user can input ice piece dimensions (uses selected candidate size as reference)
+- [x] **CFG-06**: User can input random seed for reproducibility
 
 ### Structure Generation
 
@@ -82,12 +82,12 @@ Three geometry modes: slab, pocket, piece.
 | WF-02 | Phase 16 | Complete |
 | WF-03 | Phase 16 | Complete |
 | WF-04 | Phase 16 | Complete |
-| CFG-01 | Phase 17 | Pending |
-| CFG-02 | Phase 17 | Pending |
-| CFG-03 | Phase 17 | Pending |
-| CFG-04 | Phase 17 | Pending |
-| CFG-05 | Phase 17 | Pending |
-| CFG-06 | Phase 17 | Pending |
+| CFG-01 | Phase 17 | Complete |
+| CFG-02 | Phase 17 | Complete |
+| CFG-03 | Phase 17 | Complete |
+| CFG-04 | Phase 17 | Complete |
+| CFG-05 | Phase 17 | Complete |
+| CFG-06 | Phase 17 | Complete |
 | GEN-01 | Phase 18 | Pending |
 | GEN-02 | Phase 18 | Pending |
 | GEN-03 | Phase 18 | Pending |
@@ -111,4 +111,4 @@ Three geometry modes: slab, pocket, piece.
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 — Phase 16 complete (WF-01, WF-02, WF-03, WF-04)*
+*Last updated: 2026-04-08 — Phase 17 complete (CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06)*
