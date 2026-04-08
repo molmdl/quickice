@@ -10,11 +10,12 @@ This module provides the InterfacePanel class for the Interface Construction tab
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QComboBox
+    QPushButton, QComboBox, QDoubleSpinBox, QSpinBox, 
+    QStackedWidget, QGroupBox, QFormLayout
 )
 from PySide6.QtCore import Signal, Qt
 
-from quickice.gui.view import ProgressPanel, InfoPanel
+from quickice.gui.view import ProgressPanel, InfoPanel, HelpIcon
 
 
 class InterfacePanel(QWidget):
@@ -70,6 +71,97 @@ class InterfacePanel(QWidget):
         layout.addWidget(title_label)
         
         layout.addSpacing(15)
+        
+        # === Configuration Controls Section ===
+        
+        # Mode selector row
+        mode_row = QHBoxLayout()
+        mode_label = QLabel("Interface mode:")
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Slab", "Pocket", "Piece"])
+        self.mode_combo.setToolTip("Select interface geometry type")
+        mode_row.addWidget(mode_label)
+        mode_row.addWidget(HelpIcon("Select interface geometry: slab (layered), pocket (water cavity in ice), or piece (ice crystal in water)"))
+        mode_row.addWidget(self.mode_combo)
+        mode_row.addStretch()
+        layout.addLayout(mode_row)
+        
+        layout.addSpacing(10)
+        
+        # Box dimensions section
+        box_header = QHBoxLayout()
+        box_header_label = QLabel("Box dimensions:")
+        box_header.addWidget(box_header_label)
+        box_header.addWidget(HelpIcon("Simulation box dimensions in nanometers. Slab interfaces typically use elongated Z-axis."))
+        box_header.addStretch()
+        layout.addLayout(box_header)
+        
+        box_row = QHBoxLayout()
+        
+        # X dimension
+        self.box_x_input = QDoubleSpinBox()
+        self.box_x_input.setSuffix(" nm")
+        self.box_x_input.setRange(0.5, 100.0)
+        self.box_x_input.setDecimals(2)
+        self.box_x_input.setSingleStep(0.5)
+        self.box_x_input.setValue(5.0)
+        self.box_x_input.setToolTip("Box X dimension (nm)")
+        box_row.addWidget(QLabel("X:"))
+        box_row.addWidget(self.box_x_input)
+        
+        box_row.addSpacing(10)
+        
+        # Y dimension
+        self.box_y_input = QDoubleSpinBox()
+        self.box_y_input.setSuffix(" nm")
+        self.box_y_input.setRange(0.5, 100.0)
+        self.box_y_input.setDecimals(2)
+        self.box_y_input.setSingleStep(0.5)
+        self.box_y_input.setValue(5.0)
+        self.box_y_input.setToolTip("Box Y dimension (nm)")
+        box_row.addWidget(QLabel("Y:"))
+        box_row.addWidget(self.box_y_input)
+        
+        box_row.addSpacing(10)
+        
+        # Z dimension
+        self.box_z_input = QDoubleSpinBox()
+        self.box_z_input.setSuffix(" nm")
+        self.box_z_input.setRange(0.5, 100.0)
+        self.box_z_input.setDecimals(2)
+        self.box_z_input.setSingleStep(0.5)
+        self.box_z_input.setValue(10.0)
+        self.box_z_input.setToolTip("Box Z dimension (nm)")
+        box_row.addWidget(QLabel("Z:"))
+        box_row.addWidget(self.box_z_input)
+        
+        box_row.addStretch()
+        layout.addLayout(box_row)
+        
+        layout.addSpacing(10)
+        
+        # Random seed row
+        seed_row = QHBoxLayout()
+        seed_label = QLabel("Random seed:")
+        self.seed_input = QSpinBox()
+        self.seed_input.setRange(1, 999999)
+        self.seed_input.setValue(42)
+        self.seed_input.setToolTip("Seed for random number generator")
+        seed_row.addWidget(seed_label)
+        seed_row.addWidget(HelpIcon("Integer seed for reproducible structure generation"))
+        seed_row.addWidget(self.seed_input)
+        seed_row.addStretch()
+        layout.addLayout(seed_row)
+        
+        layout.addSpacing(15)
+        
+        # Mode-specific controls (populated in Task 3)
+        self.stacked_widget = QStackedWidget()
+        layout.addWidget(self.stacked_widget)
+        
+        layout.addSpacing(15)
+        
+        # === Candidate Selection Section ===
         
         # Candidate selection row
         candidate_row = QHBoxLayout()
