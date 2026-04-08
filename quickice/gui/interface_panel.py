@@ -178,7 +178,7 @@ class InterfacePanel(QWidget):
             self.candidate_dropdown.setEnabled(True)
             for rc in candidates:
                 self.candidate_dropdown.addItem(
-                    f"Rank {rc.rank}: {rc.candidate.phase_id}"
+                    f"Rank {rc.rank} ({rc.candidate.phase_id})"
                 )
             # Default to first candidate
             self.candidate_dropdown.setCurrentIndex(0)

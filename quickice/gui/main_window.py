@@ -326,6 +326,9 @@ class MainWindow(QMainWindow):
             
             # Update candidate selector in viewer panel
             self.viewer_panel.update_candidate_selector(result.ranked_candidates)
+            
+            # Update Tab 2 dropdown with candidates
+            self.interface_panel.update_candidates(result.ranked_candidates)
         
         # Load candidates into dual viewer (if VTK available)
         if self.viewer_panel.is_vtk_available():
