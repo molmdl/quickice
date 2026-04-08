@@ -407,9 +407,29 @@ class InterfacePanel(QWidget):
         self.refresh_requested.emit()
     
     def _on_generate_clicked(self):
-        """Handle generate button click."""
-        if self._candidates and self.candidate_dropdown.currentIndex() >= 0:
-            self.generate_requested.emit(self.candidate_dropdown.currentIndex())
+        """Handle generate button click.
+        
+        Validates all configuration inputs before emitting generate_requested signal.
+        Shows inline errors for invalid inputs.
+        """
+        if not self._candidates:
+            return
+        
+        # Clear previous errors
+        self.clear_configuration_errors()
+        
+        # Validate configuration
+        if not self.validate_configuration():
+            return  # Errors shown, don't proceed
+        
+        # Get selected candidate index
+        selected_idx = self.candidate_dropdown.currentIndex()
+        if selected_idx < 0:
+            return
+        
+        # Emit signal with candidate index
+        # Configuration will be retrieved via get_configuration() by MainWindow
+        self.generate_requested.emit(selected_idx)
     
     def update_candidates(self, candidates: list) -> None:
         """Update candidate dropdown with new list.
