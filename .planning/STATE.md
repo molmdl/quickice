@@ -28,16 +28,26 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | Not started |
+| Phase | 16 (Tab Infrastructure) |
 | Plan | Not started |
-| Status | Researching domain ecosystem |
-| Last activity | 2026-04-08 — v3.0 milestone started |
+| Status | Ready for planning |
+| Last activity | 2026-04-08 — Roadmap created |
 
-**Progress:** ░░░░░░░░░░ 0% (Researching)
+**Progress:** ░░░░░░░░░░ 0% (5 phases pending)
 
 ---
 
 ## Milestone History
+
+### v3.0 Interface Generation (Active)
+
+**Phases:** 16-20 (5 phases)
+**Key features:**
+- Tab infrastructure: Ice Generation + Interface Construction tabs
+- Configuration controls: mode, boxsize, thickness, seed inputs
+- Structure generation: slab/pocket/piece modes with collision detection
+- Visualization: phase-distinct coloring in single VTK viewer
+- Export: GROMACS files with phase distinction (chain A=ice, chain B=water)
 
 ### v2.1.1 Phase Diagram Data Update (Shipped 2026-04-08)
 
@@ -85,6 +95,8 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Single export action | ✓ .gro/.top/.itp together |
 | IAPWS/Journaux data sources | ✓ Scientific accuracy |
 | Ice Ic lower boundary at 72K | ✓ Zero polygon overlaps |
+| Tab-based workflow | ✓ Two tabs for v3.0 |
+| Collision detection | ✓ Mandatory for interface generation |
 
 ### Blockers
 
@@ -99,15 +111,16 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 - v2.0: [.planning/milestones/v2.0-ROADMAP.md](./milestones/v2.0-ROADMAP.md)
 - v2.1: [.planning/milestones/v2.1-ROADMAP.md](./milestones/v2.1-ROADMAP.md)
 - v2.1.1: [.planning/milestones/v2.1.1-ROADMAP.md](./milestones/v2.1.1-ROADMAP.md)
+- v3.0: [.planning/ROADMAP.md](./ROADMAP.md)
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-08
-**Completed:** v2.1.1 milestone complete and archived
-**Next:** Research domain for v3.0 Interface Generation
+**Completed:** v3.0 Roadmap created (5 phases: 16-20)
+**Next:** Plan Phase 16 - Tab Infrastructure
 
 ---
 
-*State updated: 2026-04-08 — v3.0 milestone started, researching*
+*State updated: 2026-04-08 — Roadmap complete, ready for Phase 16 planning*

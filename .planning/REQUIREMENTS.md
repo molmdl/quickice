@@ -78,37 +78,37 @@ Three geometry modes: slab, pocket, piece.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WF-01 | TBD | Pending |
-| WF-02 | TBD | Pending |
-| WF-03 | TBD | Pending |
-| WF-04 | TBD | Pending |
-| CFG-01 | TBD | Pending |
-| CFG-02 | TBD | Pending |
-| CFG-03 | TBD | Pending |
-| CFG-04 | TBD | Pending |
-| CFG-05 | TBD | Pending |
-| CFG-06 | TBD | Pending |
-| GEN-01 | TBD | Pending |
-| GEN-02 | TBD | Pending |
-| GEN-03 | TBD | Pending |
-| GEN-04 | TBD | Pending |
-| GEN-05 | TBD | Pending |
-| GEN-06 | TBD | Pending |
-| GEN-07 | TBD | Pending |
-| VIS-01 | TBD | Pending |
-| VIS-02 | TBD | Pending |
-| VIS-03 | TBD | Pending |
-| VIS-04 | TBD | Pending |
-| EXP-01 | TBD | Pending |
-| EXP-02 | TBD | Pending |
-| EXP-03 | TBD | Pending |
+| WF-01 | Phase 16 | Pending |
+| WF-02 | Phase 16 | Pending |
+| WF-03 | Phase 16 | Pending |
+| WF-04 | Phase 16 | Pending |
+| CFG-01 | Phase 17 | Pending |
+| CFG-02 | Phase 17 | Pending |
+| CFG-03 | Phase 17 | Pending |
+| CFG-04 | Phase 17 | Pending |
+| CFG-05 | Phase 17 | Pending |
+| CFG-06 | Phase 17 | Pending |
+| GEN-01 | Phase 18 | Pending |
+| GEN-02 | Phase 18 | Pending |
+| GEN-03 | Phase 18 | Pending |
+| GEN-04 | Phase 18 | Pending |
+| GEN-05 | Phase 18 | Pending |
+| GEN-06 | Phase 18 | Pending |
+| GEN-07 | Phase 18 | Pending |
+| VIS-01 | Phase 19 | Pending |
+| VIS-02 | Phase 19 | Pending |
+| VIS-03 | Phase 19 | Pending |
+| VIS-04 | Phase 19 | Pending |
+| EXP-01 | Phase 20 | Pending |
+| EXP-02 | Phase 20 | Pending |
+| EXP-03 | Phase 20 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 23 total
-- Mapped to phases: 0 (TBD after roadmap creation)
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23 ✓
+- Unmapped: 0
 
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 — Initial definition*
+*Last updated: 2026-04-08 — Roadmap created, traceability added*
