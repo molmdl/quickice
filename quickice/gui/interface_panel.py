@@ -71,9 +71,21 @@ class InterfacePanel(QWidget):
         self.ice_thickness_input.setDecimals(2)
         self.ice_thickness_input.setSingleStep(0.5)
         self.ice_thickness_input.setValue(3.0)
-        self.ice_thickness_input.setToolTip("Thickness of ice layer in nm (0.5–50).\nDefines how thick the ice region is along Z.")
+        self.ice_thickness_input.setToolTip(
+            "Thickness of each ice layer in nm (0.5–50).\n"
+            "\n"
+            "IMPORTANT: For slab mode, box_z must equal:\n"
+            "  2 × ice_thickness + water_thickness\n"
+            "\n"
+            "Example: ice=3.0 nm, water=4.0 nm → box_z=10.0 nm"
+        )
         ice_row.addWidget(QLabel("Ice thickness:"))
-        ice_row.addWidget(HelpIcon("Thickness of the ice layer in nanometers. This defines the ice region height along the Z-axis of the simulation box. Typical values: 2–10 nm for surface studies."))
+        ice_row.addWidget(HelpIcon(
+            "Thickness of each ice layer in nanometers. The slab has two ice layers (top and bottom), "
+            "each with this thickness. Typical values: 2–10 nm for surface studies.\n\n"
+            "CRITICAL: Box Z must equal 2×ice_thickness + water_thickness. "
+            "For example, if ice=3.0 nm and water=4.0 nm, then box_z must be 10.0 nm."
+        ))
         ice_row.addWidget(self.ice_thickness_input)
         ice_row.addStretch()
         
@@ -92,9 +104,21 @@ class InterfacePanel(QWidget):
         self.water_thickness_input.setDecimals(2)
         self.water_thickness_input.setSingleStep(0.5)
         self.water_thickness_input.setValue(3.0)
-        self.water_thickness_input.setToolTip("Thickness of liquid water layer in nm (0.5–50).\nDefines how thick the water region is along Z.")
+        self.water_thickness_input.setToolTip(
+            "Thickness of liquid water layer in nm (0.5–50).\n"
+            "\n"
+            "IMPORTANT: For slab mode, box_z must equal:\n"
+            "  2 × ice_thickness + water_thickness\n"
+            "\n"
+            "Example: ice=3.0 nm, water=4.0 nm → box_z=10.0 nm"
+        )
         water_row.addWidget(QLabel("Water thickness:"))
-        water_row.addWidget(HelpIcon("Thickness of the liquid water layer in nanometers. This defines the water region height along the Z-axis. Typical values: 2–10 nm for surface studies."))
+        water_row.addWidget(HelpIcon(
+            "Thickness of the liquid water layer in nanometers. This water layer is sandwiched "
+            "between the top and bottom ice layers. Typical values: 2–10 nm for surface studies.\n\n"
+            "CRITICAL: Box Z must equal 2×ice_thickness + water_thickness. "
+            "For example, if ice=3.0 nm and water=4.0 nm, then box_z must be 10.0 nm."
+        ))
         water_row.addWidget(self.water_thickness_input)
         water_row.addStretch()
         
@@ -248,12 +272,14 @@ class InterfacePanel(QWidget):
         box_row.addSpacing(10)
         
         # Z dimension
+        # Default 9.0 nm matches default ice_thickness (3.0nm) + water_thickness (3.0nm) + ice_thickness (3.0nm)
+        # for slab mode: box_z must equal 2*ice_thickness + water_thickness
         self.box_z_input = QDoubleSpinBox()
         self.box_z_input.setSuffix(" nm")
         self.box_z_input.setRange(0.5, 100.0)
         self.box_z_input.setDecimals(2)
         self.box_z_input.setSingleStep(0.5)
-        self.box_z_input.setValue(10.0)
+        self.box_z_input.setValue(9.0)
         self.box_z_input.setToolTip("Box Z dimension in nm (0.5–100). Use elongated Z for slab interfaces.")
         box_row.addWidget(QLabel("Z:"))
         box_row.addWidget(self.box_z_input)
@@ -553,6 +579,7 @@ class InterfacePanel(QWidget):
         - Box dimensions (X, Y, Z)
         - Random seed
         - Mode-specific parameters based on selected mode
+        - For slab mode: box_z must equal 2*ice_thickness + water_thickness
         
         Returns:
             True if all inputs are valid, False otherwise
@@ -593,6 +620,18 @@ class InterfacePanel(QWidget):
             self.water_thickness_error.setText(water_err)
             self.water_thickness_error.setVisible(not valid_water)
             if not valid_water:
+                valid = False
+            
+            # Slab constraint: box_z must equal 2*ice_thickness + water_thickness
+            box_z = self.box_z_input.value()
+            ice_thickness = self.ice_thickness_input.value()
+            water_thickness = self.water_thickness_input.value()
+            expected_z = 2 * ice_thickness + water_thickness
+            if abs(box_z - expected_z) > 0.01:  # 0.01 nm tolerance
+                self.box_z_error.setText(
+                    f"Box Z ({box_z:.2f} nm) must equal 2×ice + water = {expected_z:.2f} nm"
+                )
+                self.box_z_error.setVisible(True)
                 valid = False
         
         elif current_mode == "Pocket":

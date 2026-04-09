@@ -49,17 +49,26 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Validate: box dimensions must be larger than ice piece
     if config.box_x <= ice_dims[0]:
         raise InterfaceGenerationError(
-            f"Box X dimension ({config.box_x:.2f} nm) must be larger than ice piece X ({ice_dims[0]:.2f} nm).",
+            f"Box X dimension ({config.box_x:.2f} nm) must be larger than ice piece X ({ice_dims[0]:.2f} nm). "
+            f"\n\nThe ice crystal is centered in the water box. The box must have extra space "
+            f"around the ice for water molecules. "
+            f"\n\nHow to fix: Increase box X to at least {ice_dims[0] + 1.0:.2f} nm.",
             mode="piece"
         )
     if config.box_y <= ice_dims[1]:
         raise InterfaceGenerationError(
-            f"Box Y dimension ({config.box_y:.2f} nm) must be larger than ice piece Y ({ice_dims[1]:.2f} nm).",
+            f"Box Y dimension ({config.box_y:.2f} nm) must be larger than ice piece Y ({ice_dims[1]:.2f} nm). "
+            f"\n\nThe ice crystal is centered in the water box. The box must have extra space "
+            f"around the ice for water molecules. "
+            f"\n\nHow to fix: Increase box Y to at least {ice_dims[1] + 1.0:.2f} nm.",
             mode="piece"
         )
     if config.box_z <= ice_dims[2]:
         raise InterfaceGenerationError(
-            f"Box Z dimension ({config.box_z:.2f} nm) must be larger than ice piece Z ({ice_dims[2]:.2f} nm).",
+            f"Box Z dimension ({config.box_z:.2f} nm) must be larger than ice piece Z ({ice_dims[2]:.2f} nm). "
+            f"\n\nThe ice crystal is centered in the water box. The box must have extra space "
+            f"around the ice for water molecules. "
+            f"\n\nHow to fix: Increase box Z to at least {ice_dims[2] + 1.0:.2f} nm.",
             mode="piece"
         )
 

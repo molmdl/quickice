@@ -57,17 +57,23 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
     # Common checks: box dimensions must be positive
     if config.box_x <= 0:
         raise InterfaceGenerationError(
-            f"Box X dimension must be positive, got {config.box_x:.2f} nm.",
+            f"Box X dimension must be positive, got {config.box_x:.2f} nm. "
+            f"Box dimensions define the simulation cell size. "
+            f"Use positive values (e.g., 5.0 nm for typical systems).",
             mode=config.mode
         )
     if config.box_y <= 0:
         raise InterfaceGenerationError(
-            f"Box Y dimension must be positive, got {config.box_y:.2f} nm.",
+            f"Box Y dimension must be positive, got {config.box_y:.2f} nm. "
+            f"Box dimensions define the simulation cell size. "
+            f"Use positive values (e.g., 5.0 nm for typical systems).",
             mode=config.mode
         )
     if config.box_z <= 0:
         raise InterfaceGenerationError(
-            f"Box Z dimension must be positive, got {config.box_z:.2f} nm.",
+            f"Box Z dimension must be positive, got {config.box_z:.2f} nm. "
+            f"Box dimensions define the simulation cell size. "
+            f"Use positive values (e.g., 10.0 nm for slab interfaces).",
             mode=config.mode
         )
 
@@ -126,51 +132,88 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
     # Mode-specific checks
     if config.mode == "slab":
         # Validate box_z matches ice + water thicknesses
+        # Slab structure: bottom ice | water | top ice
+        # Each ice layer has thickness ice_thickness
+        # Water layer has thickness water_thickness
+        # Therefore: box_z = 2*ice_thickness + water_thickness
         expected_z = 2 * config.ice_thickness + config.water_thickness
         if abs(config.box_z - expected_z) > 0.01:  # 0.01 nm tolerance
             raise InterfaceGenerationError(
-                f"Box Z ({config.box_z:.2f} nm) must equal 2*ice_thickness + water_thickness "
-                f"(expected {expected_z:.2f} nm = 2*{config.ice_thickness:.2f} + {config.water_thickness:.2f}).",
+                f"Box Z dimension ({config.box_z:.2f} nm) does not match layer thicknesses. "
+                f"\n\nFor slab mode, the simulation box contains three layers stacked along Z:\n"
+                f"  • Bottom ice: {config.ice_thickness:.2f} nm\n"
+                f"  • Water layer: {config.water_thickness:.2f} nm\n"
+                f"  • Top ice: {config.ice_thickness:.2f} nm\n\n"
+                f"Required box_z = 2×ice_thickness + water_thickness\n"
+                f"              = 2×{config.ice_thickness:.2f} + {config.water_thickness:.2f}\n"
+                f"              = {expected_z:.2f} nm\n\n"
+                f"Your box_z = {config.box_z:.2f} nm differs by {abs(config.box_z - expected_z):.2f} nm.\n\n"
+                f"How to fix:\n"
+                f"  Option 1: Set box_z to {expected_z:.2f} nm (matches current thicknesses)\n"
+                f"  Option 2: Adjust ice/water thicknesses to sum to {config.box_z:.2f} nm\n"
+                f"  Example: ice=3.0 nm, water=4.0 nm → box_z = 10.0 nm",
                 mode=config.mode
             )
 
         if config.ice_thickness <= 0:
             raise InterfaceGenerationError(
-                f"Ice thickness must be positive for slab mode, got {config.ice_thickness:.2f} nm.",
+                f"Ice thickness must be positive for slab mode, got {config.ice_thickness:.2f} nm. "
+                f"Ice thickness defines the thickness of each ice layer (top and bottom). "
+                f"Typical values: 2–10 nm for surface studies. "
+                f"Use positive values (e.g., 3.0 nm).",
                 mode=config.mode
             )
 
         if config.water_thickness <= 0:
             raise InterfaceGenerationError(
-                f"Water thickness must be positive for slab mode, got {config.water_thickness:.2f} nm.",
+                f"Water thickness must be positive for slab mode, got {config.water_thickness:.2f} nm. "
+                f"Water thickness defines the liquid water layer between ice slabs. "
+                f"Typical values: 2–10 nm for surface studies. "
+                f"Use positive values (e.g., 4.0 nm).",
                 mode=config.mode
             )
 
     elif config.mode == "pocket":
         # Pocket diameter must be smaller than box dimensions
+        # The pocket is carved out of ice and must fit inside the box
         min_box = min(config.box_x, config.box_y, config.box_z)
         if config.pocket_diameter >= min_box:
             raise InterfaceGenerationError(
                 f"Pocket diameter ({config.pocket_diameter:.2f} nm) must be smaller than "
-                f"box dimensions (min: {min_box:.2f} nm).",
+                f"box dimensions (minimum: {min_box:.2f} nm). "
+                f"\n\nThe pocket is a spherical water cavity carved inside the ice matrix. "
+                f"It must fit entirely within the simulation box. "
+                f"\n\nHow to fix:\n"
+                f"  Option 1: Reduce pocket diameter to < {min_box:.2f} nm (e.g., {min_box - 0.5:.2f} nm)\n"
+                f"  Option 2: Increase all box dimensions to > {config.pocket_diameter:.2f} nm\n"
+                f"  Example: For 3.0 nm pocket, use box of 4.0×4.0×4.0 nm",
                 mode=config.mode
             )
 
         if config.pocket_diameter <= 0:
             raise InterfaceGenerationError(
-                f"Pocket diameter must be positive, got {config.pocket_diameter:.2f} nm.",
+                f"Pocket diameter must be positive, got {config.pocket_diameter:.2f} nm. "
+                f"Pocket diameter defines the size of the water-filled cavity inside ice. "
+                f"Typical values: 1–5 nm for confined water studies. "
+                f"Use positive values (e.g., 2.0 nm).",
                 mode=config.mode
             )
 
         # Check pocket_shape (v3.0 only supports sphere)
         if config.pocket_shape != "sphere":
             raise InterfaceGenerationError(
-                f"Ellipsoid pockets not yet supported. pocket_shape must be 'sphere', got '{config.pocket_shape}'.",
+                f"Ellipsoid pockets not yet supported in QuickIce v3.0. "
+                f"Only spherical pockets (pocket_shape='sphere') are available. "
+                f"Got: '{config.pocket_shape}'. "
+                f"\n\nEllipsoid pockets allow elongated cavities but require additional "
+                f"shape parameters. This feature may be added in a future version. "
+                f"\n\nHow to fix: Set pocket shape to 'Sphere' in the UI.",
                 mode=config.mode
             )
 
     elif config.mode == "piece":
         # Box dimensions must be larger than candidate cell diagonal
+        # The ice piece is centered in the water box and must fit with space for water
         ice_dims = np.array([
             candidate.cell[0, 0],
             candidate.cell[1, 1],
@@ -179,17 +222,35 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
 
         if config.box_x <= ice_dims[0]:
             raise InterfaceGenerationError(
-                f"Box X ({config.box_x:.2f} nm) must be larger than ice piece X ({ice_dims[0]:.2f} nm).",
+                f"Box X dimension ({config.box_x:.2f} nm) must be larger than ice piece X ({ice_dims[0]:.2f} nm). "
+                f"\n\nIn piece mode, an ice crystal fragment is centered inside a water box. "
+                f"The ice piece comes from the selected candidate and has dimensions "
+                f"{ice_dims[0]:.2f} × {ice_dims[1]:.2f} × {ice_dims[2]:.2f} nm. "
+                f"\n\nHow to fix:\n"
+                f"  Increase box X to at least {ice_dims[0] + 1.0:.2f} nm (allows ~0.5 nm water on each side)\n"
+                f"  Example: For ice piece of {ice_dims[0]:.2f} nm, use box X = {ice_dims[0] + 1.0:.2f} nm or larger",
                 mode=config.mode
             )
         if config.box_y <= ice_dims[1]:
             raise InterfaceGenerationError(
-                f"Box Y ({config.box_y:.2f} nm) must be larger than ice piece Y ({ice_dims[1]:.2f} nm).",
+                f"Box Y dimension ({config.box_y:.2f} nm) must be larger than ice piece Y ({ice_dims[1]:.2f} nm). "
+                f"\n\nIn piece mode, an ice crystal fragment is centered inside a water box. "
+                f"The ice piece comes from the selected candidate and has dimensions "
+                f"{ice_dims[0]:.2f} × {ice_dims[1]:.2f} × {ice_dims[2]:.2f} nm. "
+                f"\n\nHow to fix:\n"
+                f"  Increase box Y to at least {ice_dims[1] + 1.0:.2f} nm (allows ~0.5 nm water on each side)\n"
+                f"  Example: For ice piece of {ice_dims[1]:.2f} nm, use box Y = {ice_dims[1] + 1.0:.2f} nm or larger",
                 mode=config.mode
             )
         if config.box_z <= ice_dims[2]:
             raise InterfaceGenerationError(
-                f"Box Z ({config.box_z:.2f} nm) must be larger than ice piece Z ({ice_dims[2]:.2f} nm).",
+                f"Box Z dimension ({config.box_z:.2f} nm) must be larger than ice piece Z ({ice_dims[2]:.2f} nm). "
+                f"\n\nIn piece mode, an ice crystal fragment is centered inside a water box. "
+                f"The ice piece comes from the selected candidate and has dimensions "
+                f"{ice_dims[0]:.2f} × {ice_dims[1]:.2f} × {ice_dims[2]:.2f} nm. "
+                f"\n\nHow to fix:\n"
+                f"  Increase box Z to at least {ice_dims[2] + 1.0:.2f} nm (allows ~0.5 nm water on each side)\n"
+                f"  Example: For ice piece of {ice_dims[2]:.2f} nm, use box Z = {ice_dims[2] + 1.0:.2f} nm or larger",
                 mode=config.mode
             )
 
@@ -205,28 +266,52 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
         if water_layer_x < min_water_layer:
             raise InterfaceGenerationError(
                 f"Water layer too thin in X dimension. "
-                f"Box X ({config.box_x:.2f} nm) minus ice X ({ice_dims[0]:.2f} nm) gives "
-                f"{water_layer_x:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
-                f"(overlap threshold). Thin water layers cause all water molecules to be "
-                f"removed as overlapping with ice.",
+                f"\n\nCalculation:\n"
+                f"  Water layer X = Box X ({config.box_x:.2f} nm) - Ice X ({ice_dims[0]:.2f} nm)\n"
+                f"               = {water_layer_x:.3f} nm\n\n"
+                f"Why this matters:\n"
+                f"  Water molecules placed too close to ice (within {min_water_layer:.2f} nm) "
+                f"are removed to avoid atomic overlaps. A water layer thinner than "
+                f"{min_water_layer:.2f} nm (overlap threshold) would have all water molecules "
+                f"removed, leaving only ice.\n\n"
+                f"How to fix:\n"
+                f"  Increase box X by at least {min_water_layer - water_layer_x:.2f} nm\n"
+                f"  Minimum box X = {ice_dims[0] + min_water_layer:.2f} nm\n"
+                f"  Recommended box X = {ice_dims[0] + 1.0:.2f} nm (for ~0.5 nm water on each side)",
                 mode=config.mode
             )
         if water_layer_y < min_water_layer:
             raise InterfaceGenerationError(
                 f"Water layer too thin in Y dimension. "
-                f"Box Y ({config.box_y:.2f} nm) minus ice Y ({ice_dims[1]:.2f} nm) gives "
-                f"{water_layer_y:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
-                f"(overlap threshold). Thin water layers cause all water molecules to be "
-                f"removed as overlapping with ice.",
+                f"\n\nCalculation:\n"
+                f"  Water layer Y = Box Y ({config.box_y:.2f} nm) - Ice Y ({ice_dims[1]:.2f} nm)\n"
+                f"               = {water_layer_y:.3f} nm\n\n"
+                f"Why this matters:\n"
+                f"  Water molecules placed too close to ice (within {min_water_layer:.2f} nm) "
+                f"are removed to avoid atomic overlaps. A water layer thinner than "
+                f"{min_water_layer:.2f} nm (overlap threshold) would have all water molecules "
+                f"removed, leaving only ice.\n\n"
+                f"How to fix:\n"
+                f"  Increase box Y by at least {min_water_layer - water_layer_y:.2f} nm\n"
+                f"  Minimum box Y = {ice_dims[1] + min_water_layer:.2f} nm\n"
+                f"  Recommended box Y = {ice_dims[1] + 1.0:.2f} nm (for ~0.5 nm water on each side)",
                 mode=config.mode
             )
         if water_layer_z < min_water_layer:
             raise InterfaceGenerationError(
                 f"Water layer too thin in Z dimension. "
-                f"Box Z ({config.box_z:.2f} nm) minus ice Z ({ice_dims[2]:.2f} nm) gives "
-                f"{water_layer_z:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
-                f"(overlap threshold). Thin water layers cause all water molecules to be "
-                f"removed as overlapping with ice.",
+                f"\n\nCalculation:\n"
+                f"  Water layer Z = Box Z ({config.box_z:.2f} nm) - Ice Z ({ice_dims[2]:.2f} nm)\n"
+                f"               = {water_layer_z:.3f} nm\n\n"
+                f"Why this matters:\n"
+                f"  Water molecules placed too close to ice (within {min_water_layer:.2f} nm) "
+                f"are removed to avoid atomic overlaps. A water layer thinner than "
+                f"{min_water_layer:.2f} nm (overlap threshold) would have all water molecules "
+                f"removed, leaving only ice.\n\n"
+                f"How to fix:\n"
+                f"  Increase box Z by at least {min_water_layer - water_layer_z:.2f} nm\n"
+                f"  Minimum box Z = {ice_dims[2] + min_water_layer:.2f} nm\n"
+                f"  Recommended box Z = {ice_dims[2] + 1.0:.2f} nm (for ~0.5 nm water on each side)",
                 mode=config.mode
             )
 
