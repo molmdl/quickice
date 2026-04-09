@@ -71,9 +71,9 @@ class InterfacePanel(QWidget):
         self.ice_thickness_input.setDecimals(2)
         self.ice_thickness_input.setSingleStep(0.5)
         self.ice_thickness_input.setValue(3.0)
-        self.ice_thickness_input.setToolTip("Thickness of ice layer in nanometers")
+        self.ice_thickness_input.setToolTip("Thickness of ice layer in nm (0.5–50).\nDefines how thick the ice region is along Z.")
         ice_row.addWidget(QLabel("Ice thickness:"))
-        ice_row.addWidget(HelpIcon("Thickness of ice layer in nanometers"))
+        ice_row.addWidget(HelpIcon("Thickness of the ice layer in nanometers. This defines the ice region height along the Z-axis of the simulation box. Typical values: 2–10 nm for surface studies."))
         ice_row.addWidget(self.ice_thickness_input)
         ice_row.addStretch()
         
@@ -92,9 +92,9 @@ class InterfacePanel(QWidget):
         self.water_thickness_input.setDecimals(2)
         self.water_thickness_input.setSingleStep(0.5)
         self.water_thickness_input.setValue(3.0)
-        self.water_thickness_input.setToolTip("Thickness of liquid water layer in nanometers")
+        self.water_thickness_input.setToolTip("Thickness of liquid water layer in nm (0.5–50).\nDefines how thick the water region is along Z.")
         water_row.addWidget(QLabel("Water thickness:"))
-        water_row.addWidget(HelpIcon("Thickness of liquid water layer in nanometers"))
+        water_row.addWidget(HelpIcon("Thickness of the liquid water layer in nanometers. This defines the water region height along the Z-axis. Typical values: 2–10 nm for surface studies."))
         water_row.addWidget(self.water_thickness_input)
         water_row.addStretch()
         
@@ -125,9 +125,9 @@ class InterfacePanel(QWidget):
         self.pocket_diameter_input.setDecimals(2)
         self.pocket_diameter_input.setSingleStep(0.5)
         self.pocket_diameter_input.setValue(2.0)
-        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nanometers")
+        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nSpherical/ellipsoidal void carved in ice.")
         diameter_row.addWidget(QLabel("Pocket diameter:"))
-        diameter_row.addWidget(HelpIcon("Diameter of water cavity in nanometers"))
+        diameter_row.addWidget(HelpIcon("Diameter of the water cavity in nanometers. The cavity is carved out of the ice matrix and filled with liquid water molecules. Larger diameters create bigger water pockets."))
         diameter_row.addWidget(self.pocket_diameter_input)
         diameter_row.addStretch()
         
@@ -142,9 +142,9 @@ class InterfacePanel(QWidget):
         shape_row = QHBoxLayout()
         self.pocket_shape_combo = QComboBox()
         self.pocket_shape_combo.addItems(["Sphere", "Ellipsoid"])
-        self.pocket_shape_combo.setToolTip("Shape of water cavity: sphere or ellipsoid")
+        self.pocket_shape_combo.setToolTip("Cavity shape: sphere or ellipsoid")
         shape_row.addWidget(QLabel("Pocket shape:"))
-        shape_row.addWidget(HelpIcon("Shape of water cavity: sphere or ellipsoid"))
+        shape_row.addWidget(HelpIcon("Shape of the water cavity. Sphere creates a round void. Ellipsoid allows elongated cavities (future release)."))
         shape_row.addWidget(self.pocket_shape_combo)
         shape_row.addStretch()
         
@@ -202,9 +202,9 @@ class InterfacePanel(QWidget):
         mode_label = QLabel("Interface mode:")
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["Slab", "Pocket", "Piece"])
-        self.mode_combo.setToolTip("Select interface geometry type")
+        self.mode_combo.setToolTip("Select interface geometry:\n• Slab — Layered ice-water interface\n• Pocket — Water cavity in ice matrix\n• Piece — Ice fragment in liquid water")
         mode_row.addWidget(mode_label)
-        mode_row.addWidget(HelpIcon("Select interface geometry: slab (layered), pocket (water cavity in ice), or piece (ice crystal in water)"))
+        mode_row.addWidget(HelpIcon("Interface geometry type. Slab creates flat layered ice-water interfaces (typical for surface melting studies). Pocket carves a water-filled cavity inside ice (confined water studies). Piece embeds an ice crystal fragment in liquid water (nucleation studies)."))
         mode_row.addWidget(self.mode_combo)
         mode_row.addStretch()
         layout.addLayout(mode_row)
@@ -215,7 +215,7 @@ class InterfacePanel(QWidget):
         box_header = QHBoxLayout()
         box_header_label = QLabel("Box dimensions:")
         box_header.addWidget(box_header_label)
-        box_header.addWidget(HelpIcon("Simulation box dimensions in nanometers. Slab interfaces typically use elongated Z-axis."))
+        box_header.addWidget(HelpIcon("Simulation box dimensions in nanometers. For slab interfaces, use an elongated Z-axis to accommodate both ice and water layers. X and Y should be large enough to contain the ice candidate's lateral dimensions."))
         box_header.addStretch()
         layout.addLayout(box_header)
         
@@ -228,7 +228,7 @@ class InterfacePanel(QWidget):
         self.box_x_input.setDecimals(2)
         self.box_x_input.setSingleStep(0.5)
         self.box_x_input.setValue(5.0)
-        self.box_x_input.setToolTip("Box X dimension (nm)")
+        self.box_x_input.setToolTip("Box X dimension in nm (0.5–100)")
         box_row.addWidget(QLabel("X:"))
         box_row.addWidget(self.box_x_input)
         
@@ -241,7 +241,7 @@ class InterfacePanel(QWidget):
         self.box_y_input.setDecimals(2)
         self.box_y_input.setSingleStep(0.5)
         self.box_y_input.setValue(5.0)
-        self.box_y_input.setToolTip("Box Y dimension (nm)")
+        self.box_y_input.setToolTip("Box Y dimension in nm (0.5–100)")
         box_row.addWidget(QLabel("Y:"))
         box_row.addWidget(self.box_y_input)
         
@@ -254,7 +254,7 @@ class InterfacePanel(QWidget):
         self.box_z_input.setDecimals(2)
         self.box_z_input.setSingleStep(0.5)
         self.box_z_input.setValue(10.0)
-        self.box_z_input.setToolTip("Box Z dimension (nm)")
+        self.box_z_input.setToolTip("Box Z dimension in nm (0.5–100). Use elongated Z for slab interfaces.")
         box_row.addWidget(QLabel("Z:"))
         box_row.addWidget(self.box_z_input)
         
@@ -294,9 +294,9 @@ class InterfacePanel(QWidget):
         self.seed_input = QSpinBox()
         self.seed_input.setRange(1, 999999)
         self.seed_input.setValue(42)
-        self.seed_input.setToolTip("Seed for random number generator")
+        self.seed_input.setToolTip("Random seed for water placement (1–999999).\nSame seed = same structure for identical inputs.")
         seed_row.addWidget(seed_label)
-        seed_row.addWidget(HelpIcon("Integer seed for reproducible structure generation"))
+        seed_row.addWidget(HelpIcon("Integer seed for reproducible water molecule placement. Using the same seed with identical parameters produces identical interface structures. Change the seed to explore different configurations."))
         seed_row.addWidget(self.seed_input)
         seed_row.addStretch()
         layout.addLayout(seed_row)
@@ -330,7 +330,7 @@ class InterfacePanel(QWidget):
         candidate_label = QLabel("Candidate:")
         self.candidate_dropdown = QComboBox()
         self.candidate_dropdown.setMinimumWidth(200)
-        self.candidate_dropdown.setToolTip("Select an ice candidate for interface generation")
+        self.candidate_dropdown.setToolTip("Select an ice candidate from Tab 1 for interface generation")
         self.candidate_dropdown.addItem("No candidates - generate ice first")
         self.candidate_dropdown.setEnabled(False)
         candidate_row.addWidget(candidate_label)
@@ -342,7 +342,7 @@ class InterfacePanel(QWidget):
         
         # Refresh button row
         self.refresh_btn = QPushButton("Refresh candidates")
-        self.refresh_btn.setToolTip("Sync candidates from Ice Generation tab")
+        self.refresh_btn.setToolTip("Sync candidate list from Ice Generation tab.\nClick after generating new candidates in Tab 1.")
         layout.addWidget(self.refresh_btn)
         
         layout.addSpacing(10)
@@ -495,7 +495,7 @@ class InterfacePanel(QWidget):
             self.generate_btn.setText("Generate Interface")
             if self._candidates:
                 self.generate_btn.setEnabled(True)
-                self.generate_btn.setToolTip("Click to generate interface structure")
+                self.generate_btn.setToolTip("Click to generate interface structure with current configuration")
     
     def get_selected_candidate_index(self) -> int:
         """Get currently selected candidate index.
