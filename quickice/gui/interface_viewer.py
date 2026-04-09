@@ -173,9 +173,10 @@ class InterfaceViewerWidget(QWidget):
         # Create molecule mapper
         mapper = vtkMoleculeMapper()
         mapper.SetInputData(mol)
-        
+
         # Set single color mode for all atoms in this phase
-        mapper.SetAtomColorModeToSingleColor()
+        # VTK 9.5+ uses SetAtomColorMode(int) instead of SetAtomColorModeToSingleColor()
+        mapper.SetAtomColorMode(mapper.SingleColor)
         
         # Convert float RGB to uint8 (multiply by 255)
         r, g, b = color_rgb
