@@ -8,6 +8,8 @@ This module provides the InterfacePanel class for the Interface Construction tab
 - Info panel for log output
 """
 
+import os
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QComboBox, QDoubleSpinBox, QSpinBox, 
@@ -20,7 +22,24 @@ from quickice.gui.validators import (
     validate_box_dimension, validate_thickness, 
     validate_pocket_diameter, validate_seed
 )
-from quickice.gui.interface_viewer import InterfaceViewerWidget
+
+# Check if VTK is available (may fail in remote/indirect rendering environments)
+# Same logic as view.py for consistency
+_VTK_AVAILABLE = False
+try:
+    # Test if we can create a basic VTK render window
+    # This will fail in environments with indirect rendering (SSH X11 forwarding)
+    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
+        # Likely SSH X11 forwarding - check for direct rendering
+        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
+    else:
+        # Local display or forced - assume VTK works
+        _VTK_AVAILABLE = True
+    
+    if _VTK_AVAILABLE:
+        from quickice.gui.interface_viewer import InterfaceViewerWidget
+except Exception:
+    _VTK_AVAILABLE = False
 
 
 class InterfacePanel(QWidget):
@@ -49,6 +68,7 @@ class InterfacePanel(QWidget):
             parent: Parent widget (MainWindow)
         """
         super().__init__(parent)
+        self._vtk_available = _VTK_AVAILABLE
         self._candidates: list = []  # Store ranked candidates
         self._generating = False  # Track generation state
         self._setup_ui()
@@ -411,7 +431,7 @@ class InterfacePanel(QWidget):
         # Viewer stack: placeholder (page 0) and 3D viewer (page 1)
         self._viewer_stack = QStackedWidget()
         
-        # Page 0: Placeholder text
+        # Page 0: Placeholder text (shown before generation or when VTK unavailable)
         self.placeholder_label = QLabel(
             "Generate a structure to visualize"
         )
@@ -422,9 +442,25 @@ class InterfacePanel(QWidget):
         )
         self._viewer_stack.addWidget(self.placeholder_label)
         
-        # Page 1: 3D interface viewer
-        self._interface_viewer = InterfaceViewerWidget()
-        self._viewer_stack.addWidget(self._interface_viewer)
+        # Page 1: 3D interface viewer or fallback (if VTK unavailable)
+        if self._vtk_available:
+            self._interface_viewer = InterfaceViewerWidget()
+            self._viewer_stack.addWidget(self._interface_viewer)
+        else:
+            # Fallback: show message that 3D viewer requires local display
+            # Consistent with Tab 1 behavior
+            fallback_label = QLabel(
+                "3D Interface Viewer requires a local display.\n\n"
+                "If running remotely via SSH, clone to your local machine\n"
+                "or use QUICKICE_FORCE_VTK=true to override."
+            )
+            fallback_label.setAlignment(Qt.AlignCenter)
+            fallback_label.setStyleSheet(
+                "font-size: 14px; color: #666; background-color: #f0f0f0; "
+                "padding: 20px; border: 1px solid #ccc; border-radius: 4px;"
+            )
+            self._viewer_stack.addWidget(fallback_label)
+            self._interface_viewer = None  # No viewer available
         
         layout.addWidget(self._viewer_stack, stretch=1)
         
@@ -553,8 +589,21 @@ class InterfacePanel(QWidget):
         self._viewer_stack.setCurrentIndex(0)
     
     def hide_placeholder(self) -> None:
-        """Hide placeholder, show 3D viewer."""
-        self._viewer_stack.setCurrentIndex(1)
+        """Hide placeholder, show 3D viewer (or fallback if VTK unavailable)."""
+        if self._vtk_available:
+            self._viewer_stack.setCurrentIndex(1)
+        else:
+            # VTK unavailable - keep showing placeholder/fallback message
+            # The fallback message (index 1) explains why 3D viewer is unavailable
+            self._viewer_stack.setCurrentIndex(1)
+    
+    def is_vtk_available(self) -> bool:
+        """Check if VTK 3D viewer is available.
+        
+        Returns:
+            True if VTK is working, False if fallback mode is active.
+        """
+        return self._vtk_available
     
     def append_log(self, message: str) -> None:
         """Append message to info panel log.

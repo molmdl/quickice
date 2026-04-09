@@ -480,9 +480,16 @@ class MainWindow(QMainWindow):
         
         self.interface_panel.append_log(f"\nInterface generation complete.")
         
-        # Display structure in 3D viewer
-        self.interface_panel._interface_viewer.set_interface_structure(result)
-        self.interface_panel.hide_placeholder()
+        # Display structure in 3D viewer (if VTK available)
+        if self.interface_panel.is_vtk_available():
+            self.interface_panel._interface_viewer.set_interface_structure(result)
+            self.interface_panel.hide_placeholder()
+        else:
+            # VTK not available - show message in log
+            self.interface_panel.append_log(
+                "3D viewer unavailable in remote environment. "
+                "Clone to local machine for full visualization."
+            )
     
     @Slot(str)
     def _on_interface_generation_error(self, error_msg: str):
