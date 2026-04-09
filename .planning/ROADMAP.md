@@ -138,14 +138,21 @@ Plans:
 
 **Requirements:**
 - EXP-01: User can export interface structure as GROMACS files (.gro/.top/.itp)
-- EXP-02: Ice and water phases are distinguished in topology (chain A = ice, chain B = water)
+- EXP-02: Ice and water phases are distinguished in topology (OVERRIDDEN: single SOL for both, no chain distinction)
 - EXP-03: Same TIP4P-ICE topology applies to both ice and water phases
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md — Add interface GROMACS writer functions (compute_mw_position, write_interface_gro_file, write_interface_top_file)
+- [ ] 20-02-PLAN.md — GUI integration (InterfaceGROMACSExporter, menu action, Ctrl+I shortcut, help dialog)
 
 **Success Criteria:**
 
-1. User can export interface structure via GROMACS format action/shortcut
-2. Exported .gro file contains chain identifiers: chain A for ice atoms, chain B for water atoms
-3. Exported .top and .itp files use TIP4P-ICE force field for both ice and water molecules
+1. User can export interface structure via File menu "Export Interface for GROMACS..." or Ctrl+I shortcut
+2. Exported .gro file contains all atoms as 4-atom TIP4P-ICE SOL molecules (ice normalized from 3→4 atoms at export time)
+3. Exported .top file uses single SOL molecule type with combined ice+water molecule count
+4. Exported .itp file is identical to Tab 1's TIP4P-ICE force field
 
 ---
 
