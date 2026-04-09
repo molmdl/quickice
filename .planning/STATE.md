@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
-| Phase | 19 (Visualization) - Complete |
-| Plan | 02 complete (2/2 plans) |
-| Status | Phase complete |
-| Last activity | 2026-04-09 — Completed 19-02-PLAN.md |
+| Phase | 20 (Export) |
+| Plan | 01 complete (1/2 plans) |
+| Status | In progress |
+| Last activity | 2026-04-09 — Completed 20-01-PLAN.md |
 
 **Progress:** █████████░ 75% (6/8 phases complete in v3.0)
 
@@ -127,6 +127,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Z-axis side-view camera | ✓ Slab stacking visualization |
 | QStackedWidget placeholder/viewer | ✓ Tab 2 viewer state management |
 | Deferred testing approach | ✓ Test all phases at once at milestone completion |
+| TIP4P_ICE_ALPHA = 0.13458335 | ✓ Exact match with tip4p-ice.itp virtual_sites3 |
+| Ice 3→4 atom normalization at export | ✓ MW computed from O, H, H positions |
+| Water 4-atom pass-through at export | ✓ No modification needed (already TIP4P-ICE) |
+| Single combined SOL molecule type | ✓ ice_nmolecules + water_nmolecules count |
 
 ### Roadmap Evolution
 
@@ -152,9 +156,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 ## Session Continuity
 
 **Last session:** 2026-04-09
-**Completed:** 19-02-PLAN.md (Visualization GUI integration)
-**Next:** 20-01-PLAN.md (Export)
+**Completed:** 20-01-PLAN.md (Interface GROMACS writer functions)
+**Next:** 20-02-PLAN.md (Export GUI integration)
 
 ---
 
-*State updated: 2026-04-09 — Phase 19 complete*
+*State updated: 2026-04-09 — Phase 20 Plan 01 complete*
