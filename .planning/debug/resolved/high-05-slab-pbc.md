@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: resolved
 trigger: "HIGH-05 slab-mode-pbc-check - Slab mode creates double ice layer without PBC overlap check"
 created: 2026-04-09T00:00:00Z
 updated: 2026-04-09T00:00:00Z

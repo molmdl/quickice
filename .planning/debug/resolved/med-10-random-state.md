@@ -1,15 +1,15 @@
 ---
-status: verifying
+status: resolved
 trigger: "GenIce uses global np.random state, affecting concurrent operations"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:10:00Z
+updated: 2026-04-09T00:15:00Z
 ---
 
 ## Current Focus
 hypothesis: ROOT CAUSE FOUND - GenIce requires global np.random, save/restore pattern is correct for sequential use
 test: Verified save/restore works correctly. No concurrent usage in codebase.
 expecting: Fix: document limitation, remove misleading unused rng variable
-next_action: Implement fix
+next_action: Fix committed
 
 ## Eliminated
 - hypothesis: Save/restore pattern is broken
@@ -47,9 +47,3 @@ root_cause: GenIce internally uses global np.random (confirmed in genice2/genice
 fix: Removed misleading unused rng variable (line 91), added documentation about thread-safety limitation in _generate_single docstring
 verification: All 20 structure generation tests pass. Reproducibility test passes. Random state preservation test passes.
 files_changed: [quickice/structure_generation/generator.py]
-
-## Resolution
-root_cause: 
-fix: 
-verification: 
-files_changed: []

@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "LOW-03 threshold-comment-mismatch - Docstring says overlap threshold is 'informational' but it's actually used"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:03:00Z
+updated: 2026-04-09T00:04:00Z
 ---
 
 ## Current Focus

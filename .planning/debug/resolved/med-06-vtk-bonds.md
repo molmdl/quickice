@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "MED-06 vtk-atom-index-handling - VTK bond creation assumes specific atom ordering without verification"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:00:01Z
+updated: 2026-04-09T00:00:02Z
 ---
 
 ## Current Focus

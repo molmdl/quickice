@@ -1,16 +1,16 @@
 ---
-status: verifying
+status: resolved
 trigger: "Investigate issue: MED-01 hardcoded-seed-range - Hardcoded seed range limits diversity of generated candidates"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:10:00Z
+updated: 2026-04-09T00:15:00Z
 ---
 
 ## Current Focus
 
-hypothesis: Fix implemented - adding base_seed parameter with nanosecond default
-test: Run full test suite to verify no regressions
-expecting: All tests pass, new tests validate seed diversity
-next_action: Archive session after verification
+hypothesis: Fix implemented and verified
+test: All tests pass
+expecting: Complete
+next_action: Report completion
 
 ## Symptoms
 
@@ -57,3 +57,8 @@ root_cause: generate_all() hardcodes base_seed=1000 with no parameter to change 
 fix: Added base_seed parameter to generate_all() and generate_candidates(). Default to None (uses time_ns() for nanosecond precision) for automatic diversity. When specified, use user-provided seed for reproducibility.
 verification: All 57 tests pass. New tests verify: (1) explicit base_seed produces sequential seeds, (2) random seeds produce different batches, (3) same base_seed produces identical results.
 files_changed: [quickice/structure_generation/generator.py, tests/test_structure_generation.py]
+
+## Commit
+
+hash: d8952b9
+message: fix(med-01): add base_seed parameter for candidate diversity
