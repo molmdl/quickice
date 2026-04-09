@@ -2,6 +2,8 @@
 
 Complete documentation for QuickIce command-line interface.
 
+> **Note:** Ice-water interface construction (slab, pocket, and piece geometries) is available only in the [GUI](gui-guide.md#interface-construction-tab-2), not from the command line.
+
 ## Usage
 
 ```bash

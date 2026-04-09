@@ -35,7 +35,8 @@ class QuickReferenceDialog(QDialog):
         # Introduction
         intro = QLabel(
             "QuickIce generates plausible ice crystal structure candidates "
-            "for given thermodynamic conditions (temperature and pressure)."
+            "for given thermodynamic conditions (temperature and pressure), "
+            "and constructs ice-water interfaces (GUI only) for molecular dynamics simulations."
         )
         intro.setWordWrap(True)
         layout.addWidget(intro)
