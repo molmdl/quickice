@@ -53,9 +53,9 @@ Three geometry modes: slab, pocket, piece.
 
 ### Export
 
-- [ ] **EXP-01**: User can export interface structure as GROMACS files (.gro/.top/.itp)
-- [ ] **EXP-02**: Ice and water phases are distinguished in topology (chain A = ice, chain B = water)
-- [ ] **EXP-03**: Same TIP4P-ICE topology applies to both ice and water phases
+- [x] **EXP-01**: User can export interface structure as GROMACS files (.gro/.top/.itp)
+- [x] **EXP-02**: Ice and water phases are distinguished in topology (single SOL for both phases, overridden from chain distinction)
+- [x] **EXP-03**: Same TIP4P-ICE topology applies to both ice and water phases
 
 ---
 
@@ -99,9 +99,9 @@ Three geometry modes: slab, pocket, piece.
 | VIS-02 | Phase 19 | Complete |
 | VIS-03 | Phase 19 | Complete |
 | VIS-04 | Phase 19 | Complete (overridden: H-bonds hidden) |
-| EXP-01 | Phase 20 | Pending |
-| EXP-02 | Phase 20 | Pending |
-| EXP-03 | Phase 20 | Pending |
+| EXP-01 | Phase 20 | Complete |
+| EXP-02 | Phase 20 | Complete (overridden: single SOL for both phases) |
+| EXP-03 | Phase 20 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 23 total
@@ -111,4 +111,4 @@ Three geometry modes: slab, pocket, piece.
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-09 — Phase 19 complete (VIS-01, VIS-02, VIS-03, VIS-04)*
+*Last updated: 2026-04-09 — Phase 20 complete (EXP-01, EXP-02, EXP-03)*

@@ -144,8 +144,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Add interface GROMACS writer functions (compute_mw_position, write_interface_gro_file, write_interface_top_file)
-- [ ] 20-02-PLAN.md — GUI integration (InterfaceGROMACSExporter, menu action, Ctrl+I shortcut, help dialog)
+- [x] 20-01-PLAN.md — Add interface GROMACS writer functions (compute_mw_position, write_interface_gro_file, write_interface_top_file)
+- [x] 20-02-PLAN.md — GUI integration (InterfaceGROMACSExporter, menu action, Ctrl+I shortcut, help dialog)
 
 **Success Criteria:**
 
@@ -180,7 +180,7 @@ Plans:
 | 17 | Configuration Controls | Complete | CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06 |
 | 18 | Structure Generation | Complete | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Complete | VIS-01, VIS-02, VIS-03, VIS-04 |
-| 20 | Export | Pending | EXP-01, EXP-02, EXP-03 |
+| 20 | Export | Complete | EXP-01, EXP-02, EXP-03 |
 | 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Pending | TBD |
 
 ---
