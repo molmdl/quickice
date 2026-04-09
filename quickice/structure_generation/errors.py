@@ -29,5 +29,6 @@ class InterfaceGenerationError(StructureGenerationError):
             message: Error description
             mode: Interface mode that failed
         """
-        super().__init__(message)
+        full_message = f"[{mode}] {message}"
+        super().__init__(full_message)
         self.mode = mode
