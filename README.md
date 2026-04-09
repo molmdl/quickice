@@ -12,13 +12,20 @@ Condition-based ice structure candidate generation from thermodynamic conditions
 
 **What is QuickIce?**
 
-QuickIce is a command-line tool with an optional GUI that generates plausible ice crystal structure candidates for given thermodynamic conditions. Given a temperature (K) and pressure (MPa), it:
+QuickIce generates plausible ice crystal structure candidates and constructs ice-water interfaces from given thermodynamic conditions (temperature and pressure). The v3.0 GUI introduces **interface construction** — build slab, pocket, and piece geometries for molecular dynamics simulations of ice-water systems.
+
+**Interface construction** is a major feature available in the GUI (Tab 2), enabling:
+- **Slab interfaces** — Layered ice-water boundaries for surface studies
+- **Pocket interfaces** — Water cavities within ice for confined water studies
+- **Piece interfaces** — Ice crystals embedded in water for nucleation studies
+
+Given temperature and pressure, QuickIce:
 
 1. **Identifies the ice polymorph** that would form under those conditions (Ice Ih, Ice Ic, Ice II, III, V, VI, VII, or VIII)
 2. **Generates candidate structures** using GenIce2 with appropriate lattice parameters
 3. **Ranks candidates** by energy estimate, density match, and structural diversity
-4. **Constructs ice-water interfaces** — slab, pocket, or piece geometries (v3.0)
-5. **Outputs PDB files** and a phase diagram visualization
+4. **Constructs ice-water interfaces** — slab, pocket, or piece geometries (GUI only)
+5. **Outputs PDB files** and GROMACS-compatible formats
 
 **Why QuickIce?**
 
@@ -82,7 +89,7 @@ python -m quickice.gui
 
 For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
 
-![QuickIce GUI](docs/images/quickice-gui.png)
+![QuickIce v3.0 GUI — Ice Generation and Interface Construction tabs](docs/images/quickice-v3-gui.png)
 *QuickIce GUI showing ice generation and interface construction tabs*
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).
