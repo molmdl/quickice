@@ -6,7 +6,13 @@ from generated ice structure candidates using the TIP4P-ICE water model.
 
 from pathlib import Path
 
-from quickice.structure_generation.types import Candidate
+import numpy as np
+
+from quickice.structure_generation.types import Candidate, InterfaceStructure
+
+
+# TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
+TIP4P_ICE_ALPHA = 0.13458335
 
 
 def write_gro_file(candidate: Candidate, filepath: str) -> None:
@@ -169,3 +175,171 @@ def get_tip4p_itp_path() -> Path:
     
     # Fallback to project root (for development)
     return Path(__file__).parent.parent / "data" / "tip4p-ice.itp"
+
+
+def compute_mw_position(o_pos: np.ndarray, h1_pos: np.ndarray, h2_pos: np.ndarray) -> np.ndarray:
+    """Compute MW virtual site position for TIP4P-ICE water model.
+    
+    The MW (massless virtual site) is positioned along the bisector of the H-O-H angle.
+    
+    Args:
+        o_pos: Oxygen position as (3,) array in nm
+        h1_pos: Hydrogen 1 position as (3,) array in nm
+        h2_pos: Hydrogen 2 position as (3,) array in nm
+    
+    Returns:
+        MW position as (3,) array in nm
+    
+    Formula:
+        MW = O + α*(H1-O) + α*(H2-O)
+        where α = 0.13458335 (TIP4P-ICE specific)
+    """
+    return o_pos + TIP4P_ICE_ALPHA * (h1_pos - o_pos) + TIP4P_ICE_ALPHA * (h2_pos - o_pos)
+
+
+def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
+    """Write interface structure to GROMACS .gro format.
+    
+    Ice molecules (3-atom: O, H, H) are normalized to 4-atom TIP4P-ICE format
+    (OW, HW1, HW2, MW) at export time. Water molecules (4-atom: OW, HW1, HW2, MW)
+    pass through unchanged.
+    
+    Args:
+        iface: InterfaceStructure object with combined ice + water positions
+        filepath: Output file path for .gro file
+    """
+    # Total atoms: all molecules output as 4-atom TIP4P-ICE
+    n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4
+    
+    atom_num = 0
+    
+    with open(filepath, 'w') as f:
+        # Title line
+        f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
+        
+        # Number of atoms
+        f.write(f"{n_atoms:5d}\n")
+        
+        # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
+        for mol_idx in range(iface.ice_nmolecules):
+            base_idx = mol_idx * 3  # Ice uses 3 atoms per molecule
+            o_pos = iface.positions[base_idx]
+            h1_pos = iface.positions[base_idx + 1]
+            h2_pos = iface.positions[base_idx + 2]
+            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+            
+            res_num = mol_idx + 1  # Continuous numbering starting at 1
+            
+            # OW (oxygen)
+            atom_num += 1
+            f.write(f"{res_num:5d}SOL  "
+                    f"   OW{atom_num:5d}"
+                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+            
+            # HW1 (hydrogen 1)
+            atom_num += 1
+            f.write(f"{res_num:5d}SOL  "
+                    f"  HW1{atom_num:5d}"
+                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+            
+            # HW2 (hydrogen 2)
+            atom_num += 1
+            f.write(f"{res_num:5d}SOL  "
+                    f"  HW2{atom_num:5d}"
+                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+            
+            # MW (virtual site)
+            atom_num += 1
+            f.write(f"{res_num:5d}SOL  "
+                    f"   MW{atom_num:5d}"
+                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+        
+        # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
+        for mol_idx in range(iface.water_nmolecules):
+            base_idx = iface.ice_atom_count + mol_idx * 4  # Water starts after ice
+            res_num = iface.ice_nmolecules + mol_idx + 1  # Continue numbering after ice
+            
+            atom_names = ["OW", "HW1", "HW2", "MW"]
+            for i, atom_name in enumerate(atom_names):
+                atom_num += 1
+                pos = iface.positions[base_idx + i]
+                f.write(f"{res_num:5d}SOL  "
+                        f"{atom_name:>4s}{atom_num:5d}"
+                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+        
+        # Box vectors (triclinic format)
+        cell = iface.cell
+        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+
+def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
+    """Write GROMACS topology file for interface structure.
+    
+    Uses a single SOL molecule type with combined ice + water molecule count.
+    
+    Args:
+        iface: InterfaceStructure object with ice_nmolecules and water_nmolecules
+        filepath: Output file path for .top file
+    """
+    total_molecules = iface.ice_nmolecules + iface.water_nmolecules
+    
+    with open(filepath, 'w') as f:
+        # Header
+        f.write("; Generated by QuickIce\n")
+        f.write("; TIP4P-ICE water model\n")
+        f.write("; Ice/water interface structure\n\n")
+        
+        # [ defaults ] - force field defaults
+        f.write("; Defaults compitable with the Amber forcefield\n")
+        f.write("[ defaults ]\n")
+        f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
+        
+        # [ atomtypes ] - define custom atom types for TIP4P-ICE
+        f.write("[ atomtypes ]\n")
+        f.write("; name  bond_type  atomic_number  mass  charge  ptype  V              W\n")
+        f.write("OW_ice      OW_ice     8           15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
+        f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n\n")
+        
+        # [ moleculetype ] - define SOL (water)
+        f.write("[ moleculetype ]\n")
+        f.write("; Name        nrexcl\n")
+        f.write("SOL          2\n\n")
+        
+        # [ atoms ] - define atoms in molecule
+        f.write("[ atoms ]\n")
+        f.write(";   nr  type  resi  res  atom  cgnr     charge    mass\n")
+        f.write("   1   OW_ice    1  SOL    OW     1       0.0  16.00000\n")
+        f.write("   2   HW_ice    1  SOL   HW1     1     0.5897   1.00800\n")
+        f.write("   3   HW_ice    1  SOL   HW2     1     0.5897   1.00800\n")
+        f.write("   4   MW        1  SOL    MW     1    -1.1794   0.00000\n\n")
+        
+        # [ settles ] - TIP4P water geometry (for rigid water)
+        f.write("[ settles ]\n")
+        f.write("; i  funct  doh     dhh\n")
+        f.write("  1    1    0.09572  0.15139\n\n")
+        
+        # [ virtual_sites3 ] - define MW virtual site
+        f.write("[ virtual_sites3 ]\n")
+        f.write("; Vsite from                    funct  a          b\n")
+        f.write("   4     1       2       3       1      0.13458335 0.13458335\n\n")
+        
+        # [ exclusions ] - exclude virtual site from non-bonded
+        f.write("[ exclusions ]\n")
+        f.write("  1  2  3  4\n")
+        f.write("  2  1  3  4\n")
+        f.write("  3  1  2  4\n")
+        f.write("  4  1  2  3\n\n")
+        
+        # [ system ] - system-level section
+        f.write("[ system ]\n")
+        f.write("; Name\n")
+        f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n\n")
+        
+        # [ molecules ] - molecule counts (SINGLE combined count)
+        f.write("[ molecules ]\n")
+        f.write("; Compound    #mols\n")
+        f.write(f"SOL          {total_molecules}\n")
