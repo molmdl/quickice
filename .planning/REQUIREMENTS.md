@@ -46,10 +46,10 @@ Three geometry modes: slab, pocket, piece.
 
 ### Visualization (Tab 2)
 
-- [ ] **VIS-01**: Single VTK viewer displays the interface structure (not dual viewport)
-- [ ] **VIS-02**: Bond rendering uses lines (not ball-and-stick) for performance
-- [ ] **VIS-03**: Ice region atoms render in one color, liquid water in different color
-- [ ] **VIS-04**: Hydrogen bonds display as dashed lines across interface boundary
+- [x] **VIS-01**: Single VTK viewer displays the interface structure (not dual viewport)
+- [x] **VIS-02**: Bond rendering uses lines (not ball-and-stick) for performance
+- [x] **VIS-03**: Ice region atoms render in one color, liquid water in different color
+- [x] **VIS-04**: Hydrogen bonds hidden in Tab 2 (overridden by CONTEXT — water makes H-bonds too messy)
 
 ### Export
 
@@ -95,10 +95,10 @@ Three geometry modes: slab, pocket, piece.
 | GEN-05 | Phase 18 | Complete |
 | GEN-06 | Phase 18 | Complete |
 | GEN-07 | Phase 18 | Complete |
-| VIS-01 | Phase 19 | Pending |
-| VIS-02 | Phase 19 | Pending |
-| VIS-03 | Phase 19 | Pending |
-| VIS-04 | Phase 19 | Pending |
+| VIS-01 | Phase 19 | Complete |
+| VIS-02 | Phase 19 | Complete |
+| VIS-03 | Phase 19 | Complete |
+| VIS-04 | Phase 19 | Complete (overridden: H-bonds hidden) |
 | EXP-01 | Phase 20 | Pending |
 | EXP-02 | Phase 20 | Pending |
 | EXP-03 | Phase 20 | Pending |
@@ -111,4 +111,4 @@ Three geometry modes: slab, pocket, piece.
 ---
 
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-09 — Phase 18 complete (GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07)*
+*Last updated: 2026-04-09 — Phase 19 complete (VIS-01, VIS-02, VIS-03, VIS-04)*
