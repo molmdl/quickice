@@ -79,16 +79,22 @@ class IceStructureGenerator:
 
         Raises:
             StructureGenerationError: If GenIce fails to generate
+
+        Note:
+            GenIce internally uses the global np.random state (not the newer
+            Generator API). We save and restore the global state around each
+            generation call to minimize side effects on external code.
+
+            Thread Safety: This method is NOT thread-safe. Concurrent calls
+            from multiple threads would corrupt each other's random state.
+            QuickIce is designed for sequential execution and does not support
+            concurrent generation.
         """
         try:
             # Save global random state to minimize pollution
-            # GenIce uses np.random internally, so we must set the seed for reproducibility
+            # GenIce uses np.random internally (see genice2/genice.py lines 58, 816, 1072)
             original_state = np.random.get_state()
             np.random.seed(seed)
-
-            # Create local random generator for potential future use
-            # (GenIce currently uses global state, but this prepares for GenIce updates)
-            rng = np.random.Generator(np.random.PCG64(seed))
 
             # Load lattice
             lattice = safe_import("lattice", self.lattice_name).Lattice()
