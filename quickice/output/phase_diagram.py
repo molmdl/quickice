@@ -27,8 +27,90 @@ from quickice.phase_mapping.solid_boundaries import (
     ii_v_boundary,
     v_vi_boundary,
     vi_vii_boundary,
+    vii_viii_boundary,
+    x_boundary,
     VII_VIII_ORDERING_TEMP,
 )
+
+
+# Shared boundary sampling cache to ensure aligned vertices
+_SHARED_BOUNDARY_CACHE = {}
+
+
+def _get_shared_boundary_vertices(boundary_name: str, T_min: float, T_max: float, n_points: int = 50) -> List[Tuple[float, float]]:
+    """Get pre-computed vertices for a shared boundary curve.
+    
+    Uses a cache to ensure all polygons sharing a boundary use the same vertices,
+    preventing geometric overlaps caused by different sampling.
+    
+    Args:
+        boundary_name: Name of boundary function (e.g., 'x_boundary', 'vii_viii_boundary')
+        T_min: Minimum temperature
+        T_max: Maximum temperature
+        n_points: Number of points (used for cache key)
+        
+    Returns:
+        List of (T, P) tuples along the boundary
+    """
+    # Get the boundary function
+    boundary_funcs = {
+        'ih_ii_boundary': ih_ii_boundary,
+        'ii_iii_boundary': ii_iii_boundary,
+        'iii_v_boundary': iii_v_boundary,
+        'ii_v_boundary': ii_v_boundary,
+        'v_vi_boundary': v_vi_boundary,
+        'vi_vii_boundary': vi_vii_boundary,
+        'vii_viii_boundary': vii_viii_boundary,
+        'x_boundary': x_boundary,
+    }
+    
+    if boundary_name not in boundary_funcs:
+        raise ValueError(f"Unknown boundary: {boundary_name}")
+    
+    # Create cache key
+    cache_key = (boundary_name, round(T_min, 2), round(T_max, 2), n_points)
+    
+    # Check cache
+    if cache_key in _SHARED_BOUNDARY_CACHE:
+        return _SHARED_BOUNDARY_CACHE[cache_key]
+    
+    # Compute vertices
+    func = boundary_funcs[boundary_name]
+    vertices = []
+    
+    # Include triple points as explicit vertices if they're within range
+    triple_points_in_range = {
+        'vii_viii_boundary': [
+            ('VI_VII_VIII', 278.15, 2100.0),
+            ('VII_VIII_X', 100.0, 62000.0),
+        ],
+        'x_boundary': [
+            ('VII_VIII_X', 100.0, 62000.0),
+            ('VII_X_Transition', 300.0, 30000.0),
+        ],
+    }
+    
+    # Generate temperature values
+    T_vals = np.linspace(T_min, T_max, n_points)
+    
+    # Add explicit triple points if applicable
+    T_explicit = set()
+    if boundary_name in triple_points_in_range:
+        for tp_name, tp_T, tp_P in triple_points_in_range[boundary_name]:
+            if T_min <= tp_T <= T_max:
+                T_explicit.add(tp_T)
+    
+    # Combine linspace values with explicit triple points
+    all_T = sorted(set(T_vals) | T_explicit)
+    
+    for T in all_T:
+        P = func(T)
+        vertices.append((T, P))
+    
+    # Cache the result
+    _SHARED_BOUNDARY_CACHE[cache_key] = vertices
+    
+    return vertices
 
 
 # Phase colors for visualization (add new phases)
@@ -511,7 +593,6 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     - Top edge: along X boundary from 500K down to 100K (VII-VIII-X triple point)
     - Left edge: along VII-VIII boundary from 100K back up to 278K
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary, vi_vii_boundary
     from quickice.phase_mapping.melting_curves import melting_pressure
     
     vertices = []
@@ -551,17 +632,21 @@ def _build_ice_vii_polygon() -> List[Tuple[float, float]]:
     P_x_high = x_boundary(T_high)
     vertices.append((T_high, P_x_high))
     
-    # 5. Top edge: follow X boundary DOWN from 500K to 100K
-    T_vals_down = np.linspace(T_high, T_tp_x, 40)
-    for T in T_vals_down[1:]:
-        P = x_boundary(T)
-        vertices.append((T, P))
+    # 5. Top edge: follow X boundary DOWN from 500K to 100K (using shared boundary vertices)
+    x_boundary_vertices = _get_shared_boundary_vertices('x_boundary', T_tp_x, T_high, n_points=50)
+    # Reverse to go from high T to low T
+    for T, P in reversed(x_boundary_vertices):
+        if T_tp_x <= T <= T_high:
+            vertices.append((T, P))
     
-    # 6. Left edge: follow VII-VIII boundary UP from 100K to 278K
-    T_vals_up = np.linspace(T_tp_x, T_tp, 30)
-    for T in T_vals_up[1:]:
-        P = vii_viii_boundary(T)
-        vertices.append((T, P))
+    # Remove duplicates and sort
+    vertices = list(dict.fromkeys(vertices))
+    
+    # 6. Left edge: follow VII-VIII boundary UP from 100K to 278K (using shared boundary vertices)
+    vii_viii_boundary_vertices = _get_shared_boundary_vertices('vii_viii_boundary', T_tp_x, T_tp, n_points=30)
+    for T, P in vii_viii_boundary_vertices:
+        if T_tp_x < T <= T_tp:  # Exclude the starting point (already added)
+            vertices.append((T, P))
     
     return vertices
 
@@ -572,29 +657,28 @@ def _build_ice_viii_polygon() -> List[Tuple[float, float]]:
     Upper boundary: x_boundary (Ice X at very high pressure)
     Lower boundary: VII-VIII boundary (curved from 278K/2100MPa to 100K/62000MPa)
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary, vii_viii_boundary
-    
     vertices = []
     
     # VI-VII-VIII triple point (bottom left corner)
     T1, P1 = get_triple_point("VI_VII_VIII")
     vertices.append((T1, P1))
     
-    # Follow VII-VIII boundary down to T=100K (VII-VIII-X triple point)
+    # Follow VII-VIII boundary down to T=100K (using shared boundary vertices)
     T_viii_x = 100.0
-    T_vals_down = np.linspace(T1, T_viii_x, 20)
-    for T in T_vals_down[1:]:
-        P = vii_viii_boundary(T)
+    vii_viii_boundary_vertices = _get_shared_boundary_vertices('vii_viii_boundary', T_viii_x, T1, n_points=20)
+    # Reverse to go from high T to low T
+    for T, P in reversed(vii_viii_boundary_vertices):
         vertices.append((T, P))
     
-    # At T=100K, follow X boundary up to T=50K
-    T_vals_x = np.linspace(T_viii_x, 50.0, 20)
-    for T in T_vals_x[1:]:
-        P = x_boundary(T)
+    # At T=100K, follow X boundary up to T=50K (using shared boundary vertices)
+    T_low = 50.0
+    x_boundary_vertices = _get_shared_boundary_vertices('x_boundary', T_low, T_viii_x, n_points=20)
+    # Reverse to go from T=100 to T=50
+    for T, P in reversed(x_boundary_vertices):
         vertices.append((T, P))
     
     # Bottom edge at T=50K - connect back to VI-VII-VIII
-    vertices.append((50.0, P1))
+    vertices.append((T_low, P1))
     
     return vertices
 
@@ -673,8 +757,6 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
     - VII_X_Transition at (300K, 30000 MPa)
     - VII_X_Liquid at (1000K, 43000 MPa)
     """
-    from quickice.phase_mapping.solid_boundaries import x_boundary
-    
     vertices = []
     
     T_low = 50.0
@@ -685,11 +767,9 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
     P_boundary_low = x_boundary(T_low)
     vertices.append((T_low, P_boundary_low))
     
-    # Lower boundary: follow x_boundary from T=50K to T=500K
-    # This creates a curved lower boundary that passes through all triple points
-    T_vals = np.linspace(T_low, T_high, 50)
-    for T in T_vals[1:]:
-        P = x_boundary(T)
+    # Lower boundary: follow x_boundary from T=50K to T=500K (using shared boundary vertices)
+    x_boundary_vertices = _get_shared_boundary_vertices('x_boundary', T_low, T_high, n_points=50)
+    for T, P in x_boundary_vertices:
         vertices.append((T, P))
     
     # Upper boundary at P_max
