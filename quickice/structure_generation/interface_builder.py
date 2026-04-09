@@ -16,6 +16,24 @@ from quickice.structure_generation.modes.pocket import assemble_pocket
 from quickice.structure_generation.modes.piece import assemble_piece
 
 
+def is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
+    """Check if a cell matrix represents an orthogonal (rectangular) box.
+
+    An orthogonal cell has non-zero elements only on the diagonal.
+    Triclinic cells have off-diagonal elements representing tilt.
+
+    Args:
+        cell: (3, 3) cell matrix where each row is a lattice vector.
+        tol: Tolerance for considering off-diagonal elements as zero.
+
+    Returns:
+        True if the cell is orthogonal, False if triclinic.
+    """
+    off_diagonal = cell.copy()
+    np.fill_diagonal(off_diagonal, 0)
+    return np.allclose(off_diagonal, 0, atol=tol)
+
+
 def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> None:
     """Validate interface configuration before generation.
 
@@ -57,6 +75,19 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
     if candidate.cell is None or candidate.cell.shape != (3, 3):
         raise InterfaceGenerationError(
             "Candidate has invalid cell matrix. Cannot generate interface.",
+            mode=config.mode
+        )
+
+    # Check for triclinic (non-orthogonal) cells
+    if not is_cell_orthogonal(candidate.cell):
+        # Calculate the phase info for error message
+        phase_id = getattr(candidate, 'phase_id', 'unknown')
+        raise InterfaceGenerationError(
+            f"Triclinic (non-orthogonal) cell detected for phase '{phase_id}'. "
+            f"QuickIce v3.0 only supports orthogonal cells. "
+            f"The cell has off-diagonal elements which indicate a tilted box. "
+            f"Affected phases include: ice_ii, ice_v. "
+            f"Please select a different ice phase or contact support for triclinic support.",
             mode=config.mode
         )
 

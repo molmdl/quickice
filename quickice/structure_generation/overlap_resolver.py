@@ -29,12 +29,30 @@ def detect_overlaps(
         water_o_positions_nm: (N_water, 3) water oxygen positions in nm.
         box_dims_nm: [bx, by, bz] box dimensions in nm for PBC.
         threshold_nm: O-O distance threshold in nm (default 0.25 nm = 2.5 Å).
+            Must be in range [0.1, 1.0] nm. Values outside this range suggest
+            unit mismatch (e.g., passing Angstrom instead of nm).
 
     Returns:
         Set of water molecule indices to remove (0-based, indexing into
         water_o_positions_nm). Each index represents one water molecule
         whose oxygen is within threshold_nm of any ice oxygen.
+
+    Raises:
+        ValueError: If threshold_nm is outside reasonable range [0.1, 1.0] nm,
+            which suggests a unit mismatch (e.g., Angstrom vs nm).
     """
+    # Validate threshold to catch unit mismatches
+    # Reasonable range: 0.1 nm (1 Å) to 1.0 nm (10 Å)
+    # Values outside this range likely indicate wrong units
+    if not (0.1 <= threshold_nm <= 1.0):
+        raise ValueError(
+            f"threshold_nm={threshold_nm} is outside reasonable range [0.1, 1.0] nm. "
+            f"This suggests a unit mismatch. "
+            f"If you have a value in Angstrom, divide by 10 to get nm "
+            f"(e.g., 2.5 Å → 0.25 nm). "
+            f"Default: 0.25 nm (2.5 Å) for typical O-O overlap detection."
+        )
+
     if len(ice_o_positions_nm) == 0 or len(water_o_positions_nm) == 0:
         return set()
 
@@ -103,3 +121,36 @@ def remove_overlapping_molecules(
     n_remaining = int(np.sum(keep_mask))
 
     return filtered_positions, n_remaining
+
+
+# Unit conversion helpers
+def angstrom_to_nm(value_angstrom: float) -> float:
+    """Convert distance from Angstrom to nanometers.
+
+    Args:
+        value_angstrom: Distance in Angstrom (Å)
+
+    Returns:
+        Distance in nanometers (nm)
+
+    Example:
+        >>> angstrom_to_nm(2.5)
+        0.25
+    """
+    return value_angstrom / 10.0
+
+
+def nm_to_angstrom(value_nm: float) -> float:
+    """Convert distance from nanometers to Angstrom.
+
+    Args:
+        value_nm: Distance in nanometers (nm)
+
+    Returns:
+        Distance in Angstrom (Å)
+
+    Example:
+        >>> nm_to_angstrom(0.25)
+        2.5
+    """
+    return value_nm * 10.0

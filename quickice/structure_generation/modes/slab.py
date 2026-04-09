@@ -48,14 +48,16 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
-        np.array([config.box_x, config.box_y, config.ice_thickness])
+        np.array([config.box_x, config.box_y, config.ice_thickness]),
+        atoms_per_molecule=3  # GenIce ice: O, H, H
     )
 
     # Tile ice for top layer: same target region, then shift Z
     top_ice_positions, top_ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
-        np.array([config.box_x, config.box_y, config.ice_thickness])
+        np.array([config.box_x, config.box_y, config.ice_thickness]),
+        atoms_per_molecule=3  # GenIce ice: O, H, H
     )
     # Shift top layer to Z = [ice_thickness + water_thickness, box_z]
     top_ice_positions = top_ice_positions.copy()

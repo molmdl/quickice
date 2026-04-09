@@ -37,6 +37,8 @@ from quickice.structure_generation.water_filler import (
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
+    angstrom_to_nm,
+    nm_to_angstrom,
 )
 
 __all__ = [
@@ -64,6 +66,9 @@ __all__ = [
     "fill_region_with_water",
     "detect_overlaps",
     "remove_overlapping_molecules",
+    # Unit conversion helpers
+    "angstrom_to_nm",
+    "nm_to_angstrom",
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",

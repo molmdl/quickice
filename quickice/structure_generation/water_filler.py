@@ -122,20 +122,50 @@ def tile_structure(
     ny = math.ceil(ly / b) if b > 0 else 1
     nz = math.ceil(lz / c) if c > 0 else 1
 
-    # Determine atoms_per_molecule from original structure
+    # Determine atoms_per_molecule
     # This must be done BEFORE tiling to correctly filter molecules
     n_original_atoms = len(positions)
-    if n_original_atoms % 3 == 0 and n_original_atoms % 4 != 0:
-        atoms_per_molecule = 3
-    elif n_original_atoms % 4 == 0 and n_original_atoms % 3 != 0:
-        atoms_per_molecule = 4
-    elif n_original_atoms % 4 == 0 and n_original_atoms % 3 == 0:
-        # Ambiguous (e.g., 12 atoms = 4*3 or 3*4)
-        # Default to 4 for water since this module is primarily for water tiling
-        atoms_per_molecule = 4
+
+    if atoms_per_molecule is None:
+        # Heuristic inference (deprecated - may produce incorrect results)
+        import warnings
+
+        if n_original_atoms % 3 == 0 and n_original_atoms % 4 != 0:
+            atoms_per_molecule = 3
+            warnings.warn(
+                f"Inferred atoms_per_molecule=3 from {n_original_atoms} atoms. "
+                "Pass atoms_per_molecule explicitly to avoid ambiguity.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        elif n_original_atoms % 4 == 0 and n_original_atoms % 3 != 0:
+            atoms_per_molecule = 4
+            warnings.warn(
+                f"Inferred atoms_per_molecule=4 from {n_original_atoms} atoms. "
+                "Pass atoms_per_molecule explicitly to avoid ambiguity.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        elif n_original_atoms % 4 == 0 and n_original_atoms % 3 == 0:
+            # Ambiguous case - cannot determine safely
+            raise ValueError(
+                f"Cannot determine atoms_per_molecule: {n_original_atoms} atoms is "
+                f"divisible by both 3 and 4. Pass atoms_per_molecule explicitly "
+                f"(3 for ice, 4 for TIP4P water)."
+            )
+        else:
+            # Cannot determine - refuse to guess
+            raise ValueError(
+                f"Cannot determine atoms_per_molecule: {n_original_atoms} atoms is "
+                f"not divisible by 3 or 4. Pass atoms_per_molecule explicitly."
+            )
     else:
-        # Fallback: assume whole structure is one molecule
-        atoms_per_molecule = n_original_atoms
+        # Validate that atoms_per_molecule divides evenly
+        if n_original_atoms % atoms_per_molecule != 0:
+            raise ValueError(
+                f"Invalid atoms_per_molecule={atoms_per_molecule}: "
+                f"{n_original_atoms} atoms is not evenly divisible by {atoms_per_molecule}."
+            )
 
     n_original_molecules = n_original_atoms // atoms_per_molecule
 
@@ -233,7 +263,8 @@ def fill_region_with_water(
 
     # Tile water into the target region
     tiled_positions, n_molecules = tile_structure(
-        template_positions, template_box, region_dims
+        template_positions, template_box, region_dims,
+        atoms_per_molecule=ATOMS_PER_WATER_MOLECULE
     )
 
     if n_molecules == 0:

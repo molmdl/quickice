@@ -65,7 +65,8 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     tiled_ice_positions, ice_nmolecules = tile_structure(
         candidate.positions,
         ice_dims,
-        ice_dims
+        ice_dims,
+        atoms_per_molecule=3  # GenIce ice: O, H, H
     )
 
     if len(tiled_ice_positions) == 0:

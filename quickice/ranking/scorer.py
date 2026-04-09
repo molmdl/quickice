@@ -170,6 +170,19 @@ def density_score(candidate: Candidate) -> float:
     # mass_per_molecule = molecular_mass / avogadro
     actual_density = (candidate.nmolecules * WATER_MASS) / (AVOGADRO * volume_cm3)
     
+    # Validate density is in reasonable range for water/ice
+    # Water/ice densities are typically 0.5-1.2 g/cm³
+    # Values far outside this range suggest unit mismatch (e.g., Å instead of nm)
+    # Å coordinates would give volume 1000x too large → density 1000x too small
+    if actual_density < 0.1 or actual_density > 10.0:
+        raise ValueError(
+            f"Calculated density {actual_density:.3f} g/cm³ is outside reasonable range "
+            f"(0.1-10.0 g/cm³). This suggests unit mismatch: candidate.positions and "
+            f"candidate.cell must be in nanometers (nm), not Angstroms (Å). "
+            f"If coordinates are in Å, convert to nm by dividing by 10. "
+            f"Volume: {volume_nm3:.3f} nm³, molecules: {candidate.nmolecules}"
+        )
+    
     # Return absolute deviation (lower = better)
     return abs(actual_density - expected_density)
 

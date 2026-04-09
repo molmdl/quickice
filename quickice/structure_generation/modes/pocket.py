@@ -61,7 +61,8 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     ice_positions, ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
-        box_dims
+        box_dims,
+        atoms_per_molecule=3  # GenIce ice: O, H, H
     )
 
     if len(ice_positions) == 0:

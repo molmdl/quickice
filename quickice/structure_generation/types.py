@@ -68,7 +68,8 @@ class InterfaceConfig:
         water_thickness: Water layer thickness in nm (slab mode)
         pocket_diameter: Cavity diameter in nm (pocket mode)
         pocket_shape: Cavity shape (pocket mode)
-        overlap_threshold: O-O distance threshold in nm (default 0.25 nm = 2.5 Å)
+        overlap_threshold: O-O distance threshold in nm (default 0.25 nm = 2.5 Å).
+            Must be in range [0.1, 1.0] nm to catch unit mismatches.
     """
 
     mode: str
@@ -81,6 +82,18 @@ class InterfaceConfig:
     pocket_diameter: float = 0.0
     pocket_shape: str = "sphere"
     overlap_threshold: float = 0.25  # 0.25 nm = 2.5 Å
+
+    def __post_init__(self):
+        """Validate configuration parameters after initialization."""
+        # Validate overlap_threshold to catch unit mismatches
+        if not (0.1 <= self.overlap_threshold <= 1.0):
+            raise ValueError(
+                f"overlap_threshold={self.overlap_threshold} nm is outside reasonable range [0.1, 1.0] nm. "
+                f"This suggests a unit mismatch. "
+                f"If you have a value in Angstrom, divide by 10 to get nm "
+                f"(e.g., 2.5 Å → 0.25 nm). "
+                f"Default: 0.25 nm (2.5 Å) for typical O-O overlap detection."
+            )
 
     @classmethod
     def from_dict(cls, d: dict) -> "InterfaceConfig":

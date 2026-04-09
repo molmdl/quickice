@@ -364,6 +364,52 @@ class TestDensityScore:
         
         # Should still work with default density
         assert isinstance(score, float)
+    
+    def test_density_score_rejects_angstrom_units(self):
+        """Test that density_score raises error for Angstrom coordinates."""
+        # Create candidate with Å coordinates (should be in nm)
+        # 1 nm = 10 Å, so positions and cell should be 10x larger
+        positions_angstrom = np.zeros((12, 3))
+        atom_names = ['O', 'H', 'H'] * 4
+        cell_angstrom = np.eye(3) * 10.0  # 10 Å = 1 nm (but treated as 10 nm)
+        
+        candidate_angstrom = Candidate(
+            positions=positions_angstrom,
+            atom_names=atom_names,
+            cell=cell_angstrom,
+            nmolecules=4,
+            phase_id='ice_ih',
+            seed=1000,
+            metadata={'density': 0.9167}
+        )
+        
+        # Should raise ValueError because density would be ~0.0012 g/cm³ (1000x too small)
+        with pytest.raises(ValueError, match="outside reasonable range"):
+            density_score(candidate_angstrom)
+    
+    def test_density_score_accepts_valid_nm_units(self):
+        """Test that density_score accepts valid nm coordinates."""
+        # Create a candidate with reasonable density
+        # For ice: density ~0.9 g/cm³, need ~4 molecules per nm³
+        # Use 1 nm cell with 4 molecules = ~1.2 g/cm³ (reasonable for ice)
+        positions = np.zeros((12, 3))
+        atom_names = ['O', 'H', 'H'] * 4
+        cell = np.eye(3) * 1.0  # 1 nm cubic cell
+        
+        candidate = Candidate(
+            positions=positions,
+            atom_names=atom_names,
+            cell=cell,
+            nmolecules=4,
+            phase_id='ice_ih',
+            seed=1000,
+            metadata={'density': 0.9167}
+        )
+        
+        # Should work without error (density ~1.2 g/cm³, within 0.1-10.0 range)
+        score = density_score(candidate)
+        assert isinstance(score, float)
+        assert score >= 0
 
 
 # ============================================================================
