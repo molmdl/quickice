@@ -132,7 +132,11 @@ def validate_box_dimension(value: str) -> Tuple[bool, str]:
         return (False, "Box dimension must be a number")
     
     if dim < 0.5 or dim > 100.0:
-        return (False, "Box dimension must be between 0.5 and 100 nm")
+        return (False, 
+                f"Box dimension must be between 0.5 and 100 nm. "
+                f"Got {dim:.2f} nm. "
+                f"Typical values: 5–10 nm for small systems, 20–50 nm for large systems."
+        )
     
     return (True, "")
 
@@ -160,7 +164,12 @@ def validate_thickness(value: str) -> Tuple[bool, str]:
         return (False, "Thickness must be a number")
     
     if thick < 0.5 or thick > 50.0:
-        return (False, "Thickness must be between 0.5 and 50 nm")
+        return (False, 
+                f"Thickness must be between 0.5 and 50 nm. "
+                f"Got {thick:.2f} nm. "
+                f"For slab mode: ice and water thickness typically 2–10 nm. "
+                f"Remember: box_z = 2×ice_thickness + water_thickness."
+        )
     
     return (True, "")
 
@@ -188,7 +197,12 @@ def validate_pocket_diameter(value: str) -> Tuple[bool, str]:
         return (False, "Diameter must be a number")
     
     if diam < 0.5 or diam > 50.0:
-        return (False, "Diameter must be between 0.5 and 50 nm")
+        return (False, 
+                f"Pocket diameter must be between 0.5 and 50 nm. "
+                f"Got {diam:.2f} nm. "
+                f"Typical values: 1–5 nm for confined water studies. "
+                f"Remember: pocket diameter must be smaller than all box dimensions."
+        )
     
     return (True, "")
 

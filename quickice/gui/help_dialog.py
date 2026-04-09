@@ -78,6 +78,66 @@ class QuickReferenceDialog(QDialog):
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)
         
+        # Dimension Relationships section (NEW)
+        layout.addWidget(self._create_section_label("Dimension Relationships"))
+        dimension_text = QLabel(
+            "SLAB MODE:\n"
+            "• Box Z MUST equal: 2 × ice_thickness + water_thickness\n"
+            "• Example: ice=3.0 nm, water=4.0 nm → box_z = 10.0 nm\n"
+            "• Structure: bottom ice (Z: 0–3.0) | water (Z: 3.0–7.0) | top ice (Z: 7.0–10.0)\n"
+            "• Typical values: ice 2–10 nm, water 2–10 nm\n"
+            "\n"
+            "POCKET MODE:\n"
+            "• Pocket diameter MUST be smaller than all box dimensions\n"
+            "• Example: pocket=2.0 nm → box must be >2.0 nm in X, Y, and Z\n"
+            "• The pocket is a spherical water cavity carved inside ice\n"
+            "• Typical values: pocket 1–5 nm for confined water studies\n"
+            "\n"
+            "PIECE MODE:\n"
+            "• Box dimensions MUST exceed ice piece dimensions\n"
+            "• Ice piece dimensions shown in 'Piece Parameters' section\n"
+            "• Example: ice 2.5×2.5×2.0 nm → box must be larger (e.g., 4.0×4.0×3.0 nm)\n"
+            "• Water molecules within 0.25 nm of ice surface are removed\n"
+            "• Minimum water layer: 0.25 nm (overlap threshold)\n"
+            "\n"
+            "OVERLAP THRESHOLD (all modes):\n"
+            "• Distance threshold for removing overlapping water molecules\n"
+            "• Default: 0.25 nm (2.5 Å) — typical O-O distance for overlap detection\n"
+            "• Water molecules closer than this to ice oxygen atoms are removed\n"
+            "• Prevents atomic overlaps between ice and water"
+        )
+        dimension_text.setWordWrap(True)
+        layout.addWidget(dimension_text)
+        
+        # Best Practices section (NEW)
+        layout.addWidget(self._create_section_label("Best Practices"))
+        best_practices_text = QLabel(
+            "CHOOSING BOX DIMENSIONS:\n"
+            "• X, Y: Large enough to contain ice candidate lateral dimensions\n"
+            "• Z: Depends on mode (see Dimension Relationships above)\n"
+            "• Larger boxes → more molecules → longer generation time\n"
+            "• Typical systems: 5–10 nm per dimension\n"
+            "\n"
+            "CHOOSING ICE/WATER THICKNESS (slab mode):\n"
+            "• Ice thickness: 2–10 nm for surface studies\n"
+            "• Water thickness: 2–10 nm for sufficient water layer\n"
+            "• Thicker layers → more realistic but slower\n"
+            "• Minimum: 1–2 nm for each layer\n"
+            "\n"
+            "CHOOSING POCKET DIAMETER:\n"
+            "• 1–3 nm: Small cavities (tens of water molecules)\n"
+            "• 3–5 nm: Medium cavities (hundreds of water molecules)\n"
+            "• >5 nm: Large cavities (requires large boxes)\n"
+            "\n"
+            "TROUBLESHOOTING:\n"
+            "• 'Box too small': Increase box dimensions\n"
+            "• 'Water layer too thin': Increase box or decrease ice thickness\n"
+            "• 'No water molecules': Box too small or ice piece too large\n"
+            "• 'Triclinic cell': Select different ice phase (ice_ii, ice_v are triclinic)"
+        )
+        best_practices_text.setWordWrap(True)
+        layout.addWidget(best_practices_text)
+        
         # External references
         layout.addWidget(self._create_section_label("More Information"))
         refs_text = QLabel(

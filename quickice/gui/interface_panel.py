@@ -288,7 +288,14 @@ class InterfacePanel(QWidget):
         self.box_z_input.setDecimals(2)
         self.box_z_input.setSingleStep(0.5)
         self.box_z_input.setValue(9.0)
-        self.box_z_input.setToolTip("Box Z dimension in nm (0.5–100). Use elongated Z for slab interfaces.")
+        self.box_z_input.setToolTip(
+            "Box Z dimension in nm (0.5–100).\n"
+            "\n"
+            "For SLAB mode, box_z MUST equal:\n"
+            "  2 × ice_thickness + water_thickness\n"
+            "\n"
+            "Default: 9.0 nm (matches 2×3.0 + 3.0)"
+        )
         box_row.addWidget(QLabel("Z:"))
         box_row.addWidget(self.box_z_input)
         
