@@ -1,210 +1,248 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-04-07
+**Analysis Date:** 2026-04-10
 
 ## Directory Layout
 
 ```
-quickice/
-├── quickice/              # Main package
-│   ├── cli/               # CLI argument parsing
-│   ├── validation/        # Input validators
-│   ├── phase_mapping/     # Phase lookup logic
-│   │   └── data/          # Phase boundary data
-│   ├── structure_generation/  # GenIce wrapper
-│   ├── ranking/           # Candidate scoring
-│   ├── output/            # PDB/diagram output
-│   ├── gui/               # GUI (PySide6/Qt)
-│   └── data/              # Static data files (ITP, GRO)
-├── tests/                 # Test suite
-│   └── test_output/       # Output module tests
-├── docs/                  # Documentation
-│   └── images/            # Documentation images
-├── .planning/             # Planning documents
-├── scripts/               # Build/utility scripts
-├── sample_output/         # Example output files
-├── tmp/                   # Temporary test output
-├── dist/                  # PyInstaller output
-└── build/                 # Build artifacts
+quickice/                          # Project root
+├── quickice.py                    # CLI entry point script
+├── quickice/                      # Main Python package
+│   ├── __init__.py                # Package init, version="3.0.0"
+│   ├── main.py                    # CLI pipeline orchestrator
+│   ├── cli/                       # CLI argument parsing
+│   ├── data/                      # Bundled data files
+│   ├── gui/                       # GUI application (PySide6 + VTK)
+│   ├── output/                    # File output and diagram generation
+│   ├── phase_mapping/             # Ice phase identification
+│   ├── ranking/                   # Candidate scoring and ranking
+│   ├── structure_generation/      # Ice structure generation (GenIce2)
+│   └── validation/               # Input validation (CLI)
+├── tests/                         # Test suite
+├── docs/                          # Documentation and images
+├── scripts/                       # Build/packaging scripts
+├── sample_output/                 # Example output files
+├── build/                         # PyInstaller build artifacts
+├── dist/                          # PyInstaller distribution
+├── .planning/                     # GSD planning artifacts
+├── .github/workflows/             # CI/CD
+├── environment.yml                # Conda environment (dev)
+├── environment-build.yml          # Conda environment (build)
+├── requirements-dev.txt           # Dev pip dependencies
+├── quickice-gui.spec              # PyInstaller spec
+└── setup.sh                       # Environment setup script
 ```
 
 ## Directory Purposes
 
-**quickice/:**
-- Purpose: Main Python package
-- Contains: All source modules, __init__.py with version
-- Key files: `main.py` (CLI entry), `__init__.py` (package init)
+**`quickice/` (main package):**
+- Purpose: Core application logic, both CLI and GUI
+- Contains: All Python modules for the application
+- Key files: `__init__.py` (version), `main.py` (pipeline)
 
-**quickice/cli/:**
-- Purpose: CLI interface
-- Contains: Argument parser configuration
-- Key files: `parser.py` (argparse setup)
+**`quickice/cli/`:**
+- Purpose: CLI argument parsing
+- Contains: argparse configuration, validation type converters
+- Key files: `parser.py` (argument parser), `__init__.py`
 
-**quickice/validation/:**
-- Purpose: Input validation
-- Contains: Validators for temperature, pressure, molecule count
-- Key files: `validators.py` (type validation functions)
+**`quickice/data/`:**
+- Purpose: Bundled molecular data files
+- Contains: GROMACS water model files
+- Key files: `tip4p-ice.itp` (TIP4P-ICE topology), `tip4p.gro` (water template)
 
-**quickice/phase_mapping/:**
-- Purpose: Ice phase identification
-- Contains: Curve-based lookup, boundary functions, triple points
-- Key files: `lookup.py` (main API), `melting_curves.py`, `solid_boundaries.py`
-
-**quickice/structure_generation/:**
-- Purpose: Ice structure generation
-- Contains: GenIce wrapper, phase mapping, supercell calculation
-- Key files: `generator.py` (IceStructureGenerator), `mapper.py` (phase → lattice)
-
-**quickice/ranking/:**
-- Purpose: Candidate scoring and ranking
-- Contains: Energy, density, diversity scorers
-- Key files: `scorer.py` (rank_candidates)
-
-**quickice/output/:**
-- Purpose: File output and validation
-- Contains: PDB writer, GROMACS writer, validator, diagram generator
-- Key files: `orchestrator.py` (main API), `pdb_writer.py`, `gromacs_writer.py`
-
-**quickice/gui/:**
+**`quickice/gui/`:**
 - Purpose: Graphical user interface
-- Contains: View, ViewModel, Workers, 3D viewers, panels
-- Key files: `main_window.py` (MainWindow), `viewmodel.py`, `workers.py`
+- Contains: PySide6 widgets, VTK 3D viewers, ViewModel, workers, exporters
+- Key files: `main_window.py` (window assembly), `viewmodel.py` (MVVM bridge), `workers.py` (background threads), `view.py` (UI panels), `interface_panel.py` (Tab 2), `molecular_viewer.py` (3D viewer), `dual_viewer.py` (side-by-side), `phase_diagram_widget.py` (interactive diagram), `interface_viewer.py` (Tab 2 3D viewer), `export.py` (file export handlers), `vtk_utils.py` (VTK conversion), `validators.py` (GUI validation), `help_dialog.py` (help dialog)
 
-**quickice/data/:**
-- Purpose: Static data files
-- Contains: TIP4P-ICE ITP file, reference GRO structure
-- Key files: `tip4p-ice.itp`, `tip4p.gro`
+**`quickice/output/`:**
+- Purpose: File output, structure validation, diagram generation
+- Contains: PDB/GROMACS writers, spglib validator, phase diagram generator, orchestrator
+- Key files: `orchestrator.py` (output coordination), `pdb_writer.py` (PDB format), `gromacs_writer.py` (GRO/TOP/ITP), `validator.py` (space group + overlap), `phase_diagram.py` (matplotlib diagram), `types.py` (OutputResult)
 
-**tests/:**
-- Purpose: Unit and integration tests
-- Contains: Test files for each module
-- Key files: `test_phase_mapping.py`, `test_structure_generation.py`, `test_ranking.py`
+**`quickice/phase_mapping/`:**
+- Purpose: Ice phase identification from T,P conditions
+- Contains: Curve-based boundary evaluation, IAPWS equations, triple point data
+- Key files: `lookup.py` (main `lookup_phase()` function, `IcePhaseLookup` class), `melting_curves.py` (IAPWS R14-08 equations), `solid_boundaries.py` (linear interpolation), `triple_points.py` (triple point coordinates), `errors.py` (exception hierarchy), `data/` (legacy polygon data)
+
+**`quickice/ranking/`:**
+- Purpose: Score and rank ice structure candidates
+- Contains: Multi-metric scoring with min-max normalization
+- Key files: `scorer.py` (energy/density/diversity scoring, `rank_candidates()`), `types.py` (RankedCandidate, RankingResult, ScoringConfig)
+
+**`quickice/structure_generation/`:**
+- Purpose: Generate ice crystal structures using GenIce2
+- Contains: GenIce2 wrapper, phase mapping, interface modes, water filling
+- Key files: `generator.py` (IceStructureGenerator, `generate_candidates()`), `mapper.py` (phase-to-GenIce mapping, supercell calculation), `types.py` (Candidate, GenerationResult, InterfaceConfig, InterfaceStructure), `errors.py` (exception hierarchy), `interface_builder.py` (interface orchestrator with validation), `water_filler.py` (TIP4P water template loading and tiling), `overlap_resolver.py` (PBC-aware overlap detection and molecule removal), `modes/slab.py` (slab interface), `modes/pocket.py` (pocket interface), `modes/piece.py` (piece interface)
+
+**`quickice/validation/`:**
+- Purpose: CLI input validation
+- Contains: Type converter functions for argparse
+- Key files: `validators.py` (validate_temperature, validate_pressure, validate_nmolecules)
+
+**`tests/`:**
+- Purpose: Test suite
+- Contains: Unit and integration tests
+- Key files: `test_phase_mapping.py`, `test_structure_generation.py`, `test_ranking.py`, `test_validators.py`, `test_cli_integration.py`, `test_pbc_hbonds.py`, `test_atom_ordering_validation.py`, `test_interface_ordering_validation.py`, `test_med03_minimum_box_size.py`, `test_piece_mode_validation.py`, `test_output/`
 
 ## Key File Locations
 
 **Entry Points:**
-- `quickice.py`: CLI entry script (root directory)
-- `quickice/main.py`: CLI main function
-- `quickice/gui/__main__.py`: GUI entry point
+- `quickice.py`: CLI entry point (imports `quickice.main.main`)
+- `quickice/main.py`: CLI pipeline orchestrator (full pipeline: parse → lookup → generate → rank → output)
+- `quickice/gui/__main__.py`: GUI entry point (`python -m quickice.gui`)
+- `quickice/gui/main_window.py`: MainWindow class and `run_app()` function
 
 **Configuration:**
-- `requirements-dev.txt`: Development dependencies
-- `environment.yml`: Conda environment specification
-- `opencode.json`: OpenCode tool configuration
+- `environment.yml`: Conda environment specification (dev dependencies)
+- `environment-build.yml`: Conda environment for PyInstaller builds
+- `requirements-dev.txt`: Dev pip dependencies (pytest, pyinstaller)
+- `quickice-gui.spec`: PyInstaller build specification
+- `setup.sh`: Environment setup script
 
-**Core Logic:**
-- `quickice/phase_mapping/lookup.py`: Phase lookup algorithm
-- `quickice/structure_generation/generator.py`: Structure generation
-- `quickice/ranking/scorer.py`: Scoring functions
-- `quickice/output/orchestrator.py`: Output coordination
+**Core Logic (Pipeline):**
+- `quickice/phase_mapping/lookup.py`: Phase identification (`lookup_phase()`, `PHASE_METADATA`)
+- `quickice/phase_mapping/melting_curves.py`: IAPWS R14-08 melting curve equations
+- `quickice/phase_mapping/solid_boundaries.py`: Solid-solid boundary interpolation
+- `quickice/structure_generation/generator.py`: GenIce2 wrapper (`IceStructureGenerator`, `generate_candidates()`)
+- `quickice/structure_generation/mapper.py`: Phase ID → GenIce lattice mapping, supercell calculation
+- `quickice/structure_generation/interface_builder.py`: Interface generation orchestrator
+- `quickice/ranking/scorer.py`: Multi-metric scoring (`rank_candidates()`)
 
-**Types:**
-- `quickice/structure_generation/types.py`: Candidate, GenerationResult
-- `quickice/ranking/types.py`: RankedCandidate, RankingResult
+**Type Definitions:**
+- `quickice/structure_generation/types.py`: Candidate, GenerationResult, InterfaceConfig, InterfaceStructure
+- `quickice/ranking/types.py`: RankedCandidate, RankingResult, ScoringConfig
 - `quickice/output/types.py`: OutputResult
-
-**Errors:**
 - `quickice/phase_mapping/errors.py`: PhaseMappingError, UnknownPhaseError
-- `quickice/structure_generation/errors.py`: StructureGenerationError
+- `quickice/structure_generation/errors.py`: StructureGenerationError, UnsupportedPhaseError, InterfaceGenerationError
+
+**Data Files:**
+- `quickice/data/tip4p-ice.itp`: GROMACS TIP4P-ICE topology file
+- `quickice/data/tip4p.gro`: TIP4P water template (864 molecules, equilibrated)
+- `quickice/phase_mapping/data/ice_phases.json`: Legacy phase polygon data (not used by curve-based lookup)
+- `quickice/phase_mapping/data/ice_boundaries.py`: Legacy boundary data (not used by curve-based lookup)
+- `quickice/phase_mapping/triple_points.py`: Triple point coordinates (used by curve-based lookup)
 
 **Testing:**
-- `tests/test_validators.py`: Validation tests
 - `tests/test_phase_mapping.py`: Phase mapping tests
-- `tests/test_structure_generation.py`: Generation tests
+- `tests/test_structure_generation.py`: Structure generation tests
 - `tests/test_ranking.py`: Ranking tests
-- `tests/test_output/`: Output module tests
+- `tests/test_validators.py`: Validation tests
+- `tests/test_cli_integration.py`: CLI integration tests
+- `tests/test_output/`: Output-related test artifacts
+
+**Build/Packaging:**
+- `scripts/`: Build scripts
+- `build/`: PyInstaller build output
+- `dist/`: PyInstaller distribution output
+- `quickice-gui.spec`: PyInstaller specification
 
 ## Naming Conventions
 
 **Files:**
-- Modules: `snake_case.py` (e.g., `pdb_writer.py`, `melting_curves.py`)
-- Tests: `test_<module>.py` (e.g., `test_ranking.py`)
-- Types: `types.py` (dataclasses)
-- Errors: `errors.py` (custom exceptions)
-- Init: `__init__.py` (public API exports)
+- Python modules: `snake_case.py` (e.g., `melting_curves.py`, `pdb_writer.py`, `interface_builder.py`)
+- Test files: `test_` prefix + `snake_case.py` (e.g., `test_phase_mapping.py`, `test_ranking.py`)
+- Data files: lowercase with hyphens/extensions (e.g., `tip4p-ice.itp`, `tip4p.gro`)
+- GUI widget files: descriptive `snake_case.py` matching class purpose (e.g., `main_window.py` → `MainWindow`, `dual_viewer.py` → `DualViewerWidget`)
 
 **Directories:**
-- Modules: `snake_case/` (e.g., `phase_mapping/`, `structure_generation/`)
-- Tests: `tests/` (mirrors package structure)
-- Planning: `.planning/` (plans, phases, research)
+- Python packages: `snake_case/` (e.g., `phase_mapping/`, `structure_generation/`)
+- Sub-packages use nested `snake_case/` (e.g., `structure_generation/modes/`)
+- Data directories: `data/` within relevant package (e.g., `quickice/data/`, `quickice/phase_mapping/data/`)
+- Test directory: `tests/` at project root
 
 **Classes:**
-- PascalCase (e.g., `IceStructureGenerator`, `RankedCandidate`, `MainWindow`)
+- Data types: `PascalCase` dataclasses (e.g., `Candidate`, `GenerationResult`, `RankedCandidate`, `InterfaceConfig`, `InterfaceStructure`, `OutputResult`, `ScoringConfig`, `RankingResult`)
+- Exceptions: `PascalCase` with `Error` suffix (e.g., `PhaseMappingError`, `UnknownPhaseError`, `StructureGenerationError`, `InterfaceGenerationError`)
+- GUI widgets: `PascalCase` with descriptive suffix (e.g., `MainWindow`, `InputPanel`, `ProgressPanel`, `ViewerPanel`, `DualViewerWidget`, `MolecularViewerWidget`, `InterfaceViewerWidget`, `PhaseDiagramPanel`, `QuickReferenceDialog`)
+- Workers: `PascalCase` with `Worker` suffix (e.g., `GenerationWorker`, `InterfaceGenerationWorker`)
+- Exporters: `PascalCase` with `Exporter` suffix (e.g., `PDBExporter`, `DiagramExporter`, `ViewportExporter`, `GROMACSExporter`)
 
 **Functions:**
-- snake_case (e.g., `lookup_phase`, `generate_candidates`, `rank_candidates`)
+- Public API: `snake_case` (e.g., `lookup_phase()`, `generate_candidates()`, `rank_candidates()`, `output_ranked_candidates()`, `generate_interface()`, `validate_interface_config()`)
+- Private helpers: `_snake_case` prefix (e.g., `_build_result()`, `_calculate_oo_distances_pbc()`, `_linear_interpolate()`, `_parse_gro()`)
+- Type converters (CLI): `validate_snake_case` (e.g., `validate_temperature`, `validate_pressure`, `validate_nmolecules`)
+- GUI validators return tuples: `(bool, str)` pattern in `quickice/gui/validators.py`
 
-**Variables:**
-- snake_case (e.g., `temperature`, `phase_info`, `n_candidates`)
+**Constants:**
+- `UPPER_SNAKE_CASE` for module-level constants (e.g., `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`, `TRIPLE_POINTS`, `PHASE_COLORS`, `PHASE_LABELS`, `ATOMS_PER_WATER_MOLECULE`, `TIP4P_ICE_ALPHA`, `MINIMUM_BOX_DIMENSION`, `VII_VIII_ORDERING_TEMP`)
 
 ## Where to Add New Code
 
-**New Feature (pipeline stage):**
-- Create new module: `quickice/<feature>/`
-- Add files: `__init__.py`, `types.py`, `<feature>.py`, `errors.py`
-- Export public API in `__init__.py`
-- Add tests: `tests/test_<feature>.py`
+**New Ice Phase:**
+- Phase mapping: Add entry to `PHASE_METADATA` in `quickice/phase_mapping/lookup.py`, add boundary curve in `quickice/phase_mapping/solid_boundaries.py`, add triple points in `quickice/phase_mapping/triple_points.py`, add detection logic in `lookup_phase()`
+- Structure generation: Add mapping in `PHASE_TO_GENICE` and `UNIT_CELL_MOLECULES` in `quickice/structure_generation/mapper.py`
+- Phase diagram: Add polygon builder in `quickice/output/phase_diagram.py`, add to `PHASE_COLORS` and `PHASE_LABELS`, add to `phases_to_plot` list
+- GUI diagram: Add detection in `PhaseDetector` in `quickice/gui/phase_diagram_widget.py`
+- Tests: Add phase mapping tests in `tests/test_phase_mapping.py`
 
-**New Component/Module:**
-- Implementation: `quickice/<module>/<component>.py`
-- Types: `quickice/<module>/types.py`
-- Tests: `tests/test_<module>.py`
+**New Interface Mode:**
+- Create mode module: `quickice/structure_generation/modes/<mode_name>.py` with `assemble_<mode>()` function
+- Add routing: In `quickice/structure_generation/interface_builder.py` → `generate_interface()` function
+- Add validation: In `validate_interface_config()` in same file
+- Add UI: In `quickice/gui/interface_panel.py` → new mode in `QStackedWidget`
+- Tests: Add `test_<mode_name>_validation.py` in `tests/`
 
-**New GUI Panel:**
-- Panel widget: `quickice/gui/<panel_name>_panel.py`
-- Add to MainWindow: `quickice/gui/main_window.py`
-- Connect signals in `_setup_connections()`
+**New Export Format:**
+- Create writer: `quickice/output/<format>_writer.py`
+- Add orchestrator call: In `quickice/output/orchestrator.py` or `quickice/main.py`
+- Add GUI exporter: In `quickice/gui/export.py` → new exporter class
+- Add menu action: In `quickice/gui/main_window.py` → `_create_menu_bar()`
+- Add worker export: In `quickice/gui/workers.py` if background processing needed
 
-**New Scoring Function:**
-- Add to: `quickice/ranking/scorer.py`
-- Update `rank_candidates()` to include new score
-- Add tests: `tests/test_ranking.py`
+**New Scoring Metric:**
+- Add score function: In `quickice/ranking/scorer.py`
+- Add weight: In `rank_candidates()` weight dict
+- Add field: In `quickice/ranking/types.py` → `RankedCandidate` dataclass
+- Update display: In `quickice/main.py` ranking table output and `quickice/gui/main_window.py` log output
 
-**New Output Format:**
-- Writer: `quickice/output/<format>_writer.py`
-- Add to orchestrator: `quickice/output/orchestrator.py`
-- Export in `quickice/output/__init__.py`
+**New GUI Widget:**
+- Create widget: `quickice/gui/<widget_name>.py`
+- Import in: `quickice/gui/__init__.py` if public
+- Assemble in: `quickice/gui/main_window.py` → `_setup_ui()` or `_setup_connections()`
+- Connect signals: In `MainWindow._setup_connections()`
 
 **Utilities:**
-- Shared helpers: Create `quickice/utils.py` if needed
-- Module-specific: Keep in module file
-
-**Data Files:**
-- Static data: `quickice/data/`
-- Generated data: `output/` or user-specified directory
+- Shared helpers: `quickice/gui/vtk_utils.py` (VTK conversion), `quickice/structure_generation/overlap_resolver.py` (PBC overlap), `quickice/structure_generation/water_filler.py` (water template)
 
 ## Special Directories
 
-**.planning/:**
-- Purpose: GSD planning documents, phases, research
-- Generated: Yes (by GSD tools)
-- Committed: Yes (tracks planning history)
+**`quickice/data/`:**
+- Purpose: Bundled molecular data files used at runtime
+- Generated: No (manually maintained)
+- Committed: Yes
+- Used by: `quickice/structure_generation/water_filler.py` (tip4p.gro), `quickice/output/gromacs_writer.py` (tip4p-ice.itp via `get_tip4p_itp_path()`)
 
-**__pycache__/:**
-- Purpose: Python bytecode cache
-- Generated: Yes (Python automatically)
-- Committed: No (in .gitignore)
+**`quickice/phase_mapping/data/`:**
+- Purpose: Legacy polygon-based phase boundary data (pre-curve-based)
+- Generated: No
+- Committed: Yes
+- Used by: NOT used by current curve-based lookup (kept for backward compatibility); `ice_phases.json` and `ice_boundaries.py` are legacy artifacts
 
-**.pytest_cache/:**
-- Purpose: pytest cache and test discovery
-- Generated: Yes (pytest automatically)
-- Committed: No (in .gitignore)
+**`build/` and `dist/`:**
+- Purpose: PyInstaller build artifacts and distribution output
+- Generated: Yes (by PyInstaller)
+- Committed: Yes (currently in repo)
+- Used by: Binary distribution
 
-**dist/:**
-- Purpose: PyInstaller build output (standalone executable)
-- Generated: Yes (build process)
-- Committed: No (artifacts)
+**`sample_output/`:**
+- Purpose: Example output files for documentation
+- Generated: Yes (by running QuickIce)
+- Committed: Yes
+- Used by: README documentation
 
-**build/:**
-- Purpose: Build intermediate files
-- Generated: Yes (build process)
-- Committed: No (artifacts)
+**`.planning/`:**
+- Purpose: GSD planning artifacts (phases, milestones, codebase analysis)
+- Generated: Yes (by GSD commands)
+- Committed: Yes
+- Used by: GSD orchestrator
 
-**tmp/:**
-- Purpose: Temporary test output
-- Generated: Yes (tests)
-- Committed: No (in .gitignore)
+**`tests/test_output/`:**
+- Purpose: Test output artifacts
+- Generated: Yes (by test runs)
+- Committed: Partially (some test data)
+- Used by: Test suite
 
 ---
 
-*Structure analysis: 2026-04-07*
+*Structure analysis: 2026-04-10*
