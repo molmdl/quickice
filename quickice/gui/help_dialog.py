@@ -60,6 +60,7 @@ class QuickReferenceDialog(QDialog):
         # Workflow section
         layout.addWidget(self._create_section_label("Workflow"))
         workflow_text = QLabel(
+            "Tab 1 — Ice Generation:\n"
             "1. Enter temperature, pressure, and molecule count\n"
             "2. Click on phase diagram OR type values directly\n"
             "3. Press Enter or click Generate button\n"
@@ -68,9 +69,11 @@ class QuickReferenceDialog(QDialog):
             "\n"
             "Tab 2 — Interface Construction:\n"
             "6. Switch to Interface Construction tab\n"
-            "7. Select a candidate and configure parameters\n"
-            "8. Generate interface structure\n"
-            "9. Export interface for GROMACS (Ctrl+I)"
+            "7. Select mode: Slab (layered), Pocket (water cavity), or Piece (ice in water)\n"
+            "8. Set box dimensions and mode-specific parameters\n"
+            "9. Select a candidate and click Generate Interface\n"
+            "10. View result (ice=cyan, water=cornflower blue)\n"
+            "11. Export interface for GROMACS (Ctrl+I)"
         )
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)
