@@ -1,5 +1,5 @@
 ---
-status: investigating
+status: resolved
 trigger: "Investigate issue: unclear-error-documentation - Error messages and in-app documentation not clear enough for users to solve problems"
 created: 2026-04-09T00:00:00Z
 updated: 2026-04-09T00:00:00Z

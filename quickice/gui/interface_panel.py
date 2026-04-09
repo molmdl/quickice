@@ -239,7 +239,15 @@ class InterfacePanel(QWidget):
         box_header = QHBoxLayout()
         box_header_label = QLabel("Box dimensions:")
         box_header.addWidget(box_header_label)
-        box_header.addWidget(HelpIcon("Simulation box dimensions in nanometers. For slab interfaces, use an elongated Z-axis to accommodate both ice and water layers. X and Y should be large enough to contain the ice candidate's lateral dimensions."))
+        box_header.addWidget(HelpIcon(
+            "Simulation box dimensions in nanometers.\n\n"
+            "For SLAB mode: box_z must equal 2×ice_thickness + water_thickness\n"
+            "  Example: ice=3.0 nm, water=3.0 nm → box_z=9.0 nm\n\n"
+            "For POCKET mode: All dimensions must exceed pocket diameter\n"
+            "  Example: pocket=2.0 nm → box must be >2.0 nm in X, Y, Z\n\n"
+            "For PIECE mode: Box must be larger than ice candidate dimensions\n"
+            "  Ice piece dimensions shown in 'Piece Parameters' section"
+        ))
         box_header.addStretch()
         layout.addLayout(box_header)
         
