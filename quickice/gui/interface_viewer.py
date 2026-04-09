@@ -4,8 +4,6 @@ This module provides the InterfaceViewerWidget class for rendering
 ice-water interface structures with phase-distinct coloring.
 """
 
-from math import sqrt
-
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -35,7 +33,7 @@ class InterfaceViewerWidget(QWidget):
     """VTK-based 3D viewer for ice-water interface structures.
     
     Renders ice and water phases with distinct colors in a single viewport,
-    with line-based bonds and a Z-axis side-view camera orientation.
+    with line-based bonds and auto-fit camera orientation.
     
     Attributes:
         vtk_widget: The QVTKRenderWindowInteractor instance.
@@ -152,8 +150,8 @@ class InterfaceViewerWidget(QWidget):
         self.renderer.AddActor(self._water_bond_actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
-        # Set Z-axis side view camera
-        self._set_side_view_camera()
+        # Auto-fit camera to frame all actors
+        self._reset_camera()
         
         # Render the scene
         self.render_window.Render()
@@ -247,45 +245,14 @@ class InterfaceViewerWidget(QWidget):
         
         return bonds
     
-    def _set_side_view_camera(self) -> None:
-        """Set camera to Z-axis side view.
+    def _reset_camera(self) -> None:
+        """Reset camera to auto-fit all actors in viewport.
         
-        Positions camera along Y-axis looking at the center,
-        with Z-axis vertical (slab stacking direction).
+        Uses VTK's default camera behavior which provides an isometric-style
+        view optimized for the structure's aspect ratio. This is better for
+        horizontal slab structures (ice-water interfaces) than a fixed side view.
         """
-        # Reset camera first to compute bounds/center
         self.renderer.ResetCamera()
-        
-        # Get bounds of all visible props
-        bounds = self.renderer.ComputeVisiblePropBounds()
-        
-        # bounds = (x_min, x_max, y_min, y_max, z_min, z_max)
-        x_min, x_max, y_min, y_max, z_min, z_max = bounds
-        
-        # Calculate center
-        center_x = (x_min + x_max) / 2
-        center_y = (y_min + y_max) / 2
-        center_z = (z_min + z_max) / 2
-        
-        # Calculate diagonal for camera distance
-        dx = x_max - x_min
-        dy = y_max - y_min
-        dz = z_max - z_min
-        diagonal = sqrt(dx * dx + dy * dy + dz * dz)
-        
-        # Get camera and set position
-        camera = self.renderer.GetActiveCamera()
-        
-        # Position along Y-axis (side view)
-        camera.SetPosition(center_x, center_y + diagonal, center_z)
-        
-        # Look at center
-        camera.SetFocalPoint(center_x, center_y, center_z)
-        
-        # Z is vertical (slab stacking direction)
-        camera.SetViewUp(0, 0, 1)
-        
-        # Reset clipping range for proper near/far planes
         self.renderer.ResetCameraClippingRange()
     
     def _clear_actors(self) -> None:
@@ -327,9 +294,9 @@ class InterfaceViewerWidget(QWidget):
         self.render_window.Render()
     
     def reset_camera(self) -> None:
-        """Reset camera to Z-axis side view.
+        """Reset camera to auto-fit all actors in viewport.
         
-        Recalculates bounds and positions camera for optimal viewing.
+        Recalculates bounds and resets camera for optimal viewing.
         """
-        self._set_side_view_camera()
+        self._reset_camera()
         self.render_window.Render()
