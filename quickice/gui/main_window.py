@@ -737,10 +737,7 @@ class MainWindow(QMainWindow):
         self.info_panel.append_log(f"Phase Information")
         self.info_panel.append_log(f"{'='*50}")
         self.info_panel.append_log(f"Conditions: T = {T:.1f} K, P = {P:.2f} MPa")
-        
-        # Debug: Log the phase_id being processed
-        print(f"[DEBUG] _on_phase_info called with phase_id='{phase_id}'")
-        
+
         # Handle special cases (Vapor, Liquid, boundary regions)
         if phase_id in ("Vapor", "Liquid") or "/" in phase_id:
             if "/" in phase_id:
@@ -753,9 +750,7 @@ class MainWindow(QMainWindow):
             # Get phase metadata
             # Convert short form to full phase_id (e.g., "Ih" -> "ice_ih")
             phase_id_full = _get_full_phase_id(phase_id)
-            print(f"[DEBUG] Converted to phase_id_full='{phase_id_full}'")
             meta = PHASE_METADATA.get(phase_id_full, {})
-            print(f"[DEBUG] PHASE_METADATA lookup returned: {meta}")
             phase_name = meta.get("name", phase_id)
             density = meta.get("density", "Unknown")
             density_note = meta.get("density_note")
