@@ -289,4 +289,4 @@ class TestHelpAndVersion:
         
         # --version causes argparse to exit with 0
         assert returncode == 0
-        assert "quickice 0.1.0" in stdout
+        assert "python quickice.py 3.0.0" in stdout
