@@ -18,7 +18,7 @@ This document contains all manual GUI tests for v3.0 phases. Phase 16 passed UAT
 | 18 Structure Generation | ✓ passed (7/7) | ⏳ DEFERRED |
 | 19 Visualization | ✓ passed (9/9) | ⏳ DEFERRED |
 | 20 Export | ✓ passed (12/12) | ⏳ DEFERRED |
-| 21 Documentation | ⏳ Pending | ⏳ DEFERRED |
+| 21 Documentation | ✓ passed (8/8) | ⏳ DEFERRED |
 
 ---
 
@@ -752,54 +752,290 @@ This document contains all manual GUI tests for v3.0 phases. Phase 16 passed UAT
 
 ## Phase 21: Documentation
 
-**Goal:** Updated documentation for v3.0 features
+**Goal:** All documentation reflects v3.0 features — interface construction, Tab 2, Ctrl+I, three modes, phase-distinct visualization
+
+**Requirements:** No formal REQ-IDs (TBD in ROADMAP), but must_haves from plans cover:
+- No v2.0/v2.1/2.0.0 references in docs
+- README.md mentions interface construction, Tab 2, Ctrl+I
+- gui-guide.md has complete Tab 2 section
+- Help dialog shows mode descriptions
+- All Tab 2 inputs have educational tooltips
 
 ### Tests
 
-#### 1. README Updates
+#### 1. README.md Version References Clean
+**Steps:**
+1. Open README.md in text editor
+2. Search for "v2.0", "v2.1", "2.0.0"
+3. Search for "v3.0"
+
+**Expected:**
+- NO matches for "v2.0", "v2.1", or "2.0.0"
+- "v3.0" appears in version references
+- No outdated version strings remain
+
+**Status:** ⏳ Pending
+
+---
+
+#### 2. README.md Interface Construction Mentioned
 **Steps:**
 1. Open README.md
-2. Check for v3.0 interface generation documentation
+2. Search for "interface construction" or "Interface Construction"
+3. Search for "Ctrl+I"
 
 **Expected:**
-- Interface generation feature documented
-- Two-tab workflow explained
-- Three modes (slab, pocket, piece) described
-- Export functionality documented
+- Overview section mentions interface construction (v3.0 feature)
+- GROMACS Export section has "Interface GROMACS Export (Tab 2)" subsection
+- Ctrl+I shortcut documented for interface export
+- Two-tab workflow mentioned
 
-**Status:** ⏳ Pending (after Phase 21 execution)
+**Status:** ⏳ Pending
 
 ---
 
-#### 2. In-App Help
+#### 3. README_bin.md Version References Clean
 **Steps:**
-1. Launch QuickIce
-2. Look for Help menu or help button
-3. Access help content
+1. Open README_bin.md
+2. Search for "v2.0.0", "2.0.0"
+3. Search for "v3.0.0"
 
 **Expected:**
-- Help menu or button accessible
-- Help content includes v3.0 features
-- Interface construction workflow explained
-- Mode descriptions available
+- NO matches for "v2.0.0" or "2.0.0"
+- Binary filenames reference v3.0.0
+- quickice-v3.0.0-linux-x86_64.tar.gz
+- quickice-v3.0.0-windows-x86_64.zip
 
-**Status:** ⏳ Pending (after Phase 21 execution)
+**Status:** ⏳ Pending
 
 ---
 
-#### 3. Tab 2 Tooltip Help
+#### 4. gui-guide.md Version References Clean
+**Steps:**
+1. Open docs/gui-guide.md
+2. Search for "v2.0", "v2.1", "v2."
+3. Search for "v3.0"
+
+**Expected:**
+- NO matches for "v2.0", "v2.1", or "v2."
+- Title/intro mentions "v3.0"
+- GROMACS export section mentions v3.0
+
+**Status:** ⏳ Pending
+
+---
+
+#### 5. gui-guide.md Complete Tab 2 Section (CRITICAL)
+**Steps:**
+1. Open docs/gui-guide.md
+2. Find "Interface Construction (Tab 2)" section
+3. Verify subsections present
+
+**Expected:**
+- Top-level section: `## Interface Construction (Tab 2)`
+- Subsections present:
+  - Prerequisites (candidates from Tab 1)
+  - Interface Modes (Slab/Pocket/Piece table)
+  - Mode-Specific Parameters (Slab, Pocket, Piece)
+  - Shared Parameters (box, seed)
+  - Visualization (ice=cyan, water=cornflower blue)
+  - Export for GROMACS (Ctrl+I)
+- All three modes documented with use cases
+- Parameter ranges documented (0.5-100 nm box, 0.5-50 nm thickness/diameter)
+
+**Status:** ⏳ Pending
+
+---
+
+#### 6. gui-guide.md Keyboard Shortcuts Include Ctrl+I
+**Steps:**
+1. Open docs/gui-guide.md
+2. Find Keyboard Shortcuts table
+3. Look for Ctrl+I and Ctrl+G
+
+**Expected:**
+- Shortcuts table has both:
+  - `Ctrl+G | Export for GROMACS (Tab 1)`
+  - `Ctrl+I | Export interface for GROMACS (Tab 2)`
+- Ctrl+I documented as Tab 2-specific export shortcut
+
+**Status:** ⏳ Pending
+
+---
+
+#### 7. Help Dialog Mode Descriptions (CRITICAL)
+**Steps:**
+1. Launch QuickIce: `python -m quickice`
+2. Open Help → Quick Reference (or F1)
+3. Read workflow section
+4. Look for Tab 2 steps
+
+**Expected:**
+- Workflow shows two sections:
+  - "Tab 1 — Ice Generation:" (steps 1-5)
+  - "Tab 2 — Interface Construction:" (steps 6-11)
+- Step 7 describes modes: "Slab (layered), Pocket (water cavity), or Piece (ice in water)"
+- Step 10 shows visualization: "ice=cyan, water=cornflower blue"
+- Step 11 shows Ctrl+I export
+
+**Status:** ⏳ Pending
+
+---
+
+#### 8. Mode Selector Tooltip
+**Steps:**
+1. Launch QuickIce, switch to Tab 2
+2. Hover over mode dropdown
+3. Read tooltip
+4. Look for HelpIcon near mode selector
+
+**Expected:**
+- setToolTip shows: "Select interface geometry:" with bullet list of Slab/Pocket/Piece
+- HelpIcon (if present) shows longer explanation with use cases
+- Text describes what each mode builds
+
+**Status:** ⏳ Pending
+
+---
+
+#### 9. Box Dimension Tooltips
 **Steps:**
 1. Switch to Tab 2
-2. Hover over each control
-3. Read tooltips
+2. Hover over Box X, Box Y, Box Z inputs
+3. Read each tooltip
 
 **Expected:**
-- Each input has helpful tooltip
-- Mode selector explains geometry types
-- Box size, thickness, diameter explained
-- Seed explains reproducibility purpose
+- Each box dimension input has tooltip
+- Tooltips mention "nm" and valid range (0.5–100)
+- Box Z tooltip mentions "elongated Z for slab interfaces"
+- HelpIcon (if present) explains simulation box dimensions
 
-**Status:** ⏳ Pending (after Phase 21 execution)
+**Status:** ⏳ Pending
+
+---
+
+#### 10. Slab Mode Parameter Tooltips
+**Steps:**
+1. Select "Slab" mode
+2. Hover over "Ice thickness" input
+3. Hover over "Water thickness" input
+4. Read tooltips
+
+**Expected:**
+- Ice thickness tooltip: mentions "ice layer", "nm", range (0.5-50)
+- Water thickness tooltip: mentions "liquid water layer", "nm", range (0.5-50)
+- HelpIcon provides more detail about layer size
+- Typical values mentioned (2-10 nm)
+
+**Status:** ⏳ Pending
+
+---
+
+#### 11. Pocket Mode Parameter Tooltips
+**Steps:**
+1. Select "Pocket" mode
+2. Hover over "Pocket diameter" input
+3. Hover over shape selector
+4. Read tooltips
+
+**Expected:**
+- Pocket diameter tooltip: mentions "water cavity", "nm", range (0.5-50)
+- Shape selector tooltip: "sphere or ellipsoid"
+- HelpIcon explains cavity purpose
+- Note about ellipsoid support planned
+
+**Status:** ⏳ Pending
+
+---
+
+#### 12. Piece Mode Informational Label
+**Steps:**
+1. Generate ice candidate in Tab 1
+2. Select candidate in Tab 2
+3. Switch to "Piece" mode
+4. Observe informational label
+
+**Expected:**
+- Label shows ice dimensions derived from candidate
+- Format: "Ice dimensions: X × Y × Z nm"
+- No manual dimension inputs (derived automatically)
+
+**Status:** ⏳ Pending
+
+---
+
+#### 13. Random Seed Tooltip
+**Steps:**
+1. Switch to Tab 2
+2. Hover over seed input field
+3. Read tooltip
+4. Look for HelpIcon
+
+**Expected:**
+- setToolTip: mentions "reproducible", range (1-999999)
+- HelpIcon explains: same seed = same structure
+- Educational context about reproducibility
+
+**Status:** ⏳ Pending
+
+---
+
+#### 14. Candidate Dropdown Tooltip
+**Steps:**
+1. Switch to Tab 2
+2. Hover over candidate dropdown
+3. Read tooltip
+
+**Expected:**
+- Tooltip: "Select an ice candidate from Tab 1 for interface generation"
+- Clear connection to Tab 1 candidates
+
+**Status:** ⏳ Pending
+
+---
+
+#### 15. Refresh Candidates Button Tooltip
+**Steps:**
+1. Switch to Tab 2
+2. Hover over "Refresh candidates" button
+3. Read tooltip
+
+**Expected:**
+- Tooltip: "Sync candidate list from Ice Generation tab"
+- Tooltip mentions: "Click after generating new candidates in Tab 1"
+- Clear action guidance
+
+**Status:** ⏳ Pending
+
+---
+
+#### 16. Generate Button Tooltip
+**Steps:**
+1. Select a candidate in Tab 2
+2. Hover over "Generate Interface" button
+3. Read tooltip when enabled
+
+**Expected:**
+- Tooltip: "Click to generate interface structure with current configuration"
+- Button shows enabled/disabled state clearly
+- Disabled when no candidate selected
+
+**Status:** ⏳ Pending
+
+---
+
+#### 17. No Broken Image References in gui-guide.md
+**Steps:**
+1. Open docs/gui-guide.md
+2. Search for image references (Tab 2 screenshots)
+3. Check if referenced files exist
+
+**Expected:**
+- NO references to non-existent Tab 2 screenshots
+- Existing image references (Tab 1) still valid
+- No broken markdown image links
+
+**Status:** ⏳ Pending
 
 ---
 
@@ -867,9 +1103,23 @@ After completing all phases, run these tests and record results below:
 ### Phase 21 Results
 | Test | Result | Notes |
 |------|--------|-------|
-| 1. README | ⏳ | |
-| 2. In-App Help | ⏳ | |
-| 3. Tab 2 Tooltips | ⏳ | |
+| 1. README.md Version Clean | ⏳ | |
+| 2. README.md Interface Mentioned | ⏳ | |
+| 3. README_bin.md Version Clean | ⏳ | |
+| 4. gui-guide.md Version Clean | ⏳ | |
+| 5. gui-guide.md Tab 2 Section (CRITICAL) | ⏳ | |
+| 6. gui-guide.md Ctrl+I Shortcut | ⏳ | |
+| 7. Help Dialog Mode Descriptions (CRITICAL) | ⏳ | |
+| 8. Mode Selector Tooltip | ⏳ | |
+| 9. Box Dimension Tooltips | ⏳ | |
+| 10. Slab Mode Tooltips | ⏳ | |
+| 11. Pocket Mode Tooltips | ⏳ | |
+| 12. Piece Mode Label | ⏳ | |
+| 13. Random Seed Tooltip | ⏳ | |
+| 14. Candidate Dropdown Tooltip | ⏳ | |
+| 15. Refresh Button Tooltip | ⏳ | |
+| 16. Generate Button Tooltip | ⏳ | |
+| 17. No Broken Image Links | ⏳ | |
 
 ---
 
@@ -894,4 +1144,5 @@ After all tests complete, fill in:
 ---
 
 *Created: 2026-04-09*
-*To be executed: After Phase 21 completion*
+*Phase 21 tests added: 2026-04-09 (after Phase 21 completion)*
+*To be executed: Milestone UAT after all phases complete*
