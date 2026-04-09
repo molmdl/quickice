@@ -158,17 +158,18 @@ Plans:
 
 ### Phase 21: Update Readme, Docs, In-App Help, Tab 2 Tooltip Help
 
-**Goal:** [To be planned]
+**Goal:** All documentation reflects v3.0 features — interface construction, Tab 2, Ctrl+I, three modes, phase-distinct visualization
 
 **Dependencies:** Phase 20
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 21 to break down)
+- [ ] 21-01-PLAN.md — Update README.md, README_bin.md, gui-guide.md for v3.0
+- [ ] 21-02-PLAN.md — Enhance help_dialog.py workflow and interface_panel.py tooltips
 
 **Details:**
-[To be added during planning]
+Five files need updating: README.md (version bumps + interface mention), README_bin.md (version bumps), docs/gui-guide.md (full Tab 2 section), help_dialog.py (mode descriptions), interface_panel.py (educational tooltips).
 
 ---
 
