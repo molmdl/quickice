@@ -4,6 +4,8 @@ This module provides the IceStructureGenerator class that wraps GenIce's API
 to generate physically valid ice structures with diverse hydrogen bond networks.
 """
 
+import time
+
 import numpy as np
 
 from genice2.plugin import safe_import
@@ -199,20 +201,31 @@ class IceStructureGenerator:
 
         return positions, atom_names, cell
 
-    def generate_all(self, n_candidates: int = 10) -> list[Candidate]:
+    def generate_all(self, n_candidates: int = 10, base_seed: int | None = None) -> list[Candidate]:
         """Generate multiple ice structure candidates with diverse seeds.
 
         Args:
             n_candidates: Number of candidates to generate (default 10)
+            base_seed: Base seed for random number generation. If None, uses
+                current time to ensure different candidates across batches.
+                Specify a seed for reproducibility.
 
         Returns:
-            List of Candidate objects with seeds 1000 to 1000+n_candidates-1
+            List of Candidate objects with sequential seeds starting from base_seed
 
         Raises:
             StructureGenerationError: If generation fails
+
+        Note:
+            If base_seed is None (default), each batch uses a different starting
+            seed based on the current time, ensuring diversity across calls.
+            For reproducibility, specify a base_seed value.
         """
         candidates = []
-        base_seed = 1000
+        if base_seed is None:
+            # Use nanosecond time for maximum resolution diversity across batches
+            # Modulo keeps seed in reasonable range for random number generators
+            base_seed = time.time_ns() % 1000000000
 
         for i in range(n_candidates):
             seed = base_seed + i
@@ -226,6 +239,7 @@ def generate_candidates(
     phase_info: dict,
     nmolecules: int,
     n_candidates: int = 10,
+    base_seed: int | None = None,
 ) -> GenerationResult:
     """Generate multiple ice structure candidates.
 
@@ -236,6 +250,8 @@ def generate_candidates(
         phase_info: Dict from lookup_phase() containing phase_id, density, etc.
         nmolecules: Target number of water molecules
         n_candidates: Number of candidates to generate (default 10)
+        base_seed: Base seed for random number generation. If None, uses
+            current time for automatic diversity. Specify a seed for reproducibility.
 
     Returns:
         GenerationResult with list of candidates and metadata
@@ -251,12 +267,18 @@ def generate_candidates(
         >>> result = generate_candidates(phase_info, nmolecules=100)
         >>> len(result.candidates)
         10
+
+        For reproducibility:
+        >>> result = generate_candidates(phase_info, nmolecules=100, base_seed=42)
+        >>> # Second call with same seed produces identical candidates
+        >>> result2 = generate_candidates(phase_info, nmolecules=100, base_seed=42)
+        >>> # result and result2 have identical structures
     """
     # Create generator
     generator = IceStructureGenerator(phase_info, nmolecules)
 
     # Generate candidates
-    candidates = generator.generate_all(n_candidates)
+    candidates = generator.generate_all(n_candidates, base_seed)
 
     # Create result
     result = GenerationResult(

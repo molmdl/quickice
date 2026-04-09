@@ -410,14 +410,55 @@ class TestIceStructureGenerator:
         assert len(candidates) == 10
 
     def test_generate_all_has_different_seeds(self, phase_info_ice_ih):
-        """Each candidate should have a different seed (1000-1009)."""
+        """Each candidate should have sequential seeds starting from base_seed."""
         from quickice.structure_generation.generator import IceStructureGenerator
 
         gen = IceStructureGenerator(phase_info_ice_ih, nmolecules=100)
-        candidates = gen.generate_all()
+        candidates = gen.generate_all(base_seed=1000)
 
         seeds = [c.seed for c in candidates]
         assert seeds == list(range(1000, 1010))
+
+    def test_generate_all_random_seeds(self, phase_info_ice_ih):
+        """With no base_seed, each batch should have different seeds."""
+        import time
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ih, nmolecules=100)
+
+        # Generate two batches with time gap
+        candidates1 = gen.generate_all()
+        time.sleep(0.1)  # Small delay to ensure different time-based seed
+        candidates2 = gen.generate_all()
+
+        seeds1 = [c.seed for c in candidates1]
+        seeds2 = [c.seed for c in candidates2]
+
+        # Seeds within each batch should be sequential
+        assert seeds1 == list(range(seeds1[0], seeds1[0] + 10))
+        assert seeds2 == list(range(seeds2[0], seeds2[0] + 10))
+
+        # Different batches should have different seed ranges (with high probability)
+        assert seeds1 != seeds2
+
+    def test_generate_all_reproducible_with_seed(self, phase_info_ice_ih):
+        """Same base_seed should produce identical candidates across batches."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ih, nmolecules=100)
+
+        # Generate with same seed
+        candidates1 = gen.generate_all(base_seed=42)
+        candidates2 = gen.generate_all(base_seed=42)
+
+        # Should have same seeds
+        seeds1 = [c.seed for c in candidates1]
+        seeds2 = [c.seed for c in candidates2]
+        assert seeds1 == seeds2
+
+        # Should have identical positions
+        for c1, c2 in zip(candidates1, candidates2):
+            np.testing.assert_array_equal(c1.positions, c2.positions)
 
     def test_generate_all_candidates_are_diverse(self, phase_info_ice_ih):
         """Different seeds should produce different hydrogen bond networks."""
@@ -509,6 +550,23 @@ class TestGenerateCandidates:
         result = generate_candidates(phase_info_ice_ih, nmolecules=100, n_candidates=5)
 
         assert len(result.candidates) == 5
+
+    def test_generate_candidates_with_seed(self, phase_info_ice_ih):
+        """generate_candidates should accept base_seed for reproducibility."""
+        from quickice.structure_generation import generate_candidates
+
+        # Generate with same seed
+        result1 = generate_candidates(phase_info_ice_ih, nmolecules=100, base_seed=42)
+        result2 = generate_candidates(phase_info_ice_ih, nmolecules=100, base_seed=42)
+
+        # Should have same seeds
+        seeds1 = [c.seed for c in result1.candidates]
+        seeds2 = [c.seed for c in result2.candidates]
+        assert seeds1 == seeds2
+
+        # Should have identical positions
+        for c1, c2 in zip(result1.candidates, result2.candidates):
+            np.testing.assert_array_equal(c1.positions, c2.positions)
 
     def test_generate_candidates_valid_coordinates(self, phase_info_ice_ih):
         """All candidates should have valid parseable coordinates."""
