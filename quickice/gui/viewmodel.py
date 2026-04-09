@@ -67,10 +67,13 @@ class MainViewModel(QObject):
             nmolecules: Number of molecules (4-216)
         """
         # Clean up any existing thread
+        # Use timeout to prevent UI freeze during long operations
         if self._thread and self._thread.isRunning():
             self._thread.requestInterruption()
             self._thread.quit()
-            self._thread.wait()
+            # Wait with timeout to avoid blocking UI thread
+            # Thread will finish naturally via signal handlers if timeout expires
+            self._thread.wait(100)  # 100ms timeout
         
         # Create worker
         self._worker = GenerationWorker(temperature, pressure, nmolecules)
@@ -101,10 +104,12 @@ class MainViewModel(QObject):
     
     def cancel_generation(self):
         """Cancel running generation."""
+        # Use timeout to prevent UI freeze during long operations
         if self._thread and self._thread.isRunning():
             self._thread.requestInterruption()
             self._thread.quit()
-            self._thread.wait()
+            # Wait with timeout to avoid blocking UI thread
+            self._thread.wait(100)  # 100ms timeout
         
         self._is_generating = False
         self.ui_enabled_changed.emit(True)  # Re-enable UI
@@ -178,10 +183,12 @@ class MainViewModel(QObject):
         from quickice.gui.workers import InterfaceGenerationWorker
         
         # Clean up any existing thread
+        # Use timeout to prevent UI freeze during long operations
         if self._interface_thread and self._interface_thread.isRunning():
             self._interface_thread.requestInterruption()
             self._interface_thread.quit()
-            self._interface_thread.wait()
+            # Wait with timeout to avoid blocking UI thread
+            self._interface_thread.wait(100)  # 100ms timeout
         
         # Create worker
         self._interface_worker = InterfaceGenerationWorker(candidate, config)
@@ -212,10 +219,12 @@ class MainViewModel(QObject):
     
     def cancel_interface_generation(self):
         """Cancel running interface generation."""
+        # Use timeout to prevent UI freeze during long operations
         if self._interface_thread and self._interface_thread.isRunning():
             self._interface_thread.requestInterruption()
             self._interface_thread.quit()
-            self._interface_thread.wait()
+            # Wait with timeout to avoid blocking UI thread
+            self._interface_thread.wait(100)  # 100ms timeout
         
         self._is_interface_generating = False
         self.interface_ui_enabled_changed.emit(True)
