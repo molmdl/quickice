@@ -49,6 +49,7 @@ class QuickReferenceDialog(QDialog):
             "Ctrl+Shift+S — Save PDB (right viewer)\n"
             "Ctrl+D — Save phase diagram\n"
             "Ctrl+G — Export for GROMACS\n"
+            "Ctrl+I — Export interface for GROMACS\n"
             "Ctrl+Alt+S — Save viewport screenshot"
         )
         shortcuts_text.setTextInteractionFlags(
@@ -63,7 +64,13 @@ class QuickReferenceDialog(QDialog):
             "2. Click on phase diagram OR type values directly\n"
             "3. Press Enter or click Generate button\n"
             "4. View ranked candidates in dual 3D viewer\n"
-            "5. Use File menu to export PDB, GROMACS files, diagram, or screenshots"
+            "5. Use File menu to export PDB, GROMACS files, diagram, or screenshots\n"
+            "\n"
+            "Tab 2 — Interface Construction:\n"
+            "6. Switch to Interface Construction tab\n"
+            "7. Select a candidate and configure parameters\n"
+            "8. Generate interface structure\n"
+            "9. Export interface for GROMACS (Ctrl+I)"
         )
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)
@@ -87,6 +94,7 @@ class QuickReferenceDialog(QDialog):
             "• GROMACS export generates .gro, .top, and .itp files\n"
             "• TIP4P-ICE water model used for GROMACS compatibility\n"
             "• GROMACS export uses candidate selected in left viewport dropdown\n"
+            "• Interface GROMACS export uses same TIP4P-ICE model for both ice and water"
         )
         notes_text.setWordWrap(True)
         layout.addWidget(notes_text)

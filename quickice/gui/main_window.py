@@ -21,7 +21,7 @@ from PySide6.QtCore import Qt, Slot
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
-from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.phase_mapping.lookup import PHASE_METADATA
@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         self._diagram_exporter = DiagramExporter(self)
         self._viewport_exporter = ViewportExporter(self)
         self._gromacs_exporter = GROMACSExporter(self)
+        self._interface_gromacs_exporter = InterfaceGROMACSExporter(self)
         
         # Store current generation result for export
         self._current_result = None
@@ -266,6 +267,13 @@ class MainWindow(QMainWindow):
         export_gromacs_action = file_menu.addAction("Export for GROMACS...")
         export_gromacs_action.setShortcut("Ctrl+G")
         export_gromacs_action.triggered.connect(self._on_export_gromacs)
+        
+        # Separator and Export Interface for GROMACS (Tab 2)
+        file_menu.addSeparator()
+        
+        export_interface_gromacs_action = file_menu.addAction("Export Interface for GROMACS...")
+        export_interface_gromacs_action.setShortcut("Ctrl+I")
+        export_interface_gromacs_action.triggered.connect(self._on_export_interface_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -671,6 +679,32 @@ class MainWindow(QMainWindow):
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.gro\n"
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.top\n"
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.itp"
+            )
+
+    @Slot()
+    def _on_export_interface_gromacs(self):
+        """Handle Export Interface for GROMACS menu action (Tab 2)."""
+        if not self._current_interface_result:
+            QMessageBox.warning(self, "No Interface", "Generate an interface structure first.")
+            return
+        
+        iface = self._current_interface_result
+        success = self._interface_gromacs_exporter.export_interface_gromacs(iface)
+        
+        if success:
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"GROMACS files exported successfully.\n\n"
+                f"Water model: TIP4P-ICE\n"
+                f"(Abascal et al. 2005, DOI: 10.1063/1.1931662)\n\n"
+                f"Ice molecules: {iface.ice_nmolecules}\n"
+                f"Water molecules: {iface.water_nmolecules}\n"
+                f"Total: {iface.ice_nmolecules + iface.water_nmolecules}\n\n"
+                f"Files generated:\n"
+                f"• interface_{iface.mode}.gro\n"
+                f"• interface_{iface.mode}.top\n"
+                f"• interface_{iface.mode}.itp"
             )
 
     @Slot()
