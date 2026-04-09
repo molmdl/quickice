@@ -92,17 +92,31 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Build ice atom names
     ice_atom_names = ["O", "H", "H"] * ice_nmolecules
 
-    # Fill entire box with water
+    # OPTIMIZATION: Fill only the bounding box of the cavity instead of entire box
+    # For a sphere of radius r centered at (cx, cy, cz):
+    #   - Bounding box: [cx-r, cx+r] x [cy-r, cy+r] x [cz-r, cz+r]
+    #   - Dimensions: 2r x 2r x 2r
+    # This reduces water generation from box volume to (2r)^3,
+    # which is much smaller for large boxes with small pockets.
+    # Example: 10nm box with 2nm radius pocket -> 1000nm³ reduced to 64nm³ (94% reduction)
+    fill_dims = np.array([2 * radius, 2 * radius, 2 * radius])
+
+    # Fill the bounding box with water (positions start at origin [0, 0, 0])
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        box_dims,
+        fill_dims,
         config.overlap_threshold
     )
 
     if len(water_positions) == 0:
         raise InterfaceGenerationError(
-            "Water filling produced zero molecules. Check box dimensions.",
+            "Water filling produced zero molecules. Check pocket dimensions.",
             mode="pocket"
         )
+
+    # Translate water positions from [0, 2r] to [center-r, center+r]
+    # This places the water molecules around the cavity center
+    fill_origin = center - radius
+    water_positions = water_positions + fill_origin
 
     # Remove water molecules OUTSIDE the cavity (keep only water IN cavity)
     # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule from TIP4P)
