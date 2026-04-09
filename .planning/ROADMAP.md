@@ -162,11 +162,13 @@ Plans:
 
 **Dependencies:** Phase 20
 
-**Plans:** 2 plans
+**Plans:** 4 plans
 
 Plans:
 - [x] 21-01-PLAN.md — Update README.md, README_bin.md, gui-guide.md for v3.0
 - [x] 21-02-PLAN.md — Enhance help_dialog.py workflow and interface_panel.py tooltips
+- [ ] 21-03-PLAN.md — Version bump 0.1.0 → 3.0.0
+- [ ] 21-04-PLAN.md — GUI-only interface clarification + README overview enhancement
 
 **Details:**
 Five files need updating: README.md (version bumps + interface mention), README_bin.md (version bumps), docs/gui-guide.md (full Tab 2 section), help_dialog.py (mode descriptions), interface_panel.py (educational tooltips).
