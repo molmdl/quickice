@@ -1,8 +1,8 @@
 ---
-status: investigating
+status: resolved
 trigger: "HIGH-08 density-unit-conversion - Density calculation assumes positions in nm without validation"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:00:00Z
+updated: 2026-04-09T00:20:00Z
 ---
 
 ## Current Focus
@@ -55,5 +55,5 @@ started: Always assumed nm without validation
 ## Resolution
 root_cause: density_score() in scorer.py (lines 158-171) hardcodes conversion factor 1e-21 for nm³ to cm³ without validating that input coordinates are actually in nm. The codebase convention is nm units (documented in types.py), GenIce outputs nm, all coordinate inputs use nm, but density_score has no runtime validation. If Å coordinates were passed, density would be wrong by factor of 1000.
 fix: Added validation in density_score() (lines 171-179) to check if calculated density is in reasonable range (0.1-10.0 g/cm³). If density is outside this range, raises ValueError with helpful message explaining that coordinates must be in nm, not Å. Added two new tests: test_density_score_rejects_angstrom_units validates the error is raised for Å coordinates, test_density_score_accepts_valid_nm_units confirms normal nm coordinates work.
-verification: All 36 tests in test_ranking.py pass, including new unit validation tests. The validation correctly rejects Å coordinates (density 0.0012 g/cm³ would be rejected) and accepts nm coordinates (density 1.2 g/cm³ accepted).
+verification: Manual test confirmed: (1) nm coordinates with density 1.2 g/cm³ pass validation, (2) Å coordinates with density 0.0012 g/cm³ fail with clear error message. All 36 ranking tests pass including new unit validation tests. No regression introduced.
 files_changed: [quickice/ranking/scorer.py, tests/test_ranking.py]
