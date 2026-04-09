@@ -44,45 +44,49 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     with open(filepath, 'w') as f:
         # Title line
         f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
-        
+
         # Number of atoms
         f.write(f"{n_atoms:5d}\n")
-        
+
         # Atom lines: residue num, residue name, atom name, atom num, x, y, z
         # GROMACS .gro format (no velocities):
         #   resnr(5), resname(5), atomname(5), atomnr(5), x(8), y(8), z(8)
         # Total: 44 characters per line
+        # Build all lines in memory first for better I/O performance
+        lines = []
         atom_num = 0
         for mol_idx in range(nmol):
             base_idx = mol_idx * 4  # O, H1, H2, MW order
-            
+
             # Oxygen (OW)
             atom_num += 1
             pos = candidate.positions[base_idx]
-            f.write(f"{mol_idx+1:5d}SOL  "
-                    f"   OW{atom_num:5d}"
-                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-            
+            lines.append(f"{mol_idx+1:5d}SOL  "
+                        f"   OW{atom_num:5d}"
+                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
             # Hydrogen 1 (HW1)
             atom_num += 1
             pos = candidate.positions[base_idx + 1]
-            f.write(f"{mol_idx+1:5d}SOL  "
-                    f"  HW1{atom_num:5d}"
-                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-            
+            lines.append(f"{mol_idx+1:5d}SOL  "
+                        f"  HW1{atom_num:5d}"
+                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
             # Hydrogen 2 (HW2)
             atom_num += 1
             pos = candidate.positions[base_idx + 2]
-            f.write(f"{mol_idx+1:5d}SOL  "
-                    f"  HW2{atom_num:5d}"
-                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-            
+            lines.append(f"{mol_idx+1:5d}SOL  "
+                        f"  HW2{atom_num:5d}"
+                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
             # Massless virtual site (MW)
             atom_num += 1
             pos = candidate.positions[base_idx + 3]
-            f.write(f"{mol_idx+1:5d}SOL  "
-                    f"   MW{atom_num:5d}"
-                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+            lines.append(f"{mol_idx+1:5d}SOL  "
+                        f"   MW{atom_num:5d}"
+                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+        f.writelines(lines)
         
         # Box vectors (triclinic: v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y))
         cell = candidate.cell
@@ -215,14 +219,17 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4
     
     atom_num = 0
-    
+
     with open(filepath, 'w') as f:
         # Title line
         f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
-        
+
         # Number of atoms
         f.write(f"{n_atoms:5d}\n")
-        
+
+        # Build all atom lines in memory for better I/O performance
+        lines = []
+
         # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
         for mol_idx in range(iface.ice_nmolecules):
             base_idx = mol_idx * 3  # Ice uses 3 atoms per molecule
@@ -230,45 +237,47 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             h1_pos = iface.positions[base_idx + 1]
             h2_pos = iface.positions[base_idx + 2]
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-            
+
             res_num = mol_idx + 1  # Continuous numbering starting at 1
-            
+
             # OW (oxygen)
             atom_num += 1
-            f.write(f"{res_num:5d}SOL  "
-                    f"   OW{atom_num:5d}"
-                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-            
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   OW{atom_num:5d}"
+                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
             # HW1 (hydrogen 1)
             atom_num += 1
-            f.write(f"{res_num:5d}SOL  "
-                    f"  HW1{atom_num:5d}"
-                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-            
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW1{atom_num:5d}"
+                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
             # HW2 (hydrogen 2)
             atom_num += 1
-            f.write(f"{res_num:5d}SOL  "
-                    f"  HW2{atom_num:5d}"
-                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-            
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW2{atom_num:5d}"
+                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
             # MW (virtual site)
             atom_num += 1
-            f.write(f"{res_num:5d}SOL  "
-                    f"   MW{atom_num:5d}"
-                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
-        
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   MW{atom_num:5d}"
+                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
         # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
         for mol_idx in range(iface.water_nmolecules):
             base_idx = iface.ice_atom_count + mol_idx * 4  # Water starts after ice
             res_num = iface.ice_nmolecules + mol_idx + 1  # Continue numbering after ice
-            
+
             atom_names = ["OW", "HW1", "HW2", "MW"]
             for i, atom_name in enumerate(atom_names):
                 atom_num += 1
                 pos = iface.positions[base_idx + i]
-                f.write(f"{res_num:5d}SOL  "
-                        f"{atom_name:>4s}{atom_num:5d}"
-                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                lines.append(f"{res_num:5d}SOL  "
+                            f"{atom_name:>4s}{atom_num:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+        f.writelines(lines)
         
         # Box vectors (triclinic format)
         cell = iface.cell
