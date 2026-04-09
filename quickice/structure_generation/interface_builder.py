@@ -16,6 +16,12 @@ from quickice.structure_generation.modes.pocket import assemble_pocket
 from quickice.structure_generation.modes.piece import assemble_piece
 
 
+# Physical constants for validation
+MINIMUM_BOX_DIMENSION = 1.0  # nm - Minimum box dimension for physical validity
+# Rationale: Water molecule diameter ~0.28 nm, ice unit cells 0.6-0.9 nm
+# Conservative minimum ensures enough space for at least one unit cell
+
+
 def is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
     """Check if a cell matrix represents an orthogonal (rectangular) box.
 
@@ -62,6 +68,32 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
     if config.box_z <= 0:
         raise InterfaceGenerationError(
             f"Box Z dimension must be positive, got {config.box_z:.2f} nm.",
+            mode=config.mode
+        )
+
+    # Check minimum box dimensions for physical validity
+    if config.box_x < MINIMUM_BOX_DIMENSION:
+        raise InterfaceGenerationError(
+            f"Box X dimension ({config.box_x:.3f} nm) is too small. "
+            f"Minimum is {MINIMUM_BOX_DIMENSION:.1f} nm. "
+            f"Water molecules have diameter ~0.28 nm; boxes smaller than 1.0 nm "
+            f"cause numerical issues and cannot fit realistic structures.",
+            mode=config.mode
+        )
+    if config.box_y < MINIMUM_BOX_DIMENSION:
+        raise InterfaceGenerationError(
+            f"Box Y dimension ({config.box_y:.3f} nm) is too small. "
+            f"Minimum is {MINIMUM_BOX_DIMENSION:.1f} nm. "
+            f"Water molecules have diameter ~0.28 nm; boxes smaller than 1.0 nm "
+            f"cause numerical issues and cannot fit realistic structures.",
+            mode=config.mode
+        )
+    if config.box_z < MINIMUM_BOX_DIMENSION:
+        raise InterfaceGenerationError(
+            f"Box Z dimension ({config.box_z:.3f} nm) is too small. "
+            f"Minimum is {MINIMUM_BOX_DIMENSION:.1f} nm. "
+            f"Water molecules have diameter ~0.28 nm; boxes smaller than 1.0 nm "
+            f"cause numerical issues and cannot fit realistic structures.",
             mode=config.mode
         )
 
@@ -158,6 +190,43 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
         if config.box_z <= ice_dims[2]:
             raise InterfaceGenerationError(
                 f"Box Z ({config.box_z:.2f} nm) must be larger than ice piece Z ({ice_dims[2]:.2f} nm).",
+                mode=config.mode
+            )
+
+        # Validate minimum water layer thickness
+        # Water molecules within overlap_threshold of ice surface are removed.
+        # For any water to survive, the water layer must be at least overlap_threshold thick.
+        # This ensures the box has enough space for viable water filling.
+        min_water_layer = config.overlap_threshold
+        water_layer_x = config.box_x - ice_dims[0]
+        water_layer_y = config.box_y - ice_dims[1]
+        water_layer_z = config.box_z - ice_dims[2]
+
+        if water_layer_x < min_water_layer:
+            raise InterfaceGenerationError(
+                f"Water layer too thin in X dimension. "
+                f"Box X ({config.box_x:.2f} nm) minus ice X ({ice_dims[0]:.2f} nm) gives "
+                f"{water_layer_x:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
+                f"(overlap threshold). Thin water layers cause all water molecules to be "
+                f"removed as overlapping with ice.",
+                mode=config.mode
+            )
+        if water_layer_y < min_water_layer:
+            raise InterfaceGenerationError(
+                f"Water layer too thin in Y dimension. "
+                f"Box Y ({config.box_y:.2f} nm) minus ice Y ({ice_dims[1]:.2f} nm) gives "
+                f"{water_layer_y:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
+                f"(overlap threshold). Thin water layers cause all water molecules to be "
+                f"removed as overlapping with ice.",
+                mode=config.mode
+            )
+        if water_layer_z < min_water_layer:
+            raise InterfaceGenerationError(
+                f"Water layer too thin in Z dimension. "
+                f"Box Z ({config.box_z:.2f} nm) minus ice Z ({ice_dims[2]:.2f} nm) gives "
+                f"{water_layer_z:.3f} nm water layer, but minimum is {min_water_layer:.2f} nm "
+                f"(overlap threshold). Thin water layers cause all water molecules to be "
+                f"removed as overlapping with ice.",
                 mode=config.mode
             )
 
