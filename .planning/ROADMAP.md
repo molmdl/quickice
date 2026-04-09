@@ -165,8 +165,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 21-01-PLAN.md — Update README.md, README_bin.md, gui-guide.md for v3.0
-- [ ] 21-02-PLAN.md — Enhance help_dialog.py workflow and interface_panel.py tooltips
+- [x] 21-01-PLAN.md — Update README.md, README_bin.md, gui-guide.md for v3.0
+- [x] 21-02-PLAN.md — Enhance help_dialog.py workflow and interface_panel.py tooltips
 
 **Details:**
 Five files need updating: README.md (version bumps + interface mention), README_bin.md (version bumps), docs/gui-guide.md (full Tab 2 section), help_dialog.py (mode descriptions), interface_panel.py (educational tooltips).
@@ -182,7 +182,7 @@ Five files need updating: README.md (version bumps + interface mention), README_
 | 18 | Structure Generation | Complete | GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07 |
 | 19 | Visualization | Complete | VIS-01, VIS-02, VIS-03, VIS-04 |
 | 20 | Export | Complete | EXP-01, EXP-02, EXP-03 |
-| 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Pending | TBD |
+| 21 | Update Readme, Docs, In-App Help, Tab 2 Tooltip Help | Complete | TBD |
 
 ---
 
