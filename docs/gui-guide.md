@@ -195,6 +195,9 @@ Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&ti
 
 ## Interface Construction (Tab 2)
 
+<img src="images/tab2-slab-interface.png" width="80%">
+*Slab interface with phase-distinct coloring (ice=cyan, water=cornflower blue)*
+
 The second tab builds ice-water interface structures from candidates 
 generated in Tab 1. This is useful for molecular dynamics simulations 
 of ice-water interfaces, confined water, or ice nucleation studies.
@@ -212,12 +215,22 @@ QuickIce supports three interface geometries:
 | Mode | Description | Use Case |
 |------|-------------|----------|
 | Slab | Layered ice-water interface | Surface melting/freezing studies |
+
+<img src="images/tab2-slab-interface.png" width="60%">
+
 | Pocket | Water cavity within ice matrix | Confined water studies |
+
+<img src="images/tab2-pocket-interface.png" width="60%">
+
 | Piece | Ice crystal embedded in water | Ice nucleation/growth studies |
+
+<img src="images/tab2-piece-interface.png" width="60%">
 
 ### Mode-Specific Parameters
 
 #### Slab Parameters
+
+<img src="images/tab2-controls-slab.png" width="40%">
 
 - **Ice thickness** (0.5–50 nm): Thickness of the ice layer along the Z-axis
 - **Water thickness** (0.5–50 nm): Thickness of the liquid water layer
@@ -225,10 +238,14 @@ QuickIce supports three interface geometries:
 
 #### Pocket Parameters
 
+<img src="images/tab2-controls-pocket.png" width="40%">
+
 - **Pocket diameter** (0.5–50 nm): Diameter of the spherical/ellipsoidal water cavity
 - **Pocket shape**: Sphere or Ellipsoid (ellipsoid support planned for future release)
 
 #### Piece Parameters
+
+<img src="images/tab2-controls-piece.png" width="40%">
 
 - No additional parameters — piece dimensions are derived from the 
   selected ice candidate
@@ -251,6 +268,8 @@ Tab 2 uses phase-distinct coloring to distinguish ice and water:
 - Camera defaults to Z-axis side view for slab interfaces
 
 ### Export for GROMACS
+
+<img src="images/export-interface-menu.png" width="50%">
 
 **File → Export Interface for GROMACS (Ctrl+I)**
 

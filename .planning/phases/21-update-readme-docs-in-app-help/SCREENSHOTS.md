@@ -189,6 +189,24 @@
 
 ---
 
+## Placeholder Status
+
+Images referenced in documentation but not yet captured:
+
+| Image | Referenced in | Status |
+|-------|--------------|--------|
+| quickice-v3-gui.png | README.md line 92 | Placeholder added |
+| tab2-slab-interface.png | gui-guide.md (2 locations: section header + Slab mode) | Placeholder added |
+| tab2-pocket-interface.png | gui-guide.md (Pocket mode) | Placeholder added |
+| tab2-piece-interface.png | gui-guide.md (Piece mode) | Placeholder added |
+| tab2-controls-slab.png | gui-guide.md (Slab Parameters) | Placeholder added |
+| tab2-controls-pocket.png | gui-guide.md (Pocket Parameters) | Placeholder added |
+| tab2-controls-piece.png | gui-guide.md (Piece Parameters) | Placeholder added |
+| export-interface-menu.png | gui-guide.md (Export for GROMACS Tab 2) | Placeholder added |
+| help-dialog-v3.png | — | Not referenced yet (optional) |
+
+---
+
 ## Summary
 
 | Priority | Screenshot | Purpose |
