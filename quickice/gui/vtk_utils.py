@@ -66,9 +66,30 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
     # TIP3P is [O, H, H, O, H, H, ...] = 3 per water
     # Either way, we have 3 visible atoms per water molecule
     num_water_molecules = candidate.nmolecules
+    
+    # VERIFY: Build list of visible atom names (excluding MW virtual sites)
+    # This matches what atom_indices contains
+    visible_atom_names = [name for name in candidate.atom_names if name != "MW"]
+    
     for mol_idx in range(num_water_molecules):
         # Each water has 3 visible atoms (O + 2H), regardless of TIP3P/TIP4P
         # atom_indices contains only visible atoms in order
+        
+        # VERIFY atom ordering before creating bonds
+        # This catches upstream issues where atoms might not follow expected O, H, H pattern
+        visible_names_per_mol = visible_atom_names[mol_idx * 3: mol_idx * 3 + 3]
+        # For TIP3P: ["O", "H", "H"]
+        # For TIP4P: ["OW", "HW1", "HW2"]
+        expected_tip3p = ["O", "H", "H"]
+        expected_tip4p = ["OW", "HW1", "HW2"]
+        
+        if visible_names_per_mol != expected_tip3p and visible_names_per_mol != expected_tip4p:
+            raise ValueError(
+                f"Invalid atom ordering for molecule {mol_idx}: expected {expected_tip3p} or {expected_tip4p}, "
+                f"got {visible_names_per_mol}. "
+                f"Bond creation requires atoms to be ordered as oxygen followed by two hydrogens."
+            )
+        
         o_idx = atom_indices[mol_idx * 3]
         h1_idx = atom_indices[mol_idx * 3 + 1]
         h2_idx = atom_indices[mol_idx * 3 + 2]
@@ -142,6 +163,24 @@ def detect_hydrogen_bonds(
     """
     positions = candidate.positions
     nmolecules = candidate.nmolecules
+    atom_names = candidate.atom_names
+    
+    # VERIFY atom ordering before detecting H-bonds
+    # This function expects atoms to be ordered as O, H, H for each molecule
+    for mol_idx in range(nmolecules):
+        mol_names = atom_names[mol_idx * 3: mol_idx * 3 + 3]
+        # Accept both TIP3P (O, H, H) and TIP4P (OW, HW1, HW2) patterns
+        # Note: TIP4P with MW virtual site should have MW already filtered out
+        # before calling this function, as MW atoms are not stored in Candidate
+        expected_tip3p = ["O", "H", "H"]
+        expected_tip4p = ["OW", "HW1", "HW2"]
+        
+        if mol_names != expected_tip3p and mol_names != expected_tip4p:
+            raise ValueError(
+                f"Invalid atom ordering for molecule {mol_idx} in H-bond detection: "
+                f"expected {expected_tip3p} or {expected_tip4p}, got {mol_names}. "
+                f"H-bond detection requires atoms to be ordered as oxygen followed by two hydrogens."
+            )
     
     # Get box dimensions from cell matrix (assuming orthorhombic)
     cell_dims = np.diag(candidate.cell)
@@ -371,6 +410,15 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     # Add bonds for ice molecules
     # Ice uses 3 visible atoms per molecule (O, H, H) - no MW to skip
     for mol_idx in range(iface.ice_nmolecules):
+        # VERIFY atom ordering before creating bonds
+        ice_names_per_mol = iface.atom_names[mol_idx * 3: mol_idx * 3 + 3]
+        if ice_names_per_mol != ["O", "H", "H"]:
+            raise ValueError(
+                f"Invalid ice atom ordering for molecule {mol_idx}: expected ['O', 'H', 'H'], "
+                f"got {ice_names_per_mol}. "
+                f"Ice bond creation requires atoms to be ordered as oxygen followed by two hydrogens."
+            )
+        
         o_idx = ice_indices[mol_idx * 3]
         h1_idx = ice_indices[mol_idx * 3 + 1]
         h2_idx = ice_indices[mol_idx * 3 + 2]
@@ -382,6 +430,20 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     # Water uses 4 atoms per molecule (OW, HW1, HW2, MW) but MW is skipped
     # So we have 3 visible atoms per molecule in water_indices
     for mol_idx in range(iface.water_nmolecules):
+        # VERIFY atom ordering before creating bonds
+        # water_indices has MW already filtered out, so we check the raw iface.atom_names
+        # to verify the pattern before MW was skipped
+        # Each water molecule has 4 atoms in iface: [OW, HW1, HW2, MW, OW, HW1, HW2, MW, ...]
+        # Water starts at iface.ice_atom_count
+        water_start_in_full = iface.ice_atom_count + mol_idx * 4
+        water_names_check = iface.atom_names[water_start_in_full: water_start_in_full + 4]
+        if water_names_check != ["OW", "HW1", "HW2", "MW"]:
+            raise ValueError(
+                f"Invalid water atom ordering for molecule {mol_idx}: "
+                f"expected ['OW', 'HW1', 'HW2', 'MW'], got {water_names_check}. "
+                f"Water bond creation requires atoms to be ordered as OW, HW1, HW2, MW."
+            )
+        
         o_idx = water_indices[mol_idx * 3]
         h1_idx = water_indices[mol_idx * 3 + 1]
         h2_idx = water_indices[mol_idx * 3 + 2]
