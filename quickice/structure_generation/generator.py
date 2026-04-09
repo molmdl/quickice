@@ -96,8 +96,11 @@ class IceStructureGenerator:
                 lattice, density=self.density, reshape=self.supercell_matrix
             )
 
-            # Load TIP4P water model (4-point: O, H1, H2, MW)
-            water = safe_import("molecule", "tip4p").Molecule()
+            # Load TIP3P water model (3-point: O, H, H)
+            # TIP4P produces 4 atoms (OW, HW1, HW2, MW) but our interface modes
+            # expect 3 atoms per molecule (O, H, H). Ice is generated with 3-atom
+            # TIP3P format and normalized to 4-atom TIP4P-ICE at export time.
+            water = safe_import("molecule", "tip3p").Molecule()
 
             # Load GROMACS formatter
             formatter = safe_import("format", "gromacs").Format()

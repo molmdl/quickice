@@ -63,6 +63,30 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     top_ice_positions = top_ice_positions.copy()
     top_ice_positions[:, 2] += config.ice_thickness + config.water_thickness
 
+    # PBC wrap check: ensure top ice atoms are within [0, box_z)
+    # After shift, atoms should be in [ice_thickness + water_thickness, box_z)
+    # but we wrap defensively to handle floating-point precision issues
+    # and catch any configuration errors early.
+    top_ice_z = top_ice_positions[:, 2]
+    if len(top_ice_z) > 0:
+        # Check for atoms that would wrap to bottom layer (Z < 0 or Z >= box_z)
+        below_zero = top_ice_z < 0
+        above_boxz = top_ice_z >= config.box_z
+
+        if np.any(below_zero) or np.any(above_boxz):
+            # This should never happen if validation is correct, but handle defensively
+            from quickice.structure_generation.errors import InterfaceGenerationError
+            n_below = np.sum(below_zero)
+            n_above = np.sum(above_boxz)
+            raise InterfaceGenerationError(
+                f"PBC overlap detected: {n_below} top ice atoms have Z < 0, "
+                f"{n_above} atoms have Z >= box_z ({config.box_z:.2f} nm). "
+                f"This indicates a configuration error: box_z should equal "
+                f"2*ice_thickness + water_thickness = {2*config.ice_thickness + config.water_thickness:.2f} nm. "
+                f"Got ice_thickness={config.ice_thickness:.2f} nm, water_thickness={config.water_thickness:.2f} nm.",
+                mode=config.mode
+            )
+
     # Combine ice positions (bottom + top)
     if len(bottom_ice_positions) > 0 and len(top_ice_positions) > 0:
         combined_ice_positions = np.vstack([bottom_ice_positions, top_ice_positions])
