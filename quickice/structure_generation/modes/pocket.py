@@ -109,8 +109,7 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
 
     # Fill the bounding box with water (positions start at origin [0, 0, 0])
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        fill_dims,
-        config.overlap_threshold
+        fill_dims
     )
 
     if len(water_positions) == 0:

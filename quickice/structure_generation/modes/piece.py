@@ -90,8 +90,7 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
 
     # Fill entire box with water
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        box_dims,
-        config.overlap_threshold
+        box_dims
     )
 
     # Detect overlaps between centered ice O and water O

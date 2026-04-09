@@ -238,7 +238,6 @@ def tile_structure(
 
 def fill_region_with_water(
     region_dims: np.ndarray,
-    overlap_threshold_nm: float = 0.25,
 ) -> tuple[np.ndarray, list[str], int]:
     """Fill a rectangular region with TIP4P water molecules.
 
@@ -248,9 +247,6 @@ def fill_region_with_water(
 
     Args:
         region_dims: [lx, ly, lz] region dimensions in nm.
-        overlap_threshold_nm: O-O overlap threshold in nm (default 0.25 nm = 2.5 Å).
-            Used for informational purposes; actual overlap removal is done
-            by the caller using overlap_resolver functions.
 
     Returns:
         Tuple of (positions, atom_names, nmolecules):

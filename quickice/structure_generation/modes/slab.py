@@ -110,8 +110,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
     # Fill water in middle region: [box_x, box_y, water_thickness]
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        np.array([config.box_x, config.box_y, config.water_thickness]),
-        config.overlap_threshold
+        np.array([config.box_x, config.box_y, config.water_thickness])
     )
 
     # Shift water to Z = [ice_thickness, ice_thickness + water_thickness]
