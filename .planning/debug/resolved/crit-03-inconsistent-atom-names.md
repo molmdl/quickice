@@ -1,16 +1,16 @@
 ---
-status: verifying
+status: resolved
 trigger: "CRIT-03 inconsistent-atom-names - Inconsistent Atom Name Handling Between Ice and Water (vtk_utils.py:277-360)"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:03:00Z
+updated: 2026-04-09T00:04:00Z
 ---
 
 ## Current Focus
 
-hypothesis: N/A - root cause confirmed
+hypothesis: N/A
 test: N/A
 expecting: N/A
-next_action: Fix misleading comments in docstring (lines 295-298) and inline (lines 326-327)
+next_action: Archive resolved session
 
 ## Symptoms
 
@@ -58,5 +58,5 @@ started: Always been potentially wrong since VTK interface visualization was imp
 
 root_cause: MISLEADING COMMENTS, NOT A LOGIC BUG. The comments in interface_to_vtk_molecules claim that (1) ice_atom_count includes MW atoms, and (2) the boundary check happens before skipping MW. Both claims are factually wrong. ice_atom_count = ice_nmolecules * 3 (ice has NO MW), and MW atoms are skipped with 'continue' BEFORE reaching the boundary check. However, the LOGIC is actually correct because: (1) ice atoms occupy indices 0 to ice_atom_count-1, (2) MW atoms only exist in water at indices >= ice_atom_count, (3) skipping MW before the boundary check is safe because MW atoms are never in the ice region.
 fix: Corrected misleading docstring (lines 295-302) and inline comment (lines 326-329) to accurately describe the atom ordering and boundary check logic
-verification: (pending)
+verification: Ran quick sanity check verifying atom classification logic works correctly. Ice atoms (O, H, H) at indices 0-2 correctly identified as ice. Water atoms (OW, HW1, HW2) at indices 3-5 correctly identified as water. MW at index 6 correctly skipped. Pre-existing test failures (CLI integration, structure generation) are unrelated to this comment fix.
 files_changed: [quickice/gui/vtk_utils.py]
