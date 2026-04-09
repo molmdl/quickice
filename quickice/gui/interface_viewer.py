@@ -16,6 +16,7 @@ from vtkmodules.all import (
     vtkActor,
 )
 
+import numpy as np
 from quickice.structure_generation.types import InterfaceStructure
 from quickice.gui.vtk_utils import (
     interface_to_vtk_molecules,
@@ -129,9 +130,9 @@ class InterfaceViewerWidget(QWidget):
         self._ice_actor = self._create_phase_actor(ice_mol, ICE_COLOR)
         self._water_actor = self._create_phase_actor(water_mol, WATER_COLOR)
         
-        # Extract bonds from each molecule
-        ice_bonds = self._extract_bonds(ice_mol)
-        water_bonds = self._extract_bonds(water_mol)
+        # Extract bonds from each molecule with PBC wrapping
+        ice_bonds = self._extract_bonds(ice_mol, structure.cell)
+        water_bonds = self._extract_bonds(water_mol, structure.cell)
         
         # Create bond line actors
         self._ice_bond_actor = create_bond_lines_actor(
@@ -194,17 +195,28 @@ class InterfaceViewerWidget(QWidget):
         actor.SetMapper(mapper)
         return actor
     
-    def _extract_bonds(self, mol) -> list:
-        """Extract bond positions from a VTK molecule.
+    def _extract_bonds(self, mol, cell: np.ndarray = None) -> list:
+        """Extract bond positions from a VTK molecule with PBC wrapping.
+        
+        Applies minimum image convention to ensure bonds are drawn as the
+        shortest connection, wrapping across periodic boundaries when needed.
         
         Args:
             mol: vtkMolecule with bonds.
+            cell: (3, 3) cell matrix for PBC wrapping. If None, no wrapping.
         
         Returns:
-            List of ((x1, y1, z1), (x2, y2, z2)) tuples for each bond.
+            List of ((x1, y1, z1), (x2, y2, z2)) tuples for each bond,
+            with positions wrapped to show shortest distance.
         """
         bonds = []
         n_bonds = mol.GetNumberOfBonds()
+        
+        # Get cell dimensions for PBC (assuming orthorhombic)
+        if cell is not None:
+            cell_dims = np.diag(cell)
+        else:
+            cell_dims = None
         
         for i in range(n_bonds):
             bond = mol.GetBond(i)
@@ -217,12 +229,19 @@ class InterfaceViewerWidget(QWidget):
             atom1 = mol.GetAtom(atom1_id)
             atom2 = mol.GetAtom(atom2_id)
             
-            pos1 = atom1.GetPosition()
-            pos2 = atom2.GetPosition()
+            pos1 = np.array(atom1.GetPosition())
+            pos2 = np.array(atom2.GetPosition())
+            
+            # Apply minimum image convention if cell is provided
+            if cell_dims is not None:
+                # Wrap pos2 to be within half box distance of pos1
+                delta = pos2 - pos1
+                delta = delta - cell_dims * np.round(delta / cell_dims)
+                pos2 = pos1 + delta
             
             # Convert to tuples
-            p1 = (pos1[0], pos1[1], pos1[2])
-            p2 = (pos2[0], pos2[1], pos2[2])
+            p1 = (float(pos1[0]), float(pos1[1]), float(pos1[2]))
+            p2 = (float(pos2[0]), float(pos2[1]), float(pos2[2]))
             
             bonds.append((p1, p2))
         

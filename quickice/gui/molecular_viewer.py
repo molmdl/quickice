@@ -1,12 +1,13 @@
 """VTK-based 3D molecular viewer widget.
-
+ 
 This module provides the MolecularViewerWidget class for rendering
 molecular structures using VTK with PySide6 Qt integration.
 """
-
+ 
+import numpy as np
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import QTimer
-
+ 
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vtkmodules.all import (
     vtkRenderer,
@@ -16,7 +17,7 @@ from vtkmodules.all import (
     vtkColorTransferFunction,
     vtkFloatArray,
 )
-
+ 
 from quickice.structure_generation.types import Candidate
 from quickice.ranking.types import RankedCandidate
 from quickice.gui.vtk_utils import (
@@ -24,12 +25,17 @@ from quickice.gui.vtk_utils import (
     detect_hydrogen_bonds,
     create_hbond_actor,
     create_unit_cell_actor,
+    create_bond_lines_actor,
 )
 
 # Unit conversion: VTK periodic table provides radii in Angstroms (Å),
 # but QuickIce positions are in nanometers (nm).
 # Multiply all radius scale factors by this to convert Å → nm.
 ANGSTROM_TO_NM = 0.1
+
+# Bond visualization settings
+BOND_COLOR = (0.5, 0.5, 0.5)  # Gray for O-H bonds
+BOND_LINE_WIDTH = 1.5
 
 
 class MolecularViewerWidget(QWidget):
@@ -61,6 +67,9 @@ class MolecularViewerWidget(QWidget):
         self._molecule_actor: vtkActor | None = None
         self._current_candidate: Candidate | None = None
         self._representation_mode: str = "ball_and_stick"
+        
+        # Bond visualization (custom line actors with PBC wrapping)
+        self._bond_actor: vtkActor | None = None
         
         # Hydrogen bond visualization (default visible per CONTEXT.md)
         self._hbond_actor: vtkActor | None = None
@@ -129,6 +138,10 @@ class MolecularViewerWidget(QWidget):
         
         Creates a vtkMoleculeMapper for ball-and-stick rendering
         and associates it with a vtkActor for scene management.
+        
+        Note: VTK bond rendering is DISABLED. Bonds are rendered separately
+        as line actors with PBC wrapping to avoid bonds crossing periodic
+        boundaries.
         """
         # Create molecule mapper with ball-and-stick settings (per VIEWER-02)
         self._mapper = vtkMoleculeMapper()
@@ -137,8 +150,9 @@ class MolecularViewerWidget(QWidget):
         # Apply unit conversion: VTK radii are in Å, positions are in nm
         # VTK default 0.30 in Å system → 0.03 in nm system
         self._mapper.SetAtomicRadiusScaleFactor(0.30 * ANGSTROM_TO_NM)
-        # VTK default 0.075 in Å system → 0.0075 in nm system
-        self._mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
+        
+        # DISABLE VTK bond rendering - bonds rendered separately with PBC wrapping
+        self._mapper.RenderBondsOff()
         
         # Create actor with the mapper
         self._molecule_actor = vtkActor()
@@ -166,6 +180,20 @@ class MolecularViewerWidget(QWidget):
         # Set input to mapper
         self._mapper.SetInputData(mol)
         
+        # Create bond actor with PBC wrapping
+        # Remove old bond actor if exists
+        if self._bond_actor is not None:
+            self.renderer.RemoveActor(self._bond_actor)
+            self._bond_actor = None
+        
+        # Extract bonds with PBC wrapping and create line actor
+        bonds = self._extract_bonds(mol, candidate.cell)
+        if bonds:
+            self._bond_actor = create_bond_lines_actor(
+                bonds, BOND_COLOR, BOND_LINE_WIDTH
+            )
+            self.renderer.AddActor(self._bond_actor)
+        
         # Re-create hydrogen bonds if visible
         if self._show_hydrogen_bonds:
             self.set_hydrogen_bonds_visible(True)
@@ -189,6 +217,53 @@ class MolecularViewerWidget(QWidget):
         self.renderer.ResetCamera()
         self.render_window.Render()
     
+    def _extract_bonds(self, mol, cell: np.ndarray) -> list:
+        """Extract bond positions from a VTK molecule with PBC wrapping.
+        
+        Applies minimum image convention to ensure bonds are drawn as the
+        shortest connection, wrapping across periodic boundaries when needed.
+        
+        Args:
+            mol: vtkMolecule with bonds.
+            cell: (3, 3) cell matrix for PBC wrapping.
+        
+        Returns:
+            List of ((x1, y1, z1), (x2, y2, z2)) tuples for each bond,
+            with positions wrapped to show shortest distance.
+        """
+        bonds = []
+        n_bonds = mol.GetNumberOfBonds()
+        
+        # Get cell dimensions for PBC (assuming orthorhombic)
+        cell_dims = np.diag(cell)
+        
+        for i in range(n_bonds):
+            bond = mol.GetBond(i)
+            
+            # Get atom IDs for this bond
+            atom1_id = bond.GetBeginAtomId()
+            atom2_id = bond.GetEndAtomId()
+            
+            # Get atom positions
+            atom1 = mol.GetAtom(atom1_id)
+            atom2 = mol.GetAtom(atom2_id)
+            
+            pos1 = np.array(atom1.GetPosition())
+            pos2 = np.array(atom2.GetPosition())
+            
+            # Apply minimum image convention: wrap pos2 to be within half box distance of pos1
+            delta = pos2 - pos1
+            delta = delta - cell_dims * np.round(delta / cell_dims)
+            pos2 = pos1 + delta
+            
+            # Convert to tuples
+            p1 = (float(pos1[0]), float(pos1[1]), float(pos1[2]))
+            p2 = (float(pos2[0]), float(pos2[1]), float(pos2[2]))
+            
+            bonds.append((p1, p2))
+        
+        return bonds
+    
     def clear(self) -> None:
         """Clear the current structure from the viewer.
         
@@ -201,6 +276,11 @@ class MolecularViewerWidget(QWidget):
         if self._molecule_actor is not None:
             self.renderer.RemoveActor(self._molecule_actor)
             self._molecule_actor = None
+        
+        # Remove bond actor if it exists
+        if self._bond_actor is not None:
+            self.renderer.RemoveActor(self._bond_actor)
+            self._bond_actor = None
         
         # Remove H-bond actor if it exists
         if self._hbond_actor is not None:
