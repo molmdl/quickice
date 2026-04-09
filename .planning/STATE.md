@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
 | Phase | 20 (Export) |
-| Plan | 01 complete (1/2 plans) |
-| Status | In progress |
-| Last activity | 2026-04-09 — Completed 20-01-PLAN.md |
+| Plan | 02 complete (2/2 plans) |
+| Status | Phase complete |
+| Last activity | 2026-04-09 — Completed 20-02-PLAN.md |
 
 **Progress:** █████████░ 75% (6/8 phases complete in v3.0)
 
@@ -131,6 +131,8 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Ice 3→4 atom normalization at export | ✓ MW computed from O, H, H positions |
 | Water 4-atom pass-through at export | ✓ No modification needed (already TIP4P-ICE) |
 | Single combined SOL molecule type | ✓ ice_nmolecules + water_nmolecules count |
+| InterfaceGROMACSExporter pattern | ✓ Follows GROMACSExporter for consistency |
+| Ctrl+I shortcut for interface export | ✓ No conflict with Ctrl+G |
 
 ### Roadmap Evolution
 
@@ -156,9 +158,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 ## Session Continuity
 
 **Last session:** 2026-04-09
-**Completed:** 20-01-PLAN.md (Interface GROMACS writer functions)
-**Next:** 20-02-PLAN.md (Export GUI integration)
+**Completed:** 20-02-PLAN.md (Export GUI integration)
+**Next:** Phase 21 (Documentation) - update readme, in-app help, tooltips
 
 ---
 
-*State updated: 2026-04-09 — Phase 20 Plan 01 complete*
+*State updated: 2026-04-09 — Phase 20 complete*
