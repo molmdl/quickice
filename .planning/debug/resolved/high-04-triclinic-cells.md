@@ -1,16 +1,16 @@
 ---
-status: investigating
+status: verifying
 trigger: "HIGH-04 triclinic-cell-handling - Cell extraction assumes orthogonal box, but GenIce can produce triclinic cells"
 created: 2026-04-09T19:30:00Z
-updated: 2026-04-09T19:30:00Z
+updated: 2026-04-09T20:00:00Z
 ---
 
 ## Current Focus
 
-hypothesis: The code extracts only diagonal elements from cell matrix, which is incorrect for triclinic cells. The fix should detect triclinic cells and raise a clear error message since full triclinic support requires significant changes to tiling logic.
-test: Write a test that creates a triclinic cell candidate and verify it fails with a clear error message
-expecting: Error raised when triclinic cell is detected, preventing silent data corruption
-next_action: Implement cell orthogonality check in interface_builder.py validation
+hypothesis: CONFIRMED - The code extracts only diagonal elements from cell matrix, which is incorrect for triclinic cells
+test: Run comprehensive tests for triclinic detection and error handling
+expecting: All tests pass, no regressions in existing tests
+next_action: Archive session after verification
 
 ## Symptoms
 
@@ -22,7 +22,7 @@ started: Always assumed orthogonal, but GenIce can produce non-orthogonal cells
 
 ## Eliminated
 
-(none yet)
+(none - hypothesis confirmed)
 
 ## Evidence
 
@@ -56,9 +56,20 @@ started: Always assumed orthogonal, but GenIce can produce non-orthogonal cells
   found: Already supports triclinic output format correctly (lines 87-91)
   implication: Export layer is correct; only structure generation layer has the bug
 
+- timestamp: 2026-04-09T19:35:00Z
+  checked: GenIce lattice cells directly
+  found: Ice 2 (ice_ii) and Ice 5 (ice_v) produce triclinic cells with off-diagonal elements
+  implication: This bug affects real use cases with actual ice phases
+
+- timestamp: 2026-04-09T19:45:00Z
+  checked: Test suite for fix
+  found: All 13 new tests pass, 25 output tests pass, no regressions
+  implication: Fix is working correctly
+
 ## Resolution
 
-root_cause: All mode files and interface_builder validation extract only diagonal elements from the 3x3 cell matrix, which gives incorrect dimensions for triclinic (non-orthogonal) cells. This silently corrupts tiling operations, overlap detection, and piece mode validation.
-fix: (pending)
-verification: (pending)
-files_changed: []
+root_cause: All mode files and interface_builder validation extract only diagonal elements from the 3x3 cell matrix, which gives incorrect dimensions for triclinic (non-orthogonal) cells. This silently corrupts tiling operations, overlap detection, and piece mode validation. Ice II and Ice V phases produce triclinic cells and are affected by this bug.
+fix: Added `is_cell_orthogonal()` function to interface_builder.py that checks if off-diagonal elements are non-zero. Added validation in `validate_interface_config()` that raises clear InterfaceGenerationError when triclinic cells are detected, preventing silent data corruption.
+verification: All 13 new tests pass including integration tests with real GenIce-generated Ice II and Ice V structures. Orthogonal phases (Ice Ih, Ice Ic, etc.) continue to work correctly. Error messages clearly identify affected phases.
+files_changed:
+  - quickice/structure_generation/interface_builder.py: Added is_cell_orthogonal() function and triclinic cell validation
