@@ -294,8 +294,11 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     
     Note:
         MW (massless virtual site) atoms are skipped during conversion as they
-        are not visualized. The ice_atom_count includes ALL atoms including MW,
-        so the boundary check must happen BEFORE skipping MW.
+        are not visualized. Ice has 3 atoms per molecule (O, H, H) with no MW.
+        Water has 4 atoms per molecule (OW, HW1, HW2, MW). The atom_names array
+        contains ice atoms first (indices 0 to ice_atom_count-1) followed by
+        water atoms (indices ice_atom_count onward). MW atoms only appear in the
+        water region, so skipping them before the boundary check is safe.
     """
     ice_mol = vtkMolecule()
     water_mol = vtkMolecule()
@@ -323,8 +326,9 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         if atomic_num is None:
             continue
         
-        # CRITICAL: Check ice/water boundary BEFORE skipping MW
-        # ice_atom_count counts ALL atoms including MW in the raw array
+        # Check ice/water boundary using raw index i
+        # Ice atoms: indices 0 to ice_atom_count-1 (no MW in ice)
+        # Water atoms: indices ice_atom_count onward (MW skipped above)
         if i < iface.ice_atom_count:
             # Ice atom
             idx = ice_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])

@@ -208,7 +208,10 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         iface: InterfaceStructure object with combined ice + water positions
         filepath: Output file path for .gro file
     """
-    # Total atoms: all molecules output as 4-atom TIP4P-ICE
+    # Total atoms: ice (3 atoms/mol) + water (4 atoms/mol) normalized to 4-atom TIP4P-ICE
+    # Each ice molecule gets 1 MW virtual site added, so output is 4 atoms per molecule
+    # Ice: nmol * 3 input atoms -> nmol * 4 output atoms (MW added)
+    # Water: nmol * 4 input atoms -> nmol * 4 output atoms (unchanged)
     n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4
     
     atom_num = 0

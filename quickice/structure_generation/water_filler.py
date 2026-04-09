@@ -113,41 +113,9 @@ def tile_structure(
     ny = math.ceil(ly / b) if b > 0 else 1
     nz = math.ceil(lz / c) if c > 0 else 1
 
-    # Collect all tiled copies
-    all_positions = []
-    for ix in range(nx):
-        for iy in range(ny):
-            for iz in range(nz):
-                offset = np.array([ix * a, iy * b, iz * c])
-                shifted = positions + offset
-                all_positions.append(shifted)
-
-    # Stack all copies
-    all_positions = np.vstack(all_positions)
-
-    # Filter positions strictly inside target region
-    # Use a tiny tolerance for floating point edge cases
-    tol = 1e-10
-    mask_x = all_positions[:, 0] < lx - tol
-    mask_y = all_positions[:, 1] < ly - tol
-    mask_z = all_positions[:, 2] < lz - tol
-    keep_mask = mask_x & mask_y & mask_z
-
-    filtered = all_positions[keep_mask]
-
-    if len(filtered) == 0:
-        return np.zeros((0, 3), dtype=float), 0
-
-    # Wrap positions into target region using modulo
-    # This handles edge cases where atoms fall exactly on box boundary
-    tiled_positions = filtered % target_region
-
-    # Calculate number of molecules based on original structure ratio
+    # Determine atoms_per_molecule from original structure
+    # This must be done BEFORE tiling to correctly filter molecules
     n_original_atoms = len(positions)
-    n_tiled_atoms = len(tiled_positions)
-
-    # Derive atoms_per_molecule from original count
-    # Try common values: 3 (GenIce ice) or 4 (TIP4P water)
     if n_original_atoms % 3 == 0 and n_original_atoms % 4 != 0:
         atoms_per_molecule = 3
     elif n_original_atoms % 4 == 0 and n_original_atoms % 3 != 0:
@@ -160,7 +128,60 @@ def tile_structure(
         # Fallback: assume whole structure is one molecule
         atoms_per_molecule = n_original_atoms
 
-    n_molecules = n_tiled_atoms // atoms_per_molecule
+    n_original_molecules = n_original_atoms // atoms_per_molecule
+
+    # Collect all tiled copies
+    all_positions = []
+    for ix in range(nx):
+        for iy in range(ny):
+            for iz in range(nz):
+                offset = np.array([ix * a, iy * b, iz * c])
+                shifted = positions + offset
+                all_positions.append(shifted)
+
+    # Stack all copies
+    all_positions = np.vstack(all_positions)
+
+    # CRITICAL: Filter at MOLECULE boundaries, not individual atoms
+    # This prevents incomplete molecules that cause index overflow bugs
+    tol = 1e-10
+
+    # Count total molecules in tiled structure
+    n_tiled_molecules = len(all_positions) // atoms_per_molecule
+
+    # Check each molecule: keep only if ALL its atoms are inside target region
+    keep_molecules = []
+    for mol_idx in range(n_tiled_molecules):
+        start_atom = mol_idx * atoms_per_molecule
+        end_atom = start_atom + atoms_per_molecule
+        mol_atoms = all_positions[start_atom:end_atom]
+
+        # Check if ALL atoms of this molecule are inside target region
+        all_inside_x = np.all(mol_atoms[:, 0] < lx - tol)
+        all_inside_y = np.all(mol_atoms[:, 1] < ly - tol)
+        all_inside_z = np.all(mol_atoms[:, 2] < lz - tol)
+
+        if all_inside_x and all_inside_y and all_inside_z:
+            keep_molecules.append(mol_idx)
+
+    if not keep_molecules:
+        return np.zeros((0, 3), dtype=float), 0
+
+    # Build keep mask for atoms of complete molecules
+    keep_mask = np.zeros(len(all_positions), dtype=bool)
+    for mol_idx in keep_molecules:
+        start_atom = mol_idx * atoms_per_molecule
+        end_atom = start_atom + atoms_per_molecule
+        keep_mask[start_atom:end_atom] = True
+
+    filtered = all_positions[keep_mask]
+
+    # Wrap positions into target region using modulo
+    # This handles edge cases where atoms fall exactly on box boundary
+    tiled_positions = filtered % target_region
+
+    # Molecule count is exact (no truncation needed)
+    n_molecules = len(keep_molecules)
 
     return tiled_positions, n_molecules
 
