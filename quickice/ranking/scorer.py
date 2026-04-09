@@ -15,19 +15,18 @@ from collections import Counter
 from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
-from quickice.ranking.types import RankedCandidate, RankingResult
+from quickice.ranking.types import RankedCandidate, RankingResult, ScoringConfig
 
-
-# Constants for scoring
-IDEAL_OO_DISTANCE = 0.276  # nm - ideal O-O distance in ice (H-bond length)
-OO_CUTOFF = 0.35  # nm - cutoff for H-bond detection
+# Module-level constants for scoring (matching ScoringConfig defaults)
+IDEAL_OO_DISTANCE = 0.276  # nm - ideal O-O distance in ice (2.76 Å, H-bond length)
+OO_CUTOFF = 0.35  # nm - cutoff for O-O neighbor detection (H-bond range)
 
 
 def _calculate_oo_distances_pbc(
     positions: np.ndarray,
     atom_names: list[str],
     cell: np.ndarray,
-    cutoff: float = OO_CUTOFF
+    cutoff: float = 0.35  # nm - default from ScoringConfig.oo_cutoff
 ) -> np.ndarray:
     """Calculate O-O distances with periodic boundary conditions.
     
@@ -85,13 +84,17 @@ def _calculate_oo_distances_pbc(
     return np.array(distances)
 
 
-def energy_score(candidate: Candidate) -> float:
+def energy_score(
+    candidate: Candidate,
+    config: ScoringConfig | None = None
+) -> float:
     """Calculate energy score based on O-O distance deviation from ideal.
     
     This is a heuristic estimate of the energy based on the assumption that
-    ideal ice structures have O-O distances close to 0.276 nm (the typical
-    hydrogen bond length in ice). Structures with O-O distances close to
-    this ideal value are assumed to have lower energy.
+    ideal ice structures have O-O distances close to the configured ideal value
+    (default: 0.276 nm, the typical hydrogen bond length in ice). Structures
+    with O-O distances close to this ideal value are assumed to have lower
+    energy.
     
     The score is calculated as the mean absolute deviation of O-O distances
     from the ideal value, scaled for visibility. Lower scores indicate
@@ -99,6 +102,8 @@ def energy_score(candidate: Candidate) -> float:
     
     Args:
         candidate: A Candidate object from Phase 3
+        config: Optional ScoringConfig with ideal_oo_distance and oo_cutoff.
+            If None, uses default values (0.276 nm ideal, 0.35 nm cutoff).
     
     Returns:
         Energy score (lower = better, lower = closer to ideal O-O distances).
@@ -109,11 +114,16 @@ def energy_score(candidate: Candidate) -> float:
         O-O distance statistics. For real energies, use MD simulations with
         appropriate force fields.
     """
+    # Use default config if not provided
+    if config is None:
+        config = ScoringConfig()
+    
     # Calculate O-O distances with PBC
     oo_distances = _calculate_oo_distances_pbc(
         candidate.positions,
         candidate.atom_names,
-        candidate.cell
+        candidate.cell,
+        cutoff=config.oo_cutoff
     )
     
     # Handle edge case: no O-O pairs within cutoff
@@ -121,7 +131,7 @@ def energy_score(candidate: Candidate) -> float:
         return float('inf')
     
     # Calculate mean absolute deviation from ideal
-    deviations = np.abs(oo_distances - IDEAL_OO_DISTANCE)
+    deviations = np.abs(oo_distances - config.ideal_oo_distance)
     mean_deviation = np.mean(deviations)
     
     # Scale for visibility (multiply by 100)

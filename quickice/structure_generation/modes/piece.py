@@ -15,6 +15,11 @@ from quickice.structure_generation.overlap_resolver import (
     remove_overlapping_molecules,
 )
 
+# Ice atom names template (GenIce: 3 atoms per molecule)
+# Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
+# Acceptable for typical use. For very large systems (>10k), this is modest overhead.
+ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
+
 
 def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
     """Assemble piece interface structure: ice centered in water box.
@@ -79,8 +84,9 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     offset = box_dims / 2.0 - ice_dims / 2.0
     centered_ice_positions = tiled_ice_positions + offset
 
-    # Build ice atom names
-    ice_atom_names = ["O", "H", "H"] * ice_nmolecules
+    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
+    # Uses module-level template for consistency
+    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
 
     # Fill entire box with water
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(

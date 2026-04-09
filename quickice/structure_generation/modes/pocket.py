@@ -7,6 +7,11 @@ and overlapping water molecules at the boundary are removed.
 
 import numpy as np
 
+# Ice atom names template (GenIce: 3 atoms per molecule)
+# Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
+# Acceptable for typical use. For very large systems (>10k), this is modest overhead.
+ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
+
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
@@ -89,8 +94,9 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             atoms_per_molecule=3  # GenIce: O, H, H
         )
 
-    # Build ice atom names
-    ice_atom_names = ["O", "H", "H"] * ice_nmolecules
+    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
+    # Uses module-level template for consistency
+    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
 
     # OPTIMIZATION: Fill only the bounding box of the cavity instead of entire box
     # For a sphere of radius r centered at (cx, cy, cz):

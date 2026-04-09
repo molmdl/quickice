@@ -8,6 +8,11 @@ Creates a three-layer structure:
 
 import numpy as np
 
+# Ice atom names template (GenIce: 3 atoms per molecule)
+# Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
+# Acceptable for typical use. For very large systems (>10k), this is modest overhead.
+ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
+
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
 from quickice.structure_generation.overlap_resolver import (
@@ -100,7 +105,8 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     total_ice_nmolecules = bottom_ice_nmolecules + top_ice_nmolecules
 
     # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
-    ice_atom_names = ["O", "H", "H"] * total_ice_nmolecules
+    # Uses module-level template for consistency
+    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * total_ice_nmolecules
 
     # Fill water in middle region: [box_x, box_y, water_thickness]
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
