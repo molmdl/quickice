@@ -246,13 +246,43 @@ class InterfaceViewerWidget(QWidget):
         return bonds
     
     def _reset_camera(self) -> None:
-        """Reset camera to auto-fit all actors in viewport.
+        """Reset camera for optimal viewing of ice-water interface in wide viewer.
         
-        Uses VTK's default camera behavior which provides an isometric-style
-        view optimized for the structure's aspect ratio. This is better for
-        horizontal slab structures (ice-water interfaces) than a fixed side view.
+        The interface viewer is a wide horizontal rectangle. Interface structures
+        have ice-water-ice layers stacked along Z-axis. This camera orientation
+        makes Z horizontal (left-right) to utilize the wide viewer space.
         """
         self.renderer.ResetCamera()
+        
+        # Get the camera
+        camera = self.renderer.GetActiveCamera()
+        
+        # Get bounds to find center
+        bounds = self.renderer.ComputeVisiblePropBounds()
+        center_x = (bounds[0] + bounds[1]) / 2
+        center_y = (bounds[2] + bounds[3]) / 2
+        center_z = (bounds[4] + bounds[5]) / 2
+        
+        # Calculate diagonal for distance
+        dx = bounds[1] - bounds[0]
+        dy = bounds[3] - bounds[2]
+        dz = bounds[5] - bounds[4]
+        diagonal = (dx**2 + dy**2 + dz**2) ** 0.5
+        
+        # Position camera at an angle to see the slab layers
+        # Looking from above and to the side
+        camera.SetPosition(
+            center_x + diagonal * 0.5,
+            center_y + diagonal * 0.5,
+            center_z + diagonal * 0.5
+        )
+        camera.SetFocalPoint(center_x, center_y, center_z)
+        
+        # Make Z horizontal (along X direction) for wide viewer
+        # ViewUp = (0, 0, 1) would make Z vertical
+        # ViewUp = (0, 1, 0) makes Y vertical, Z horizontal
+        camera.SetViewUp(0, 1, 0)
+        
         self.renderer.ResetCameraClippingRange()
     
     def _clear_actors(self) -> None:
@@ -294,9 +324,9 @@ class InterfaceViewerWidget(QWidget):
         self.render_window.Render()
     
     def reset_camera(self) -> None:
-        """Reset camera to auto-fit all actors in viewport.
+        """Reset camera for optimal interface viewing.
         
-        Recalculates bounds and resets camera for optimal viewing.
+        Reorients camera to show slab layers horizontally in the wide viewer.
         """
         self._reset_camera()
         self.render_window.Render()
