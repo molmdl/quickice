@@ -13,7 +13,13 @@ class Candidate:
     Attributes:
         positions: (N_atoms, 3) coordinates in nm
         atom_names: List of atom names ["O", "H", "H", "O", "H", "H", ...]
-        cell: (3, 3) cell vectors in nm
+        cell: (3, 3) cell vectors in nm, stored as ROW vectors.
+            Each row is a lattice vector: [[a_x, a_y, a_z],
+                                           [b_x, b_y, b_z],
+                                           [c_x, c_y, c_z]].
+            This means: new_position = position @ cell.
+            Note: VTK uses column vectors (matrix @ position), so transpose
+            is needed when passing to VTK's SetLattice().
         nmolecules: Actual number of water molecules
         phase_id: Phase identifier (e.g., "ice_ih")
         seed: Random seed used for generation
@@ -132,7 +138,8 @@ class InterfaceStructure:
         positions: (N_atoms, 3) combined ice + water atom positions in nm.
             Ice atoms come FIRST, then water atoms.
         atom_names: Atom names for all atoms (ice names then water names)
-        cell: (3, 3) box cell vectors in nm
+        cell: (3, 3) box cell vectors in nm, stored as ROW vectors.
+            Each row is a lattice vector. See Candidate.cell for details.
         ice_atom_count: Number of ice atoms (marks split between ice and water)
         water_atom_count: Number of water atoms
         ice_nmolecules: Number of ice molecules

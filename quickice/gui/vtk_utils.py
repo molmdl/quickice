@@ -98,8 +98,22 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
         mol.AppendBond(o_idx, h2_idx, 1)
     
     # Set unit cell lattice from the (3, 3) cell matrix
-    # VTK expects a vtkMatrix3x3 with lattice vectors as COLUMNS
-    # Our candidate.cell has vectors as ROWS, so we need to transpose
+    # 
+    # CELL MATRIX ORIENTATION CONVENTIONS:
+    # =====================================
+    # - VTK uses COLUMN vectors: new_position = lattice_matrix @ position
+    #   where lattice columns are the a, b, c vectors
+    # - QuickIce uses ROW vectors: new_position = position @ cell_matrix
+    #   where cell rows are the a, b, c vectors
+    # 
+    # The transpose converts between these conventions:
+    #   (row_vectors)^T = column_vectors
+    # 
+    # For orthogonal cells (ice Ih), transpose has no effect since the
+    # matrix is diagonal. For non-orthogonal cells (ice II, V), the
+    # transpose is critical for correct lattice visualization.
+    # 
+    # See resolved debug session: unit-cell-mismatch.md
     lattice_matrix = vtkMatrix3x3()
     cell_transposed = candidate.cell.T  # Transpose: rows -> columns
     for i in range(3):
