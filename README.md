@@ -17,7 +17,8 @@ QuickIce is a command-line tool with an optional GUI that generates plausible ic
 1. **Identifies the ice polymorph** that would form under those conditions (Ice Ih, Ice Ic, Ice II, III, V, VI, VII, or VIII)
 2. **Generates candidate structures** using GenIce2 with appropriate lattice parameters
 3. **Ranks candidates** by energy estimate, density match, and structural diversity
-4. **Outputs PDB files** and a phase diagram visualization
+4. **Constructs ice-water interfaces** — slab, pocket, or piece geometries (v3.0)
+5. **Outputs PDB files** and a phase diagram visualization
 
 **Why QuickIce?**
 
@@ -54,7 +55,7 @@ QuickIce uses:
 ### One-Time Setup
 
 ```bash
-# Create conda environment (includes v2.0 GUI dependencies)
+# Create conda environment (includes v3.0 GUI dependencies)
 conda env create -f envronment.yml
 ```
 
@@ -73,7 +74,7 @@ python quickice.py --help
 
 ### GUI Usage
 
-QuickIce v2.0 includes an optional GUI application. To launch:
+QuickIce v3.0 includes an optional GUI application with ice-water interface construction. To launch:
 
 ```bash
 python -m quickice.gui
@@ -82,7 +83,7 @@ python -m quickice.gui
 For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
 
 ![QuickIce GUI](docs/images/quickice-gui.png)
-*QuickIce GUI showing interactive phase diagram and dual 3D molecular viewer*
+*QuickIce GUI showing ice generation and interface construction tabs*
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
@@ -247,6 +248,13 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 3. Select candidate from the dropdown (left viewport selection to choose the one exported for gromacs)
 4. Files are saved to the output directory
 
+### Interface GROMACS Export (Tab 2)
+
+1. Generate ice candidates in Tab 1 first
+2. Switch to Interface Construction tab (Tab 2)
+3. Select mode (Slab/Pocket/Piece), configure parameters, click Generate Interface
+4. **File → Export Interface for GROMACS** (Ctrl+I)
+
 ### Water Model: TIP4P-ICE
 
 The TIP4P-ICE water model is optimized for ice simulations:
@@ -269,7 +277,7 @@ The molecule count input specifies a **minimum** number of molecules. GenIce2 cr
 For more details, see:
 
 - **[CLI Reference](docs/cli-reference.md)** - Complete command-line documentation
-- **[GUI Guide](docs/gui-guide.md)** - QuickIce v2.0 graphical interface documentation
+- **[GUI Guide](docs/gui-guide.md)** - QuickIce v3.0 graphical interface documentation
 - **[Ranking Algorithm](docs/ranking.md)** - How candidates are scored and ranked
 - **[Design Principles](docs/principles.md)** - Project architecture and decisions
 
