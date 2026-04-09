@@ -451,8 +451,9 @@ class InterfacePanel(QWidget):
             # Consistent with Tab 1 behavior
             fallback_label = QLabel(
                 "3D Interface Viewer requires a local display.\n\n"
-                "If running remotely via SSH, clone to your local machine\n"
-                "or use QUICKICE_FORCE_VTK=true to override."
+                "If running remotely, clone to your local machine\n"
+                "or use QUICKICE_FORCE_VTK=true to override.\n\n"
+                "Generate interface structures and export to GRO/PDB files."
             )
             fallback_label.setAlignment(Qt.AlignCenter)
             fallback_label.setStyleSheet(
