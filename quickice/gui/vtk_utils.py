@@ -89,6 +89,30 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
     return mol
 
 
+def _pbc_distance(pos1: np.ndarray, pos2: np.ndarray, cell_dims: np.ndarray) -> float:
+    """Calculate distance between two positions with periodic boundary conditions.
+    
+    Applies the minimum image convention to compute the shortest distance
+    between two atoms across periodic box boundaries.
+    
+    Args:
+        pos1: (3,) array of first atom position in nm
+        pos2: (3,) array of second atom position in nm
+        cell_dims: (3,) array of box dimensions [Lx, Ly, Lz] in nm
+    
+    Returns:
+        Distance in nanometers, accounting for periodic boundaries.
+    
+    Note:
+        Assumes orthorhombic box (typical for ice structures).
+        The minimum image convention wraps the displacement vector to the
+        nearest periodic image.
+    """
+    delta = pos1 - pos2
+    delta = delta - cell_dims * np.round(delta / cell_dims)
+    return np.linalg.norm(delta)
+
+
 def detect_hydrogen_bonds(
     candidate: Candidate, max_distance: float = 0.25
 ) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
@@ -112,9 +136,15 @@ def detect_hydrogen_bonds(
         - Oxygen atoms are at indices 0, 3, 6, 9, ... (every 3rd starting at 0)
         - Hydrogen atoms are at indices 1, 2, 4, 5, 7, 8, ...
         - Each O has two bonded H atoms: O[i] bonded to H[i+1] and H[i+2]
+        
+        Uses periodic boundary conditions (PBC) to correctly detect H-bonds
+        that cross box boundaries.
     """
     positions = candidate.positions
     nmolecules = candidate.nmolecules
+    
+    # Get box dimensions from cell matrix (assuming orthorhombic)
+    cell_dims = np.diag(candidate.cell)
     
     # Collect O and H atom positions with their indices
     # O atoms: indices 0, 3, 6, ... (every 3rd atom starting at 0)
@@ -143,8 +173,8 @@ def detect_hydrogen_bonds(
             if o_idx == parent_o_idx:
                 continue
             
-            # Calculate H...O distance
-            distance = np.linalg.norm(h_pos - o_pos)
+            # Calculate H...O distance with PBC
+            distance = _pbc_distance(h_pos, o_pos, cell_dims)
             
             if distance < max_distance:
                 # H-bond detected: H...O
