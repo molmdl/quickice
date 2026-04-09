@@ -17,7 +17,7 @@ from vtkmodules.all import (
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
-from quickice.structure_generation.types import Candidate
+from quickice.structure_generation.types import Candidate, InterfaceStructure
 
 
 class PDBExporter:
@@ -360,6 +360,83 @@ class GROMACSExporter:
             # Write .top file
             from quickice.output.gromacs_writer import write_top_file
             write_top_file(candidate, str(top_path))
+            
+            # Copy .itp file from data directory
+            import shutil
+            from quickice.output.gromacs_writer import get_tip4p_itp_path
+            itp_source = get_tip4p_itp_path()
+            shutil.copy(itp_source, itp_path)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
+            return False
+
+
+class InterfaceGROMACSExporter:
+    """Handle GROMACS file export for interface structures (.gro, .top, .itp).
+    
+    Per CONTEXT.md:
+    - Same SOL molecule type for both ice and water phases
+    - Ice molecules normalized from 3-atom to 4-atom TIP4P-ICE format at export time
+    - Continuous residue numbering: ice 1..N_ice, water N_ice+1..N_ice+N_water
+    - Single combined SOL count in [molecules] section
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize interface GROMACS exporter.
+        
+        Args:
+            parent_widget: Parent widget for dialog centering
+        """
+        self.parent = parent_widget
+    
+    def export_interface_gromacs(self, interface_structure: InterfaceStructure) -> bool:
+        """Export interface structure to GROMACS format.
+
+        Args:
+            interface_structure: InterfaceStructure with ice and water phases
+
+        Returns:
+            True if export succeeded
+
+        Per CONTEXT.md:
+        - Default filename format: interface_{mode}.gro
+        - Generates companion .top and .itp files
+        """
+        # Generate default filename with mode info
+        mode = interface_structure.mode
+        default_name = f"interface_{mode}.gro"
+
+        # Show save dialog for .gro file
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Export Interface for GROMACS",
+            default_name,
+            "GRO Files (*.gro);;All Files (*)",
+            "GRO Files (*.gro)"
+        )
+        
+        if not filepath:
+            return False
+        
+        # Ensure .gro extension
+        path = Path(filepath)
+        if path.suffix.lower() != '.gro':
+            path = path.with_suffix('.gro')
+        
+        # Generate companion filenames using stem (handles dots in filename correctly)
+        top_path = path.with_name(path.stem + '.top')
+        itp_path = path.with_name(path.stem + '.itp')
+        
+        try:
+            # Write .gro file using gromacs_writer
+            from quickice.output.gromacs_writer import write_interface_gro_file
+            write_interface_gro_file(interface_structure, str(path))
+            
+            # Write .top file
+            from quickice.output.gromacs_writer import write_interface_top_file
+            write_interface_top_file(interface_structure, str(top_path))
             
             # Copy .itp file from data directory
             import shutil
