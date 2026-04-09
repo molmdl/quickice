@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
 | Phase | 21 (Documentation) |
-| Plan | None (needs planning) |
-| Status | Ready for planning |
-| Last activity | 2026-04-09 — Completed Phase 20 (Export) |
+| Plan | 1 of 2 complete in Phase 21 |
+| Status | In progress |
+| Last activity | 2026-04-09 — Completed 21-02-PLAN.md |
 
-**Progress:** ██████████░ 87.5% (7/8 phases complete in v3.0)
+**Progress:** ████████████ 97.8% (90/92 plans complete)
 
 ---
 
@@ -163,10 +163,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-09
-**Completed:** Phase 20 (Export) - GROMACS interface writer functions + GUI integration
-**Next:** Phase 21 (Documentation) - update readme, in-app help, tooltips
+**Last session:** 2026-04-09 09:30:36 UTC
+**Completed:** 21-02-PLAN.md - In-app help content enhanced (tooltips + help dialog)
+**Next:** 21-01-PLAN.md - README and documentation updates
 
 ---
 
-*State updated: 2026-04-09 — Phase 20 complete*
+*State updated: 2026-04-09 — Plan 21-02 complete*
