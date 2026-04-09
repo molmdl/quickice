@@ -7,6 +7,22 @@ from quickice.structure_generation.types import Candidate
 
 
 @dataclass
+class ScoringConfig:
+    """Configuration for scoring functions.
+
+    Allows customization of scoring parameters for different water models,
+    temperatures, or research scenarios.
+
+    Attributes:
+        ideal_oo_distance: Ideal O-O distance in nm (default: 0.276 nm for TIP3P/TIP4P ice)
+        oo_cutoff: Cutoff distance for O-O neighbor detection in nm (default: 0.35 nm)
+    """
+
+    ideal_oo_distance: float = 0.276  # nm - ideal O-O distance in ice (H-bond length)
+    oo_cutoff: float = 0.35  # nm - cutoff for H-bond detection
+
+
+@dataclass
 class RankedCandidate:
     """A candidate with its ranking scores.
 

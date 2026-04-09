@@ -3,6 +3,7 @@
 from quickice.ranking.types import (
     RankedCandidate,
     RankingResult,
+    ScoringConfig,
 )
 
 from quickice.ranking.scorer import (
@@ -18,6 +19,7 @@ __all__ = [
     # Types
     "RankedCandidate",
     "RankingResult",
+    "ScoringConfig",
     # Main API
     "rank_candidates",
     # Individual scorers (for advanced use)

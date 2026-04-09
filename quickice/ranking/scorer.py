@@ -17,10 +17,6 @@ from scipy.spatial import cKDTree
 from quickice.structure_generation.types import Candidate
 from quickice.ranking.types import RankedCandidate, RankingResult, ScoringConfig
 
-# Module-level constants for scoring (matching ScoringConfig defaults)
-IDEAL_OO_DISTANCE = 0.276  # nm - ideal O-O distance in ice (2.76 Å, H-bond length)
-OO_CUTOFF = 0.35  # nm - cutoff for O-O neighbor detection (H-bond range)
-
 
 def _calculate_oo_distances_pbc(
     positions: np.ndarray,
@@ -281,7 +277,8 @@ def normalize_scores(scores: list[float]) -> np.ndarray:
 
 def rank_candidates(
     candidates: list[Candidate],
-    weights: dict[str, float] | None = None
+    weights: dict[str, float] | None = None,
+    config: ScoringConfig | None = None
 ) -> RankingResult:
     """Rank candidates by combined scoring.
     
@@ -289,6 +286,8 @@ def rank_candidates(
         candidates: List of Candidate objects from Phase 3
         weights: Optional weight config (default: equal weights 1:1:1)
             Must contain 'energy', 'density', 'diversity' keys if provided.
+        config: Optional ScoringConfig with ideal_oo_distance and oo_cutoff.
+            If None, uses default values (0.276 nm ideal, 0.35 nm cutoff).
     
     Returns:
         RankingResult with sorted candidates and score breakdown.
@@ -307,6 +306,10 @@ def rank_candidates(
         >>> result = rank_candidates(candidates)
         >>> print(result.ranked_candidates[0].rank)  # 1 (best)
     """
+    # Use default config if not provided
+    if config is None:
+        config = ScoringConfig()
+    
     # Default weights: equal weighting
     if weights is None:
         weights = {'energy': 1.0, 'density': 1.0, 'diversity': 1.0}
@@ -314,7 +317,7 @@ def rank_candidates(
     n_candidates = len(candidates)
     
     # Calculate raw scores for each component
-    energy_scores = [energy_score(c) for c in candidates]
+    energy_scores = [energy_score(c, config) for c in candidates]
     density_scores = [density_score(c) for c in candidates]
     diversity_scores = [diversity_score(c, candidates) for c in candidates]
     
@@ -356,7 +359,8 @@ def rank_candidates(
     # Build metadata
     scoring_metadata = {
         'n_candidates': n_candidates,
-        'ideal_oo_distance': IDEAL_OO_DISTANCE,
+        'ideal_oo_distance': config.ideal_oo_distance,
+        'oo_cutoff': config.oo_cutoff,
         'energy_range': (float(min(energy_scores)), float(max(energy_scores))),
         'density_range': (float(min(density_scores)), float(max(density_scores))),
         'diversity_range': (float(min(diversity_scores)), float(max(diversity_scores))),
