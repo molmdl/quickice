@@ -1,6 +1,6 @@
 # QuickIce GUI Guide
 
-This guide covers the QuickIce v2.0 graphical user interface.
+This guide covers the QuickIce v3.0 graphical user interface.
 
 ## Overview
 
@@ -9,6 +9,7 @@ The QuickIce GUI provides an intuitive visual interface for:
 - Real-time 3D molecular structure visualization
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, PNG, SVG)
+- Interface Construction for ice-water systems (Tab 2)
 
 ## Getting Started
 
@@ -22,9 +23,9 @@ For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 ### Main Window Layout
 
-The main window is divided into two sections:
-- **Left panel**: Interactive phase diagram
-- **Right panel**: Input controls, progress indicator, 3D viewer, and log output
+The main window is divided into two tabs:
+- **Tab 1 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
+- **Tab 2 (Interface Construction)**: Build ice-water interfaces for MD simulations
 
 ### Basic Workflow
 
@@ -161,7 +162,7 @@ The File menu provides multiple export formats:
 
 ### Export for GROMACS
 
-QuickIce v2.1 adds direct GROMACS export for molecular dynamics simulations.
+QuickIce v3.0 adds interface construction with direct GROMACS export for molecular dynamics simulations.
 
 **Menu Path:** File → Export for GROMACS (Ctrl+G)
 
@@ -189,6 +190,77 @@ Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&ti
 | Ctrl+Shift+S | Save PDB (right viewer) |
 | Ctrl+D | Save phase diagram |
 | Ctrl+Alt+S | Save viewport screenshot |
+| Ctrl+G | Export for GROMACS (Tab 1) |
+| Ctrl+I | Export interface for GROMACS (Tab 2) |
+
+## Interface Construction (Tab 2)
+
+The second tab builds ice-water interface structures from candidates 
+generated in Tab 1. This is useful for molecular dynamics simulations 
+of ice-water interfaces, confined water, or ice nucleation studies.
+
+### Prerequisites
+
+Generate ice candidates in Tab 1 (Ice Generation) before using Tab 2. 
+The candidate dropdown in Tab 2 is populated from Tab 1's results.
+Click "Refresh candidates" to sync after generating new candidates in Tab 1.
+
+### Interface Modes
+
+QuickIce supports three interface geometries:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| Slab | Layered ice-water interface | Surface melting/freezing studies |
+| Pocket | Water cavity within ice matrix | Confined water studies |
+| Piece | Ice crystal embedded in water | Ice nucleation/growth studies |
+
+### Mode-Specific Parameters
+
+#### Slab Parameters
+
+- **Ice thickness** (0.5–50 nm): Thickness of the ice layer along the Z-axis
+- **Water thickness** (0.5–50 nm): Thickness of the liquid water layer
+- Typical box: elongated Z-axis to accommodate both layers
+
+#### Pocket Parameters
+
+- **Pocket diameter** (0.5–50 nm): Diameter of the spherical/ellipsoidal water cavity
+- **Pocket shape**: Sphere or Ellipsoid (ellipsoid support planned for future release)
+
+#### Piece Parameters
+
+- No additional parameters — piece dimensions are derived from the 
+  selected ice candidate
+- An informational label shows the candidate dimensions automatically
+
+### Shared Parameters
+
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| Box X/Y/Z | 0.5–100 nm | Simulation box dimensions in nanometers |
+| Random seed | 1–999999 | Seed for reproducible water molecule placement |
+
+### Visualization
+
+Tab 2 uses phase-distinct coloring to distinguish ice and water:
+
+- **Ice phase**: Cyan atoms with line-based bonds
+- **Water phase**: Cornflower blue atoms with line-based bonds
+- H-bonds are hidden by default in Tab 2
+- Camera defaults to Z-axis side view for slab interfaces
+
+### Export for GROMACS
+
+**File → Export Interface for GROMACS (Ctrl+I)**
+
+Exported files use a single combined SOL molecule type:
+- `interface_{mode}.gro` — Combined ice + water coordinates
+- `interface_{mode}.top` — Topology with single moleculetype SOL
+- `interface_{mode}.itp` — TIP4P-ICE force field parameters
+
+Ice molecules are normalized from 3-atom (O, H, H) to 4-atom (O, H1, H2, MW) 
+TIP4P-ICE format at export time. Water molecules pass through unchanged (already 4-atom TIP4P-ICE).
 
 ## Help Menu
 
