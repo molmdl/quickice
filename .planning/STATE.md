@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|-------|
 | Milestone | v3.0 Interface Generation |
 | Phase | 21 (Documentation) |
-| Plan | 1 of 2 complete in Phase 21 |
-| Status | In progress |
-| Last activity | 2026-04-09 — Completed 21-02-PLAN.md |
+| Plan | 2 of 2 complete in Phase 21 |
+| Status | Phase complete |
+| Last activity | 2026-04-09 — Completed 21-01-PLAN.md |
 
-**Progress:** ████████████ 97.8% (90/92 plans complete)
+**Progress:** ████████████ 98.9% (91/92 plans complete)
 
 ---
 
@@ -133,6 +133,8 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Single combined SOL molecule type | ✓ ice_nmolecules + water_nmolecules count |
 | InterfaceGROMACSExporter pattern | ✓ Follows GROMACSExporter for consistency |
 | Ctrl+I shortcut for interface export | ✓ No conflict with Ctrl+G |
+| Interface Construction mentioned 3x in docs | ✓ Better discoverability |
+| Tab 2 section after Keyboard Shortcuts | ✓ Logical documentation flow |
 | TIP4P_ICE_ALPHA = 0.13458335 | ✓ Exact match with tip4p-ice.itp virtual_sites3 |
 | Ice 3→4 atom normalization at export | ✓ MW computed from O, H, H positions |
 | Water 4-atom pass-through at export | ✓ No modification needed (already TIP4P-ICE) |
@@ -163,10 +165,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-09 09:30:36 UTC
-**Completed:** 21-02-PLAN.md - In-app help content enhanced (tooltips + help dialog)
-**Next:** 21-01-PLAN.md - README and documentation updates
+**Last session:** 2026-04-09 09:32:37 UTC
+**Completed:** 21-01-PLAN.md - README and documentation updates
+**Next:** Phase 21 complete, ready for milestone completion
 
 ---
 
-*State updated: 2026-04-09 — Plan 21-02 complete*
+*State updated: 2026-04-09 — Phase 21 complete*
