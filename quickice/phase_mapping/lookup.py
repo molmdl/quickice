@@ -232,13 +232,14 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         phase_id = "ice_xv"
         return _build_result(phase_id, T, P)
     
-    # 1c. Ice VI region at T=201.9-218.95K (above II-V-VI TP, below main VI check)
-    # This fills the gap between II-V-VI TP and the main VI region
-    # IMPORTANT: VI only exists at T >= II-V-VI TP (201.9K), not at lower T
+    # 1c. Ice VI region at T=100-218.95K (above XV region, below main VI check)
+    # This fills the gap between XV (T <= 100K) and main VI region (T >= 218.95K)
+    # VI extends from T=100K (meeting XV) up to II-V-VI TP (201.9K) and beyond
     # Must check BEFORE II to avoid II being returned for VI coordinates
-    T_ii_v_vi = TRIPLE_POINTS["II_V_VI"][0]  # 201.9K
-    if T_ii_v_vi <= T < 218.95 and P > 620:
+    # Note: At T=100K exactly, XV takes P >= 950, so VI gap fill handles P < 950
+    if 100.0 <= T < 218.95 and P > 620:
         # Check V-VI boundary - above this boundary is VI
+        # v_vi_boundary extrapolates correctly for T < 201.9K
         P_v_vi = v_vi_boundary(T)
         if P > P_v_vi:
             phase_id = "ice_vi"

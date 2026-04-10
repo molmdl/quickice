@@ -433,13 +433,23 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     # II-V-VI triple point
     vertices.append((T3, P3))
     
-    # Cold edge: below II-V-VI TP (T < 201.9K), VI doesn't exist
-    # So II extends to higher pressures
-    # At T <= 100K, XV exists at P=950-2100 MPa, so II stays at P < 950
-    # For T in [100, 201.9], II extends to P below XV's lower boundary
+    # Cold edge: below II-V-VI TP (T < 201.9K), VI still exists above V-VI boundary
+    # So II traces just BELOW the extrapolated V-VI boundary
+    # For T in [100, 201.9], trace below V-VI boundary
     
-    # From II-V-VI TP, go down to T=100K at P just below XV's lower boundary
-    vertices.append((100.0, 945.0))
+    T_cold = np.linspace(T3, 100.0, 10)
+    for T in T_cold[1:]:
+        P_vi = v_vi_boundary(T)  # This extrapolates for T < 201.9K
+        vertices.append((T, P_vi - 5.0))  # Just below VI boundary
+    
+    # At T=100K, V-VI boundary extrapolates to P≈726 MPa
+    # XV exists at P=950-2100 MPa for T <= 100K
+    # So at T=100K, II is at P < 726 (below V-VI boundary)
+    # We need to connect to the lower pressure region (T < 100K)
+    
+    # At T < 100K, XV occupies P=950-2100 MPa, so II stays at P < 950
+    # Connect from V-VI boundary at T=100K to below XV's lower boundary
+    vertices.append((100.0, 945.0))  # Just below XV
     
     # At T=50K, II extends from P=400 (IX upper boundary) to P=950 (below XV)
     vertices.append((50.0, 945.0))
@@ -548,12 +558,24 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")  # (278, 2100)
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP back to II-V-VI TP
-    # This follows the VI-VII boundary for T in [278, 201.9]
-    # Note: VI-VII boundary is only defined for T in [278, 354.75]
-    # For T < 278, we just connect directly to II-V-VI TP
-    # The VI region doesn't extend below T=201.9K (II-V-VI TP)
-    vertices.append((T1, P1))  # Back to II-V-VI TP to close polygon
+    # Cold boundary: from VI-VII-VIII TP down to T=100K at P=2100 MPa
+    # This touches XV's upper boundary (VIII's lower boundary)
+    vertices.append((100.0, 2100.0))
+    
+    # VI-XV transition point at (100K, 1100 MPa)
+    # This is where VI meets XV (XV is rendered on top at T <= 100K)
+    vertices.append((100.0, 1100.0))
+    
+    # From T=100K back to II-V-VI TP, trace along extrapolated V-VI boundary
+    # The V-VI boundary extrapolates to P≈726 MPa at T=100K
+    # We trace just above this boundary to close the polygon
+    T_cold = np.linspace(100.0, T1, 10)
+    for T in T_cold[1:-1]:  # Skip endpoints
+        P_vi = v_vi_boundary(T)  # This extrapolates for T < 201.9K
+        vertices.append((T, P_vi + 5.0))  # Just above boundary
+    
+    # Back to II-V-VI TP to close polygon
+    vertices.append((T1, P1))
     
     return vertices
 
