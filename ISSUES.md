@@ -4,106 +4,52 @@
 
 ---
 
-## Active Issues
-
-### Issue 3: Wrong Hydrogen Bonds in Tab 1 (REGRESSION)
-
-**Status:** In Progress  
-**Priority:** High  
-**Debug Session:** `.planning/debug/hbond-regression-all-phases.md`
-
-**Description:**
-After fixing PBC distance calculation for triclinic cells (commit dee7802), hydrogen bond display now shows incorrect bonds even for ice Ih (which used to work correctly).
-
-**Symptoms:**
-- O-O bonds displayed (incorrect - O cannot H-bond to O directly)
-- H-H bonds displayed (incorrect - H cannot H-bond to H)
-- Affects all ice phases, including orthorhombic ice Ih
-
-**Expected Behavior:**
-H-bonds should only be displayed between:
-- H atom (donor) of one molecule
-- O atom (acceptor) of a **different** molecule
-- Based on distance (< 2.5 Å) and O-H...O angle criteria
-
-**User's Key Insight:**
-> "hbond should be simple O-H distance and angle determination exclude same mol, right?"
-
-**Investigation Notes:**
-- `detect_hydrogen_bonds()` in `vtk_utils.py` appears logically correct
-- Returns `(H_position, O_position)` tuples
-- PBC distance calculation works (tests pass)
-- Bug likely in visualization layer or atom indexing
-
-**Files Involved:**
-- `quickice/gui/vtk_utils.py` - Lines 168-257 (detection), 260-316 (visualization)
-- `quickice/gui/molecular_viewer.py` - Lines 380-403 (display control)
-
----
-
-### Issue 2: Missing Documentation on Unsupported Phase in Interface
-
-**Status:** Pending  
-**Priority:** Medium  
-
-**Description:**
-Documentation is missing for which ice phases are not supported in interface construction mode.
-
-**Expected Behavior:**
-Users should see clear documentation or error messages when attempting to create an interface with unsupported ice phases.
-
-**Action Needed:**
-- Identify which phases are unsupported for interface mode
-- Add documentation in UI (tooltips, help text)
-- Add validation with clear error messages
-
----
-
-### Issue 4: PBC Overlap in Interface Slab Mode (Non-Hexagonal Phases)
-
-**Status:** Pending  
-**Priority:** High  
-
-**Description:**
-Periodic boundary condition overlap occurs in interface slab mode for some non-hexagonal ice phases (e.g., ice II, III, V, VI, VII).
-
-**Symptoms:**
-- Visual artifacts showing atoms overlapping across PBC boundaries
-- Affects non-hexagonal (triclinic) ice phases in slab mode
-- Hexagonal ice Ih works correctly
-
-**Expected Behavior:**
-Atoms should be properly wrapped within the simulation box, no visual overlap across boundaries.
-
-**Likely Cause:**
-The slab mode code may assume orthorhombic cells when placing/trimming ice layers, similar to the previous H-bond PBC issue.
-
-**Files to Investigate:**
-- `quickice/interface_generation/slab.py`
-- Related PBC handling in interface construction
-
----
-
-## Recently Resolved
+## Resolved Issues
 
 ### Issue 1: Interface GRO Export Error ✅
 - **Commit:** 721d9b2
 - **Root Cause:** `write_gro_file()` assumed 4 atoms/mol but ice Candidates have 3 atoms/mol
 - **Fix:** Corrected indexing to use `mol_idx * 3`, compute MW at export time
 
-### Issue 3 (Original): Wrong H-bonds for Non-Ih Phases ✅ (partial)
-- **Commit:** dee7802
-- **Root Cause:** PBC distance assumed orthorhombic cells
-- **Fix:** Updated `_pbc_distance()` to use fractional coordinates for triclinic cells
-- **Note:** This fix introduced the current regression for Issue 3
+### Issue 2: Missing Documentation on Unsupported Phase in Interface ✅
+- **Commit:** e29f65d
+- **Root Cause:** Users could generate ice_ii and ice_v candidates in Tab 1 but fail in Tab 2 with no prior explanation
+- **Fix:** Added "Interface Construction Limitation" note to README.md and "Phase Compatibility" section to gui-guide.md
+- **Note:** Documentation now clearly states that Ice II (rhombohedral) and Ice V (monoclinic) have triclinic cells and are not supported for interface construction
+
+### Issue 3: Wrong H-bonds in Tab 1 (REGRESSION) ✅
+- **Commits:** 4783a73 (H-bond fix), 3ca893b (triclinic validation)
+- **Root Cause:** After triclinic PBC fix (commit dee7802), H-bond visualization showed wrong bonds because `detect_hydrogen_bonds()` returned raw O positions without minimum-image correction. When H-bonds crossed periodic boundaries, lines were drawn to wrong periodic images.
+- **Fix:** Added `_pbc_min_image_position()` helper and modified `detect_hydrogen_bonds()` to return minimum-image corrected O positions. Also reverted MolecularViewerWidget to use VTK's built-in bond rendering for covalent O-H bonds.
+- **Additional Fix:** Added triclinic cell validation to all interface mode functions to provide clear error messages for unsupported phases.
+
+### Issue 4: PBC Overlap in Interface Slab Mode ✅
+- **Commits:** 3ca893b (triclinic validation), 6ea4bc4 (slab PBC overlap fix)
+- **Root Cause (Part 1):** Mode functions extracted only diagonal elements of cell matrix, discarding off-diagonal tilt factors. This caused incorrect tiling for triclinic cells.
+- **Fix (Part 1):** Added `_is_cell_orthogonal()` helper and triclinic validation to all mode functions (slab, pocket, piece).
+- **Root Cause (Part 2):** `tile_structure` wrapping logic used `if-elif` structure which only applied one correction at a time. When `min_pos < 0`, shifting up could push `max_pos >= target_region`, creating atoms outside the box. This affected orthogonal phases Ic, VII, VIII.
+- **Fix (Part 2):** Added second pass in wrapping logic to check if any atoms are still outside `[0, target_region)` after initial shift, and apply additional `+/-target_region` shift if needed.
+- **Verification:** All orthogonal phases (Ih, Ic, III, VI, VII, VIII) now work correctly with slab mode.
+
+### Issue: Phase Diagram Click Lookup Mismatch ✅
+- **Commit:** d2346f5
+- **Root Cause:** Phase diagram polygons for Ice XV, Ice VI, and Ice II didn't match `lookup_phase()` conditions, causing `PhaseDetector` (used by diagram clicks) to return different phases than `lookup_phase()` (used for structure generation).
+- **Fix:** Aligned polygon definitions with `lookup_phase()` conditions:
+  - XV polygon: Changed T range from 50-100K to 80-108K
+  - VI polygon: Changed start T from 100K to 108K
+  - VI lookup: Added check for T=108-218K to fill gap
+  - II polygon: Extended to P=2100 MPa for T < 80K
 
 ---
 
 ## Summary
 
-| Issue | Description | Status | Priority |
-|-------|-------------|--------|----------|
-| 1 | Interface GRO export error | ✅ Fixed | - |
-| 2 | Missing doc on unsupported phases | ⏳ Pending | Medium |
-| 3 | Wrong H-bonds (regression) | 🔄 In Progress | High |
-| 4 | PBC overlap in slab mode | ⏳ Pending | High |
+| Issue | Description | Status | Commits |
+|-------|-------------|--------|---------|
+| 1 | Interface GRO export error | ✅ Fixed | 721d9b2 |
+| 2 | Missing doc on unsupported phases | ✅ Fixed | e29f65d |
+| 3 | Wrong H-bonds (regression) | ✅ Fixed | 4783a73, 3ca893b |
+| 4 | PBC overlap in slab mode | ✅ Fixed | 3ca893b, 6ea4bc4 |
+| - | Phase diagram lookup mismatch | ✅ Fixed | d2346f5 |
+
+All issues from debug session dump resolved.
