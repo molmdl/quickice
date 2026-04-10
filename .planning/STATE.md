@@ -153,6 +153,12 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 (None)
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 004 | Interface viewer improvements (remove spheres, pocket types, UI layout) | 2026-04-10 | 48d8352 | [004-interface-viewer-improvements](./quick/004-interface-viewer-improvements/) |
+
 ---
 
 ## Archive Reference
@@ -168,7 +174,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-10 06:19 UTC
+**Last session:** 2026-04-10 14:19 UTC
 **Completed:** Quick task 004 (interface viewer improvements) — bond-only visualization, four pocket shapes, two-column layout
 **Next:** v3.0 milestone complete — ready for audit
 
