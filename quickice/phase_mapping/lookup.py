@@ -232,10 +232,12 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         phase_id = "ice_xv"
         return _build_result(phase_id, T, P)
     
-    # 1c. Ice VI region at T=100-218.95K (above XV, below main VI check)
-    # This fills the gap between XV (T <= 100K) and main VI region (T >= 218.95K)
+    # 1c. Ice VI region at T=201.9-218.95K (above II-V-VI TP, below main VI check)
+    # This fills the gap between II-V-VI TP and the main VI region
+    # IMPORTANT: VI only exists at T >= II-V-VI TP (201.9K), not at lower T
     # Must check BEFORE II to avoid II being returned for VI coordinates
-    if 100.0 < T < 218.95 and P > 620:
+    T_ii_v_vi = TRIPLE_POINTS["II_V_VI"][0]  # 201.9K
+    if T_ii_v_vi <= T < 218.95 and P > 620:
         # Check V-VI boundary - above this boundary is VI
         P_v_vi = v_vi_boundary(T)
         if P > P_v_vi:
@@ -273,9 +275,17 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
             P_vi_vii = vi_vii_boundary(T)
             phase_id = "ice_vii" if P > P_vi_vii else "ice_vi"
         else:
-            # Below VI-VII-VIII triple point, all high P is Ice VI
-            phase_id = "ice_vi"
-        return _build_result(phase_id, T, P)
+            # T in [218.95, 278]: check V-VI boundary to distinguish VI from V/II
+            P_v_vi = v_vi_boundary(T)
+            if P > P_v_vi:
+                # Above V-VI boundary = Ice VI
+                phase_id = "ice_vi"
+            else:
+                # Below V-VI boundary, not VI - let Ice V or Ice II checks handle it
+                pass
+        
+        if phase_id:
+            return _build_result(phase_id, T, P)
     
     # 3. Ice V region
     # Ice V: T(218.95-273.31K), P(344-626 MPa)

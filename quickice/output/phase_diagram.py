@@ -433,31 +433,16 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     # II-V-VI triple point
     vertices.append((T3, P3))
     
-    # Cold edge: II traces just BELOW VI boundary
-    # VI's left edge: from II-V-VI TP to (100, 1100)
-    # Line equation: P = P3 + (1100 - P3) * (T3 - T) / (T3 - 100)
-    T_cold = np.linspace(T3, 140.0, 10)
-    for T in T_cold[1:]:
-        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
-        vertices.append((T, P_vi - 5.0))
+    # Cold edge: below II-V-VI TP (T < 201.9K), VI doesn't exist
+    # So II extends to higher pressures
+    # At T <= 100K, XV exists at P=950-2100 MPa, so II stays at P < 950
+    # For T in [100, 201.9], II extends to P below XV's lower boundary
     
-    # At T=140K, IX ends. II continues down towards XV.
-    # From T=140K to T=100K: II traces just below VI boundary
-    # XV only exists at T <= 100K, so for T > 100K, II can extend up to VI boundary
-    T_cold2 = np.linspace(140.0, 100.0, 5)
-    for T in T_cold2[1:]:
-        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
-        vertices.append((T, P_vi - 5.0))
+    # From II-V-VI TP, go down to T=100K at P just below XV's lower boundary
+    vertices.append((100.0, 945.0))
     
-    # At T=100K, II meets VI at P~1095 (VI's left boundary)
-    # But XV exists at T <= 100K, P=950-2100 MPa
-    # So II must stay at P <= 950 for T <= 100K
-    # This creates a vertical drop at T=100K from P~1095 to P=950
-    vertices.append((100.0, 950.0))
-    
-    # At T < 100K, II stays at P=950 (XV's lower boundary)
-    # Go down to T=50K at P=950
-    vertices.append((50.0, 950.0))
+    # At T=50K, II extends from P=400 (IX upper boundary) to P=950 (below XV)
+    vertices.append((50.0, 945.0))
     
     # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
     vertices.append((50.0, 400.0))
@@ -540,39 +525,35 @@ def _build_ice_v_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     """Ice VI region: high pressure.
     
-    Ice VI exists at T >= 100K, P >= 620 MPa.
-    Cold boundary touches XV at the VI-XV transition point (100K, 1100 MPa).
-    At T < 100K, XV (ordered VI) exists instead of VI.
+    Ice VI exists at T >= 201.9K (II-V-VI TP), P above V-VI boundary.
+    Cold boundary is at II-V-VI triple point (201.9K, 670.8 MPa).
+    At T < 201.9K, VI doesn't exist - it's Ice II or Ice V instead.
+    At T < 100K, XV (ordered VI) exists in a separate region.
     """
     vertices = []
     
-    # II-V-VI triple point - this is the cold temperature limit where II meets VI
-    T1, P1 = get_triple_point("II_V_VI")
+    # II-V-VI triple point - this is the cold temperature limit of VI
+    T1, P1 = get_triple_point("II_V_VI")  # (201.9, 670.8)
     vertices.append((T1, P1))
     
     # V-VI-Liquid triple point
-    T2, P2 = get_triple_point("V_VI_Liquid")
+    T2, P2 = get_triple_point("V_VI_Liquid")  # (273.31, 632.4)
     vertices.append((T2, P2))
     
     # VI-VII-Liquid triple point
-    T3, P3 = get_triple_point("VI_VII_Liquid")
+    T3, P3 = get_triple_point("VI_VII_Liquid")  # (355, 2216)
     vertices.append((T3, P3))
     
     # VI-VII-VIII triple point
-    T4, P4 = get_triple_point("VI_VII_VIII")
+    T4, P4 = get_triple_point("VI_VII_VIII")  # (278, 2100)
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP down to T=100K at P=2100 MPa
-    # This touches XV's upper boundary (VIII's lower boundary)
-    vertices.append((100.0, 2100.0))
-    
-    # Touch VI-XV transition point at (100K, 1100 MPa)
-    # This is where VI meets XV (XV is rendered on top at T < 100K)
-    vertices.append((100.0, 1100.0))
-    
-    # Back to II-V-VI TP - close polygon
-    # This creates the cold edge that doesn't overlap XV
-    vertices.append((T1, P1))  # Back to II-V-VI TP
+    # Cold boundary: from VI-VII-VIII TP back to II-V-VI TP
+    # This follows the VI-VII boundary for T in [278, 201.9]
+    # Note: VI-VII boundary is only defined for T in [278, 354.75]
+    # For T < 278, we just connect directly to II-V-VI TP
+    # The VI region doesn't extend below T=201.9K (II-V-VI TP)
+    vertices.append((T1, P1))  # Back to II-V-VI TP to close polygon
     
     return vertices
 
