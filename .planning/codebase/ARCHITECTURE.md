@@ -1,194 +1,201 @@
 # Architecture
 
-**Analysis Date:** 2026-04-10
+**Analysis Date:** 2026-04-11
 
 ## Pattern Overview
 
-**Overall:** Pipeline with MVVM GUI layer
+**Overall:** Pipeline + MVVM hybrid
 
 **Key Characteristics:**
-- Sequential data pipeline for CLI: Input → Phase Mapping → Structure Generation → Ranking → Output
-- MVVM (Model-View-ViewModel) for GUI: View (PySide6 widgets) → ViewModel (signal/slot bridge) → Model (pipeline modules)
-- Background threading for GUI: QThread worker-object pattern keeps UI responsive during generation
-- Shared domain model: Both CLI and GUI use the same `quickice/` package modules
-- Dataclass-based type system: `Candidate`, `GenerationResult`, `RankedCandidate`, `RankingResult`, `InterfaceConfig`, `InterfaceStructure`, `OutputResult`
+- CLI path: Sequential pipeline (validation → phase mapping → structure generation → ranking → output)
+- GUI path: MVVM (Model-ViewModel-View) with background workers on QThread
+- Core domain logic is shared between CLI and GUI — neither depends on the other
+- Data flows through typed dataclasses (`Candidate`, `GenerationResult`, `RankedCandidate`, `RankingResult`, `OutputResult`, `InterfaceStructure`)
+- Phase mapping uses curve-based boundary evaluation (not polygon containment) for scientific accuracy
 
 ## Layers
 
-**CLI Entry Layer:**
-- Purpose: Parse command-line arguments and orchestrate the full pipeline
-- Location: `quickice.py`, `quickice/main.py`, `quickice/cli/parser.py`
-- Contains: CLI entry point, argparse parser, validation type converters
-- Depends on: `quickice.validation`, `quickice.phase_mapping`, `quickice.structure_generation`, `quickice.ranking`, `quickice.output`
-- Used by: End user via `python quickice.py`
+**Presentation (CLI):**
+- Purpose: Parse CLI arguments, display results to terminal
+- Location: `quickice/cli/`
+- Contains: Argument parser, CLI-specific validators
+- Depends on: `quickice.validation`, `quickice.main`
+- Used by: `quickice.py` entry point
 
-**GUI Entry Layer:**
-- Purpose: Provide interactive graphical interface with 3D visualization
+**Presentation (GUI):**
+- Purpose: Interactive ice structure generation and visualization
 - Location: `quickice/gui/`
-- Contains: PySide6 widgets, VTK 3D viewers, matplotlib diagram, ViewModel, background workers
-- Depends on: All pipeline modules, PySide6, VTK, matplotlib
-- Used by: End user via `python -m quickice.gui` or PyInstaller binary
+- Contains: PySide6 widgets, VTK viewers, matplotlib canvas, MVVM ViewModel, QThread workers
+- Depends on: All core modules (`phase_mapping`, `structure_generation`, `ranking`, `output`)
+- Used by: `python -m quickice.gui` entry point
 
-**Phase Mapping Layer (Domain):**
+**Orchestration:**
+- Purpose: Wire pipeline stages together into a single execution flow
+- Location: `quickice/main.py` (CLI), `quickice/gui/viewmodel.py` + `quickice/gui/workers.py` (GUI)
+- Contains: Sequential call chain from phase lookup through output
+- Depends on: All pipeline modules
+- Used by: CLI entry point, GUI ViewModel
+
+**Domain — Phase Mapping:**
 - Purpose: Determine which ice polymorph is stable at given T,P conditions
 - Location: `quickice/phase_mapping/`
-- Contains: Curve-based boundary evaluation, IAPWS melting curve equations, triple point data, solid-solid boundary interpolation
-- Depends on: `numpy`, `iapws` (for IAPWS97 saturation curve in diagram)
-- Used by: `quickice/main.py`, `quickice/gui/workers.py`, `quickice/output/phase_diagram.py`
+- Contains: Curve-based lookup, IAPWS melting equations, solid-solid boundary interpolation, triple point data
+- Depends on: `iapws` (for Liquid-Vapor boundary only)
+- Used by: `quickice.main`, `quickice/gui/workers.py`, `quickice/output/phase_diagram.py`
 
-**Structure Generation Layer (Domain):**
-- Purpose: Generate ice crystal structure candidates using GenIce2
+**Domain — Structure Generation:**
+- Purpose: Generate ice crystal structures using GenIce2 and build ice-water interfaces
 - Location: `quickice/structure_generation/`
-- Contains: GenIce2 wrapper, phase-to-lattice mapping, supercell calculation, interface builder (slab/pocket/piece modes), water filling, overlap resolution
-- Depends on: `genice2`, `numpy`, `quickice.structure_generation.mapper`, `quickice.structure_generation.types`
-- Used by: `quickice/main.py`, `quickice/gui/workers.py`
+- Contains: GenIce2 wrapper, phase-to-lattice mapper, supercell calculator, interface builder (slab/pocket/piece modes), water filler, overlap resolver
+- Depends on: `genice2`, `quickice.phase_mapping` (for density metadata)
+- Used by: `quickice.main`, `quickice/gui/workers.py`
 
-**Ranking Layer (Domain):**
-- Purpose: Score and rank ice structure candidates by quality metrics
+**Domain — Ranking:**
+- Purpose: Score and rank generated ice structure candidates
 - Location: `quickice/ranking/`
-- Contains: Energy scoring (O-O distance heuristic), density scoring, diversity scoring, min-max normalization
-- Depends on: `numpy`, `scipy.spatial.cKDTree`, `quickice.structure_generation.types`
-- Used by: `quickice/main.py`, `quickice/gui/workers.py`
+- Contains: Energy scorer (O-O distance heuristic), density scorer, diversity scorer, weighted combination
+- Depends on: `quickice.structure_generation.types` (Candidate type)
+- Used by: `quickice.main`, `quickice/gui/workers.py`
 
-**Output Layer:**
-- Purpose: Write results to files (PDB, GRO, TOP, phase diagram images)
+**Domain — Output:**
+- Purpose: Write results to files (PDB, GROMACS, phase diagrams)
 - Location: `quickice/output/`
-- Contains: PDB writer, GROMACS writer (GRO/TOP/ITP), structure validator (spglib), phase diagram generator (matplotlib), orchestrator
-- Depends on: `numpy`, `spglib`, `matplotlib`, `shapely`, `quickice.ranking.types`, `quickice.phase_mapping`
-- Used by: `quickice/main.py` (via orchestrator)
+- Contains: PDB writer, GROMACS writer, phase diagram generator, structure validator (spglib), orchestrator
+- Depends on: `quickice.ranking.types`, `quickice.phase_mapping` (for diagram boundary curves), `spglib`, `matplotlib`, `shapely`
+- Used by: `quickice.main`, `quickice/gui/export.py`
 
-**Validation Layer (Cross-Cutting):**
-- Purpose: Input validation for CLI and GUI
-- Location: `quickice/validation/validators.py` (CLI), `quickice/gui/validators.py` (GUI)
-- Contains: Temperature/pressure/molecule count validators; GUI validators return `(bool, str)` tuples, CLI validators raise `ArgumentTypeError`
-- Depends on: `argparse` (CLI only)
-- Used by: `quickice/cli/parser.py`, `quickice/gui/view.py`, `quickice/gui/interface_panel.py`
+**Validation:**
+- Purpose: Validate user inputs (temperature, pressure, molecule count)
+- Location: `quickice/validation/`
+- Contains: CLI validators (raise `ArgumentTypeError`) and shared validation logic
+- Depends on: None (standalone)
+- Used by: `quickice/cli/parser.py`, `quickice/gui/validators.py` (separate GUI-specific validators)
+
+**Static Data:**
+- Purpose: Bundled reference files (GROMACS topology templates)
+- Location: `quickice/data/`
+- Contains: `tip4p-ice.itp` (TIP4P-ICE topology), `tip4p.gro` (water template for interface generation)
+- Depends on: None
+- Used by: `quickice/output/gromacs_writer.py`, `quickice/structure_generation/water_filler.py`
 
 ## Data Flow
 
 **CLI Pipeline:**
 
-1. User runs `python quickice.py --temperature 300 --pressure 100 --nmolecules 96`
-2. `quickice.py` calls `quickice.main.main()`
-3. `main()` calls `get_arguments()` → parses and validates CLI args via `quickice/cli/parser.py`
-4. `main()` calls `lookup_phase(T, P)` → returns `phase_info` dict with `phase_id`, `phase_name`, `density`
-5. `main()` calls `generate_candidates(phase_info, nmolecules)` → returns `GenerationResult` with list of `Candidate` objects
-6. `main()` calls `rank_candidates(candidates)` → returns `RankingResult` with `RankedCandidate` list
-7. `main()` calls `output_ranked_candidates(ranking_result, output_dir)` → writes PDB files, validates structures, optionally generates phase diagram
-8. Optionally: `main()` calls GROMACS export functions to write `.gro`, `.top`, `.itp` files
-9. Exit code 0 on success, 1 on error
+1. User runs `python quickice.py -T 300 -P 100 -N 96`
+2. `quickice/cli/parser.py` parses and validates arguments via `quickice/validation/validators.py`
+3. `quickice/main.py:main()` calls `lookup_phase(T, P)` from `quickice/phase_mapping/`
+4. `generate_candidates(phase_info, nmolecules)` in `quickice/structure_generation/generator.py` creates `IceStructureGenerator`, calls GenIce2 for each seed
+5. `rank_candidates(candidates)` in `quickice/ranking/scorer.py` scores and sorts candidates
+6. `output_ranked_candidates(ranking_result)` in `quickice/output/orchestrator.py` writes PDB files, validates structures, generates phase diagram
+7. Optionally: GROMACS export writes `.gro`, `.top`, `.itp` files via `quickice/output/gromacs_writer.py`
 
-**GUI Pipeline (Tab 1 - Ice Generation):**
+**GUI Pipeline (MVVM):**
 
-1. User enters T, P, nmolecules in `InputPanel` or clicks phase diagram
-2. `MainWindow._on_generate_clicked()` validates inputs, calls `MainViewModel.start_generation(T, P, N)`
-3. `MainViewModel` creates `GenerationWorker`, moves to `QThread`, starts thread
-4. Worker runs same pipeline (lookup → generate → rank) in background, emitting progress/status signals
-5. On completion: `ranked_candidates_ready` signal → `MainWindow._on_candidates_ready()` → loads into `DualViewerWidget` for 3D display
-6. User can export via File menu (PDB, diagram, viewport, GROMACS)
+1. User enters parameters in `InputPanel` or clicks `PhaseDiagramPanel`
+2. `MainWindow._on_generate_clicked()` calls `MainViewModel.start_generation(T, P, N)`
+3. ViewModel creates `GenerationWorker` (QObject), moves to `QThread`, starts thread
+4. Worker runs same pipeline as CLI (lookup → generate → rank), emitting progress/status signals
+5. ViewModel forwards signals to View: `generation_progress`, `generation_status`, `ranked_candidates_ready`
+6. View updates: progress bar, log panel, `DualViewerWidget` loads ranked candidates via VTK
+7. Export handlers (`PDBExporter`, `GROMACSExporter`, etc.) save files via native file dialogs
 
-**GUI Pipeline (Tab 2 - Interface Construction):**
+**Interface Construction (GUI Tab 2):**
 
-1. User selects candidate from Tab 1 results, configures interface mode (slab/pocket/piece) in `InterfacePanel`
-2. `MainWindow._on_interface_generate()` calls `MainViewModel.start_interface_generation(candidate, config)`
-3. `InterfaceGenerationWorker` runs `generate_interface(candidate, config)` in background thread
-4. On completion: `InterfaceStructure` displayed in `InterfaceViewerWidget` (3D viewer)
-5. User can export interface structure as GROMACS files
+1. User selects candidate from Tab 1 dropdown, configures mode (slab/pocket/piece) in `InterfacePanel`
+2. `MainWindow._on_interface_generate()` creates `InterfaceConfig` and calls `MainViewModel.start_interface_generation()`
+3. `InterfaceGenerationWorker` calls `generate_interface(candidate, config)` in `quickice/structure_generation/interface_builder.py`
+4. Mode router dispatches to `modes/slab.py`, `modes/pocket.py`, or `modes/piece.py`
+5. Each mode: places ice slab/cavity, fills remaining space with water (via `water_filler.py`), resolves overlaps (via `overlap_resolver.py`)
+6. Returns `InterfaceStructure` → displayed in `InterfaceViewerWidget`
 
 **State Management:**
-- CLI: Stateless pipeline, all data flows through function return values
-- GUI: `MainViewModel` stores `_last_ranking_result` and `_last_interface_result` for cross-tab access
-- GUI: `MainWindow` stores `_current_result`, `_current_T`, `_current_P`, `_current_interface_result` for export
+- CLI: Stateless pipeline — each run is independent
+- GUI: ViewModel holds `_last_ranking_result` and `_last_interface_result` for export access
+- No persistent state between sessions — all state is transient (in-memory)
 
 ## Key Abstractions
 
-**Candidate:**
-- Purpose: Represents a single generated ice crystal structure
-- Examples: `quickice/structure_generation/types.py`
-- Pattern: `@dataclass` with `positions` (nm), `atom_names`, `cell` (nm), `nmolecules`, `phase_id`, `seed`, `metadata`
-- Key invariant: positions in nm, cell as (3,3) row-vector matrix, `new_position = position @ cell`
+**Candidate (`quickice/structure_generation/types.py`):**
+- Purpose: Represents a single generated ice structure with atomic positions, cell vectors, metadata
+- Examples: Created by `IceStructureGenerator._generate_single()`, consumed by ranking and output
+- Pattern: Immutable dataclass with numpy arrays (positions, cell) + metadata dict
 
-**RankedCandidate:**
-- Purpose: Wraps a Candidate with its ranking scores
-- Examples: `quickice/ranking/types.py`
-- Pattern: `@dataclass` with `candidate`, `energy_score`, `density_score`, `diversity_score`, `combined_score`, `rank`
+**GenerationResult (`quickice/structure_generation/types.py`):**
+- Purpose: Bundles multiple Candidates with generation metadata (requested vs actual molecule count)
+- Examples: Return type of `generate_candidates()`
+- Pattern: Dataclass container with `was_rounded` flag for crystal symmetry rounding
 
-**GenerationResult:**
-- Purpose: Bundles multiple candidates with metadata about the generation run
-- Examples: `quickice/structure_generation/types.py`
-- Pattern: `@dataclass` with `candidates`, `requested_nmolecules`, `actual_nmolecules`, `phase_id`, `phase_name`, `density`, `was_rounded`
+**RankedCandidate (`quickice/ranking/types.py`):**
+- Purpose: A Candidate with scoring breakdown and rank
+- Examples: Output of `rank_candidates()`, input to PDB writer and VTK viewer
+- Pattern: Dataclass wrapping a Candidate reference + score fields
 
-**InterfaceConfig:**
-- Purpose: Captures all parameters for interface structure generation
-- Examples: `quickice/structure_generation/types.py`
-- Pattern: `@dataclass` with mode, box dimensions, seed, mode-specific thicknesses, `from_dict()` classmethod for GUI binding
-- Validation: `__post_init__` validates `overlap_threshold` range to catch unit mismatches
+**InterfaceConfig (`quickice/structure_generation/types.py`):**
+- Purpose: Configuration dataclass capturing all interface generation parameters from UI
+- Examples: Created by `InterfacePanel.get_configuration()`, validated by `validate_interface_config()`
+- Pattern: Validated dataclass with `from_dict()` classmethod for UI→domain conversion
 
-**InterfaceStructure:**
-- Purpose: Result of ice-water interface generation with combined positions
-- Examples: `quickice/structure_generation/types.py`
-- Pattern: `@dataclass` with combined positions, `ice_atom_count` marking ice/water boundary
+**InterfaceStructure (`quickice/structure_generation/types.py`):**
+- Purpose: Combined ice + water atomic positions with phase boundary marker
+- Examples: Output of `generate_interface()`, input to VTK `InterfaceViewerWidget`
+- Pattern: Dataclass with `ice_atom_count` marking the ice/water split index
 
-**Worker-Object Pattern:**
-- Purpose: Run heavy computation off the Qt main thread without subclassing QThread
-- Examples: `quickice/gui/workers.py` (`GenerationWorker`, `InterfaceGenerationWorker`)
-- Pattern: QObject subclass with `run()` method, moved to QThread via `moveToThread()`, signals for progress/status/completion
+**Phase Info Dict (`quickice/phase_mapping/lookup.py`):**
+- Purpose: Result of phase lookup containing `phase_id`, `phase_name`, `density`, `temperature`, `pressure`
+- Examples: Return type of `lookup_phase()`, passed to `generate_candidates()`
+- Pattern: Plain dict with known keys (not a dataclass — legacy from polygon-based design)
 
 ## Entry Points
 
 **CLI Entry Point:**
-- Location: `quickice.py`
+- Location: `quickice.py` (project root)
 - Triggers: `python quickice.py --temperature 300 --pressure 100 --nmolecules 96`
-- Responsibilities: Imports `quickice.main.main()`, passes sys.exit code
-
-**CLI Main Function:**
-- Location: `quickice/main.py` → `main()`
-- Triggers: Called by `quickice.py` entry point
-- Responsibilities: Full pipeline orchestration (parse → lookup → generate → rank → output → export)
+- Responsibilities: Imports `quickice.main:main()`, passes `sys.exit()` code
 
 **GUI Entry Point:**
 - Location: `quickice/gui/__main__.py`
 - Triggers: `python -m quickice.gui`
-- Responsibilities: Creates QApplication, MainWindow, starts event loop
+- Responsibilities: Creates `QApplication`, `MainWindow`, starts Qt event loop
 
-**GUI Main Window:**
-- Location: `quickice/gui/main_window.py` → `MainWindow` class, `run_app()` function
-- Triggers: Called by `__main__.py` or `quickice/gui/__init__.py:run_app()`
-- Responsibilities: Assembles all UI components, connects signals, handles user actions
+**Main Module Entry Point:**
+- Location: `quickice/main.py:main()`
+- Triggers: Called by `quickice.py`
+- Responsibilities: Parses args, runs full pipeline (lookup → generate → rank → output), handles errors
 
-**Standalone Phase Diagram:**
-- Location: `quickice/output/phase_diagram.py` → `if __name__ == "__main__"`
-- Triggers: `python quickice/output/phase_diagram.py [T P]`
-- Responsibilities: Generates phase diagram image for testing
+**Direct Script Execution:**
+- Location: `quickice/output/phase_diagram.py` (has `if __name__ == "__main__"` block)
+- Triggers: `python quickice/output/phase_diagram.py [T] [P]`
+- Responsibilities: Standalone phase diagram generation for testing
 
 ## Error Handling
 
-**Strategy:** Layered exceptions with context-rich error messages
+**Strategy:** Fail-fast with typed exceptions, no silent fallbacks
 
 **Patterns:**
-- Domain errors use custom exception hierarchy: `PhaseMappingError` → `UnknownPhaseError`; `StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError`
-- CLI: Catches `UnknownPhaseError` separately (exit 1 with message), generic `Exception` fallback (exit 1)
-- GUI: Workers catch exceptions and emit `error` signal with message string; `MainWindow` shows `QMessageBox.critical` dialog
-- Validation errors: CLI raises `ArgumentTypeError` (argparse handles display); GUI validators return `(bool, error_message)` tuples for inline error labels
-- Interface builder validation: `InterfaceGenerationError` raised with detailed "How to fix" instructions in error messages
+- Domain errors use custom exception hierarchies:
+  - `PhaseMappingError` → `UnknownPhaseError` (`quickice/phase_mapping/errors.py`)
+  - `StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError` (`quickice/structure_generation/errors.py`)
+- CLI catches exceptions in `quickice/main.py:main()` and prints to stderr with exit code 1
+- GUI workers catch exceptions in `run()` methods and emit `error` signals with string messages
+- GUI `MainWindow` shows `QMessageBox.critical()` for generation errors
+- Validation errors: CLI uses `ArgumentTypeError` (argparse convention), GUI returns `(bool, str)` tuples
+- `UnknownPhaseError` carries `temperature` and `pressure` attributes for debugging context
+- Interface generation validates config BEFORE starting expensive operations (`validate_interface_config()`)
+- Structure validation (spglib) and overlap checking are non-fatal — logged as warnings, not errors
 
 ## Cross-Cutting Concerns
 
-**Logging:** Python `logging` module used in `quickice/output/orchestrator.py` and `quickice/output/phase_diagram.py` for warnings; GUI uses `InfoPanel` (text widget) for user-facing log output
+**Logging:** Python `logging` module used in output module (`quickice/output/orchestrator.py`, `quickice/output/phase_diagram.py`); GUI uses `InfoPanel` log display fed by ViewModel signals
 
-**Validation:** Dual validation system — CLI validators (`quickice/validation/validators.py`) raise `ArgumentTypeError`; GUI validators (`quickice/gui/validators.py`) return `(bool, str)` tuples with different limits (GUI nmolecules max=216 vs CLI max=100000)
+**Validation:** Dual validation systems — CLI validators raise exceptions (`quickice/validation/validators.py`), GUI validators return `(bool, str)` tuples (`quickice/gui/validators.py`). Same rules, different error propagation.
 
-**Authentication:** Not applicable — no user accounts or API keys
+**Unit Conversions:** Positions and cell vectors are consistently in nanometers (nm) internally. PDB writer converts to Ångströms (`* 10.0`). GROMACS writer converts to nm output. VTK viewer converts nm → Å for rendering. `InterfaceConfig.overlap_threshold` validates nm range [0.1, 1.0] to catch Å/nm unit mismatches.
 
-**Unit Consistency:** All internal coordinates in nanometers (nm); conversion to Ångströms happens only at export boundaries (`quickice/output/pdb_writer.py`, `quickice/output/validator.py`, `quickice/output/gromacs_writer.py`). The `InterfaceConfig.overlap_threshold` has `__post_init__` validation to catch Å/nm unit mismatches.
+**Thread Safety:** GenIce2 uses global `np.random` state (not thread-safe). `IceStructureGenerator._generate_single()` saves/restores global state. QuickIce is designed for sequential execution; concurrent generation is explicitly unsupported.
 
-**Thread Safety:** GenIce2 uses global `np.random` state (not thread-safe); `IceStructureGenerator._generate_single()` saves/restores global state. Workers import modules inside `run()` to avoid blocking main thread. QuickIce is designed for sequential execution only.
-
-**PBC Handling:** Multiple modules implement periodic boundary condition logic using scipy `cKDTree` with 3×3×3 supercell approach:
-- `quickice/ranking/scorer.py` → O-O distance calculation
-- `quickice/output/validator.py` → atomic overlap check
-- `quickice/structure_generation/overlap_resolver.py` → ice-water overlap detection
+**VTK Availability:** VTK rendering may fail in SSH/X11 forwarding environments. Both `quickice/gui/view.py` and `quickice/gui/interface_panel.py` detect `_VTK_AVAILABLE` and degrade gracefully (show log message instead of 3D viewer). `QUICKICE_FORCE_VTK=true` env var overrides detection.
 
 ---
 
-*Architecture analysis: 2026-04-10*
+*Architecture analysis: 2026-04-11*
