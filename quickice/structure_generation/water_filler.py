@@ -229,9 +229,31 @@ def tile_structure(
 
     filtered = all_positions[keep_mask]
 
-    # Wrap positions into target region using modulo
-    # This handles edge cases where atoms fall exactly on box boundary
-    tiled_positions = filtered % target_region
+    # CRITICAL: Wrap molecules as UNITS, not individual atoms
+    # This preserves molecular integrity when molecules span the PBC boundary
+    # Without this, atoms of the same molecule could end up on opposite sides
+    # of the box (e.g., O at Y=0.1, H at Y=1.9 in a 2.0 nm box), causing
+    # bonds to appear 1.8 nm long instead of the correct 0.1 nm.
+    tiled_positions = np.zeros_like(filtered)
+    n_filtered_molecules = len(filtered) // atoms_per_molecule
+
+    for mol_idx in range(n_filtered_molecules):
+        start_atom = mol_idx * atoms_per_molecule
+        end_atom = start_atom + atoms_per_molecule
+        mol_atoms = filtered[start_atom:end_atom]
+
+        # Use first atom (oxygen) as reference for wrapping
+        o_pos = mol_atoms[0].copy()
+
+        # Calculate shift to wrap O into target region
+        # We want O to be in [0, lx) x [0, ly) x [0, lz)
+        shift = np.zeros(3)
+        for dim in range(3):
+            # Use floor division to find how many box lengths to shift
+            shift[dim] = -np.floor(o_pos[dim] / target_region[dim]) * target_region[dim]
+
+        # Apply same shift to ALL atoms in the molecule
+        tiled_positions[start_atom:end_atom] = mol_atoms + shift
 
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
