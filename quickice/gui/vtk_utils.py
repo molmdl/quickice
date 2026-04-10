@@ -165,6 +165,38 @@ def _pbc_distance(pos1: np.ndarray, pos2: np.ndarray, cell: np.ndarray) -> float
     return np.linalg.norm(delta_cart)
 
 
+def _pbc_min_image_position(ref_pos: np.ndarray, target_pos: np.ndarray, cell: np.ndarray) -> np.ndarray:
+    """Get the minimum image position of target relative to reference position.
+    
+    Given a reference position (e.g., H atom), returns the periodic image of target_pos
+    that is closest to ref_pos. This is needed for correct visualization of H-bonds
+    that cross periodic boundaries.
+    
+    Args:
+        ref_pos: (3,) array of reference position (e.g., H atom) in nm
+        target_pos: (3,) array of target position (e.g., O atom) in nm
+        cell: (3, 3) cell matrix in nm
+    
+    Returns:
+        (3,) array of target_pos in the periodic image closest to ref_pos
+    """
+    # Compute displacement from ref to target
+    delta_cart = target_pos - ref_pos
+    
+    # Convert to fractional coordinates
+    cell_inv = np.linalg.inv(cell)
+    delta_frac = delta_cart @ cell_inv
+    
+    # Apply minimum image convention in fractional space
+    delta_frac = delta_frac - np.round(delta_frac)
+    
+    # Convert back to Cartesian coordinates
+    delta_cart = delta_frac @ cell
+    
+    # Return the minimum image position of target
+    return ref_pos + delta_cart
+
+
 def detect_hydrogen_bonds(
     candidate: Candidate, max_distance: float = 0.25
 ) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
@@ -249,9 +281,12 @@ def detect_hydrogen_bonds(
             
             if distance < max_distance:
                 # H-bond detected: H...O
+                # Use minimum image position of O for correct visualization
+                # This ensures the line is drawn to the nearest periodic image of O
+                o_min_image = _pbc_min_image_position(h_pos, o_pos, cell)
                 hbonds.append((
                     tuple(float(h_pos[i]) for i in range(3)),
-                    tuple(float(o_pos[i]) for i in range(3))
+                    tuple(float(o_min_image[i]) for i in range(3))
                 ))
     
     return hbonds
