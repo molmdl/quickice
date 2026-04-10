@@ -231,10 +231,30 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         phase_id = "ice_xv"
         return _build_result(phase_id, T, P)
     
+    # 1c. Ice VI region at low temperature (T=108-218K, above XV range)
+    # This fills the gap between XV (T=80-108K) and the main VI region (T >= 218K)
+    # Lower boundary: line from (108K, 1100 MPa) to (201.9K, 670.8 MPa)
+    # Upper boundary: line from (108K, 2100 MPa) to (201.9K, 670.8 MPa) or P=2100
+    # This region is where VI exists but was previously missed
+    if 108.0 < T < 218.95 and P > 620:
+        # Calculate VI lower boundary at this temperature
+        # Line from (108, 1100) to (201.9, 670.8): II-V-VI TP
+        T_low = 108.0
+        T_tp = 201.9  # II_V_VI triple point
+        P_low = 1100.0  # VI-XV transition
+        P_tp = 670.8   # II_V_VI TP
+        
+        # Linear interpolation for VI lower boundary
+        P_vi_lower = P_low + (P_tp - P_low) * (T - T_low) / (T_tp - T_low)
+        
+        if P > P_vi_lower:
+            phase_id = "ice_vi"
+            return _build_result(phase_id, T, P)
+    
     # 2. Ice VI region (between V-VI and VI-VII boundaries)
     # Ice VI: T(273.31-355K at high P), P(626-2200 MPa)
-    # Note: At lower temperatures, Ice VI extends down to T=218.95K (II-V-VI TP)
-    # For T > 354.75K (VI-VII-Liquid TP): Ice VI doesn't exist, boundary is VII melting curve
+    # Note: At lower temperatures, Ice VI extends down to T=108K (checked above)
+    # The II-V-VI TP is at T=201.9K (not 218.95K as previously stated)
     if T >= 218.95 and P > 620:
         if T > 354.75:
             # Above VI-VII-Liquid TP: Ice VI doesn't exist
