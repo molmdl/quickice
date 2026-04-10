@@ -402,9 +402,8 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     
     II exists in the region between Ih-II boundary and the XV/VI regions.
     At T < 140K, IX exists at P=200-400 MPa, so II must stay at P >= 400 MPa.
-    At T=80-108K, XV exists at P=950-2100 MPa, so II must stay at P <= 950 MPa.
-    At T < 80K (below XV range), II extends up to VIII boundary (P=2100 MPa).
-    II should NOT overlap VI - trace just below VI boundary for T > 108K.
+    At T < 100K, XV exists at P=950-2100 MPa, so II must stay at P <= 950 MPa.
+    II should NOT overlap VI - trace just below VI boundary.
     """
     vertices = []
     
@@ -435,37 +434,32 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     vertices.append((T3, P3))
     
     # Cold edge: II traces just BELOW VI boundary
-    # VI's left edge: from II-V-VI TP to (108, 1100) - updated for XV range T=80-108K
-    # Line equation: P = P3 + (1100 - P3) * (T3 - T) / (T3 - 108)
+    # VI's left edge: from II-V-VI TP to (100, 1100)
+    # Line equation: P = P3 + (1100 - P3) * (T3 - T) / (T3 - 100)
     T_cold = np.linspace(T3, 140.0, 10)
     for T in T_cold[1:]:
-        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 108.0)
+        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
         vertices.append((T, P_vi - 5.0))
     
     # At T=140K, IX ends. II continues down towards XV.
-    # From T=140K to T=108K: II traces just below VI boundary
-    # XV exists at T=80-108K, P=950-2100 MPa, so II stays at P <= 950 for T > 80K
-    T_cold2 = np.linspace(140.0, 108.0, 5)
+    # From T=140K to T=100K: II traces just below VI boundary
+    # XV only exists at T <= 100K, so for T > 100K, II can extend up to VI boundary
+    T_cold2 = np.linspace(140.0, 100.0, 5)
     for T in T_cold2[1:]:
-        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 108.0)
+        P_vi = P3 + (1100.0 - P3) * (T3 - T) / (T3 - 100.0)
         vertices.append((T, P_vi - 5.0))
     
-    # At T=108K (upper bound of XV), II meets XV's lower boundary
-    # XV is at T=80-108K, P=950-2100 MPa
-    vertices.append((108.0, 950.0))
+    # At T=100K, II meets VI at P~1095 (VI's left boundary)
+    # But XV exists at T <= 100K, P=950-2100 MPa
+    # So II must stay at P <= 950 for T <= 100K
+    # This creates a vertical drop at T=100K from P~1095 to P=950
+    vertices.append((100.0, 950.0))
     
-    # At T=80-108K, XV occupies P=950-2100 MPa, so II stays at P <= 950
-    # Vertical drop from T=108K to T=80K at P=950
-    vertices.append((80.0, 950.0))
+    # At T < 100K, II stays at P=950 (XV's lower boundary)
+    # Go down to T=50K at P=950
+    vertices.append((50.0, 950.0))
     
-    # At T < 80K, XV doesn't exist, so II extends up to VIII boundary (P=2100 MPa)
-    # Go up to P=2100 at T=80K
-    vertices.append((80.0, 2100.0))
-    
-    # At T=50K, stay at P=2100 (VIII lower boundary)
-    vertices.append((50.0, 2100.0))
-    
-    # At T=50K, go down to P=400 (IX's upper boundary for T < 140K)
+    # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
     vertices.append((50.0, 400.0))
     
     # Up to T=140K at P=400 (IX upper boundary)
@@ -546,13 +540,9 @@ def _build_ice_v_polygon() -> List[Tuple[float, float]]:
 def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     """Ice VI region: high pressure.
     
-    Ice VI exists at T >= 108K (above XV range), P > ~620 MPa.
-    Cold boundary starts at T=108K to avoid overlap with Ice XV (T=80-108K, P=950-2100 MPa).
-    At T=80-108K, XV (ordered VI) exists instead of VI.
-    
-    Note: The VI polygon covers T=108-355K, but lookup_phase() currently only checks
-    VI for T >= 218.95K. The region T=108-218K is checked by II in lookup_phase().
-    This polygon represents the theoretical VI stability region.
+    Ice VI exists at T >= 100K, P >= 620 MPa.
+    Cold boundary touches XV at the VI-XV transition point (100K, 1100 MPa).
+    At T < 100K, XV (ordered VI) exists instead of VI.
     """
     vertices = []
     
@@ -572,13 +562,13 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     T4, P4 = get_triple_point("VI_VII_VIII")
     vertices.append((T4, P4))
     
-    # Cold boundary: from VI-VII-VIII TP down to T=108K at P=2100 MPa
-    # This is above XV's upper temperature bound (T=108K)
-    T_xv_upper = 108.0  # Upper bound of XV temperature range
-    vertices.append((T_xv_upper, 2100.0))
+    # Cold boundary: from VI-VII-VIII TP down to T=100K at P=2100 MPa
+    # This touches XV's upper boundary (VIII's lower boundary)
+    vertices.append((100.0, 2100.0))
     
-    # At T=108K, P=1100 MPa is where VI meets XV's upper boundary
-    vertices.append((T_xv_upper, 1100.0))
+    # Touch VI-XV transition point at (100K, 1100 MPa)
+    # This is where VI meets XV (XV is rendered on top at T < 100K)
+    vertices.append((100.0, 1100.0))
     
     # Back to II-V-VI TP - close polygon
     # This creates the cold edge that doesn't overlap XV
@@ -793,16 +783,12 @@ def _build_ice_x_polygon() -> List[Tuple[float, float]]:
 
 
 def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
-    """Ice XV region: T = 80-108K, P = 950-2100 MPa (proton-ordered VI).
+    """Ice XV region: T = 50-100K, P = 950-2100 MPa (proton-ordered VI).
     
     Ice XV is the proton-ordered form of Ice VI at low temperatures.
-    This polygon matches the lookup_phase() condition: T=80-108K, P=950-2100 MPa.
-    
-    Note: The VI_XV_Transition triple point is at (100K, 1100 MPa), but the stable
-    range for XV extends slightly beyond this (80-108K) based on literature values.
-    
-    References:
-    - Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701
+    Extends from T=50K to T=100K where it meets VI.
+    Pressure spans from II's upper boundary (P~950 MPa) to VIII's lower boundary (P=2100 MPa).
+    The VI-XV transition point (100K, 1100 MPa) is at the top of this region.
     """
     from quickice.phase_mapping.solid_boundaries import xv_boundary
     
@@ -813,24 +799,20 @@ def _build_ice_xv_polygon() -> List[Tuple[float, float]]:
     P_lower = 950.0
     P_upper = 2100.0
     
-    # Temperature range matches lookup_phase() condition: T=80-108K
-    T_lower = 80.0
-    T_upper = 108.0
+    # Start at T=50K, lower boundary
+    vertices.append((50.0, P_lower))
     
-    # Start at T=80K, lower boundary
-    vertices.append((T_lower, P_lower))
+    # Lower boundary to T=100K
+    vertices.append((100.0, P_lower))
     
-    # Lower boundary to T=108K
-    vertices.append((T_upper, P_lower))
+    # Upper boundary at T=100K (touching VIII)
+    vertices.append((100.0, P_upper))
     
-    # Upper boundary at T=108K (touching VIII)
-    vertices.append((T_upper, P_upper))
-    
-    # Back along upper boundary to T=80K
-    vertices.append((T_lower, P_upper))
+    # Back along upper boundary to T=50K
+    vertices.append((50.0, P_upper))
     
     # Close back to start
-    vertices.append((T_lower, P_lower))
+    vertices.append((50.0, P_lower))
     
     return vertices
 
