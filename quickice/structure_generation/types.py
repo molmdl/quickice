@@ -86,7 +86,7 @@ class InterfaceConfig:
     ice_thickness: float = 0.0
     water_thickness: float = 0.0
     pocket_diameter: float = 0.0
-    pocket_shape: str = "sphere"
+    pocket_shape: str = "sphere"  # Valid values: "sphere", "rectangular", "cubic", "hexagonal"
     overlap_threshold: float = 0.25  # 0.25 nm = 2.5 Å
 
     def __post_init__(self):

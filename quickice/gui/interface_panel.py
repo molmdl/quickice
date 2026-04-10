@@ -185,10 +185,10 @@ class InterfacePanel(QWidget):
         # Pocket shape row
         shape_row = QHBoxLayout()
         self.pocket_shape_combo = QComboBox()
-        self.pocket_shape_combo.addItems(["Sphere", "Ellipsoid"])
-        self.pocket_shape_combo.setToolTip("Cavity shape: sphere or ellipsoid")
+        self.pocket_shape_combo.addItems(["Sphere", "Rectangular", "Cubic", "Hexagonal"])
+        self.pocket_shape_combo.setToolTip("Cavity shape: sphere, rectangular prism, cube, or hexagonal prism")
         shape_row.addWidget(QLabel("Pocket shape:"))
-        shape_row.addWidget(HelpIcon("Shape of the water cavity. Sphere creates a round void. Ellipsoid allows elongated cavities (future release)."))
+        shape_row.addWidget(HelpIcon("Shape of the water cavity. Sphere creates a round void. Rectangular creates a rectangular prism. Cubic creates a cube. Hexagonal creates a hexagonal prism."))
         shape_row.addWidget(self.pocket_shape_combo)
         shape_row.addStretch()
         

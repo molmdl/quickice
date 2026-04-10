@@ -199,15 +199,13 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
                 mode=config.mode
             )
 
-        # Check pocket_shape (v3.0 only supports sphere)
-        if config.pocket_shape != "sphere":
+        # Check pocket_shape is valid
+        valid_shapes = {"sphere", "rectangular", "cubic", "hexagonal"}
+        if config.pocket_shape not in valid_shapes:
             raise InterfaceGenerationError(
-                f"Ellipsoid pockets not yet supported in QuickIce v3.0. "
-                f"Only spherical pockets (pocket_shape='sphere') are available. "
-                f"Got: '{config.pocket_shape}'. "
-                f"\n\nEllipsoid pockets allow elongated cavities but require additional "
-                f"shape parameters. This feature may be added in a future version. "
-                f"\n\nHow to fix: Set pocket shape to 'Sphere' in the UI.",
+                f"Invalid pocket shape: '{config.pocket_shape}'. "
+                f"Valid shapes are: sphere, rectangular, cubic, hexagonal. "
+                f"\n\nHow to fix: Select a valid pocket shape in the UI.",
                 mode=config.mode
             )
 

@@ -1,11 +1,13 @@
 """Pocket mode: water cavity in ice matrix.
 
-Creates a spherical water cavity inside an ice matrix at the box center.
+Creates a water-filled cavity inside an ice matrix at the box center.
+Supports four cavity shapes: sphere, rectangular prism, cube, and hexagonal prism.
 Ice molecules inside the cavity are removed, water fills the cavity,
 and overlapping water molecules at the boundary are removed.
 """
 
 import numpy as np
+import math
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
@@ -25,12 +27,15 @@ from quickice.structure_generation.overlap_resolver import (
 def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
     """Assemble pocket interface structure: water cavity in ice matrix.
 
-    Creates a spherical cavity at the box center, removes ice molecules
+    Creates a cavity at the box center, removes ice molecules
     inside the cavity, fills the cavity with water, and removes overlapping
     water molecules at the ice-water boundary.
 
-    For v3.0 MVP, only spherical cavities are supported. Ellipsoid support
-    is planned for future versions.
+    Supports four cavity shapes:
+    - sphere: spherical void with diameter = pocket_diameter
+    - rectangular: rectangular prism with dimensions = pocket_diameter in all axes
+    - cubic: cube with side = pocket_diameter
+    - hexagonal: hexagonal prism with circumradius = pocket_diameter/2, height = pocket_diameter
 
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
@@ -40,14 +45,9 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         InterfaceStructure with ice (outside cavity) + water (in cavity).
 
     Raises:
-        InterfaceGenerationError: If pocket_shape is not "sphere" or if generation fails.
+        InterfaceGenerationError: If pocket_shape is not valid or if generation fails.
     """
-    # Check pocket shape (v3.0 only supports sphere)
-    if config.pocket_shape != "sphere":
-        raise InterfaceGenerationError(
-            f"Ellipsoid pockets not yet supported. pocket_shape must be 'sphere', got '{config.pocket_shape}'.",
-            mode="pocket"
-        )
+    # Get ice cell diagonal dimensions (orthogonal boxes only for v3.0)
 
     # Get ice cell diagonal dimensions (orthogonal boxes only for v3.0)
     ice_cell_dims = np.array([
@@ -77,15 +77,51 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             mode="pocket"
         )
 
-    # Remove ice molecules inside the spherical cavity
+    # Remove ice molecules inside the cavity (shape-dependent)
     # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule from GenIce)
     ice_o_positions = ice_positions[::3]
-
-    # Calculate distances from cavity center (no PBC needed - cavity is fully inside box)
-    distances = np.linalg.norm(ice_o_positions - center, axis=1)
-
-    # Molecules inside cavity: remove these
-    ice_inside_cavity = set(np.where(distances < radius)[0])
+    
+    # Calculate which ice molecules are inside the cavity based on shape
+    if config.pocket_shape == "sphere":
+        # Spherical cavity: distance from center < radius
+        distances = np.linalg.norm(ice_o_positions - center, axis=1)
+        ice_inside_cavity = set(np.where(distances < radius)[0])
+    
+    elif config.pocket_shape == "rectangular":
+        # Rectangular prism: |x - cx| < rx, |y - cy| < ry, |z - cz| < rz
+        # Since diameter defines all dimensions, rx = ry = rz = radius
+        dx = np.abs(ice_o_positions[:, 0] - center[0])
+        dy = np.abs(ice_o_positions[:, 1] - center[1])
+        dz = np.abs(ice_o_positions[:, 2] - center[2])
+        ice_inside_cavity = set(np.where((dx < radius) & (dy < radius) & (dz < radius))[0])
+    
+    elif config.pocket_shape == "cubic":
+        # Cubic cavity: same as rectangular (diameter defines single side length)
+        dx = np.abs(ice_o_positions[:, 0] - center[0])
+        dy = np.abs(ice_o_positions[:, 1] - center[1])
+        dz = np.abs(ice_o_positions[:, 2] - center[2])
+        ice_inside_cavity = set(np.where((dx < radius) & (dy < radius) & (dz < radius))[0])
+    
+    elif config.pocket_shape == "hexagonal":
+        # Hexagonal prism: pointy-top hexagon in XY plane, extruded along Z
+        # Circumradius R = radius (half of diameter)
+        # Containment test: max(|y|, |y|/2 + |x|*sqrt(3)/2) <= R for pointy-top hex
+        # And |z - cz| < radius for Z containment
+        dx = np.abs(ice_o_positions[:, 0] - center[0])
+        dy = np.abs(ice_o_positions[:, 1] - center[1])
+        dz = np.abs(ice_o_positions[:, 2] - center[2])
+        # Pointy-top hexagon containment (circumradius R)
+        hex_check = np.maximum(dy, dy / 2 + dx * math.sqrt(3) / 2)
+        inside_xy = hex_check <= radius
+        inside_z = dz < radius
+        ice_inside_cavity = set(np.where(inside_xy & inside_z)[0])
+    
+    else:
+        raise InterfaceGenerationError(
+            f"Unknown pocket shape: '{config.pocket_shape}'. "
+            f"Valid shapes: sphere, rectangular, cubic, hexagonal.",
+            mode="pocket"
+        )
 
     # Remove ice molecules inside cavity
     if ice_inside_cavity:
@@ -127,12 +163,42 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Remove water molecules OUTSIDE the cavity (keep only water IN cavity)
     # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule from TIP4P)
     water_o_positions = water_positions[::4]
-
-    # Calculate distances from cavity center
-    water_distances = np.linalg.norm(water_o_positions - center, axis=1)
-
-    # Molecules outside cavity: remove these (keep water_distances < radius)
-    water_outside = set(np.where(water_distances >= radius)[0])
+    
+    # Calculate which water molecules are OUTSIDE the cavity based on shape
+    if config.pocket_shape == "sphere":
+        # Spherical cavity: distance from center >= radius -> outside
+        water_distances = np.linalg.norm(water_o_positions - center, axis=1)
+        water_outside = set(np.where(water_distances >= radius)[0])
+    
+    elif config.pocket_shape == "rectangular":
+        # Rectangular prism: outside if any coordinate exceeds half-size
+        dx = np.abs(water_o_positions[:, 0] - center[0])
+        dy = np.abs(water_o_positions[:, 1] - center[1])
+        dz = np.abs(water_o_positions[:, 2] - center[2])
+        water_outside = set(np.where((dx >= radius) | (dy >= radius) | (dz >= radius))[0])
+    
+    elif config.pocket_shape == "cubic":
+        # Cubic cavity: same as rectangular
+        dx = np.abs(water_o_positions[:, 0] - center[0])
+        dy = np.abs(water_o_positions[:, 1] - center[1])
+        dz = np.abs(water_o_positions[:, 2] - center[2])
+        water_outside = set(np.where((dx >= radius) | (dy >= radius) | (dz >= radius))[0])
+    
+    elif config.pocket_shape == "hexagonal":
+        # Hexagonal prism: outside if outside hexagon in XY or outside Z range
+        dx = np.abs(water_o_positions[:, 0] - center[0])
+        dy = np.abs(water_o_positions[:, 1] - center[1])
+        dz = np.abs(water_o_positions[:, 2] - center[2])
+        hex_check = np.maximum(dy, dy / 2 + dx * math.sqrt(3) / 2)
+        outside_xy = hex_check > radius
+        outside_z = dz >= radius
+        water_outside = set(np.where(outside_xy | outside_z)[0])
+    
+    else:
+        raise InterfaceGenerationError(
+            f"Unknown pocket shape: '{config.pocket_shape}'.",
+            mode="pocket"
+        )
 
     # Remove water molecules outside cavity
     if water_outside:
