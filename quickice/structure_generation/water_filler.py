@@ -197,22 +197,25 @@ def tile_structure(
 
     # CRITICAL: Filter at MOLECULE boundaries, not individual atoms
     # This prevents incomplete molecules that cause index overflow bugs
+    # Also filter out molecules that span the PBC boundary (atoms outside [0, target_region))
     tol = 1e-10
 
     # Count total molecules in tiled structure
     n_tiled_molecules = len(all_positions) // atoms_per_molecule
 
     # Check each molecule: keep only if ALL its atoms are inside target region
+    # AND all atoms are >= 0 (lower bound check)
+    # This filters out molecules that span the PBC boundary of the original unit cell
     keep_molecules = []
     for mol_idx in range(n_tiled_molecules):
         start_atom = mol_idx * atoms_per_molecule
         end_atom = start_atom + atoms_per_molecule
         mol_atoms = all_positions[start_atom:end_atom]
 
-        # Check if ALL atoms of this molecule are inside target region
-        all_inside_x = np.all(mol_atoms[:, 0] < lx - tol)
-        all_inside_y = np.all(mol_atoms[:, 1] < ly - tol)
-        all_inside_z = np.all(mol_atoms[:, 2] < lz - tol)
+        # Check if ALL atoms of this molecule are inside target region [0, target_region)
+        all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
+        all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
+        all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
 
         if all_inside_x and all_inside_y and all_inside_z:
             keep_molecules.append(mol_idx)
@@ -234,26 +237,51 @@ def tile_structure(
     # Without this, atoms of the same molecule could end up on opposite sides
     # of the box (e.g., O at Y=0.1, H at Y=1.9 in a 2.0 nm box), causing
     # bonds to appear 1.8 nm long instead of the correct 0.1 nm.
+    #
+    # After filtering, all atoms should already be in [0, target_region).
+    # The wrapping here is a safety measure for edge cases (e.g., floating point
+    # precision issues, or molecules very close to boundary).
     tiled_positions = np.zeros_like(filtered)
     n_filtered_molecules = len(filtered) // atoms_per_molecule
 
     for mol_idx in range(n_filtered_molecules):
         start_atom = mol_idx * atoms_per_molecule
         end_atom = start_atom + atoms_per_molecule
-        mol_atoms = filtered[start_atom:end_atom]
+        mol_atoms = filtered[start_atom:end_atom].copy()
 
-        # Use first atom (oxygen) as reference for wrapping
-        o_pos = mol_atoms[0].copy()
-
-        # Calculate shift to wrap O into target region
-        # We want O to be in [0, lx) x [0, ly) x [0, lz)
+        # Calculate shift based on minimum position across all atoms
+        # This handles any edge cases where atoms might be slightly outside [0, target_region)
         shift = np.zeros(3)
         for dim in range(3):
-            # Use floor division to find how many box lengths to shift
-            shift[dim] = -np.floor(o_pos[dim] / target_region[dim]) * target_region[dim]
+            min_pos = mol_atoms[:, dim].min()
+            max_pos = mol_atoms[:, dim].max()
+            
+            # Only shift if atoms are actually outside [0, target_region)
+            if min_pos < 0:
+                # Shift up to bring minimum into range
+                shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
+            elif max_pos >= target_region[dim]:
+                # Shift down to bring maximum into range
+                shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
 
-        # Apply same shift to ALL atoms in the molecule
-        tiled_positions[start_atom:end_atom] = mol_atoms + shift
+        # Apply shift to all atoms in the molecule
+        shifted = mol_atoms + shift
+        
+        # Second pass: ensure all atoms are within [0, target_region)
+        # This handles edge cases where the first shift pushed atoms out the other side
+        # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
+        for dim in range(3):
+            min_pos = shifted[:, dim].min()
+            max_pos = shifted[:, dim].max()
+            
+            if min_pos < 0:
+                # Atoms are still negative after first shift - shift up by one box
+                shifted[:, dim] += target_region[dim]
+            elif max_pos >= target_region[dim]:
+                # Atoms are too high after first shift - shift down by one box
+                shifted[:, dim] -= target_region[dim]
+        
+        tiled_positions[start_atom:end_atom] = shifted
 
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
