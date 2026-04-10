@@ -14,6 +14,9 @@ import numpy as np
 # Number of atoms per TIP4P water molecule (OW, HW1, HW2, MW)
 ATOMS_PER_WATER_MOLECULE = 4
 
+# Water atom names template for ONE molecule
+WATER_ATOM_NAMES_TEMPLATE = ["OW", "HW1", "HW2", "MW"]
+
 # Module-level cache for water template (never changes)
 _water_template_cache: Optional[tuple[np.ndarray, list[str], np.ndarray]] = None
 
@@ -275,6 +278,7 @@ def fill_region_with_water(
     tiled_positions = tiled_positions[:n_atoms]
 
     # Replicate atom names: one template's worth per molecule
-    all_atom_names = template_atom_names * n_molecules
+    # Use the constant template for ONE molecule, not the full template which may have many
+    all_atom_names = WATER_ATOM_NAMES_TEMPLATE * n_molecules
 
     return tiled_positions, all_atom_names, n_molecules

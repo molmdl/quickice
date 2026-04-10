@@ -77,6 +77,10 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             mode="pocket"
         )
 
+    # Build ice atom names BEFORE removing molecules (CRITICAL for correct filtering)
+    # Ice has 3 atoms per molecule: O, H, H from GenIce
+    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
+
     # Remove ice molecules inside the cavity (shape-dependent)
     # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule from GenIce)
     ice_o_positions = ice_positions[::3]
@@ -130,10 +134,12 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             ice_inside_cavity,
             atoms_per_molecule=3  # GenIce: O, H, H
         )
-
-    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
-    # Uses module-level template for consistency
-    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
+        # Filter ice atom names to match positions (CRITICAL: must use same ice_inside_cavity)
+        ice_atom_names = filter_atom_names(
+            ice_atom_names,
+            ice_inside_cavity,
+            atoms_per_molecule=3
+        )
 
     # OPTIMIZATION: Fill only the bounding box of the cavity instead of entire box
     # For a sphere of radius r centered at (cx, cy, cz):
