@@ -208,6 +208,19 @@ Generate ice candidates in Tab 1 (Ice Generation) before using Tab 2.
 The candidate dropdown in Tab 2 is populated from Tab 1's results.
 Click "Refresh candidates" to sync after generating new candidates in Tab 1.
 
+### Phase Compatibility
+
+**Important:** Interface construction only works with ice phases that have orthogonal simulation cells. QuickIce v3.0 does not support triclinic (tilted) cells for interface generation.
+
+**Compatible phases:**
+- Ice Ih, Ice Ic, Ice III, Ice VI, Ice VII, Ice VIII
+
+**Incompatible phases:**
+- **Ice II** (rhombohedral structure - triclinic cell)
+- **Ice V** (monoclinic structure - triclinic cell)
+
+If you generate Ice II or Ice V candidates in Tab 1 and attempt to use them in Tab 2, you will receive an error explaining this limitation. You can still export these candidates as PDB/GRO files from Tab 1 for other uses.
+
 ### Interface Modes
 
 QuickIce supports three interface geometries:

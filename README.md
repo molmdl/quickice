@@ -223,6 +223,12 @@ QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations):
 
 **Not supported:** Ice IX, Ice X, Ice XI, Ice XV, and liquid water (no GenIce2 lattices available).
 
+**Interface Construction Limitation:** QuickIce v3.0 interface construction (GUI Tab 2) only supports phases with orthogonal simulation cells. This excludes:
+- **Ice II** (rhombohedral crystal structure - triclinic cell)
+- **Ice V** (monoclinic crystal structure - triclinic cell)
+
+All other phases (Ih, Ic, III, VI, VII, VIII) work with interface construction. If you attempt to generate an interface with Ice II or Ice V candidates, you will receive an error explaining the limitation. These phases can still be generated and exported as PDB/GRO files via Tab 1 (Ice Generation) or the CLI.
+
 ## GROMACS Export
 
 QuickIce can export ice structures as GROMACS input files for molecular dynamics simulations.

@@ -210,3 +210,6 @@ __marimo__/
 #tmp
 tmp/
 !quickice-gui.spec
+
+# Output files
+output/
