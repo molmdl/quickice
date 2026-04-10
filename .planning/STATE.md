@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | Phase | 21 (Documentation) |
 | Plan | 4 of 4 complete |
 | Status | Phase complete |
-| Last activity | 2026-04-10 — Completed quick task 004 (interface viewer improvements) |
+| Last activity | 2026-04-10 — Completed quick task 005 (simplify pocket shapes) |
 
 **Progress:** ███████████ 100% (8/8 phases complete in v3.0)
 
@@ -158,6 +158,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 004 | Interface viewer improvements (remove spheres, pocket types, UI layout) | 2026-04-10 | 48d8352 | [004-interface-viewer-improvements](./quick/004-interface-viewer-improvements/) |
+| 005 | Simplify pocket shapes (remove rectangular/hexagonal, keep sphere/cubic) | 2026-04-10 | 35ce9a5, 860004e | [005-simplify-pocket-shapes](./quick/005-simplify-pocket-shapes/) |
 
 ---
 
@@ -174,10 +175,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Session Continuity
 
-**Last session:** 2026-04-10 14:19 UTC
-**Completed:** Quick task 004 (interface viewer improvements) — bond-only visualization, four pocket shapes, two-column layout
+**Last session:** 2026-04-10 07:20 UTC
+**Completed:** Quick task 005 (simplify pocket shapes) — removed rectangular and hexagonal, kept sphere and cubic
 **Next:** v3.0 milestone complete — ready for audit
 
 ---
 
-*State updated: 2026-04-10 — Quick task 004 complete*
+*State updated: 2026-04-10 — Quick task 005 complete*
