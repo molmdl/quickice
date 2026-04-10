@@ -232,6 +232,16 @@ def lookup_phase(temperature: float, pressure: float) -> dict:
         phase_id = "ice_xv"
         return _build_result(phase_id, T, P)
     
+    # 1c. Ice VI region at T=100-218.95K (above XV, below main VI check)
+    # This fills the gap between XV (T <= 100K) and main VI region (T >= 218.95K)
+    # Must check BEFORE II to avoid II being returned for VI coordinates
+    if 100.0 < T < 218.95 and P > 620:
+        # Check V-VI boundary - above this boundary is VI
+        P_v_vi = v_vi_boundary(T)
+        if P > P_v_vi:
+            phase_id = "ice_vi"
+            return _build_result(phase_id, T, P)
+    
     # 2. Ice VI region (between V-VI and VI-VII boundaries)
     # Ice VI: T(273.31-355K at high P), P(626-2200 MPa)
     # Note: At lower temperatures, Ice VI extends down to T=218.95K (II-V-VI TP)
