@@ -10,7 +10,6 @@ from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vtkmodules.all import (
     vtkRenderer,
     vtkInteractorStyleTrackballCamera,
-    vtkMoleculeMapper,
     vtkActor,
 )
 
@@ -41,8 +40,6 @@ class InterfaceViewerWidget(QWidget):
         renderer: VTK renderer for the scene.
         interactor: VTK interactor for user input.
         _current_structure: Currently displayed InterfaceStructure.
-        _ice_actor: VTK actor for ice atoms.
-        _water_actor: VTK actor for water atoms.
         _ice_bond_actor: VTK actor for ice bonds (lines).
         _water_bond_actor: VTK actor for water bonds (lines).
         _unit_cell_actor: VTK actor for unit cell boundary box.
@@ -58,8 +55,6 @@ class InterfaceViewerWidget(QWidget):
         
         # State tracking
         self._current_structure: InterfaceStructure | None = None
-        self._ice_actor: vtkActor | None = None
-        self._water_actor: vtkActor | None = None
         self._ice_bond_actor: vtkActor | None = None
         self._water_bond_actor: vtkActor | None = None
         self._unit_cell_actor: vtkActor | None = None
@@ -124,10 +119,6 @@ class InterfaceViewerWidget(QWidget):
         # Convert to separate ice and water VTK molecules
         ice_mol, water_mol = interface_to_vtk_molecules(structure)
         
-        # Create atom actors for each phase
-        self._ice_actor = self._create_phase_actor(ice_mol, ICE_COLOR)
-        self._water_actor = self._create_phase_actor(water_mol, WATER_COLOR)
-        
         # Extract bonds from each molecule with PBC wrapping
         ice_bonds = self._extract_bonds(ice_mol, structure.cell)
         water_bonds = self._extract_bonds(water_mol, structure.cell)
@@ -143,9 +134,7 @@ class InterfaceViewerWidget(QWidget):
         # Create unit cell actor
         self._unit_cell_actor = create_unit_cell_actor(structure.cell)
         
-        # Add all actors to renderer
-        self.renderer.AddActor(self._ice_actor)
-        self.renderer.AddActor(self._water_actor)
+        # Add all actors to renderer (bond lines and unit cell only)
         self.renderer.AddActor(self._ice_bond_actor)
         self.renderer.AddActor(self._water_bond_actor)
         self.renderer.AddActor(self._unit_cell_actor)
@@ -155,43 +144,6 @@ class InterfaceViewerWidget(QWidget):
         
         # Render the scene
         self.render_window.Render()
-    
-    def _create_phase_actor(self, mol, color_rgb: tuple) -> vtkActor:
-        """Create a VTK actor for a phase (ice or water).
-        
-        Configures vtkMoleculeMapper with single-color atoms and
-        disabled 3D bonds (bonds rendered separately as 2D lines).
-        
-        Args:
-            mol: vtkMolecule containing atoms and bonds.
-            color_rgb: RGB color tuple with values in [0, 1].
-        
-        Returns:
-            A vtkActor configured for ball-and-stick rendering.
-        """
-        # Create molecule mapper
-        mapper = vtkMoleculeMapper()
-        mapper.SetInputData(mol)
-
-        # Set single color mode for all atoms in this phase
-        # VTK 9.5+ uses SetAtomColorMode(int) instead of SetAtomColorModeToSingleColor()
-        mapper.SetAtomColorMode(mapper.SingleColor)
-        
-        # Convert float RGB to uint8 (multiply by 255)
-        r, g, b = color_rgb
-        mapper.SetAtomColor(int(r * 255), int(g * 255), int(b * 255))
-        
-        # Disable 3D bond rendering (bonds shown as 2D lines instead)
-        mapper.RenderBondsOff()
-        
-        # Use unit radius with small scale for performance
-        mapper.SetAtomicRadiusTypeToUnitRadius()
-        mapper.SetAtomicRadiusScaleFactor(0.2 * ANGSTROM_TO_NM)
-        
-        # Create and return actor
-        actor = vtkActor()
-        actor.SetMapper(mapper)
-        return actor
     
     def _extract_bonds(self, mol, cell: np.ndarray = None) -> list:
         """Extract bond positions from a VTK molecule with PBC wrapping.
@@ -287,16 +239,6 @@ class InterfaceViewerWidget(QWidget):
     
     def _clear_actors(self) -> None:
         """Remove all actors from renderer and reset state."""
-        # Remove ice actor
-        if self._ice_actor is not None:
-            self.renderer.RemoveActor(self._ice_actor)
-            self._ice_actor = None
-        
-        # Remove water actor
-        if self._water_actor is not None:
-            self.renderer.RemoveActor(self._water_actor)
-            self._water_actor = None
-        
         # Remove ice bond actor
         if self._ice_bond_actor is not None:
             self.renderer.RemoveActor(self._ice_bond_actor)
