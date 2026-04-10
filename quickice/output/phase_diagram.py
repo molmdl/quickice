@@ -444,15 +444,25 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     
     # At T=100K, V-VI boundary extrapolates to P≈726 MPa
     # XV exists at P=950-2100 MPa for T <= 100K
-    # So at T=100K, II is at P < 726 (below V-VI boundary)
-    # We need to connect to the lower pressure region (T < 100K)
+    # So at T=100K, II ends at P < 726 (below V-VI boundary)
+    # Then for T < 100K, II needs to connect to the lower pressure region
     
     # At T < 100K, XV occupies P=950-2100 MPa, so II stays at P < 950
-    # Connect from V-VI boundary at T=100K to below XV's lower boundary
-    vertices.append((100.0, 945.0))  # Just below XV
+    # But we need to properly close the polygon
+    # The II polygon at T=100K ends at P ≈ 720 (just below V-VI)
+    # For T < 100K, II extends up to P < 950 (below XV)
     
-    # At T=50K, II extends from P=400 (IX upper boundary) to P=950 (below XV)
-    vertices.append((50.0, 945.0))
+    # First, go vertically up at T=100K to close the gap
+    # This creates the edge between T=100K line and T<100K region
+    # But wait - VI exists at T=100K, P in [726, 950], so II can't go there!
+    
+    # Correct approach: at T=100K, II is at P < 726 (below V-VI boundary)
+    # For T < 100K, II is at P < 950 (below XV)
+    # So there's a narrow VI strip at T=100K between P=[726, 950]
+    
+    # Connect from (100, 720.6) diagonally to (50, 945)
+    # This avoids the VI strip at T=100K
+    vertices.append((50.0, 945.0))  # Just below XV at T=50K
     
     # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
     vertices.append((50.0, 400.0))
@@ -566,9 +576,13 @@ def _build_ice_vi_polygon() -> List[Tuple[float, float]]:
     # This is where VI meets XV (XV is rendered on top at T <= 100K)
     vertices.append((100.0, 1100.0))
     
+    # IMPORTANT: At T=100K, VI also extends down to V-VI boundary (~726 MPa)
+    # This closes the gap between VI polygon and the V-VI boundary
+    P_at_100 = v_vi_boundary(100.0)  # ≈ 726 MPa
+    vertices.append((100.0, P_at_100 + 5.0))  # Just above V-VI boundary
+    
     # From T=100K back to II-V-VI TP, trace along extrapolated V-VI boundary
-    # The V-VI boundary extrapolates to P≈726 MPa at T=100K
-    # We trace just above this boundary to close the polygon
+    # The V-VI boundary extrapolates correctly for T < 201.9K
     T_cold = np.linspace(100.0, T1, 10)
     for T in T_cold[1:-1]:  # Skip endpoints
         P_vi = v_vi_boundary(T)  # This extrapolates for T < 201.9K
