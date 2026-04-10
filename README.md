@@ -6,7 +6,7 @@
 >
 > - While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
-Condition-based ice structure candidate generation from thermodynamic conditions (temperature and pressure).
+Condition-based ice structure candidate generation from thermodynamic conditions (temperature and pressure) with a simple Ice-water interface builder.
 
 ## Overview
 
@@ -25,7 +25,7 @@ Given temperature and pressure, QuickIce:
 2. **Generates candidate structures** using GenIce2 with appropriate lattice parameters
 3. **Ranks candidates** by energy estimate, density match, and structural diversity
 4. **Constructs ice-water interfaces** — slab, pocket, or piece geometries (GUI only)
-5. **Outputs PDB files** and GROMACS-compatible formats
+5. **Outputs PDB files** and **GROMACS-compatible input**
 
 **Why QuickIce?**
 
