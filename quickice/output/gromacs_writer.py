@@ -29,16 +29,20 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
           - ice Ih with requested nmol=216 may generate 432 molecules (2× supercell)
           - ice Ih with requested nmol=4 may generate 16 molecules (4× supercell)
         This is expected behavior and ensures the structure is physically valid.
+        
+        Ice structures store 3 atoms per molecule (O, H, H). The MW virtual site
+        is computed at export time to produce TIP4P-ICE format (4 atoms per molecule).
     """
     nmol = candidate.nmolecules
-    n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW
+    n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW (MW computed from O, H, H)
     
     # Bounds check: ensure positions array is large enough
-    expected_atoms = nmol * 4
+    # Ice candidates have 3 atoms per molecule (O, H, H), not 4
+    expected_atoms = nmol * 3
     if len(candidate.positions) < expected_atoms:
         raise ValueError(
             f"positions has {len(candidate.positions)} atoms but "
-            f"nmolecules={nmol} needs {expected_atoms} (4 atoms per water)"
+            f"nmolecules={nmol} needs {expected_atoms} (3 atoms per ice molecule)"
         )
     
     with open(filepath, 'w') as f:
@@ -56,35 +60,39 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
         lines = []
         atom_num = 0
         for mol_idx in range(nmol):
-            base_idx = mol_idx * 4  # O, H1, H2, MW order
+            base_idx = mol_idx * 3  # Ice has 3 atoms per molecule: O, H, H
+            
+            # Read O, H1, H2 positions from Candidate
+            o_pos = candidate.positions[base_idx]
+            h1_pos = candidate.positions[base_idx + 1]
+            h2_pos = candidate.positions[base_idx + 2]
+            
+            # Compute MW virtual site position
+            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
             # Oxygen (OW)
             atom_num += 1
-            pos = candidate.positions[base_idx]
             lines.append(f"{mol_idx+1:5d}SOL  "
                         f"   OW{atom_num:5d}"
-                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
             # Hydrogen 1 (HW1)
             atom_num += 1
-            pos = candidate.positions[base_idx + 1]
             lines.append(f"{mol_idx+1:5d}SOL  "
                         f"  HW1{atom_num:5d}"
-                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
             # Hydrogen 2 (HW2)
             atom_num += 1
-            pos = candidate.positions[base_idx + 2]
             lines.append(f"{mol_idx+1:5d}SOL  "
                         f"  HW2{atom_num:5d}"
-                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
             # Massless virtual site (MW)
             atom_num += 1
-            pos = candidate.positions[base_idx + 3]
             lines.append(f"{mol_idx+1:5d}SOL  "
                         f"   MW{atom_num:5d}"
-                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
         f.writelines(lines)
         
