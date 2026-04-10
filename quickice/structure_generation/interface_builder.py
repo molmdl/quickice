@@ -200,11 +200,11 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
             )
 
         # Check pocket_shape is valid
-        valid_shapes = {"sphere", "rectangular", "cubic", "hexagonal"}
+        valid_shapes = {"sphere", "cubic"}
         if config.pocket_shape not in valid_shapes:
             raise InterfaceGenerationError(
                 f"Invalid pocket shape: '{config.pocket_shape}'. "
-                f"Valid shapes are: sphere, rectangular, cubic, hexagonal. "
+                f"Valid shapes are: sphere and cubic. "
                 f"\n\nHow to fix: Select a valid pocket shape in the UI.",
                 mode=config.mode
             )
