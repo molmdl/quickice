@@ -123,6 +123,58 @@ def remove_overlapping_molecules(
     return filtered_positions, n_remaining
 
 
+def filter_atom_names(
+    atom_names: list[str],
+    overlapping_mol_indices: set[int],
+    atoms_per_molecule: int,
+) -> list[str]:
+    """Filter atom names to match positions filtered by remove_overlapping_molecules.
+
+    Removes atom names for molecules in overlapping_mol_indices.
+    MUST be called with the same overlapping_mol_indices that was passed
+    to remove_overlapping_molecules to maintain consistency between
+    positions and atom_names arrays.
+
+    Args:
+        atom_names: List of atom names (e.g., ["OW", "HW1", "HW2", "MW", ...]).
+        overlapping_mol_indices: Set of molecule indices to remove (0-based).
+            Must be the SAME set passed to remove_overlapping_molecules.
+        atoms_per_molecule: Number of atoms per molecule.
+            3 for ice (O, H, H from GenIce).
+            4 for water (OW, HW1, HW2, MW from tip4p.gro).
+
+    Returns:
+        Filtered list of atom names with overlapping molecules removed.
+
+    Example:
+        >>> atom_names = ["OW", "HW1", "HW2", "MW", "OW", "HW1", "HW2", "MW"]
+        >>> overlapping = {1}  # Remove molecule 1 (indices 4-7)
+        >>> filter_atom_names(atom_names, overlapping, 4)
+        ['OW', 'HW1', 'HW2', 'MW']  # Only molecule 0 remains
+    """
+    if not overlapping_mol_indices:
+        # Nothing to remove
+        return atom_names
+
+    n_molecules = len(atom_names) // atoms_per_molecule
+
+    # Create molecule-level keep mask (same logic as remove_overlapping_molecules)
+    keep_mask = np.ones(n_molecules, dtype=bool)
+    for mol_idx in overlapping_mol_indices:
+        if 0 <= mol_idx < n_molecules:
+            keep_mask[mol_idx] = False
+
+    # Filter atom names using molecule-level mask
+    filtered_names = []
+    for mol_idx in range(n_molecules):
+        if keep_mask[mol_idx]:
+            start = mol_idx * atoms_per_molecule
+            end = start + atoms_per_molecule
+            filtered_names.extend(atom_names[start:end])
+
+    return filtered_names
+
+
 # Unit conversion helpers
 def angstrom_to_nm(value_angstrom: float) -> float:
     """Convert distance from Angstrom to nanometers.

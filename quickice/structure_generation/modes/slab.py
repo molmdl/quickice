@@ -18,6 +18,7 @@ from quickice.structure_generation.water_filler import tile_structure, fill_regi
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
+    filter_atom_names,
 )
 
 
@@ -141,8 +142,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             overlapping_mol_indices,
             atoms_per_molecule=4
         )
-        # Trim atom names to match
-        water_atom_names = water_atom_names[:water_nmolecules * 4]
+        # Filter atom names to match positions (CRITICAL: must use same overlapping_mol_indices)
+        water_atom_names = filter_atom_names(
+            water_atom_names,
+            overlapping_mol_indices,
+            atoms_per_molecule=4
+        )
     else:
         trimmed_water_positions = water_positions
 

@@ -18,6 +18,7 @@ from quickice.structure_generation.water_filler import tile_structure, fill_regi
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
+    filter_atom_names,
 )
 
 
@@ -140,8 +141,12 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             water_outside,
             atoms_per_molecule=4  # TIP4P: OW, HW1, HW2, MW
         )
-        # Trim atom names
-        water_atom_names = water_atom_names[:water_nmolecules * 4]
+        # Filter atom names to match positions (CRITICAL: must use same water_outside)
+        water_atom_names = filter_atom_names(
+            water_atom_names,
+            water_outside,
+            atoms_per_molecule=4
+        )
 
     # Detect overlaps between remaining ice and cavity water
     if len(ice_positions) > 0 and len(water_positions) > 0:
@@ -164,7 +169,12 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             overlapping_mol_indices,
             atoms_per_molecule=4
         )
-        water_atom_names = water_atom_names[:water_nmolecules * 4]
+        # Filter atom names to match positions (CRITICAL: must use same overlapping_mol_indices)
+        water_atom_names = filter_atom_names(
+            water_atom_names,
+            overlapping_mol_indices,
+            atoms_per_molecule=4
+        )
 
     # Combine: ice (outside cavity) FIRST, then water (in cavity)
     if len(ice_positions) > 0 and len(water_positions) > 0:

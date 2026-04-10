@@ -13,6 +13,7 @@ from quickice.structure_generation.water_filler import tile_structure, fill_regi
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
+    filter_atom_names,
 )
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
@@ -125,7 +126,12 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             overlapping_mol_indices,
             atoms_per_molecule=4  # TIP4P: OW, HW1, HW2, MW
         )
-        water_atom_names = water_atom_names[:water_nmolecules * 4]
+        # Filter atom names to match positions (CRITICAL: must use same overlapping_mol_indices)
+        water_atom_names = filter_atom_names(
+            water_atom_names,
+            overlapping_mol_indices,
+            atoms_per_molecule=4
+        )
 
     # Combine: ice (centered) FIRST, then water
     if len(centered_ice_positions) > 0 and len(water_positions) > 0:
