@@ -11,8 +11,9 @@ class TestPBCDistance:
     
     def test_pbc_distance_across_boundary(self):
         """Test that distance across box boundary is calculated correctly."""
-        # Box dimensions: 10 x 10 x 10 nm
+        # Box dimensions: 10 x 10 x 10 nm (orthorhombic cell)
         cell_dims = np.array([10.0, 10.0, 10.0])
+        cell = np.diag(cell_dims)  # Create diagonal cell matrix
         
         # Two atoms near opposite boundaries
         pos1 = np.array([0.1, 0.0, 0.0])
@@ -20,12 +21,13 @@ class TestPBCDistance:
         
         # Without PBC: distance would be 9.8 nm
         # With PBC: distance should be 0.2 nm
-        distance = _pbc_distance(pos1, pos2, cell_dims)
+        distance = _pbc_distance(pos1, pos2, cell)
         assert abs(distance - 0.2) < 1e-10, f"Expected 0.2 nm, got {distance} nm"
     
     def test_pbc_distance_within_box(self):
         """Test that distance within box is calculated correctly."""
         cell_dims = np.array([10.0, 10.0, 10.0])
+        cell = np.diag(cell_dims)  # Create diagonal cell matrix
         
         # Two atoms well within the box
         pos1 = np.array([1.0, 2.0, 3.0])
@@ -33,12 +35,13 @@ class TestPBCDistance:
         
         # Should be same as normal distance
         expected = np.linalg.norm(pos1 - pos2)
-        distance = _pbc_distance(pos1, pos2, cell_dims)
+        distance = _pbc_distance(pos1, pos2, cell)
         assert abs(distance - expected) < 1e-10
     
     def test_pbc_distance_3d(self):
         """Test PBC distance in all three dimensions."""
         cell_dims = np.array([10.0, 10.0, 10.0])
+        cell = np.diag(cell_dims)  # Create diagonal cell matrix
         
         # Atoms at opposite corners
         pos1 = np.array([0.1, 0.1, 0.1])
@@ -46,7 +49,7 @@ class TestPBCDistance:
         
         # Each dimension wraps: 0.2 + 0.2 + 0.2 = 0.6 total
         expected = np.sqrt(3 * 0.2**2)
-        distance = _pbc_distance(pos1, pos2, cell_dims)
+        distance = _pbc_distance(pos1, pos2, cell)
         assert abs(distance - expected) < 1e-10
 
 

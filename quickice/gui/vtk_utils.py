@@ -124,28 +124,45 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
     return mol
 
 
-def _pbc_distance(pos1: np.ndarray, pos2: np.ndarray, cell_dims: np.ndarray) -> float:
+def _pbc_distance(pos1: np.ndarray, pos2: np.ndarray, cell: np.ndarray) -> float:
     """Calculate distance between two positions with periodic boundary conditions.
     
     Applies the minimum image convention to compute the shortest distance
-    between two atoms across periodic box boundaries.
+    between two atoms across periodic box boundaries. Works for both
+    orthorhombic (diagonal) and triclinic (non-orthogonal) cells.
     
     Args:
         pos1: (3,) array of first atom position in nm
         pos2: (3,) array of second atom position in nm
-        cell_dims: (3,) array of box dimensions [Lx, Ly, Lz] in nm
+        cell: (3, 3) cell matrix where each row is a lattice vector in nm.
+              For orthorhombic cells, this is diagonal. For triclinic cells,
+              off-diagonal elements are non-zero.
     
     Returns:
         Distance in nanometers, accounting for periodic boundaries.
     
     Note:
-        Assumes orthorhombic box (typical for ice structures).
-        The minimum image convention wraps the displacement vector to the
-        nearest periodic image.
+        Uses the minimum image convention in fractional coordinate space.
+        For triclinic cells, this correctly handles non-orthogonal periodic
+        images by transforming to fractional coordinates before applying
+        the minimum image convention.
     """
-    delta = pos1 - pos2
-    delta = delta - cell_dims * np.round(delta / cell_dims)
-    return np.linalg.norm(delta)
+    # Compute displacement in Cartesian coordinates
+    delta_cart = pos1 - pos2
+    
+    # Convert to fractional coordinates using inverse of cell matrix
+    # This works for both orthorhombic and triclinic cells
+    cell_inv = np.linalg.inv(cell)
+    delta_frac = delta_cart @ cell_inv
+    
+    # Apply minimum image convention in fractional space
+    # Wrap each component to [-0.5, 0.5]
+    delta_frac = delta_frac - np.round(delta_frac)
+    
+    # Convert back to Cartesian coordinates
+    delta_cart = delta_frac @ cell
+    
+    return np.linalg.norm(delta_cart)
 
 
 def detect_hydrogen_bonds(
@@ -196,8 +213,9 @@ def detect_hydrogen_bonds(
                 f"H-bond detection requires atoms to be ordered as oxygen followed by two hydrogens."
             )
     
-    # Get box dimensions from cell matrix (assuming orthorhombic)
-    cell_dims = np.diag(candidate.cell)
+    # Get cell matrix for PBC distance calculation
+    # This works for both orthorhombic (ice Ih) and triclinic (ice II, V) cells
+    cell = candidate.cell
     
     # Collect O and H atom positions with their indices
     # O atoms: indices 0, 3, 6, ... (every 3rd atom starting at 0)
@@ -226,8 +244,8 @@ def detect_hydrogen_bonds(
             if o_idx == parent_o_idx:
                 continue
             
-            # Calculate H...O distance with PBC
-            distance = _pbc_distance(h_pos, o_pos, cell_dims)
+            # Calculate H...O distance with PBC (handles both orthorhombic and triclinic)
+            distance = _pbc_distance(h_pos, o_pos, cell)
             
             if distance < max_distance:
                 # H-bond detected: H...O

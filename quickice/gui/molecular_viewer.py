@@ -222,10 +222,11 @@ class MolecularViewerWidget(QWidget):
         
         Applies minimum image convention to ensure bonds are drawn as the
         shortest connection, wrapping across periodic boundaries when needed.
+        Works for both orthorhombic (ice Ih) and triclinic (ice II, V) cells.
         
         Args:
             mol: vtkMolecule with bonds.
-            cell: (3, 3) cell matrix for PBC wrapping.
+            cell: (3, 3) cell matrix for PBC wrapping. Each row is a lattice vector.
         
         Returns:
             List of ((x1, y1, z1), (x2, y2, z2)) tuples for each bond,
@@ -234,8 +235,8 @@ class MolecularViewerWidget(QWidget):
         bonds = []
         n_bonds = mol.GetNumberOfBonds()
         
-        # Get cell dimensions for PBC (assuming orthorhombic)
-        cell_dims = np.diag(cell)
+        # Pre-compute inverse cell matrix for fractional coordinate transformation
+        cell_inv = np.linalg.inv(cell)
         
         for i in range(n_bonds):
             bond = mol.GetBond(i)
@@ -251,10 +252,13 @@ class MolecularViewerWidget(QWidget):
             pos1 = np.array(atom1.GetPosition())
             pos2 = np.array(atom2.GetPosition())
             
-            # Apply minimum image convention: wrap pos2 to be within half box distance of pos1
-            delta = pos2 - pos1
-            delta = delta - cell_dims * np.round(delta / cell_dims)
-            pos2 = pos1 + delta
+            # Apply minimum image convention using fractional coordinates
+            # This works for both orthorhombic and triclinic cells
+            delta_cart = pos2 - pos1
+            delta_frac = delta_cart @ cell_inv
+            delta_frac = delta_frac - np.round(delta_frac)  # Wrap to [-0.5, 0.5]
+            delta_cart = delta_frac @ cell
+            pos2 = pos1 + delta_cart
             
             # Convert to tuples
             p1 = (float(pos1[0]), float(pos1[1]), float(pos1[2]))
