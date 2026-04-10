@@ -3,7 +3,9 @@
 Per INFO-04: Modal dialog showing keyboard shortcuts and workflow summary.
 """
 
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
+from PySide6.QtWidgets import (
+    QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QScrollArea, QWidget
+)
 from PySide6.QtCore import Qt
 
 
@@ -24,13 +26,30 @@ class QuickReferenceDialog(QDialog):
         self.setWindowTitle("Quick Reference - QuickIce")
         self.setMinimumWidth(450)
         self.setMaximumWidth(600)
+        self.setMinimumHeight(400)
+        self.setMaximumHeight(700)
         
         self._setup_ui()
     
     def _setup_ui(self):
         """Setup dialog content."""
-        layout = QVBoxLayout(self)
+        # Main dialog layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        
+        # Create content widget to hold all scrollable content
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
         layout.setSpacing(12)
+        layout.setContentsMargins(12, 12, 12, 12)
         
         # Introduction
         intro = QLabel(
@@ -163,10 +182,19 @@ class QuickReferenceDialog(QDialog):
         notes_text.setWordWrap(True)
         layout.addWidget(notes_text)
         
-        # Standard OK button
+        # Add stretch to push content up
+        layout.addStretch()
+        
+        # Set content widget to scroll area
+        scroll_area.setWidget(content_widget)
+        
+        # Add scroll area to main layout
+        main_layout.addWidget(scroll_area)
+        
+        # Standard OK button (outside scroll area)
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
-        layout.addWidget(button_box)
+        main_layout.addWidget(button_box)
     
     def _create_section_label(self, text: str) -> QLabel:
         """Create a section header label.
