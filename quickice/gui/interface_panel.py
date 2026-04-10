@@ -169,7 +169,7 @@ class InterfacePanel(QWidget):
         self.pocket_diameter_input.setDecimals(2)
         self.pocket_diameter_input.setSingleStep(0.5)
         self.pocket_diameter_input.setValue(2.0)
-        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nVoid carved in ice (sphere/rectangular/cubic/hexagonal).")
+        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nVoid carved in ice (sphere/cubic).")
         diameter_row.addWidget(QLabel("Pocket diameter:"))
         diameter_row.addWidget(HelpIcon("Diameter of the water cavity in nanometers. The cavity is carved out of the ice matrix and filled with liquid water molecules. Larger diameters create bigger water pockets."))
         diameter_row.addWidget(self.pocket_diameter_input)
@@ -185,10 +185,10 @@ class InterfacePanel(QWidget):
         # Pocket shape row
         shape_row = QHBoxLayout()
         self.pocket_shape_combo = QComboBox()
-        self.pocket_shape_combo.addItems(["Sphere", "Rectangular", "Cubic", "Hexagonal"])
-        self.pocket_shape_combo.setToolTip("Cavity shape: sphere, rectangular prism, cube, or hexagonal prism")
+        self.pocket_shape_combo.addItems(["Sphere", "Cubic"])
+        self.pocket_shape_combo.setToolTip("Cavity shape: sphere or cube")
         shape_row.addWidget(QLabel("Pocket shape:"))
-        shape_row.addWidget(HelpIcon("Shape of the water cavity. Sphere creates a round void. Rectangular creates a rectangular prism. Cubic creates a cube. Hexagonal creates a hexagonal prism."))
+        shape_row.addWidget(HelpIcon("Shape of the water cavity. Sphere creates a round void. Cubic creates a cube-shaped void."))
         shape_row.addWidget(self.pocket_shape_combo)
         shape_row.addStretch()
         
