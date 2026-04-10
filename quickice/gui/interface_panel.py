@@ -169,7 +169,7 @@ class InterfacePanel(QWidget):
         self.pocket_diameter_input.setDecimals(2)
         self.pocket_diameter_input.setSingleStep(0.5)
         self.pocket_diameter_input.setValue(2.0)
-        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nSpherical/ellipsoidal void carved in ice.")
+        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nVoid carved in ice (sphere/rectangular/cubic/hexagonal).")
         diameter_row.addWidget(QLabel("Pocket diameter:"))
         diameter_row.addWidget(HelpIcon("Diameter of the water cavity in nanometers. The cavity is carved out of the ice matrix and filled with liquid water molecules. Larger diameters create bigger water pockets."))
         diameter_row.addWidget(self.pocket_diameter_input)
@@ -217,29 +217,28 @@ class InterfacePanel(QWidget):
         return group
     
     def _setup_ui(self):
-        """Set up UI components with vertical layout.
+        """Set up UI components with two-column layout.
         
         Layout structure:
-        - Title label
-        - Candidate selection row (label + dropdown)
-        - Refresh button row
-        - Generate button row
-        - Progress panel
-        - Info panel (collapsible)
-        - Placeholder label (initially visible)
+        - QHBoxLayout (top-level)
+          - Left column (QVBoxLayout): Title, mode, box dims, seed, candidate, buttons, progress, info
+          - Right column (QVBoxLayout): StackedWidget (mode params), viewer stack (stretch=1)
         """
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(10)
+        # Top-level horizontal layout
+        top_layout = QHBoxLayout(self)
+        top_layout.setContentsMargins(20, 20, 20, 20)
+        top_layout.setSpacing(20)
+        
+        # === LEFT COLUMN: Configuration Controls ===
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(10)
         
         # Title
         title_label = QLabel("Interface Construction")
         title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        layout.addWidget(title_label)
+        left_layout.addWidget(title_label)
         
-        layout.addSpacing(15)
-        
-        # === Configuration Controls Section ===
+        left_layout.addSpacing(15)
         
         # Mode selector row
         mode_row = QHBoxLayout()
@@ -251,9 +250,9 @@ class InterfacePanel(QWidget):
         mode_row.addWidget(HelpIcon("Interface geometry type. Slab creates flat layered ice-water interfaces (typical for surface melting studies). Pocket carves a water-filled cavity inside ice (confined water studies). Piece embeds an ice crystal fragment in liquid water (nucleation studies)."))
         mode_row.addWidget(self.mode_combo)
         mode_row.addStretch()
-        layout.addLayout(mode_row)
+        left_layout.addLayout(mode_row)
         
-        layout.addSpacing(10)
+        left_layout.addSpacing(10)
         
         # Box dimensions section
         box_header = QHBoxLayout()
@@ -269,7 +268,7 @@ class InterfacePanel(QWidget):
             "  Ice piece dimensions shown in 'Piece Parameters' section"
         ))
         box_header.addStretch()
-        layout.addLayout(box_header)
+        left_layout.addLayout(box_header)
         
         box_row = QHBoxLayout()
         
@@ -300,8 +299,6 @@ class InterfacePanel(QWidget):
         box_row.addSpacing(10)
         
         # Z dimension
-        # Default 9.0 nm matches default ice_thickness (3.0nm) + water_thickness (3.0nm) + ice_thickness (3.0nm)
-        # for slab mode: box_z must equal 2*ice_thickness + water_thickness
         self.box_z_input = QDoubleSpinBox()
         self.box_z_input.setSuffix(" nm")
         self.box_z_input.setRange(0.5, 100.0)
@@ -320,7 +317,7 @@ class InterfacePanel(QWidget):
         box_row.addWidget(self.box_z_input)
         
         box_row.addStretch()
-        layout.addLayout(box_row)
+        left_layout.addLayout(box_row)
         
         # Box dimension error labels (hidden by default)
         self.box_x_error = QLabel()
@@ -345,9 +342,9 @@ class InterfacePanel(QWidget):
         box_errors_layout.addSpacing(10)
         box_errors_layout.addWidget(self.box_z_error)
         box_errors_layout.addStretch()
-        layout.addLayout(box_errors_layout)
+        left_layout.addLayout(box_errors_layout)
         
-        layout.addSpacing(10)
+        left_layout.addSpacing(10)
         
         # Random seed row
         seed_row = QHBoxLayout()
@@ -360,7 +357,7 @@ class InterfacePanel(QWidget):
         seed_row.addWidget(HelpIcon("Integer seed for reproducible water molecule placement. Using the same seed with identical parameters produces identical interface structures. Change the seed to explore different configurations."))
         seed_row.addWidget(self.seed_input)
         seed_row.addStretch()
-        layout.addLayout(seed_row)
+        left_layout.addLayout(seed_row)
         
         # Seed error label (hidden by default)
         self.seed_error = QLabel()
@@ -371,18 +368,9 @@ class InterfacePanel(QWidget):
         seed_error_layout = QHBoxLayout()
         seed_error_layout.addWidget(self.seed_error)
         seed_error_layout.addStretch()
-        layout.addLayout(seed_error_layout)
+        left_layout.addLayout(seed_error_layout)
         
-        layout.addSpacing(15)
-        
-        # Mode-specific controls
-        self.stacked_widget = QStackedWidget()
-        self.stacked_widget.addWidget(self._create_slab_panel())
-        self.stacked_widget.addWidget(self._create_pocket_panel())
-        self.stacked_widget.addWidget(self._create_piece_panel())
-        layout.addWidget(self.stacked_widget)
-        
-        layout.addSpacing(15)
+        left_layout.addSpacing(15)
         
         # === Candidate Selection Section ===
         
@@ -397,36 +385,49 @@ class InterfacePanel(QWidget):
         candidate_row.addWidget(candidate_label)
         candidate_row.addWidget(self.candidate_dropdown)
         candidate_row.addStretch()
-        layout.addLayout(candidate_row)
+        left_layout.addLayout(candidate_row)
         
-        layout.addSpacing(10)
+        left_layout.addSpacing(10)
         
         # Refresh button row
         self.refresh_btn = QPushButton("Refresh candidates")
         self.refresh_btn.setToolTip("Sync candidate list from Ice Generation tab.\nClick after generating new candidates in Tab 1.")
-        layout.addWidget(self.refresh_btn)
+        left_layout.addWidget(self.refresh_btn)
         
-        layout.addSpacing(10)
+        left_layout.addSpacing(10)
         
         # Generate button row
         self.generate_btn = QPushButton("Generate Interface")
         self.generate_btn.setEnabled(False)
         self.generate_btn.setToolTip("Generate ice candidates in Tab 1 first")
-        layout.addWidget(self.generate_btn)
+        left_layout.addWidget(self.generate_btn)
         
-        layout.addSpacing(15)
+        left_layout.addSpacing(15)
         
         # Progress panel (reuse from view.py)
         self.progress_panel = ProgressPanel()
-        layout.addWidget(self.progress_panel)
+        left_layout.addWidget(self.progress_panel)
         
-        layout.addSpacing(10)
+        left_layout.addSpacing(10)
         
         # Info panel (collapsible, reuse from view.py)
         self.info_panel = InfoPanel()
-        layout.addWidget(self.info_panel)
+        left_layout.addWidget(self.info_panel)
         
-        layout.addSpacing(10)
+        left_layout.addStretch()
+        
+        # === RIGHT COLUMN: Mode params + Viewer ===
+        right_layout = QVBoxLayout()
+        right_layout.setSpacing(10)
+        
+        # Mode-specific controls at top right
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self._create_slab_panel())
+        self.stacked_widget.addWidget(self._create_pocket_panel())
+        self.stacked_widget.addWidget(self._create_piece_panel())
+        right_layout.addWidget(self.stacked_widget)
+        
+        right_layout.addSpacing(10)
         
         # Viewer stack: placeholder (page 0) and 3D viewer (page 1)
         self._viewer_stack = QStackedWidget()
@@ -463,9 +464,11 @@ class InterfacePanel(QWidget):
             self._viewer_stack.addWidget(fallback_label)
             self._interface_viewer = None  # No viewer available
         
-        layout.addWidget(self._viewer_stack, stretch=1)
+        right_layout.addWidget(self._viewer_stack, stretch=1)
         
-        layout.addStretch()
+        # Add columns to top-level layout
+        top_layout.addLayout(left_layout, stretch=2)
+        top_layout.addLayout(right_layout, stretch=3)
     
     def _setup_connections(self):
         """Connect internal signals to slots."""
