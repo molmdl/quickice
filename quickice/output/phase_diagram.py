@@ -452,17 +452,16 @@ def _build_ice_ii_polygon() -> List[Tuple[float, float]]:
     # The II polygon at T=100K ends at P ≈ 720 (just below V-VI)
     # For T < 100K, II extends up to P < 950 (below XV)
     
-    # First, go vertically up at T=100K to close the gap
-    # This creates the edge between T=100K line and T<100K region
-    # But wait - VI exists at T=100K, P in [726, 950], so II can't go there!
+    # Correct approach: 
+    # - At T=100K, II is at P < 726 (below V-VI boundary)
+    # - For T < 100K, VI doesn't exist (VI gap fill is T >= 100K)
+    # - So II can extend up to P=945 (just below XV) for T < 100K
     
-    # Correct approach: at T=100K, II is at P < 726 (below V-VI boundary)
-    # For T < 100K, II is at P < 950 (below XV)
-    # So there's a narrow VI strip at T=100K between P=[726, 950]
+    # Add a point just below T=100K at P=945 to avoid VI strip at T=100K
+    vertices.append((99.9, 945.0))  # Just below T=100K, below XV
     
-    # Connect from (100, 720.6) diagonally to (50, 945)
-    # This avoids the VI strip at T=100K
-    vertices.append((50.0, 945.0))  # Just below XV at T=50K
+    # At T=50K, II extends from P=400 (IX upper boundary) to P=945 (below XV)
+    vertices.append((50.0, 945.0))
     
     # At T=50K, go to P=400 (IX's upper boundary for T < 140K)
     vertices.append((50.0, 400.0))
