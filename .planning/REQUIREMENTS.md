@@ -7,6 +7,19 @@
 
 Requirements for Interface Enhancements milestone.
 
+### Ice Ih Density
+
+- [ ] **ICE-01**: System calculates Ice Ih density from IAPWS (temperature-dependent)
+- [ ] **ICE-02**: System displays Ice Ih density in UI
+- [ ] **ICE-03**: System replaces hardcoded 0.9167 g/cm³ with IAPWS calculation
+
+### Water Density
+
+- [ ] **WATER-01**: System calculates water density from T/P using IAPWS
+- [ ] **WATER-02**: System displays water density in Tab 1 info panel
+- [ ] **WATER-03**: System generates water molecules at correct spacing for target density in Tab 2 interface generation
+- [ ] **WATER-04**: System caches IAPWS density lookups for performance
+
 ### Triclinic Transformation
 
 - [ ] **TRAN-01**: System auto-detects triclinic cells for ice_ii and ice_v phases
@@ -20,13 +33,6 @@ Requirements for Interface Enhancements milestone.
 - [ ] **CLI-03**: User can specify ice_thickness and water_thickness for slab mode
 - [ ] **CLI-04**: User can specify pocket_diameter and pocket_shape for pocket mode
 - [ ] **CLI-05**: User can export interface structures to GROMACS format from CLI
-
-### Density Features
-
-- [ ] **DENS-01**: System calculates water density from T/P using IAPWS library
-- [ ] **DENS-02**: System displays water density in UI
-- [ ] **DENS-03**: System calculates Ice Ih density from IAPWS (temperature-dependent, replaces hardcoded 0.9167 g/cm³)
-- [ ] **DENS-04**: System caches IAPWS density lookups for performance
 
 ## v4.0 Requirements (Future)
 
@@ -60,23 +66,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRAN-01 | — | Pending |
-| TRAN-02 | — | Pending |
-| TRAN-03 | — | Pending |
-| CLI-01 | — | Pending |
-| CLI-02 | — | Pending |
-| CLI-03 | — | Pending |
-| CLI-04 | — | Pending |
-| CLI-05 | — | Pending |
-| DENS-01 | — | Pending |
-| DENS-02 | — | Pending |
-| DENS-03 | — | Pending |
-| DENS-04 | — | Pending |
+| ICE-01 | Phase 22 | Pending |
+| ICE-02 | Phase 22 | Pending |
+| ICE-03 | Phase 22 | Pending |
+| WATER-01 | Phase 23 | Pending |
+| WATER-02 | Phase 23 | Pending |
+| WATER-03 | Phase 23 | Pending |
+| WATER-04 | Phase 23 | Pending |
+| TRAN-01 | Phase 24 | Pending |
+| TRAN-02 | Phase 24 | Pending |
+| TRAN-03 | Phase 24 | Pending |
+| CLI-01 | Phase 25 | Pending |
+| CLI-02 | Phase 25 | Pending |
+| CLI-03 | Phase 25 | Pending |
+| CLI-04 | Phase 25 | Pending |
+| CLI-05 | Phase 25 | Pending |
 
 **Coverage:**
-- v3.5 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- v3.5 requirements: 15 total
+- Mapped to phases: 15 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-12*

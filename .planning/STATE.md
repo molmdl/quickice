@@ -2,23 +2,23 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
-**Current Focus:** Planning next milestone
+**Current Focus:** v3.5 Interface Enhancements — Roadmap created
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-11)
+See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
 
-**Current focus:** v3.5 Interface Enhancements — started 2026-04-12
+**Current focus:** v3.5 Interface Enhancements — Roadmap created, phases 22-26 defined
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
 - VTK 9.5.2 (BSD-licensed)
 - Matplotlib Qt backend
-- GenIce2, spglib, numpy, scipy
+- GenIce2, spglib, numpy, scipy, iapws
 - MVVM architecture with QThread workers
 
 ---
@@ -28,16 +28,27 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | Not started |
+| Phase | 22 (ready to plan) |
 | Plan | Not started |
-| Status | Defining requirements |
-| Last activity | 2026-04-12 — v3.5 milestone started |
+| Status | Roadmap created |
+| Last activity | 2026-04-12 — Roadmap created |
 
-**Progress:** ░░░░░░░░░░░ 0% (v3.5 started)
+**Progress:** ░░░░░░░░░░░ 0% (5 phases defined)
 
 ---
 
 ## Milestone History
+
+### v3.5 Interface Enhancements (Active)
+
+**Phases:** 22-26 (5 phases)
+**Requirements:** 15 (ICE-01 to CLI-05)
+**Key features:**
+- Ice Ih IAPWS density (temperature-dependent, replaces 0.9167 g/cm³)
+- Water density from T/P via IAPWS (display + interface spacing)
+- Triclinic→orthogonal transformation for Ice II, V, VI
+- CLI interface generation (--interface flag with full parameters)
+- Integration and polish
 
 ### v3.0 Interface Generation (Shipped 2026-04-11)
 
@@ -99,6 +110,30 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 | Single SOL molecule type | ✓ Simplifies GROMACS topology |
 | Ctrl+I for interface export | ✓ No conflict with Ctrl+G |
 
+### v3.5 New Decisions
+
+| Decision | Rationale | Status |
+|----------|-----------|--------|
+| Build order: Ice Ih → Water → Triclinic → CLI → Integration | Research-identified dependency graph | Approved |
+| IAPWS library for density | Already in environment, scientifically accurate | Approved |
+| numpy for transformation | No external crystallography library needed | Approved |
+| Service layer pattern | Matches existing architecture | Approved |
+
+### Research Findings (v3.5)
+
+- **Triclinic transformation:** Highest risk - must validate against known structures
+- **IAPWS range violations:** Need bounds checking with fallback (~1.0 g/cm³)
+- **Density units:** IAPWS returns kg/m³, QuickIce uses g/cm³ - factor-of-1000 conversion
+- **Performance:** Use @lru_cache for density lookups (IAPWS-95 iterative solver)
+
+### Pitfalls to Avoid (v3.5)
+
+1. Incorrect triclinic coordinate transformation (silent invalid crystals)
+2. Breaking piece.py validation (orthogonal-only check at lines 61-71)
+3. IAPWS range violations returning NaN
+4. Performance regression from uncached IAPWS calls
+5. Density units confusion (kg/m³ vs g/cm³)
+
 ### Blockers
 
 (None)
@@ -125,9 +160,10 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 
 ## Session Continuity
 
-**Last session:** 2026-04-11
-**Completed:** v3.0 milestone completion and archival
-**Next:** Start next milestone with /gsd-new-milestone
+**Last session:** 2026-04-12
+**Completed:** v3.5 roadmap created (phases 22-26)
+**Next:** `/gsd-plan-phase 22` to plan Ice Ih IAPWS Density
 
 ---
-*State updated: 2026-04-12 — v3.5 milestone started*
+
+*State updated: 2026-04-12 — Roadmap created*
