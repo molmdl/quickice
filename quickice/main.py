@@ -35,7 +35,11 @@ def main() -> int:
         
         # Print phase information
         print(f"Phase: {phase_info['phase_name']} ({phase_info['phase_id']})")
-        print(f"Density: {phase_info['density']} g/cm³")
+        density = phase_info['density']
+        if isinstance(density, float):
+            print(f"Density: {density:.4f} g/cm³")
+        else:
+            print(f"Density: {density} g/cm³")
         print()
         
         # Generate candidates for the phase
