@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 
 **Core value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
 
-**Current focus:** Planning next milestone — v3.0 shipped 2026-04-11
+**Current focus:** v3.5 Interface Enhancements — started 2026-04-12
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,13 +27,13 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 
 | Field | Value |
 |-------|-------|
-| Milestone | Next milestone TBD |
+| Milestone | v3.5 Interface Enhancements |
 | Phase | Not started |
 | Plan | Not started |
-| Status | Ready for /gsd-new-milestone |
-| Last activity | 2026-04-11 — v3.0 milestone complete |
+| Status | Defining requirements |
+| Last activity | 2026-04-12 — v3.5 milestone started |
 
-**Progress:** ███████████ 100% (v3.0 shipped)
+**Progress:** ░░░░░░░░░░░ 0% (v3.5 started)
 
 ---
 
@@ -130,4 +130,4 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 **Next:** Start next milestone with /gsd-new-milestone
 
 ---
-*State updated: 2026-04-11 — v3.0 milestone complete*
+*State updated: 2026-04-12 — v3.5 milestone started*

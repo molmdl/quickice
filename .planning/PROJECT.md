@@ -66,10 +66,16 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 
 ### Active
 
-**v2.5 Seawater Phase Diagram (Deferred):**
-- Salinity-Temperature phase diagram widget
-- Freezing point depression calculation (IAPWS-08)
-- Na+ and Cl- ions in output structure
+**v3.5 Interface Enhancements:**
+- Triclinic→orthogonal transformation (all ice phases for interface)
+- CLI interface generation (--interface flag)
+- Water density from T/P (display in UI)
+- Ice Ih accurate IAPWS density
+
+**v4.0 Molecule Insertion (Future):**
+- Tab 2: Molecules to ice (GenIce hydrates, user topology)
+- Tab 4: Insert to liquid (NaCl ions, custom molecules)
+- Display styles per molecule type in 3D viewer
 
 ### Out of Scope
 
@@ -81,6 +87,16 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - Web-based viewer
 - Real-time preview while typing
 - Cloud sync/collaboration
+
+## Current Milestone: v3.5 Interface Enhancements
+
+**Goal:** Enable all ice phases in interface generation with CLI access and accurate densities.
+
+**Target features:**
+- Triclinic→orthogonal automatic transformation
+- CLI interface generation (--interface flag)
+- Water density from T/P in UI
+- Ice Ih IAPWS density
 
 ## Current State
 
@@ -143,4 +159,4 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - **Installation**: Do NOT auto-install dependencies. Add to env.yml, seek approval, wait for user to install.
 
 ---
-*Last updated: 2026-04-11 after v3.0 milestone completion*
+*Last updated: 2026-04-12 after v3.5 milestone started*
