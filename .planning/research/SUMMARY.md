@@ -1,351 +1,157 @@
-# Project Research Summary: QuickIce v3 Milestone Exploration
+# Project Research Summary
 
-**Project:** QuickIce — Post-v2.0 Feature Research  
-**Domain:** Scientific visualization / Computational chemistry  
-**Researched:** 2026-04-05  
-**Confidence:** HIGH (verified via official documentation and standards)
-
----
+**Project:** QuickIce v3.5 Interface Enhancements
+**Domain:** Scientific visualization / Computational chemistry (ice structure generation)
+**Researched:** 2026-04-12
+**Confidence:** HIGH
 
 ## Executive Summary
 
-This research synthesizes three potential feature directions for QuickIce's next milestone: GROMACS output support, seawater/saltwater ice phase diagrams, and liquid-solid interface generation. All three features are technically feasible and leverage existing dependencies, with no new external libraries required for MVP implementations.
+QuickIce v3.5 is an incremental feature release for an existing scientific GUI application (PySide6 + VTK + GenIce2) that generates ice crystal structures and ice-water interfaces. The v3.5 release adds four tightly-scoped features: triclinic-to-orthogonal cell transformation (unlocking Ice II, V, VI for interface generation), CLI interface generation (`--interface` flag), water density calculation from T/P via IAPWS, and Ice Ih IAPWS density replacing a hardcoded value. All four features are additive — no core generation logic changes, no new external dependencies, and the existing MVVM architecture accommodates them through three new service modules.
 
-**Recommended approach:** Implement features in order of increasing complexity — seawater phase diagram first (v2.1, lowest effort), GROMACS support second (v2.2), and interface generation last (v2.5/v3.0). This sequencing allows users to benefit from simpler features while the more complex interface generation matures. The critical risk across all features is validation — generated outputs must be scientifically meaningful, not just visually correct.
-
-**Key insight:** All three features share a common architectural pattern — new service layer modules that integrate into the existing MVVM architecture without modifying core generation logic. This keeps the codebase maintainable and allows incremental delivery.
-
----
+The recommended approach is to build in dependency order: density service first (lowest risk, foundational), then triclinic transformation (unblocks interface for non-orthogonal phases), then CLI interface integration (builds on existing patterns), and finally integration/polish. The dominant risk is the triclinic→orthogonal coordinate transformation — an incorrect transformation silently produces structurally invalid crystals that may only fail downstream in GROMACS. This must be validated against known ice phases (Ice II, V) before any other feature depends on it. Secondary risks include IAPWS range violations returning `NaN`, performance regression from uncached density lookups, and breaking existing validation checks in `piece.py` that were specifically designed to reject triclinic cells.
 
 ## Key Findings
 
-### Feature 1: GROMACS Output Support (STACK_GROMACS.md)
+### Recommended Stack
 
-**Complexity:** 3/5 (MODERATE)  
-**Estimated Effort:** ~38 hours (~5 days)  
-**Confidence:** HIGH
+No new dependencies are required. All four v3.5 features use the existing stack. This is a significant finding — it eliminates supply-chain risk, version conflict risk, and environment setup overhead.
 
-GenIce2 already produces GROMACS `.gro` coordinate files, but NOT `.top` topology files. QuickIce must generate topology files from scratch using the TIP4P-ICE force field parameters (published values from Abascal et al. 2005).
+**Core technologies (all existing):**
+- **numpy 2.4.3**: Triclinic→orthogonal transformation — custom implementation using `linalg.norm`, `arccos`, `dot` products; no external crystallography library needed
+- **argparse (stdlib)**: CLI `--interface` extension — matches existing parser pattern in `quickice/cli/parser.py`
+- **iapws 1.5.5**: Water and Ice Ih density — `IAPWS97` class for liquid water, `_Ice` class for Ice Ih; already in `environment.yml`
+- **spglib 2.7.0**: Confirmed NOT suitable for triclinic→orthogonal conversion (provides Niggli/Delaunay reduction only, not orthogonal cell conversion)
 
-**Core requirements:**
-- Generate `.top` topology file with proper GROMACS format
-- Bundle `tip4p-ice.itp` force field file as application resource
-- Integrate into existing export menu with UI controls
-- Validate files can be loaded by GROMACS
+### Expected Features
 
-**Technical findings:**
-- GenIce2 provides `.gro` output natively (`-f gromacs` flag)
-- TIP4P-ICE is NOT built into GROMACS; custom `.itp` required
-- All parameters verified from primary literature (Vega group publications)
+**Must have (table stakes):**
+- Triclinic→orthogonal transformation — currently QuickIce rejects Ice II/V/VI with error; transformation unblocks interface generation for these phases
+- CLI interface generation — users expect full CLI parity with GUI; `--interface` flag with mode/thickness/box parameters
+- Water density from T/P — interface generation needs correct water molecule spacing; static TIP4P template doesn't account for T/P effects
 
-**Dependencies:** None new — GenIce2, NumPy already in environment
+**Should have (competitive):**
+- Ice Ih IAPWS density — replaces hardcoded 0.9167 g/cm³ with temperature-dependent calculation; scientific accuracy improvement, low risk
 
----
+**Defer (post v3.5):**
+- Additional ice phase support beyond GenIce2's current 8
+- Automated interface geometry optimization
+- GROMACS `gmx solvate` integration
 
-### Feature 2: Seawater Ice Phase Diagram (FEATURES_SEAWATER.md)
+### Architecture Approach
 
-**Complexity:** 2/5 (LOW-MEDIUM)  
-**Estimated Effort:** ~20-30 hours (~3-4 days)  
-**Confidence:** HIGH
+All new features follow the established service layer pattern: new modules in `structure_generation/` called from the existing ViewModel→Worker pipeline. No changes to core generation logic (`generator.py`), the MVVM signal/slot wiring, or the QThread worker architecture.
 
-The IAPWS library (already installed: `iapws==1.5.5`) provides full IAPWS-08 seawater thermodynamics including freezing point calculations. The key finding is that seawater ice is fundamentally different from pure water ice — it's a single phase (Ice Ih) with brine pockets, not multiple high-pressure polymorphs.
+**Major components (new):**
+1. `cell_transformer.py` — Triclinic→orthogonal transformation service; called by `interface_builder.py` when `is_cell_orthogonal()` returns false
+2. `density_service.py` — IAPWS density calculations for water and Ice Ih; provides `get_water_density(T,P)`, `get_ice_ih_density(T)`, molecule count calculators
+3. `interface_parser.py` — CLI interface argument handling; extends `cli/parser.py` with `--interface` argument group
 
-**Core requirements:**
-- New S-T (Salinity-Temperature) phase diagram widget
-- Freezing curve calculation via IAPWS `_Tf()` function
-- Single phase region (Ice Ih + brine) vs liquid seawater
-- New tab in GUI (separate axes from T-P pure water diagram)
+**Modified components:**
+- `interface_builder.py` — Call `transform_triclinic_to_orthogonal()` on triclinic detection instead of raising `InterfaceGenerationError`
+- `cli/parser.py` — Add `--interface` argument group with mode/box/thickness sub-arguments
+- `main.py` — Route `--interface` flag to interface generation flow
+- `modes/piece.py` — Update orthogonal check (lines 61-71) to allow transformed triclinic cells
+- `phase_mapping/lookup.py` — Add IAPWS density function alongside hardcoded values
 
-**Technical findings:**
-- Seawater ice has NO high-pressure polymorphs at ocean conditions (<100 MPa)
-- Valid salinity range: 0-12% (covers all natural seawater)
-- IAPWS-08 is the authoritative international standard
-- Different visualization: S-T axes, single freezing curve
+### Critical Pitfalls
 
-**Dependencies:** None new — `iapws==1.5.5` already installed
+1. **Incorrect triclinic coordinate transformation** — Extracting only diagonal elements from the cell matrix produces structurally invalid crystals. Must use full 3×3 matrix transformation with volume verification and PBC wrapping. Validate against known Ice II structure before proceeding. (Recovery cost: HIGH)
 
----
+2. **Breaking existing `piece.py` validation** — The orthogonal-only check at lines 61-71 was added in v3.0 specifically to block triclinic phases. Adding transformation without updating this check means the new feature silently fails. Must update or remove the validation and add integration tests for triclinic phases.
 
-### Feature 3: Liquid-Solid Interface Generation (ARCHITECTURE_INTERFACE.md)
+3. **IAPWS range violations** — `IAPWS97` returns `NaN` or throws exceptions outside its validity range (273.15–647 K, 0.006–22 MPa). Must add bounds checking with graceful fallback to reference density (~1.0 g/cm³) and display a warning.
 
-**Complexity:** 3/5 (MODERATE)  
-**Estimated Effort:** ~9-14 days (~70-100 hours)  
-**Confidence:** MEDIUM
+4. **Performance regression from uncached IAPWS calls** — IAPWS-95 uses an iterative solver; calling it for each of 10+ candidates during ranking causes noticeable slowdown. Must implement `@lru_cache` keyed on `(T, P)` — since all candidates for the same phase share identical density, a single computation suffices.
 
-GenIce2 does NOT support interface generation — it's purely an ice crystal generator. Three approaches exist: rule-based assembly (recommended for MVP), pre-generated configuration library, or MD-based relaxation (avoid for now).
+5. **Density units confusion** — IAPWS returns kg/m³; QuickIce uses g/cm³. Factor-of-1000 error is easy to introduce and hard to catch visually. Add explicit conversion with unit tests.
 
-**Core requirements:**
-- New `InterfaceGenerator` service module
-- Liquid water configuration generator
-- Interface assembly and validation logic
-- VTK visualization enhancements (phase coloring, boundary plane)
+## Implications for Roadmap
 
-**Technical findings:**
-- Must NOT modify GenIce2; build interface as post-processing layer
-- Rule-based assembly sufficient for visualization use case
-- May need validation testing for physical reasonableness
-- Existing VTK viewer can be extended for phase differentiation
+Based on combined research, suggested phase structure:
 
-**Dependencies:** None new — GenIce2, NumPy, VTK already in environment
+### Phase 1: Density Service Foundation
+**Rationale:** Lowest risk, no dependencies on other features, validates IAPWS integration approach. Other features may optionally consume density data later.
+**Delivers:** `density_service.py` with `get_water_density()`, `get_ice_ih_density()`, molecule count calculators, bounds checking, LRU cache, unit tests
+**Addresses:** Water density from T/P (table stakes), Ice Ih IAPWS density (differentiator)
+**Avoids:** Pitfalls 5 (IAPWS range violations), 7 (performance regression), 15 (density units confusion)
 
----
+### Phase 2: Triclinic Transformation Service
+**Rationale:** This is the highest-risk, highest-value feature. It must be built and validated before CLI or integration work depends on it. Isolating it enables thorough testing with known ice phases.
+**Delivers:** `cell_transformer.py` with `transform_triclinic_to_orthogonal()`, `extract_lattice_parameters()`, `build_orthogonal_cell()`; integration with `interface_builder.py`; validation against Ice II/V structures
+**Addresses:** Triclinic→orthogonal transformation (table stakes)
+**Avoids:** Pitfalls 1 (incorrect transformation), 9 (detection failure), 14 (undocumented transformation)
+**Uses:** numpy (existing stack)
 
-## Version Recommendations
+### Phase 3: CLI Interface Integration
+**Rationale:** Builds on existing argparse patterns and the now-available transformation service. Can be developed independently from GUI changes. High user demand for CLI parity.
+**Delivers:** `interface_parser.py`, extended `cli/parser.py`, updated `main.py` routing, file naming strategy, CLI help text
+**Addresses:** CLI interface generation (table stakes)
+**Avoids:** Pitfalls 3 (parser not extended), 4 (file naming conflicts), 10 (missing help text)
+**Implements:** CLI extension architecture pattern
 
-### v2.1: Seawater Phase Diagram
+### Phase 4: Integration, Polish & Validation
+**Rationale:** Bring all features together, fix validation logic in `piece.py`, update GROMACS export for new cases, update GUI density display, end-to-end testing.
+**Delivers:** Updated `piece.py` validation, GROMACS export verification, GUI density display updates, integration test suite, documentation
+**Addresses:** Cross-cutting concerns
+**Avoids:** Pitfalls 2 (breaking piece mode validation), 8 (integration breakage), 11 (GROMACS export), 12 (UI not updated)
 
-**Rationale:** Lowest complexity, leverages existing library, adds immediate user value for ocean science users. Well-defined scope with authoritative data source (IAPWS-08).
+### Phase Ordering Rationale
 
-**Delivers:**
-- Salinity-Temperature phase diagram tab
-- Freezing point depression curve
-- Phase region labels (Sea Ice vs Liquid Seawater)
-- Click interaction with phase info display
+- Phase 1 first because density service is self-contained, low-risk, and establishes the IAPWS integration pattern that other phases may consume
+- Phase 2 second because triclinic transformation is the critical-path blocker for non-orthogonal interface generation — it must be validated before any integration work
+- Phase 3 third because CLI integration depends on transformation working correctly for triclinic phases, but is otherwise independent
+- Phase 4 last because cross-cutting integration, validation updates, and GUI changes touch multiple modules and require all features to be stable
 
-**Estimated timeline:** 3-4 days  
-**Risk level:** LOW
+### Research Flags
 
----
+Phases likely needing deeper research during planning:
+- **Phase 2:** Triclinic transformation algorithm correctness — the math is standard crystallography but needs validation against known structures. Consider `/gsd-research-phase` to verify the transformation preserves crystallographic symmetry, not just volume.
+- **Phase 4:** GROMACS export compatibility — need to verify that transformed orthogonal cells produce valid `.gro` files that GROMACS accepts. May need to research GROMACS box vector format requirements.
 
-### v2.2: GROMACS Export
-
-**Rationale:** Moderate complexity, serves computational chemistry users who need simulation-ready files. Builds on existing GenIce integration.
-
-**Delivers:**
-- GROMACS `.top` topology file generation
-- Bundled `tip4p-ice.itp` force field file
-- Export menu integration
-- GROMACS validation testing
-
-**Estimated timeline:** 5 days  
-**Risk level:** MEDIUM (validation needed)
-
----
-
-### v2.5: Interface Generation (MVP)
-
-**Rationale:** Higher complexity, requires new service layer. Rule-based assembly provides core functionality without MD complexity. Could be v3.0 if scope expands.
-
-**Delivers:**
-- Ice-water interface structure generation
-- Rule-based assembly combining ice + liquid layers
-- Phase-colored VTK visualization
-- Basic interface orientation controls
-
-**Estimated timeline:** 2-3 weeks  
-**Risk level:** MEDIUM (needs validation testing)
-
----
-
-### v3.0: Enhanced Features (Future)
-
-Potential v3.0 enhancements depending on user feedback:
-- Configuration library for pre-generated interface structures
-- MD relaxation option for interface generation
-- Extended water models beyond TIP4P-ICE
-- 3D S-T-P surface visualization
-- Brine pocket fraction modeling
-
----
-
-## Complexity Comparison Matrix
-
-| Feature | Complexity | Effort | Dependencies | Risk | User Value |
-|---------|------------|--------|--------------|------|------------|
-| Seawater Phase Diagram | 2/5 | 3-4 days | None | LOW | HIGH (ocean science) |
-| GROMACS Export | 3/5 | 5 days | None | MEDIUM | HIGH (simulation) |
-| Interface Generation | 3/5 | 2-3 weeks | None | MEDIUM | MEDIUM (visualization) |
-
----
-
-## Effort Breakdown
-
-### Seawater Phase Diagram (~25 hours)
-
-| Task | Hours | Notes |
-|------|-------|-------|
-| Core logic (S-T lookup) | 2 | Wrapper around `_Tf()` |
-| Phase diagram widget | 10 | New widget, S-T axes |
-| GUI tab integration | 5 | Standard pattern |
-| Export functionality | 3 | Reuse existing export |
-| Testing | 5 | Unit + integration |
-| **Total** | **25** | |
-
-### GROMACS Export (~38 hours)
-
-| Task | Hours | Notes |
-|------|-------|-------|
-| Research finalization | 2 | Verify TIP4P-ICE params |
-| Create tip4p-ice.itp file | 4 | Encode force field |
-| Implement .top generator | 16 | Python module |
-| Integrate with export menu | 8 | UI integration |
-| Testing with GROMACS | 8 | Validate files work |
-| **Total** | **38** | |
-
-### Interface Generation (~90 hours)
-
-| Task | Hours | Notes |
-|------|-------|-------|
-| Interface module development | 16 | Core generation logic |
-| Liquid generator module | 12 | Water configuration |
-| Worker/ViewModel integration | 8 | Standard patterns |
-| VTK visualization updates | 12 | Phase coloring |
-| UI controls | 8 | New input controls |
-| Testing & validation | 20 | Physical reasonableness |
-| Documentation | 14 | User guide updates |
-| **Total** | **90** | |
-
----
-
-## Dependencies Analysis
-
-### New Dependencies Required: NONE
-
-All three features can be implemented using existing packages:
-
-| Package | Version | Used By |
-|---------|---------|---------|
-| genice2 | 2.2.13.1 | GROMACS, Interface |
-| iapws | 1.5.5 | Seawater |
-| numpy | (existing) | All features |
-| vtk | 9.5.2 | Interface visualization |
-| PySide6 | 6.10.2 | All UI work |
-
-### Optional Future Dependencies
-
-| Package | Purpose | Recommended For |
-|---------|---------|------------------|
-| mdanalysis | File validation | Post-MVP GROMACS |
-| openmm | MD relaxation | v3.0 Interface |
-
----
-
-## Architecture Implications
-
-### Existing MVVM Pattern Extends Cleanly
-
-All three features follow the same architectural pattern:
-
-```
-FeatureXService (new module)
-    │
-    ├── Encapsulates feature logic
-    ├── Called by ViewModel
-    └── Returns typed result objects
-```
-
-### New Modules Required
-
-| Module | Location | Responsibility |
-|--------|----------|----------------|
-| `gromacs_export.py` | `export/` | .top file generation |
-| `seawater_diagram.py` | `diagrams/` | S-T phase diagram widget |
-| `interface_generator.py` | `structure_generation/` | Ice-water assembly |
-| `liquid_generator.py` | `structure_generation/` | Liquid water config |
-
-### ViewModel Additions
-
-Each feature needs:
-- New signal (e.g., `seawater_generation_complete`)
-- New method (e.g., `start_seawater_generation()`)
-- New worker class (runs in QThread)
-
----
-
-## Critical Pitfalls
-
-### 1. GROMACS Validation (MEDIUM Severity)
-**Risk:** Generated `.top` files may not load correctly in GROMACS.  
-**Prevention:** Test with actual GROMACS installation, validate atom naming conventions.
-
-### 2. Interface Physical Reasonableness (MEDIUM Severity)
-**Risk:** Rule-based interfaces may have unrealistic hydrogen bonding at boundaries.  
-**Prevention:** Compare with published MD simulation snapshots; add validation tests.
-
-### 3. Seawater Axis Confusion (LOW Severity)
-**Risk:** Users may expect T-P diagram but get S-T diagram instead.  
-**Prevention:** Clear labels, tooltips, documentation explaining the difference.
-
-### 4. Performance with Dense Sampling (LOW Severity)
-**Risk:** Dense S-T grids may slow down rendering.  
-**Prevention:** Use vectorized numpy operations, lazy evaluation.
-
----
-
-## Recommendations for Milestone Scoping
-
-### Recommended Release Schedule
-
-| Version | Feature | Timeline | Cumulative |
-|---------|---------|----------|------------|
-| v2.1 | Seawater Phase Diagram | Week 1-2 | 2 weeks |
-| v2.2 | GROMACS Export | Week 3-4 | 4 weeks |
-| v2.5 | Interface Generation MVP | Week 5-7 | 7 weeks |
-
-### Alternative: Single v3.0 Release
-
-Bundle all features into v3.0 (estimated 7-8 weeks total). This delays user value but creates a more significant release.
-
-**Recommendation:** Incremental releases preferred — users benefit from each feature immediately.
-
----
+Phases with standard patterns (skip research-phase):
+- **Phase 1:** IAPWS library usage is well-documented; existing codebase already uses it for seawater phase diagrams
+- **Phase 3:** argparse extension is a well-known pattern; existing CLI structure in `parser.py` is straightforward
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| GROMACS Technical | HIGH | GenIce2 capabilities verified; format documented |
-| GROMACS Parameters | HIGH | TIP4P-ICE from primary literature |
-| Seawater Technical | HIGH | IAPWS-08 is authoritative standard |
-| Seawater Feasibility | HIGH | Single function call for freezing point |
-| Interface Technical | MEDIUM | Approaches identified, implementation details need refinement |
-| Interface Validation | LOW | Need domain expert review for physical reasonableness |
+| Stack | HIGH | All technologies already installed; no new dependencies; verified against `environment.yml` and codebase |
+| Features | HIGH | Feature list is scoped from existing codebase gaps (triclinic rejection, missing CLI flag, hardcoded density); clear dependency graph |
+| Architecture | HIGH | MVVM patterns verified against existing code; new modules follow established service layer pattern; build order respects dependency graph |
+| Pitfalls | MEDIUM-HIGH | Critical pitfalls well-identified from codebase analysis; some algorithm-specific risks (transformation correctness) need validation during implementation |
 
-**Overall confidence:** MEDIUM-HIGH
+**Overall confidence:** HIGH
 
----
+### Gaps to Address
 
-## Gaps to Address
-
-| Gap | How to Address | Priority |
-|-----|----------------|----------|
-| Interface validation criteria | Consult with domain expert or compare to MD literature | HIGH |
-| GROMACS user testing | Recruit beta testers from computational chemistry users | MEDIUM |
-| Seawater user personas | Survey ocean science users for expected use cases | LOW |
-| Performance benchmarks | Test with various molecule counts | LOW |
-
----
+- **Triclinic transformation algorithm validation:** Research shows the approach (extract lattice parameters → build orthogonal cell → transform coordinates) but doesn't verify it against a reference implementation. Need to compare output with ASE's `Cell.orthorhombic_cell()` or a known crystallographic tool during Phase 2 implementation.
+- **IAPWS `_Ice` class API:** STACK.md and FEATURES.md disagree on the exact IAPWS API for Ice Ih density (`_Ice` class vs `IAPWS97` with `x=1`). Need to verify which API is correct in the installed `iapws==1.5.5` before implementing density service.
+- **Default CLI interface parameters:** No consensus on default box dimensions or thickness values when not specified. Architecture doc flags this as an open question. Decide during Phase 3 planning.
+- **Backward compatibility for triclinic transformation:** If transformation produces unexpected results, should users be able to disable it and get the original error? Flag for Phase 4 decision.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
-1. **GenIce2 PyPI** — https://pypi.org/project/genice2/ — GROMACS .gro format support verified
-2. **GROMACS Manual** — https://manual.gromacs.org/current/reference-manual/topologies/topology-file-formats.html — .top format specification
-3. **IAPWS-08 Standard** — http://www.iapws.org/relguide/Seawater.html — Seawater thermodynamics
-4. **IAPWS Python Library** — https://pypi.org/project/iapws/ — Implementation
-5. **TIP4P-ICE Publication** — Abascal et al., J. Chem. Phys. 122, 234511 (2005) — Force field parameters
+- QuickIce codebase — Verified existing MVVM architecture, service patterns, CLI structure, interface builder, phase lookup
+  - `gui/viewmodel.py`, `gui/workers.py` — MVVM patterns
+  - `cli/parser.py` — CLI argument structure
+  - `structure_generation/interface_builder.py` — Service layer pattern, orthogonal check
+  - `structure_generation/generator.py` — Cell parsing, triclinic handling
+  - `phase_mapping/lookup.py` — Hardcoded density values
+- `environment.yml` — Dependency verification (iapws, spglib, numpy all present)
+- IAPWS Python library (`iapws==1.5.5`) — Already installed; API documented on GitHub/PyPI
 
 ### Secondary (MEDIUM confidence)
+- GenIce2 documentation — Triclinic cell format; cell parsing verified in `generator.py`
+- IAPWS R10-06(2009) — Ice Ih equation of state; referenced for density values but implementation details need verification
+- spglib documentation — Confirmed NOT providing triclinic→orthogonal conversion
 
-6. **TIP4P-ICE in GROMACS** — González & Abascal, JCTC 14, 3674 (2018)
-7. **Sea Ice Wikipedia** — https://en.wikipedia.org/wiki/Sea_ice — Phase behavior
-8. **Phases of Ice Wikipedia** — https://en.wikipedia.org/wiki/Phases_of_ice — Pressure thresholds
-
-### Tertiary (MEDIUM confidence)
-
-9. **QuickIce Architecture** — Existing codebase patterns (MVVM, threading, VTK)
-
----
-
-## Open Questions
-
-1. **Interface validation:** Should we engage domain experts for review, or rely on comparison with published structures?
-2. **GROMACS testing:** Can users provide GROMACS installations for validation, or is offline file validation sufficient?
-3. **Seawater UI:** Should seawater diagram be a tab, or integrated into the existing phase diagram?
-4. **Version numbering:** Should interface generation be v2.5 (small increment) or v3.0 (major)?
+### Tertiary (LOW confidence)
+- ASE (Atomic Simulation Environment) — Referenced as alternative for cell transformation; not used but provides validation reference
+- OVITO, Avogadro, Pymatgen — Scientific visualization tool patterns for feature landscape context (v2.0 research)
 
 ---
-
-*Research completed: 2026-04-05*  
-*Ready for milestone definition: yes*
+*Research completed: 2026-04-12*
+*Ready for roadmap: yes*

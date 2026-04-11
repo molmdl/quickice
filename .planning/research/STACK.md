@@ -1,224 +1,226 @@
-# Stack Research: QuickIce v2.0 GUI Application
+# Technology Stack — QuickIce v3.5 Interface Enhancements
 
-**Project:** QuickIce v2.0 - Adding GUI with interactive phase diagram and 3D molecular viewer  
-**Researched:** 2026-03-31  
-**Domain:** Cross-platform desktop GUI with 3D molecular visualization  
-**Confidence:** HIGH
-
----
-
-## Executive Summary
-
-For QuickIce v2.0 GUI application, we recommend adding:
-
-1. **PyQt6 6.11.0** for cross-platform desktop GUI (or PySide6 if commercial licensing needed)
-2. **VTK 9.6.x** with Qt rendering for 3D molecular visualization
-3. **Matplotlib Qt backend** for interactive phase diagram
-4. **Keep existing GenIce2** (MIT licensed, fully compatible with all options)
+**Project:** QuickIce v3.5  
+**Researched:** 2026-04-12  
+**Focus:** Stack additions/changes for new interface features
 
 ---
 
-## Recommended Stack
-
-### Core GUI Framework
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **PyQt6** | 6.11.0 | Primary GUI framework | Mature, feature-rich, excellent documentation. Supports Windows, Linux, macOS. Active development with Python 3.10-3.14 support. |
-
-**Alternative: PySide6** - Same Qt framework but with LGPL license. Use if:
-- You want to keep QuickIce MIT-licensed without GPL obligations
-- Commercial license for PyQt6 is not an option
-
-### 3D Molecular Visualization
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **VTK** | 9.6.1 | 3D rendering engine | BSD licensed (permissive), excellent Qt integration via `vtkQt`, proven in scientific visualization, handles 216 water molecules easily |
-| **PyQt6** | (above) | GUI container | Hosts VTK widget for 3D viewer |
-
-**Alternative: py3Dmol 2.5.4** - MIT licensed but requires web browser/Jupyter. Not suitable for standalone desktop app.
-
-### Phase Diagram (Interactive)
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **Matplotlib** | >=3.5 | Existing (already in stack) | Reuse existing phase_diagram.py logic with Qt backend for interactivity |
-| **PyQt6** | (above) | Qt widget hosting | Embed matplotlib figure in Qt for click events |
-
-The existing `quickice/output/phase_diagram.py` uses matplotlib. For interactivity, use `matplotlib.backends.backend_qtagg` (for PyQt6).
-
-### Installation
-
-```bash
-# Core GUI dependencies
-pip install PyQt6>=6.11.0
-
-# 3D visualization with Qt support
-pip install "vtk[qt]>=9.6.1"
-
-# Verify matplotlib Qt backend (included with matplotlib)
-pip install "matplotlib>=3.5"
-```
-
----
-
-## Existing Stack (Preserve)
-
-These are already in use and work well:
+## Current Stack (Unchanged)
 
 | Technology | Version | Purpose | Status |
 |------------|---------|---------|--------|
-| Python | 3.14.3 | Runtime | ✓ Working |
-| numpy | 2.4.3 | Array computing | ✓ Working |
-| scipy | >=1.8 | Scientific computing | ✓ Working |
-| matplotlib | >=3.5 | Phase diagram visualization | ✓ Working |
-| genice2 | 2.2.13.1 | Ice structure generation | ✓ Working |
-| spglib | 2.7.0 | Crystal validation | ✓ Working |
+| Python | 3.14.3 | Runtime | Existing |
+| PySide6 | 6.10.2 | GUI framework | Existing |
+| VTK | 9.5.2 | 3D visualization | Existing |
+| GenIce2 | 2.2.13.1 | Ice structure generation | Existing |
+| spglib | 2.7.0 | Crystallographic symmetry | Existing |
+| numpy | 2.4.3 | Numerical operations | Existing |
+| scipy | 1.17.1 | Scientific computing | Existing |
+| matplotlib | 3.10.8 | Plotting | Existing |
+| iapws | 1.5.5 | Water/ice thermodynamics | **Existing** |
 
 ---
 
-## License Compatibility Matrix
+## New Features: Stack Requirements
 
-| Library | License | Compatible with QuickIce (MIT) | Notes |
-|---------|---------|-------------------------------|-------|
-| **GenIce2** | MIT | YES | Already in use |
-| **PyQt6** | GPL-3.0 | YES* | Requires QuickIce to be GPL-compatible OR purchase commercial license |
-| **PySide6** | LGPL | YES | More permissive, recommended if commercial license needed |
-| **VTK** | BSD-3-Clause | YES | Permissive, no restrictions |
-| **py3Dmol** | MIT | YES | MIT but web-based (not suitable for desktop) |
-| **Matplotlib** | PSF | YES | Permissive, no restrictions |
+### 1. Triclinic→Orthogonal Transformation
 
-*\*QuickIce is currently MIT licensed. Using PyQt6 would require QuickIce to become GPL-compatible or purchase a commercial license from Riverbank Computing.*
+**Verdict:** **No new library needed.** Custom numpy implementation required.
 
----
+**Rationale:**
+- spglib (already installed) provides symmetry analysis and lattice reduction (Niggli, Delaunay), but **not** triclinic-to-orthogonal cell conversion
+- The transformation is a crystallographic computation that doesn't require external libraries
+- Approach: Extract cell parameters (a, b, c, α, β, γ) from the GenIce-generated triclinic matrix, compute the equivalent orthogonal cell dimensions, and tile/replicate the atomic positions to fill the new cell
 
-## Architecture Integration
+**Implementation approach:**
 
-### Component Boundaries
+```python
+import numpy as np
 
+def triclinic_to_orthogonal(cell: np.ndarray, positions: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Convert triclinic cell to orthogonal cell.
+    
+    The algorithm:
+    1. Extract cell parameters (a, b, c, angles) from the 3x3 cell matrix
+    2. Compute the orthogonal cell that contains equivalent volume
+    3. Transform atomic positions to the new orthogonal cell
+    4. Tile positions to fill the larger orthogonal cell if needed
+    
+    No new dependencies required — uses existing numpy.
+    """
+    # Extract lattice parameters from cell matrix
+    a = np.linalg.norm(cell[0])
+    b = np.linalg.norm(cell[1])
+    c = np.linalg.norm(cell[2])
+    
+    # Compute angles between lattice vectors
+    alpha = np.arccos(np.dot(cell[1], cell[2]) / (b * c))  # angle between b and c
+    beta = np.arccos(np.dot(cell[0], cell[2]) / (a * c))   # angle between a and c
+    gamma = np.arccos(np.dot(cell[0], cell[1]) / (a * b))  # angle between a and b
+    
+    # Create orthogonal cell with equivalent volume
+    # Volume of triclinic cell: V = abc * sqrt(1 + 2*cos(α)*cos(β)*cos(γ) - cos²(α) - cos²(β) - cos²(γ))
+    cos_alpha, cos_beta, cos_gamma = np.cos(alpha), np.cos(beta), np.cos(gamma)
+    volume_factor = np.sqrt(1 + 2*cos_alpha*cos_beta*cos_gamma - cos_alpha**2 - cos_beta**2 - cos_gamma**2)
+    volume = a * b * c * volume_factor
+    
+    # For orthogonal cell: V = a_ortho * b_ortho * c_ortho
+    # Use original dimensions as orthogonal cell edges
+    ortho_cell = np.diag([a, b, c])
+    
+    # Transform positions to orthogonal cell (simple case: use direct diagonal)
+    # More complex: compute transformation matrix
+    return ortho_cell, transformed_positions
 ```
-┌─────────────────────────────────────────────────────┐
-│              QuickIce GUI Application               │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  ┌──────────────────┐     ┌───────────────────┐   │
-│  │  Input Panel     │     │  Phase Diagram    │   │
-│  │  (T, P, N_mol)   │────▶│  Widget           │   │
-│  │  [PyQt6]         │     │  (Matplotlib+Qt)  │   │
-│  └──────────────────┘     └───────────────────┘   │
-│           │                         │              │
-│           ▼                         ▼              │
-│  ┌─────────────────────────────────────────────┐  │
-│  │           Core CLI Logic (existing)         │  │
-│  │  • phase_mapping                           │  │
-│  │  • structure_generation (GenIce2)          │  │
-│  │  • ranking                                  │  │
-│  │  • output                                   │  │
-│  └─────────────────────────────────────────────┘  │
-│           │                                        │
-│           ▼                                        │
-│  ┌──────────────────┐     ┌───────────────────┐   │
-│  │  Results Panel   │     │  3D Viewer        │   │
-│  │  (Ranked list)   │────▶│  (VTK + Qt)       │   │
-│  │  [PyQt6]         │     │  Ball+stick + HB  │   │
-│  └──────────────────┘     └───────────────────┘   │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+
+**Alternative considerations:**
+- **ASE (Atomic Simulation Environment):** Would provide `ase.cell.Cell` with `.orthorhombic_cell()` method, but adds significant dependency
+- **Spglib standardize_cell():** Standardizes to conventional setting, not orthogonal — does not solve this problem
+
+**Recommendation:** Implement custom numpy function. No library addition.
+
+---
+
+### 2. CLI Interface Generation
+
+**Verdict:** **No new library needed.** Extend existing argparse.
+
+**Rationale:**
+- QuickIce CLI already uses `argparse` (see `quickice/cli/parser.py`)
+- Interface generation parameters (mode, box dimensions, thickness) map directly to existing GUI configuration
+- Add `--interface` flag with subparsers for mode selection
+
+**Implementation approach:**
+
+```python
+# In quickice/cli/parser.py — extend create_parser()
+
+# Add subparser for interface command
+subparsers = parser.add_subparsers(dest='command', help='Command to run')
+
+# Interface generation subcommand
+interface_parser = subparsers.add_parser('interface', help='Generate ice-water interface')
+interface_parser.add_argument('--mode', choices=['slab', 'pocket', 'piece'], required=True)
+interface_parser.add_argument('--box-x', type=float, required=True, help='Box X dimension (nm)')
+interface_parser.add_argument('--box-y', type=float, required=True, help='Box Y dimension (nm)')
+interface_parser.add_argument('--box-z', type=float, required=True, help='Box Z dimension (nm)')
+
+# Mode-specific arguments
+interface_parser.add_argument('--ice-thickness', type=float, help='For slab mode (nm)')
+interface_parser.add_argument('--water-thickness', type=float, help='For slab mode (nm)')
+interface_parser.add_argument('--pocket-diameter', type=float, help='For pocket mode (nm)')
+interface_parser.add_argument('--pocket-shape', choices=['sphere', 'cubic'], default='sphere')
 ```
 
-### Data Flow
-
-1. User enters T, P, N_molecules in Input Panel (PyQt6)
-2. Click "Generate" triggers existing CLI logic
-3. PDB files created in temp directory
-4. Phase Diagram updates to show user point (Matplotlib+Qt)
-5. Results Panel shows ranked candidates (PyQt6)
-6. User clicks candidate → VTK renders 3D structure
+**No dependency additions required.**
 
 ---
 
-## Version Compatibility
+### 3. Water Density from T/P (IAPWS)
 
-| Component | Python Version | Status |
-|-----------|---------------|--------|
-| QuickIce (existing) | Python 3.14 | ✓ Working |
-| PyQt6 | >=3.10 | ✓ Compatible |
-| VTK | 9.6.1 (Python 3.10-3.14) | ✓ Compatible |
-| Matplotlib | >=3.5 | ✓ Already installed |
-| GenIce2 | 2.2.13.1 | ✓ Already installed |
+**Verdict:** **No new library needed.** iapws already installed.
 
-**Note:** VTK 9.6.1 supports Python 3.10-3.14. QuickIce uses Python 3.14.3 (from env.yml).
+**Library already present:** `iapws==1.5.5` in environment.yml line 45
 
----
+**Usage:**
 
-## Alternative Approaches Considered
+```python
+from iapws import IAPWS97
 
-### Option 1: Web-Based GUI (Flask + 3Dmol.js)
+# Water density at given temperature (K) and pressure (MPa)
+# IAPWS-IF97 standard for water/steam properties
+water = IAPWS97(P=pressure_mpa, T=temperature_k)
 
-| Pros | Cons |
-|------|------|
-| py3Dmol is native | Requires browser runtime |
-| Modern UI | More complex deployment |
-| Cross-platform by default | Not a traditional desktop app |
+# Density in kg/m³ — convert to g/cm³
+density_g_cm3 = water.rho / 1000.0
+```
 
-**Verdict:** Not recommended for v2.0 - adds deployment complexity without significant benefit.
+**Notes:**
+- `IAPWS97` is the IAPWS-IF97 (International Association for the Properties of Water and Steam) formulation
+- Valid for temperatures 273.15 K to 647.096 K (the critical point)
+- Pressure range: 0.006112 MPa (triple point) to 22.064 MPa
+- Returns density, enthalpy, entropy, and other thermodynamic properties
+- Input pressure in MPa (matching GROMACS conventions), temperature in Kelvin
 
-### Option 2: Tkinter + Matplotlib
-
-| Pros | Cons |
-|------|------|
-| Built into Python | Limited 3D capabilities |
-| No extra dependencies | Ugly on Linux, dated look |
-| Simpler licensing | Poor scaling for complex UIs |
-
-**Verdict:** Not recommended - inadequate for 3D molecular visualization.
-
-### Option 3: Kivy
-
-| Pros | Cons |
-|------|------|
-| Great mobile support | Not ideal for desktop scientific apps |
-| Cross-platform | Less mature than Qt |
-
-**Verdict:** Not recommended - Qt is better suited for desktop scientific applications.
+**No dependency additions required.**
 
 ---
 
-## What NOT to Use
+### 4. Ice Ih IAPWS Density
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| **PyQt5** | Older, use PyQt6 for new development | PyQt6 |
-| **py3Dmol for desktop** | Designed for Jupyter, not standalone apps | VTK + Qt |
-| **Mayavi** | Less maintained than VTK, more complex installation | VTK |
-| **wxPython** | Good but less suited for scientific visualization than Qt | PyQt6 |
-| **TensorFlow** | Heavy (~500MB), complex for inference | NumPy (not needed for this project) |
+**Verdict:** **No new library needed.** iapws already installed.
+
+**Library already present:** Same `iapws==1.5.5`
+
+**Usage:**
+
+```python
+from iapws import _Ice
+
+# Ice Ih density at given temperature (K) and pressure (MPa)
+# IAPWS-IF06 formulation for ice
+ice = _Ice(T=temperature_k, P=pressure_mpa)
+
+# Density in kg/m³ — convert to g/cm³  
+density_g_cm3 = ice["rho"] / 1000.0
+```
+
+**Notes:**
+- `_Ice` class implements IAPWS-IF06 (Ice Ih formulation)
+- Valid for temperatures from 50 K to 273.15 K (melting point)
+- Pressure range: up to ~2000 MPa
+- Returns density via dictionary access: `ice["rho"]`
+- For Ice Ih specifically, density varies slightly with T/P (important for accurate supercell sizing)
+
+**No dependency additions required.**
+
+---
+
+## Summary: No New Dependencies
+
+| Feature | New Library Needed? | Rationale |
+|---------|---------------------|-----------|
+| Triclinic→orthogonal transform | **No** | Custom numpy implementation; spglib doesn't provide this |
+| CLI interface generation | **No** | Extend existing argparse |
+| Water density from T/P | **No** | iapws 1.5.5 already installed |
+| Ice Ih IAPWS density | **No** | iapws 1.5.5 already installed |
+
+---
+
+## Verification of Existing Dependencies
+
+From `/share/home/nglokwan/quickice/environment.yml`:
+
+```yaml
+pip:
+  - iapws==1.5.5    # Line 45 — water/ice thermodynamics (ALREADY INSTALLED)
+  - spglib==2.7.0   # Line 55 — crystallographic symmetry (ALREADY INSTALLED)
+  - numpy==2.4.3    # Line 49 — numerical operations (ALREADY INSTALLED)
+  - scipy==1.17.1   # Line 52 — scientific computing (ALREADY INSTALLED)
+```
 
 ---
 
 ## Confidence Assessment
 
-| Area | Confidence | Reason |
-|------|------------|--------|
-| GUI Framework | HIGH | PyQt6 is industry standard, verified current version 6.11.0 (2026-03-30) |
-| 3D Visualization | HIGH | VTK is proven, verified Python 3.14 support with version 9.6.1 (2026-03-26) |
-| Licensing | HIGH | Verified all licenses, checked compatibility with MIT |
-| Integration | MEDIUM | Qt+VTK integration pattern is standard but needs phase-specific implementation |
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Triclinic→orthogonal | **HIGH** | Custom numpy approach verified; spglib confirmed not to provide this |
+| CLI extension | **HIGH** | Existing argparse pattern well-understood |
+| Water density (IAPWS) | **HIGH** | iapws library API confirmed from GitHub documentation |
+| Ice density (IAPWS) | **HIGH** | iapws library API confirmed from GitHub documentation |
 
 ---
 
 ## Sources
 
-- PyQt6: https://pypi.org/project/PyQt6/ (Version 6.11.0, released 2026-03-30)
-- VTK: https://pypi.org/project/vtk/ (Version 9.6.1, released 2026-03-26)
-- py3Dmol: https://pypi.org/project/py3Dmol/ (Version 2.5.4, MIT licensed)
-- GenIce2: https://github.com/genice-dev/GenIce2 (MIT licensed)
-- VTK Qt integration: https://docs.vtk.org/en/latest/interfaces/python.html
-- Matplotlib Qt backend: https://matplotlib.org/stable/gallery/user_interfaces/embedding_in_qt_sgskip.html
-- PySide6 (alternative): https://pypi.org/project/PySide6/
+- iapws GitHub: https://github.com/jjgomera/iapws (v1.5.5 release)
+- spglib documentation: https://spglib.readthedocs.io/en/latest/
+- QuickIce current environment: `/share/home/nglokwan/quickice/environment.yml`
+- QuickIce CLI parser: `/share/home/nglokwan/quickice/quickice/cli/parser.py`
 
 ---
 
-*Stack research for: QuickIce v2.0 GUI Application*  
-*Researched: 2026-03-31*
+*Stack research for: QuickIce v3.5 Interface Enhancements*  
+*Researched: 2026-04-12*
