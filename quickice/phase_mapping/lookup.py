@@ -27,8 +27,8 @@ from quickice.phase_mapping.errors import UnknownPhaseError
 PHASE_METADATA = {
     "ice_ih": {
         "name": "Ice Ih",
-        "density": 0.9167,
-        "density_note": "Density varies with temperature and pressure. Value shown is at reference conditions (273.15 K, 0.101325 MPa). See IAPWS R10-06(2009): Revised Release on the Equation of State 2006 for H2O Ice Ih for complete equation of state (https://www.iapws.org/release/Ice-2009.html)."
+        "density": 0.9167,  # Fallback value; actual density calculated via IAPWS R10-06(2009)
+        "density_note": "Only Ice Ih has temperature-dependent density (IAPWS R10-06(2009)). Other ice phases use fixed reference values."
     },
     "ice_ic": {"name": "Ice Ic", "density": 0.92},
     "ice_ii": {"name": "Ice II", "density": 1.18},
@@ -58,10 +58,18 @@ def _build_result(phase_id: str, T: float, P: float) -> dict:
         Dict with phase_id, phase_name, density, temperature, pressure
     """
     meta = PHASE_METADATA[phase_id]
+    
+    # Ice Ih: use IAPWS R10-06(2009) temperature-dependent density
+    if phase_id == "ice_ih":
+        from quickice.phase_mapping.ice_ih_density import ice_ih_density_gcm3
+        density = ice_ih_density_gcm3(T, P)
+    else:
+        density = meta["density"]
+    
     return {
         "phase_id": phase_id,
         "phase_name": meta["name"],
-        "density": meta["density"],
+        "density": density,
         "temperature": T,
         "pressure": P,
     }
