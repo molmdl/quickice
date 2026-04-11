@@ -243,7 +243,6 @@ QuickIce supports three interface geometries:
 
 #### Slab Parameters
 
-<img src="images/tab2-controls-slab.png" width="40%">
 
 - **Ice thickness** (0.5–50 nm): Thickness of the ice layer along the Z-axis
 - **Water thickness** (0.5–50 nm): Thickness of the liquid water layer
@@ -251,14 +250,12 @@ QuickIce supports three interface geometries:
 
 #### Pocket Parameters
 
-<img src="images/tab2-controls-pocket.png" width="40%">
 
 - **Pocket diameter** (0.5–50 nm): Diameter of the spherical/ellipsoidal water cavity
 - **Pocket shape**: Sphere or Ellipsoid (ellipsoid support planned for future release)
 
 #### Piece Parameters
 
-<img src="images/tab2-controls-piece.png" width="40%">
 
 - No additional parameters — piece dimensions are derived from the 
   selected ice candidate
@@ -281,8 +278,6 @@ Tab 2 uses phase-distinct coloring to distinguish ice and water:
 - Camera defaults to Z-axis side view for slab interfaces
 
 ### Export for GROMACS
-
-<img src="images/export-interface-menu.png" width="50%">
 
 **File → Export Interface for GROMACS (Ctrl+I)**
 
