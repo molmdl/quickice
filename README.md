@@ -8,7 +8,7 @@
 
 Condition-based ice structure candidate generation from thermodynamic conditions with a simple Ice-water interface builder. 
 
-QuickIce is also a minimal GUI of basic GenIce2 functions with extended capabilities.
+QuickIce is also a minimal GUI of basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with extended capabilities.
 
 ## Overview
 
