@@ -144,7 +144,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 | Phase | Status | Plans | Must-Haves |
 |-------|--------|-------|------------|
-| 22 - Ice Ih Density | Pending | — | — |
+| 22 - Ice Ih Density | Planning | 4 plans | IAPWS density via GSW, backend/frontend integration, tests |
 | 23 - Water Density | Pending | — | — |
 | 24 - Triclinic Transformation | Pending | — | — |
 | 25 - CLI Interface | Pending | — | — |
