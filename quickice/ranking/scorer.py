@@ -143,7 +143,7 @@ def density_score(candidate: Candidate) -> float:
     This function compares the actual density of the candidate structure to
     the expected density for its phase. The expected density is taken from
     the candidate's metadata (set during Phase 2 phase mapping), with a
-    default of 0.9167 g/cm³ (ice Ih density at standard conditions).
+    default of 0.9167 g/cm³ (ice Ih reference density; actual Ice Ih uses IAPWS-calculated value).
     
     Args:
         candidate: A Candidate object from Phase 3
@@ -159,7 +159,7 @@ def density_score(candidate: Candidate) -> float:
         - Unit conversions: nm³ to cm³ (1e-21 factor)
     """
     # Get expected density from metadata (default: ice Ih density)
-    expected_density = candidate.metadata.get('density', 0.9167)  # g/cm³
+    expected_density = candidate.metadata.get('density', 0.9167)  # g/cm³ fallback; Ice Ih uses IAPWS-calculated value via lookup
     
     # Calculate cell volume in nm³
     volume_nm3 = abs(np.linalg.det(candidate.cell))
