@@ -51,8 +51,8 @@ The input panel contains three text fields for thermodynamic parameters:
 
 ### Pressure
 
-- Range: 0-10000 bar
-- Units: bar (1 bar ≈ 0.1 MPa)
+- Range: 0-10000 MPa
+- Units: MPa (1 MPa ≈ 10 bar)
 - Validation: Error shown if outside valid range
 
 ### Molecule Count
