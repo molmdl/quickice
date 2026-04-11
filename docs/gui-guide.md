@@ -134,7 +134,7 @@ Use the toolbar to switch between:
 
 ## Export Options
 
-<img src="images/export-menu.png" width="50%">
+<img src="images/export-menu.png" width="40%">
 
 *File menu with export options*
 
@@ -195,8 +195,6 @@ Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&ti
 
 ## Interface Construction (Tab 2)
 
-<img src="images/tab2-slab-interface.png" width="80%">
-*Slab interface with phase-distinct coloring (ice=cyan, water=cornflower blue)*
 
 The second tab builds ice-water interface structures from candidates 
 generated in Tab 1. This is useful for molecular dynamics simulations 
@@ -223,39 +221,36 @@ If you generate Ice II or Ice V candidates in Tab 1 and attempt to use them in T
 
 ### Interface Modes
 
-QuickIce supports three interface geometries:
+QuickIce supports three interface geometries. 
 
 | Mode | Description | Use Case |
 |------|-------------|----------|
 | Slab | Layered ice-water interface | Surface melting/freezing studies |
-
-<img src="images/tab2-slab-interface.png" width="60%">
-
 | Pocket | Water cavity within ice matrix | Confined water studies |
-
-<img src="images/tab2-pocket-interface.png" width="60%">
-
 | Piece | Ice crystal embedded in water | Ice nucleation/growth studies |
 
-<img src="images/tab2-piece-interface.png" width="60%">
+3D viewer displays the generated interface with phase-distinct coloring (ice=cyan, water=cornflower blue).
 
 ### Mode-Specific Parameters
 
-#### Slab Parameters
+#### Slab Interface
 
+<img src="images/tab2-slab-interface.png" width="90%">
 
 - **Ice thickness** (0.5–50 nm): Thickness of the ice layer along the Z-axis
 - **Water thickness** (0.5–50 nm): Thickness of the liquid water layer
 - Typical box: elongated Z-axis to accommodate both layers
 
-#### Pocket Parameters
+#### Pocket Interface
 
+<img src="images/tab2-pocket-interface.png" width="90%">
 
 - **Pocket diameter** (0.5–50 nm): Diameter of the spherical/ellipsoidal water cavity
 - **Pocket shape**: Sphere or Ellipsoid (ellipsoid support planned for future release)
 
-#### Piece Parameters
+#### Piece Interface
 
+<img src="images/tab2-piece-interface.png" width="90%">
 
 - No additional parameters — piece dimensions are derived from the 
   selected ice candidate
