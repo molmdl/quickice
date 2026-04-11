@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A cross-platform GUI application for generating plausible ice structures. Users select thermodynamic conditions via interactive phase diagram or text input, and receive ranked PDB structure candidates with 3D visualization.
+A cross-platform GUI application for generating plausible ice structures and ice-water interfaces. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures (slab, pocket, piece modes) with GROMACS export.
 
 ## Core Value
 
-Generate plausible ice structure candidates quickly with an intuitive visual interface.
+Generate plausible ice structure candidates and interfaces quickly with an intuitive visual interface.
 
 ## Requirements
 
@@ -38,15 +38,6 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 - ✓ License compliance audit (MIT-compatible) — v2.0
 - ✓ Exact version pinning for all dependencies — v2.0
 
-### Validated
-
-**v2.1.1 Phase Diagram Data Update:**
-- ✓ Triple point data corrected to IAPWS R14-08(2011) compliant values — v2.1.1
-- ✓ II-III-V and II-V-VI triple points per Journaux et al. (2019, 2020) — v2.1.1
-- ✓ Ice Ic metastable phase region (72-150K, 0-204 MPa) — v2.1.1
-- ✓ Zero polygon overlaps across all 12 ice phases — v2.1.1
-- ✓ Metastability documentation with literature citations — v2.1.1
-
 **v2.1 GROMACS Export:**
 - ✓ GROMACS .gro coordinate file export — v2.1
 - ✓ GROMACS .top topology file export — v2.1
@@ -56,14 +47,24 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 - ✓ CLI --gromacs and --candidate flags — v2.1
 - ✓ Complete documentation with academic citation — v2.1
 
-### Active
+**v2.1.1 Phase Diagram Data Update:**
+- ✓ Triple point data corrected to IAPWS R14-08(2011) compliant values — v2.1.1
+- ✓ II-III-V and II-V-VI triple points per Journaux et al. (2019, 2020) — v2.1.1
+- ✓ Ice Ic metastable phase region (72-150K, 0-204 MPa) — v2.1.1
+- ✓ Zero polygon overlaps across all 12 ice phases — v2.1.1
+- ✓ Metastability documentation with literature citations — v2.1.1
 
 **v3.0 Interface Generation:**
-- [ ] Interface geometry modes (slab, ice-in-water, water-in-ice)
-- [ ] New input controls (boxsize, mode, seed, thickness)
-- [ ] Liquid water from bundled tip4p.gro
-- [ ] Phase-distinct VTK visualization
-- [ ] Interface structure export
+- ✓ Two-tab workflow (Ice Generation + Interface Construction) — v3.0
+- ✓ Three interface geometry modes (slab, pocket, piece) — v3.0
+- ✓ Interface configuration controls (boxsize, mode, seed, thickness) — v3.0
+- ✓ Liquid water from bundled tip4p.gro — v3.0
+- ✓ PBC-aware collision detection via scipy cKDTree — v3.0
+- ✓ Phase-distinct VTK visualization (cyan ice, cornflower blue water) — v3.0
+- ✓ Interface GROMACS export with TIP4P-ICE normalization — v3.0
+- ✓ Ctrl+I shortcut for interface export — v3.0
+
+### Active
 
 **v2.5 Seawater Phase Diagram (Deferred):**
 - Salinity-Temperature phase diagram widget
@@ -83,28 +84,16 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 
 ## Current State
 
-**Version:** v2.1.1 (shipped 2026-04-08)
-**Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, matplotlib
-**Code:** ~8,472 lines of Python (test files excluded)
+**Version:** v3.0 (shipped 2026-04-11)
+**Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib
+**Code:** ~12,768 lines of Python (test files excluded)
 **Test Coverage:** 62 tests passing
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
 **Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
+**Interface Modes:** Slab, Pocket (sphere/cubic), Piece
 **Distribution:** Standalone executable
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
 **Thermodynamic Data:** IAPWS R14-08(2011), Journaux et al. (2019, 2020)
-
-## Current Milestone: v3.0 Interface Generation
-
-**Goal:** Generate ice-water interface structures with 3 geometry modes and new input controls
-
-**Target features:**
-- Interface geometry modes: slab, ice-in-water, water-in-ice
-- New controls: boxsize, mode, seed, ice_thickness, water_thickness (replacing nmol)
-- Liquid water from bundled GROMACS tip4p.gro
-- VTK visualization with phase distinction
-- Export: PDB + GROMACS (.gro/.top/.itp)
-
----
 
 ## Key Decisions
 
@@ -129,6 +118,12 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 | Ice Ic upper pressure ~204 MPa | Ih-II curve boundary | ✓ Confirmed — scientifically accurate |
 | Ice Ih bounded at T=150K | Avoid Ice Ic overlap | ✓ Confirmed — clean phase regions |
 | Metastability documentation | Scientific transparency | ✓ Confirmed — literature citations added |
+| QTabWidget two-tab workflow | Separate ice gen from interface | ✓ Confirmed — clean separation |
+| QStackedWidget mode switching | Mode-specific controls | ✓ Confirmed — clean UI |
+| scipy cKDTree for PBC | Automatic periodic boundaries | ✓ Confirmed — robust overlap detection |
+| Line-based bonds (Tab 2) | Performance for large systems | ✓ Confirmed — smooth rendering |
+| Single SOL molecule type | Simplifies GROMACS topology | ✓ Confirmed — works with GROMACS |
+| Ctrl+I for interface export | No conflict with Ctrl+G | ✓ Confirmed — intuitive shortcut |
 
 ## Context
 
@@ -137,15 +132,15 @@ Generate plausible ice structure candidates quickly with an intuitive visual int
 - This project wraps/extends GenIce with a simple condition matching interface
 - Initial prompt notes: "pure vibe coding project"
 - v2.0 adds PySide6 GUI with interactive phase diagram and VTK 3D viewer
+- v3.0 adds two-tab interface with ice-water interface generation and GROMACS export
 
 ## Constraints
 
 - **Runtime**: Minimal resource usage — lightweight model
-- **Output**: PDB format only (plus image exports)
+- **Output**: PDB format only (plus image exports, GROMACS for interface)
 - **Dependencies**: Only Python libraries in current conda environment
 - **Scope**: Water ice only, generation only
 - **Installation**: Do NOT auto-install dependencies. Add to env.yml, seek approval, wait for user to install.
 
 ---
-
-*Last updated: 2026-04-08 after v3.0 milestone started*
+*Last updated: 2026-04-11 after v3.0 milestone completion*

@@ -1,5 +1,33 @@
 # Project Milestones: QuickIce
 
+## v3.0 Interface Generation (Shipped: 2026-04-11)
+
+**Delivered:** Ice-water interface generation with three geometry modes, phase-distinct visualization, and GROMACS export
+
+**Phases completed:** 16-21 (15 plans total)
+
+**Key accomplishments:**
+- Two-tab workflow (Ice Generation + Interface Construction) with candidate selection flow
+- Three interface geometry modes (slab, pocket, piece) with mode-specific configuration controls
+- PBC-aware structure generation with collision detection using scipy cKDTree
+- Phase-distinct VTK visualization (cyan ice, cornflower blue water) with line-based bonds
+- GROMACS export with TIP4P-ICE normalization (3→4 atom for ice molecules)
+- Version bump to 3.0.0 and comprehensive documentation (README, gui-guide, in-app help)
+
+**Stats:**
+- ~12,768 lines of Python (test files excluded)
+- 6 phases, 15 plans, 61 must-haves verified
+- 4 days (2026-04-08 → 2026-04-11)
+- 23/23 requirements satisfied, 0 gaps
+
+**Git range:** `docs(16)` → `test(21)`
+
+**What's next:** v4.0 (next milestone to be defined)
+
+**Archive:** [.planning/milestones/v3.0-ROADMAP.md](./milestones/v3.0-ROADMAP.md)
+
+---
+
 ## v2.1.1 Phase Diagram Data Update (Shipped: 2026-04-08)
 
 **Delivered:** Corrected thermodynamic data per IAPWS R14-08(2011) and added Ice Ic metastable phase region
