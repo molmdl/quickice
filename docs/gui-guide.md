@@ -29,7 +29,7 @@ The main window is divided into two tabs:
 
 ### Basic Workflow
 
-![QuickIce GUI](images/quickice-gui.png)
+![QuickIce GUI](images/quickice-v3-gui.png)
 *Main QuickIce GUI window with phase diagram and 3D viewer*
 
 1. Enter temperature (K), pressure (MPa), and molecule count
