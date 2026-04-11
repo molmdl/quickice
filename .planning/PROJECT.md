@@ -153,10 +153,11 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 ## Constraints
 
 - **Runtime**: Minimal resource usage — lightweight model
-- **Output**: PDB format only (plus image exports, GROMACS for interface)
+- **Output**: PDB format plus image exports, GROMACS-reday inputs
 - **Dependencies**: Only Python libraries in current conda environment
 - **Scope**: Water ice only, generation only
-- **Installation**: Do NOT auto-install dependencies. Add to env.yml, seek approval, wait for user to install.
+- **Installation**: Do NOT auto-install dependencies. Add to environment.yml, seek approval, wait for user to install.
+- **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
 *Last updated: 2026-04-12 after v3.5 milestone started*
