@@ -759,7 +759,14 @@ class MainWindow(QMainWindow):
             phase_id_full = _get_full_phase_id(phase_id)
             meta = PHASE_METADATA.get(phase_id_full, {})
             phase_name = meta.get("name", phase_id)
-            density = meta.get("density", "Unknown")
+            
+            # Ice Ih: use IAPWS R10-06(2009) temperature-dependent density
+            if phase_id_full == "ice_ih":
+                from quickice.phase_mapping.ice_ih_density import ice_ih_density_gcm3
+                density = f"{ice_ih_density_gcm3(T, P):.4f}"
+            else:
+                density = meta.get("density", "Unknown")
+            
             density_note = meta.get("density_note")
             
             self.info_panel.append_log(f"Phase: {phase_name}")
