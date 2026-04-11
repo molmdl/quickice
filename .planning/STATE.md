@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 22 of 6 (Ice Ih IAPWS Density) |
-| Plan | 1 of 4 complete |
+| Plan | 2 of 4 complete |
 | Status | In progress |
-| Last activity | 2026-04-12 — Completed 22-01-PLAN.md |
+| Last activity | 2026-04-11 — Completed 22-02-PLAN.md |
 
-**Progress:** ██░░░░░░░░░ 17% (1 plan complete across 6 phases)
+**Progress:** ███░░░░░░░░ 33% (2 plans complete across 6 phases)
 
 ---
 
@@ -121,6 +121,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Direct iapws._iapws._Ice usage | Already implements IAPWS R10-06(2009) | Implemented (22-01) |
 | @lru_cache(maxsize=256) for density | Performance for IAPWS iterative solver | Implemented (22-01) |
 | Fallback density 0.9167 g/cm³ | Handle out-of-range conditions gracefully | Implemented (22-01) |
+| IAPWS density in lookup_phase | Ice Ih uses T-dependent density, other phases use fixed | Implemented (22-02) |
 
 ### Research Findings (v3.5)
 
@@ -163,10 +164,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12 19:48 UTC
-**Completed:** 22-01-PLAN.md (Ice Ih IAPWS density module)
-**Next:** Continue with 22-02-PLAN.md (integrate IAPWS density into lookup.py)
+**Last session:** 2026-04-11 19:55 UTC
+**Completed:** 22-02-PLAN.md (IAPWS density integration into lookup.py)
+**Next:** Continue with 22-03-PLAN.md (update consumers for IAPWS density)
 
 ---
 
-*State updated: 2026-04-12 — Completed 22-01*
+*State updated: 2026-04-11 — Completed 22-02*
