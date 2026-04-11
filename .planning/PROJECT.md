@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A cross-platform GUI application for generating plausible ice structures and ice-water interfaces. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures (slab, pocket, piece modes) with GROMACS export.
+A cross-platform GUI application for generating plausible ice structures and ice-water interfaces; QuickIce is also a minimal GUI of basic GenIce2 functions with extended capabilities. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures (slab, pocket, piece modes) with GROMACS export.
 
 ## Core Value
 
