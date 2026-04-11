@@ -27,6 +27,12 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 **Coverage:** 3/3 requirements → Complete
 
+**Plans (4):**
+- [ ] 22-01-PLAN.md — Create IAPWS Ice Ih density module (wrapper + tests)
+- [ ] 22-02-PLAN.md — Integrate IAPWS density into lookup.py backend
+- [ ] 22-03-PLAN.md — Update GUI/CLI density display for IAPWS values
+- [ ] 22-04-PLAN.md — Update existing tests for IAPWS-calculated density
+
 ---
 
 ### Phase 23: Water Density from T/P
@@ -144,7 +150,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 | Phase | Status | Plans | Must-Haves |
 |-------|--------|-------|------------|
-| 22 - Ice Ih Density | Planning | 4 plans | IAPWS density via GSW, backend/frontend integration, tests |
+| 22 - Ice Ih Density | Planning | 4 plans | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | Pending | — | — |
 | 24 - Triclinic Transformation | Pending | — | — |
 | 25 - CLI Interface | Pending | — | — |
@@ -157,7 +163,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 - **Phase ordering rationale:** Ice Ih density first (lowest risk, shared IAPWS infrastructure), then water density (builds on same service), then triclinic transformation (critical path blocker), then CLI (builds on transformation), then integration (cross-cutting)
 - **Research flags:** Phase 24 (triclinic) needs algorithm validation against known structures; Phase 26 GROMACS export needs verification for transformed cells
-- **No new dependencies:** All features use existing stack (numpy, argparse, iapws)
+- **No new dependencies:** All features use existing stack (numpy, argparse, iapws) — iapws._iapws._Ice() already implements IAPWS R10-06(2009) Ice Ih EOS
 - **Density unit conversion:** IAPWS returns kg/m³, QuickIce uses g/cm³ (factor of 1000)
 
 ---

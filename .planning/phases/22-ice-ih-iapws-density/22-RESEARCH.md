@@ -3,42 +3,38 @@
 **Researched:** 2026-04-12
 **Domain:** Thermodynamic property calculation (IAPWS R10-06(2009) Ice Ih equation of state)
 **Confidence:** HIGH
+**Revised:** 2026-04-12 — Corrected: iapws._iapws._Ice DOES implement Ice Ih EOS (initial research incorrectly stated it was not importable)
 
 ## Summary
 
-The goal is to replace the hardcoded Ice Ih density (0.9167 g/cm³) with a temperature-dependent IAPWS R10-06(2009) calculation. The existing `iapws` Python library (v1.5.5) does NOT implement the Ice Ih equation of state — it only provides fluid water properties (IAPWS97/IAPWS95) which fail with "Incoming out of bound" below 273.15K.
+The goal is to replace the hardcoded Ice Ih density (0.9167 g/cm³) with a temperature-dependent IAPWS R10-06(2009) calculation. **The existing `iapws` library (v1.5.5) already implements IAPWS R10-06(2009) Ice Ih equation of state** via `iapws._iapws._Ice(T, P)`. No new dependencies are needed.
 
-The correct solution is the **GSW (Gibbs SeaWater) library v3.6.21**, which implements IAPWS R10-06(2009) via `gsw.rho_ice(t, p)`. GSW is the official TEOS-10 Python implementation, and the IAPWS website explicitly endorses TEOS-10 as containing software implementations of the Ice Ih formulation. GSW only requires numpy (already installed) and is a lightweight, compiled C library with excellent performance (~12.7 µs/call scalar, ~0.1 µs/call vectorized).
+The `iapws._iapws._Ice(T, P)` function:
+- Accepts temperature in **Kelvin** and pressure in **MPa** (same units as our codebase — no conversion needed!)
+- Returns a dict with `rho` in kg/m³ (divide by 1000 → g/cm³)
+- Implements the full IAPWS R10-06(2009) Gibbs energy formulation
+- Valid range: T ≤ 273.16K, P ≤ 208.566 MPa
+- Raises `NotImplementedError("Incoming out of bound")` for P > 208.566 MPa
+- Issues `warnings.warn` for metastable conditions (T > 273.16K or below sublimation line)
 
-The key challenge is **unit conversion**: GSW uses °C (ITS-90) temperature and dbar "sea pressure" (absolute pressure minus 10.1325 dbar = 1 atm), while our codebase uses Kelvin and MPa. The conversion formulas are well-defined and tested.
-
-**Primary recommendation:** Use `gsw.rho_ice()` for Ice Ih density. Create a thin wrapper in `quickice/phase_mapping/` that handles unit conversion, caching, and fallback.
+**Primary recommendation:** Use `iapws._iapws._Ice(T, P)` for Ice Ih density. Create a thin wrapper in `quickice/phase_mapping/` that handles fallback and caching. No new dependencies required.
 
 ## Standard Stack
 
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| gsw | 3.6.21 | IAPWS R10-06(2009) Ice Ih density | Official TEOS-10 implementation, IAPWS-endorsed, compiled C backend |
+| iapws | 1.5.5 | IAPWS R10-06(2009) Ice Ih density | Already in environment.yml, implements IAPWS R10-06(2009) directly |
 
-### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| numpy | 2.4.3 | Array operations, GSW dependency | Already installed, required by gsw |
+### No New Dependencies
+`iapws` is already in `environment.yml` (pip section: `iapws==1.5.5`). No new packages needed.
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| gsw.rho_ice() | Custom IAPWS R10-06(2009) implementation | Custom is error-prone (23+ coefficient Gibbs equation); GSW is validated by IAPWS/TEOS-10 community |
-| gsw.rho_ice() | iapws library | iapws does NOT implement Ice Ih EOS; only fluid water (IAPWS97/95) which fails below 273.15K |
-| gsw.rho_ice() | Empirical polynomial fit | Less accurate, defeats IAPWS compliance requirement |
-
-**Installation:**
-```bash
-pip install gsw
-```
-
-Note: `gsw` only requires `numpy>=2`, which is already installed. No additional heavy dependencies.
+| iapws._iapws._Ice() | gsw.rho_ice() | gsw is NOT in environment.yml, would be a NEW dependency; requires °C/dbar unit conversion; no advantage since iapws already has Ice Ih EOS |
+| iapws._iapws._Ice() | Custom IAPWS R10-06(2009) implementation | Custom is error-prone (23+ coefficient Gibbs equation); iapws already implements it |
+| iapws._iapws._Ice() | iapws.IAPWS97 | IAPWS97 only covers FLUID water, fails below 273.15K; _Ice is specifically for solid Ice Ih |
 
 ## Architecture Patterns
 
@@ -53,17 +49,15 @@ quickice/phase_mapping/
 ```
 
 ### Pattern 1: Density Calculator Wrapper
-**What:** Thin wrapper around `gsw.rho_ice()` that handles unit conversion, validation, and fallback.
+**What:** Thin wrapper around `iapws._iapws._Ice()` that handles validation, caching, and fallback.
 **When to use:** Every time Ice Ih density is needed (replaces hardcoded 0.9167).
 **Example:**
 ```python
-# Source: IAPWS R10-06(2009) via GSW TEOS-10 implementation
+# Source: IAPWS R10-06(2009) via iapws library
 from functools import lru_cache
-import gsw
+from iapws._iapws import _Ice
 
 FALLBACK_DENSITY_GCM3 = 0.9167  # g/cm³ at 273.15K, 1 atm
-DBAR_PER_MPA = 100.0
-ATM_PRESSURE_DBAR = 10.1325  # 101325 Pa = 1 atm in dbar
 
 
 @lru_cache(maxsize=256)
@@ -78,10 +72,9 @@ def ice_ih_density_kgm3(T_K: float, P_MPa: float) -> float:
         Density in kg/m³
     """
     try:
-        t_C = T_K - 273.15  # K → °C (ITS-90)
-        P_sea_dbar = P_MPa * DBAR_PER_MPA - ATM_PRESSURE_DBAR  # MPa → sea pressure dbar
-        return float(gsw.rho_ice(t_C, P_sea_dbar))
-    except (ValueError, OverflowError):
+        result = _Ice(T=T_K, P=P_MPa)
+        return float(result["rho"])
+    except (NotImplementedError, ValueError, OverflowError):
         return FALLBACK_DENSITY_GCM3 * 1000  # Convert fallback to kg/m³
 
 
@@ -125,35 +118,31 @@ def _build_result(phase_id: str, T: float, P: float) -> dict:
 
 ### Anti-Patterns to Avoid
 - **Don't use IAPWS97 for ice:** `iapws.IAPWS97` only covers fluid water, fails with `NotImplementedError: Incoming out of bound` for T < 273.15K.
-- **Don't implement the Gibbs equation manually:** The IAPWS R10-06(2009) equation has 23+ coefficients with complex polynomial/exponential terms; manual implementation is error-prone and unverifiable.
-- **Don't forget unit conversion:** GSW uses °C and dbar; our codebase uses K and MPa. Getting this wrong produces silently incorrect results (e.g., 100x off if MPa→dbar conversion is wrong).
-- **Don't call gsw.rho_ice with K and MPa directly:** Will not raise errors but will return wildly wrong values since the function expects °C and dbar.
+- **Don't implement the Gibbs equation manually:** The IAPWS R10-06(2009) equation has 23+ coefficients; iapws._iapws._Ice already implements it.
+- **Don't call iapws._Ice at P > 208.566 MPa:** Raises `NotImplementedError("Incoming out of bound")`. The Ih-III-Liquid triple point is at 209.9 MPa, so near-boundary conditions may fail. Use fallback.
+- **Don't add gsw as a new dependency:** iapws already provides Ice Ih density. No need for a new library.
 
 ## Don't Hand-Roll
 
-Problems that look simple but have existing solutions:
-
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Ice Ih density vs T,P | Custom IAPWS Gibbs energy implementation | `gsw.rho_ice()` | 23+ coefficient equation, validated by IAPWS/TEOS-10 community |
-| Unit conversion K→°C, MPa→dbar | Ad-hoc conversion in each call site | Centralized wrapper function | Easy to get wrong, single source of truth |
-| Density caching | Manual dict cache | `@lru_cache(maxsize=256)` | Thread-safe, bounded, built-in, already decided in context |
-
-**Key insight:** The IAPWS R10-06(2009) Ice Ih equation of state is a Gibbs energy formulation with ~23 terms. Density is the second derivative ∂²g/∂P². A manual implementation would need to reproduce all coefficients exactly and verify against IAPWS test values. GSW already does this with a compiled C backend.
+| Ice Ih density vs T,P | Custom IAPWS Gibbs energy implementation | `iapws._iapws._Ice(T, P)` | Already implemented in installed library |
+| Density caching | Manual dict cache | `@lru_cache(maxsize=256)` | Thread-safe, bounded, built-in |
+| Fallback handling | Scattered try/except at every call site | Centralized wrapper function | Single source of truth for fallback logic |
 
 ## Common Pitfalls
 
-### Pitfall 1: GSW Unit Conversion Error
-**What goes wrong:** Passing Kelvin to `gsw.rho_ice()` instead of °C, or passing MPa instead of dbar.
-**Why it happens:** GSW was designed for oceanography, not cryosphere science. Its units (°C, dbar) are different from our codebase (K, MPa).
-**How to avoid:** Always use the wrapper function `ice_ih_density_gcm3(T_K, P_MPa)` which handles conversion internally. Never call `gsw.rho_ice()` directly from outside the wrapper.
-**Warning signs:** Density values that are off by ~1-2 orders of magnitude, or that don't change with temperature as expected.
+### Pitfall 1: iapws._Ice Raises NotImplementedError for High Pressure
+**What goes wrong:** Calling `_Ice(T, P)` with P > 208.566 MPa raises `NotImplementedError("Incoming out of bound")`.
+**Why it happens:** IAPWS R10-06(2009) is only valid for P ≤ 208.566 MPa. The Ih-III-Liquid triple point is at 209.9 MPa.
+**How to avoid:** Catch `NotImplementedError` in the wrapper and return fallback density 0.9167 g/cm³.
+**Warning signs:** Crashes when user clicks near the Ih-III boundary.
 
-### Pitfall 2: GSW "Sea Pressure" vs Absolute Pressure
-**What goes wrong:** Using absolute pressure in dbar instead of sea pressure (absolute - atmospheric).
-**Why it happens:** GSW uses "sea pressure" = absolute pressure - 10.1325 dbar (1 atm). This is an oceanographic convention.
-**How to avoid:** `P_sea_dbar = P_MPa * 100 - 10.1325`. At 1 atm (0.101325 MPa), sea pressure = 0 dbar ✓
-**Warning signs:** At 1 atm, density should be ~916.7 kg/m³. If it's ~917.8, you passed absolute pressure instead of sea pressure.
+### Pitfall 2: iapws._Ice Metastable Warnings
+**What goes wrong:** `_Ice(T, P)` issues `UserWarning` for metastable conditions (T > 273.16K or below sublimation line).
+**Why it happens:** The function warns when ice is outside its thermodynamically stable region.
+**How to avoid:** The wrapper should suppress these warnings with `warnings.filterwarnings("ignore")` or the caller should handle them. Since our phase mapping already ensures only Ice Ih conditions reach this function, warnings should be rare.
+**Warning signs:** Warning messages printed to console during normal use.
 
 ### Pitfall 3: Test Failures from Hardcoded 0.9167
 **What goes wrong:** Existing tests assert `result["density"] == 0.9167` exactly. After switching to IAPWS, density at 273K is 0.91718, not 0.9167.
@@ -161,13 +150,7 @@ Problems that look simple but have existing solutions:
 **How to avoid:** Update tests to check approximate density values with `pytest.approx()` or check that density is in the expected range (0.91-0.94 g/cm³ for Ice Ih).
 **Warning signs:** Tests failing with `AssertionError: 0.91718 != 0.9167`.
 
-### Pitfall 4: Forgetting to Handle GSW Import Failure
-**What goes wrong:** If `gsw` is not installed, the entire phase lookup breaks.
-**Why it happens:** GSW is a new dependency not in the existing requirements.
-**How to avoid:** Import gsw inside the density function with a try/except, fall back to the hardcoded value. Or make gsw a required dependency (recommended for simplicity).
-**Warning signs:** ImportError when running the application.
-
-### Pitfall 5: Density Display Precision Mismatch
+### Pitfall 4: Density Display Precision Mismatch
 **What goes wrong:** IAPWS-calculated density has 5-6 decimal places (e.g., 0.91672), but the UI was showing 4 decimals (0.9167).
 **Why it happens:** The hardcoded value had limited precision; IAPWS provides more.
 **How to avoid:** Format to 4 decimal places for display: `f"{density:.4f}"`. This matches the existing display style while still using the accurate calculated value internally.
@@ -177,41 +160,28 @@ Problems that look simple but have existing solutions:
 
 ### Ice Ih Density Calculation (Core)
 ```python
-# Source: IAPWS R10-06(2009) via GSW TEOS-10 implementation
+# Source: IAPWS R10-06(2009) via iapws library
 # https://www.iapws.org/release/Ice-2009.html
-import gsw
-
-# Unit conversion constants
-DBAR_PER_MPA = 100.0      # 1 MPa = 100 dbar
-ATM_PRESSURE_DBAR = 10.1325  # 101325 Pa = 1 atm in dbar
+from iapws._iapws import _Ice
 
 def ice_ih_density(T_K: float, P_MPa: float) -> float:
     """Calculate Ice Ih density using IAPWS R10-06(2009) equation of state.
     
-    Uses the GSW (TEOS-10) library which implements the IAPWS R10-06(2009)
-    Gibbs energy formulation for H2O Ice Ih.
-    
     Args:
         T_K: Temperature in Kelvin (valid: 0-273.16 K)
-        P_MPa: Pressure in MPa (valid: 0-210 MPa for Ice Ih stability)
+        P_MPa: Pressure in MPa (valid: 0-208.566 MPa)
     
     Returns:
         Density in g/cm³
     """
-    # Convert units: K → °C (ITS-90), MPa → sea pressure dbar
-    t_C = T_K - 273.15
-    P_sea_dbar = P_MPa * DBAR_PER_MPA - ATM_PRESSURE_DBAR
-    
-    # GSW returns density in kg/m³
-    rho_kgm3 = gsw.rho_ice(t_C, P_sea_dbar)
-    
-    # Convert kg/m³ → g/cm³
-    return rho_kgm3 / 1000.0
+    result = _Ice(T=T_K, P=P_MPa)
+    # iapws returns kg/m³, convert to g/cm³
+    return result["rho"] / 1000.0
 ```
 
 ### Validated Test Values
 ```python
-# Source: Verified against GSW 3.6.21 on 2026-04-12
+# Source: Verified against iapws 1.5.5 _Ice() on 2026-04-12
 # These values can be used as test reference values
 
 # At 1 atm (0.101325 MPa):
@@ -225,7 +195,7 @@ REFERENCE_DENSITIES = {
     (273.15, 0.101325): 0.91672,
 }
 
-# At 200 MPa:
+# At 200 MPa (within valid range P ≤ 208.566):
 (251, 200): 0.93983,
 (273.15, 200): 0.93737,
 ```
@@ -267,7 +237,7 @@ def _build_result(phase_id: str, T: float, P: float) -> dict:
 "ice_ih": {
     "name": "Ice Ih",
     "density": 0.9167,  # Fallback value only; actual density calculated via IAPWS
-    "density_note": "Density calculated from IAPWS R10-06(2009): Equation of State 2006 for H2O Ice Ih. Density varies with temperature and pressure."
+    "density_note": "Only Ice Ih has temperature-dependent density. Others use fixed values."
 },
 ```
 
@@ -275,51 +245,25 @@ def _build_result(phase_id: str, T: float, P: float) -> dict:
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Hardcoded 0.9167 g/cm³ | IAPWS R10-06(2009) via gsw.rho_ice() | Phase 22 (this phase) | Density now varies with T,P; ~1.78% variation across Ice Ih range |
-| iapws library for all water | iapws for fluid + gsw for ice | iapws never had Ice Ih | Need two libraries: iapws (fluid/melting) + gsw (Ice Ih density) |
-
-**Deprecated/outdated:**
-- `iapws.IAPWS97` for Ice Ih: Never worked (raises error below 273.15K); only for fluid water
-- `iapws._Ice` module: Listed in `__init__.py` but not actually importable (not a Python file)
-
-## Open Questions
-
-1. **Should gsw be a required or optional dependency?**
-   - What we know: gsw is lightweight (6 MB, numpy-only dependency), already installed in dev environment
-   - What's unclear: Whether users installing QuickIce via PyInstaller will include gsw
-   - Recommendation: Make gsw a required dependency. It's small, well-maintained, and the fallback to 0.9167 undermines the IAPWS accuracy goal.
-
-2. **What decimal precision for display?**
-   - What we know: Current hardcoded value is 0.9167 (4 decimal places). IAPWS returns e.g. 0.91672.
-   - What's unclear: Whether to show 4 or 5 decimal places
-   - Recommendation: 4 decimal places (`f"{density:.4f}"`) matches existing style. The 5th decimal is below measurement precision for most use cases.
-
-3. **Should lru_cache be used given gsw's speed?**
-   - What we know: gsw.rho_ice takes ~12.7 µs/call (scalar) or ~0.1 µs/call (vectorized). Prior decision was to use @lru_cache.
-   - What's unclear: Whether caching is worth the complexity for such fast calls
-   - Recommendation: Use `@lru_cache(maxsize=256)` as decided. It's trivial to add and prevents any repeated calculations in the GUI (hover updates, repeated queries).
+| Hardcoded 0.9167 g/cm³ | IAPWS R10-06(2009) via iapws._iapws._Ice() | Phase 22 (this phase) | Density now varies with T,P; ~1.78% variation across Ice Ih range |
+| gsw.rho_ice() (incorrect research) | iapws._iapws._Ice() | Research correction | No new dependency needed; no unit conversion needed |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- IAPWS R10-06(2009) official page: https://www.iapws.org/release/Ice-2009.html — Confirms TEOS-10 includes software implementations of this formulation
-- GSW 3.6.21 installed and tested — `gsw.rho_ice(t, p)` verified against known IAPWS values
-- IAPWS R10-06(2009) PDF: https://iapws.org/public/documents/S1atB/Ice-Rev2009.pdf — Defines the Gibbs energy equation for Ice Ih
-- TEOS-10 official site: https://www.teos-10.org/ — Confirms GSW is the official Python TEOS-10 implementation
+- iapws 1.5.5 installed and tested — `_Ice(T, P)` verified against known IAPWS values
+- IAPWS R10-06(2009) official page: https://www.iapws.org/release/Ice-2009.html
+- iapws._iapws._Ice docstring: "Basic state equation for Ice Ih... IAPWS, Revised Release on the Equation of State 2006 for H2O Ice Ih"
 
 ### Secondary (MEDIUM confidence)
-- GSW rho_ice docstring: References IOC, SCOR and IAPSO (2010) TEOS-10 manual which explicitly uses IAPWS R10-06(2009)
-- GSW gibbs_ice function: Verified that rho_ice = 1/gibbs_ice(0,1,t,p), confirming derivation from Gibbs energy (IAPWS formulation)
-
-### Tertiary (LOW confidence)
-- None — all key findings verified with primary sources
+- iapws._iapws._Ice source code: Validated range checks (T ≤ 273.16, P ≤ 208.566 MPa)
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — GSW is the IAPWS-endorsed implementation; tested and verified
-- Architecture: HIGH — Straightforward wrapper pattern; unit conversions verified with numerical tests
-- Pitfalls: HIGH — All pitfalls discovered through actual testing; conversion errors reproduced and documented
+- Standard stack: HIGH — iapws already installed, already implements IAPWS R10-06(2009) for Ice Ih
+- Architecture: HIGH — Straightforward wrapper pattern; NO unit conversion needed (K and MPa match codebase)
+- Pitfalls: HIGH — Edge cases tested (P > 208.566 → NotImplementedError, metastable warnings)
 
 **Research date:** 2026-04-12
-**Valid until:** 2027-04-12 (stable: IAPWS standard is unlikely to change; GSW is mature)
+**Valid until:** 2027-04-12 (stable: IAPWS standard is unlikely to change; iapws is mature)
