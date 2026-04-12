@@ -449,6 +449,12 @@ class MainWindow(QMainWindow):
         self.interface_panel.append_log(f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm")
         self.interface_panel.append_log(f"  Candidate: {candidate.phase_id} ({candidate.nmolecules} molecules)")
         
+        # Show transformation status if candidate was transformed
+        if candidate.metadata.get("transformation_status") == "transformed":
+            multiplier = candidate.metadata.get("transformation_multiplier", "?")
+            message = candidate.metadata.get("transformation_message", "Cell transformed")
+            self.interface_panel.append_log(f"  Transformation: {message} ({multiplier}x multiplier)")
+        
         # Start generation via ViewModel
         self._viewmodel.start_interface_generation(candidate, config)
     
