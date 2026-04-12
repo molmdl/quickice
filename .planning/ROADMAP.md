@@ -89,7 +89,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 ### Phase 25: CLI Interface Generation
 
-**Users can generate ice-water interfaces entirely from the command line with full parameter control.
+**Goal:** Users can generate ice-water interfaces entirely from the command line with full parameter control.
 
 **Dependencies:** Phase 24 (transformation service must work before CLI can handle triclinic phases)
 
@@ -103,7 +103,11 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 4. User can specify pocket_diameter and pocket_shape for pocket mode (CLI-04)
 5. User can export interface structures to GROMACS format from CLI (CLI-05)
 
-**Coverage:** 5/5 requirements → Complete
+**Coverage:** 5/5 requirements
+
+**Plans (2):**
+- [ ] 25-01-PLAN.md — Extend CLI parser with interface flags and validation
+- [ ] 25-02-PLAN.md — Add interface generation workflow and GROMACS export
 
 ---
 
@@ -168,7 +172,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 | 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
 | 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
-| 25 - CLI Interface | Pending | — | — |
+| 25 - CLI Interface | Planned | 2 plans | Parser extension, interface workflow, GROMACS export |
 | 26 - Integration & Polish | Pending | — | — |
 | 27 - Documentation Update | Pending | — | — |
 
