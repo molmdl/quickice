@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 24 complete → 25 next |
-| Plan | Phase 24 complete (3/3) |
-| Status | Phase 24 verified ✓ |
-| Last activity | 2026-04-12 — Phase 24 verified |
+| Phase | 25 of 5 (CLI Interface Generation) |
+| Plan | 1 of 2 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-12 — Completed 25-01-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete)
+**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete, Phase 25: 1/2)
 
 ---
 
@@ -138,6 +138,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Transformation metadata in candidate | Status, multiplier, message for user feedback | Implemented (24-02) |
 | Triclinic rejection removed | All interface modes now accept transformed cells | Implemented (24-03) |
 | get_cell_extent for ice_dims | Bounding box calculation works for any cell shape | Implemented (24-03) |
+| Interface flags in argparse group | Clear help text organization | Implemented (25-01) |
+| Post-parse validation for mode params | Clear error messages for missing required params | Implemented (25-01) |
+| Box dimension minimum 1.0 nm | Ensures physically meaningful simulation cells | Implemented (25-01) |
 
 ### Research Findings (v3.5)
 
@@ -181,9 +184,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** Phase 24: Triclinic Transformation Service (3 plans, 3 requirements, 11 must-haves verified)
-**Next:** `/gsd-plan-phase 25` — CLI Interface Generation
+**Completed:** Phase 25 Plan 01: CLI Interface Generation Flags (validators, parser extension, validation)
+**Next:** Execute 25-02-PLAN.md — Interface generation service implementation
 
 ---
 
-*State updated: 2026-04-12 — Phase 24 verified complete*
+*State updated: 2026-04-12 — Phase 25 Plan 01 complete*
