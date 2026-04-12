@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 22 complete → 23 next |
-| Plan | Phase 22 complete |
-| Status | Phase 22 verified ✓ |
-| Last activity | 2026-04-12 — Phase 22 verified |
+| Phase | 23 in progress |
+| Plan | 1/2 complete |
+| Status | 23-01 complete |
+| Last activity | 2026-04-12 — Completed 23-01-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 22 complete - 4/4 plans)
+**Progress:** █████████░░ 90% (Phase 23: 1/2 plans, Phase 22: 4/4 complete)
 
 ---
 
@@ -125,6 +125,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Inline IAPWS density in GUI | Calculate Ice Ih density directly in display code | Implemented (22-03) |
 | 4 decimal density formatting | Consistent display between GUI and CLI | Implemented (22-03) |
 | Test fixtures with 0.9167 are input data | Not assertions about IAPWS output | Verified (22-04) |
+| IAPWS95 for water density | Supports supercooled water (T < 273.15K) via extrapolation | Implemented (23-01) |
+| Water fallback 0.9998 g/cm³ | Water density at melting point (0°C, 1 atm) | Implemented (23-01) |
+| Water density sanity check rho > 100 kg/m³ | Catches numerical issues from invalid inputs | Implemented (23-01) |
 
 ### Research Findings (v3.5)
 
@@ -168,9 +171,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** Phase 22: Ice Ih IAPWS Density (4 plans, 3 requirements)
-**Next:** `/gsd-plan-phase 23` — Water Density from T/P
+**Completed:** 23-01-PLAN.md — IAPWS95 water density module (2 tasks, 10 tests)
+**Next:** Execute 23-02-PLAN.md — Integrate water density into Tab 1 display and Tab 2 interface generation
 
 ---
 
-*State updated: 2026-04-12 — Phase 22 verified complete*
+*State updated: 2026-04-12 — Plan 23-01 complete*
