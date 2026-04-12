@@ -130,6 +130,9 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 **Coverage:** Cross-cutting phase, no new requirements
 
+**Plans (1):**
+- [ ] 26-01-PLAN.md — Integration tests for v3.5 features (GROMACS validation + CLI + triclinic)
+
 ---
 
 ### Phase 27: Documentation Update
@@ -175,7 +178,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 | 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
 | 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
 | 25 - CLI Interface | ✓ Complete | 2/2 complete | CLI flags, interface workflow, GROMACS export, all modes tested |
-| 26 - Integration & Polish | Pending | — | — |
+| 26 - Integration & Polish | Planned | 0/1 complete | GROMACS validation, CLI integration tests, triclinic phase tests |
 | 27 - Documentation Update | Pending | — | — |
 
 ---
