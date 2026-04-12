@@ -211,6 +211,24 @@ class TriclinicTransformer:
                     new_cell = H @ cell
                     if not self.is_triclinic(new_cell):
                         return H
+            
+            # Try 2D transformations in a-c plane
+            # H = [[1, 0, n1], [0, 1, 0], [n2, 0, 1]]
+            # This transforms a → a + n1*c, c → n2*a + c
+            for n1 in range(-20, 21):
+                for n2 in range(-20, 21):
+                    if n1 == 0 and n2 == 0:
+                        continue
+                    H = np.array([
+                        [1, 0, n1],
+                        [0, 1, 0],
+                        [n2, 0, 1]
+                    ], dtype=int)
+                    det = abs(np.linalg.det(H))
+                    if det <= max_multiplier:
+                        new_cell = H @ cell
+                        if not self.is_triclinic(new_cell):
+                            return H
 
         # General search: try common patterns
         patterns = [
