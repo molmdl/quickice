@@ -96,3 +96,52 @@ def validate_nmolecules(value: str) -> int:
         )
     
     return nmol
+
+
+def validate_positive_float(value: str) -> float:
+    """Validate positive float input.
+    
+    Args:
+        value: String input from CLI argument
+        
+    Returns:
+        Validated positive float
+        
+    Raises:
+        ArgumentTypeError: If value is not numeric or not positive
+    """
+    try:
+        val = float(value)
+    except ValueError:
+        raise ArgumentTypeError(
+            f"Expected a number, got '{value}'"
+        )
+    
+    if val <= 0:
+        raise ArgumentTypeError(
+            f"Value must be positive, got {val}"
+        )
+    
+    return val
+
+
+def validate_box_dimension(value: str) -> float:
+    """Validate box dimension input.
+    
+    Args:
+        value: String input from CLI argument
+        
+    Returns:
+        Validated box dimension (>= 1.0 nm)
+        
+    Raises:
+        ArgumentTypeError: If value is not a positive float or < 1.0 nm
+    """
+    val = validate_positive_float(value)
+    
+    if val < 1.0:
+        raise ArgumentTypeError(
+            f"Box dimension must be >= 1.0 nm, got {val:.3f} nm"
+        )
+    
+    return val
