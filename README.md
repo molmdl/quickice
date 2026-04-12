@@ -42,9 +42,12 @@ Ice exhibits at least 19 different crystalline phases depending on temperature a
 
 QuickIce uses:
 - **IAPWS-95 validated melting curves** for high-confidence phase boundaries
+- **IAPWS R10-06(2009)** for temperature-dependent Ice Ih density
 - **Triple point data** for solid-solid phase transitions
 - **GenIce2** for structure generation with proper hydrogen bonding networks
 - **Knowledge-based ranking** based on lattice energy estimates and density matching
+
+Water density for interface generation uses IAPWS-95 formulation for accuracy.
 
 ## Installation
 
@@ -186,6 +189,8 @@ See [sample_output](sample_output) for files generated with this example (ice Ih
 | `--version` | `-V` | No | Show version number |
 | `--help` | `-h` | No | Show help message |
 
+**Interface Generation:** Use `--interface` flag with `--mode`, `--box-x/y/z`, and mode-specific parameters. See [CLI Reference](docs/cli-reference.md) for details.
+
 ### More Examples
 
 Generate Ice VII structures at high pressure:
@@ -225,11 +230,7 @@ QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations):
 
 **Not supported:** Ice IX, Ice X, Ice XI, Ice XV, and liquid water (no GenIce2 lattices available).
 
-**Interface Construction Limitation:** QuickIce v3.0 interface construction (GUI Tab 2) only supports phases with orthogonal simulation cells. This excludes:
-- **Ice II** (rhombohedral crystal structure - triclinic cell)
-- **Ice V** (monoclinic crystal structure - triclinic cell)
-
-All other phases (Ih, Ic, III, VI, VII, VIII) work with interface construction. If you attempt to generate an interface with Ice II or Ice V candidates, you will receive an error explaining the limitation. These phases can still be generated and exported as PDB/GRO files via Tab 1 (Ice Generation) or the CLI.
+All supported ice phases (Ih, Ic, II, III, V, VI, VII, VIII) work with interface construction. Triclinic phases (Ice II, V, VI) are automatically transformed to orthogonal cells for interface generation.
 
 ## GROMACS Export
 
