@@ -294,11 +294,11 @@ class TriclinicTransformer:
         # Generate all unit cell offsets for the supercell
         # A lattice vector v is in the supercell if frac = H_inv @ v has all components in [0, 1)
         H_inv = np.linalg.inv(H)
-        
+
         # Determine search range based on H elements
         max_elem = int(np.max(np.abs(H))) + 1
-        
-        offsets = []
+
+        frac_offsets = []
         for i in range(-max_elem * 2, max_elem * 2 + 1):
             for j in range(-max_elem * 2, max_elem * 2 + 1):
                 for k in range(-max_elem * 2, max_elem * 2 + 1):
@@ -306,35 +306,29 @@ class TriclinicTransformer:
                     v = np.array([i, j, k], dtype=float)
                     frac = H_inv @ v
                     if np.all(frac >= -0.001) and np.all(frac < 0.999):
-                        offsets.append([i, j, k])
-        
+                        # Store the supercell fractional offset directly
+                        frac_offsets.append(frac.tolist())
+
         # Convert to array
-        offsets = np.array(offsets) if offsets else np.zeros((1, 3))
-        
+        frac_offsets = np.array(frac_offsets) if frac_offsets else np.zeros((1, 3))
+
         # Replicate atoms for each unit cell offset
         n_atoms = len(positions)
-        n_offsets = len(offsets)
+        n_offsets = len(frac_offsets)
         new_positions = np.zeros((n_atoms * n_offsets, 3))
 
+        # Convert fractional positions to supercell fractional coordinates
+        # f' = f @ H_inv where f' is in supercell coords, f is in original coords
+        frac_in_supercell = frac_positions @ H_inv
+
         idx = 0
-        for offset in offsets:
-            for pos in frac_positions:
-                new_frac = pos + offset
-                new_pos = new_frac @ cell.T  # Convert to Cartesian in original cell
+        for frac_offset in frac_offsets:
+            for pos in frac_in_supercell:
+                new_frac = pos + frac_offset
+                # Convert to Cartesian in the new supercell
+                new_pos = new_frac @ new_cell.T
                 new_positions[idx] = new_pos
                 idx += 1
-
-        # Transform positions to the new cell
-        # Positions are currently in the original cell, need to convert to supercell coordinates
-        # frac_new = new_positions @ inv(new_cell.T)
-        # But positions are already spread across the supercell via offsets
-        # So we just need to wrap to the supercell bounds
-        
-        # Convert to fractional coordinates in the new cell
-        new_cell_inv_T = np.linalg.inv(new_cell.T)
-        new_frac = new_positions @ new_cell_inv_T
-        new_frac = new_frac % 1.0
-        new_positions = new_frac @ new_cell.T
 
         return new_positions, new_cell
 
