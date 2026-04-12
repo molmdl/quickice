@@ -116,19 +116,6 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
             mode=config.mode
         )
 
-    # Check for triclinic (non-orthogonal) cells
-    if not is_cell_orthogonal(candidate.cell):
-        # Calculate the phase info for error message
-        phase_id = getattr(candidate, 'phase_id', 'unknown')
-        raise InterfaceGenerationError(
-            f"Triclinic (non-orthogonal) cell detected for phase '{phase_id}'. "
-            f"QuickIce v3.0 only supports orthogonal cells. "
-            f"The cell has off-diagonal elements which indicate a tilted box. "
-            f"Affected phases include: ice_ii, ice_v. "
-            f"Please select a different ice phase or contact support for triclinic support.",
-            mode=config.mode
-        )
-
     # Mode-specific checks
     if config.mode == "slab":
         # Validate box_z matches ice + water thicknesses
