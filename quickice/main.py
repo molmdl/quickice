@@ -1,14 +1,41 @@
 """Main entry point for QuickIce CLI."""
 
 import sys
+import shutil
 from pathlib import Path
 
 from quickice.cli.parser import get_arguments
 from quickice.phase_mapping import lookup_phase, UnknownPhaseError
 from quickice.structure_generation import generate_candidates
+from quickice.structure_generation.types import InterfaceConfig
+from quickice.structure_generation.interface_builder import (
+    generate_interface,
+    InterfaceGenerationError,
+)
 from quickice.ranking import rank_candidates
 from quickice.output import output_ranked_candidates
-from quickice.output.gromacs_writer import write_gro_file, write_top_file
+from quickice.output.gromacs_writer import (
+    write_gro_file,
+    write_top_file,
+    write_interface_gro_file,
+    write_interface_top_file,
+    get_tip4p_itp_path,
+)
+
+
+def check_output_file(filepath: Path) -> bool:
+    """Check if file exists and prompt for overwrite.
+    
+    Args:
+        filepath: Path to check
+        
+    Returns:
+        True if file doesn't exist or user confirms overwrite, False otherwise
+    """
+    if filepath.exists():
+        response = input(f"File {filepath.name} exists. Overwrite? [y/N] ")
+        return response.lower() == 'y'
+    return True
 
 
 def main() -> int:
