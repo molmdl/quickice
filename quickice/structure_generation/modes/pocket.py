@@ -49,10 +49,12 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     Raises:
         InterfaceGenerationError: If pocket_shape is not valid or if generation fails.
     """
-    # Get ice cell dimensions using bounding box calculation
-    # This works for both orthogonal and transformed cells
+    # Get ice cell dimensions using the actual cell vector LENGTHS
+    # This is critical for transformed orthogonal cells that are rotated in space.
+    # For such cells, get_cell_extent() returns the bounding box (larger),
+    # but we need the actual vector lengths for correct tiling.
     transformer = TriclinicTransformer()
-    ice_cell_dims = transformer.get_cell_extent(candidate.cell)
+    ice_cell_dims = transformer.get_cell_dimensions(candidate.cell)
 
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions to multiples of ice unit cell

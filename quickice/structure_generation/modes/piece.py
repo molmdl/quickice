@@ -42,10 +42,12 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     Raises:
         InterfaceGenerationError: If box is smaller than ice piece or generation fails.
     """
-    # Get ice piece dimensions using bounding box calculation
-    # This works for both orthogonal and transformed cells
+    # Get ice piece dimensions using the actual cell vector LENGTHS
+    # This is critical for transformed orthogonal cells that are rotated in space.
+    # For such cells, get_cell_extent() returns the bounding box (larger),
+    # but we need the actual vector lengths for correct positioning.
     transformer = TriclinicTransformer()
-    ice_dims = transformer.get_cell_extent(candidate.cell)
+    ice_dims = transformer.get_cell_dimensions(candidate.cell)
 
     # Validate: box dimensions must be larger than ice piece
     if config.box_x <= ice_dims[0]:

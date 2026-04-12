@@ -91,19 +91,19 @@ class TriclinicTransformer:
 
     def get_cell_extent(self, cell: np.ndarray) -> np.ndarray:
         """Calculate the bounding box extent of a unit cell.
-
+        
         For orthogonal cells, this equals the diagonal [cell[0,0], cell[1,1], cell[2,2]].
         For triclinic cells, this computes the actual bounding box by checking all
         8 corners of the parallelepiped.
-
+        
         Args:
             cell: (3, 3) cell vectors as ROW vectors [a, b, c]
-
+        
         Returns:
             (3,) array of [dx, dy, dz] bounding box dimensions
         """
         a, b, c = cell[0], cell[1], cell[2]
-
+        
         # All 8 corners of the unit cell parallelepiped
         corners = np.array([
             [0, 0, 0],
@@ -115,9 +115,37 @@ class TriclinicTransformer:
             b + c,
             a + b + c,
         ])
-
+        
         # Bounding box extent = max - min for each dimension
         return corners.max(axis=0) - corners.min(axis=0)
+
+    def get_cell_dimensions(self, cell: np.ndarray) -> np.ndarray:
+        """Get the cell dimensions for tiling purposes.
+        
+        For an orthogonal cell (all angles 90°), returns the LENGTHS of the
+        lattice vectors, which are the actual cell dimensions for tiling.
+        For a triclinic cell, returns the bounding box extent.
+        
+        This method is critical for interface generation (slab, pocket, piece modes)
+        where we need to tile the ice structure. For a transformed orthogonal cell
+        that is rotated in space, the bounding box extent is WRONG for tiling - 
+        we need the actual vector lengths.
+        
+        Args:
+            cell: (3, 3) cell vectors as ROW vectors [a, b, c]
+        
+        Returns:
+            (3,) array of [a_len, b_len, c_len] - the cell dimensions for tiling
+        """
+        if self.is_triclinic(cell):
+            # Triclinic cell - use bounding box extent
+            return self.get_cell_extent(cell)
+        else:
+            # Orthogonal cell - use vector lengths
+            a_len = np.linalg.norm(cell[0])
+            b_len = np.linalg.norm(cell[1])
+            c_len = np.linalg.norm(cell[2])
+            return np.array([a_len, b_len, c_len])
 
     def find_orthogonal_supercell(
         self, cell: np.ndarray, max_multiplier: int | None = None
