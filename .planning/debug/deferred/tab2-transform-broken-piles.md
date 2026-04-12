@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: deferred
 trigger: "tab2-transform-broken-piles"
 created: 2026-04-13T00:00:00Z
 updated: 2026-04-13T00:00:00Z

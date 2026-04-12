@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: deferred
 trigger: "After triclinic transformation for slab generation, there's a large gap in the middle of the structure. The transformed Ice II doesn't form a proper lattice - there's ~2.8 nm of empty space between layers."
 created: 2026-04-13T12:00:00Z
 updated: 2026-04-13T13:00:00Z

@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: deferred
 trigger: "molecules-broken-tiling"
 created: 2026-04-13T00:00:00Z
 updated: 2026-04-13T00:00:03Z

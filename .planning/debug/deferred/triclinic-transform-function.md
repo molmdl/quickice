@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: deferred
 trigger: "triclinic-transform-function - The triclinic transformation function itself is broken. Even after fixing atom_names replication, tab 2 still shows corrupted structure"
 created: 2026-04-13T00:00:00Z
 updated: 2026-04-13T00:00:00Z
