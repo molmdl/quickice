@@ -54,6 +54,10 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 **Coverage:** 4/4 requirements → Complete
 
+**Plans (2):**
+- [ ] 23-01-PLAN.md — Create IAPWS95 water density module (wrapper + tests)
+- [ ] 23-02-PLAN.md — Integrate water density into Tab 1 display and Tab 2 interface generation
+
 ---
 
 ### Phase 24: Triclinic Transformation Service
@@ -153,7 +157,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 | Phase | Status | Plans | Must-Haves |
 |-------|--------|-------|------------|
 | 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
-| 23 - Water Density | Pending | — | — |
+| 23 - Water Density | Planned | 0/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
 | 24 - Triclinic Transformation | Pending | — | — |
 | 25 - CLI Interface | Pending | — | — |
 | 26 - Integration & Polish | Pending | — | — |
