@@ -6,7 +6,7 @@
 >
 > - While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
-Condition-based ice structure candidate generation from thermodynamic conditions with a simple Ice-water interface builder. 
+A portable condition-based ice structure candidate generator from thermodynamic conditions with a simple Ice-water interface builder. 
 
 QuickIce is also a minimal GUI of basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with extended capabilities.
 
