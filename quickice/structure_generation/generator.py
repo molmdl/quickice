@@ -125,6 +125,12 @@ class IceStructureGenerator:
             # Parse GRO output
             positions, atom_names, cell = self._parse_gro(gro_string)
 
+            # Store original positions/cell for viewer display (before transformation)
+            original_positions = positions.copy()
+            original_cell = cell.copy()
+            original_atom_names = atom_names.copy()
+            original_nmolecules = self.actual_nmolecules
+
             # Transform triclinic cells to orthogonal (Phase 24)
             # Ice II and Ice V have non-orthogonal cells that need transformation
             transformer = TriclinicTransformer()
@@ -152,6 +158,10 @@ class IceStructureGenerator:
             if result.multiplier > 1:
                 atom_names = atom_names * result.multiplier
 
+            # Determine if we need to store original (only for transformed triclinic)
+            # For orthogonal cells or failed transformations, no original needed
+            store_original = result.status.name == "TRANSFORMED"
+
             # Create candidate with transformation metadata
             candidate = Candidate(
                 positions=positions,
@@ -167,6 +177,9 @@ class IceStructureGenerator:
                     "transformation_multiplier": result.multiplier,
                     "transformation_message": result.message,
                 },
+                # Store original triclinic structure for Tab 1 viewer display
+                original_positions=original_positions if store_original else None,
+                original_cell=original_cell if store_original else None,
             )
 
             return candidate

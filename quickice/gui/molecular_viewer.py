@@ -153,6 +153,10 @@ class MolecularViewerWidget(QWidget):
         Converts the Candidate to a VTK molecule, updates the mapper,
         auto-fits the structure in the viewport, and triggers a render.
         
+        For triclinic phases (Ice II, Ice V), displays the ORIGINAL triclinic
+        structure rather than the transformed orthogonal version. This ensures
+        Tab 1 viewer shows the correct unit cell with intact molecules.
+        
         Args:
             candidate: A QuickIce Candidate containing positions, atom_names,
                        cell matrix, and nmolecules.
@@ -160,8 +164,27 @@ class MolecularViewerWidget(QWidget):
         # Store the candidate reference
         self._current_candidate = candidate
         
+        # For display in Tab 1, use original triclinic structure if available
+        # (original_positions/original_cell are set when triclinic transformation was applied)
+        # This ensures viewers show correct triclinic unit cells with intact molecules,
+        # while Tab 2 interface construction uses the transformed orthogonal structure.
+        if candidate.original_positions is not None and candidate.original_cell is not None:
+            # Create display candidate with original triclinic data
+            display_candidate = Candidate(
+                positions=candidate.original_positions,
+                atom_names=candidate.atom_names[:len(candidate.original_positions)],  # Match atom count
+                cell=candidate.original_cell,
+                nmolecules=len(candidate.original_positions) // 3,  # Original molecule count
+                phase_id=candidate.phase_id,
+                seed=candidate.seed,
+                metadata=candidate.metadata,
+            )
+        else:
+            # No transformation was applied, use as-is
+            display_candidate = candidate
+        
         # Convert to VTK molecule
-        mol = candidate_to_vtk_molecule(candidate)
+        mol = candidate_to_vtk_molecule(display_candidate)
         
         # Set input to mapper
         self._mapper.SetInputData(mol)
@@ -297,8 +320,24 @@ class MolecularViewerWidget(QWidget):
         self._show_hydrogen_bonds = visible
         
         if visible and self._current_candidate is not None:
+            # Use original triclinic structure for H-bond detection if available
+            # (same as set_candidate display logic)
+            candidate = self._current_candidate
+            if candidate.original_positions is not None and candidate.original_cell is not None:
+                display_candidate = Candidate(
+                    positions=candidate.original_positions,
+                    atom_names=candidate.atom_names[:len(candidate.original_positions)],
+                    cell=candidate.original_cell,
+                    nmolecules=len(candidate.original_positions) // 3,
+                    phase_id=candidate.phase_id,
+                    seed=candidate.seed,
+                    metadata=candidate.metadata,
+                )
+            else:
+                display_candidate = candidate
+            
             # Detect H-bonds from current structure
-            hbonds = detect_hydrogen_bonds(self._current_candidate)
+            hbonds = detect_hydrogen_bonds(display_candidate)
             
             # Remove old actor if exists
             if self._hbond_actor is not None:
@@ -342,8 +381,14 @@ class MolecularViewerWidget(QWidget):
             if self._unit_cell_actor is not None:
                 self.renderer.RemoveActor(self._unit_cell_actor)
             
+            # Use original cell for display if available (triclinic phases)
+            # This ensures the unit cell box matches the displayed structure
+            cell = self._current_candidate.original_cell
+            if cell is None:
+                cell = self._current_candidate.cell
+            
             # Create and add new actor
-            self._unit_cell_actor = create_unit_cell_actor(self._current_candidate.cell)
+            self._unit_cell_actor = create_unit_cell_actor(cell)
             self.renderer.AddActor(self._unit_cell_actor)
         
         elif not visible and self._unit_cell_actor is not None:
