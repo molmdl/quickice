@@ -32,6 +32,10 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
         
         Ice structures store 3 atoms per molecule (O, H, H). The MW virtual site
         is computed at export time to produce TIP4P-ICE format (4 atoms per molecule).
+        
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
+        For systems with >99999 residues, residue numbers wrap at 100000.
     """
     nmol = candidate.nmolecules
     n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW (MW computed from O, H, H)
@@ -70,28 +74,35 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
             # Compute MW virtual site position
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
+            # Wrap residue and atom numbers at 100000 (GROMACS convention for large systems)
+            res_num = (mol_idx + 1) % 100000
+
             # Oxygen (OW)
             atom_num += 1
-            lines.append(f"{mol_idx+1:5d}SOL  "
-                        f"   OW{atom_num:5d}"
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   OW{atom_num_wrapped:5d}"
                         f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
             # Hydrogen 1 (HW1)
             atom_num += 1
-            lines.append(f"{mol_idx+1:5d}SOL  "
-                        f"  HW1{atom_num:5d}"
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW1{atom_num_wrapped:5d}"
                         f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
             # Hydrogen 2 (HW2)
             atom_num += 1
-            lines.append(f"{mol_idx+1:5d}SOL  "
-                        f"  HW2{atom_num:5d}"
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW2{atom_num_wrapped:5d}"
                         f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
             # Massless virtual site (MW)
             atom_num += 1
-            lines.append(f"{mol_idx+1:5d}SOL  "
-                        f"   MW{atom_num:5d}"
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   MW{atom_num_wrapped:5d}"
                         f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
         f.writelines(lines)
@@ -219,6 +230,11 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     Args:
         iface: InterfaceStructure object with combined ice + water positions
         filepath: Output file path for .gro file
+    
+    Note:
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
+        For systems with >99999 residues, residue numbers wrap at 100000.
     """
     # Total atoms: ice (3 atoms/mol) + water (4 atoms/mol) normalized to 4-atom TIP4P-ICE
     # Each ice molecule gets 1 MW virtual site added, so output is 4 atoms per molecule
@@ -246,43 +262,50 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             h2_pos = iface.positions[base_idx + 2]
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
-            res_num = mol_idx + 1  # Continuous numbering starting at 1
+            # Wrap residue number at 100000 (GROMACS convention for large systems)
+            res_num = (mol_idx + 1) % 100000
 
             # OW (oxygen)
             atom_num += 1
+            atom_num_wrapped = atom_num % 100000
             lines.append(f"{res_num:5d}SOL  "
-                        f"   OW{atom_num:5d}"
+                        f"   OW{atom_num_wrapped:5d}"
                         f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
             # HW1 (hydrogen 1)
             atom_num += 1
+            atom_num_wrapped = atom_num % 100000
             lines.append(f"{res_num:5d}SOL  "
-                        f"  HW1{atom_num:5d}"
+                        f"  HW1{atom_num_wrapped:5d}"
                         f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
             # HW2 (hydrogen 2)
             atom_num += 1
+            atom_num_wrapped = atom_num % 100000
             lines.append(f"{res_num:5d}SOL  "
-                        f"  HW2{atom_num:5d}"
+                        f"  HW2{atom_num_wrapped:5d}"
                         f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
             # MW (virtual site)
             atom_num += 1
+            atom_num_wrapped = atom_num % 100000
             lines.append(f"{res_num:5d}SOL  "
-                        f"   MW{atom_num:5d}"
+                        f"   MW{atom_num_wrapped:5d}"
                         f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
         # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
         for mol_idx in range(iface.water_nmolecules):
             base_idx = iface.ice_atom_count + mol_idx * 4  # Water starts after ice
-            res_num = iface.ice_nmolecules + mol_idx + 1  # Continue numbering after ice
+            # Wrap residue number at 100000 (GROMACS convention for large systems)
+            res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
 
             atom_names = ["OW", "HW1", "HW2", "MW"]
             for i, atom_name in enumerate(atom_names):
                 atom_num += 1
+                atom_num_wrapped = atom_num % 100000
                 pos = iface.positions[base_idx + i]
                 lines.append(f"{res_num:5d}SOL  "
-                            f"{atom_name:>4s}{atom_num:5d}"
+                            f"{atom_name:>4s}{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
         f.writelines(lines)
