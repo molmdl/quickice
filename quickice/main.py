@@ -272,6 +272,9 @@ def main() -> int:
     except UnknownPhaseError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    except InterfaceGenerationError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
     except SystemExit:
         # argparse calls sys.exit on error or --help
         # Re-raise to propagate the exit code
