@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 23 in progress |
-| Plan | 1/2 complete |
-| Status | 23-01 complete |
-| Last activity | 2026-04-12 — Completed 23-01-PLAN.md |
+| Phase | 23 complete |
+| Plan | 2/2 complete |
+| Status | Phase 23 verified ✓ |
+| Last activity | 2026-04-12 — Completed 23-02-PLAN.md |
 
-**Progress:** █████████░░ 90% (Phase 23: 1/2 plans, Phase 22: 4/4 complete)
+**Progress:** ██████████ 100% (Phase 23: 2/2 plans, Phase 22: 4/4 complete)
 
 ---
 
@@ -128,6 +128,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | IAPWS95 for water density | Supports supercooled water (T < 273.15K) via extrapolation | Implemented (23-01) |
 | Water fallback 0.9998 g/cm³ | Water density at melting point (0°C, 1 atm) | Implemented (23-01) |
 | Water density sanity check rho > 100 kg/m³ | Catches numerical issues from invalid inputs | Implemented (23-01) |
+| TEMPLATE_DENSITY_GCM3 = 0.991 | TIP4P template density from tip4p.gro | Implemented (23-02) |
+| Cube root scaling for density | scale = (template_density / target_density)^(1/3) | Implemented (23-02) |
+| Water density in GUI for Liquid phase | Lazy import, 4 decimal formatting | Implemented (23-02) |
 
 ### Research Findings (v3.5)
 
@@ -171,9 +174,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** 23-01-PLAN.md — IAPWS95 water density module (2 tasks, 10 tests)
-**Next:** Execute 23-02-PLAN.md — Integrate water density into Tab 1 display and Tab 2 interface generation
+**Completed:** 23-02-PLAN.md — Water density integration (3 tasks, density scaling + GUI display)
+**Next:** Execute Phase 24-PLAN.md — Triclinic Transformation Service
 
 ---
 
-*State updated: 2026-04-12 — Plan 23-01 complete*
+*State updated: 2026-04-12 — Phase 23 complete*
