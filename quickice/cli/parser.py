@@ -177,6 +177,44 @@ Examples:
     return parser
 
 
+def validate_interface_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Validate interface-specific arguments after parsing.
+    
+    Performs conditional validation for mode-specific parameters.
+    Raises SystemExit via parser.error() if validation fails.
+    
+    Args:
+        args: Parsed arguments from parser.parse_args()
+        parser: ArgumentParser instance for error reporting
+    """
+    if not args.interface:
+        return  # No validation needed if not using interface mode
+    
+    # --mode is required when --interface is set
+    if args.mode is None:
+        parser.error("--mode is required when using --interface")
+    
+    # Box dimensions are required when --interface is set
+    if args.box_x is None:
+        parser.error("--box-x is required when using --interface")
+    if args.box_y is None:
+        parser.error("--box-y is required when using --interface")
+    if args.box_z is None:
+        parser.error("--box-z is required when using --interface")
+    
+    # Mode-specific validation
+    if args.mode == "slab":
+        if args.ice_thickness is None:
+            parser.error("--ice-thickness is required for slab mode")
+        if args.water_thickness is None:
+            parser.error("--water-thickness is required for slab mode")
+    
+    elif args.mode == "pocket":
+        if args.pocket_diameter is None:
+            parser.error("--pocket-diameter is required for pocket mode")
+        # pocket_shape has default, no validation needed
+
+
 def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
     """Parse and return command-line arguments.
     
@@ -192,9 +230,18 @@ def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
             - no_diagram: bool (if True, skip diagram generation)
             - gromacs: bool (if True, export GROMACS format)
             - candidate: Optional[int] (candidate rank to export, only with --gromacs)
+            - interface: bool (if True, generate ice-water interface)
+            - mode: Optional[str] (interface mode: slab, pocket, or piece)
+            - box_x, box_y, box_z: Optional[float] (box dimensions in nm)
+            - seed: int (random seed, default: 42)
+            - ice_thickness, water_thickness: Optional[float] (slab mode parameters)
+            - pocket_diameter: Optional[float] (pocket mode parameter)
+            - pocket_shape: str (pocket shape, default: "sphere")
             
     Raises:
         SystemExit: If arguments are invalid or missing
     """
     parser = create_parser()
-    return parser.parse_args(args)
+    parsed = parser.parse_args(args)
+    validate_interface_args(parsed, parser)
+    return parsed
