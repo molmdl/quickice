@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 27 of 27 (documentation-update) |
-| Plan | 2 of 3 in current phase |
-| Status | In progress |
-| Last activity | 2026-04-12 — Completed 27-02-PLAN.md |
+| Plan | 3 of 3 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-04-12 — Completed 27-01-PLAN.md |
 
-**Progress:** █████████░ 97% (Phase 27: 2/3 plans complete)
+**Progress:** ██████████ 100% (Phase 27: 3/3 plans complete)
 
 ---
 
@@ -188,10 +188,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12T16:00:50Z
-**Completed:** Phase 27 Plan 02: Documentation and UI Polish (help dialog, transformation status, tooltip width)
-**Next:** 27-03-PLAN.md — Screenshot verification checkpoint
+**Last session:** 2026-04-12T16:02:13Z
+**Completed:** Phase 27 Plan 01: Documentation update (README, CLI reference, GUI guide for v3.5)
+**Next:** v3.5 complete — Ready for release
 
 ---
 
-*State updated: 2026-04-12 — Phase 27 in progress (2/3 plans)*
+*State updated: 2026-04-12 — Phase 27 complete (3/3 plans)*
