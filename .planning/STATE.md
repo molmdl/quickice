@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 24 of 28 (triclinic-transformation) |
-| Plan | 1 of 3 complete |
+| Plan | 2 of 3 complete |
 | Status | In progress |
-| Last activity | 2026-04-12 — Completed 24-01 |
+| Last activity | 2026-04-12 — Completed 24-02 |
 
-**Progress:** ██████████ 100% (Phase 24: 1/3 plans complete)
+**Progress:** ██████████ 100% (Phase 24: 2/3 plans complete)
 
 ---
 
@@ -134,6 +134,8 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | 0.1° angle tolerance for orthogonal detection | CONTEXT.md decision for triclinic identification | Implemented (24-01) |
 | Ice II 6x multiplier | Rhombohedral→hexagonal→orthogonal chain | Implemented (24-01) |
 | Density validation 1% tolerance | Ensures structure preservation | Implemented (24-01) |
+| 2D transformation for monoclinic | H = [[1, 0, n1], [0, 1, 0], [n2, 0, 1]] for Ice V | Implemented (24-02) |
+| Transformation metadata in candidate | Status, multiplier, message for user feedback | Implemented (24-02) |
 
 ### Research Findings (v3.5)
 
@@ -176,10 +178,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12 05:07 UTC
-**Completed:** Phase 24 Plan 01: Triclinic Transformation Core (TDD: RED, GREEN, REFACTOR)
-**Next:** `/gsd-execute-plan 24-02` — Integration with Generator
+**Last session:** 2026-04-12 05:33 UTC
+**Completed:** Phase 24 Plan 02: Generator Integration (2 tasks, 5 integration tests)
+**Next:** `/gsd-execute-plan 24-03` — Remove Triclinic Rejection
 
 ---
 
-*State updated: 2026-04-12 — Phase 24 Plan 01 complete*
+*State updated: 2026-04-12 — Phase 24 Plan 02 complete*
