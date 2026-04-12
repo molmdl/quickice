@@ -146,6 +146,12 @@ class IceStructureGenerator:
             # Track actual molecules after transformation (may increase due to supercell)
             actual_nmolecules = int(len(positions) / 3)  # 3 atoms per molecule from GenIce
 
+            # Replicate atom_names if transformation increased the number of atoms
+            # The supercell transformation replicates the unit cell, so atom_names
+            # must also be replicated to match the new positions count
+            if result.multiplier > 1:
+                atom_names = atom_names * result.multiplier
+
             # Create candidate with transformation metadata
             candidate = Candidate(
                 positions=positions,

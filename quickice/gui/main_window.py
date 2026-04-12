@@ -909,10 +909,13 @@ def run_app():
     import sys
     app = QApplication(sys.argv)
     
-    # Apply global tooltip width limit for consistent display
+    # Apply global tooltip styling
+    # Note: Qt QToolTip doesn't support max-width for text wrapping.
+    # Tooltips with \n characters will wrap naturally.
+    # Removed max-width which was causing truncation.
     app.setStyleSheet("""
         QToolTip {
-            max-width: 400px;
+            padding: 4px;
         }
     """)
     

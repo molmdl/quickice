@@ -724,3 +724,26 @@ class TestTriclinicTransformationIntegration:
         # Check that message is recorded
         assert "transformation_message" in candidate.metadata
         assert "Ice II" in candidate.metadata["transformation_message"]
+
+    def test_atom_names_count_matches_positions_after_transformation(self, phase_info_ice_ii):
+        """Atom names count should match positions count after triclinic transformation.
+        
+        Regression test for bug where atom_names was not replicated during transformation,
+        causing ValueError in VTK molecule creation for molecules beyond original count.
+        """
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ii, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Atom names count should match positions count
+        assert len(candidate.atom_names) == candidate.positions.shape[0], (
+            f"atom_names count ({len(candidate.atom_names)}) != "
+            f"positions count ({candidate.positions.shape[0]})"
+        )
+
+        # Verify OHH pattern for all molecules (including those beyond original count)
+        for i in range(0, len(candidate.atom_names), 3):
+            assert candidate.atom_names[i] == "O", f"Molecule {i//3}: expected O, got {candidate.atom_names[i]}"
+            assert candidate.atom_names[i + 1] == "H", f"Molecule {i//3}: expected H, got {candidate.atom_names[i + 1]}"
+            assert candidate.atom_names[i + 2] == "H", f"Molecule {i//3}: expected H, got {candidate.atom_names[i + 2]}"
