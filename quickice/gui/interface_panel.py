@@ -169,7 +169,15 @@ class InterfacePanel(QWidget):
         self.pocket_diameter_input.setDecimals(2)
         self.pocket_diameter_input.setSingleStep(0.5)
         self.pocket_diameter_input.setValue(2.0)
-        self.pocket_diameter_input.setToolTip("Diameter of water cavity in nm (0.5–50).\nVoid carved in ice (sphere/cubic).")
+        self.pocket_diameter_input.setToolTip(
+            "Diameter of water cavity in nm (0.5–50).\n"
+            "\n"
+            "IMPORTANT: All box dimensions (X, Y, Z) must exceed\n"
+            "the pocket diameter to contain the cavity properly.\n"
+            "\n"
+            "Example: pocket=2.0 nm → box must be >2.0 nm in X, Y, Z\n"
+            "Typical values: 1–5 nm for confined water studies."
+        )
         diameter_row.addWidget(QLabel("Pocket diameter:"))
         diameter_row.addWidget(HelpIcon("Diameter of the water cavity in nanometers. The cavity is carved out of the ice matrix and filled with liquid water molecules. Larger diameters create bigger water pockets."))
         diameter_row.addWidget(self.pocket_diameter_input)
@@ -279,7 +287,12 @@ class InterfacePanel(QWidget):
         self.box_x_input.setDecimals(2)
         self.box_x_input.setSingleStep(0.5)
         self.box_x_input.setValue(5.0)
-        self.box_x_input.setToolTip("Box X dimension in nm (0.5–100)")
+        self.box_x_input.setToolTip(
+            "Box X dimension in nm (0.5–100).\n"
+            "\n"
+            "For POCKET mode: X must exceed pocket diameter.\n"
+            "For PIECE mode: X must exceed ice candidate width."
+        )
         box_row.addWidget(QLabel("X:"))
         box_row.addWidget(self.box_x_input)
         
@@ -292,7 +305,12 @@ class InterfacePanel(QWidget):
         self.box_y_input.setDecimals(2)
         self.box_y_input.setSingleStep(0.5)
         self.box_y_input.setValue(5.0)
-        self.box_y_input.setToolTip("Box Y dimension in nm (0.5–100)")
+        self.box_y_input.setToolTip(
+            "Box Y dimension in nm (0.5–100).\n"
+            "\n"
+            "For POCKET mode: Y must exceed pocket diameter.\n"
+            "For PIECE mode: Y must exceed ice candidate depth."
+        )
         box_row.addWidget(QLabel("Y:"))
         box_row.addWidget(self.box_y_input)
         
