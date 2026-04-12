@@ -29,9 +29,11 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 **Plans (4):**
 - [x] 22-01-PLAN.md — Create IAPWS Ice Ih density module (wrapper + tests) ✓
-- [ ] 22-02-PLAN.md — Integrate IAPWS density into lookup.py backend
-- [ ] 22-03-PLAN.md — Update GUI/CLI density display for IAPWS values
-- [ ] 22-04-PLAN.md — Update existing tests for IAPWS-calculated density
+- [x] 22-02-PLAN.md — Integrate IAPWS density into lookup.py backend ✓
+- [x] 22-03-PLAN.md — Update GUI/CLI density display for IAPWS values ✓
+- [x] 22-04-PLAN.md — Update existing tests for IAPWS-calculated density ✓
+
+**Completed:** 2026-04-12
 
 ---
 
@@ -150,7 +152,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 | Phase | Status | Plans | Must-Haves |
 |-------|--------|-------|------------|
-| 22 - Ice Ih Density | In progress | 1/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
+| 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | Pending | — | — |
 | 24 - Triclinic Transformation | Pending | — | — |
 | 25 - CLI Interface | Pending | — | — |

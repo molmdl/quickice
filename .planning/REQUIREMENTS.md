@@ -9,9 +9,9 @@ Requirements for Interface Enhancements milestone.
 
 ### Ice Ih Density
 
-- [ ] **ICE-01**: System calculates Ice Ih density from IAPWS (temperature-dependent)
-- [ ] **ICE-02**: System displays Ice Ih density in UI
-- [ ] **ICE-03**: System replaces hardcoded 0.9167 g/cm³ with IAPWS calculation
+- [x] **ICE-01**: System calculates Ice Ih density from IAPWS (temperature-dependent) ✓
+- [x] **ICE-02**: System displays Ice Ih density in UI ✓
+- [x] **ICE-03**: System replaces hardcoded 0.9167 g/cm³ with IAPWS calculation ✓
 
 ### Water Density
 
@@ -66,9 +66,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ICE-01 | Phase 22 | Pending |
-| ICE-02 | Phase 22 | Pending |
-| ICE-03 | Phase 22 | Pending |
+| ICE-01 | Phase 22 | Complete ✓ |
+| ICE-02 | Phase 22 | Complete ✓ |
+| ICE-03 | Phase 22 | Complete ✓ |
 | WATER-01 | Phase 23 | Pending |
 | WATER-02 | Phase 23 | Pending |
 | WATER-03 | Phase 23 | Pending |
