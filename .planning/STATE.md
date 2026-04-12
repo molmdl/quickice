@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 22 of 6 (Ice Ih IAPWS Density) |
-| Plan | 3 of 4 complete |
-| Status | In progress |
-| Last activity | 2026-04-12 — Completed 22-03-PLAN.md |
+| Phase | 22 of 5 (Ice Ih IAPWS Density) |
+| Plan | 4 of 4 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-12 — Completed 22-04-PLAN.md |
 
-**Progress:** ████░░░░░░ 50% (3 plans complete in phase 22)
+**Progress:** ██████████ 100% (Phase 22 complete - 4/4 plans)
 
 ---
 
@@ -124,6 +124,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | IAPWS density in lookup_phase | Ice Ih uses T-dependent density, other phases use fixed | Implemented (22-02) |
 | Inline IAPWS density in GUI | Calculate Ice Ih density directly in display code | Implemented (22-03) |
 | 4 decimal density formatting | Consistent display between GUI and CLI | Implemented (22-03) |
+| Test fixtures with 0.9167 are input data | Not assertions about IAPWS output | Verified (22-04) |
 
 ### Research Findings (v3.5)
 
@@ -166,10 +167,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12 03:56 UTC
-**Completed:** 22-03-PLAN.md (GUI and CLI display of IAPWS Ice Ih density)
-**Next:** Continue with 22-04-PLAN.md (final integration and testing)
+**Last session:** 2026-04-12 02:00 UTC
+**Completed:** 22-04-PLAN.md (Test updates for IAPWS density)
+**Next:** Continue with Phase 23 (Water Density from T/P via IAPWS)
 
 ---
 
-*State updated: 2026-04-12 — Completed 22-03*
+*State updated: 2026-04-12 — Phase 22 complete*
