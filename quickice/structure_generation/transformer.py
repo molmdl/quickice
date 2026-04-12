@@ -291,12 +291,20 @@ class TriclinicTransformer:
 
     def apply_transformation(
         self, positions: np.ndarray, cell: np.ndarray, H: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        ) -> tuple[np.ndarray, np.ndarray]:
         """Apply supercell transformation to positions and cell.
 
         The transformation replicates the unit cell according to the
         transformation matrix H. For each unit cell copy, atoms are
         placed at the appropriate fractional coordinates.
+
+        IMPORTANT: Molecules are handled as units throughout the transformation
+        to preserve molecular integrity. Individual atom handling would break
+        molecules when atoms cross PBC boundaries.
+
+        The key insight is that H transforms CELL VECTORS, not positions.
+        Positions in Cartesian space should be replicated, not transformed.
+        Only the cell vectors are transformed.
 
         Args:
             positions: (N, 3) atom positions in nm
@@ -308,57 +316,87 @@ class TriclinicTransformer:
         """
         new_cell = H @ cell
 
-        # Convert positions to fractional coordinates
-        # Formula: frac_pos = positions @ inv(cell.T)
-        cell_inv_T = np.linalg.inv(cell.T)
-        frac_positions = positions @ cell_inv_T
-
-        # Wrap fractional coordinates to [0, 1)
-        frac_positions = frac_positions % 1.0
-
         # Get the multiplier (number of unit cell replicas)
         multiplier = int(abs(np.linalg.det(H)))
 
-        # Generate all unit cell offsets for the supercell
-        # A lattice vector v is in the supercell if frac = H_inv @ v has all components in [0, 1)
+        # GenIce ice has 3 atoms per molecule (O, H, H)
+        atoms_per_molecule = 3
+        n_molecules = len(positions) // atoms_per_molecule
+
+        # Instead of transforming fractional coordinates, we replicate the
+        # Cartesian positions and shift them by lattice vector combinations.
+        # This preserves molecular geometry exactly.
+
+        # Find all integer combinations that span the supercell
+        # For H = [[1,0,-1], [1,-2,1], [1,1,1]], we need to find all
+        # lattice vectors v = i*a + j*b + k*c such that v is within the supercell
         H_inv = np.linalg.inv(H)
 
-        # Determine search range based on H elements
-        max_elem = int(np.max(np.abs(H))) + 1
+        # Generate all unit cell offsets
+        max_elem = int(np.max(np.abs(H))) + 2
 
-        frac_offsets = []
-        for i in range(-max_elem * 2, max_elem * 2 + 1):
-            for j in range(-max_elem * 2, max_elem * 2 + 1):
-                for k in range(-max_elem * 2, max_elem * 2 + 1):
-                    # Check if this lattice point is in the supercell
-                    v = np.array([i, j, k], dtype=float)
-                    frac = H_inv @ v
-                    if np.all(frac >= -0.001) and np.all(frac < 0.999):
-                        # Store the supercell fractional offset directly
-                        frac_offsets.append(frac.tolist())
+        offsets = []
+        for i in range(-max_elem, max_elem + 1):
+            for j in range(-max_elem, max_elem + 1):
+                for k in range(-max_elem, max_elem + 1):
+                    # Check if this lattice vector is within the supercell
+                    v_frac = np.array([i, j, k], dtype=float)
+                    v_in_super = H_inv @ v_frac
+                    if np.all(v_in_super >= -1e-10) and np.all(v_in_super < 1.0 - 1e-10):
+                        # Calculate the Cartesian offset
+                        offset = i * cell[0] + j * cell[1] + k * cell[2]
+                        offsets.append(offset)
 
-        # Convert to array
-        frac_offsets = np.array(frac_offsets) if frac_offsets else np.zeros((1, 3))
+        offsets = np.array(offsets) if offsets else np.zeros((1, 3))
 
-        # Replicate atoms for each unit cell offset
-        n_atoms = len(positions)
-        n_offsets = len(frac_offsets)
-        new_positions = np.zeros((n_atoms * n_offsets, 3))
+        # Replicate molecules for each offset
+        new_positions = []
 
-        # Convert fractional positions to supercell fractional coordinates
-        # f' = f @ H_inv where f' is in supercell coords, f is in original coords
-        frac_in_supercell = frac_positions @ H_inv
+        for mol_idx in range(n_molecules):
+            start = mol_idx * atoms_per_molecule
+            end = start + atoms_per_molecule
+            mol_cart = positions[start:end].copy()
 
-        idx = 0
-        for frac_offset in frac_offsets:
-            for pos in frac_in_supercell:
-                new_frac = pos + frac_offset
-                # Convert to Cartesian in the new supercell
-                new_pos = new_frac @ new_cell.T
-                new_positions[idx] = new_pos
-                idx += 1
+            for offset in offsets:
+                # Shift the entire molecule by this offset
+                shifted_mol = mol_cart + offset
+                new_positions.extend(shifted_mol.tolist())
 
-        return new_positions, new_cell
+        new_positions = np.array(new_positions) if new_positions else np.zeros((0, 3))
+
+        # Wrap molecules as units into the supercell
+        new_cell_inv_T = np.linalg.inv(new_cell.T)
+        n_total_molecules = len(new_positions) // atoms_per_molecule
+
+        final_positions = np.zeros_like(new_positions)
+        for mol_idx in range(n_total_molecules):
+            start = mol_idx * atoms_per_molecule
+            end = start + atoms_per_molecule
+            mol_cart = new_positions[start:end]
+            mol_frac = mol_cart @ new_cell_inv_T
+
+            # Wrap molecule as a unit into [0, 1) in supercell fractional coords
+            for dim in range(3):
+                min_val = mol_frac[:, dim].min()
+                max_val = mol_frac[:, dim].max()
+                center = (min_val + max_val) / 2
+
+                # Shift to bring center into [0, 1)
+                shift = -np.floor(center)
+                mol_frac[:, dim] += shift
+
+                # Handle edge cases
+                min_val = mol_frac[:, dim].min()
+                max_val = mol_frac[:, dim].max()
+                if min_val < -1e-10:
+                    mol_frac[:, dim] += 1.0
+                elif max_val >= 1.0 - 1e-10:
+                    mol_frac[:, dim] -= 1.0
+
+            # Convert back to Cartesian
+            final_positions[start:end] = mol_frac @ new_cell.T
+
+        return final_positions, new_cell
 
     def validate_transformation(
         self,
