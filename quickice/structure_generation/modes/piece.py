@@ -15,29 +15,13 @@ from quickice.structure_generation.overlap_resolver import (
     remove_overlapping_molecules,
     filter_atom_names,
 )
+from quickice.phase_mapping.water_density import water_density_gcm3
+from quickice.structure_generation.transformer import TriclinicTransformer
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
 # Acceptable for typical use. For very large systems (>10k), this is modest overhead.
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
-
-
-def _is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
-    """Check if a cell matrix represents an orthogonal (rectangular) box.
-
-    An orthogonal cell has non-zero elements only on the diagonal.
-    Triclinic cells have off-diagonal elements representing tilt.
-
-    Args:
-        cell: (3, 3) cell matrix where each row is a lattice vector.
-        tol: Tolerance for considering off-diagonal elements as zero.
-
-    Returns:
-        True if the cell is orthogonal, False if triclinic.
-    """
-    off_diagonal = cell.copy()
-    np.fill_diagonal(off_diagonal, 0)
-    return np.allclose(off_diagonal, 0, atol=tol)
 
 
 def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
@@ -58,24 +42,10 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     Raises:
         InterfaceGenerationError: If box is smaller than ice piece or generation fails.
     """
-    # Check for triclinic (non-orthogonal) cells - must be orthogonal for v3.0
-    if not _is_cell_orthogonal(candidate.cell):
-        phase_id = getattr(candidate, 'phase_id', 'unknown')
-        raise InterfaceGenerationError(
-            f"Triclinic (non-orthogonal) cell detected for phase '{phase_id}'. "
-            f"QuickIce v3.0 only supports orthogonal cells. "
-            f"The cell has off-diagonal elements which indicate a tilted box. "
-            f"Affected phases include: ice_ii, ice_v. "
-            f"Please select a different ice phase or contact support for triclinic support.",
-            mode=config.mode
-        )
-
-    # Get ice piece dimensions from candidate cell diagonal
-    ice_dims = np.array([
-        candidate.cell[0, 0],
-        candidate.cell[1, 1],
-        candidate.cell[2, 2]
-    ])
+    # Get ice piece dimensions using bounding box calculation
+    # This works for both orthogonal and transformed cells
+    transformer = TriclinicTransformer()
+    ice_dims = transformer.get_cell_extent(candidate.cell)
 
     # Validate: box dimensions must be larger than ice piece
     if config.box_x <= ice_dims[0]:
@@ -128,9 +98,15 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Uses module-level template for consistency
     ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
 
+    # Calculate water density from ice temperature/pressure
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+
     # Fill entire box with water
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        box_dims
+        box_dims,
+        target_density=target_water_density
     )
 
     # Detect overlaps between centered ice O and water O

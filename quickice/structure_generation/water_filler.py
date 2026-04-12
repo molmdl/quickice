@@ -3,6 +3,9 @@
 This module provides utilities to load the bundled TIP4P water template
 (tip4p.gro), tile structures to fill target regions using cell periodicity,
 and fill arbitrary rectangular regions with water molecules.
+
+Supports density scaling for water molecules to match target density
+from IAPWS calculations.
 """
 
 import math
@@ -17,8 +20,83 @@ ATOMS_PER_WATER_MOLECULE = 4
 # Water atom names template for ONE molecule
 WATER_ATOM_NAMES_TEMPLATE = ["OW", "HW1", "HW2", "MW"]
 
+# Template density in g/cm³ calculated from tip4p.gro:
+# 216 molecules in 1.86824³ nm³ box
+# Density = (216 molecules * 18.01528 g/mol) / (6.02214076e23 molecules/mol * 1.86824³ * 1e-21 cm³)
+# = 3891.3 g / (6.022e23 * 6.52 nm³ * 1e-21 cm³/nm³) = 3891.3 g / 3924 cm³ ≈ 0.991 g/cm³
+TEMPLATE_DENSITY_GCM3 = 0.991
+
 # Module-level cache for water template (never changes)
 _water_template_cache: Optional[tuple[np.ndarray, list[str], np.ndarray]] = None
+
+
+def round_to_periodicity(
+    target_dim: float,
+    cell_dim: float,
+    min_multiplier: int = 1,
+) -> tuple[float, int]:
+    """Round a target dimension to the nearest multiple of cell periodicity.
+    
+    Ensures continuous periodic images by adjusting dimensions to exact
+    multiples of the ice unit cell dimensions.
+    
+    Args:
+        target_dim: Target dimension in nm (e.g., box_x, ice_thickness).
+        cell_dim: Ice unit cell dimension in nm.
+        min_multiplier: Minimum number of unit cells (default 1).
+    
+    Returns:
+        Tuple of (adjusted_dim, n_cells):
+            - adjusted_dim: Dimension rounded up to nearest multiple of cell_dim.
+            - n_cells: Number of unit cells in the adjusted dimension.
+    
+    Example:
+        >>> round_to_periodicity(5.0, 0.893)  # box_x=5.0nm, ice cell=0.893nm
+        (5.358, 6)  # Adjusted to 6 unit cells = 6 * 0.893 = 5.358 nm
+    """
+    if cell_dim <= 0:
+        return target_dim, min_multiplier
+    
+    # Calculate how many unit cells needed (round up for continuous coverage)
+    n_cells = max(min_multiplier, math.ceil(target_dim / cell_dim))
+    
+    # Adjusted dimension is exact multiple of cell dimension
+    adjusted_dim = n_cells * cell_dim
+    
+    return adjusted_dim, n_cells
+
+
+def scale_positions_for_density(
+    positions: np.ndarray,
+    template_density: float,
+    target_density: float,
+) -> np.ndarray:
+    """Scale molecular positions to achieve target density.
+
+    Density is proportional to (spacing)^(-3) in 3D, so:
+    scale = (template_density / target_density)^(1/3)
+
+    This scales the unit cell dimensions to achieve the desired density
+    while preserving molecular geometry.
+
+    Args:
+        positions: (N, 3) array of atom positions in nm.
+        template_density: Density of original template in g/cm³.
+        target_density: Desired density in g/cm³.
+
+    Returns:
+        Scaled positions array (same shape as input).
+
+    Raises:
+        ValueError: If template_density or target_density is not positive.
+    """
+    if template_density <= 0:
+        raise ValueError(f"template_density must be positive, got {template_density}")
+    if target_density <= 0:
+        raise ValueError(f"target_density must be positive, got {target_density}")
+
+    scale = (template_density / target_density) ** (1.0 / 3.0)
+    return positions * scale
 
 
 def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
@@ -291,6 +369,7 @@ def tile_structure(
 
 def fill_region_with_water(
     region_dims: np.ndarray,
+    target_density: Optional[float] = None,
 ) -> tuple[np.ndarray, list[str], int]:
     """Fill a rectangular region with TIP4P water molecules.
 
@@ -298,8 +377,14 @@ def fill_region_with_water(
     the specified region, and returns positions, atom names, and
     molecule count.
 
+    Supports density scaling: if target_density is provided, positions
+    are scaled to match the target density using the cube root formula:
+    scale = (template_density / target_density)^(1/3)
+
     Args:
         region_dims: [lx, ly, lz] region dimensions in nm.
+        target_density: Target water density in g/cm³. If None, uses the
+            template density (~0.991 g/cm³) without scaling.
 
     Returns:
         Tuple of (positions, atom_names, nmolecules):
@@ -310,9 +395,23 @@ def fill_region_with_water(
     # Load water template
     template_positions, template_atom_names, template_box = load_water_template()
 
+    # Apply density scaling if target_density is specified
+    if target_density is not None:
+        scaled_positions = scale_positions_for_density(
+            template_positions,
+            TEMPLATE_DENSITY_GCM3,
+            target_density
+        )
+        # Scale box dimensions by same factor for correct tiling
+        scale = (TEMPLATE_DENSITY_GCM3 / target_density) ** (1.0 / 3.0)
+        scaled_box = template_box * scale
+    else:
+        scaled_positions = template_positions
+        scaled_box = template_box
+
     # Tile water into the target region
     tiled_positions, n_molecules = tile_structure(
-        template_positions, template_box, region_dims,
+        scaled_positions, scaled_box, region_dims,
         atoms_per_molecule=ATOMS_PER_WATER_MOLECULE
     )
 

@@ -28,10 +28,12 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 **Coverage:** 3/3 requirements → Complete
 
 **Plans (4):**
-- [ ] 22-01-PLAN.md — Create IAPWS Ice Ih density module (wrapper + tests)
-- [ ] 22-02-PLAN.md — Integrate IAPWS density into lookup.py backend
-- [ ] 22-03-PLAN.md — Update GUI/CLI density display for IAPWS values
-- [ ] 22-04-PLAN.md — Update existing tests for IAPWS-calculated density
+- [x] 22-01-PLAN.md — Create IAPWS Ice Ih density module (wrapper + tests) ✓
+- [x] 22-02-PLAN.md — Integrate IAPWS density into lookup.py backend ✓
+- [x] 22-03-PLAN.md — Update GUI/CLI density display for IAPWS values ✓
+- [x] 22-04-PLAN.md — Update existing tests for IAPWS-calculated density ✓
+
+**Completed:** 2026-04-12
 
 ---
 
@@ -52,6 +54,12 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 **Coverage:** 4/4 requirements → Complete
 
+**Plans (2):**
+- [x] 23-01-PLAN.md — Create IAPWS95 water density module (wrapper + tests) ✓
+- [x] 23-02-PLAN.md — Integrate water density into Tab 1 display and Tab 2 interface generation ✓
+
+**Completed:** 2026-04-12
+
 ---
 
 ### Phase 24: Triclinic Transformation Service
@@ -69,6 +77,13 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 3. System skips transformation for already-orthogonal phases (Ih, Ic, III, VI, VII, VIII) without errors (TRAN-03)
 
 **Coverage:** 3/3 requirements → Complete
+
+**Plans (3):**
+- [x] 24-01-PLAN.md — Triclinic transformation algorithm (TDD: types + transformer + tests) ✓
+- [x] 24-02-PLAN.md — Integrate transformer into generator.py ✓
+- [x] 24-03-PLAN.md — Update validation in interface_builder.py and piece.py ✓
+
+**Completed:** 2026-04-12
 
 ---
 
@@ -150,9 +165,9 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 | Phase | Status | Plans | Must-Haves |
 |-------|--------|-------|------------|
-| 22 - Ice Ih Density | Planning | 4 plans | IAPWS density via iapws._Ice, backend/frontend integration, tests |
-| 23 - Water Density | Pending | — | — |
-| 24 - Triclinic Transformation | Pending | — | — |
+| 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
+| 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
+| 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
 | 25 - CLI Interface | Pending | — | — |
 | 26 - Integration & Polish | Pending | — | — |
 | 27 - Documentation Update | Pending | — | — |

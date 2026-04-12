@@ -18,6 +18,7 @@ from quickice.structure_generation.mapper import (
 )
 from quickice.structure_generation.types import Candidate, GenerationResult
 from quickice.structure_generation.errors import StructureGenerationError
+from quickice.structure_generation.transformer import TriclinicTransformer
 
 
 class IceStructureGenerator:
@@ -124,17 +125,41 @@ class IceStructureGenerator:
             # Parse GRO output
             positions, atom_names, cell = self._parse_gro(gro_string)
 
-            # Create candidate
+            # Transform triclinic cells to orthogonal (Phase 24)
+            # Ice II and Ice V have non-orthogonal cells that need transformation
+            transformer = TriclinicTransformer()
+            result = transformer.transform_if_needed(
+                Candidate(
+                    positions=positions,
+                    atom_names=atom_names,
+                    cell=cell,
+                    nmolecules=self.actual_nmolecules,
+                    phase_id=self.phase_id,
+                    seed=seed,
+                )
+            )
+
+            # Update positions and cell from transformation
+            positions = result.positions
+            cell = result.cell
+
+            # Track actual molecules after transformation (may increase due to supercell)
+            actual_nmolecules = int(len(positions) / 3)  # 3 atoms per molecule from GenIce
+
+            # Create candidate with transformation metadata
             candidate = Candidate(
                 positions=positions,
                 atom_names=atom_names,
                 cell=cell,
-                nmolecules=self.actual_nmolecules,
+                nmolecules=actual_nmolecules,
                 phase_id=self.phase_id,
                 seed=seed,
                 metadata={
                     "density": self.density,
                     "phase_name": self.phase_name,
+                    "transformation_status": result.status.name,
+                    "transformation_multiplier": result.multiplier,
+                    "transformation_message": result.message,
                 },
             )
 

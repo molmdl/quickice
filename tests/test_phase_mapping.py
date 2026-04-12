@@ -16,7 +16,8 @@ class TestLookupPhaseIceIh:
         result = lookup_phase(273, 0)
         assert result["phase_id"] == "ice_ih"
         assert result["phase_name"] == "Ice Ih"
-        assert result["density"] == 0.9167
+        # Density is now IAPWS-calculated, use approximate comparison
+        assert abs(result["density"] - 0.9167) < 0.001
         assert result["temperature"] == 273
         assert result["pressure"] == 0
 

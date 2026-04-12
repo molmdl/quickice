@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 22 (ready to plan) |
-| Plan | Not started |
-| Status | Roadmap created |
-| Last activity | 2026-04-12 — Roadmap created |
+| Phase | 24 complete → 25 next |
+| Plan | Phase 24 complete (3/3) |
+| Status | Phase 24 verified ✓ |
+| Last activity | 2026-04-12 — Phase 24 verified |
 
-**Progress:** ░░░░░░░░░░░ 0% (5 phases defined)
+**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete)
 
 ---
 
@@ -118,6 +118,26 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | IAPWS library for density | Already in environment, scientifically accurate | Approved |
 | numpy for transformation | No external crystallography library needed | Approved |
 | Service layer pattern | Matches existing architecture | Approved |
+| Direct iapws._iapws._Ice usage | Already implements IAPWS R10-06(2009) | Implemented (22-01) |
+| @lru_cache(maxsize=256) for density | Performance for IAPWS iterative solver | Implemented (22-01) |
+| Fallback density 0.9167 g/cm³ | Handle out-of-range conditions gracefully | Implemented (22-01) |
+| IAPWS density in lookup_phase | Ice Ih uses T-dependent density, other phases use fixed | Implemented (22-02) |
+| Inline IAPWS density in GUI | Calculate Ice Ih density directly in display code | Implemented (22-03) |
+| 4 decimal density formatting | Consistent display between GUI and CLI | Implemented (22-03) |
+| Test fixtures with 0.9167 are input data | Not assertions about IAPWS output | Verified (22-04) |
+| IAPWS95 for water density | Supports supercooled water (T < 273.15K) via extrapolation | Implemented (23-01) |
+| Water fallback 0.9998 g/cm³ | Water density at melting point (0°C, 1 atm) | Implemented (23-01) |
+| Water density sanity check rho > 100 kg/m³ | Catches numerical issues from invalid inputs | Implemented (23-01) |
+| TEMPLATE_DENSITY_GCM3 = 0.991 | TIP4P template density from tip4p.gro | Implemented (23-02) |
+| Cube root scaling for density | scale = (template_density / target_density)^(1/3) | Implemented (23-02) |
+| Water density in GUI for Liquid phase | Lazy import, 4 decimal formatting | Implemented (23-02) |
+| 0.1° angle tolerance for orthogonal detection | CONTEXT.md decision for triclinic identification | Implemented (24-01) |
+| Ice II 6x multiplier | Rhombohedral→hexagonal→orthogonal chain | Implemented (24-01) |
+| Density validation 1% tolerance | Ensures structure preservation | Implemented (24-01) |
+| 2D transformation for monoclinic | H = [[1, 0, n1], [0, 1, 0], [n2, 0, 1]] for Ice V | Implemented (24-02) |
+| Transformation metadata in candidate | Status, multiplier, message for user feedback | Implemented (24-02) |
+| Triclinic rejection removed | All interface modes now accept transformed cells | Implemented (24-03) |
+| get_cell_extent for ice_dims | Bounding box calculation works for any cell shape | Implemented (24-03) |
 
 ### Research Findings (v3.5)
 
@@ -161,9 +181,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** v3.5 roadmap created (phases 22-26)
-**Next:** `/gsd-plan-phase 22` to plan Ice Ih IAPWS Density
+**Completed:** Phase 24: Triclinic Transformation Service (3 plans, 3 requirements, 11 must-haves verified)
+**Next:** `/gsd-plan-phase 25` — CLI Interface Generation
 
 ---
 
-*State updated: 2026-04-12 — Roadmap created*
+*State updated: 2026-04-12 — Phase 24 verified complete*

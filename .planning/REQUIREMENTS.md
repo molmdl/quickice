@@ -9,22 +9,22 @@ Requirements for Interface Enhancements milestone.
 
 ### Ice Ih Density
 
-- [ ] **ICE-01**: System calculates Ice Ih density from IAPWS (temperature-dependent)
-- [ ] **ICE-02**: System displays Ice Ih density in UI
-- [ ] **ICE-03**: System replaces hardcoded 0.9167 g/cm³ with IAPWS calculation
+- [x] **ICE-01**: System calculates Ice Ih density from IAPWS (temperature-dependent) ✓
+- [x] **ICE-02**: System displays Ice Ih density in UI ✓
+- [x] **ICE-03**: System replaces hardcoded 0.9167 g/cm³ with IAPWS calculation ✓
 
 ### Water Density
 
-- [ ] **WATER-01**: System calculates water density from T/P using IAPWS
-- [ ] **WATER-02**: System displays water density in Tab 1 info panel
-- [ ] **WATER-03**: System generates water molecules at correct spacing for target density in Tab 2 interface generation
-- [ ] **WATER-04**: System caches IAPWS density lookups for performance
+- [x] **WATER-01**: System calculates water density from T/P using IAPWS ✓
+- [x] **WATER-02**: System displays water density in Tab 1 info panel ✓
+- [x] **WATER-03**: System generates water molecules at correct spacing for target density in Tab 2 interface generation ✓
+- [x] **WATER-04**: System caches IAPWS density lookups for performance ✓
 
 ### Triclinic Transformation
 
-- [ ] **TRAN-01**: System auto-detects triclinic cells for ice_ii and ice_v phases
-- [ ] **TRAN-02**: System transforms triclinic cells to orthogonal while preserving crystal structure
-- [ ] **TRAN-03**: System skips transformation for already-orthogonal phases (ice_ih, ice_ic, ice_iii, ice_vi, ice_vii, ice_viii)
+- [x] **TRAN-01**: System auto-detects triclinic cells for ice_ii and ice_v phases ✓
+- [x] **TRAN-02**: System transforms triclinic cells to orthogonal while preserving crystal structure ✓
+- [x] **TRAN-03**: System skips transformation for already-orthogonal phases (ice_ih, ice_ic, ice_iii, ice_vi, ice_vii, ice_viii) ✓
 
 ### CLI Interface Generation
 
@@ -66,16 +66,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ICE-01 | Phase 22 | Pending |
-| ICE-02 | Phase 22 | Pending |
-| ICE-03 | Phase 22 | Pending |
-| WATER-01 | Phase 23 | Pending |
-| WATER-02 | Phase 23 | Pending |
-| WATER-03 | Phase 23 | Pending |
-| WATER-04 | Phase 23 | Pending |
-| TRAN-01 | Phase 24 | Pending |
-| TRAN-02 | Phase 24 | Pending |
-| TRAN-03 | Phase 24 | Pending |
+| ICE-01 | Phase 22 | Complete ✓ |
+| ICE-02 | Phase 22 | Complete ✓ |
+| ICE-03 | Phase 22 | Complete ✓ |
+| WATER-01 | Phase 23 | Complete ✓ |
+| WATER-02 | Phase 23 | Complete ✓ |
+| WATER-03 | Phase 23 | Complete ✓ |
+| WATER-04 | Phase 23 | Complete ✓ |
+| TRAN-01 | Phase 24 | Complete ✓ |
+| TRAN-02 | Phase 24 | Complete ✓ |
+| TRAN-03 | Phase 24 | Complete ✓ |
 | CLI-01 | Phase 25 | Pending |
 | CLI-02 | Phase 25 | Pending |
 | CLI-03 | Phase 25 | Pending |

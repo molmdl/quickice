@@ -15,30 +15,14 @@ ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
-from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
+from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water, round_to_periodicity
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
     filter_atom_names,
 )
-
-
-def _is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
-    """Check if a cell matrix represents an orthogonal (rectangular) box.
-
-    An orthogonal cell has non-zero elements only on the diagonal.
-    Triclinic cells have off-diagonal elements representing tilt.
-
-    Args:
-        cell: (3, 3) cell matrix where each row is a lattice vector.
-        tol: Tolerance for considering off-diagonal elements as zero.
-
-    Returns:
-        True if the cell is orthogonal, False if triclinic.
-    """
-    off_diagonal = cell.copy()
-    np.fill_diagonal(off_diagonal, 0)
-    return np.allclose(off_diagonal, 0, atol=tol)
+from quickice.phase_mapping.water_density import water_density_gcm3
+from quickice.structure_generation.transformer import TriclinicTransformer
 
 
 def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
@@ -52,6 +36,9 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     - sphere: spherical void with diameter = pocket_diameter
     - cubic: cube with side = pocket_diameter
 
+    IMPORTANT: Box dimensions are adjusted to ensure continuous periodic images.
+    The adjustments are reported in the InterfaceStructure.report field.
+
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
         config: Interface configuration with pocket_diameter and pocket_shape.
@@ -62,33 +49,35 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     Raises:
         InterfaceGenerationError: If pocket_shape is not valid or if generation fails.
     """
-    # Check for triclinic (non-orthogonal) cells - must be orthogonal for v3.0
-    if not _is_cell_orthogonal(candidate.cell):
-        phase_id = getattr(candidate, 'phase_id', 'unknown')
-        raise InterfaceGenerationError(
-            f"Triclinic (non-orthogonal) cell detected for phase '{phase_id}'. "
-            f"QuickIce v3.0 only supports orthogonal cells. "
-            f"The cell has off-diagonal elements which indicate a tilted box. "
-            f"Affected phases include: ice_ii, ice_v. "
-            f"Please select a different ice phase or contact support for triclinic support.",
-            mode=config.mode
-        )
+    # Get ice cell dimensions using bounding box calculation
+    # This works for both orthogonal and transformed cells
+    transformer = TriclinicTransformer()
+    ice_cell_dims = transformer.get_cell_extent(candidate.cell)
 
-    # Get ice cell diagonal dimensions (orthogonal boxes only for v3.0)
-    ice_cell_dims = np.array([
-        candidate.cell[0, 0],
-        candidate.cell[1, 1],
-        candidate.cell[2, 2]
-    ])
+    # ADJUST DIMENSIONS FOR PERIODICITY
+    # Round box dimensions to multiples of ice unit cell
+    # This ensures continuous periodic images without gaps at boundaries
+    adjusted_box_x, nx = round_to_periodicity(config.box_x, ice_cell_dims[0])
+    adjusted_box_y, ny = round_to_periodicity(config.box_y, ice_cell_dims[1])
+    adjusted_box_z, nz = round_to_periodicity(config.box_z, ice_cell_dims[2])
 
-    # Box dimensions
-    box_dims = np.array([config.box_x, config.box_y, config.box_z])
+    # Track adjustments for reporting
+    adjustments = []
+    if abs(adjusted_box_x - config.box_x) > 0.001:
+        adjustments.append(f"  box_x: {config.box_x:.3f} → {adjusted_box_x:.3f} nm ({nx} cells)")
+    if abs(adjusted_box_y - config.box_y) > 0.001:
+        adjustments.append(f"  box_y: {config.box_y:.3f} → {adjusted_box_y:.3f} nm ({ny} cells)")
+    if abs(adjusted_box_z - config.box_z) > 0.001:
+        adjustments.append(f"  box_z: {config.box_z:.3f} → {adjusted_box_z:.3f} nm ({nz} cells)")
+
+    # Box dimensions (using adjusted values)
+    box_dims = np.array([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Cavity center and radius
     center = box_dims / 2.0
     radius = config.pocket_diameter / 2.0
 
-    # Tile ice to fill entire box
+    # Tile ice to fill entire box (using adjusted dimensions)
     ice_positions, ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
@@ -153,9 +142,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Example: 10nm box with 2nm radius pocket -> 1000nm³ reduced to 64nm³ (94% reduction)
     fill_dims = np.array([2 * radius, 2 * radius, 2 * radius])
 
+    # Calculate water density from ice temperature/pressure
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+
     # Fill the bounding box with water (positions start at origin [0, 0, 0])
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        fill_dims
+        fill_dims,
+        target_density=target_water_density
     )
 
     if len(water_positions) == 0:
@@ -251,18 +246,28 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     ice_atom_count = len(ice_positions)
     water_atom_count = len(water_positions)
 
-    # Build cell matrix
-    cell = np.diag([config.box_x, config.box_y, config.box_z])
+    # Build cell matrix (using adjusted dimensions)
+    cell = np.diag([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Build report (gmx solvate convention)
     total_molecules = ice_nmolecules + water_nmolecules
+    
+    # Include periodicity adjustments in report
+    adjustment_report = ""
+    if adjustments:
+        adjustment_report = (
+            f"\n\nPeriodicity adjustments (for continuous images):\n" +
+            "\n".join(adjustments)
+        )
+    
     report = (
         f"Generated pocket interface structure\n"
         f"  Ice molecules: {ice_nmolecules}\n"
         f"  Water molecules: {water_nmolecules}\n"
         f"  Total molecules: {total_molecules}\n"
         f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
-        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
+        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+        f"{adjustment_report}"
     )
 
     return InterfaceStructure(
