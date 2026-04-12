@@ -259,7 +259,7 @@ class TestMissingArguments:
         )
         
         assert returncode != 0
-        assert "required: --nmolecules" in stderr.lower() or "required: -N" in stderr.lower()
+        assert "--nmolecules is required for ice generation" in stderr.lower()
     
     def test_no_arguments(self):
         """No arguments should show error."""
