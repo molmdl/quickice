@@ -293,14 +293,6 @@ class TriclinicTransformer:
         # Convert to array
         offsets = np.array(offsets) if offsets else np.zeros((1, 3))
         
-        # Verify we found the right number of offsets
-        if len(offsets) != multiplier:
-            # Fallback: if offset count doesn't match, use a simpler approach
-            # Just replicate by the multiplier factor
-            offsets = []
-            for m in range(multiplier):
-                offsets.append([m, 0, 0])  # Simplified fallback
-
         # Replicate atoms for each unit cell offset
         n_atoms = len(positions)
         n_offsets = len(offsets)
