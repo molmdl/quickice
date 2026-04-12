@@ -106,8 +106,8 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 **Coverage:** 5/5 requirements
 
 **Plans (2):**
-- [ ] 25-01-PLAN.md — Extend CLI parser with interface flags and validation
-- [ ] 25-02-PLAN.md — Add interface generation workflow and GROMACS export
+- [ ] 25-01-PLAN.md — Extend CLI parser with interface flags and validation (Wave 1)
+- [ ] 25-02-PLAN.md — Add interface generation workflow and GROMACS export (Wave 2)
 
 ---
 
