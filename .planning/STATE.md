@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 23 complete |
-| Plan | 2/2 complete |
+| Phase | 23 complete → 24 next |
+| Plan | Phase 23 complete (2/2) |
 | Status | Phase 23 verified ✓ |
-| Last activity | 2026-04-12 — Completed 23-02-PLAN.md |
+| Last activity | 2026-04-12 — Phase 23 verified |
 
-**Progress:** ██████████ 100% (Phase 23: 2/2 plans, Phase 22: 4/4 complete)
+**Progress:** ██████████ 100% (Phase 23: 2/2 plans complete)
 
 ---
 
@@ -174,9 +174,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** 23-02-PLAN.md — Water density integration (3 tasks, density scaling + GUI display)
-**Next:** Execute Phase 24-PLAN.md — Triclinic Transformation Service
+**Completed:** Phase 23: Water Density from T/P (2 plans, 4 requirements)
+**Next:** `/gsd-plan-phase 24` — Triclinic Transformation Service
 
 ---
 
-*State updated: 2026-04-12 — Phase 23 complete*
+*State updated: 2026-04-12 — Phase 23 verified complete*

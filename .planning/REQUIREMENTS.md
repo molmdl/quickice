@@ -15,10 +15,10 @@ Requirements for Interface Enhancements milestone.
 
 ### Water Density
 
-- [ ] **WATER-01**: System calculates water density from T/P using IAPWS
-- [ ] **WATER-02**: System displays water density in Tab 1 info panel
-- [ ] **WATER-03**: System generates water molecules at correct spacing for target density in Tab 2 interface generation
-- [ ] **WATER-04**: System caches IAPWS density lookups for performance
+- [x] **WATER-01**: System calculates water density from T/P using IAPWS ✓
+- [x] **WATER-02**: System displays water density in Tab 1 info panel ✓
+- [x] **WATER-03**: System generates water molecules at correct spacing for target density in Tab 2 interface generation ✓
+- [x] **WATER-04**: System caches IAPWS density lookups for performance ✓
 
 ### Triclinic Transformation
 
@@ -69,10 +69,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ICE-01 | Phase 22 | Complete ✓ |
 | ICE-02 | Phase 22 | Complete ✓ |
 | ICE-03 | Phase 22 | Complete ✓ |
-| WATER-01 | Phase 23 | Pending |
-| WATER-02 | Phase 23 | Pending |
-| WATER-03 | Phase 23 | Pending |
-| WATER-04 | Phase 23 | Pending |
+| WATER-01 | Phase 23 | Complete ✓ |
+| WATER-02 | Phase 23 | Complete ✓ |
+| WATER-03 | Phase 23 | Complete ✓ |
+| WATER-04 | Phase 23 | Complete ✓ |
 | TRAN-01 | Phase 24 | Pending |
 | TRAN-02 | Phase 24 | Pending |
 | TRAN-03 | Phase 24 | Pending |
