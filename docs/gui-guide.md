@@ -94,6 +94,16 @@ Clicking on a phase region displays scientific information in the log panel:
 - Crystal system
 - Validated references (GenIce2, IAPWS)
 
+### Density Information
+
+When you click on a phase region, the displayed density is calculated using IAPWS standards:
+
+- **Ice Ih:** Temperature-dependent density from IAPWS R10-06(2009)
+- **Liquid water:** Density from IAPWS-95 formulation
+- **Other ice phases:** Fixed reference densities
+
+This ensures accurate density values for interface generation and GROMACS export.
+
 ## 3D Molecular Viewer
 
 <img src="images/3d-viewer.png" width="30%">
@@ -208,16 +218,12 @@ Click "Refresh candidates" to sync after generating new candidates in Tab 1.
 
 ### Phase Compatibility
 
-**Important:** Interface construction only works with ice phases that have orthogonal simulation cells. QuickIce v3.0 does not support triclinic (tilted) cells for interface generation.
+All supported ice phases work with interface construction. The following phases are compatible:
 
-**Compatible phases:**
-- Ice Ih, Ice Ic, Ice III, Ice VI, Ice VII, Ice VIII
+- **Ice Ih, Ice Ic, Ice III, Ice VI, Ice VII, Ice VIII** — Native orthogonal cells
+- **Ice II, Ice V** — Triclinic cells, automatically transformed to orthogonal for interface generation
 
-**Incompatible phases:**
-- **Ice II** (rhombohedral structure - triclinic cell)
-- **Ice V** (monoclinic structure - triclinic cell)
-
-If you generate Ice II or Ice V candidates in Tab 1 and attempt to use them in Tab 2, you will receive an error explaining this limitation. You can still export these candidates as PDB/GRO files from Tab 1 for other uses.
+Triclinic phases (Ice II, Ice V) are transformed using the algorithm from Matsumoto et al. (2022), which converts rhombohedral/monoclinic cells to orthogonal representation. A status message appears in the interface log when transformation occurs.
 
 ### Interface Modes
 
@@ -271,6 +277,17 @@ Tab 2 uses phase-distinct coloring to distinguish ice and water:
 - **Water phase**: Cornflower blue atoms with line-based bonds
 - H-bonds are hidden by default in Tab 2
 - Camera defaults to Z-axis side view for slab interfaces
+
+### Transformation Indicator
+
+When generating interfaces with triclinic ice phases (Ice II, Ice V, Ice VI), you'll see a transformation message in the interface log:
+
+```
+Candidate: ice_ii (384 molecules)
+Transformation: Cell transformed from rhombohedral to orthogonal (6x multiplier)
+```
+
+This indicates that the ice cell was automatically converted for interface generation. The transformed structure is fully compatible with GROMACS simulations.
 
 ### Export for GROMACS
 
