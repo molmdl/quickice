@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 24 of 28 (triclinic-transformation) |
-| Plan | 2 of 3 complete |
-| Status | In progress |
-| Last activity | 2026-04-12 — Completed 24-02 |
+| Plan | 3 of 3 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-12 — Completed 24-03 |
 
-**Progress:** ██████████ 100% (Phase 24: 2/3 plans complete)
+**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete)
 
 ---
 
@@ -136,6 +136,8 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Density validation 1% tolerance | Ensures structure preservation | Implemented (24-01) |
 | 2D transformation for monoclinic | H = [[1, 0, n1], [0, 1, 0], [n2, 0, 1]] for Ice V | Implemented (24-02) |
 | Transformation metadata in candidate | Status, multiplier, message for user feedback | Implemented (24-02) |
+| Triclinic rejection removed | All interface modes now accept transformed cells | Implemented (24-03) |
+| get_cell_extent for ice_dims | Bounding box calculation works for any cell shape | Implemented (24-03) |
 
 ### Research Findings (v3.5)
 
@@ -178,10 +180,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12 05:33 UTC
-**Completed:** Phase 24 Plan 02: Generator Integration (2 tasks, 5 integration tests)
-**Next:** `/gsd-execute-plan 24-03` — Remove Triclinic Rejection
+**Last session:** 2026-04-12 05:50 UTC
+**Completed:** Phase 24 Plan 03: Remove Triclinic Rejection (3 tasks, 6 end-to-end tests)
+**Next:** `/gsd-execute-phase 25` — CLI Interface Generation
 
 ---
 
-*State updated: 2026-04-12 — Phase 24 Plan 02 complete*
+*State updated: 2026-04-12 — Phase 24 complete*
