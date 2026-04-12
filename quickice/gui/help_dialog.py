@@ -153,7 +153,7 @@ class QuickReferenceDialog(QDialog):
             "• 'Box too small': Increase box dimensions\n"
             "• 'Water layer too thin': Increase box or decrease ice thickness\n"
             "• 'No water molecules': Box too small or ice piece too large\n"
-            "• 'Triclinic cell': Select different ice phase (ice_ii, ice_v are triclinic)"
+            "• 'Triclinic cell': Transformation applied automatically (Ice II, V, VI work with interfaces)"
         )
         best_practices_text.setWordWrap(True)
         layout.addWidget(best_practices_text)
@@ -177,7 +177,9 @@ class QuickReferenceDialog(QDialog):
             "• GROMACS export generates .gro, .top, and .itp files\n"
             "• TIP4P-ICE water model used for GROMACS compatibility\n"
             "• GROMACS export uses candidate selected in left viewport dropdown\n"
-            "• Interface GROMACS export uses same TIP4P-ICE model for both ice and water"
+            "• Interface GROMACS export uses same TIP4P-ICE model for both ice and water\n"
+            "• Ice Ih density uses IAPWS R10-06(2009) for temperature-dependent accuracy\n"
+            "• Water density for interfaces uses IAPWS-95 formulation"
         )
         notes_text.setWordWrap(True)
         layout.addWidget(notes_text)
