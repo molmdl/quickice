@@ -72,9 +72,10 @@ def water_density_kgm3(T_K: float, P_MPa: float) -> float:
             water = IAPWS95(T=T_K, P=P_MPa)
             rho = water.rho
             
-            # Sanity check: density should be positive and reasonable
-            # Water density at extreme conditions: < 2000 kg/m³
-            if rho > 0 and rho < 2000:
+            # Sanity check: density should be in reasonable range
+            # Water density at extreme conditions: 100-2000 kg/m³
+            # Very low values (< 100) indicate numerical issues or invalid input
+            if 100 < rho < 2000:
                 return rho
             else:
                 return FALLBACK_DENSITY_GCM3 * 1000
