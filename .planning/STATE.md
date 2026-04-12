@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
-**Current Focus:** v3.5 Interface Enhancements — Roadmap created
+**Current Focus:** v3.5 Interface Enhancements — COMPLETE
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
 
-**Current focus:** v3.5 Interface Enhancements — Roadmap created, phases 22-26 defined
+**Current focus:** v3.5 Interface Enhancements — COMPLETE (ready for release)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -30,25 +30,27 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 27 of 27 (documentation-update) |
 | Plan | 3 of 3 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-04-12 — Completed 27-01-PLAN.md |
+| Status | Milestone complete |
+| Last activity | 2026-04-13 — Completed 27-03-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 27: 3/3 plans complete)
+**Progress:** ██████████ 100% (v3.5 milestone complete)
 
 ---
 
 ## Milestone History
 
-### v3.5 Interface Enhancements (Active)
+### v3.5 Interface Enhancements (COMPLETE - 2026-04-13)
 
-**Phases:** 22-26 (5 phases)
+**Phases:** 22-27 (6 phases, 15 plans)
 **Requirements:** 15 (ICE-01 to CLI-05)
-**Key features:**
+**Key features delivered:**
 - Ice Ih IAPWS density (temperature-dependent, replaces 0.9167 g/cm³)
 - Water density from T/P via IAPWS (display + interface spacing)
 - Triclinic→orthogonal transformation for Ice II, V, VI
 - CLI interface generation (--interface flag with full parameters)
-- Integration and polish
+- Documentation and in-app help updates
+
+**Archive:** To be created at release
 
 ### v3.0 Interface Generation (Shipped 2026-04-11)
 
@@ -146,6 +148,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Early return after interface generation | Clean separation between interface and ice workflows | Implemented (25-02) |
 | Optional --nmolecules for interface mode | Interface workflow generates its own candidate | Implemented (25-02) |
 | GROMACS atom number wrapping at 100000 | Standard convention for large systems (>99k atoms) | Implemented (26-01) |
+| 400px max-width for tooltips | Consistent with typical dialog width | Implemented (27-02) |
+| Transformation status only when "transformed" | Avoids clutter for orthogonal phases | Implemented (27-02) |
+| Defer screenshot updates | User will capture manually later | Implemented (27-03) |
 
 ### Research Findings (v3.5)
 
@@ -166,12 +171,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 (None)
 
-### Quick Tasks Completed
+### Known Issues (to investigate)
 
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 004 | Interface viewer improvements (remove spheres, pocket types, UI layout) | 2026-04-10 | 48d8352 | [004-interface-viewer-improvements](./quick/004-interface-viewer-improvements/) |
-| 005 | Simplify pocket shapes (remove rectangular/hexagonal, keep sphere/cubic) | 2026-04-10 | 35ce9a5, 860004e | [005-simplify-pocket-shapes](./quick/005-simplify-pocket-shapes/) |
+- Tab 2 transformation indicator display issues (noted by user)
+- Help dialog content issues (noted by user)
 
 ---
 
@@ -188,10 +191,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12T16:02:13Z
-**Completed:** Phase 27 Plan 01: Documentation update (README, CLI reference, GUI guide for v3.5)
+**Last session:** 2026-04-13T18:03:55Z
+**Completed:** Phase 27 Plan 03: Screenshot verification checkpoint (user chose manual capture later)
 **Next:** v3.5 complete — Ready for release
 
 ---
 
-*State updated: 2026-04-12 — Phase 27 complete (3/3 plans)*
+*State updated: 2026-04-13 — v3.5 Interface Enhancements milestone COMPLETE*
