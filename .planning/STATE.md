@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 26 complete |
-| Plan | Phase 26 complete (1/1) |
-| Status | Phase 26 verified ✓ |
-| Last activity | 2026-04-12 — Phase 26 complete |
+| Phase | 27 of 27 (documentation-update) |
+| Plan | 2 of 3 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-12 — Completed 27-02-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 26: 1/1 plans complete)
+**Progress:** █████████░ 97% (Phase 27: 2/3 plans complete)
 
 ---
 
@@ -188,10 +188,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12T14:44:15Z
-**Completed:** Phase 26 Plan 01: Integration Tests (GROMACS validation, CLI interface tests, triclinic cell tests)
-**Next:** v3.5 complete — Ready for human verification and release
+**Last session:** 2026-04-12T16:00:50Z
+**Completed:** Phase 27 Plan 02: Documentation and UI Polish (help dialog, transformation status, tooltip width)
+**Next:** 27-03-PLAN.md — Screenshot verification checkpoint
 
 ---
 
-*State updated: 2026-04-12 — Phase 26 complete*
+*State updated: 2026-04-12 — Phase 27 in progress (2/3 plans)*
