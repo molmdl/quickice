@@ -623,3 +623,104 @@ class TestIntegrationWithPhase2:
         assert result.phase_id == "ice_vi"
         assert len(result.candidates) == 10
         assert result.actual_nmolecules >= 50
+
+
+class TestTriclinicTransformationIntegration:
+    """Integration tests for triclinic cell transformation in generation."""
+
+    @pytest.fixture
+    def phase_info_ice_ii(self):
+        """Phase info for Ice II."""
+        return {
+            "phase_id": "ice_ii",
+            "phase_name": "Ice II",
+            "density": 1.18,  # Ice II density
+            "temperature": 238,
+            "pressure": 300,
+        }
+
+    @pytest.fixture
+    def phase_info_ice_v(self):
+        """Phase info for Ice V."""
+        return {
+            "phase_id": "ice_v",
+            "phase_name": "Ice V",
+            "density": 1.24,
+            "temperature": 253,
+            "pressure": 500,
+        }
+
+    @pytest.fixture
+    def phase_info_ice_ih(self):
+        """Phase info for Ice Ih."""
+        return {
+            "phase_id": "ice_ih",
+            "phase_name": "Ice Ih",
+            "density": 0.92,
+            "temperature": 273,
+            "pressure": 0,
+        }
+
+    def test_ice_ii_generation_produces_orthogonal_cell(self, phase_info_ice_ii):
+        """Generated Ice II candidates should have orthogonal cells."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+        from quickice.structure_generation.transformer import TriclinicTransformer
+
+        gen = IceStructureGenerator(phase_info_ice_ii, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Should be orthogonal after transformation
+        transformer = TriclinicTransformer()
+        assert transformer.is_triclinic(candidate.cell) is False
+
+        # Check metadata
+        assert "transformation_status" in candidate.metadata
+        assert candidate.metadata["transformation_status"] == "TRANSFORMED"
+
+    def test_ice_v_generation_produces_orthogonal_cell(self, phase_info_ice_v):
+        """Generated Ice V candidates should have orthogonal cells."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+        from quickice.structure_generation.transformer import TriclinicTransformer
+
+        gen = IceStructureGenerator(phase_info_ice_v, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Should be orthogonal after transformation
+        transformer = TriclinicTransformer()
+        assert transformer.is_triclinic(candidate.cell) is False
+
+        # Check metadata
+        assert "transformation_status" in candidate.metadata
+        assert candidate.metadata["transformation_status"] == "TRANSFORMED"
+
+    def test_ice_ih_remains_orthogonal(self, phase_info_ice_ih):
+        """Ice Ih should remain orthogonal (no transformation needed)."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ih, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Should have SKIPPED status
+        assert candidate.metadata.get("transformation_status") == "SKIPPED"
+
+    def test_transformation_multiplier_in_metadata(self, phase_info_ice_ii):
+        """Transformation multiplier should be recorded in metadata."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ii, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Check that multiplier is recorded
+        assert "transformation_multiplier" in candidate.metadata
+        assert candidate.metadata["transformation_multiplier"] > 1
+
+    def test_transformation_message_in_metadata(self, phase_info_ice_ii):
+        """Transformation message should be recorded in metadata."""
+        from quickice.structure_generation.generator import IceStructureGenerator
+
+        gen = IceStructureGenerator(phase_info_ice_ii, nmolecules=100)
+        candidate = gen._generate_single(seed=1000)
+
+        # Check that message is recorded
+        assert "transformation_message" in candidate.metadata
+        assert "Ice II" in candidate.metadata["transformation_message"]
