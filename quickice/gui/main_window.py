@@ -764,6 +764,9 @@ class MainWindow(QMainWindow):
             if phase_id_full == "ice_ih":
                 from quickice.phase_mapping.ice_ih_density import ice_ih_density_gcm3
                 density = f"{ice_ih_density_gcm3(T, P):.4f}"
+            elif phase_id_full == "liquid":
+                from quickice.phase_mapping.water_density import water_density_gcm3
+                density = f"{water_density_gcm3(T, P):.4f}"
             else:
                 density = meta.get("density", "Unknown")
             
@@ -814,6 +817,7 @@ def _get_full_phase_id(phase_id: str) -> str:
         "IX": "ice_ix",
         "X": "ice_x",
         "XV": "ice_xv",
+        "Liquid": "liquid",
     }
     
     # If already full form, return as-is
