@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 23 complete → 24 next |
-| Plan | Phase 23 complete (2/2) |
-| Status | Phase 23 verified ✓ |
-| Last activity | 2026-04-12 — Phase 23 verified |
+| Phase | 24 of 28 (triclinic-transformation) |
+| Plan | 1 of 3 complete |
+| Status | In progress |
+| Last activity | 2026-04-12 — Completed 24-01 |
 
-**Progress:** ██████████ 100% (Phase 23: 2/2 plans complete)
+**Progress:** ██████████ 100% (Phase 24: 1/3 plans complete)
 
 ---
 
@@ -131,6 +131,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | TEMPLATE_DENSITY_GCM3 = 0.991 | TIP4P template density from tip4p.gro | Implemented (23-02) |
 | Cube root scaling for density | scale = (template_density / target_density)^(1/3) | Implemented (23-02) |
 | Water density in GUI for Liquid phase | Lazy import, 4 decimal formatting | Implemented (23-02) |
+| 0.1° angle tolerance for orthogonal detection | CONTEXT.md decision for triclinic identification | Implemented (24-01) |
+| Ice II 6x multiplier | Rhombohedral→hexagonal→orthogonal chain | Implemented (24-01) |
+| Density validation 1% tolerance | Ensures structure preservation | Implemented (24-01) |
 
 ### Research Findings (v3.5)
 
@@ -173,10 +176,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-12
-**Completed:** Phase 23: Water Density from T/P (2 plans, 4 requirements)
-**Next:** `/gsd-plan-phase 24` — Triclinic Transformation Service
+**Last session:** 2026-04-12 05:07 UTC
+**Completed:** Phase 24 Plan 01: Triclinic Transformation Core (TDD: RED, GREEN, REFACTOR)
+**Next:** `/gsd-execute-plan 24-02` — Integration with Generator
 
 ---
 
-*State updated: 2026-04-12 — Phase 23 verified complete*
+*State updated: 2026-04-12 — Phase 24 Plan 01 complete*
