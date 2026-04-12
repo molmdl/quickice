@@ -14,7 +14,7 @@ import numpy as np
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
-from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
+from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water, round_to_periodicity
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -30,6 +30,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     The ice-water-ice sandwich is stacked along the Z-axis. Ice layers are
     tiled from the candidate ice structure, water fills the middle region,
     and overlapping water molecules are removed.
+
+    IMPORTANT: Box dimensions and ice thickness are adjusted to ensure
+    continuous periodic images. The adjustments are reported in the
+    InterfaceStructure.report field.
 
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
@@ -49,14 +53,36 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     transformer = TriclinicTransformer()
     ice_cell_dims = transformer.get_cell_extent(candidate.cell)
 
-    # Box dimensions
-    box_dims = np.array([config.box_x, config.box_y, config.box_z])
+    # ADJUST DIMENSIONS FOR PERIODICITY
+    # Round box dimensions and ice thickness to multiples of ice unit cell
+    # This ensures continuous periodic images without gaps at boundaries
+    adjusted_box_x, nx = round_to_periodicity(config.box_x, ice_cell_dims[0])
+    adjusted_box_y, ny = round_to_periodicity(config.box_y, ice_cell_dims[1])
+    adjusted_ice_thickness, nz_ice = round_to_periodicity(config.ice_thickness, ice_cell_dims[2])
 
-    # Tile ice for bottom layer: fill [box_x, box_y, ice_thickness]
+    # Track adjustments for reporting
+    adjustments = []
+    if abs(adjusted_box_x - config.box_x) > 0.001:
+        adjustments.append(f"  box_x: {config.box_x:.3f} → {adjusted_box_x:.3f} nm ({nx} cells)")
+    if abs(adjusted_box_y - config.box_y) > 0.001:
+        adjustments.append(f"  box_y: {config.box_y:.3f} → {adjusted_box_y:.3f} nm ({ny} cells)")
+    if abs(adjusted_ice_thickness - config.ice_thickness) > 0.001:
+        adjustments.append(f"  ice_thickness: {config.ice_thickness:.3f} → {adjusted_ice_thickness:.3f} nm ({nz_ice} cells)")
+
+    # Recalculate box_z to match adjusted ice thickness
+    # box_z = 2 * ice_thickness + water_thickness
+    adjusted_box_z = 2 * adjusted_ice_thickness + config.water_thickness
+    if abs(adjusted_box_z - config.box_z) > 0.001:
+        adjustments.append(f"  box_z: {config.box_z:.3f} → {adjusted_box_z:.3f} nm (auto-adjusted)")
+
+    # Box dimensions (using adjusted values)
+    box_dims = np.array([adjusted_box_x, adjusted_box_y, adjusted_box_z])
+
+    # Tile ice for bottom layer: fill [adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]
     bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
-        np.array([config.box_x, config.box_y, config.ice_thickness]),
+        np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
         atoms_per_molecule=3  # GenIce ice: O, H, H
     )
 
@@ -64,22 +90,22 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     top_ice_positions, top_ice_nmolecules = tile_structure(
         candidate.positions,
         ice_cell_dims,
-        np.array([config.box_x, config.box_y, config.ice_thickness]),
+        np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
         atoms_per_molecule=3  # GenIce ice: O, H, H
     )
-    # Shift top layer to Z = [ice_thickness + water_thickness, box_z]
+    # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
     top_ice_positions = top_ice_positions.copy()
-    top_ice_positions[:, 2] += config.ice_thickness + config.water_thickness
+    top_ice_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
 
-    # PBC wrap check: ensure top ice atoms are within [0, box_z)
-    # After shift, atoms should be in [ice_thickness + water_thickness, box_z)
+    # PBC wrap check: ensure top ice atoms are within [0, adjusted_box_z)
+    # After shift, atoms should be in [adjusted_ice_thickness + water_thickness, adjusted_box_z)
     # but we wrap defensively to handle floating-point precision issues
     # and catch any configuration errors early.
     top_ice_z = top_ice_positions[:, 2]
     if len(top_ice_z) > 0:
-        # Check for atoms that would wrap to bottom layer (Z < 0 or Z >= box_z)
+        # Check for atoms that would wrap to bottom layer (Z < 0 or Z >= adjusted_box_z)
         below_zero = top_ice_z < 0
-        above_boxz = top_ice_z >= config.box_z
+        above_boxz = top_ice_z >= adjusted_box_z
 
         if np.any(below_zero) or np.any(above_boxz):
             # This should never happen if validation is correct, but handle defensively
@@ -88,10 +114,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             n_above = np.sum(above_boxz)
             raise InterfaceGenerationError(
                 f"PBC overlap detected: {n_below} top ice atoms have Z < 0, "
-                f"{n_above} atoms have Z >= box_z ({config.box_z:.2f} nm). "
+                f"{n_above} atoms have Z >= box_z ({adjusted_box_z:.2f} nm). "
                 f"This indicates a configuration error: box_z should equal "
-                f"2*ice_thickness + water_thickness = {2*config.ice_thickness + config.water_thickness:.2f} nm. "
-                f"Got ice_thickness={config.ice_thickness:.2f} nm, water_thickness={config.water_thickness:.2f} nm.",
+                f"2*ice_thickness + water_thickness = {2*adjusted_ice_thickness + config.water_thickness:.2f} nm. "
+                f"Got ice_thickness={adjusted_ice_thickness:.2f} nm, water_thickness={config.water_thickness:.2f} nm.",
                 mode=config.mode
             )
 
@@ -116,16 +142,17 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     P = candidate.metadata.get('pressure', 0.101325)
     target_water_density = water_density_gcm3(T, P)
 
-    # Fill water in middle region: [box_x, box_y, water_thickness]
+    # Fill water in middle region: [adjusted_box_x, adjusted_box_y, water_thickness]
+    # Note: water thickness is NOT adjusted - it's the gap between ice layers
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        np.array([config.box_x, config.box_y, config.water_thickness]),
+        np.array([adjusted_box_x, adjusted_box_y, config.water_thickness]),
         target_density=target_water_density
     )
 
-    # Shift water to Z = [ice_thickness, ice_thickness + water_thickness]
+    # Shift water to Z = [adjusted_ice_thickness, adjusted_ice_thickness + water_thickness]
     if len(water_positions) > 0:
         water_positions = water_positions.copy()
-        water_positions[:, 2] += config.ice_thickness
+        water_positions[:, 2] += adjusted_ice_thickness
 
     # Detect overlaps between ice O and water O
     # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule)
@@ -176,17 +203,27 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     ice_atom_count = len(combined_ice_positions)
     water_atom_count = len(trimmed_water_positions)
 
-    # Build cell matrix
-    cell = np.diag([config.box_x, config.box_y, config.box_z])
+    # Build cell matrix (using adjusted dimensions)
+    cell = np.diag([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Build report (gmx solvate convention: molecules present, not removed)
     total_molecules = total_ice_nmolecules + water_nmolecules
+    
+    # Include periodicity adjustments in report
+    adjustment_report = ""
+    if adjustments:
+        adjustment_report = (
+            f"\n\nPeriodicity adjustments (for continuous images):\n" +
+            "\n".join(adjustments)
+        )
+    
     report = (
         f"Generated slab interface structure\n"
         f"  Ice molecules: {total_ice_nmolecules}\n"
         f"  Water molecules: {water_nmolecules}\n"
         f"  Total molecules: {total_molecules}\n"
-        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
+        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+        f"{adjustment_report}"
     )
 
     return InterfaceStructure(

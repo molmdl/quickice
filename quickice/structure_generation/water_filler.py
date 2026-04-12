@@ -30,6 +30,42 @@ TEMPLATE_DENSITY_GCM3 = 0.991
 _water_template_cache: Optional[tuple[np.ndarray, list[str], np.ndarray]] = None
 
 
+def round_to_periodicity(
+    target_dim: float,
+    cell_dim: float,
+    min_multiplier: int = 1,
+) -> tuple[float, int]:
+    """Round a target dimension to the nearest multiple of cell periodicity.
+    
+    Ensures continuous periodic images by adjusting dimensions to exact
+    multiples of the ice unit cell dimensions.
+    
+    Args:
+        target_dim: Target dimension in nm (e.g., box_x, ice_thickness).
+        cell_dim: Ice unit cell dimension in nm.
+        min_multiplier: Minimum number of unit cells (default 1).
+    
+    Returns:
+        Tuple of (adjusted_dim, n_cells):
+            - adjusted_dim: Dimension rounded up to nearest multiple of cell_dim.
+            - n_cells: Number of unit cells in the adjusted dimension.
+    
+    Example:
+        >>> round_to_periodicity(5.0, 0.893)  # box_x=5.0nm, ice cell=0.893nm
+        (5.358, 6)  # Adjusted to 6 unit cells = 6 * 0.893 = 5.358 nm
+    """
+    if cell_dim <= 0:
+        return target_dim, min_multiplier
+    
+    # Calculate how many unit cells needed (round up for continuous coverage)
+    n_cells = max(min_multiplier, math.ceil(target_dim / cell_dim))
+    
+    # Adjusted dimension is exact multiple of cell dimension
+    adjusted_dim = n_cells * cell_dim
+    
+    return adjusted_dim, n_cells
+
+
 def scale_positions_for_density(
     positions: np.ndarray,
     template_density: float,
