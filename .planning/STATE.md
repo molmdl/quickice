@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
 | Phase | 25 of 5 (CLI Interface Generation) |
-| Plan | 1 of 2 in current phase |
-| Status | In progress |
-| Last activity | 2026-04-12 — Completed 25-01-PLAN.md |
+| Plan | 2 of 2 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-04-12 — Completed 25-02-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete, Phase 25: 1/2)
+**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete, Phase 25: 2/2)
 
 ---
 
@@ -141,6 +141,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Interface flags in argparse group | Clear help text organization | Implemented (25-01) |
 | Post-parse validation for mode params | Clear error messages for missing required params | Implemented (25-01) |
 | Box dimension minimum 1.0 nm | Ensures physically meaningful simulation cells | Implemented (25-01) |
+| Default 256 molecules for interface generation | Simplifies workflow by using reasonable default | Implemented (25-02) |
+| Interactive file overwrite prompting | Prevents accidental data loss with [y/N] confirmation | Implemented (25-02) |
+| Early return after interface generation | Clean separation between interface and ice workflows | Implemented (25-02) |
+| Optional --nmolecules for interface mode | Interface workflow generates its own candidate | Implemented (25-02) |
 
 ### Research Findings (v3.5)
 
@@ -184,9 +188,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 ## Session Continuity
 
 **Last session:** 2026-04-12
-**Completed:** Phase 25 Plan 01: CLI Interface Generation Flags (validators, parser extension, validation)
-**Next:** Execute 25-02-PLAN.md — Interface generation service implementation
+**Completed:** Phase 25 Plan 02: CLI Interface Generation Workflow (interface generation, GROMACS export, error handling)
+**Next:** Execute 26-01-PLAN.md — Integration testing
 
 ---
 
-*State updated: 2026-04-12 — Phase 25 Plan 01 complete*
+*State updated: 2026-04-12 — Phase 25 complete*
