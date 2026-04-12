@@ -76,12 +76,14 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 2. System transforms triclinic cells to orthogonal while preserving crystal structure integrity (TRAN-02)
 3. System skips transformation for already-orthogonal phases (Ih, Ic, III, VI, VII, VIII) without errors (TRAN-03)
 
-**Coverage:** 3/3 requirements
+**Coverage:** 3/3 requirements → Complete
 
 **Plans (3):**
-- [ ] 24-01-PLAN.md — Triclinic transformation algorithm (TDD: types + transformer + tests)
-- [ ] 24-02-PLAN.md — Integrate transformer into generator.py
-- [ ] 24-03-PLAN.md — Update validation in interface_builder.py and piece.py
+- [x] 24-01-PLAN.md — Triclinic transformation algorithm (TDD: types + transformer + tests) ✓
+- [x] 24-02-PLAN.md — Integrate transformer into generator.py ✓
+- [x] 24-03-PLAN.md — Update validation in interface_builder.py and piece.py ✓
+
+**Completed:** 2026-04-12
 
 ---
 
@@ -165,7 +167,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 |-------|--------|-------|------------|
 | 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
-| 24 - Triclinic Transformation | Planned | 3 plans in 3 waves | TriclinicTransformer with detection, transformation, validation |
+| 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
 | 25 - CLI Interface | Pending | — | — |
 | 26 - Integration & Polish | Pending | — | — |
 | 27 - Documentation Update | Pending | — | — |

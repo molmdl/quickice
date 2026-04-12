@@ -22,9 +22,9 @@ Requirements for Interface Enhancements milestone.
 
 ### Triclinic Transformation
 
-- [ ] **TRAN-01**: System auto-detects triclinic cells for ice_ii and ice_v phases
-- [ ] **TRAN-02**: System transforms triclinic cells to orthogonal while preserving crystal structure
-- [ ] **TRAN-03**: System skips transformation for already-orthogonal phases (ice_ih, ice_ic, ice_iii, ice_vi, ice_vii, ice_viii)
+- [x] **TRAN-01**: System auto-detects triclinic cells for ice_ii and ice_v phases ✓
+- [x] **TRAN-02**: System transforms triclinic cells to orthogonal while preserving crystal structure ✓
+- [x] **TRAN-03**: System skips transformation for already-orthogonal phases (ice_ih, ice_ic, ice_iii, ice_vi, ice_vii, ice_viii) ✓
 
 ### CLI Interface Generation
 
@@ -73,9 +73,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WATER-02 | Phase 23 | Complete ✓ |
 | WATER-03 | Phase 23 | Complete ✓ |
 | WATER-04 | Phase 23 | Complete ✓ |
-| TRAN-01 | Phase 24 | Pending |
-| TRAN-02 | Phase 24 | Pending |
-| TRAN-03 | Phase 24 | Pending |
+| TRAN-01 | Phase 24 | Complete ✓ |
+| TRAN-02 | Phase 24 | Complete ✓ |
+| TRAN-03 | Phase 24 | Complete ✓ |
 | CLI-01 | Phase 25 | Pending |
 | CLI-02 | Phase 25 | Pending |
 | CLI-03 | Phase 25 | Pending |
