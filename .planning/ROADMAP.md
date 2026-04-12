@@ -62,28 +62,33 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 
 ---
 
-### Phase 24: Triclinic Transformation Service
+### Phase 24: Triclinic Interface Support
 
-**Goal:** Users can generate ice-water interfaces for all ice phases including non-orthogonal phases (Ice II, V, VI) that were previously rejected.
+**Goal:** Users can generate ice-water interfaces for all ice phases including triclinic phases (Ice II, Ice V) without gaps.
 
 **Dependencies:** Phase 23 (density calculations may optionally be used)
 
-**Requirements:** TRAN-01, TRAN-02, TRAN-03
+**Requirements:** TRAN-01, TRAN-02, TRAN-03 (revised for native triclinic handling)
 
-**Success Criteria (3):**
+**Success Criteria (4):**
 
-1. System auto-detects triclinic unit cells for Ice II and Ice V phases (TRAN-01)
-2. System transforms triclinic cells to orthogonal while preserving crystal structure integrity (TRAN-02)
-3. System skips transformation for already-orthogonal phases (Ih, Ic, III, VI, VII, VIII) without errors (TRAN-03)
+1. System generates Ice II interfaces without structural gaps
+2. System generates Ice V interfaces without structural gaps
+3. GRO export has 9 box values for triclinic cells
+4. PDB export has correct CRYST1 record with angles
 
-**Coverage:** 3/3 requirements → Complete
+**Architectural Note:** Phase 24 originally implemented a triclinic-to-orthogonal transformer (plans 01-03), but this approach was fundamentally flawed - transforming triclinic cells creates gaps during tiling. Plans 04-07 pivot to native triclinic handling by removing the transformer and updating the tiler.
 
-**Plans (3):**
+**Plans (7):**
 - [x] 24-01-PLAN.md — Triclinic transformation algorithm (TDD: types + transformer + tests) ✓
 - [x] 24-02-PLAN.md — Integrate transformer into generator.py ✓
 - [x] 24-03-PLAN.md — Update validation in interface_builder.py and piece.py ✓
+- [ ] 24-04-PLAN.md — Remove transformer (Wave 1)
+- [ ] 24-05-PLAN.md — Remove original_positions from Candidate, simplify viewer (Wave 1)
+- [ ] 24-06-PLAN.md — Update tiler for triclinic support (Wave 2)
+- [ ] 24-07-PLAN.md — Verify and fix export for triclinic (Wave 3)
 
-**Completed:** 2026-04-12
+**Status:** Replanning (architectural pivot)
 
 ---
 
