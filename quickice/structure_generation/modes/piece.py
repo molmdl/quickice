@@ -15,6 +15,7 @@ from quickice.structure_generation.overlap_resolver import (
     remove_overlapping_molecules,
     filter_atom_names,
 )
+from quickice.phase_mapping.water_density import water_density_gcm3
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
@@ -128,9 +129,15 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Uses module-level template for consistency
     ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
 
+    # Calculate water density from ice temperature/pressure
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+
     # Fill entire box with water
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        box_dims
+        box_dims,
+        target_density=target_water_density
     )
 
     # Detect overlaps between centered ice O and water O

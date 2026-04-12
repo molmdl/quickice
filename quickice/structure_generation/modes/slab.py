@@ -20,6 +20,7 @@ from quickice.structure_generation.overlap_resolver import (
     remove_overlapping_molecules,
     filter_atom_names,
 )
+from quickice.phase_mapping.water_density import water_density_gcm3
 
 
 def _is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
@@ -141,9 +142,15 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # Uses module-level template for consistency
     ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * total_ice_nmolecules
 
+    # Calculate water density from ice temperature/pressure
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+
     # Fill water in middle region: [box_x, box_y, water_thickness]
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        np.array([config.box_x, config.box_y, config.water_thickness])
+        np.array([config.box_x, config.box_y, config.water_thickness]),
+        target_density=target_water_density
     )
 
     # Shift water to Z = [ice_thickness, ice_thickness + water_thickness]

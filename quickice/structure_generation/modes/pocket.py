@@ -21,6 +21,7 @@ from quickice.structure_generation.overlap_resolver import (
     remove_overlapping_molecules,
     filter_atom_names,
 )
+from quickice.phase_mapping.water_density import water_density_gcm3
 
 
 def _is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
@@ -153,9 +154,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Example: 10nm box with 2nm radius pocket -> 1000nm³ reduced to 64nm³ (94% reduction)
     fill_dims = np.array([2 * radius, 2 * radius, 2 * radius])
 
+    # Calculate water density from ice temperature/pressure
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+
     # Fill the bounding box with water (positions start at origin [0, 0, 0])
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        fill_dims
+        fill_dims,
+        target_density=target_water_density
     )
 
     if len(water_positions) == 0:
