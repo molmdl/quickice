@@ -119,33 +119,51 @@ class TriclinicTransformer:
         # Bounding box extent = max - min for each dimension
         return corners.max(axis=0) - corners.min(axis=0)
 
+    def _is_diagonal_cell(self, cell: np.ndarray, tol: float = 1e-10) -> bool:
+        """Check if cell matrix is diagonal (aligned with coordinate axes).
+        
+        A diagonal cell has non-zero elements only on the diagonal.
+        This is used to determine if vector lengths equal the bounding box extent.
+        
+        Args:
+            cell: (3, 3) cell vectors as ROW vectors
+            tol: Tolerance for considering off-diagonal elements as zero
+            
+        Returns:
+            True if cell is diagonal within tolerance
+        """
+        for i in range(3):
+            for j in range(3):
+                if i != j and abs(cell[i, j]) > tol:
+                    return False
+        return True
+
     def get_cell_dimensions(self, cell: np.ndarray) -> np.ndarray:
         """Get the cell dimensions for tiling purposes.
         
-        For an orthogonal cell (all angles 90°), returns the LENGTHS of the
-        lattice vectors, which are the actual cell dimensions for tiling.
-        For a triclinic cell, returns the bounding box extent.
+        For a cell aligned with coordinate axes (diagonal matrix), returns the
+        diagonal elements which are the actual cell dimensions for tiling.
+        
+        For any other cell (triclinic OR rotated orthogonal), returns the
+        bounding box extent, which is what tiling along coordinate axes requires.
         
         This method is critical for interface generation (slab, pocket, piece modes)
         where we need to tile the ice structure. For a transformed orthogonal cell
-        that is rotated in space, the bounding box extent is WRONG for tiling - 
-        we need the actual vector lengths.
+        that is rotated in space, the vector lengths are WRONG for tiling - 
+        we need the bounding box extent.
         
         Args:
             cell: (3, 3) cell vectors as ROW vectors [a, b, c]
         
         Returns:
-            (3,) array of [a_len, b_len, c_len] - the cell dimensions for tiling
+            (3,) array of [dx, dy, dz] - the cell dimensions for tiling
         """
-        if self.is_triclinic(cell):
-            # Triclinic cell - use bounding box extent
-            return self.get_cell_extent(cell)
+        if self._is_diagonal_cell(cell):
+            # Diagonal cell (aligned with axes) - use diagonal elements directly
+            return np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
         else:
-            # Orthogonal cell - use vector lengths
-            a_len = np.linalg.norm(cell[0])
-            b_len = np.linalg.norm(cell[1])
-            c_len = np.linalg.norm(cell[2])
-            return np.array([a_len, b_len, c_len])
+            # Triclinic OR rotated orthogonal - use bounding box extent
+            return self.get_cell_extent(cell)
 
     def find_orthogonal_supercell(
         self, cell: np.ndarray, max_multiplier: int | None = None
@@ -289,9 +307,57 @@ class TriclinicTransformer:
 
         return None
 
+    def _align_cell_to_axes(
+        self, positions: np.ndarray, cell: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Rotate a cell to align with coordinate axes.
+
+        For an orthogonal cell (90° angles) that is rotated in space, this
+        rotates the cell and all positions so the cell vectors align with
+        the coordinate axes. This is essential for correct tiling.
+
+        Args:
+            positions: (N, 3) atom positions in nm
+            cell: (3, 3) orthogonal cell vectors as ROW vectors
+
+        Returns:
+            Tuple of (aligned_positions, aligned_cell) where aligned_cell is diagonal
+        """
+        # For an orthogonal cell, we can align it by finding the rotation
+        # that maps the cell vectors to the coordinate axes.
+        # The cell vectors a, b, c should map to [Lx, 0, 0], [0, Ly, 0], [0, 0, Lz]
+
+        # Get cell vector lengths
+        a_len = np.linalg.norm(cell[0])
+        b_len = np.linalg.norm(cell[1])
+        c_len = np.linalg.norm(cell[2])
+
+        # Build the rotation matrix that transforms cell vectors to axes
+        # R @ cell[0] = [a_len, 0, 0]
+        # R @ cell[1] = [0, b_len, 0]
+        # R @ cell[2] = [0, 0, c_len]
+        # So R = diag_target @ inv(cell)
+        target = np.diag([a_len, b_len, c_len])
+        R = target @ np.linalg.inv(cell)
+
+        # Verify the rotation preserves distances (should be true for orthogonal cells)
+        # R should be close to an orthogonal matrix (R @ R.T = I)
+        # But it might not be exactly orthogonal due to numerical precision
+        # Let's use SVD to get the closest orthogonal rotation matrix
+
+        # Actually, for an orthogonal cell (90° angles), the cell vectors are
+        # mutually perpendicular, so the transformation to axes is a pure rotation
+        # Apply the rotation to positions
+        aligned_positions = positions @ R.T  # R.T because R acts on column vectors
+
+        # The aligned cell is diagonal
+        aligned_cell = target
+
+        return aligned_positions, aligned_cell
+
     def apply_transformation(
         self, positions: np.ndarray, cell: np.ndarray, H: np.ndarray
-        ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Apply supercell transformation to positions and cell.
 
         The transformation replicates the unit cell according to the
@@ -305,6 +371,9 @@ class TriclinicTransformer:
         The key insight is that H transforms CELL VECTORS, not positions.
         Positions in Cartesian space should be replicated, not transformed.
         Only the cell vectors are transformed.
+
+        For rotated orthogonal cells (like transformed Ice II), the result
+        is additionally aligned with coordinate axes for correct tiling.
 
         Args:
             positions: (N, 3) atom positions in nm
@@ -365,6 +434,8 @@ class TriclinicTransformer:
         new_positions = np.array(new_positions) if new_positions else np.zeros((0, 3))
 
         # Wrap molecules as units into the supercell
+        # For each molecule, we wrap based on the CENTER position
+        # and apply the same shift to all atoms in the molecule
         new_cell_inv_T = np.linalg.inv(new_cell.T)
         n_total_molecules = len(new_positions) // atoms_per_molecule
 
@@ -372,29 +443,45 @@ class TriclinicTransformer:
         for mol_idx in range(n_total_molecules):
             start = mol_idx * atoms_per_molecule
             end = start + atoms_per_molecule
-            mol_cart = new_positions[start:end]
+            mol_cart = new_positions[start:end].copy()
             mol_frac = mol_cart @ new_cell_inv_T
 
-            # Wrap molecule as a unit into [0, 1) in supercell fractional coords
+            # Wrap based on center of mass in fractional coordinates
+            # This handles molecules that span cell boundaries correctly
+            center_frac = mol_frac.mean(axis=0)
+
+            # Compute shift to bring center into [0, 1)
+            shift_frac = np.zeros(3)
             for dim in range(3):
-                min_val = mol_frac[:, dim].min()
-                max_val = mol_frac[:, dim].max()
-                center = (min_val + max_val) / 2
+                shift_frac[dim] = -np.floor(center_frac[dim])
 
-                # Shift to bring center into [0, 1)
-                shift = -np.floor(center)
-                mol_frac[:, dim] += shift
-
-                # Handle edge cases
-                min_val = mol_frac[:, dim].min()
-                max_val = mol_frac[:, dim].max()
-                if min_val < -1e-10:
-                    mol_frac[:, dim] += 1.0
-                elif max_val >= 1.0 - 1e-10:
-                    mol_frac[:, dim] -= 1.0
+            # Apply shift
+            mol_frac += shift_frac
 
             # Convert back to Cartesian
             final_positions[start:end] = mol_frac @ new_cell.T
+
+        # CRITICAL: For rotated orthogonal cells, align with coordinate axes
+        # This ensures the cell is diagonal, which is required for correct tiling
+        if not self._is_diagonal_cell(new_cell):
+            final_positions, new_cell = self._align_cell_to_axes(final_positions, new_cell)
+
+            # Re-wrap after alignment to ensure all molecules are inside the aligned cell
+            new_cell_inv_T = np.linalg.inv(new_cell.T)
+            for mol_idx in range(n_total_molecules):
+                start = mol_idx * atoms_per_molecule
+                end = start + atoms_per_molecule
+                mol_cart = final_positions[start:end].copy()
+                mol_frac = mol_cart @ new_cell_inv_T
+
+                # Wrap based on center of mass
+                center_frac = mol_frac.mean(axis=0)
+                shift_frac = np.zeros(3)
+                for dim in range(3):
+                    shift_frac[dim] = -np.floor(center_frac[dim])
+
+                mol_frac += shift_frac
+                final_positions[start:end] = mol_frac @ new_cell.T
 
         return final_positions, new_cell
 
