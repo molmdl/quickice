@@ -12,6 +12,8 @@ from quickice.validation.validators import (
     validate_temperature,
     validate_pressure,
     validate_nmolecules,
+    validate_positive_float,
+    validate_box_dimension,
 )
 
 
@@ -85,6 +87,84 @@ Examples:
         type=int,
         default=None,
         help="Export specific candidate rank (1-10). Only used with --gromacs. Default: export all"
+    )
+    
+    # Interface generation argument group
+    interface_group = parser.add_argument_group(
+        'interface generation',
+        'Ice-water interface generation (requires --interface)'
+    )
+    
+    interface_group.add_argument(
+        "--interface",
+        action="store_true",
+        default=False,
+        help="Generate ice-water interface structure"
+    )
+    
+    interface_group.add_argument(
+        "--mode", "-m",
+        type=str,
+        choices=["slab", "pocket", "piece"],
+        default=None,
+        help="Interface mode: slab, pocket, or piece (required with --interface)"
+    )
+    
+    interface_group.add_argument(
+        "--box-x", "-x",
+        type=validate_box_dimension,
+        default=None,
+        help="Box X dimension in nm (required with --interface)"
+    )
+    
+    interface_group.add_argument(
+        "--box-y", "-y",
+        type=validate_box_dimension,
+        default=None,
+        help="Box Y dimension in nm (required with --interface)"
+    )
+    
+    interface_group.add_argument(
+        "--box-z", "-z",
+        type=validate_box_dimension,
+        default=None,
+        help="Box Z dimension in nm (required with --interface)"
+    )
+    
+    interface_group.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility (default: 42)"
+    )
+    
+    interface_group.add_argument(
+        "--ice-thickness", "-t",
+        type=validate_positive_float,
+        default=None,
+        help="Ice layer thickness in nm (required for slab mode)"
+    )
+    
+    interface_group.add_argument(
+        "--water-thickness", "-w",
+        type=validate_positive_float,
+        default=None,
+        help="Water layer thickness in nm (required for slab mode)"
+    )
+    
+    interface_group.add_argument(
+        "--pocket-diameter", "-d",
+        type=validate_positive_float,
+        default=None,
+        help="Pocket diameter in nm (required for pocket mode)"
+    )
+    
+    interface_group.add_argument(
+        "--pocket-shape",
+        type=str,
+        choices=["sphere", "cubic"],
+        default="sphere",
+        help="Pocket shape: sphere or cubic (default: sphere)"
     )
     
     parser.add_argument(
