@@ -106,8 +106,10 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 **Coverage:** 5/5 requirements
 
 **Plans (2):**
-- [ ] 25-01-PLAN.md — Extend CLI parser with interface flags and validation (Wave 1)
-- [ ] 25-02-PLAN.md — Add interface generation workflow and GROMACS export (Wave 2)
+- [x] 25-01-PLAN.md — Extend CLI parser with interface flags and validation (Wave 1) ✓
+- [x] 25-02-PLAN.md — Add interface generation workflow and GROMACS export (Wave 2) ✓
+
+**Completed:** 2026-04-12
 
 ---
 
@@ -172,7 +174,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 | 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
 | 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
-| 25 - CLI Interface | Planned | 2 plans | Parser extension, interface workflow, GROMACS export |
+| 25 - CLI Interface | ✓ Complete | 2/2 complete | CLI flags, interface workflow, GROMACS export, all modes tested |
 | 26 - Integration & Polish | Pending | — | — |
 | 27 - Documentation Update | Pending | — | — |
 

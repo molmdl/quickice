@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Interface Enhancements |
-| Phase | 25 of 5 (CLI Interface Generation) |
-| Plan | 2 of 2 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-04-12 — Completed 25-02-PLAN.md |
+| Phase | 25 complete → 26 next |
+| Plan | Phase 25 complete (2/2) |
+| Status | Phase 25 verified ✓ |
+| Last activity | 2026-04-12 — Phase 25 verified |
 
-**Progress:** ██████████ 100% (Phase 24: 3/3 plans complete, Phase 25: 2/2)
+**Progress:** ██████████ 100% (Phase 25: 2/2 plans complete)
 
 ---
 

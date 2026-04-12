@@ -28,11 +28,11 @@ Requirements for Interface Enhancements milestone.
 
 ### CLI Interface Generation
 
-- [ ] **CLI-01**: User can generate interface via `--interface` flag with mode parameter (slab/pocket/piece)
-- [ ] **CLI-02**: User can specify box dimensions (box_x, box_y, box_z) and seed for all modes
-- [ ] **CLI-03**: User can specify ice_thickness and water_thickness for slab mode
-- [ ] **CLI-04**: User can specify pocket_diameter and pocket_shape for pocket mode
-- [ ] **CLI-05**: User can export interface structures to GROMACS format from CLI
+- [x] **CLI-01**: User can generate interface via `--interface` flag with mode parameter (slab/pocket/piece) ✓
+- [x] **CLI-02**: User can specify box dimensions (box_x, box_y, box_z) and seed for all modes ✓
+- [x] **CLI-03**: User can specify ice_thickness and water_thickness for slab mode ✓
+- [x] **CLI-04**: User can specify pocket_diameter and pocket_shape for pocket mode ✓
+- [x] **CLI-05**: User can export interface structures to GROMACS format from CLI ✓
 
 ## v4.0 Requirements (Future)
 
@@ -76,11 +76,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRAN-01 | Phase 24 | Complete ✓ |
 | TRAN-02 | Phase 24 | Complete ✓ |
 | TRAN-03 | Phase 24 | Complete ✓ |
-| CLI-01 | Phase 25 | Pending |
-| CLI-02 | Phase 25 | Pending |
-| CLI-03 | Phase 25 | Pending |
-| CLI-04 | Phase 25 | Pending |
-| CLI-05 | Phase 25 | Pending |
+| CLI-01 | Phase 25 | Complete ✓ |
+| CLI-02 | Phase 25 | Complete ✓ |
+| CLI-03 | Phase 25 | Complete ✓ |
+| CLI-04 | Phase 25 | Complete ✓ |
+| CLI-05 | Phase 25 | Complete ✓ |
 
 **Coverage:**
 - v3.5 requirements: 15 total
