@@ -54,8 +54,9 @@ Examples:
         "--nmolecules",
         "-N",
         type=validate_nmolecules,
-        required=True,
-        help="Number of water molecules (4-100000)"
+        required=False,
+        default=None,
+        help="Number of water molecules (4-100000). Required for ice generation, optional for interface generation (default: 256)"
     )
     
     parser.add_argument(
@@ -187,6 +188,10 @@ def validate_interface_args(args: argparse.Namespace, parser: argparse.ArgumentP
         args: Parsed arguments from parser.parse_args()
         parser: ArgumentParser instance for error reporting
     """
+    # --nmolecules is required for ice generation mode (not interface mode)
+    if not args.interface and args.nmolecules is None:
+        parser.error("--nmolecules is required for ice generation (omit for interface mode)")
+    
     if not args.interface:
         return  # No validation needed if not using interface mode
     
