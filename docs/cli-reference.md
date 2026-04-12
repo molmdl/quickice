@@ -2,7 +2,7 @@
 
 Complete documentation for QuickIce command-line interface.
 
-> **Note:** Ice-water interface construction (slab, pocket, and piece geometries) is available only in the [GUI](gui-guide.md#interface-construction-tab-2), not from the command line.
+> **Note:** Ice-water interface construction is available in the [GUI](gui-guide.md#interface-construction-tab-2) (recommended) and via CLI with the `--interface` flag.
 
 ## Usage
 
@@ -259,6 +259,82 @@ python quickice.py -T 200 -P 2500 -N 100
 | 1 | Invalid arguments (validation error) |
 | 2 | Phase mapping error (conditions outside known regions) |
 | 3 | Structure generation error |
+
+---
+
+## Interface Generation
+
+QuickIce can generate ice-water interface structures directly from the command line using the `--interface` flag. This is useful for batch processing or scripting.
+
+### Interface Mode
+
+The `--mode` parameter specifies the interface geometry:
+
+| Mode | Description | Required Parameters |
+|------|-------------|---------------------|
+| `slab` | Layered ice-water interface | `--ice-thickness`, `--water-thickness` |
+| `pocket` | Water cavity within ice matrix | `--pocket-diameter` |
+| `piece` | Ice crystal embedded in water | None (dimensions from candidate) |
+
+### Box Dimensions
+
+All interface modes require box dimensions:
+
+- `--box-x`, `--box-y`, `--box-z`: Simulation box dimensions in nanometers (0.5–100 nm)
+
+**Slab mode constraint:** Box Z must equal `2 × ice_thickness + water_thickness`.
+
+### Common Parameters
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--seed` | 42 | Random seed for reproducible water placement |
+| `--gromacs` | False | Export GROMACS format (.gro, .top, .itp) |
+
+### Slab Interface Example
+
+Generate a layered ice-water-ice slab:
+
+```bash
+python quickice.py --temperature 250 --pressure 0.1 \
+  --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --gromacs --output slab_output
+```
+
+Creates two ice layers (3.0 nm each) with a 4.0 nm water layer between them.
+
+### Pocket Interface Example
+
+Generate a water cavity within ice:
+
+```bash
+python quickice.py --temperature 253 --pressure 500 \
+  --interface --mode pocket \
+  --box-x 4.0 --box-y 4.0 --box-z 4.0 \
+  --pocket-diameter 2.0 \
+  --gromacs --output pocket_output
+```
+
+Creates a 2.0 nm spherical water pocket inside an Ice V matrix.
+
+### Piece Interface Example
+
+Generate an ice fragment in water:
+
+```bash
+python quickice.py --temperature 180 --pressure 1000 \
+  --interface --mode piece \
+  --box-x 4.0 --box-y 4.0 --box-z 4.0 \
+  --gromacs --output piece_output
+```
+
+Box dimensions must exceed the ice candidate dimensions.
+
+### Triclinic Phase Support
+
+All supported ice phases work with interface generation. Triclinic phases (Ice II, Ice V, Ice VI) are automatically transformed to orthogonal cells using the transformation algorithm from Matsumoto et al. (2022).
 
 ---
 
