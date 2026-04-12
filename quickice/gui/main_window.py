@@ -908,6 +908,14 @@ def run_app():
     """
     import sys
     app = QApplication(sys.argv)
+    
+    # Apply global tooltip width limit for consistent display
+    app.setStyleSheet("""
+        QToolTip {
+            max-width: 400px;
+        }
+    """)
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
