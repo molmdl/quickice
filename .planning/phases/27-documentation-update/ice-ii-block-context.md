@@ -18,13 +18,13 @@ Ice II (rhombohedral, space group R-3) is now **permanently blocked** for all in
 - Ice V has `b[0]=0`, only `c[0]` is negative
 - XY projection is **rectangular**, so it tiles cleanly into orthogonal boxes
 
-### Supported Triclinic Phases
+### Supported Phases for Interfaces
 
-| Phase | Temperature | Pressure | Status |
-|-------|-------------|----------|--------|
-| Ice V | 253K | 500 MPa | ✅ Works correctly |
-| Ice VI | 180K | 1000 MPa | ✅ Works correctly |
-| Ice II | 238K | 300 MPa | ❌ Blocked - crystallographic constraint |
+| Phase | Crystal System | Temperature | Pressure | Status |
+|-------|----------------|-------------|----------|--------|
+| Ice V | Monoclinic | 253K | 500 MPa | ✅ Works (transformable) |
+| Ice VI | Tetragonal | 180K | 1000 MPa | ✅ Works (native orthogonal) |
+| Ice II | Rhombohedral | 238K | 300 MPa | ❌ Blocked (crystallographic constraint) |
 
 ## Error Message
 
@@ -35,9 +35,10 @@ InterfaceGenerationError: [slab/piece/pocket] Ice II (rhombohedral, space group 
 
 Ice II has a rhombohedral crystal structure that cannot be transformed to an orthogonal supercell (this is a fundamental crystallographic constraint). When forced into an orthogonal simulation box, Ice II develops triangular gaps at the corners, leaving significant empty regions.
 
-Supported triclinic phases:
-  • Ice V: Works correctly (rectangular XY projection)
-  • Ice VI: Works correctly
+Supported phases for interfaces:
+  • Ice V (monoclinic): Works correctly (rectangular XY projection)
+  • Ice VI (tetragonal): Works correctly (already orthogonal)
+  • All other orthogonal phases (Ice Ih, Ic, III, VII, VIII): Work correctly
 
 For Ice II interfaces, consider using a different phase or contact support for future triclinic box output.
 ```
