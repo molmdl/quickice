@@ -83,12 +83,12 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 - [x] 24-01-PLAN.md — Triclinic transformation algorithm (TDD: types + transformer + tests) ✓
 - [x] 24-02-PLAN.md — Integrate transformer into generator.py ✓
 - [x] 24-03-PLAN.md — Update validation in interface_builder.py and piece.py ✓
-- [ ] 24-04-PLAN.md — Remove transformer (Wave 1)
-- [ ] 24-05-PLAN.md — Remove original_positions from Candidate, simplify viewer (Wave 1)
-- [ ] 24-06-PLAN.md — Update tiler for triclinic support (Wave 2)
-- [ ] 24-07-PLAN.md — Verify and fix export for triclinic (Wave 3)
+- [x] 24-04-PLAN.md — Remove transformer (Wave 1) ✓
+- [x] 24-05-PLAN.md — Remove original_positions from Candidate, simplify viewer (Wave 1) ✓
+- [x] 24-06-PLAN.md — Update tiler for triclinic support (Wave 2) ✓
+- [x] 24-07-PLAN.md — Verify and fix export for triclinic (Wave 3) ✓
 
-**Status:** Replanning (architectural pivot)
+**Completed:** 2026-04-13
 
 ---
 
@@ -190,7 +190,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 |-------|--------|-------|------------|
 | 22 - Ice Ih Density | ✓ Complete | 4/4 complete | IAPWS density via iapws._Ice, backend/frontend integration, tests |
 | 23 - Water Density | ✓ Complete | 2/2 complete | IAPWS95 water density with caching, Tab 1 display, Tab 2 interface spacing |
-| 24 - Triclinic Transformation | ✓ Complete | 3/3 complete | TriclinicTransformer with detection, transformation, validation |
+| 24 - Triclinic Transformation | ✓ Complete | 7/7 complete | Native triclinic handling (transformer removed), tiler with cell_matrix, PBC wrapping, GRO/PDB export |
 | 25 - CLI Interface | ✓ Complete | 2/2 complete | CLI flags, interface workflow, GROMACS export, all modes tested |
 | 26 - Integration & Polish | ✓ Complete | 1/1 complete | GROMACS validation, CLI integration tests, triclinic phase tests |
 | 27 - Documentation Update | ✓ Complete | 3/3 complete | README, docs, help dialog, tooltips, screenshots deferred |
