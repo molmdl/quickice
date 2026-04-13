@@ -27,13 +27,13 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v3.5 Interface Enhancements |
-| Phase | 27 of 27 (documentation-update) |
-| Plan | 3 of 3 in current phase |
-| Status | Milestone complete |
-| Last activity | 2026-04-13 — Completed 27-03-PLAN.md |
+| Milestone | v3.5 Gap Filling |
+| Phase | 24 of 27 (triclinic-transformation) |
+| Plan | 4 of 7 in current phase |
+| Status | In progress |
+| Last activity | 2026-04-13 — Completed 24-04-PLAN.md |
 
-**Progress:** ██████████ 100% (v3.5 milestone complete)
+**Progress:** ██████████ 100% (v3.5 milestone complete) → Gap filling in progress
 
 ---
 
@@ -151,6 +151,8 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | 400px max-width for tooltips | Consistent with typical dialog width | Implemented (27-02) |
 | Transformation status only when "transformed" | Avoids clutter for orthogonal phases | Implemented (27-02) |
 | Defer screenshot updates | User will capture manually later | Implemented (27-03) |
+| Remove transformer entirely | Flawed approach creates gaps during tiling | Implemented (24-04) |
+| Bounding box for cell dimensions | corners.max(axis=0) - corners.min(axis=0) | Implemented (24-04) |
 
 ### Research Findings (v3.5)
 
@@ -191,10 +193,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-13T18:03:55Z
-**Completed:** Phase 27 Plan 03: Screenshot verification checkpoint (user chose manual capture later)
-**Next:** v3.5 complete — Ready for release
+**Last session:** 2026-04-13T06:45:39Z
+**Completed:** Phase 24 Plan 04: Remove transformer (984 lines deleted)
+**Next:** Phase 24 Plan 05: Remove original_positions/original_cell from types.py
 
 ---
 
-*State updated: 2026-04-13 — v3.5 Interface Enhancements milestone COMPLETE*
+*State updated: 2026-04-13 — Phase 24 Plan 04 complete, transformer removed*
