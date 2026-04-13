@@ -334,7 +334,7 @@ Box dimensions must exceed the ice candidate dimensions.
 
 ### Triclinic Phase Support
 
-All supported ice phases work with interface generation. Triclinic phases (Ice II, Ice V, Ice VI) are automatically transformed to orthogonal cells using the transformation algorithm from Matsumoto et al. (2022).
+All supported ice phases except Ice II work with interface generation. Ice II (rhombohedral) cannot form orthogonal supercells. Ice V (monoclinic) can be transformed to orthogonal cells. Ice VI (tetragonal) and other orthogonal phases work natively.
 
 ---
 
