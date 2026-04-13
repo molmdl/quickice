@@ -8,7 +8,7 @@ from typing import List
 
 import numpy as np
 
-from quickice.structure_generation.types import Candidate
+from quickice.structure_generation.types import Candidate, InterfaceStructure
 from quickice.ranking.types import RankingResult
 
 
@@ -104,6 +104,70 @@ def write_pdb_with_cryst1(candidate: Candidate, filepath: str) -> None:
             # Using HETATM for water molecules (non-standard residues)
             # Format: HETATM serial(5) space(1) atom_name(4) resName(3) chain(1) resSeq(4) ...
             line = f"HETATM{serial:5d} {formatted_name}HOH A{residue_num:4d}    {x:8.3f}{y:8.3f}{z:8.3f}  1.00  0.00          {element:>2s}\n"
+            f.write(line)
+        
+        # Write END record
+        f.write("END\n")
+
+
+def write_interface_pdb_file(iface: InterfaceStructure, filepath: str) -> None:
+    """Write interface structure to PDB format with CRYST1 record.
+    
+    Converts InterfaceStructure to PDB format with correct cell parameters
+    for triclinic cells. Includes both ice and water atoms.
+    
+    Args:
+        iface: InterfaceStructure with combined ice + water positions
+        filepath: Output PDB file path
+    """
+    # Convert cell from nm to Angstrom
+    cell_angstrom = iface.cell * 10.0
+    
+    # Calculate cell parameters
+    a, b, c, alpha, beta, gamma = _calculate_cell_parameters(cell_angstrom)
+    
+    # Convert positions from nm to Angstrom
+    positions_angstrom = iface.positions * 10.0
+    
+    with open(filepath, 'w') as f:
+        # Write CRYST1 record
+        cryst1_line = f"CRYST1{a:9.3f}{b:9.3f}{c:9.3f}{alpha:7.2f}{beta:7.2f}{gamma:7.2f}  1\n"
+        f.write(cryst1_line)
+        
+        # Write ice atoms first (3 atoms per molecule: O, H, H)
+        for i in range(iface.ice_atom_count):
+            pos = positions_angstrom[i]
+            atom_name = iface.atom_names[i]
+            residue_num = (i // 3) + 1  # 3 atoms per ice molecule
+            serial = i + 1
+            
+            # Format atom name (left-aligned in columns 13-16)
+            if len(atom_name) == 1:
+                formatted_name = f" {atom_name}  "
+            else:
+                formatted_name = f"{atom_name:<4s}"
+            
+            element = atom_name[0] if atom_name else ""
+            
+            line = f"HETATM{serial:5d} {formatted_name}HOH A{residue_num:4d}    {pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}  1.00  0.00          {element:>2s}\n"
+            f.write(line)
+        
+        # Write water atoms (4 atoms per molecule: OW, HW1, HW2, MW)
+        for i in range(iface.water_atom_count):
+            idx = iface.ice_atom_count + i
+            pos = positions_angstrom[idx]
+            atom_name = iface.atom_names[idx]
+            residue_num = iface.ice_nmolecules + (i // 4) + 1  # 4 atoms per water molecule
+            serial = idx + 1
+            
+            if len(atom_name) == 1:
+                formatted_name = f" {atom_name}  "
+            else:
+                formatted_name = f"{atom_name:<4s}"
+            
+            element = atom_name[0] if atom_name else ""
+            
+            line = f"HETATM{serial:5d} {formatted_name}HOH A{residue_num:4d}    {pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}  1.00  0.00          {element:>2s}\n"
             f.write(line)
         
         # Write END record
