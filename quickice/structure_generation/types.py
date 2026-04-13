@@ -11,9 +11,8 @@ class Candidate:
     """A single generated ice structure candidate.
 
     Attributes:
-        positions: (N_atoms, 3) coordinates in nm. For triclinic phases, this
-            contains the TRANSFORMED orthogonal cell positions. Use original_positions
-            for the original triclinic structure.
+        positions: (N_atoms, 3) coordinates in nm from GenIce. For triclinic phases (Ice II, Ice V),
+            this contains the native triclinic cell positions.
         atom_names: List of atom names ["O", "H", "H", "O", "H", "H", ...]
         cell: (3, 3) cell vectors in nm, stored as ROW vectors.
             Each row is a lattice vector: [[a_x, a_y, a_z],
@@ -22,16 +21,11 @@ class Candidate:
             This means: new_position = position @ cell.
             Note: VTK uses column vectors (matrix @ position), so transpose
             is needed when passing to VTK's SetLattice().
-            For triclinic phases, this is the TRANSFORMED orthogonal cell.
+            For triclinic phases, this is the native triclinic cell from GenIce.
         nmolecules: Actual number of water molecules
         phase_id: Phase identifier (e.g., "ice_ih")
         seed: Random seed used for generation
         metadata: Additional info from Phase 2 (density, T, P)
-        original_positions: (N_atoms, 3) original coordinates BEFORE triclinic
-            transformation. None if no transformation was applied. Use this
-            for displaying the original triclinic structure in viewers.
-        original_cell: (3, 3) original cell vectors BEFORE triclinic transformation.
-            None if no transformation was applied.
     """
 
     positions: np.ndarray
@@ -41,8 +35,6 @@ class Candidate:
     phase_id: str
     seed: int
     metadata: dict[str, Any] = field(default_factory=dict)
-    original_positions: np.ndarray | None = None
-    original_cell: np.ndarray | None = None
 
 
 @dataclass
