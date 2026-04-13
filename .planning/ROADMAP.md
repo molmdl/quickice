@@ -164,7 +164,9 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 - [x] 27-01-PLAN.md — Update README, CLI reference, and GUI guide documentation ✓
 - [x] 27-02-PLAN.md — Fix help dialog, add transformation status display, apply tooltip width fix ✓
 - [x] 27-03-PLAN.md — Screenshot verification checkpoint ✓
-- [ ] 27-04-PLAN.md — Fix crystal system inaccuracies in all documentation
+- [x] 27-04-PLAN.md — Fix crystal system inaccuracies in all documentation ✓
+
+**Completed:** 2026-04-13
 
 ---
 
@@ -192,7 +194,7 @@ This roadmap delivers four tightly-scoped features for QuickIce v3.5: Ice Ih IAP
 | 24 - Triclinic Transformation | ✓ Complete | 7/7 complete | Native triclinic handling (transformer removed), tiler with cell_matrix, PBC wrapping, GRO/PDB export |
 | 25 - CLI Interface | ✓ Complete | 2/2 complete | CLI flags, interface workflow, GROMACS export, all modes tested |
 | 26 - Integration & Polish | ✓ Complete | 1/1 complete | GROMACS validation, CLI integration tests, triclinic phase tests |
-| 27 - Documentation Update | In Progress | 3/4 complete | README, docs, help dialog, tooltips, screenshots deferred, crystal system fixes pending |
+| 27 - Documentation Update | ✓ Complete | 4/4 complete | README, docs, help dialog, tooltips, screenshots deferred, crystal systems corrected |
 
 ---
 
