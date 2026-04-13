@@ -49,10 +49,14 @@ class TestIceIIInterface:
 
     def test_ice_ii_piece_interface(self, ice_ii_candidate):
         """Ice II should work in piece mode."""
-        # Get ice dimensions
-        from quickice.structure_generation.transformer import TriclinicTransformer
-        transformer = TriclinicTransformer()
-        ice_dims = transformer.get_cell_extent(ice_ii_candidate.cell)
+        # Get ice dimensions using bounding box extent
+        cell = ice_ii_candidate.cell
+        corners = np.array([
+            [0, 0, 0], cell[0], cell[1], cell[2],
+            cell[0] + cell[1], cell[0] + cell[2],
+            cell[1] + cell[2], cell[0] + cell[1] + cell[2]
+        ])
+        ice_dims = corners.max(axis=0) - corners.min(axis=0)
 
         config = InterfaceConfig(
             mode="piece",
@@ -120,9 +124,14 @@ class TestIceVInterface:
 
     def test_ice_v_piece_interface(self, ice_v_candidate):
         """Ice V should work in piece mode."""
-        from quickice.structure_generation.transformer import TriclinicTransformer
-        transformer = TriclinicTransformer()
-        ice_dims = transformer.get_cell_extent(ice_v_candidate.cell)
+        # Get ice dimensions using bounding box extent
+        cell = ice_v_candidate.cell
+        corners = np.array([
+            [0, 0, 0], cell[0], cell[1], cell[2],
+            cell[0] + cell[1], cell[0] + cell[2],
+            cell[1] + cell[2], cell[0] + cell[1] + cell[2]
+        ])
+        ice_dims = corners.max(axis=0) - corners.min(axis=0)
 
         config = InterfaceConfig(
             mode="piece",
@@ -160,9 +169,14 @@ class TestOrthogonalPhasesStillWork:
         assert interface.ice_nmolecules > 0
 
         # Piece mode
-        from quickice.structure_generation.transformer import TriclinicTransformer
-        transformer = TriclinicTransformer()
-        ice_dims = transformer.get_cell_extent(ice_ih_candidate.cell)
+        # Get ice dimensions using bounding box extent
+        cell = ice_ih_candidate.cell
+        corners = np.array([
+            [0, 0, 0], cell[0], cell[1], cell[2],
+            cell[0] + cell[1], cell[0] + cell[2],
+            cell[1] + cell[2], cell[0] + cell[1] + cell[2]
+        ])
+        ice_dims = corners.max(axis=0) - corners.min(axis=0)
 
         config = InterfaceConfig(
             mode="piece",
