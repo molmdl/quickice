@@ -78,16 +78,11 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 
 ### Active
 
-**v3.5 Deferred (Water Density - to complete):**
-- Water density from T/P using IAPWS-95 (module created, needs integration)
-- Water density display in Tab 1 info panel
-- Water molecule spacing matches target density in interfaces
-- IAPWS density lookup caching (@lru_cache code exists)
-
-**v4.0 Molecule Insertion (Future):**
-- Tab 2: Molecules to ice (GenIce hydrates, user topology)
+**v4.0 Molecule Insertion:**
+- Tab 2: Molecules to ice (GenIce hydrates, custom molecules)
 - Tab 4: Insert to liquid (NaCl ions, custom molecules)
 - Display styles per molecule type in 3D viewer
+- Water density integration (Phase 23 carryover)
 
 ### Out of Scope
 
@@ -103,9 +98,15 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - Automated interface geometry optimization
 - Multiple salt types (KCl, MgCl2)
 
-## Current Milestone: Ready for v4.0 Planning
+## Current Milestone: v4.0 Molecule Insertion
 
-**Next Goal:** Complete water density integration (Phase 23 deferred work), then define v4.0 molecule insertion
+**Goal:** Add molecule insertion capabilities to interface systems via new tabs
+
+**Target features:**
+- Tab 2: Molecules to Ice (GenIce hydrates, custom molecules)
+- Tab 4: Insert to Liquid (NaCl ions, custom molecules to liquid phase)
+- 3D viewer enhancements (display styles per molecule type)
+- Water density display (carryover from v3.5 Phase 23)
 
 ## Current State
 
@@ -177,4 +178,4 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-04-13 after v3.5 milestone complete*
+*Last updated: 2026-04-14 after v4.0 milestone started*

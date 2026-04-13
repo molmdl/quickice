@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
-**Current Focus:** v3.5 shipped (water density deferred to v4.0)
+**Current Focus:** v4.0 Molecule Insertion (5 phases defined)
 
 ---
 
@@ -12,13 +12,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
 
-**Current focus:** Complete water density integration (Phase 23 deferred work), then v4.0 planning
+**Current focus:** v4.0 milestone: molecule insertion (hydrates, ions, custom molecules, viewer enhancements)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
 - VTK 9.5.2 (BSD-licensed)
-- Matplotlib Qt backend
-- GenIce2, spglib, numpy, scipy, iapws
+- GenIce2 2.2.13.1, spglib, numpy, scipy, iapws
 - MVVM architecture with QThread workers
 
 ---
@@ -27,19 +26,37 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v3.5 shipped (partial - water density deferred) |
-| Phase | — (ready for v4.0 planning) |
+| Milestone | v4.0 (started) |
+| Phase | 28 (planning) |
 | Plan | — |
-| Status | Ready to plan v4.0 or complete Phase 23 water density |
-| Last activity | 2026-04-14 — Milestone archived, water density deferred |
+| Status | Roadmap defined, ready for planning |
+| Last activity | 2026-04-14 — v4.0 roadmap created |
 
-**Progress:** ██████████ 100% (v3.5 shipped with deferred items)
+**Progress:** ○○░░░░░░░░ 0% (5 phases, 0 plans executed)
+
+---
+
+## v4.0 Roadmap Summary
+
+**Phases:** 5 (Phases 28-32)
+**Requirements:** 33 (HYDR, ION, CUST, VIEW, GRO, WATER)
+**Depth:** comprehensive
+
+| Phase | Goal | Requirements |
+|-------|------|--------------|
+| 28 | Pre-requisite Fixes | — (internal bug fixes) |
+| 29 | Data Structures + Multi-Molecule GROMACS | GRO-01 to GRO-03, HYDR-01 to HYDR-05 |
+| 30 | Tab 4 - Ion Insertion (NaCl) | ION-01 to ION-07, WATER-02 |
+| 31 | Tab 2 - Hydrate Generation | HYDR-06 to HYDR-08, WATER-03 |
+| 32 | Custom Molecules + Display Controls | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 |
+
+**Coverage:** 33/33 requirements mapped ✓
 
 ---
 
 ## Milestone History
 
-### v3.5 Interface Enhancements (SHIPPED 2026-04-13 - PARTIAL)
+### v3.5 Interface Enhancements (SHIPPED 2026-04-13)
 
 **Phases:** 22, 24-27 shipped; Phase 23 deferred
 **Requirements:** 11 shipped, 4 deferred (WATER-01 to WATER-04)
@@ -63,7 +80,6 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 - Structure generation: slab/pocket/piece modes with collision detection
 - Visualization: phase-distinct coloring in single VTK viewer
 - Export: GROMACS files with phase distinction (single SOL)
-- Documentation: readme, in-app help, tab 2 tooltips
 
 **Archive:** [.planning/milestones/v3.0-ROADMAP.md](./milestones/v3.0-ROADMAP.md)
 
@@ -94,43 +110,27 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Accumulated Context
 
-### Decisions Carried Forward
+### v4.0 Key Decisions
 
-| Decision | Outcome |
-|----------|---------|
-| MVVM architecture | ✓ Clean separation |
-| VTK for 3D | ✓ Full interactivity |
-| PyInstaller bundling | ✓ Linux executable |
-| Exact version pinning | ✓ All deps =x.y.z |
-| TIP4P-ICE water model | ✓ GROMACS compatible |
-| Single export action | ✓ .gro/.top/.itp together |
-| IAPWS/Journaux data sources | ✓ Scientific accuracy |
-| Ice Ic lower boundary at 72K | ✓ Zero polygon overlaps |
-| Tab-based workflow | ✓ Two tabs for v3.0 |
-| Collision detection | ✓ Mandatory for interface generation |
-| scipy cKDTree for PBC | ✓ Automatic periodic boundary handling |
-| Phase-distinct coloring | ✓ Ice=cyan, water=cornflower blue |
-| Line-based bonds (Tab 2) | ✓ Performance for large systems |
-| Single SOL molecule type | ✓ Simplifies GROMACS topology |
-| Ctrl+I for interface export | ✓ No conflict with Ctrl+G |
-| Native triclinic handling | ✓ Ice V/VI work, Ice II blocked |
-| GROMACS atom wrapping at 100k | ✓ Large systems supported |
+| Decision | Rationale | Status |
+|----------|-----------|--------|
+| No new dependencies | GenIce2 hydrate API, scipy cKDTree, VTK multi-actor already available | Pending implementation |
+| 5-phase structure | Research recommends: fixes → data structures → ion → hydrate → custom | Defined |
+| Variable atoms-per-molecule | Critical Pitfall #5 - must resolve before Tab 2/4 code works | Pending Phase 29 |
+| IonInserter class | Concentration-based placement, not lattice replacement | Pending Phase 30 |
+| HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
+| Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
 
 ### v3.5 Shipped Decisions
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | IAPWS library for density | Already in environment, scientifically accurate | ✓ Shipped |
-| Direct iapws._iapws._Ice usage | Already implements IAPWS R10-06(2009) | ✓ Shipped |
 | Native triclinic instead of transformation | Transformation creates gaps during tiling | ✓ Shipped |
 | Ice II blocked for interfaces | Rhombohedral crystal incompatible | ✓ Shipped |
 | GROMACS atom number wrapping at 100000 | Standard convention for large systems | ✓ Shipped |
 
 ### Blockers
-
-(None)
-
-### Known Issues (to investigate)
 
 (None)
 
@@ -145,15 +145,16 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 - v2.1.1: [.planning/milestones/v2.1.1-ROADMAP.md](./milestones/v2.1.1-ROADMAP.md)
 - v3.0: [.planning/milestones/v3.0-ROADMAP.md](./milestones/v3.0-ROADMAP.md)
 - v3.5: [.planning/milestones/v3.5-ROADMAP.md](./milestones/v3.5-ROADMAP.md)
+- v4.0: [.planning/ROADMAP.md](./ROADMAP.md)
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** v3.5 milestone archived (water density deferred)
-**Next:** Complete Phase 23 water density integration OR start v4.0 planning
+**Completed:** v4.0 roadmap defined (5 phases, 33 requirements)
+**Next:** /gsd-plan-phase 28 (pre-requisite fixes)
 
 ---
 
-*State updated: 2026-04-14 — v3.5 shipped, water density deferred to v4.0*
+*State updated: 2026-04-14 — v4.0 roadmap defined, ready for Phase 28 planning*
