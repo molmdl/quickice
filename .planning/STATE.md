@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Gap Filling |
 | Phase | 24 of 27 (triclinic-transformation) |
-| Plan | 4 of 7 in current phase |
+| Plan | 5 of 7 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-13 — Completed 24-04-PLAN.md |
+| Last activity | 2026-04-13 — Completed 24-05-PLAN.md |
 
 **Progress:** ██████████ 100% (v3.5 milestone complete) → Gap filling in progress
 
@@ -153,6 +153,8 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Defer screenshot updates | User will capture manually later | Implemented (27-03) |
 | Remove transformer entirely | Flawed approach creates gaps during tiling | Implemented (24-04) |
 | Bounding box for cell dimensions | corners.max(axis=0) - corners.min(axis=0) | Implemented (24-04) |
+| Remove original_positions/original_cell | No longer needed after transformation removal | Implemented (24-05) |
+| Native triclinic in Candidate | Candidate stores native structure, not transformed | Implemented (24-05) |
 
 ### Research Findings (v3.5)
 
@@ -193,10 +195,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-13T06:45:39Z
-**Completed:** Phase 24 Plan 04: Remove transformer (984 lines deleted)
-**Next:** Phase 24 Plan 05: Remove original_positions/original_cell from types.py
+**Last session:** 2026-04-13T06:52:47Z
+**Completed:** Phase 24 Plan 05: Remove original_positions/original_cell from Candidate
+**Next:** Phase 24 Plan 06: (check plan directory)
 
 ---
 
-*State updated: 2026-04-13 — Phase 24 Plan 04 complete, transformer removed*
+*State updated: 2026-04-13 — Phase 24 Plan 05 complete, Candidate simplified*
