@@ -15,7 +15,12 @@ ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
-from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water, round_to_periodicity
+from quickice.structure_generation.water_filler import (
+    tile_structure,
+    fill_region_with_water,
+    round_to_periodicity,
+    get_cell_extent,
+)
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -48,16 +53,12 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     Raises:
         InterfaceGenerationError: If pocket_shape is not valid or if generation fails.
     """
-    # Get ice cell dimensions for tiling
-    # For orthogonal cells, use diagonal directly
-    # For triclinic cells, use bounding box extent
-    cell = candidate.cell
-    corners = np.array([
-        [0, 0, 0], cell[0], cell[1], cell[2],
-        cell[0] + cell[1], cell[0] + cell[2],
-        cell[1] + cell[2], cell[0] + cell[1] + cell[2]
-    ])
-    ice_cell_dims = corners.max(axis=0) - corners.min(axis=0)
+    # Get ice cell dimensions for tiling (bounding box extent)
+    # Works for both orthogonal and triclinic cells
+    ice_cell_dims = get_cell_extent(candidate.cell)
+    
+    # Store cell matrix for triclinic-aware tiling
+    cell_matrix = candidate.cell
 
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions to multiples of ice unit cell
@@ -87,7 +88,8 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         candidate.positions,
         ice_cell_dims,
         box_dims,
-        atoms_per_molecule=3  # GenIce ice: O, H, H
+        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
     if len(ice_positions) == 0:

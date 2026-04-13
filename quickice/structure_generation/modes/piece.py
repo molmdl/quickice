@@ -9,7 +9,11 @@ import numpy as np
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
-from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water
+from quickice.structure_generation.water_filler import (
+    tile_structure,
+    fill_region_with_water,
+    get_cell_extent,
+)
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -41,16 +45,12 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     Raises:
         InterfaceGenerationError: If box is smaller than ice piece or generation fails.
     """
-    # Get ice piece dimensions for positioning
-    # For orthogonal cells, use diagonal directly
-    # For triclinic cells, use bounding box extent
-    cell = candidate.cell
-    corners = np.array([
-        [0, 0, 0], cell[0], cell[1], cell[2],
-        cell[0] + cell[1], cell[0] + cell[2],
-        cell[1] + cell[2], cell[0] + cell[1] + cell[2]
-    ])
-    ice_dims = corners.max(axis=0) - corners.min(axis=0)
+    # Get ice piece dimensions for positioning (bounding box extent)
+    # Works for both orthogonal and triclinic cells
+    ice_dims = get_cell_extent(candidate.cell)
+    
+    # Store cell matrix for triclinic-aware tiling
+    cell_matrix = candidate.cell
 
     # Validate: box dimensions must be larger than ice piece
     if config.box_x <= ice_dims[0]:
@@ -86,7 +86,8 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         candidate.positions,
         ice_dims,
         ice_dims,
-        atoms_per_molecule=3  # GenIce ice: O, H, H
+        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
     if len(tiled_ice_positions) == 0:
