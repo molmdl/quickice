@@ -14,6 +14,118 @@ from typing import Optional
 
 import numpy as np
 
+
+# === Triclinic Cell Utilities ===
+
+def get_cell_extent(cell: np.ndarray) -> np.ndarray:
+    """Calculate the bounding box extent of a unit cell.
+    
+    For orthogonal cells, this equals [cell[0,0], cell[1,1], cell[2,2]].
+    For triclinic cells, this computes the actual bounding box by checking
+    all 8 corners of the parallelepiped.
+    
+    Args:
+        cell: (3, 3) cell vectors as ROW vectors [a, b, c]
+    
+    Returns:
+        (3,) array of [dx, dy, dz] bounding box dimensions
+    """
+    a, b, c = cell[0], cell[1], cell[2]
+    
+    # All 8 corners of the unit cell parallelepiped
+    corners = np.array([
+        [0, 0, 0],
+        a,
+        b,
+        c,
+        a + b,
+        a + c,
+        b + c,
+        a + b + c,
+    ])
+    
+    # Bounding box extent = max - min for each dimension
+    return corners.max(axis=0) - corners.min(axis=0)
+
+
+def is_cell_orthogonal(cell: np.ndarray, angle_tol: float = 0.1) -> bool:
+    """Check if cell is orthogonal (all angles 90° within tolerance).
+    
+    Args:
+        cell: (3, 3) cell vectors as ROW vectors
+        angle_tol: Tolerance in degrees (default 0.1°)
+    
+    Returns:
+        True if all angles are 90° ± angle_tol
+    """
+    a, b, c = cell[0], cell[1], cell[2]
+    
+    def angle(v1, v2):
+        n1, n2 = np.linalg.norm(v1), np.linalg.norm(v2)
+        if n1 < 1e-10 or n2 < 1e-10:
+            return 90.0
+        cos_a = np.clip(np.dot(v1, v2) / (n1 * n2), -1.0, 1.0)
+        return np.degrees(np.arccos(cos_a))
+    
+    alpha = angle(b, c)  # Angle between b and c
+    beta = angle(a, c)   # Angle between a and c
+    gamma = angle(a, b)  # Angle between a and b
+    
+    return (
+        abs(alpha - 90.0) <= angle_tol
+        and abs(beta - 90.0) <= angle_tol
+        and abs(gamma - 90.0) <= angle_tol
+    )
+
+
+def wrap_positions_triclinic(
+    positions: np.ndarray,
+    cell: np.ndarray,
+    atoms_per_molecule: int,
+) -> np.ndarray:
+    """Wrap positions into a triclinic cell using fractional coordinates.
+    
+    For triclinic cells, we wrap molecules as units (based on center of mass)
+    to preserve molecular integrity.
+    
+    Args:
+        positions: (N, 3) atom positions in nm
+        cell: (3, 3) cell vectors as ROW vectors
+        atoms_per_molecule: Number of atoms per molecule
+    
+    Returns:
+        (N, 3) wrapped positions
+    """
+    if len(positions) == 0:
+        return positions
+    
+    # Inverse of cell transpose for fractional coordinate conversion
+    inv_cell_T = np.linalg.inv(cell.T)
+    
+    n_molecules = len(positions) // atoms_per_molecule
+    wrapped = np.zeros_like(positions)
+    
+    for mol_idx in range(n_molecules):
+        start = mol_idx * atoms_per_molecule
+        end = start + atoms_per_molecule
+        mol = positions[start:end].copy()
+        
+        # Convert to fractional coordinates
+        mol_frac = mol @ inv_cell_T
+        
+        # Wrap center of mass into [0, 1)
+        com_frac = mol_frac.mean(axis=0)
+        shift_frac = -np.floor(com_frac)
+        
+        # Apply shift
+        mol_frac += shift_frac
+        
+        # Convert back to Cartesian
+        wrapped[start:end] = mol_frac @ cell.T
+    
+    return wrapped
+
+
 # Number of atoms per TIP4P water molecule (OW, HW1, HW2, MW)
 ATOMS_PER_WATER_MOLECULE = 4
 
