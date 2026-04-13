@@ -315,7 +315,10 @@ def tile_structure(
     Works for ice (3 atoms/molecule from GenIce) or water (4 atoms/molecule
     from tip4p.gro). The caller is responsible for replicating atom_names.
 
-    For triclinic cells (Ice II, Ice V, Ice VI):
+    For triclinic cells (Ice V):
+    - Ice V is monoclinic and can be transformed to orthogonal
+    - Ice II is rhombohedral (blocked for interfaces, not transformed here)
+    - Ice VI is tetragonal (orthogonal, not triclinic)
     - cell_matrix: (3, 3) array of lattice vectors as ROW vectors [a, b, c]
     - Tiling uses lattice vectors for offsets instead of coordinate axes
     - PBC wrapping uses fractional coordinates via wrap_positions_triclinic()
