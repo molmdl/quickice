@@ -275,6 +275,7 @@ def tile_structure(
     cell_dims: np.ndarray,
     target_region: np.ndarray,
     atoms_per_molecule: Optional[int] = None,
+    cell_matrix: Optional[np.ndarray] = None,
 ) -> tuple[np.ndarray, int]:
     """Tile a structure to fill a target rectangular region using cell periodicity.
 
@@ -285,16 +286,29 @@ def tile_structure(
     Works for ice (3 atoms/molecule from GenIce) or water (4 atoms/molecule
     from tip4p.gro). The caller is responsible for replicating atom_names.
 
+    For triclinic cells (Ice II, Ice V, Ice VI):
+    - cell_matrix: (3, 3) array of lattice vectors as ROW vectors [a, b, c]
+    - Tiling uses lattice vectors for offsets instead of coordinate axes
+    - PBC wrapping uses fractional coordinates via wrap_positions_triclinic()
+
+    For orthogonal cells:
+    - cell_matrix can be omitted (defaults to None)
+    - Tiling uses coordinate axes
+    - PBC wrapping uses standard modulo
+
     Args:
         positions: (N, 3) atom positions in nm.
-        cell_dims: [a, b, c] cell dimensions in nm (orthogonal box diagonal).
-            We only support orthogonal boxes for v3.0.
+        cell_dims: [a, b, c] cell dimensions in nm (bounding box extent).
+            Use get_cell_extent() to calculate this for any cell shape.
         target_region: [lx, ly, lz] target region dimensions in nm.
         atoms_per_molecule: Number of atoms per molecule (optional).
             - For TIP4P water: 4 (OW, HW1, HW2, MW)
             - For GenIce ice: 3 (O, H, H)
             If None, will attempt to infer from total atom count (deprecated,
             may produce incorrect results for ambiguous cases).
+        cell_matrix: (3, 3) cell vectors as ROW vectors [a, b, c] (optional).
+            Required for triclinic cells to enable lattice-vector tiling.
+            For orthogonal cells, this can be omitted.
 
     Returns:
         Tuple of (tiled_positions, n_molecules):
@@ -362,6 +376,11 @@ def tile_structure(
 
     n_original_molecules = n_original_atoms // atoms_per_molecule
 
+    # Determine if we need triclinic-aware tiling
+    is_triclinic = False
+    if cell_matrix is not None:
+        is_triclinic = not is_cell_orthogonal(cell_matrix)
+
     # Vectorized tiling: generate all offsets at once and use broadcasting
     # Create grid of indices for all tile positions
     ix_vals = np.arange(nx)
@@ -372,11 +391,25 @@ def tile_structure(
     ix_grid, iy_grid, iz_grid = np.meshgrid(ix_vals, iy_vals, iz_vals, indexing='ij')
     
     # Compute all offsets at once: shape (nx*ny*nz, 3)
-    offsets = np.stack([
-        ix_grid.ravel() * a,
-        iy_grid.ravel() * b,
-        iz_grid.ravel() * c
-    ], axis=1)
+    # For triclinic cells, offsets are along lattice vectors (cell_matrix rows)
+    # For orthogonal cells, offsets are along coordinate axes (cell_dims)
+    if is_triclinic and cell_matrix is not None:
+        # Triclinic: use lattice vectors for offsets
+        lattice_a = cell_matrix[0]  # First lattice vector
+        lattice_b = cell_matrix[1]  # Second lattice vector
+        lattice_c = cell_matrix[2]  # Third lattice vector
+        offsets = np.stack([
+            ix_grid.ravel() * lattice_a[0] + iy_grid.ravel() * lattice_b[0] + iz_grid.ravel() * lattice_c[0],
+            ix_grid.ravel() * lattice_a[1] + iy_grid.ravel() * lattice_b[1] + iz_grid.ravel() * lattice_c[1],
+            ix_grid.ravel() * lattice_a[2] + iy_grid.ravel() * lattice_b[2] + iz_grid.ravel() * lattice_c[2],
+        ], axis=1)
+    else:
+        # Orthogonal: use coordinate axes
+        offsets = np.stack([
+            ix_grid.ravel() * a,
+            iy_grid.ravel() * b,
+            iz_grid.ravel() * c
+        ], axis=1)
     
     # Broadcast positions with all offsets
     # positions: (N, 3) -> (1, N, 3)
@@ -431,47 +464,57 @@ def tile_structure(
     # After filtering, all atoms should already be in [0, target_region).
     # The wrapping here is a safety measure for edge cases (e.g., floating point
     # precision issues, or molecules very close to boundary).
-    tiled_positions = np.zeros_like(filtered)
-    n_filtered_molecules = len(filtered) // atoms_per_molecule
+    #
+    # For triclinic cells, use fractional coordinate wrapping.
+    # For orthogonal cells, use standard coordinate-axis wrapping.
+    if is_triclinic and cell_matrix is not None:
+        # Build target cell matrix for wrapping (orthogonal box)
+        target_cell = np.diag(target_region)
+        # Use triclinic wrapping with the target orthogonal box
+        tiled_positions = wrap_positions_triclinic(filtered, target_cell, atoms_per_molecule)
+    else:
+        # Orthogonal wrapping (standard coordinate-axis modulo)
+        tiled_positions = np.zeros_like(filtered)
+        n_filtered_molecules = len(filtered) // atoms_per_molecule
 
-    for mol_idx in range(n_filtered_molecules):
-        start_atom = mol_idx * atoms_per_molecule
-        end_atom = start_atom + atoms_per_molecule
-        mol_atoms = filtered[start_atom:end_atom].copy()
+        for mol_idx in range(n_filtered_molecules):
+            start_atom = mol_idx * atoms_per_molecule
+            end_atom = start_atom + atoms_per_molecule
+            mol_atoms = filtered[start_atom:end_atom].copy()
 
-        # Calculate shift based on minimum position across all atoms
-        # This handles any edge cases where atoms might be slightly outside [0, target_region)
-        shift = np.zeros(3)
-        for dim in range(3):
-            min_pos = mol_atoms[:, dim].min()
-            max_pos = mol_atoms[:, dim].max()
+            # Calculate shift based on minimum position across all atoms
+            # This handles any edge cases where atoms might be slightly outside [0, target_region)
+            shift = np.zeros(3)
+            for dim in range(3):
+                min_pos = mol_atoms[:, dim].min()
+                max_pos = mol_atoms[:, dim].max()
+                
+                # Only shift if atoms are actually outside [0, target_region)
+                if min_pos < 0:
+                    # Shift up to bring minimum into range
+                    shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
+                elif max_pos >= target_region[dim]:
+                    # Shift down to bring maximum into range
+                    shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
+
+            # Apply shift to all atoms in the molecule
+            shifted = mol_atoms + shift
             
-            # Only shift if atoms are actually outside [0, target_region)
-            if min_pos < 0:
-                # Shift up to bring minimum into range
-                shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
-            elif max_pos >= target_region[dim]:
-                # Shift down to bring maximum into range
-                shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
-
-        # Apply shift to all atoms in the molecule
-        shifted = mol_atoms + shift
-        
-        # Second pass: ensure all atoms are within [0, target_region)
-        # This handles edge cases where the first shift pushed atoms out the other side
-        # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
-        for dim in range(3):
-            min_pos = shifted[:, dim].min()
-            max_pos = shifted[:, dim].max()
+            # Second pass: ensure all atoms are within [0, target_region)
+            # This handles edge cases where the first shift pushed atoms out the other side
+            # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
+            for dim in range(3):
+                min_pos = shifted[:, dim].min()
+                max_pos = shifted[:, dim].max()
+                
+                if min_pos < 0:
+                    # Atoms are still negative after first shift - shift up by one box
+                    shifted[:, dim] += target_region[dim]
+                elif max_pos >= target_region[dim]:
+                    # Atoms are too high after first shift - shift down by one box
+                    shifted[:, dim] -= target_region[dim]
             
-            if min_pos < 0:
-                # Atoms are still negative after first shift - shift up by one box
-                shifted[:, dim] += target_region[dim]
-            elif max_pos >= target_region[dim]:
-                # Atoms are too high after first shift - shift down by one box
-                shifted[:, dim] -= target_region[dim]
-        
-        tiled_positions[start_atom:end_atom] = shifted
+            tiled_positions[start_atom:end_atom] = shifted
 
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
