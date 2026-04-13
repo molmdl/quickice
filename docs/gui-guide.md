@@ -218,12 +218,12 @@ Click "Refresh candidates" to sync after generating new candidates in Tab 1.
 
 ### Phase Compatibility
 
-All supported ice phases work with interface construction. The following phases are compatible:
+All supported ice phases except Ice II work with interface construction. The following phases are compatible:
 
 - **Ice Ih, Ice Ic, Ice III, Ice VI, Ice VII, Ice VIII** — Native orthogonal cells
-- **Ice II, Ice V** — Triclinic cells, automatically transformed to orthogonal for interface generation
+- **Ice V** — Monoclinic cell, automatically transformed to orthogonal for interface generation
 
-Triclinic phases (Ice II, Ice V) are transformed using the algorithm from Matsumoto et al. (2022), which converts rhombohedral/monoclinic cells to orthogonal representation. A status message appears in the interface log when transformation occurs.
+Ice II (rhombohedral) is not supported for interface generation — it cannot form orthogonal supercells due to a fundamental crystallographic constraint. A status message appears in the interface log when transformation occurs for Ice V.
 
 ### Interface Modes
 
@@ -280,11 +280,11 @@ Tab 2 uses phase-distinct coloring to distinguish ice and water:
 
 ### Transformation Indicator
 
-When generating interfaces with triclinic ice phases (Ice II, Ice V, Ice VI), you'll see a transformation message in the interface log:
+When generating interfaces with Ice V (monoclinic), you'll see a transformation message in the interface log:
 
 ```
-Candidate: ice_ii (384 molecules)
-Transformation: Cell transformed from rhombohedral to orthogonal (6x multiplier)
+Candidate: ice_v (384 molecules)
+Transformation: Cell transformed from monoclinic to orthogonal
 ```
 
 This indicates that the ice cell was automatically converted for interface generation. The transformed structure is fully compatible with GROMACS simulations.
