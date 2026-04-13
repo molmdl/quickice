@@ -121,7 +121,11 @@ The tool will:
 
 Example output:
 
-Terminal STDOUT:
+**Standard mode**
+
+See [sample_output/cli_ice](sample_output/cli_ice) for the command and files generated with this example (ice Ih at 273K and 1atm).
+
+STDOUT: 
 ```
 QuickIce - Ice structure generation
 
@@ -142,11 +146,11 @@ Ranking scores (lower combined = better):
 ----------------------------------------------------------------------
 Rank  Energy      Density     Diversity   Combined    
 ----------------------------------------------------------------------
-1     0.0813      0.0008      1.0000      1.0000      
-2     0.0815      0.0008      1.0000      1.0956      
-3     0.0816      0.0008      1.0000      1.1764      
-4     0.0817      0.0008      1.0000      1.2007      
-5     0.0817      0.0008      1.0000      1.2073      
+1     0.0800      0.0008      1.0000      1.0000      
+2     0.0802      0.0008      1.0000      1.0542      
+3     0.0805      0.0008      1.0000      1.1317      
+4     0.0810      0.0008      1.0000      1.2404      
+5     0.0814      0.0008      1.0000      1.3481      
 ----------------------------------------------------------------------
 
 Exported GROMACS files:
@@ -157,23 +161,72 @@ Exported GROMACS files:
   - ice_ih_5.gro
   - ice_ih_6.gro
   - ... and 6 more
-  Directory: sample_output
+  Directory: sample_output/cli_ice
 
 Output:
   PDB files: 10
-  Directory: sample_output
+  Directory: sample_output/cli_ice
     - ice_candidate_01.pdb
     - ice_candidate_02.pdb
     - ice_candidate_03.pdb
     - ... and 7 more
-  Phase diagram: sample_output/phase_diagram.png
+  Phase diagram: sample_output/cli_ice/phase_diagram.png
 
 Validation:
   Valid structures: 10/10
 ```
 
-See [sample_output](sample_output) for files generated with this example (ice Ih at 273K and 1atm).
+**Interface mode**
 
+See [sample_output/cli_interface](sample_output/cli_interface) for the command and files generated with this example (ice Ih at 273K and 1atm).
+
+STDOUT: 
+```
+QuickIce - Ice structure generation
+
+Temperature: 273.0K
+Pressure: 0.1 MPa
+Molecules: 216
+
+Phase: Ice Ih (ice_ih)
+Density: 0.9167 g/cm³
+
+
+Starting slab interface generation...
+  Box: 4.00 x 4.00 x 8.00 nm
+  Seed: 42
+  Ice thickness: 2.00 nm
+  Water thickness: 4.00 nm
+
+Generating ice candidate (ice_ih)...
+  Generated 432 molecules
+
+Assembling interface...
+  Ice molecules: 3384
+  Water molecules: 2535
+
+==================================================
+Generated slab interface structure
+  Ice molecules: 3384
+  Water molecules: 2535
+  Total molecules: 5919
+  Box: 4.70 x 4.42 x 9.43 nm
+
+Periodicity adjustments (for continuous images):
+  box_x: 4.000 → 4.699 nm (2 cells)
+  box_y: 4.000 → 4.417 nm (2 cells)
+  ice_thickness: 2.000 → 2.714 nm (1 cells)
+  box_z: 8.000 → 9.428 nm (auto-adjusted)
+==================================================
+
+Interface generation complete.
+
+Exported GROMACS files:
+  - interface_ice_ih_slab.gro
+  - interface_ice_ih_slab.top
+  - tip4p_ice.itp
+  Directory: sample_output/cli_interface
+```
 
 ### CLI Options
 
