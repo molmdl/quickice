@@ -124,9 +124,10 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
             f"\n\nIce II has a rhombohedral crystal structure that cannot be transformed to an orthogonal supercell "
             f"(this is a fundamental crystallographic constraint). When forced into an orthogonal simulation box, "
             f"Ice II develops triangular gaps at the corners, leaving significant empty regions. "
-            f"\n\nSupported triclinic phases:\n"
-            f"  • Ice V: Works correctly (rectangular XY projection)\n"
-            f"  • Ice VI: Works correctly\n"
+            f"\n\nSupported phases for interfaces:\n"
+            f"  • Ice V (monoclinic): Works correctly (rectangular XY projection)\n"
+            f"  • Ice VI (tetragonal): Works correctly (already orthogonal)\n"
+            f"  • All other orthogonal phases (Ice Ih, Ic, III, VII, VIII): Work correctly\n"
             f"\nFor Ice II interfaces, consider using a different phase or contact support for future triclinic box output.",
             mode=config.mode
         )
