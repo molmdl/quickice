@@ -383,9 +383,83 @@ def tile_structure(
 
     # Vectorized tiling: generate all offsets at once and use broadcasting
     # Create grid of indices for all tile positions
-    ix_vals = np.arange(nx)
-    iy_vals = np.arange(ny)
-    iz_vals = np.arange(nz)
+    if is_triclinic and cell_matrix is not None:
+        # For triclinic cells, we need to compute index ranges that properly
+        # cover the target region. The issue is that triclinic unit cells
+        # can have atoms at negative coordinates, and lattice vectors can
+        # have negative components, so we need to find the correct index range.
+        
+        lattice_a = cell_matrix[0]  # First lattice vector
+        lattice_b = cell_matrix[1]  # Second lattice vector
+        lattice_c = cell_matrix[2]  # Third lattice vector
+        
+        # Find the bounding box of input positions
+        pos_min = positions.min(axis=0)
+        pos_max = positions.max(axis=0)
+        
+        # We need offsets such that:
+        # offset + pos_min >= 0 (atoms don't go negative)
+        # offset + pos_max < target_region (atoms stay inside)
+        # 
+        # For triclinic cells with mixed lattice vector signs,
+        # we need to search for the correct index ranges.
+        
+        # Strategy: compute a conservative range and let filtering do the rest
+        # The offset range must span at least [target - pos_max, -pos_min]
+        # to ensure coverage of [0, target]
+        
+        # For each dimension, estimate the required index range
+        # This is a heuristic that may over-tile but ensures coverage
+        
+        # First, find how many tiles are needed in each lattice direction
+        # to cover the extent of the target region
+        extent_a = np.abs(lattice_a)
+        extent_b = np.abs(lattice_b)
+        extent_c = np.abs(lattice_c)
+        
+        # Minimum step size along each axis (conservative)
+        min_step_x = min(v for v in [extent_a[0], extent_b[0], extent_c[0]] if v > 1e-10)
+        min_step_y = min(v for v in [extent_a[1], extent_b[1], extent_c[1]] if v > 1e-10)
+        min_step_z = min(v for v in [extent_a[2], extent_b[2], extent_c[2]] if v > 1e-10)
+        
+        # Range needed: from -pos_min to target - pos_min
+        offset_min_needed = -pos_max  # To shift min position to >= 0
+        offset_max_needed = target_region - pos_min  # To keep max position < target
+        
+        # Calculate index ranges that span the needed offset range
+        # For each lattice direction, estimate min and max index
+        
+        # Use inverse cell matrix to convert offset bounds to fractional coords
+        inv_cell = np.linalg.inv(cell_matrix)
+        
+        # Fractional coords of offset bounds
+        frac_min = offset_min_needed @ inv_cell.T
+        frac_max = offset_max_needed @ inv_cell.T
+        
+        # Conservative: use floor of min and ceil of max for each direction
+        ix_min = int(np.floor(frac_min[0])) - 1  # -1 for safety margin
+        ix_max = int(np.ceil(frac_max[0])) + 1   # +1 for safety margin
+        iy_min = int(np.floor(frac_min[1])) - 1
+        iy_max = int(np.ceil(frac_max[1])) + 1
+        iz_min = int(np.floor(frac_min[2])) - 1
+        iz_max = int(np.ceil(frac_max[2])) + 1
+        
+        # Ensure at least 1 tile in each direction
+        if ix_max <= ix_min:
+            ix_min, ix_max = 0, 1
+        if iy_max <= iy_min:
+            iy_min, iy_max = 0, 1
+        if iz_max <= iz_min:
+            iz_min, iz_max = 0, 1
+        
+        ix_vals = np.arange(ix_min, ix_max)
+        iy_vals = np.arange(iy_min, iy_max)
+        iz_vals = np.arange(iz_min, iz_max)
+    else:
+        # Orthogonal: use standard [0, n) index range
+        ix_vals = np.arange(nx)
+        iy_vals = np.arange(ny)
+        iz_vals = np.arange(nz)
     
     # Generate all (ix, iy, iz) combinations using meshgrid
     ix_grid, iy_grid, iz_grid = np.meshgrid(ix_vals, iy_vals, iz_vals, indexing='ij')
