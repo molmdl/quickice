@@ -211,7 +211,14 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     ice_atom_count = len(combined_ice_positions)
     water_atom_count = len(trimmed_water_positions)
 
-    # Build cell matrix (using adjusted dimensions)
+    # Build cell matrix
+    # For triclinic phases in slab mode, we output orthogonal cells for now.
+    # This is because:
+    # 1. Ice atoms are positioned using triclinic lattice vectors
+    # 2. Water atoms are positioned in orthogonal space (between ice layers)
+    # 3. These two geometries are fundamentally incompatible for a single triclinic cell
+    #
+    # Future improvement: Transform all atoms to a consistent triclinic space
     cell = np.diag([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Build report (gmx solvate convention: molecules present, not removed)

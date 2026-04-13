@@ -1,7 +1,10 @@
 """End-to-end tests for triclinic ice phase interface generation.
 
-These tests verify that Ice II and Ice V phases can generate
-interfaces after transformation.
+Ice II (rhombohedral, space group R-3) is NOT supported for interface generation
+because it cannot have an orthogonal supercell - this is a fundamental crystallographic
+constraint. These tests verify that Ice II is properly rejected with a clear error.
+
+Ice V interfaces work correctly with rectangular XY projections.
 """
 
 import numpy as np
@@ -11,6 +14,7 @@ from quickice.phase_mapping import lookup_phase
 from quickice.structure_generation import generate_candidates
 from quickice.structure_generation.types import InterfaceConfig
 from quickice.structure_generation.interface_builder import generate_interface
+from quickice.structure_generation.errors import InterfaceGenerationError
 
 
 class TestIceIIInterface:
@@ -30,7 +34,7 @@ class TestIceIIInterface:
         return result.candidates[0]
 
     def test_ice_ii_slab_interface(self, ice_ii_candidate):
-        """Ice II should work in slab mode."""
+        """Ice II should be rejected in slab mode with clear error message."""
         config = InterfaceConfig(
             mode="slab",
             box_x=3.0,
@@ -41,14 +45,15 @@ class TestIceIIInterface:
             water_thickness=4.0,
         )
 
-        interface = generate_interface(ice_ii_candidate, config)
+        with pytest.raises(InterfaceGenerationError) as exc_info:
+            generate_interface(ice_ii_candidate, config)
 
-        assert interface.ice_nmolecules > 0
-        assert interface.water_nmolecules > 0
-        assert len(interface.positions) > 0
+        assert "Ice II" in str(exc_info.value)
+        assert "rhombohedral" in str(exc_info.value).lower()
+        assert "not supported" in str(exc_info.value).lower()
 
     def test_ice_ii_piece_interface(self, ice_ii_candidate):
-        """Ice II should work in piece mode."""
+        """Ice II should be rejected in piece mode with clear error message."""
         # Get ice dimensions using bounding box extent
         cell = ice_ii_candidate.cell
         corners = np.array([
@@ -66,13 +71,15 @@ class TestIceIIInterface:
             seed=42,
         )
 
-        interface = generate_interface(ice_ii_candidate, config)
+        with pytest.raises(InterfaceGenerationError) as exc_info:
+            generate_interface(ice_ii_candidate, config)
 
-        assert interface.ice_nmolecules > 0
-        assert interface.water_nmolecules > 0
+        assert "Ice II" in str(exc_info.value)
+        assert "rhombohedral" in str(exc_info.value).lower()
+        assert "not supported" in str(exc_info.value).lower()
 
     def test_ice_ii_pocket_interface(self, ice_ii_candidate):
-        """Ice II should work in pocket mode."""
+        """Ice II should be rejected in pocket mode with clear error message."""
         config = InterfaceConfig(
             mode="pocket",
             box_x=4.0,
@@ -83,10 +90,12 @@ class TestIceIIInterface:
             pocket_shape="sphere",
         )
 
-        interface = generate_interface(ice_ii_candidate, config)
+        with pytest.raises(InterfaceGenerationError) as exc_info:
+            generate_interface(ice_ii_candidate, config)
 
-        assert interface.ice_nmolecules > 0
-        assert interface.water_nmolecules > 0
+        assert "Ice II" in str(exc_info.value)
+        assert "rhombohedral" in str(exc_info.value).lower()
+        assert "not supported" in str(exc_info.value).lower()
 
 
 class TestIceVInterface:

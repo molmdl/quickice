@@ -78,6 +78,35 @@ def is_cell_orthogonal(cell: np.ndarray, angle_tol: float = 0.1) -> bool:
     )
 
 
+def compute_scaled_cell(
+    cell: np.ndarray,
+    nx: int,
+    ny: int,
+    nz: int,
+) -> np.ndarray:
+    """Compute a scaled cell matrix for a supercell.
+    
+    For triclinic cells, this creates a cell matrix where each lattice vector
+    is scaled by the corresponding tile count. For orthogonal cells, this
+    returns a diagonal matrix with the scaled dimensions.
+    
+    Args:
+        cell: (3, 3) cell vectors as ROW vectors [a, b, c]
+        nx: Number of tiles in X direction (along lattice vector a)
+        ny: Number of tiles in Y direction (along lattice vector b)
+        nz: Number of tiles in Z direction (along lattice vector c)
+    
+    Returns:
+        (3, 3) scaled cell matrix
+    """
+    # Scale each lattice vector by the tile count
+    scaled_a = nx * cell[0]
+    scaled_b = ny * cell[1]
+    scaled_c = nz * cell[2]
+    
+    return np.array([scaled_a, scaled_b, scaled_c])
+
+
 def wrap_positions_triclinic(
     positions: np.ndarray,
     cell: np.ndarray,

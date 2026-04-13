@@ -116,6 +116,21 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
             mode=config.mode
         )
 
+    # Check for Ice II - rhombohedral phase that cannot have orthogonal supercell
+    # Ice II has both b[0] < 0 and c[0] < 0, creating triangular gaps when forced into orthogonal box
+    if candidate.phase_id == "ice_ii":
+        raise InterfaceGenerationError(
+            f"[{config.mode}] Ice II (rhombohedral, space group R-3) is not supported for interface generation. "
+            f"\n\nIce II has a rhombohedral crystal structure that cannot be transformed to an orthogonal supercell "
+            f"(this is a fundamental crystallographic constraint). When forced into an orthogonal simulation box, "
+            f"Ice II develops triangular gaps at the corners, leaving significant empty regions. "
+            f"\n\nSupported triclinic phases:\n"
+            f"  • Ice V: Works correctly (rectangular XY projection)\n"
+            f"  • Ice VI: Works correctly\n"
+            f"\nFor Ice II interfaces, consider using a different phase or contact support for future triclinic box output.",
+            mode=config.mode
+        )
+
     # Mode-specific checks
     if config.mode == "slab":
         # Validate box_z matches ice + water thicknesses

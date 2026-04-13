@@ -230,9 +230,8 @@ class TestCLIInterfaceGeneration:
             assert len(result['box_dimensions']) >= 3, "Missing box dimensions"
     
     def test_cli_piece_interface_ice_ii(self):
-        """Piece mode with Ice II (triclinic) should work."""
+        """Piece mode with Ice II should fail with clear error message."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Use larger box to accommodate transformed Ice II (which can be ~7nm after 6x multiplier)
             returncode, stdout, stderr = run_cli(
                 "--interface",
                 "--mode", "piece",
@@ -243,17 +242,14 @@ class TestCLIInterfaceGeneration:
                 "--box-z", "10.0",
                 "--output", tmpdir
             )
-            
-            # Verify return code
-            assert returncode == 0, f"CLI failed with stderr: {stderr}"
-            
-            # Verify .gro file was created
-            gro_files = list(Path(tmpdir).glob("*.gro"))
-            assert len(gro_files) == 1, f"Expected 1 .gro file, found {len(gro_files)}"
-            
-            # Validate the .gro file
-            result = validate_gro_file(gro_files[0])
-            assert result['valid'], f"GRO validation errors: {result['errors']}"
+
+            # Should fail with non-zero return code
+            assert returncode != 0, "Ice II should be rejected"
+
+            # Error message should be informative
+            combined_output = stdout + stderr
+            assert "Ice II" in combined_output
+            assert "rhombohedral" in combined_output.lower() or "not supported" in combined_output.lower()
     
     def test_cli_pocket_interface_ice_v(self):
         """Pocket mode with Ice V (triclinic) should work."""
@@ -382,15 +378,14 @@ class TestGROFileValidation:
             assert result['box_dimensions'][2] > 0, f"Box Z must be positive: {result['box_dimensions'][2]}"
     
     def test_gro_triclinic_box_format(self):
-        """Triclinic cells should have 9 box values."""
+        """Triclinic cells should have 9 box values (Ice V is supported triclinic phase)."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Generate Ice II interface (transformed triclinic)
-            # Use slab mode which has smaller ice dimensions than piece mode
+            # Generate Ice V interface (supported triclinic phase)
             returncode, stdout, stderr = run_cli(
                 "--interface",
                 "--mode", "slab",
-                "--temperature", "238",
-                "--pressure", "300",
+                "--temperature", "253",
+                "--pressure", "500",
                 "--box-x", "3.0",
                 "--box-y", "3.0",
                 "--box-z", "8.0",
@@ -398,12 +393,12 @@ class TestGROFileValidation:
                 "--water-thickness", "4.0",
                 "--output", tmpdir
             )
-            
+
             assert returncode == 0
-            
+
             gro_files = list(Path(tmpdir).glob("*.gro"))
             result = validate_gro_file(gro_files[0])
-            
+
             # Triclinic boxes have 9 values (v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y))
             assert len(result['box_dimensions']) == 9, \
                 f"Expected 9 box values for triclinic cell, got {len(result['box_dimensions'])}"
@@ -412,10 +407,9 @@ class TestGROFileValidation:
 class TestTransformedTriclinicCells:
     """Test cases for triclinic phase interface generation."""
     
-    def test_piece_mode_accepts_transformed_ice_ii(self):
-        """Piece mode should work with Ice II after transformation."""
+    def test_piece_mode_rejects_ice_ii(self):
+        """Piece mode should reject Ice II with clear error message."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Use larger box to accommodate transformed Ice II
             returncode, stdout, stderr = run_cli(
                 "--interface",
                 "--mode", "piece",
@@ -426,14 +420,14 @@ class TestTransformedTriclinicCells:
                 "--box-z", "10.0",
                 "--output", tmpdir
             )
-            
-            assert returncode == 0, f"Piece mode failed for Ice II: {stderr}"
-            
-            # Verify output
-            assert "Ice II" in stdout or "ice_ii" in stdout.lower()
-            
-            gro_files = list(Path(tmpdir).glob("*.gro"))
-            assert len(gro_files) == 1
+
+            # Should fail with non-zero return code
+            assert returncode != 0, "Ice II should be rejected"
+
+            # Error message should be informative
+            combined_output = stdout + stderr
+            assert "Ice II" in combined_output
+            assert "rhombohedral" in combined_output.lower() or "not supported" in combined_output.lower()
     
     def test_piece_mode_accepts_transformed_ice_v(self):
         """Piece mode should work with Ice V after transformation."""
@@ -462,14 +456,14 @@ class TestTransformedTriclinicCells:
             assert len(gro_files) == 1
     
     def test_gromacs_export_transformed_cell(self):
-        """GROMACS export should work for transformed cells."""
+        """GROMACS export should work for transformed triclinic cells (Ice V)."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Generate Ice II interface
+            # Generate Ice V interface (supported triclinic phase)
             returncode, stdout, stderr = run_cli(
                 "--interface",
                 "--mode", "slab",
-                "--temperature", "238",
-                "--pressure", "300",
+                "--temperature", "253",
+                "--pressure", "500",
                 "--box-x", "3.0",
                 "--box-y", "3.0",
                 "--box-z", "8.0",
@@ -477,13 +471,13 @@ class TestTransformedTriclinicCells:
                 "--water-thickness", "4.0",
                 "--output", tmpdir
             )
-            
+
             assert returncode == 0
-            
+
             # Validate the .gro file
             gro_files = list(Path(tmpdir).glob("*.gro"))
             result = validate_gro_file(gro_files[0])
-            
+
             assert result['valid'], f"GRO validation errors: {result['errors']}"
             assert result['atom_count'] > 0, "No atoms in exported file"
             assert len(result['box_dimensions']) > 0, "Missing box dimensions"
