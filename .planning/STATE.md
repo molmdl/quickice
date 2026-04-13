@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Gap Filling |
 | Phase | 24 of 27 (triclinic-transformation) |
-| Plan | 5 of 7 in current phase |
+| Plan | 6 of 7 in current phase |
 | Status | In progress |
-| Last activity | 2026-04-13 — Completed 24-05-PLAN.md |
+| Last activity | 2026-04-13 — Completed 24-06-PLAN.md |
 
 **Progress:** ██████████ 100% (v3.5 milestone complete) → Gap filling in progress
 
@@ -155,6 +155,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Bounding box for cell dimensions | corners.max(axis=0) - corners.min(axis=0) | Implemented (24-04) |
 | Remove original_positions/original_cell | No longer needed after transformation removal | Implemented (24-05) |
 | Native triclinic in Candidate | Candidate stores native structure, not transformed | Implemented (24-05) |
+| cell_matrix parameter for tile_structure | Enables lattice-vector tiling for triclinic cells | Implemented (24-06) |
+| is_cell_orthogonal() detection | 0.1° tolerance for triclinic identification | Implemented (24-06) |
+| wrap_positions_triclinic() | Fractional coordinate wrapping preserves molecular integrity | Implemented (24-06) |
+| Lattice vector tiling offsets | ix*a + iy*b + iz*c instead of coordinate axes | Implemented (24-06) |
 
 ### Research Findings (v3.5)
 
@@ -195,10 +199,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-13T06:52:47Z
-**Completed:** Phase 24 Plan 05: Remove original_positions/original_cell from Candidate
-**Next:** Phase 24 Plan 06: (check plan directory)
+**Last session:** 2026-04-13T07:07:59Z
+**Completed:** Phase 24 Plan 06: Triclinic Tiler Update
+**Next:** Phase 24 Plan 07: (check plan directory)
 
 ---
 
-*State updated: 2026-04-13 — Phase 24 Plan 05 complete, Candidate simplified*
+*State updated: 2026-04-13 — Phase 24 Plan 06 complete, triclinic tiling implemented*
