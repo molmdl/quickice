@@ -22,7 +22,6 @@ from quickice.structure_generation.overlap_resolver import (
     filter_atom_names,
 )
 from quickice.phase_mapping.water_density import water_density_gcm3
-from quickice.structure_generation.transformer import TriclinicTransformer
 
 
 def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
@@ -49,12 +48,16 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     Raises:
         InterfaceGenerationError: If pocket_shape is not valid or if generation fails.
     """
-    # Get ice cell dimensions using the actual cell vector LENGTHS
-    # This is critical for transformed orthogonal cells that are rotated in space.
-    # For such cells, get_cell_extent() returns the bounding box (larger),
-    # but we need the actual vector lengths for correct tiling.
-    transformer = TriclinicTransformer()
-    ice_cell_dims = transformer.get_cell_dimensions(candidate.cell)
+    # Get ice cell dimensions for tiling
+    # For orthogonal cells, use diagonal directly
+    # For triclinic cells, use bounding box extent
+    cell = candidate.cell
+    corners = np.array([
+        [0, 0, 0], cell[0], cell[1], cell[2],
+        cell[0] + cell[1], cell[0] + cell[2],
+        cell[1] + cell[2], cell[0] + cell[1] + cell[2]
+    ])
+    ice_cell_dims = corners.max(axis=0) - corners.min(axis=0)
 
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions to multiples of ice unit cell

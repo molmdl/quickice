@@ -16,7 +16,6 @@ from quickice.structure_generation.overlap_resolver import (
     filter_atom_names,
 )
 from quickice.phase_mapping.water_density import water_density_gcm3
-from quickice.structure_generation.transformer import TriclinicTransformer
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
@@ -42,12 +41,16 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     Raises:
         InterfaceGenerationError: If box is smaller than ice piece or generation fails.
     """
-    # Get ice piece dimensions using the actual cell vector LENGTHS
-    # This is critical for transformed orthogonal cells that are rotated in space.
-    # For such cells, get_cell_extent() returns the bounding box (larger),
-    # but we need the actual vector lengths for correct positioning.
-    transformer = TriclinicTransformer()
-    ice_dims = transformer.get_cell_dimensions(candidate.cell)
+    # Get ice piece dimensions for positioning
+    # For orthogonal cells, use diagonal directly
+    # For triclinic cells, use bounding box extent
+    cell = candidate.cell
+    corners = np.array([
+        [0, 0, 0], cell[0], cell[1], cell[2],
+        cell[0] + cell[1], cell[0] + cell[2],
+        cell[1] + cell[2], cell[0] + cell[1] + cell[2]
+    ])
+    ice_dims = corners.max(axis=0) - corners.min(axis=0)
 
     # Validate: box dimensions must be larger than ice piece
     if config.box_x <= ice_dims[0]:
