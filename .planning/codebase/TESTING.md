@@ -1,30 +1,33 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-04-11
+**Analysis Date:** 2026-04-13
 
 ## Test Framework
 
 **Runner:**
-- pytest 9.0.2 (per `requirements-dev.txt` specifies `pytest>=9.0.0`)
+- pytest >=9.0.0 (per `requirements-dev.txt`)
 - No `conftest.py` detected at project root or test directories
 - No `pytest.ini`, `pyproject.toml`, or `setup.cfg` pytest config detected
 - All pytest configuration uses defaults
+- 307 tests collected across 16 test files
 
 **Assertion Library:**
 - `pytest` native `assert` statements for all general assertions
 - `numpy.testing.assert_array_equal` for exact NumPy array comparisons
 - `numpy.testing.assert_allclose` for floating-point tolerance comparisons
+- `pytest.approx()` for approximate floating-point comparisons in density tests
 - No `unittest.TestCase` usage anywhere — all tests are pytest-style
 
 **Run Commands:**
 ```bash
-pytest                          # Run all tests
-pytest tests/test_validators.py # Run specific test file
-pytest tests/test_ranking.py -k "test_energy_score"  # Run tests matching pattern
+pytest                                    # Run all tests
+pytest tests/test_validators.py           # Run specific test file
+pytest tests/test_ranking.py -k "energy" # Run tests matching pattern
 pytest tests/test_phase_mapping.py::TestLookupPhaseIceIh  # Run specific class
-pytest -x                       # Stop on first failure
-pytest -v                       # Verbose output
-pytest tests/test_ranking.py    # Run ranking tests only
+pytest -x                                 # Stop on first failure
+pytest -v                                 # Verbose output
+pytest tests/test_output/                  # Run output tests only
+pytest --co -q                             # List all tests without running
 ```
 
 ## Test File Organization
@@ -38,26 +41,31 @@ pytest tests/test_ranking.py    # Run ranking tests only
 - Test files: `test_<module_name>.py` — e.g., `test_validators.py`, `test_ranking.py`, `test_phase_mapping.py`
 - Test classes: `Test<FeatureName>` — e.g., `TestValidateTemperature`, `TestEnergyScore`, `TestLookupPhaseIceIh`
 - Test methods: `test_<behavior_description>` — e.g., `test_accepts_valid_minimum_boundary`, `test_rejects_negative_temperature`
+- Issue-tracking tests include issue IDs: `test_med03_minimum_box_size.py`
 
 **Structure:**
 ```
 tests/
-├── __init__.py                           # Package marker ("QuickIce tests.")
+├── __init__.py                           # Package marker
 ├── test_validators.py                    # CLI input validators (153 lines)
 ├── test_cli_integration.py               # Full CLI subprocess tests (292 lines)
-├── test_phase_mapping.py                 # Phase mapping + CLI integration (617 lines)
+├── test_phase_mapping.py                 # Phase mapping + CLI integration (618 lines)
 ├── test_structure_generation.py          # Core generation + mapper + types (625 lines)
-├── test_ranking.py                       # Scoring + ranking + normalization (691 lines)
-├── test_pbc_hbonds.py                    # PBC-aware hydrogen bond detection
-├── test_atom_ordering_validation.py      # VTK atom ordering validation
+├── test_ranking.py                        # Scoring + ranking + normalization (691 lines)
+├── test_water_density.py                 # IAPWS-95 water density (176 lines)
+├── test_ice_ih_density.py                # IAPWS Ice Ih density (174 lines)
+├── test_pbc_hbonds.py                    # PBC-aware hydrogen bond detection (200 lines)
+├── test_atom_ordering_validation.py      # VTK atom ordering validation (201 lines)
 ├── test_atom_names_filtering.py          # Overlap resolver atom name filtering (199 lines)
-├── test_interface_ordering_validation.py # Interface atom ordering validation (192 lines)
-├── test_piece_mode_validation.py         # Piece mode water layer validation (164 lines)
+├── test_interface_ordering_validation.py # Interface atom ordering validation
+├── test_piece_mode_validation.py         # Piece mode water layer validation
 ├── test_med03_minimum_box_size.py        # Minimum box size validation
+├── test_triclinic_interface.py           # Triclinic cell interface tests
+├── test_integration_v35.py               # v3.5 comprehensive integration tests (513 lines)
 └── test_output/
-    ├── __init__.py                       # Empty
+    ├── __init__.py                        # Empty
     ├── test_pdb_writer.py                # PDB format output tests (482 lines)
-    └── test_validator.py                 # Structure validation (spglib, overlap)
+    └── test_validator.py                 # Structure validation (spglib, overlap) (323 lines)
 ```
 
 ## Test Structure
@@ -88,6 +96,7 @@ class TestValidateTemperature:
 - Arrange-Act-Assert pattern used consistently
 - Boundary value testing: tests for minimum, maximum, and just-outside-boundary values
 - Error message content verification: `assert "temperature" in str(exc_info.value).lower()`
+- Section separators with `# ============` comment blocks in larger test files (e.g., `test_ranking.py`)
 
 **Setup/Teardown:**
 - `pytest.fixture` for shared test data creation
@@ -106,6 +115,7 @@ class TestValidateTemperature:
 - Structure generation tests call real GenIce generation (no mocking of GenIce)
 - Ranking tests create `Candidate` objects with known positions for deterministic scoring
 - Phase mapping tests call real `lookup_phase()` with no stubs
+- Caching tests verify `lru_cache` behavior by checking `cache_info()`
 
 **What to Mock:**
 - NOT MOCKED: `lookup_phase()`, `generate_candidates()`, `rank_candidates()` — tested with real calls
@@ -166,6 +176,10 @@ def simple_candidate():
 - `triclinic_candidate` — data with non-orthogonal cell for angle testing
 - `ranking_result` — full `RankingResult` with 12 candidates for output testing
 - `phase_info_ice_ih` — dict matching `lookup_phase()` output format
+- `ice_ih_candidate` — candidate with hexagonal cell for space group testing
+- `overlapping_candidate` — candidate with atom overlaps for overlap detection
+- `pbc_overlap_candidate` — candidate with overlaps across PBC boundary
+- `well_spaced_candidate` — candidate with no overlaps (negative control)
 
 **Factory Patterns:**
 - Direct `Candidate()` construction with known `numpy` arrays
@@ -184,11 +198,12 @@ pytest --cov=quickice --cov-report=term-missing  # Would need pytest-cov install
 **Coverage Gaps:**
 - GUI code (`quickice/gui/`) has NO direct tests — GUI testing requires Qt display environment
 - `quickice/output/phase_diagram.py` — no direct unit tests
-- `quickice/structure_generation/modes/` (slab.py, pocket.py, piece.py) — no direct unit tests
+- `quickice/structure_generation/modes/` (`slab.py`, `pocket.py`, `piece.py`) — no direct unit tests
 - `quickice/structure_generation/water_filler.py` — no direct unit tests
 - `quickice/output/gromacs_writer.py` — no direct unit tests
 - `quickice/gui/export.py`, `quickice/gui/vtk_utils.py` — tested indirectly via `test_atom_ordering_validation.py` and `test_pbc_hbonds.py`
-- `quickice/structure_generation/overlap_resolver.py` — tested via `test_atom_names_filtering.py` and `test_pbc_hbonds.py`
+- `quickice/structure_generation/overlap_resolver.py` — tested via `test_atom_names_filtering.py`
+- `quickice/phase_mapping/melting_curves.py`, `quickice/phase_mapping/solid_boundaries.py`, `quickice/phase_mapping/triple_points.py` — tested indirectly through `test_phase_mapping.py`
 
 ## Test Types
 
@@ -198,6 +213,8 @@ pytest --cov=quickice --cov-report=term-missing  # Would need pytest-cov install
 - `test_structure_generation.py` (TestPhaseToGenIceMapping, TestUnitCellMolecules, TestCalculateSupercell, TestCandidateDataclass) — Pure data/computation
 - `test_output/test_validator.py` — Space group and overlap detection
 - `test_atom_names_filtering.py` — Overlap resolver atom name filtering logic
+- `test_water_density.py` — IAPWS-95 water density calculations
+- `test_ice_ih_density.py` — IAPWS Ice Ih density calculations
 
 **Integration Tests:**
 - `test_structure_generation.py` (TestIceStructureGenerator, TestGenerateCandidates) — Tests real GenIce generation
@@ -205,9 +222,12 @@ pytest --cov=quickice --cov-report=term-missing  # Would need pytest-cov install
 - `test_structure_generation.py::TestIntegrationWithPhase2` — Tests lookup + generation pipeline
 - `test_cli_integration.py` — Full CLI subprocess tests with `subprocess.run()`
 - `test_output/test_pdb_writer.py::TestWriteRankedCandidates` — Tests file I/O with temp directories
+- `test_integration_v35.py` — Comprehensive CLI interface generation for all modes + GRO validation
 
 **E2E Tests:**
-- Not formally structured as E2E tests, but `TestCLIIntegration` in `test_phase_mapping.py` and `test_cli_integration.py` serve this purpose by running the full CLI pipeline via subprocess
+- `TestCLIIntegration` in `test_phase_mapping.py` — runs full CLI pipeline via subprocess
+- `test_cli_integration.py` — end-to-end CLI with argument parsing, validation, generation, output
+- `test_integration_v35.py` — end-to-end interface generation with GRO file validation
 
 ## Common Patterns
 
@@ -245,6 +265,10 @@ np.testing.assert_array_equal(candidate.positions, positions)
 
 # Floating-point comparison for computed values
 np.testing.assert_allclose(result, [0.0, 0.5, 1.0])
+
+# pytest.approx for reference value comparison
+result = ice_ih_density_gcm3(273.15, 0.101325)
+assert result == pytest.approx(0.91672, abs=0.0001)
 
 # Cell volume range testing
 volume = abs(np.linalg.det(candidate.cell))
@@ -294,11 +318,46 @@ def test_valid_inputs_print_values(self):
     assert "Temperature: 300.0K" in stdout
 ```
 
+**GRO File Validation (custom helper):**
+```python
+# From test_integration_v35.py
+def validate_gro_file(filepath: Path) -> dict:
+    """Validate a GROMACS .gro file."""
+    # Parses title, atom count, coordinates, box vectors
+    # Validates format, coordinate bounds, and structure
+    return {
+        'valid': len(errors) == 0,
+        'atom_count': atom_count,
+        'box_dimensions': box_dimensions,
+        'errors': errors,
+        'coordinates': coordinates
+    }
+```
+
+**Caching Verification:**
+```python
+def test_caching_works(self):
+    """Verify that lru_cache is working for density calculations."""
+    water_density_kgm3.cache_clear()
+    
+    result1 = water_density_kgm3(298.15, 0.101325)
+    info1 = water_density_kgm3.cache_info()
+    assert info1.misses == 1
+    assert info1.hits == 0
+    
+    result2 = water_density_kgm3(298.15, 0.101325)
+    info2 = water_density_kgm3.cache_info()
+    assert info2.hits == 1
+    
+    assert result1 is result2  # Cached result is exact same object
+```
+
 **Phase Mapping Table-Driven Tests:**
 - Tests organized by ice phase region: `TestLookupPhaseIceIh`, `TestLookupPhaseIceVii`, `TestLookupPhaseIceVi`, `TestLookupPhaseIceIii`, `TestLookupPhaseIceV`, `TestLookupPhaseIceViii`, `TestLookupPhaseIceIi`, `TestLookupPhaseIceXi`, `TestLookupPhaseIceIx`, `TestLookupPhaseIceX`, `TestLookupPhaseIceXv`
 - Each test specifies (T, P) coordinates and expected `phase_id`
 - Tests include physics explanations in docstrings referencing IAPWS triple point data
 - Regression tests for polygon overlap fixes in `TestPolygonOverlapFixes` and `TestCurveBasedPhaseLookup`
+- Curved boundary verification in `TestCurvedBoundaryVerification`
 
 **Requirement-Traceable Tests:**
 - Test class `TestRequirements` maps directly to requirement IDs: `test_RANK_01_energy_ranking`, `test_RANK_02_density_scoring`, `test_RANK_03_diversity_scoring`, `test_RANK_04_combined_score`
@@ -320,10 +379,13 @@ def test_valid_inputs_print_values(self):
 - Infinite energy score: single oxygen molecule (no O-O pairs)
 - All scores equal: normalization returns zeros
 - Triclinic cells: angle calculations for non-orthogonal boxes
+- PBC boundary atoms: overlapping across periodic boundary
+- Invalid molecule indices: out-of-range indices silently ignored
+- Mixed atom name formats: TIP3P + TIP4P mixing detected and rejected
 
 **Async Testing:**
 - Not used — no async code in the project
 
 ---
 
-*Testing analysis: 2026-04-11*
+*Testing analysis: 2026-04-13*
