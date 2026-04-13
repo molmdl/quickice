@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 |-------|-------|
 | Milestone | v3.5 Gap Filling |
 | Phase | 24 of 27 (triclinic-transformation) |
-| Plan | 6 of 7 in current phase |
-| Status | In progress |
-| Last activity | 2026-04-13 — Completed 24-06-PLAN.md |
+| Plan | 7 of 7 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-04-13 — Completed 24-07-PLAN.md |
 
-**Progress:** ██████████ 100% (v3.5 milestone complete) → Gap filling in progress
+**Progress:** ██████████ 100% (Phase 24 complete - all 7 plans executed)
 
 ---
 
