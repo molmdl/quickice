@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | Field | Value |
 |-------|-------|
 | Milestone | v3.5 Gap Filling |
-| Phase | 24 of 27 (triclinic-transformation) |
-| Plan | 7 of 7 in current phase |
+| Phase | 27 of 27 (documentation-update) |
+| Plan | 4 of 4 in current phase |
 | Status | Phase complete |
-| Last activity | 2026-04-13 — Completed 24-07-PLAN.md |
+| Last activity | 2026-04-13 — Completed 27-04-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 24 complete - all 7 plans executed)
+**Progress:** ██████████ 100% (Phase 27 complete - all 4 plans executed)
 
 ---
 
@@ -160,6 +160,9 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 | wrap_positions_triclinic() | Fractional coordinate wrapping preserves molecular integrity | Implemented (24-06) |
 | Lattice vector tiling offsets | ix*a + iy*b + iz*c instead of coordinate axes | Implemented (24-06) |
 | Interface PDB export function | write_interface_pdb_file() for InterfaceStructure with CRYST1 | Implemented (24-07) |
+| Ice II rhombohedral, blocked | Correct crystal system documentation | Implemented (27-04) |
+| Ice V monoclinic, transformable | Correct crystal system documentation | Implemented (27-04) |
+| Ice VI tetragonal, orthogonal | Correct crystal system documentation (NOT triclinic) | Implemented (27-04) |
 
 ### Research Findings (v3.5)
 
@@ -182,8 +185,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ### Known Issues (to investigate)
 
-- Tab 2 transformation indicator display issues (noted by user)
-- Help dialog content issues (noted by user)
+(None - all v3.5 documentation issues resolved)
 
 ---
 
@@ -200,10 +202,10 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 ## Session Continuity
 
-**Last session:** 2026-04-13T07:13:46Z
-**Completed:** Phase 24 Plan 07: Triclinic Export Verification
-**Next:** Phase 24 complete, check ROADMAP for next phase
+**Last session:** 2026-04-13T13:06:03Z
+**Completed:** Phase 27 Plan 04: Fix Crystal System Inaccuracies
+**Next:** v3.5 documentation update complete, ready for release
 
 ---
 
-*State updated: 2026-04-13 — Phase 24 complete, triclinic export verified*
+*State updated: 2026-04-13 — Phase 27 complete, crystal system documentation corrected*
