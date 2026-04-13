@@ -14,7 +14,12 @@ import numpy as np
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
-from quickice.structure_generation.water_filler import tile_structure, fill_region_with_water, round_to_periodicity
+from quickice.structure_generation.water_filler import (
+    tile_structure,
+    fill_region_with_water,
+    round_to_periodicity,
+    get_cell_extent,
+)
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -47,16 +52,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     """
     from quickice.structure_generation.errors import InterfaceGenerationError
 
-    # Get ice cell dimensions for tiling
-    # For orthogonal cells, use diagonal directly
-    # For triclinic cells, use bounding box extent
-    cell = candidate.cell
-    corners = np.array([
-        [0, 0, 0], cell[0], cell[1], cell[2],
-        cell[0] + cell[1], cell[0] + cell[2],
-        cell[1] + cell[2], cell[0] + cell[1] + cell[2]
-    ])
-    ice_cell_dims = corners.max(axis=0) - corners.min(axis=0)
+    # Get ice cell dimensions for tiling (bounding box extent)
+    # Works for both orthogonal and triclinic cells
+    ice_cell_dims = get_cell_extent(candidate.cell)
+    
+    # Store cell matrix for triclinic-aware tiling
+    cell_matrix = candidate.cell
 
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions and ice thickness to multiples of ice unit cell
@@ -88,7 +89,8 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         candidate.positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-        atoms_per_molecule=3  # GenIce ice: O, H, H
+        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
     # Tile ice for top layer: same target region, then shift Z
@@ -96,7 +98,8 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         candidate.positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-        atoms_per_molecule=3  # GenIce ice: O, H, H
+        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
     # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
     top_ice_positions = top_ice_positions.copy()
