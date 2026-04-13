@@ -6,7 +6,7 @@
     "gsd-plan-checker": { "model": "openrouter/minimax/minimax-m2.5" },
     "gsd-phase-researcher": { "model": "openrouter/z-ai/glm-5" },
     "gsd-roadmapper": { "model": "openrouter/minimax/minimax-m2.5" },
-    "gsd-project-researcher": { "model": "openrouter/minimax/minimax-m2.5" },
+    "gsd-project-researcher": { "model": "openrouter/z-ai/glm-5.1" },
     "gsd-research-synthesizer": { "model": "openrouter/z-ai/glm-5.1" },
     "gsd-codebase-mapper": { "model": "openrouter/z-ai/glm-5.1" },
     "gsd-executor": { "model": "openrouter/z-ai/glm-5" },
