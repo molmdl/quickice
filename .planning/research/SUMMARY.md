@@ -1,157 +1,169 @@
 # Project Research Summary
 
-**Project:** QuickIce v3.5 Interface Enhancements
-**Domain:** Scientific visualization / Computational chemistry (ice structure generation)
-**Researched:** 2026-04-12
+**Project:** QuickIce v4.0 Molecule Insertion
+**Domain:** Scientific GUI application — molecular dynamics ice structure generation with hydrate/ion insertion
+**Researched:** 2026-04-14
 **Confidence:** HIGH
 
 ## Executive Summary
 
-QuickIce v3.5 is an incremental feature release for an existing scientific GUI application (PySide6 + VTK + GenIce2) that generates ice crystal structures and ice-water interfaces. The v3.5 release adds four tightly-scoped features: triclinic-to-orthogonal cell transformation (unlocking Ice II, V, VI for interface generation), CLI interface generation (`--interface` flag), water density calculation from T/P via IAPWS, and Ice Ih IAPWS density replacing a hardcoded value. All four features are additive — no core generation logic changes, no new external dependencies, and the existing MVVM architecture accommodates them through three new service modules.
+QuickIce v4.0 adds molecule insertion to an existing MVVM-patterned PySide6/VTK application that already generates ice structures and ice-water interfaces. The key discovery is that **no new external dependencies are needed**: GenIce2 already supports hydrate generation via cage-based guest insertion (`guests` parameter) and the existing `scipy.cKDTree` overlap resolver can be repurposed for ion placement. The two new features — Tab 2 (hydrate generation) and Tab 4 (NaCl/custom molecule insertion into liquid phase) — require entirely new generation pipelines but reuse the existing worker/viewer/export architecture pattern.
 
-The recommended approach is to build in dependency order: density service first (lowest risk, foundational), then triclinic transformation (unblocks interface for non-orthogonal phases), then CLI interface integration (builds on existing patterns), and finally integration/polish. The dominant risk is the triclinic→orthogonal coordinate transformation — an incorrect transformation silently produces structurally invalid crystals that may only fail downstream in GROMACS. This must be validated against known ice phases (Ice II, V) before any other feature depends on it. Secondary risks include IAPWS range violations returning `NaN`, performance regression from uncached density lookups, and breaking existing validation checks in `piece.py` that were specifically designed to reject triclinic cells.
+The recommended approach is a **5-phase build**: (0) fix 4 pre-existing bugs that block v4.0 work, (1) design multi-molecule data structures and extend the GRO parser, (2) build Tab 4 ion insertion first because it reuses the most existing infrastructure (InterfaceStructure, cKDTree, overlap_resolver), (3) build Tab 2 hydrate generation which requires a new GenIce2 API path, and (4) add custom molecule upload and per-type display controls. This ordering minimizes risk by proving the multi-actor viewer and multi-type GROMACS export pattern with the simpler ion insertion feature before tackling hydrates.
+
+The **single biggest risk** is Pitfall #5: the entire codebase assumes uniform `atoms_per_molecule` (3 for ice, 4 for water). Adding ions (1 atom) and guest molecules (variable) breaks every position-array iteration, bond-creation loop, and GROMACS export function. This must be resolved as a data structure design decision before any Tab 2/4 code works. The second major risk is that hydrate generation requires a completely separate pipeline from ice generation — attempting to shoehorn it into Tab 1's flow would create a god class with confusing conditionals.
 
 ## Key Findings
 
 ### Recommended Stack
 
-No new dependencies are required. All four v3.5 features use the existing stack. This is a significant finding — it eliminates supply-chain risk, version conflict risk, and environment setup overhead.
+**No new dependencies required.** All molecule insertion capabilities exist in the current environment (GenIce2 2.2.13.1, scipy 1.17.1, numpy 2.4.3, VTK 9.5.2, PySide6 6.10.2). The implementation is entirely application logic: UI tabs, data flow extensions, GROMACS topology additions, and VTK multi-actor rendering. Five alternatives were evaluated and rejected (RDKit, Open Babel, MDAnalysis/MDTraj, ParmEd, ASE) — each would add 50-200MB of dependency for functionality that existing libraries already provide or that can be built with ~50 lines of Python.
 
-**Core technologies (all existing):**
-- **numpy 2.4.3**: Triclinic→orthogonal transformation — custom implementation using `linalg.norm`, `arccos`, `dot` products; no external crystallography library needed
-- **argparse (stdlib)**: CLI `--interface` extension — matches existing parser pattern in `quickice/cli/parser.py`
-- **iapws 1.5.5**: Water and Ice Ih density — `IAPWS97` class for liquid water, `_Ice` class for Ice Ih; already in `environment.yml`
-- **spglib 2.7.0**: Confirmed NOT suitable for triclinic→orthogonal conversion (provides Niggli/Delaunay reduction only, not orthogonal cell conversion)
+**Core technologies:**
+- **GenIce2 2.2.13.1** — Hydrate lattice generation (CS1/sI, CS2/sII) with `guests` parameter for cage filling; verified working with CH₄ in sI structure
+- **scipy cKDTree** — PBC-aware collision detection for ion placement; existing `detect_overlaps()` function directly reusable
+- **VTK 9.5.2 multi-actor** — Per-molecule-type rendering (one vtkMoleculeMapper + vtkActor per type); verified working in testing
+- **Joung-Cheatham ion parameters** — Standard TIP4P-compatible Na⁺/Cl⁻ parameters for GROMACS export; published values (J. Phys. Chem. B, 2008)
+
+**New bundled data files required:**
+- `quickice/data/ions-na-cl.itp` — Na⁺/Cl⁻ topology (Joung-Cheatham 2008)
+- `quickice/data/ch4.itp` — Methane topology (OPLS-AA)
+- `quickice/data/co2.itp` — Carbon dioxide topology (deferrable to post-MVP)
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Triclinic→orthogonal transformation — currently QuickIce rejects Ice II/V/VI with error; transformation unblocks interface generation for these phases
-- CLI interface generation — users expect full CLI parity with GUI; `--interface` flag with mode/thickness/box parameters
-- Water density from T/P — interface generation needs correct water molecule spacing; static TIP4P template doesn't account for T/P effects
+- Tab 2: Hydrate lattice selection (sI, sII), guest molecule insertion (CH₄, CO₂), supercell sizing
+- Tab 4: NaCl concentration input (mol/L), auto-calculate ion count from liquid volume, random placement with overlap removal
+- Multi-type GROMACS export (.gro + .top + bundled .itp files)
+- Per-molecule-type VTK rendering (VDW for ions, ball-and-stick for guests, lines for water)
+- Cross-tab data flow: Tab 1 → Tab 3 (existing), Tab 3 → Tab 4 (new)
 
 **Should have (competitive):**
-- Ice Ih IAPWS density — replaces hardcoded 0.9167 g/cm³ with temperature-dependent calculation; scientific accuracy improvement, low risk
+- Custom molecule upload (.gro + .itp) for both Tab 2 and Tab 4
+- Per-type visibility/color/style toggles in 3D viewer
+- Electroneutrality validation for ion insertion
+- Liquid volume calculation from InterfaceStructure for accurate concentration
 
-**Defer (post v3.5):**
-- Additional ice phase support beyond GenIce2's current 8
-- Automated interface geometry optimization
-- GROMACS `gmx solvate` integration
+**Defer (post-v4.0):**
+- THF and H₂ guest molecule support (beyond CH₄ and CO₂)
+- Custom ion types beyond NaCl (KCl, MgCl₂)
+- Molecule orientation controls (rotation matrix for custom molecules)
+- In-app documentation viewer
 
 ### Architecture Approach
 
-All new features follow the established service layer pattern: new modules in `structure_generation/` called from the existing ViewModel→Worker pipeline. No changes to core generation logic (`generator.py`), the MVVM signal/slot wiring, or the QThread worker architecture.
+The v4.0 architecture extends the existing MVVM pattern with two new tab pipelines. Each tab has its own Panel (View), Worker (QThread), and generation logic (Domain), following the established pattern. Key architectural decisions: (1) **Separate HydrateStructureGenerator** — not an extension of IceStructureGenerator, because hydrates have fundamentally different inputs (lattice selection vs phase lookup) and outputs (mixed residue types, no ranking); (2) **New InsertedStructure dataclass** — not modifying InterfaceStructure in-place, because ice/water boundary tracking would break; (3) **Per-type VTK actor dictionary** — not single-actor scalar coloring, because VTK's vtkMoleculeMapper renders all atoms with one style (can't mix VDW spheres and lines); (4) **Custom IonInserter** — not GenIce2's cation/anion system, because Tab 4 needs concentration-based placement in liquid phase, not index-based replacement in a lattice.
 
-**Major components (new):**
-1. `cell_transformer.py` — Triclinic→orthogonal transformation service; called by `interface_builder.py` when `is_cell_orthogonal()` returns false
-2. `density_service.py` — IAPWS density calculations for water and Ice Ih; provides `get_water_density(T,P)`, `get_ice_ih_density(T)`, molecule count calculators
-3. `interface_parser.py` — CLI interface argument handling; extends `cli/parser.py` with `--interface` argument group
-
-**Modified components:**
-- `interface_builder.py` — Call `transform_triclinic_to_orthogonal()` on triclinic detection instead of raising `InterfaceGenerationError`
-- `cli/parser.py` — Add `--interface` argument group with mode/box/thickness sub-arguments
-- `main.py` — Route `--interface` flag to interface generation flow
-- `modes/piece.py` — Update orthogonal check (lines 61-71) to allow transformed triclinic cells
-- `phase_mapping/lookup.py` — Add IAPWS density function alongside hardcoded values
+**Major components:**
+1. **HydrateStructureGenerator** (NEW) — Wraps GenIce2 hydrate API with `guests` parameter; produces HydrateResult
+2. **IonInserter** (NEW) — Concentration-based NaCl placement in liquid region using cKDTree overlap detection
+3. **HydrateResult / InsertedStructure** (NEW) — Dataclasses with per-atom molecule type tagging for multi-type rendering
+4. **Multi-actor VTK viewer** (EXTEND) — Dictionary of {molecule_type: (mapper, actor)} pairs with per-type styles
+5. **Multi-type GROMACS writer** (EXTEND) — Multiple `[moleculetype]` sections with bundled .itp includes
 
 ### Critical Pitfalls
 
-1. **Incorrect triclinic coordinate transformation** — Extracting only diagonal elements from the cell matrix produces structurally invalid crystals. Must use full 3×3 matrix transformation with volume verification and PBC wrapping. Validate against known Ice II structure before proceeding. (Recovery cost: HIGH)
+1. **Variable atoms-per-molecule breaks everything (Pitfall #5)** — The entire codebase iterates assuming uniform molecule size. Adding ions (1 atom) and guests (5+ atoms) shatters this assumption. Must design a molecule-segment index structure before ANY v4.0 code works.
 
-2. **Breaking existing `piece.py` validation** — The orthogonal-only check at lines 61-71 was added in v3.0 specifically to block triclinic phases. Adding transformation without updating this check means the new feature silently fails. Must update or remove the validation and add integration tests for triclinic phases.
+2. **GenIce2 `guests` requires nested dict, not list (Pitfall #1)** — `guests={'12': {'ch4': 1.0}, '14': {'ch4': 1.0}}`, not a list. Wrong format crashes with cryptic `AttributeError`. Write adapter function with validation.
 
-3. **IAPWS range violations** — `IAPWS97` returns `NaN` or throws exceptions outside its validity range (273.15–647 K, 0.006–22 MPa). Must add bounds checking with graceful fallback to reference density (~1.0 g/cm³) and display a warning.
+3. **Ion insertion must only replace liquid water, never ice (Pitfall #4)** — Accidentally replacing ice molecules destroys the crystal structure silently. Guard assertions: `assert mol_start_idx >= iface.ice_atom_count`.
 
-4. **Performance regression from uncached IAPWS calls** — IAPWS-95 uses an iterative solver; calling it for each of 10+ candidates during ranking causes noticeable slowdown. Must implement `@lru_cache` keyed on `(T, P)` — since all candidates for the same phase share identical density, a single computation suffices.
+4. **Multi-molecule GROMACS topology requires multiple `[moleculetype]` sections (Pitfall #3)** — The current single-SOL topology is invalid for systems with Na⁺, Cl⁻, and guest molecules. Must refactor writer to accept a list of molecule specifications.
 
-5. **Density units confusion** — IAPWS returns kg/m³; QuickIce uses g/cm³. Factor-of-1000 error is easy to introduce and hard to catch visually. Add explicit conversion with unit tests.
+5. **GenIce2 numpy random state not restored on exception (Pitfall #7)** — Pre-existing bug amplified by hydrate generation's higher exception likelihood. Move `set_state()` to `finally` block before any v4.0 work.
 
 ## Implications for Roadmap
 
-Based on combined research, suggested phase structure:
+Based on research, suggested phase structure:
 
-### Phase 1: Density Service Foundation
-**Rationale:** Lowest risk, no dependencies on other features, validates IAPWS integration approach. Other features may optionally consume density data later.
-**Delivers:** `density_service.py` with `get_water_density()`, `get_ice_ih_density()`, molecule count calculators, bounds checking, LRU cache, unit tests
-**Addresses:** Water density from T/P (table stakes), Ice Ih IAPWS density (differentiator)
-**Avoids:** Pitfalls 5 (IAPWS range violations), 7 (performance regression), 15 (density units confusion)
+### Phase 0: Pre-requisite Fixes
+**Rationale:** Four pre-existing bugs will silently corrupt results or crash the app during v4.0 development. Fixing them first prevents cascading failures.
+**Delivers:** Stable foundation for multi-molecule work
+**Addresses:** Pitfalls #7 (random state), #15 (missing T/P metadata), #16 (GRO parser duplication), #21 (dual is_cell_orthogonal)
+**Avoids:** Polluted random state after hydrate errors; incorrect water density calculations; divergent cell-type detection
 
-### Phase 2: Triclinic Transformation Service
-**Rationale:** This is the highest-risk, highest-value feature. It must be built and validated before CLI or integration work depends on it. Isolating it enables thorough testing with known ice phases.
-**Delivers:** `cell_transformer.py` with `transform_triclinic_to_orthogonal()`, `extract_lattice_parameters()`, `build_orthogonal_cell()`; integration with `interface_builder.py`; validation against Ice II/V structures
-**Addresses:** Triclinic→orthogonal transformation (table stakes)
-**Avoids:** Pitfalls 1 (incorrect transformation), 9 (detection failure), 14 (undocumented transformation)
-**Uses:** numpy (existing stack)
+### Phase 1: Data Structures + GRO Parser Extension
+**Rationale:** All downstream components (generators, viewers, exporters) need the multi-molecule data types and parser. This is the single biggest refactoring (Pitfall #5) and must be resolved before any Tab 2/4 code works.
+**Delivers:** HydrateResult and InsertedStructure dataclasses, MoleculeType enum, `_parse_gro_multi_molecule()`, molecule-segment index structure
+**Addresses:** Pitfalls #5 (atoms-per-molecule), #1 (GenIce2 guest dict adapter), #2 (lattice name mapping)
+**Avoids:** All downstream code being built on broken assumptions
 
-### Phase 3: CLI Interface Integration
-**Rationale:** Builds on existing argparse patterns and the now-available transformation service. Can be developed independently from GUI changes. High user demand for CLI parity.
-**Delivers:** `interface_parser.py`, extended `cli/parser.py`, updated `main.py` routing, file naming strategy, CLI help text
-**Addresses:** CLI interface generation (table stakes)
-**Avoids:** Pitfalls 3 (parser not extended), 4 (file naming conflicts), 10 (missing help text)
-**Implements:** CLI extension architecture pattern
+### Phase 2: Tab 4 — Ion Insertion (NaCl)
+**Rationale:** Tab 4 reuses the most existing infrastructure (InterfaceStructure from Tab 3, cKDTree from overlap_resolver, GROMACS writer pattern). Proving multi-actor viewer and multi-type export with simpler ion insertion reduces risk before hydrate generation.
+**Delivers:** IonInserter class, InsertPanel UI, InsertionWorker, 4-actor VTK viewer (ice, water, Na⁺, Cl⁻), multi-type GROMACS export, bundled ions-na-cl.itp
+**Uses:** scipy cKDTree, existing overlap_resolver, Joung-Cheatham parameters
+**Implements:** InsertedStructure pipeline, per-type VTK rendering, multi-moltype GROMACS writer
+**Avoids:** Pitfalls #4 (ice replacement — guard assertions), #6 (electroneutrality — pair Na⁺ with Cl⁻), #8 (cross-tab volume dependency), #10 (atom-type overlap thresholds)
 
-### Phase 4: Integration, Polish & Validation
-**Rationale:** Bring all features together, fix validation logic in `piece.py`, update GROMACS export for new cases, update GUI density display, end-to-end testing.
-**Delivers:** Updated `piece.py` validation, GROMACS export verification, GUI density display updates, integration test suite, documentation
-**Addresses:** Cross-cutting concerns
-**Avoids:** Pitfalls 2 (breaking piece mode validation), 8 (integration breakage), 11 (GROMACS export), 12 (UI not updated)
+### Phase 3: Tab 2 — Hydrate Generation
+**Rationale:** Requires a completely new GenIce2 API path (guests parameter, cage-based occupancy). Building after Phase 2 means the multi-actor viewer and multi-type export patterns are already proven.
+**Delivers:** HydrateStructureGenerator, HydratePanel UI, HydrateGenerationWorker, 2-actor VTK viewer (water + guest), hydrate GROMACS export, bundled ch4.itp and co2.itp
+**Uses:** GenIce2 hydrate lattices (CS1, CS2), molecule plugins (ch4, co2)
+**Implements:** Separate generation pipeline (no phase lookup, no ranking)
+**Avoids:** Pitfalls #12 (hydrate unit cells differ), #14 (separate pipeline, not Tab 1 modification)
+
+### Phase 4: Custom Molecules + Display Controls
+**Rationale:** Both Tab 2 and Tab 4 need custom molecule support. Building it last lets the basic NaCl and CH₄ flows stabilize first. File upload and validation add complexity best handled when core paths work.
+**Delivers:** Custom .gro/.itp file upload, MoleculeTypeControls widget (visibility/style/color), custom molecule placement, .itp file bundling in export, molecule validation
+**Avoids:** Pitfalls #9 (.itp file paths — copy to output directory), #19 (PBC boundary crossing — molecule-as-unit wrapping)
 
 ### Phase Ordering Rationale
 
-- Phase 1 first because density service is self-contained, low-risk, and establishes the IAPWS integration pattern that other phases may consume
-- Phase 2 second because triclinic transformation is the critical-path blocker for non-orthogonal interface generation — it must be validated before any integration work
-- Phase 3 third because CLI integration depends on transformation working correctly for triclinic phases, but is otherwise independent
-- Phase 4 last because cross-cutting integration, validation updates, and GUI changes touch multiple modules and require all features to be stable
+- **Phase 0 before everything else:** Pre-existing bugs will silently corrupt results during v4.0 development. Fixing random state pollution (#7) is critical because hydrate generation is more likely to throw exceptions.
+- **Phase 1 before Phases 2/3:** The variable atoms-per-molecule problem (#5) affects ALL downstream code. Every file that iterates over molecules, creates bonds, or writes GROMACS coordinates assumes uniform molecule size.
+- **Phase 2 before Phase 3:** Tab 4 (ion insertion) reuses existing InterfaceStructure and overlap_resolver — it's simpler to implement and validates the multi-actor viewer and multi-type GROMACS export pattern with fewer unknowns.
+- **Phase 4 last:** Custom molecule upload requires file validation, PBC wrapping, and per-type display controls. Getting the built-in molecule flows working first provides stable patterns to extend.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2:** Triclinic transformation algorithm correctness — the math is standard crystallography but needs validation against known structures. Consider `/gsd-research-phase` to verify the transformation preserves crystallographic symmetry, not just volume.
-- **Phase 4:** GROMACS export compatibility — need to verify that transformed orthogonal cells produce valid `.gro` files that GROMACS accepts. May need to research GROMACS box vector format requirements.
+- **Phase 1:** Multi-molecule data structure design — the molecule-segment index structure is the foundational decision; needs detailed design review before implementation
+- **Phase 3:** GenIce2 hydrate API — the `guests` parameter format is undocumented in README; only discoverable from source code. The adapter function needs careful testing with each guest molecule type
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** IAPWS library usage is well-documented; existing codebase already uses it for seawater phase diagrams
-- **Phase 3:** argparse extension is a well-known pattern; existing CLI structure in `parser.py` is straightforward
+- **Phase 0:** All four fixes are well-understood bugs with clear solutions documented in PITFALLS.md
+- **Phase 2:** Ion insertion follows established patterns (cKDTree overlap, QThread worker, GROMACS writer)
+- **Phase 4:** File upload and validation follow standard PySide6 patterns (QFileDialog, QProgressDialog)
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All technologies already installed; no new dependencies; verified against `environment.yml` and codebase |
-| Features | HIGH | Feature list is scoped from existing codebase gaps (triclinic rejection, missing CLI flag, hardcoded density); clear dependency graph |
-| Architecture | HIGH | MVVM patterns verified against existing code; new modules follow established service layer pattern; build order respects dependency graph |
-| Pitfalls | MEDIUM-HIGH | Critical pitfalls well-identified from codebase analysis; some algorithm-specific risks (transformation correctness) need validation during implementation |
+| Stack | **HIGH** | No new dependencies. All capabilities verified: GenIce2 hydrate API tested, VTK multi-actor tested, cKDTree overlap tested. Joung-Cheatham parameters are published standard values. |
+| Features | **MEDIUM-HIGH** | v4.0 scope is clearly defined in v4-context.md. Custom molecule upload has moderate ambiguity (file validation edge cases). Hydrate guest occupancy UI needs design decision. |
+| Architecture | **HIGH** | MVVM pattern well-established in existing codebase. New tabs follow exact same Panel→ViewModel→Worker→Domain pattern. Anti-patterns documented and preventable. |
+| Pitfalls | **HIGH** | 21 pitfalls identified from direct codebase analysis and live GenIce2 testing. Phase 0 bugs are pre-existing with clear fixes. Critical Pitfall #5 (atoms-per-molecule) has explicit solution paths. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Triclinic transformation algorithm validation:** Research shows the approach (extract lattice parameters → build orthogonal cell → transform coordinates) but doesn't verify it against a reference implementation. Need to compare output with ASE's `Cell.orthorhombic_cell()` or a known crystallographic tool during Phase 2 implementation.
-- **IAPWS `_Ice` class API:** STACK.md and FEATURES.md disagree on the exact IAPWS API for Ice Ih density (`_Ice` class vs `IAPWS97` with `x=1`). Need to verify which API is correct in the installed `iapws==1.5.5` before implementing density service.
-- **Default CLI interface parameters:** No consensus on default box dimensions or thickness values when not specified. Architecture doc flags this as an open question. Decide during Phase 3 planning.
-- **Backward compatibility for triclinic transformation:** If transformation produces unexpected results, should users be able to disable it and get the original error? Flag for Phase 4 decision.
+- **Custom molecule .itp compatibility:** CH₄ and CO₂ parameters are well-established but need verification for exact compatibility with the existing AMBER-force-field-based `tip4p-ice.itp`. Handle during Phase 4 implementation.
+- **GenIce2 hydrate occupancy UI:** The `guests` dict format (`{'12': {'ch4': 1.0}}`) uses cage type numbers that aren't user-friendly. Need design for how users specify guest/cage occupancy in the HydratePanel. Handle during Phase 3 planning.
+- **Liquid volume calculation for Tab 4:** InterfaceStructure currently doesn't carry `liquid_volume_nm3`. This field must be added during Phase 2 and computed by each interface mode (slab/pocket/piece). Handle during Phase 2 planning.
+- **Large-system VTK performance:** Multi-actor rendering with >5 actors for >100K atoms may need LOD optimization. Defer until performance testing in Phase 2/3.
+- **Force field compatibility:** Joung-Cheatham ions are parameterized for TIP4P water models, but the exact combination with TIP4P-ICE hasn't been validated in simulation. This is a user responsibility (GROMACS energy minimization will reveal issues), but we should document the combination.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- QuickIce codebase — Verified existing MVVM architecture, service patterns, CLI structure, interface builder, phase lookup
-  - `gui/viewmodel.py`, `gui/workers.py` — MVVM patterns
-  - `cli/parser.py` — CLI argument structure
-  - `structure_generation/interface_builder.py` — Service layer pattern, orthogonal check
-  - `structure_generation/generator.py` — Cell parsing, triclinic handling
-  - `phase_mapping/lookup.py` — Hardcoded density values
-- `environment.yml` — Dependency verification (iapws, spglib, numpy all present)
-- IAPWS Python library (`iapws==1.5.5`) — Already installed; API documented on GitHub/PyPI
+- **QuickIce codebase (v3.5)** — Direct analysis of generator.py, viewmodel.py, workers.py, vtk_utils.py, gromacs_writer.py, overlap_resolver.py, interface_builder.py, molecular_viewer.py, interface_viewer.py, export.py
+- **GenIce2 source code (v2.2.13.1)** — GenIce class, `guests` parameter, Stage7 guest placement, `generate_ice()` with guests, lattice plugins (CS1, CS2, sI, sII), molecule plugins (ch4, co2, H2, thf, one)
+- **Live GenIce2 API testing** — Verified: hydrate generation with CH₄ in sI structure (46 SOL + 8 CH₄), case-sensitive lattice names, guest dict format
+- **VTK 9.5.2 multi-actor testing** — Verified: separate vtkMoleculeMapper + vtkActor per molecule type with different styles works correctly
+- **Joung & Cheatham (2008)** — "Determination of Alkali and Halide Monovalent Ion Parameters," J. Phys. Chem. B, 112, 9020-9041. Standard published parameters.
+- **v4-context.md** — Feature specification for molecule insertion
 
 ### Secondary (MEDIUM confidence)
-- GenIce2 documentation — Triclinic cell format; cell parsing verified in `generator.py`
-- IAPWS R10-06(2009) — Ice Ih equation of state; referenced for density values but implementation details need verification
-- spglib documentation — Confirmed NOT providing triclinic→orthogonal conversion
+- **GROMACS topology conventions** — Multi-molecule `[moleculetype]` sections, `#include` path resolution. Not yet tested with actual `gmx grompp` validation.
+- **OPLS-AA parameters for CH₄** — Standard literature values for methane topology. Need verification for exact TIP4P-ICE compatibility.
 
 ### Tertiary (LOW confidence)
-- ASE (Atomic Simulation Environment) — Referenced as alternative for cell transformation; not used but provides validation reference
-- OVITO, Avogadro, Pymatgen — Scientific visualization tool patterns for feature landscape context (v2.0 research)
+- **Custom molecule .gro parsing edge cases** — Users may provide unusual residue formats. Validation will be needed during implementation.
+- **VTK performance with >5 actors and >100K atoms** — May need LOD optimization. Not yet benchmarked.
 
 ---
-*Research completed: 2026-04-12*
+*Research completed: 2026-04-14*
 *Ready for roadmap: yes*

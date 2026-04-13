@@ -1,511 +1,437 @@
-# Pitfalls Research: QuickIce v3.5 Interface Enhancements
+# Domain Pitfalls
 
-**Domain:** Adding interface enhancements to existing ice structure generation tool
-**Researched:** 2026-04-12
-**Confidence:** MEDIUM-HIGH
-
-## Overview
-
-This document catalogs common pitfalls when adding four specific features to an existing QuickIce v3.0 application:
-
-1. **Triclinic→orthogonal transformation** — Enabling non-orthogonal ice phases in interface generation
-2. **CLI interface generation** — Adding `--interface` flag to command-line interface
-3. **Water density from T/P** — Computing liquid water density from temperature/pressure
-4. **Ice Ih IAPWS density** — Using IAPWS R10-06 equation for accurate ice density
-
-These pitfalls are specific to *adding* these features to an existing system, with emphasis on integration issues, API compatibility, and regression prevention.
+**Domain:** Molecule insertion into ice/interface structures (QuickIce v4.0)
+**Researched:** 2026-04-14
+**Context:** Adding Tab 2 (Molecules to Ice / hydrates) and Tab 4 (Insert to Liquid / NaCl ions + custom molecules) to existing QuickIce v3.5 system
+**Overall confidence:** HIGH (based on direct codebase analysis + live GenIce2 API testing)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Incorrect Coordinate Transformation for Triclinic Cells
+Mistakes that cause rewrites, data corruption, or silent wrong results.
 
-**What goes wrong:**
-When transforming a triclinic (non-orthogonal) cell to orthogonal, atoms end up in wrong positions or the transformation produces a structurally invalid crystal. The cell volume changes dramatically, or atoms cross periodic boundaries incorrectly.
+### Pitfall 1: GenIce2 Hydrate Guests Require Nested Dict, Not List
 
-**Why it happens:**
-- Extracting only diagonal elements from triclinic cell matrix (`cell[0,0], cell[1,1], cell[2,2]`) ignores the tilt angles
-- No rotation matrix applied to coordinates during transformation
-- Volume preservation not calculated — transformed cell may have different volume than original
-- PBC wrapping not handled after transformation
+**What goes wrong:** The `guests` parameter to `GenIce.generate_ice()` expects a nested dict `{cagetype: {molecule_name: fraction}}`, NOT a list of molecule objects. Passing `guests=[methane_molecule]` raises `AttributeError: 'list' object has no attribute 'items'` — a cryptic error that doesn't explain the correct format.
 
-**How to avoid:**
-1. **Use full cell matrix transformation:** Apply proper 3×3 cell matrix transformation to coordinates
-2. **Calculate volume before/after:** Verify volume ratio and adjust if needed
-3. **Implement PBC wrapping:** After transformation, wrap all coordinates back into the new cell
-4. **Test with known phases:** Use ice_ii (known triclinic) to verify transformation preserves structure
+**Why it happens:** GenIce2's API design is unconventional. The `guests` dict maps cage types (e.g., `"12"` for 12-hedron small cages, `"14"` for 14-hedron large cages in sI) to molecule-to-occupancy-fraction mappings. This is only discoverable by reading `genice2/genice.py` Stage7 source — it's NOT documented in GenIce2's README.
 
-```python
-# Correct approach: transform coordinates using cell matrix
-def triclinic_to_orthogonal(positions: np.ndarray, cell: np.ndarray) -> tuple:
-    """Transform triclinic coordinates to orthogonal cell.
-    
-    Args:
-        positions: (N, 3) coordinates in triclinic basis
-        cell: (3, 3) triclinic cell matrix (rows = lattice vectors)
-    
-    Returns:
-        (orthogonal_positions, orthogonal_cell, volume_ratio)
-    """
-    # Extract orthogonal cell dimensions from triclinic
-    a, b, c = np.linalg.norm(cell, axis=1)
-    alpha = np.arccos(np.dot(cell[1], cell[2]) / (b * c))
-    beta = np.arccos(np.dot(cell[0], cell[2]) / (a * c))
-    gamma = np.arccos(np.dot(cell[0], cell[1]) / (a * b))
-    
-    # Build transformation matrix (triclinic → orthogonal)
-    import numpy as np
-    transform = np.array([
-        [a, b * np.cos(gamma), c * np.cos(beta)],
-        [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta)*np.cos(gamma))/np.sin(gamma)],
-        [0, 0, c * np.sqrt(1 - np.cos(beta)**2 - ((np.cos(alpha) - np.cos(beta)*np.cos(gamma))/np.sin(gamma))**2)]
-    ])
-    
-    # Transform coordinates
-    orthogonal_positions = positions @ np.linalg.inv(transform).T
-    
-    # Calculate volume ratio
-    triclinic_volume = np.linalg.det(cell)
-    orthogonal_volume = np.linalg.det(transform)
-    
-    return orthogonal_positions, np.diag([a, b, c]), triclinic_volume / orthogonal_volume
-```
+**Consequences:** Hydrate generation crashes with an unhelpful error. Developers waste time debugging the wrong thing (thinking the molecule plugin failed).
 
-**Warning signs:**
-- Interface generation fails for ice_ii, ice_v with "cell too small" errors
-- Generated structures show atoms outside unit cell boundaries
-- Visual inspection reveals distorted crystal lattice
-- GROMACS energy minimization crashes with "box vector error"
+**Prevention:** Write a thin adapter function that translates QuickIce's user-facing API (select a molecule, specify occupancy) into GenIce2's dict format. Validate the guest dict structure before passing to GenIce.
 
-**Phase to address:**
-Triclinic Transformation Implementation Phase — verify with test structures.
+**Detection:** Unit test that generates a hydrate with a guest molecule. If it crashes with `AttributeError: 'list' object has no attribute 'items'`, this pitfall was hit.
+
+**Phase:** Phase 1 (Tab 2 — hydrate generation must work before any UI)
 
 ---
 
-### Pitfall 2: Breaking Existing Piece Mode Validation
+### Pitfall 2: Hydrate Lattice Names Are Case-Sensitive (Opposite Convention from Pure Ice)
 
-**What goes wrong:**
-After adding triclinic support, the existing `_is_cell_orthogonal()` check in `piece.py` still triggers, blocking all triclinic phases. The new feature doesn't actually work because the error check wasn't updated.
+**What goes wrong:** GenIce2 hydrate lattices use specific mixed-case names: `sI`, `sII`, `sH`, `CS1`, `CS2`, `CS4`. Using lowercase (`si`, `cs1`) or uppercase (`SI`) fails with `AssertionError: Nonexistent or failed to load the module`. This is the OPPOSITE convention from pure ice lattices which use lowercase (`ice1h`, `ice5`).
 
-**Why it happens:**
-- Code in `piece.py` lines 61-71 explicitly checks for orthogonal cells and raises `InterfaceGenerationError`
-- The check was added in v3.0 specifically to block triclinic phases
-- Adding triclinic support requires modifying this validation logic
-- Integration test may not cover triclinic phases specifically
+**Why it happens:** GenIce2's `safe_import()` resolves module names to Python files in `genice2/lattices/`. The hydrate files are literally named `sI.py`, `CS1.py`, etc. There's no case normalization.
 
-**How to avoid:**
-1. **Remove or update orthogonal check:** Change validation to allow transformed triclinic cells
-2. **Add flag for auto-transform:** Allow users to enable automatic triclinic→orthogonal
-3. **Preserve error for untransformed:** Keep error for genuinely non-orthogonal output
-4. **Test both paths:** Add tests for ice_ii and ice_v interface generation
+**Consequences:** Hydrate generation fails silently. The error message ("Nonexistent module") doesn't hint at case sensitivity, leading developers to assume hydrate support is broken.
 
-**Warning signs:**
-- Adding `--interface` CLI flag still fails for ice_ii, ice_v
-- Error message still mentions "v3.0 only supports orthogonal cells"
-- Unit tests pass but integration fails for specific phases
+**Prevention:** Create a `HYDRATE_LATTICE_NAMES` mapping dict in `quickice/structure_generation/mapper.py`, similar to the existing `PHASE_TO_GENICE` mapping. Never expose GenIce2's raw lattice names to the UI. Verified available hydrate lattices: `sI`, `sII`, `sH`, `CS1`, `CS2`, `CS4`, `DOH`, `HS1`, `HS2`, `HS3`, `FAU`, `LTA`.
 
-**Phase to address:**
-Integration Phase — update validation and add integration tests.
+**Detection:** Test all hydrate lattice names in a unit test. Verify both the GenIce2 plugin loads AND the Lattice class instantiates.
+
+**Phase:** Phase 1 (Tab 2 — must get names right before any generation works)
 
 ---
 
-### Pitfall 3: CLI Parser Not Extended for Interface Parameters
+### Pitfall 3: Multi-Molecule-Type Topology Breaks the Single-SOL Convention
 
-**What goes wrong:**
-Adding `--interface` flag to CLI fails because the existing parser doesn't handle the new parameters (box dimensions, mode, etc.). Users get "unrecognized arguments" errors or the interface generation silently falls back to ice-only output.
+**What goes wrong:** The existing `write_interface_top_file()` uses a single `SOL` molecule type for ALL water molecules (ice + liquid combined). Adding ions (Na+, Cl-) and custom molecules requires MULTIPLE `[ moleculetype ]` sections in the `.top` file. Naively extending the existing writer produces invalid GROMACS topology that causes energy minimization failures.
 
-**Why it happens:**
-- CLI parser in `cli/parser.py` only handles ice generation parameters
-- No interface-specific arguments defined (`--box-size`, `--mode`, etc.)
-- `main.py` doesn't pass interface parameters to `generate_candidates()`
-- No validation for interface-specific constraints (box > ice piece)
+**Why it happens:** GROMACS requires each distinct molecule type to have its own `[ moleculetype ]` section, `[ atoms ]` definition, and entry in `[ molecules ]`. Current code has ONE: `SOL` with TIP4P-ICE parameters. Ions need separate `NA` and `CL` sections. Custom molecules need user-defined sections.
 
-**How to avoid:**
-1. **Add interface argument group:** Use `parser.add_argument_group()` for interface options
-2. **Implement conditional parsing:** Only require interface params when `--interface` specified
-3. **Add validation:** Box dimensions must exceed ice piece dimensions
-4. **Update main.py flow:** Route interface parameters to interface generation
+**Consequences:** GROMACS rejects the topology file (`gmx grompp` fails). At worst, if atom types silently mismatch, the simulation runs with wrong force field parameters and produces garbage results.
 
-```python
-# Example: Extend CLI parser
-interface_group = parser.add_argument_group('interface options')
-interface_group.add_argument('--interface', '-i', action='store_true',
-    help='Generate ice-water interface')
-interface_group.add_argument('--box-size', type=float, default=5.0,
-    help='Box size in nm (default: 5.0)')
-interface_group.add_argument('--mode', choices=['slab', 'pocket', 'piece'],
-    default='piece', help='Interface geometry mode')
-```
+**Prevention:** Refactor the GROMACS writer to accept a list of molecule specifications: `[(moltype_name, atom_count_per_mol, nmols, itp_source), ...]`. The `.top` file should `#include` TIP4P-ICE `.itp` for water, bundled ion `.itp` files for NaCl, and reference user-provided `.itp` files for custom molecules. Design this data structure BEFORE writing any Tab 4 code.
 
-**Warning signs:**
-- `python quickice.py --temperature 250 --pressure 0.1 --nmolecules 100 --interface` fails
-- No error but no interface files generated
-- Interface parameters silently ignored
+**Detection:** Run `gmx grompp` on exported topology with NaCl. If it fails with "Invalid topology" or "Unknown moleculetype", this pitfall was hit.
 
-**Phase to address:**
-CLI Enhancement Phase — add interface arguments and validation.
+**Phase:** Phase 2 (Tab 4 — topology export for multi-molecule systems)
 
 ---
 
-### Pitfall 4: Output File Naming Conflicts
+### Pitfall 4: Ion Insertion Replaces Ice Molecules, Not Just Water
 
-**What goes wrong:**
-When CLI generates both ice candidates and interface structures, files overwrite each other or use confusing naming. Multiple runs with different parameters produce identical filenames.
+**What goes wrong:** When inserting NaCl ions into the liquid phase, code must ONLY replace water molecules in the liquid region. If selection logic accidentally picks molecules from the ice region, it destroys the crystal structure and creates unphysical defects.
 
-**Why it happens:**
-- Ice generation uses `ice_candidate_N.pdb` naming
-- Interface generation uses similar naming without distinguishing suffix
-- No timestamp or parameter hash in filenames
-- Same `--output` directory for ice and interface runs
+**Why it happens:** `InterfaceStructure` stores all atoms in a single flat array with `ice_atom_count` as the boundary marker. To replace a water molecule, code must: (1) start at index `>= ice_atom_count`, (2) select molecules at random from the liquid region, (3) remove ALL 4 atoms of that water molecule (OW, HW1, HW2, MW), (4) insert the ion at the removed molecule's center-of-mass. If step (1) uses `<` instead of `>=`, or if `atoms_per_molecule` is wrong (3 vs 4), ice molecules get destroyed.
 
-**How to avoid:**
-1. **Separate output subdirectories:** Create `output/ice/` and `output/interface/` automatically
-2. **Include parameters in filename:** `ice_ih_250K_01.pdb` vs `interface_piece_250K_01.pdb`
-3. **Add timestamp:** Prevent overwrite on repeated runs
-4. **Warn on overwrite:** Check if files exist before writing
+**Consequences:** Crystal structure corruption. The interface is no longer physically valid. This is a SILENT error — no crash, just wrong results that propagate through all downstream analysis.
 
-**Warning signs:**
-- Interface PDB overwrites ice candidate PDB
-- User reports "my interface files look like ice"
-- Multiple runs produce identical filenames
+**Prevention:**
+1. Write explicit guard assertions: `assert mol_start_idx >= iface.ice_atom_count` before any replacement.
+2. Separate the "select liquid molecules to replace" step from "perform replacement" step, with validation between them.
+3. Unit test: Generate an interface, insert ions, verify `ice_atom_count` positions still contain O, H, H atoms with ice-like O-O distances.
 
-**Phase to address:**
-CLI Enhancement Phase — implement file naming strategy.
+**Detection:** After insertion, check that the ice region's O-O distance distribution matches the pre-insertion distribution. Any deviation >0.01 nm indicates accidental ice replacement.
+
+**Phase:** Phase 2 (Tab 4 — ion insertion logic)
 
 ---
 
-### Pitfall 5: Water Density Calculation Outside Valid Range
+### Pitfall 5: Variable Atoms-Per-Molecule Breaks All Position Array Assumptions
 
-**What goes wrong:**
-The water density calculation returns unrealistic values when temperature or pressure is outside the IAPWS validity range (typically 273-373K, 0-100 MPa for liquid water). The UI shows incorrect density or crashes.
+**What goes wrong:** The ENTIRE codebase assumes a UNIFORM `atoms_per_molecule`: 3 for ice (O, H, H), 4 for water (OW, HW1, HW2, MW). Adding ions (Na+=1 atom, Cl-=1 atom) and custom molecules (arbitrary atom count) breaks this assumption in `overlap_resolver.py`, `water_filler.py`, `gromacs_writer.py`, `vtk_utils.py`, and the `InterfaceStructure` type itself.
 
-**Why it happens:**
-- IAPWS formulations have limited validity ranges
-- No bounds checking before calling IAPWS library
-- Library may return `NaN` or extrapolate poorly outside range
-- No fallback for invalid conditions (e.g., ice conditions)
+**Why it happens:** `InterfaceStructure` stores positions as a single flat `(N, 3)` array with `ice_atom_count` and `water_atom_count` boundary markers. All downstream code iterates using uniform `atoms_per_molecule`. With ions (1 atom/mol), the indexing math `mol_idx * atoms_per_molecule` gives wrong offsets. This is the SINGLE BIGGEST refactoring required for v4.0.
 
-**How to avoid:**
-1. **Add bounds checking:** Validate T is in 273-373K range, P in 0-100 MPa range
-2. **Provide fallback:** Return known water density (1.0 g/cm³ at 277K, 0.1 MPa) outside range
-3. **Show warning:** Display "approximate" or "outside valid range" when bounds exceeded
-4. **Check phase:** If conditions favor ice, show ice density not water density
+**Consequences:** Out-of-bounds array access, wrong atom positions read, bonds created on wrong atom pairs, GROMACS export with garbled coordinates, VTK rendering crashes.
 
-```python
-def water_density_from_tp(temperature: float, pressure: float) -> float:
-    """Calculate water density using IAPWS with bounds checking."""
-    # IAPWS-95 validity: 273.15-1073.15 K, 0-1000 MPa (extended)
-    # For liquid water (not ice): 273.15-373.15 K, 0-100 MPa is most reliable
-    T_MIN, T_MAX = 273.15, 373.15
-    P_MIN, P_MAX = 0.0, 100.0
-    
-    if not (T_MIN <= temperature <= T_MAX) or not (P_MIN <= pressure <= P_MAX):
-        # Fallback: return density at reference conditions
-        return 0.99997495  # g/cm³ at 277.13K, 0.101325 MPa
-    
-    try:
-        from iapws import IAPWS97
-        water = IAPWS97(T=temperature, P=pressure)
-        return water.rho  # kg/m³ → convert to g/cm³
-    except Exception:
-        return 0.99997495  # Fallback
-```
+**Prevention:**
+1. Replace the flat positions array with a structured approach: store a list of molecule segments, where each segment has `positions`, `atom_names`, `moltype`, `atoms_per_molecule`, and `nmolecules`.
+2. Or: keep the flat array but add an index structure: `molecule_segments = [(start_idx, end_idx, moltype, atoms_per_molecule), ...]` alongside the positions array.
+3. ALL code that iterates over molecules must use the index structure instead of uniform `atoms_per_molecule`.
 
-**Warning signs:**
-- Density shows as `nan` or extremely large/small values
-- UI displays "Density: -0.00 g/cm³"
-- IAPWS library throws exception on invalid input
+**Detection:** Write a test that creates a structure with water (4 atoms/mol) + Na+ (1 atom/mol) + Cl- (1 atom/mol) and verifies every molecule's atoms are correctly indexed.
 
-**Phase to address:**
-Water Density Implementation Phase — add validation and fallback.
+**Phase:** Phase 1 (data structure design — MUST be resolved before ANY Tab 2 or Tab 4 code works)
 
 ---
 
-### Pitfall 6: Ice Ih Density vs. Hardcoded Value Conflict
+### Pitfall 6: Electroneutrality Violation in Ion Insertion
 
-**What goes wrong:**
-The phase lookup returns hardcoded 0.9167 g/cm³ for ice Ih, but IAPWS R10-06 gives different values based on T/P. Users notice discrepancy or the ranking score uses wrong density.
+**What goes wrong:** Users might request only Na+ ions (or only Cl-), or unequal numbers. GROMACS requires total system charge to be zero for energy minimization. A charged system causes `gmx grompp` to fail with "System has non-zero total charge" or causes numerical instabilities during MD.
 
-**Why it happens:**
-- `PHASE_METADATA` in `lookup.py` has static `"density": 0.9167` for ice Ih
-- IAPWS R10-06(2009) provides temperature-dependent density
-- No function exists to compute density from conditions
-- Existing code references metadata density, not computed density
+**Why it happens:** The v4-context.md spec says "Auto-calculate number of Na+ and Cl- ions" from concentration. But if the user provides a concentration, the calculated number of ion pairs may not be an integer (e.g., 3.2 → rounds to 3, but what about the fractional 0.2?). Also, users may want custom ion counts.
 
-**How to avoid:**
-1. **Create density calculation function:** Implement IAPWS R10-06 for ice Ih
-2. **Update metadata structure:** Add `"density_function": callable` to metadata
-3. **Modify `_build_result()`:** Use function when available, static value otherwise
-4. **Document changes:** Note that density now varies with T/P for Ih
+**Consequences:** GROMACS rejects the topology. For MD simulations, even ~1e net charge in a periodic system creates an artificial electric field that corrupts results.
 
-**Warning signs:**
-- Ranking scores change unexpectedly after adding IAPWS density
-- Users report "density doesn't match literature at high pressure"
-- Test failures due to density value differences
+**Prevention:**
+1. Always pair Na+ with Cl- in equal numbers.
+2. If concentration yields a non-integer ion pair count, round to nearest integer and show the actual resulting concentration.
+3. Add validation: `assert abs(total_charge) < 1e-6` before writing topology.
+4. For custom ion insertion, warn: "System has net charge of +Xe. GROMACS may reject this."
 
-**Phase to address:**
-Ice Density Enhancement Phase — update density calculation and tests.
+**Detection:** After ion insertion, sum all charges and verify `abs(total_charge) < 1e-6`.
+
+**Phase:** Phase 2 (Tab 4 — ion insertion validation)
 
 ---
 
-### Pitfall 7: Performance Regression from Repeated IAPWS Calls
+### Pitfall 7: GenIce2 Numpy Random State Not Restored on Exception
 
-**What goes wrong:**
-Every candidate ranking calls IAPWS density function, causing significant slowdown when generating 10+ candidates. The CLI becomes unresponsive.
+**What goes wrong:** The existing tech debt in `generator.py` (documented in CONCERNS.md) means `np.random.set_state(original_state)` is NOT called if an exception occurs between seed and restore. Hydrate generation is MORE complex and MORE likely to throw exceptions (invalid guest dict format, too many guests for cage capacity, incompatible molecule-lattice pairs), making this bug much more dangerous.
 
-**Why it happens:**
-- IAPWS-95 is computationally expensive (iterative solver)
-- No caching of results for repeated T/P conditions
-- Density called during ranking for every candidate
-- No caching strategy implemented
+**Why it happens:** `set_state()` is outside the try/except block. GenIce2's Stage7 (guest placement) can throw `AssertionError: Too many guests` which bypasses the restore.
 
-**How to avoid:**
-1. **Implement LRU cache:** Cache density results for (T, P) pairs
-2. **Cache at phase level:** Since all candidates for same phase share density, compute once
-3. **Lazy evaluation:** Only compute density when displaying/ranking, not during generation
-4. **Benchmark:** Verify performance acceptable with 10 candidates
+**Consequences:** After ANY hydrate generation failure, ALL subsequent random number generation in QuickIce is polluted. This silently corrupts interface generation, ranking, and any code using `np.random`.
 
-```python
-from functools import lru_cache
+**Prevention:** Move `np.random.set_state(original_state)` into a `finally` block. This is a pre-existing fix that should be done BEFORE any v4.0 work.
 
-@lru_cache(maxsize=128)
-def ice_ih_density_iapws(temperature: float, pressure: float) -> float:
-    """Calculate ice Ih density using IAPWS R10-06 with caching."""
-    # IAPWS R10-06 equation implementation
-    # ...
-    return density
-```
+**Detection:** Generate a hydrate with too many guests (should throw), then generate a pure ice structure. If the ice structure differs from a fresh-session generation, random state is polluted.
 
-**Warning signs:**
-- CLI takes >5 seconds for 10 candidates (was <1 second)
-- CPU usage spikes during ranking phase
-- Progress bar seems stuck after candidate generation
-
-**Phase to address:**
-Performance Optimization Phase — add caching before release.
-
----
-
-### Pitfall 8: Integration Breakage with Existing Phase Lookup
-
-**What goes wrong:**
-Adding IAPWS density functions breaks existing phase lookup. Tests fail, temperature/pressure inputs cause errors, or density shows as `None` for some phases.
-
-**Why it happens:**
-- Changes to `lookup.py` affect all callers (GUI, CLI, ranking)
-- New density function has different signature than expected
-- Metadata dictionary structure changed
-- Backward compatibility not maintained
-
-**How to avoid:**
-1. **Preserve API compatibility:** Keep `phase_info['density']` interface the same
-2. **Add new function separately:** Don't modify existing, add new `compute_phase_density()`
-3. **Update tests incrementally:** Run existing tests after each change
-4. **Use feature flag:** Allow switching between old and new density for comparison
-
-**Warning signs:**
-- `lookup_phase()` returns different structure than before
-- Tests in `test_phase_mapping/` fail
-- GUI shows "Density: None" for some phases
-
-**Phase to address:**
-Integration Phase — maintain backward compatibility, test thoroughly.
+**Phase:** Phase 0 (pre-requisite fix before v4.0 work begins)
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 9: Triclinic Phase Detection Failure
+Mistakes that cause delays, confusing errors, or technical debt.
 
-**What goes wrong:**
-The code fails to detect that a phase uses a triclinic cell, either missing the detection entirely or incorrectly classifying some orthogonal phases as triclinic.
+### Pitfall 8: Concentration-to-Count Requires Liquid Volume (Cross-Tab Dependency)
 
-**Why it happens:**
-- Detection relies on `np.allclose(off_diagonal, 0)` which may have wrong tolerance
-- Some phases may have very small off-diagonal elements due to numerical precision
-- Phase metadata doesn't explicitly mark triclinic vs. orthogonal
+**What goes wrong:** Converting "0.5 mol/L NaCl" to a number of ion pairs requires knowing the LIQUID water volume (not total box volume). The liquid volume is determined by Tab 3 (Interface Construction) which runs BEFORE Tab 4. This creates a tight cross-tab dependency: Tab 4 needs Tab 3's output to calculate ion counts.
 
-**How to avoid:**
-1. **Use explicit phase metadata:** Add `"cell_type": "triclinic"|"orthogonal"` to phase info
-2. **Set appropriate tolerance:** Use `tol=1e-8` instead of `1e-10` for numerical stability
-3. **Test detection:** Verify ice_ii, ice_v detected as triclinic; ice_Ih as orthogonal
+**Why it happens:** NaCl goes into the liquid phase only. Liquid volume = total volume - ice volume. For slab: `liquid_volume = box_x × box_y × water_thickness`. For pocket: `liquid_volume = (4/3) × π × (diameter/2)³`. For piece: `liquid_volume = total_volume - ice_volume`. But `InterfaceStructure` currently doesn't carry `liquid_volume_nm3`.
 
-**Phase to address:**
-Triclinic Detection Implementation — add explicit metadata and test.
+**Consequences:** Without liquid volume, ion count is wrong. Too many ions over-saturates the solution; too few under-saturates it.
 
----
+**Prevention:**
+1. Add `liquid_volume_nm3: float` field to `InterfaceStructure`, computed during each interface mode's assembly.
+2. Tab 4 reads this field to calculate: `n_ion_pairs = concentration_mol_L × liquid_volume_nm3 × 1e-24 × NA` where `NA = 6.022e23`.
+3. If no interface structure is available, require manual box volume input.
 
-### Pitfall 10: CLI Help Text Missing Interface Options
+**Detection:** Test with known system (0.5 mol/L in 5×5×4 nm water → should give ~30 ion pairs). Compare calculated count to expected value.
 
-**What goes wrong:**
-Users running `python quickice.py --help` don't see interface-related options, or the help text is confusing. They don't know what parameters to use.
-
-**Why it happens:**
-- Interface arguments not added to parser
-- Epilog examples don't include interface usage
-- No separate `--help` for interface-specific options
-
-**How to avoid:**
-1. **Add comprehensive help:** Document all interface options in epilog
-2. **Provide examples:** Show `python quickice.py --interface --box-size 5.0 --mode piece`
-3. **Consider subcommands:** `quickice interface generate` vs `quickice generate`
-
-**Phase to address:**
-CLI Enhancement Phase — improve documentation.
+**Phase:** Phase 2 (Tab 4 — depends on InterfaceStructure carrying liquid volume)
 
 ---
 
-### Pitfall 11: GROMACS Export Not Updated for New Interface Modes
+### Pitfall 9: User-Provided .gro/.itp File Path Problems
 
-**What goes wrong:**
-GROMACS export works for ice only but fails or produces incorrect files for interfaces generated via new CLI or triclinic-transformed structures.
+**What goes wrong:** The `.top` file must `#include` the user's `.itp` file. Absolute paths (`#include "/home/user/molecules/methane.itp"`) break when moved to another machine. Relative paths (`#include "methane.itp"`) only work if GROMACS runs from the same directory as the `.itp` file.
 
-**Why it happens:**
-- GROMACS writer assumes specific structure format
-- Interface structures have different atom counts or ordering
-- Triclinic transformation changes cell format that GROMACS expects
+**Why it happens:** GROMACS resolves `#include` paths relative to the working directory where `gmx grompp` is run, NOT relative to the `.top` file location. There's no standard way to handle this in GROMACS.
 
-**How to avoid:**
-1. **Test GROMACS export for all new cases:** ice_ii interface, CLI interface, etc.
-2. **Verify cell format:** Orthogonal cell must use `np.diag()`, not general 3×3
-3. **Update TIP4P-ICE normalization:** Ensure ice atoms have correct 4-atom format
+**Consequences:** Users can't run MD simulations with exported files without manually editing `.top`. This undermines the "generate GROMACS-ready input" value proposition.
 
-**Phase to address:**
-Export Verification Phase — test all new combinations.
+**Prevention:**
+1. Copy user-provided `.itp` files to the output directory alongside `.gro` and `.top`.
+2. Use relative paths in `#include` directives.
+3. Document that all `.itp` files must be in the same directory as `.top` when running GROMACS.
+4. Bundle common ion `.itp` files (Na+, Cl-) in `quickice/data/` like `tip4p-ice.itp`.
+
+**Detection:** Export system with custom molecules, move all output files to a different directory, try `gmx grompp`. If it fails with "file not found", path handling is broken.
+
+**Phase:** Phase 2 (Tab 4 export)
 
 ---
 
-### Pitfall 12: UI Not Updated to Show New Densities
+### Pitfall 10: Overlap Detection Uses O-O Distance for Non-Water Molecules
 
-**What goes wrong:**
-The GUI still shows old hardcoded density values even after IAPWS density functions are added. Users don't see the benefit of the new feature.
+**What goes wrong:** Current `detect_overlaps()` uses O-O distance (0.25 nm threshold) as collision criterion. This works for water-water overlap. But for ion-water overlap, the threshold should be based on VDW radii. Na+ (ionic radius 0.116 nm) is smaller than O (0.152 nm VDW). Cl- (ionic radius 0.167 nm) is larger. Using 0.25 nm O-O distance over-estimates Na+ exclusion zone; for Cl-, it may under-estimate.
 
-**Why it happens:**
-- GUI reads from cached phase info that wasn't updated
-- Density display widget not connected to new calculation function
-- No UI refresh when temperature/pressure changes
+**Why it happens:** The overlap resolver was designed for water-water collision detection only. It uses O atom positions as reference points and assumes all molecules are water.
 
-**How to avoid:**
-1. **Connect signals:** Update density display when T or P changes
-2. **Show source:** Indicate "IAPWS" vs "static" for transparency
-3. **Display range warning:** Show when density is approximate
+**Consequences:** After ion insertion, Na+ may be too far from water molecules (over-excluded) or Cl- may overlap with water (under-excluded). GROMACS energy minimization may fail for Cl- overlap cases.
 
-**Phase to address:**
-UI Enhancement Phase — update density display.
+**Prevention:**
+1. Add atom-type-aware overlap detection: use cKDTree with per-atom-type thresholds based on VDW radii.
+2. For ions: use ion VDW radius + O VDW radius as threshold (Na-O: ~0.27 nm, Cl-O: ~0.33 nm).
+3. For custom molecules: use the largest atom's VDW radius.
+4. Make the overlap threshold a parameter per atom type, not a single global value.
+
+**Detection:** Insert Na+ ions, check that no Na-O distance is less than ~0.2 nm (sum of VDW radii minus tolerance). Insert Cl- ions, check that no Cl-O distance is less than ~0.25 nm.
+
+**Phase:** Phase 2 (Tab 4 — overlap detection for non-water molecules)
+
+---
+
+### Pitfall 11: VTK Visualization Hardcodes Water-Only Atom Types
+
+**What goes wrong:** `vtk_utils.py` maps atom names to atomic numbers with a fixed dict: `{"O": 8, "H": 1, "OW": 8, "HW1": 1, "HW2": 1, "MW": None}`. Adding ions (Na=11, Cl=17) and custom molecules (C=6, S=16, etc.) requires extending this mapping. The current bond creation logic assumes water molecule structure (3 visible atoms per molecule, O-H-H pattern).
+
+**Why it happens:** VTK conversion functions were written for water-only systems. `candidate_to_vtk_molecule()` and `interface_to_vtk_molecules()` assume `[O, H, H]` or `[OW, HW1, HW2]` patterns. The per-molecule bond creation iterates assuming 3 visible atoms per molecule.
+
+**Consequences:** Ions and custom molecules are invisible (KeyError for unmapped atom names) or rendered incorrectly (bonds drawn between Na+ and adjacent water molecules). The 3D viewer silently fails or shows garbage.
+
+**Prevention:**
+1. Use a general element-to-atomic-number lookup (periodic table style) instead of a hardcoded dict.
+2. Separate bond creation from atom creation: ions have NO bonds, custom molecules may have internal bonds defined by their topology.
+3. Create separate VTK actors per molecule type with per-type rendering styles (VDW for ions, ball-and-stick for small molecules, lines for water) as specified in v4-context.md.
+
+**Detection:** Render a structure with Na+ ions. If they don't appear or if bonds are drawn between Na+ and water molecules, this pitfall was hit.
+
+**Phase:** Phase 3 (3D viewer enhancements — display styles per molecule type)
+
+---
+
+### Pitfall 12: Hydrate Unit Cells Differ from Pure Ice
+
+**What goes wrong:** Methane hydrate sI has a unit cell of 12.24 Å (1.224 nm) with 46 water molecules + 8 guest cages. This is fundamentally different from ice Ih (variable supercell). If Tab 2 passes the same `nmolecules` parameter to the hydrate lattice as it does to pure ice, `calculate_supercell()` will be wrong.
+
+**Why it happens:** `calculate_supercell()` uses `UNIT_CELL_MOLECULES` which maps GenIce lattice names to molecules per unit cell. Hydrate lattices have different molecule counts AND include guest cages that are not water molecules. The density is also different (0.795 g/cm³ for sI vs 0.92 g/cm³ for ice Ih).
+
+**Consequences:** Wrong supercell size, wrong molecule count, wrong density. Generated structure may have far too many or too few water molecules.
+
+**Prevention:**
+1. Create a `HYDRATE_UNIT_CELL_MOLECULES` mapping separate from `UNIT_CELL_MOLECULES`.
+2. Hydrate generation should use the lattice's own `density` attribute (`lattice.density`), not the phase-based density from `lookup_phase()`.
+3. Hydrate generation is NOT a simple replacement of `PHASE_TO_GENICE["ice_ih"]` with `PHASE_TO_GENICE["sI"]` — the generation flow is fundamentally different.
+
+**Detection:** Generate sI hydrate. Verify the unit cell has the expected dimensions (~1.224 nm) and 46 water molecules per unit cell.
+
+**Phase:** Phase 1 (Tab 2 — hydrate generation)
+
+---
+
+### Pitfall 13: MW Virtual Site Computation Called on Non-Water Molecules
+
+**What goes wrong:** `compute_mw_position()` computes the TIP4P-ICE virtual site from O, H1, H2 positions. If the GROMACS writer iterates over all molecules and blindly calls `compute_mw_position()` for each, it crashes or produces garbage for ions (1 atom, not 3) and custom molecules (different atom layouts).
+
+**Why it happens:** The writer's loop `for mol_idx in range(nmol)` assumes every molecule is water. With ions and custom molecules, this assumption breaks.
+
+**Consequences:** `IndexError` when accessing `positions[base_idx + 1]` for a 1-atom ion. Or silent wrong coordinates if the ion's single atom position is misinterpreted as O.
+
+**Prevention:**
+1. Refactor the writer to iterate over molecule segments with per-segment `atoms_per_molecule` and `moltype`.
+2. Only call `compute_mw_position()` for water molecules (moltype == "SOL").
+3. Ions and custom molecules write their atoms directly from positions without MW computation.
+
+**Detection:** Export a system with water + NaCl. If the writer crashes with IndexError or the GRO file has garbage coordinates for Na+, this pitfall was hit.
+
+**Phase:** Phase 2 (GROMACS export for multi-molecule systems)
+
+---
+
+### Pitfall 14: Tab 2 Hydrate Generation Must Be a Separate Pipeline, Not Tab 1 Modification
+
+**What goes wrong:** If hydrate generation is implemented as a modification of Tab 1 (replacing the ice lattice with a hydrate lattice), it breaks Tab 1's validated flow. Hydrate structures are fundamentally different from pure ice: no phase lookup needed (lattice chosen directly), no ranking (one structure per lattice), output contains both water AND guest molecules.
+
+**Why it happens:** It's tempting to reuse Tab 1's generation pipeline. But hydrate generation requires: selecting a hydrate lattice (not a phase from T/P), providing a guest molecule (not just water), and producing output with mixed molecule types (water + guests). Tab 1's flow is: T/P → phase lookup → lattice → generate → rank → display. Tab 2's flow is: select lattice → select guest → generate → display (no ranking needed).
+
+**Prevention:** Implement hydrate generation as a SEPARATE pipeline in Tab 2 with its own ViewModel, Worker, and generation logic. Tab 1 remains unchanged.
+
+**Detection:** If Tab 2 code imports or modifies Tab 1's `generate_candidates()` or `rank_candidates()`, this pitfall was hit.
+
+**Phase:** Phase 1 (Tab 2 architecture decision — make this explicit before coding)
+
+---
+
+### Pitfall 15: Missing Temperature/Pressure in Candidate Metadata
+
+**What goes wrong:** Already documented as a known bug in CONCERNS.md: `candidate.metadata` never includes `temperature` or `pressure`. Water density calculations in interface modes always use defaults (273.15 K, 0.1 MPa). For Tab 4, ion concentration calculations depend on liquid volume, which depends on water density, which depends on temperature.
+
+**Why it happens:** `IceStructureGenerator._generate_single()` at line 136-138 only stores `density` and `phase_name` in metadata. Temperature and pressure are available at call time but not persisted.
+
+**Prevention:** Add `"temperature": temperature` and `"pressure": pressure` to `candidate.metadata` in `_generate_single()`. This is a pre-existing fix.
+
+**Detection:** Generate a candidate, check `candidate.metadata`. If `temperature` and `pressure` keys are missing, this bug is present.
+
+**Phase:** Phase 0 (pre-requisite fix)
+
+---
+
+### Pitfall 16: GRO Parser Duplication Gets Worse with Custom Molecules
+
+**What goes wrong:** Two separate `_parse_gro()` implementations exist (CONCERNS.md). With custom molecules, users will provide `.gro` files that also need parsing. A third copy would be disastrous.
+
+**Why it happens:** Both `generator.py` and `water_filler.py` implement GRO parsing independently. Custom molecule parsing requires the same format handling plus user-provided file loading.
+
+**Prevention:** Extract `_parse_gro()` into a shared `quickice/structure_generation/gro_parser.py` module. Use it everywhere. This is a pre-existing tech debt fix.
+
+**Detection:** Count GRO parsing implementations. If >1, this pitfall hasn't been addressed.
+
+**Phase:** Phase 0 (pre-requisite fix)
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 13: Missing Validation for Box Size vs. Ice Piece
+Mistakes that cause annoyance but are fixable with moderate effort.
 
-**What goes wrong:**
-Users specify box dimensions smaller than the ice piece, causing generation to fail with confusing errors or produce invalid structures.
+### Pitfall 17: Residue Naming in GRO/Top Output
 
-**How to avoid:**
-- Validate box dimensions > ice piece dimensions before generation
-- Provide clear error message with suggested minimum values
+**What goes wrong:** Current code uses "SOL" as the residue name for all molecules. With ions, GROMACS convention is "NA" for sodium, "CL" for chloride. Using "SOL" for everything confuses analysis tools.
 
----
+**Prevention:** Store residue name as part of molecule segment specification. Use per-moltype residue naming.
 
-### Pitfall 14: Triclinic Transformation Not Documented
-
-**What goes wrong:**
-Users don't understand what happens when triclinic cells are transformed, leading to confusion about structure validity.
-
-**How to avoid:**
-- Add tooltip/UI note explaining automatic transformation
-- Document in user guide with before/after visualization
+**Phase:** Phase 2 (GROMACS export)
 
 ---
 
-### Pitfall 15: Density Units Confusion
+### Pitfall 18: Random Ion Placement Can Create Ion-Ion Pairs Too Close
 
-**What goes wrong:**
-IAPWS returns kg/m³ but codebase uses g/cm³, causing factor-of-1000 errors.
+**What goes wrong:** Multiple Na+ and Cl- ions placed randomly in the liquid phase may end up very close together. Like-charge ion pairs (Na-Na, Cl-Cl) cause GROMACS energy minimization to fail or converge slowly.
 
-**How to avoid:**
-- Convert explicitly: `density_g_cm3 = density_kg_m3 / 1000.0`
-- Add unit tests verifying correct conversion
+**Prevention:** After placing all ions, run overlap check with ion-ion thresholds (~0.3 nm for Na-Na, ~0.4 nm for Cl-Cl). If overlaps found, re-place offending ions. Optionally warn if too many ions for the liquid volume.
 
----
-
-## Phase-Specific Pitfall Mapping
-
-| Phase | Primary Pitfalls to Address | Verification Method |
-|-------|----------------------------|---------------------|
-| Triclinic Detection | Pitfall 1, 9 | Generate ice_ii interface, verify cell |
-| CLI Enhancement | Pitfall 3, 4, 10 | Run --help, generate interface |
-| Water Density | Pitfall 5, 7, 12 | Test extreme T/P values |
-| Ice Density | Pitfall 6, 8, 15 | Compare with IAPWS R10-06 tables |
-| Integration | Pitfall 2, 8, 11 | Full test suite passes |
+**Phase:** Phase 2 (Tab 4 — post-insertion validation)
 
 ---
 
-## Prevention Checklist
+### Pitfall 19: Custom Molecule Orientation May Cross PBC Boundaries
 
-Before implementing each feature, verify:
+**What goes wrong:** In Tab 4 custom mode, the user specifies center-of-mass and rotation matrix. If the molecule is large (e.g., THF with 14+ atoms) and the COM is near a box edge, some atoms may end up outside the periodic box after rotation, creating "broken" molecules spanning PBC boundaries.
 
-- [ ] Triclinic transformation preserves crystal structure (visual inspection)
-- [ ] CLI parser handles both ice-only and interface modes
-- [ ] Water density has bounds checking and fallback
-- [ ] Ice Ih density matches IAPWS R10-06 within 0.001 g/cm³
-- [ ] Performance acceptable with caching (benchmark 10 candidates)
-- [ ] GROMACS export works for new interface modes
-- [ ] GUI displays new densities correctly
-- [ ] Existing tests still pass (regression check)
+**Prevention:** After placing a custom molecule with rotation, wrap all atoms using molecule-as-unit wrapping (same approach as `water_filler.py`'s `tile_structure()`). Check that no intra-molecular bond exceeds a reasonable distance.
+
+**Phase:** Phase 2 (Tab 4 — custom molecule placement)
 
 ---
 
-## Recovery Strategies
+### Pitfall 20: No Cancellation UI for Long-Running Molecule Insertion
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Coordinate transformation errors | HIGH | Recomplete transformation math, test with known structures |
-| CLI parameter issues | LOW | Update parser, re-test with valid arguments |
-| Density out of range | LOW | Add bounds check, verify fallback works |
-| Performance regression | MEDIUM | Add LRU cache, profile again |
-| Integration breakage | MEDIUM | Revert changes, add backward compatibility layer |
+**What goes wrong:** The existing GUI has no cancel button for Tab 3 interface generation (noted in CONCERNS.md). Tab 4 molecule insertion (especially random placement with overlap checking for large systems) may also be slow. Users must wait or kill the application.
+
+**Prevention:** Add a cancel button to Tab 2 and Tab 4 generation panels. Connect to `QThread.requestInterruption()` in the worker. This is a pre-existing UX gap.
+
+**Phase:** Phase 3 (GUI polish)
 
 ---
 
-## Technical Integration Notes
+### Pitfall 21: Dual is_cell_orthogonal() Functions Cause Inconsistency
 
-### Existing Code to Modify
+**What goes wrong:** Two `is_cell_orthogonal()` implementations exist (CONCERNS.md): one in `water_filler.py` (angle tolerance 0.1°) and one in `interface_builder.py` (off-diagonal element tolerance 1e-10). For hydrate unit cells, which may have near-orthogonal angles, these can give DIFFERENT results, causing one code path to use triclinic tiling while another uses orthogonal.
 
-| File | Changes Needed |
-|------|----------------|
-| `quickice/structure_generation/modes/piece.py` | Update orthogonal check (lines 61-71) |
-| `quickice/cli/parser.py` | Add interface argument group |
-| `quickice/main.py` | Route interface params to generation |
-| `quickice/phase_mapping/lookup.py` | Add IAPWS density function, update `_build_result()` |
-| `quickice/gui/phase_diagram_widget.py` | Connect density display to new calculation |
+**Prevention:** Consolidate into a single function with one tolerance strategy. This is a pre-existing tech debt fix.
 
-### Dependencies
-
-| Library | Version | Purpose | Status |
-|---------|---------|---------|--------|
-| iapws | 2.1.0 | Water/ice thermodynamic properties | Already in environment |
+**Phase:** Phase 0 (pre-requisite fix)
 
 ---
 
-## Sources
+## Phase-Specific Warnings
 
-- **IAPWS R10-06(2009):** Revised Release on the Equation of State 2006 for H2O Ice Ih — authoritative ice Ih density equation
-- **IAPWS R14-08(2011):** Revised Release on the Pressure along the Melting and Sublimation Curves — melting curves, not density
-- **Existing QuickIce Code:** `piece.py`, `parser.py`, `lookup.py` — current implementation
-- **Phase Context:** [.planning/debug/resolved/validate-iapws-source.md] — validated IAPWS references
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Pre-requisite fixes | Random state not restored on exception (#7) | Move `set_state()` to `finally` block |
+| Pre-requisite fixes | Missing T/P in metadata (#15) | Add temperature/pressure to Candidate.metadata |
+| Pre-requisite fixes | GRO parser duplication (#16) | Extract to shared module |
+| Pre-requisite fixes | Dual is_cell_orthogonal (#21) | Consolidate to one function |
+| Data structure design | Variable atoms-per-molecule (#5) | Design molecule segment index before any Tab 2/4 code |
+| Tab 2 hydrate generation | GenIce2 guest dict format (#1) | Write adapter function; unit test with methane guest |
+| Tab 2 hydrate generation | Case-sensitive lattice names (#2) | Create hydrate-to-GenIce name mapping |
+| Tab 2 hydrate generation | Different unit cells for hydrates (#12) | Separate HYDRATE_UNIT_CELL_MOLECULES mapping |
+| Tab 2 architecture | Hydrate must be separate pipeline (#14) | Design as separate flow, not Tab 1 modification |
+| Tab 4 ion insertion | Ion replaces ice molecule (#4) | Guard assertions + boundary validation |
+| Tab 4 ion insertion | Electroneutrality violation (#6) | Always pair Na+ with Cl-; validate total charge |
+| Tab 4 ion insertion | Cross-tab volume dependency (#8) | Add liquid_volume_nm3 to InterfaceStructure |
+| Tab 4 overlap detection | O-O threshold for non-water (#10) | Atom-type-aware overlap thresholds |
+| Tab 4 custom placement | PBC boundary crossing (#19) | Molecule-as-unit wrapping after rotation |
+| GROMACS export | Single-SOL topology broken (#3) | Multi-moltype topology writer |
+| GROMACS export | MW computed for non-water (#13) | Per-moltype export logic |
+| GROMACS export | .itp file paths broken (#9) | Copy .itp files to output directory |
+| GROMACS export | Wrong residue names (#17) | Per-moltype residue naming |
+| 3D viewer | Hardcoded atom types (#11) | General element lookup + per-type rendering |
+| 3D viewer | No cancel button (#20) | Add cancel to Tab 2 and Tab 4 panels |
 
 ---
 
-## Additional Research Needed
+## Dependency Order (What Must Be Fixed Before What)
 
-1. **Specific IAPWS R10-06 equation coefficients** — Need to implement or find Python library
-2. **Triclinic transformation algorithm** — Verify mathematical correctness
-3. **Performance benchmarks** — Measure IAPWS call time with caching
+```
+Pre-requisite (Phase 0):
+  #7 Random state restore → #1 Hydrate generation safety
+  #15 Missing T/P metadata → #8 Liquid volume calculation
+  #16 GRO parser duplication → Any .gro file reading for custom molecules
+  #21 Dual is_cell_orthogonal → Consistent cell type detection for hydrates
+
+Core data structure (Phase 1):
+  #5 Variable atoms-per-molecule → ALL downstream code
+  #5 → #3 Multi-moltype topology
+  #5 → #4 Ion insertion boundary
+  #5 → #11 VTK visualization
+  #5 → #13 MW virtual site per moltype
+
+Tab 2 (Phase 1):
+  #2 Lattice name mapping → #1 Guest dict adapter → Hydrate generation works
+  #12 Hydrate unit cells → #14 Separate pipeline design → Tab 2 UI
+
+Tab 4 (Phase 2):
+  #8 Liquid volume → #6 Electroneutrality → Ion count calculation
+  #4 Ice boundary guards → Ion replacement logic
+  #10 Atom-type overlaps → #18 Ion-ion distance check
+  #3 → #13 → #9 → #17 → GROMACS export works
+
+3D viewer (Phase 3):
+  #11 VTK atom types → Per-type rendering styles
+  #20 Cancel button → UX for long operations
+```
 
 ---
 
-*Pitfalls research for: QuickIce v3.5 Interface Enhancements*
-*Researched: 2026-04-12*
+## Confidence Assessment
+
+| Pitfall | Confidence | Source |
+|---------|------------|--------|
+| #1 GenIce2 guest dict format | HIGH | Verified by running code; read Stage7 source |
+| #2 Case-sensitive lattice names | HIGH | Verified by running `safe_import('lattice', 'sI')` vs `'cs1'` |
+| #3 Single-SOL topology | HIGH | Read existing `write_interface_top_file()` source |
+| #4 Ion replaces ice molecule | HIGH | Read `InterfaceStructure` type + `overlap_resolver.py` logic |
+| #5 Variable atoms-per-molecule | HIGH | Read all code that iterates over molecules |
+| #6 Electroneutrality | HIGH | GROMACS standard requirement |
+| #7 Random state pollution | HIGH | Read generator.py source + CONCERNS.md |
+| #8 Cross-tab volume | HIGH | Read v4-context.md + existing interface mode code |
+| #9 .itp file paths | MEDIUM | GROMACS convention; not verified with actual export yet |
+| #10 O-O overlap for non-water | HIGH | Read `overlap_resolver.py` source |
+| #11 VTK hardcoded types | HIGH | Read `vtk_utils.py` source |
+| #12 Hydrate unit cells | HIGH | Verified GenIce2 lattice attributes (cell, density, cagepos) |
+| #13 MW for non-water | HIGH | Read `gromacs_writer.py` compute loop |
+| #14 Separate pipeline | HIGH | Read v4-context.md + understood GenIce2 hydrate flow |
+| #15 Missing T/P metadata | HIGH | Read generator.py source + CONCERNS.md |
+| #16 GRO parser duplication | HIGH | Read generator.py + water_filler.py + CONCERNS.md |
+| #17-21 Minor pitfalls | MEDIUM | Based on code reading and GROMACS conventions |
+
+---
+
+*Pitfalls research: 2026-04-14*
+*Sources: Codebase analysis (all files read directly), GenIce2 API testing (live execution), GROMACS topology conventions*
