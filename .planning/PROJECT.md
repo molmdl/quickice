@@ -64,13 +64,25 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - ✓ Interface GROMACS export with TIP4P-ICE normalization — v3.0
 - ✓ Ctrl+I shortcut for interface export — v3.0
 
+**v3.5 Interface Enhancements:**
+- ✓ Ice Ih IAPWS density (temperature-dependent via R10-06(2009)) — v3.5
+- ✓ Native triclinic handling for interface generation — v3.5
+- ✓ Ice V, Ice VI interfaces work via lattice-vector tiling — v3.5
+- ✓ Ice II correctly blocked with clear error message — v3.5
+- ✓ CLI interface generation (--interface flag) — v3.5
+- ✓ All three interface modes from CLI (slab/pocket/piece) — v3.5
+- ✓ Full parameter control from CLI (box, thickness, seed) — v3.5
+- ✓ GROMACS export from CLI for interfaces — v3.5
+- ✓ Crystal system documentation corrected — v3.5
+- ✓ GROMACS atom wrapping for large systems (>99k atoms) — v3.5
+
 ### Active
 
-**v3.5 Interface Enhancements:**
-- Triclinic→orthogonal transformation (all ice phases for interface)
-- CLI interface generation (--interface flag)
-- Water density from T/P (display in UI)
-- Ice Ih accurate IAPWS density
+**v3.5 Deferred (Water Density - to complete):**
+- Water density from T/P using IAPWS-95 (module created, needs integration)
+- Water density display in Tab 1 info panel
+- Water molecule spacing matches target density in interfaces
+- IAPWS density lookup caching (@lru_cache code exists)
 
 **v4.0 Molecule Insertion (Future):**
 - Tab 2: Molecules to ice (GenIce hydrates, user topology)
@@ -87,29 +99,29 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - Web-based viewer
 - Real-time preview while typing
 - Cloud sync/collaboration
+- Additional ice phases beyond GenIce2 support
+- Automated interface geometry optimization
+- Multiple salt types (KCl, MgCl2)
 
-## Current Milestone: v3.5 Interface Enhancements
+## Current Milestone: Ready for v4.0 Planning
 
-**Goal:** Enable all ice phases in interface generation with CLI access and accurate densities.
-
-**Target features:**
-- Triclinic→orthogonal automatic transformation
-- CLI interface generation (--interface flag)
-- Water density from T/P in UI
-- Ice Ih IAPWS density
+**Next Goal:** Complete water density integration (Phase 23 deferred work), then define v4.0 molecule insertion
 
 ## Current State
 
-**Version:** v3.0 (shipped 2026-04-11)
-**Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib
-**Code:** ~12,768 lines of Python (test files excluded)
-**Test Coverage:** 62 tests passing
+**Version:** v3.5 (shipped 2026-04-13)
+**Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib, iapws
+**Code:** ~17,018 lines of Python (test files excluded)
+**Test Coverage:** 307+ tests passing
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
 **Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
 **Interface Modes:** Slab, Pocket (sphere/cubic), Piece
+**CLI Interface Generation:** Full support for all modes with parameter control
+**Triclinic Support:** Ice V, Ice VI work natively; Ice II blocked
 **Distribution:** Standalone executable
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
 **Thermodynamic Data:** IAPWS R14-08(2011), Journaux et al. (2019, 2020)
+**Density Calculations:** IAPWS R10-06(2009) for Ice Ih, IAPWS-95 for water
 
 ## Key Decisions
 
@@ -140,6 +152,10 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 | Line-based bonds (Tab 2) | Performance for large systems | ✓ Confirmed — smooth rendering |
 | Single SOL molecule type | Simplifies GROMACS topology | ✓ Confirmed — works with GROMACS |
 | Ctrl+I for interface export | No conflict with Ctrl+G | ✓ Confirmed — intuitive shortcut |
+| IAPWS library for density | Already in environment, scientifically accurate | ✓ Confirmed — v3.5 |
+| Native triclinic handling | Transformation creates gaps during tiling | ✓ Confirmed — v3.5 |
+| Ice II blocked for interfaces | Rhombohedral crystal incompatible | ✓ Confirmed — v3.5 |
+| GROMACS atom wrapping at 100k | Standard convention for large systems | ✓ Confirmed — v3.5 |
 
 ## Context
 
@@ -149,15 +165,16 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - Initial prompt notes: "pure vibe coding project"
 - v2.0 adds PySide6 GUI with interactive phase diagram and VTK 3D viewer
 - v3.0 adds two-tab interface with ice-water interface generation and GROMACS export
+- v3.5 adds IAPWS density calculations, triclinic support, and CLI interface generation
 
 ## Constraints
 
 - **Runtime**: Minimal resource usage — lightweight model
-- **Output**: PDB format plus image exports, GROMACS-reday inputs
+- **Output**: PDB format plus image exports, GROMACS-ready inputs
 - **Dependencies**: Only Python libraries in current conda environment
 - **Scope**: Water ice only, generation only
 - **Installation**: Do NOT auto-install dependencies. Add to environment.yml, seek approval, wait for user to install.
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-04-12 after v3.5 milestone started*
+*Last updated: 2026-04-13 after v3.5 milestone complete*

@@ -1,5 +1,36 @@
 # Project Milestones: QuickIce
 
+## v3.5 Interface Enhancements (Shipped: 2026-04-13)
+
+**Delivered:** Ice Ih IAPWS density, native triclinic handling, CLI interface generation, and documentation corrections
+
+**Phases completed:** 22, 24-27 (16 plans shipped; Phase 23 water density deferred)
+
+**Key accomplishments:**
+- Ice Ih IAPWS density (temperature-dependent via R10-06(2009), replaces hardcoded 0.9167 g/cm³)
+- Native triclinic handling (Ice V, Ice VI work with lattice-vector tiling; Ice II correctly blocked)
+- CLI interface generation (--interface flag with slab/pocket/piece modes and full parameter control)
+- GROMACS export validation (atom number wrapping at 100k for large systems)
+- Crystal system documentation corrected (Ice VI tetragonal, Ice V monoclinic, Ice II rhombohedral)
+
+**Deferred to v4.0:**
+- Water density integration (Tab 1 display, Tab 2 interface spacing) - see Phase 23 UAT
+
+**Stats:**
+- ~17,018 lines of Python (test files excluded)
+- 5 phases shipped, 1 phase deferred, 16 plans executed
+- 11 requirements satisfied, 4 deferred (WATER-01 to WATER-04)
+- 18 days (2026-03-26 → 2026-04-13)
+- 27 feature commits
+
+**Git range:** `feat(22-01)` → `docs(27-04)`
+
+**What's next:** v4.0 (complete water density + molecule insertion)
+
+**Archive:** [.planning/milestones/v3.5-ROADMAP.md](./milestones/v3.5-ROADMAP.md)
+
+---
+
 ## v3.0 Interface Generation (Shipped: 2026-04-11)
 
 **Delivered:** Ice-water interface generation with three geometry modes, phase-distinct visualization, and GROMACS export
