@@ -153,7 +153,8 @@ class QuickReferenceDialog(QDialog):
             "• 'Box too small': Increase box dimensions\n"
             "• 'Water layer too thin': Increase box or decrease ice thickness\n"
             "• 'No water molecules': Box too small or ice piece too large\n"
-            "• 'Triclinic cell': Transformation applied automatically (Ice II, V, VI work with interfaces)"
+            "• 'Ice II not supported': Ice II (rhombohedral) cannot form orthogonal supercells - use Ice V or Ice VI instead\n"
+            "• 'Triclinic cell': Transformation applied automatically for Ice V (monoclinic)"
         )
         best_practices_text.setWordWrap(True)
         layout.addWidget(best_practices_text)
