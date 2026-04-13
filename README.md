@@ -230,7 +230,7 @@ QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations):
 
 **Not supported:** Ice IX, Ice X, Ice XI, Ice XV, and liquid water (no GenIce2 lattices available).
 
-All supported ice phases (Ih, Ic, II, III, V, VI, VII, VIII) work with interface construction. Triclinic phases (Ice II, V, VI) are automatically transformed to orthogonal cells via triclinic-to-orthogonal transformation for interface generation.
+All supported ice phases except Ice II work with interface construction. Ice II (rhombohedral) cannot form orthogonal supercells for interface generation. Ice V (monoclinic) is automatically transformed to orthogonal cells. Ice VI (tetragonal) and other orthogonal phases work natively.
 
 ## GROMACS Export
 
