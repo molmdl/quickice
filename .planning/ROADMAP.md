@@ -64,6 +64,13 @@ Phase 32 (Custom Molecules + Display Controls)
 
 **Requirements:** None (internal fixes)
 
+**Plans:** 3 plans in 1 wave (all parallel)
+
+Plans:
+- [ ] 28-01-PLAN.md — Fix random state restoration + add T/P metadata (generator.py)
+- [ ] 28-02-PLAN.md — Deduplicate GRO parser into shared module (gro_parser.py)
+- [ ] 28-03-PLAN.md — Unify is_cell_orthogonal() implementation (cell_utils.py)
+
 **Success Criteria:**
 1. GenIce2 numpy random state restored in finally block after any generation exception (Pitfall #7)
 2. Temperature/Pressure metadata correctly stored in StructureResult (Pitfall #15)
