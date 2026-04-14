@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 30 (ion insertion) |
-| Plan | 01 of 07 |
+| Plan | 02 of 07 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 30-01-SUMMARY.md (IonInserter class) |
+| Last activity | 2026-04-14 — Completed 30-02-SUMMARY.md (GROMACS ion export) |
 
 **Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
@@ -122,6 +122,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HYDRATE_LATTICES constant | sI, sII, sH GenIce2 lattice info | ✓ Implemented (29-02) |
 | GUEST_MOLECULES constant | ch4, thf, co2, h2 guest molecule metadata | ✓ Implemented (29-02) |
 | IonInserter class | Concentration-based placement, not lattice replacement | ✓ Implemented (30-01) |
+| gromacs_ion_export.py | ion.itp generator with [moleculetype] sections | ✓ Implemented (30-02) |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
 | MOLECULE_TO_GROMACS mapping | Internal types to GROMACS residue/itp names | ✓ Implemented (29-03) |
@@ -163,8 +164,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 30-01-SUMMARY.md (IonInserter class)
-**Next:** Phase 30 Plan 02
+**Completed:** 30-02-SUMMARY.md (GROMACS ion export)
+**Next:** Phase 30 Plan 03
 
 ---
 
