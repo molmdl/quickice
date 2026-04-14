@@ -10,6 +10,7 @@ All validation failures raise InterfaceGenerationError with descriptive messages
 import numpy as np
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
+from quickice.structure_generation.cell_utils import is_cell_orthogonal
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.modes.slab import assemble_slab
 from quickice.structure_generation.modes.pocket import assemble_pocket
@@ -20,24 +21,6 @@ from quickice.structure_generation.modes.piece import assemble_piece
 MINIMUM_BOX_DIMENSION = 1.0  # nm - Minimum box dimension for physical validity
 # Rationale: Water molecule diameter ~0.28 nm, ice unit cells 0.6-0.9 nm
 # Conservative minimum ensures enough space for at least one unit cell
-
-
-def is_cell_orthogonal(cell: np.ndarray, tol: float = 1e-10) -> bool:
-    """Check if a cell matrix represents an orthogonal (rectangular) box.
-
-    An orthogonal cell has non-zero elements only on the diagonal.
-    Triclinic cells have off-diagonal elements representing tilt.
-
-    Args:
-        cell: (3, 3) cell matrix where each row is a lattice vector.
-        tol: Tolerance for considering off-diagonal elements as zero.
-
-    Returns:
-        True if the cell is orthogonal, False if triclinic.
-    """
-    off_diagonal = cell.copy()
-    np.fill_diagonal(off_diagonal, 0)
-    return np.allclose(off_diagonal, 0, atol=tol)
 
 
 def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> None:
