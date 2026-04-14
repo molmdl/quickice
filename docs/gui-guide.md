@@ -251,8 +251,8 @@ QuickIce supports three interface geometries.
 
 <img src="images/tab2-pocket-interface.png" width="90%">
 
-- **Pocket diameter** (0.5–50 nm): Diameter of the spherical/ellipsoidal water cavity
-- **Pocket shape**: Sphere or Ellipsoid (ellipsoid support planned for future release)
+- **Pocket diameter** (0.5–50 nm): Diameter of the spherical/cubic water cavity
+- **Pocket shape**: Sphere or cubic (other shapes planned for future release.
 
 #### Piece Interface
 
