@@ -15,6 +15,19 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure
 TIP4P_ICE_ALPHA = 0.13458335
 
 
+# Mapping from internal molecule type to GROMACS names
+MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
+    "ice":   {"res_name": "SOL", "itp_file": "water.itp", "mol_name": "SOL"},
+    "water": {"res_name": "SOL", "itp_file": "water.itp", "mol_name": "SOL"},
+    "na":    {"res_name": "NA",  "itp_file": "na.itp",     "mol_name": "NA"},
+    "cl":    {"res_name": "CL",  "itp_file": "cl.itp",     "mol_name": "CL"},
+    "ch4":   {"res_name": "CH4", "itp_file": "ch4.itp",    "mol_name": "CH4"},
+    "thf":   {"res_name": "THF", "itp_file": "thf.itp",    "mol_name": "THF"},
+    "co2":   {"res_name": "CO2", "itp_file": "co2.itp",    "mol_name": "CO2"},
+    "h2":    {"res_name": "H2",  "itp_file": "h2.itp",     "mol_name": "H2"},
+}
+
+
 def write_gro_file(candidate: Candidate, filepath: str) -> None:
     """Write candidate to GROMACS .gro format.
     
