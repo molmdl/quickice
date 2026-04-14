@@ -717,6 +717,25 @@ class InfoPanel(QWidget):
         
         layout.addLayout(header_layout)
         
+        # Density info row (below header, above log)
+        self.density_info_layout = QHBoxLayout()
+        self.density_info_layout.setContentsMargins(4, 0, 4, 4)
+        self.density_info_layout.setSpacing(12)
+        
+        # Ice density label (existing or placeholder)
+        self.ice_density_label = QLabel("Ice: -- g/cm³")
+        self.ice_density_label.setStyleSheet("color: #0066CC;")
+        self.density_info_layout.addWidget(self.ice_density_label)
+        
+        # Water density label (new)
+        self.water_density_label = QLabel("Liquid water: -- g/cm³")
+        self.water_density_label.setStyleSheet("color: #0066CC;")
+        self.density_info_layout.addWidget(self.water_density_label)
+        
+        self.density_info_layout.addStretch()
+        
+        layout.addLayout(self.density_info_layout)
+        
         # Log text area (monospace, read-only)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
@@ -771,3 +790,25 @@ class InfoPanel(QWidget):
         self._collapsed = True
         self.toggle_btn.setChecked(False)
         self._update_visibility()
+    
+    def update_water_density(self, T_K: float, P_MPa: float = 0.101325):
+        """Update water density display.
+        
+        Args:
+            T_K: Temperature in Kelvin
+            P_MPa: Pressure in MPa (default 1 atm)
+        """
+        from quickice.phase_mapping.water_density import water_density_gcm3
+        rho = water_density_gcm3(T_K, P_MPa)
+        self.water_density_label.setText(f"Liquid water: {rho:.4f} g/cm³")
+    
+    def update_ice_density(self, T_K: float, P_MPa: float = 0.101325):
+        """Update ice density display.
+        
+        Args:
+            T_K: Temperature in Kelvin
+            P_MPa: Pressure in MPa (default 1 atm)
+        """
+        from quickice.phase_mapping.ice_ih_density import ice_ih_density_gcm3
+        rho = ice_ih_density_gcm3(T_K, P_MPa)
+        self.ice_density_label.setText(f"Ice: {rho:.4f} g/cm³")
