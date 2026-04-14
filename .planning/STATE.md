@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 28 (pre-requisite fixes) |
-| Plan | 01 of 03 |
+| Plan | 02 of 03 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 28-01-PLAN.md |
+| Last activity | 2026-04-14 — Completed 28-02-PLAN.md |
 
 **Progress:** ░░░░░░░░░░ 0% (5 phases, 0 plans executed)
 
@@ -122,6 +122,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
 | Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
+| Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
 
 ### v3.5 Shipped Decisions
 
@@ -154,8 +155,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 28-01-PLAN.md (Phase 28 pre-requisite bug fixes)
-**Next:** 28-02-PLAN.md (remaining plans in Phase 28)
+**Completed:** 28-02-PLAN.md (GRO parser deduplication)
+**Next:** 28-03-PLAN.md (remaining Phase 28 pre-requisite fixes)
 
 ---
 
