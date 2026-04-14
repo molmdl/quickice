@@ -25,6 +25,7 @@ from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, 
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
+from quickice.gui.ion_panel import IonPanel
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
@@ -141,9 +142,13 @@ class MainWindow(QMainWindow):
         # === Tab 2: Hydrate Configuration (new in v4.0) ===
         self.hydrate_panel = HydratePanel()
         
+        # === Tab 3: Ion Insertion (new in v4.0) ===
+        self.ion_panel = IonPanel()
+        
         # Add tabs to tab widget
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
+        self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         
         # Set Tab 1 as default on startup
@@ -387,6 +392,10 @@ class MainWindow(QMainWindow):
                 "3D viewer unavailable in remote environment. "
                 "Clone to local machine for full visualization."
             )
+        
+        # Update density displays in InfoPanel (both ice and water)
+        self.info_panel.update_ice_density(self._current_T, self._current_P)
+        self.info_panel.update_water_density(self._current_T, self._current_P)
     
     @Slot(str)
     def _on_generation_error(self, error_msg: str):
@@ -559,8 +568,14 @@ class MainWindow(QMainWindow):
             index: New tab index (0 = Ice Generation, 1 = Interface Construction)
         """
         # Qt preserves all widget state automatically
-        # No explicit state saving needed - widgets maintain their own state
-        pass
+        # No explicit state saving needed - widgets maintain their state
+        
+        # Update density displays when switching to Tab 1 (Ice Generation)
+        if index == 0:
+            # Only update if we have valid current T/P values
+            if self._current_T > 0 and self._current_P > 0:
+                self.info_panel.update_ice_density(self._current_T, self._current_P)
+                self.info_panel.update_water_density(self._current_T, self._current_P)
     
     @Slot(bool)
     def _on_ui_enabled_changed(self, enabled: bool):
