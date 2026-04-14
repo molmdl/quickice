@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 29 (data structures + multi-molecule GROMACS) |
-| Plan | 04 of 06 |
+| Plan | 05 of 06 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 29-04-PLAN.md (HydratePanel UI widget) |
+| Last activity | 2026-04-14 — Completed 29-06-PLAN.md (HydrateStructureGenerator) |
 
-**Progress:** ██████░░░░ 47% (5 phases, 7/15 plans executed - Phase 28 complete, Phase 29 4/6)
+**Progress:** ███████░░░ 53% (5 phases, 8/15 plans executed - Phase 28 complete, Phase 29 5/6)
 
 ---
 
@@ -163,8 +163,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 29-04-PLAN.md (HydratePanel UI widget)
-**Next:** Phase 29 Plan 05 (multi-molecule structure builder)
+**Completed:** 29-06-PLAN.md (HydrateStructureGenerator)
+**Next:** Phase 29 Plan 07 (hydration worker integration)
 
 ---
 
