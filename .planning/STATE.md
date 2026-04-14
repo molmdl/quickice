@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 29 (data structures + multi-molecule GROMACS) |
-| Plan | 06 of 06 |
-| Status | Phase complete |
-| Last activity | 2026-04-14 — Phase 29 verified (6/6 must-haves) |
+| Phase | 30 (ion insertion) |
+| Plan | 01 of 07 |
+| Status | In progress |
+| Last activity | 2026-04-14 — Completed 30-01-SUMMARY.md (IonInserter class) |
 
-**Progress:** ████░░░░░░ 40% (2/5 phases complete - Phases 28, 29)
+**Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
 ---
 
@@ -121,7 +121,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydrateLatticeInfo dataclass | Display info for hydrate lattice selection | ✓ Implemented (29-02) |
 | HYDRATE_LATTICES constant | sI, sII, sH GenIce2 lattice info | ✓ Implemented (29-02) |
 | GUEST_MOLECULES constant | ch4, thf, co2, h2 guest molecule metadata | ✓ Implemented (29-02) |
-| IonInserter class | Concentration-based placement, not lattice replacement | Pending Phase 30 |
+| IonInserter class | Concentration-based placement, not lattice replacement | ✓ Implemented (30-01) |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
 | MOLECULE_TO_GROMACS mapping | Internal types to GROMACS residue/itp names | ✓ Implemented (29-03) |
@@ -163,8 +163,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 29-05-SUMMARY.md (HydratePanel integration)
-**Next:** Phase 29 Plan 06 (HydrateStructureGenerator)
+**Completed:** 30-01-SUMMARY.md (IonInserter class)
+**Next:** Phase 30 Plan 02
 
 ---
 
