@@ -327,6 +327,42 @@ class HydrateConfig:
 
 
 @dataclass
+class IonConfig:
+    """Configuration for ion insertion.
+    
+    Attributes:
+        concentration_molar: NaCl concentration in mol/L (M)
+    """
+    concentration_molar: float = 0.0
+    
+    def __post_init__(self):
+        if self.concentration_molar < 0:
+            raise ValueError(f"concentration_molar must be >= 0, got {self.concentration_molar}")
+
+
+@dataclass
+class IonStructure:
+    """Result of ion insertion.
+    
+    Attributes:
+        positions: (N_atoms, 3) atom positions in nm (water + ions)
+        atom_names: Atom names for all atoms
+        cell: (3, 3) box cell vectors in nm
+        molecule_index: List of MoleculeIndex for each molecule
+        na_count: Number of Na+ ions placed
+        cl_count: Number of Cl- ions placed
+        report: Generation report string
+    """
+    positions: np.ndarray
+    atom_names: list[str]
+    cell: np.ndarray
+    molecule_index: list[MoleculeIndex]
+    na_count: int
+    cl_count: int
+    report: str
+
+
+@dataclass
 class HydrateLatticeInfo:
     """Display information for a hydrate lattice type.
     
