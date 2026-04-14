@@ -52,6 +52,11 @@ from quickice.structure_generation.gro_parser import (
     parse_gro_string,
     parse_gro_file,
 )
+from quickice.structure_generation.gromacs_ion_export import (
+    generate_ion_itp,
+    write_ion_itp,
+    get_ion_molecule_section,
+)
 from quickice.structure_generation.cell_utils import is_cell_orthogonal
 
 __all__ = [
@@ -93,6 +98,10 @@ __all__ = [
     # GRO parsing utilities
     "parse_gro_string",
     "parse_gro_file",
+    # Ion export utilities
+    "generate_ion_itp",
+    "write_ion_itp",
+    "get_ion_molecule_section",
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",
