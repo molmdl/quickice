@@ -1,8 +1,8 @@
-"""GenIce-based ice structure generator.
+'''GenIce-based ice structure generator.
 
 This module provides the IceStructureGenerator class that wraps GenIce's API
 to generate physically valid ice structures with diverse hydrogen bond networks.
-"""
+'''
 
 import time
 
@@ -21,13 +21,13 @@ from quickice.structure_generation.errors import StructureGenerationError
 
 
 class IceStructureGenerator:
-    """Generator for ice structure candidates using GenIce.
+    '''Generator for ice structure candidates using GenIce.
 
     This class wraps GenIce's API to generate multiple ice structure candidates
     with different hydrogen bond network configurations (controlled by random seed).
 
     Attributes:
-        phase_id: Phase identifier (e.g., "ice_ih")
+        phase_id: Phase identifier (e.g., 'ice_ih')
         phase_name: Human-readable phase name
         density: Density in g/cm³ from Phase 2 lookup
         nmolecules: Target number of water molecules
@@ -35,26 +35,33 @@ class IceStructureGenerator:
         molecules_per_unit_cell: Molecules in one unit cell
         supercell_matrix: 3x3 supercell matrix
         actual_nmolecules: Actual number of molecules (after supercell rounding)
-    """
+        temperature: Temperature in Kelvin (may be None)
+        pressure: Pressure in MPa (may be None)
+    '''
 
     def __init__(self, phase_info: dict, nmolecules: int):
-        """Initialize the generator with phase info and target molecule count.
+        '''Initialize the generator with phase info and target molecule count.
 
         Args:
             phase_info: Dict from lookup_phase() containing:
                 - phase_id: Phase identifier
                 - phase_name: Human-readable name
                 - density: Density in g/cm³
+                - temperature: Temperature in Kelvin (optional)
+                - pressure: Pressure in MPa (optional)
             nmolecules: Target number of water molecules
 
         Raises:
             UnsupportedPhaseError: If phase is not supported by GenIce
             StructureGenerationError: If initialization fails
-        """
+        '''
         # Extract phase information
-        self.phase_id = phase_info["phase_id"]
-        self.phase_name = phase_info["phase_name"]
-        self.density = phase_info["density"]
+        self.phase_id = phase_info.get('phase_id') or phase_info['phase_id']
+        self.phase_name = phase_info.get('phase_name') or phase_info['phase_name']
+        self.density = phase_info.get('density') or phase_info['density']
+        # Temperature and pressure may be missing in legacy callers (backward compatible)
+        self.temperature = phase_info.get('temperature')
+        self.pressure = phase_info.get('pressure')
         self.nmolecules = nmolecules
 
         # Get GenIce lattice name
@@ -69,7 +76,7 @@ class IceStructureGenerator:
         )
 
     def _generate_single(self, seed: int) -> Candidate:
-        """Generate a single ice structure candidate.
+        '''Generate a single ice structure candidate.
 
         Args:
             seed: Random seed for hydrogen bond network diversity
@@ -89,15 +96,15 @@ class IceStructureGenerator:
             from multiple threads would corrupt each other's random state.
             QuickIce is designed for sequential execution and does not support
             concurrent generation.
-        """
+        '''
+        # Save global random state BEFORE try block - ensures restoration even on exception
+        # GenIce uses np.random internally (see genice2/genice.py lines 58, 816, 1072)
+        original_state = np.random.get_state()
         try:
-            # Save global random state to minimize pollution
-            # GenIce uses np.random internally (see genice2/genice.py lines 58, 816, 1072)
-            original_state = np.random.get_state()
             np.random.seed(seed)
 
             # Load lattice
-            lattice = safe_import("lattice", self.lattice_name).Lattice()
+            lattice = safe_import('lattice', self.lattice_name).Lattice()
 
             # Create GenIce instance with density and supercell
             ice = GenIce(
@@ -108,18 +115,15 @@ class IceStructureGenerator:
             # TIP4P produces 4 atoms (OW, HW1, HW2, MW) but our interface modes
             # expect 3 atoms per molecule (O, H, H). Ice is generated with 3-atom
             # TIP3P format and normalized to 4-atom TIP4P-ICE at export time.
-            water = safe_import("molecule", "tip3p").Molecule()
+            water = safe_import('molecule', 'tip3p').Molecule()
 
             # Load GROMACS formatter
-            formatter = safe_import("format", "gromacs").Format()
+            formatter = safe_import('format', 'gromacs').Format()
 
             # Generate ice structure with strict depolarization
             gro_string = ice.generate_ice(
-                formatter=formatter, water=water, depol="strict"
+                formatter=formatter, water=water, depol='strict'
             )
-
-            # Restore global random state to minimize pollution
-            np.random.set_state(original_state)
 
             # Parse GRO output
             positions, atom_names, cell = self._parse_gro(gro_string)
@@ -133,8 +137,10 @@ class IceStructureGenerator:
                 phase_id=self.phase_id,
                 seed=seed,
                 metadata={
-                    "density": self.density,
-                    "phase_name": self.phase_name,
+                    'density': self.density,
+                    'phase_name': self.phase_name,
+                    'temperature': self.temperature,
+                    'pressure': self.pressure,
                 },
             )
 
@@ -143,11 +149,14 @@ class IceStructureGenerator:
         except Exception as e:
             # Wrap any GenIce or internal errors with full context
             raise StructureGenerationError(
-                f"Failed to generate ice structure ({type(e).__name__}): {e}"
+                f'Failed to generate ice structure ({type(e).__name__}): {e}'
             ) from e
+        finally:
+            # ALWAYS restore random state - even on exception
+            np.random.set_state(original_state)
 
     def _parse_gro(self, gro_string: str) -> tuple[np.ndarray, list[str], np.ndarray]:
-        """Parse GRO format string to extract coordinates.
+        '''Parse GRO format string to extract coordinates.
 
         GRO format:
             Line 0: Title
@@ -161,10 +170,10 @@ class IceStructureGenerator:
         Returns:
             Tuple of (positions, atom_names, cell)
             - positions: (N_atoms, 3) array in nm
-            - atom_names: List of atom names ["O", "H", "H", ...]
+            - atom_names: List of atom names ['O', 'H', 'H', ...]
             - cell: (3, 3) cell vectors in nm
-        """
-        lines = gro_string.strip().split("\n")
+        '''
+        lines = gro_string.strip().split('\n')
 
         # Parse number of atoms
         n_atoms = int(lines[1])
@@ -188,8 +197,8 @@ class IceStructureGenerator:
             positions[i] = [x, y, z]
 
         # Parse cell dimensions (last line)
-        # For orthogonal boxes: "v1 v2 v3"
-        # For non-orthogonal: "v1x v2y v3z v1y v1z v2x v2z v3x v3y"
+        # For orthogonal boxes: 'v1 v2 v3'
+        # For non-orthogonal: 'v1x v2y v3z v1y v1z v2x v2z v3x v3y'
         cell_line = lines[-1].split()
         if len(cell_line) == 3:
             # Orthogonal box
@@ -208,7 +217,7 @@ class IceStructureGenerator:
         return positions, atom_names, cell
 
     def generate_all(self, n_candidates: int = 10, base_seed: int | None = None) -> list[Candidate]:
-        """Generate multiple ice structure candidates with diverse seeds.
+        '''Generate multiple ice structure candidates with diverse seeds.
 
         Args:
             n_candidates: Number of candidates to generate (default 10)
@@ -226,7 +235,7 @@ class IceStructureGenerator:
             If base_seed is None (default), each batch uses a different starting
             seed based on the current time, ensuring diversity across calls.
             For reproducibility, specify a base_seed value.
-        """
+        '''
         candidates = []
         if base_seed is None:
             # Use nanosecond time for maximum resolution diversity across batches
@@ -247,7 +256,7 @@ def generate_candidates(
     n_candidates: int = 10,
     base_seed: int | None = None,
 ) -> GenerationResult:
-    """Generate multiple ice structure candidates.
+    '''Generate multiple ice structure candidates.
 
     This is a convenience function that creates a generator instance
     and returns results in a single call.
@@ -279,7 +288,7 @@ def generate_candidates(
         >>> # Second call with same seed produces identical candidates
         >>> result2 = generate_candidates(phase_info, nmolecules=100, base_seed=42)
         >>> # result and result2 have identical structures
-    """
+    '''
     # Create generator
     generator = IceStructureGenerator(phase_info, nmolecules)
 
