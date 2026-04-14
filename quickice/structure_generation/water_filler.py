@@ -14,6 +14,8 @@ from typing import Optional
 
 import numpy as np
 
+from quickice.structure_generation.gro_parser import parse_gro_file
+
 
 # === Triclinic Cell Utilities ===
 
@@ -243,8 +245,7 @@ def scale_positions_for_density(
 def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
     """Load the bundled TIP4P water template from tip4p.gro.
 
-    Reads and parses the GRO file following the same format as
-    IceStructureGenerator._parse_gro(). Results are cached at module
+    Uses shared gro_parser module. Results are cached at module
     level since the template never changes.
 
     Returns:
@@ -261,37 +262,15 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
     # Locate the bundled tip4p.gro file
     gro_path = Path(__file__).parent.parent / "data" / "tip4p.gro"
 
-    with open(gro_path, "r") as f:
-        gro_string = f.read()
+    # Parse GRO using shared parser
+    positions, atom_names, cell = parse_gro_file(gro_path)
 
-    # Parse GRO format (same logic as IceStructureGenerator._parse_gro)
-    lines = gro_string.strip().split("\n")
-
-    # Parse number of atoms
-    n_atoms = int(lines[1])
-
-    # Parse atom positions and names
-    positions = np.zeros((n_atoms, 3), dtype=float)
-    atom_names = []
-
-    for i in range(n_atoms):
-        line = lines[2 + i]
-        atom_name = line[10:15].strip()
-        atom_names.append(atom_name)
-
-        x = float(line[20:28])
-        y = float(line[28:36])
-        z = float(line[36:44])
-        positions[i] = [x, y, z]
-
-    # Parse cell dimensions (last line)
-    cell_line = lines[-1].split()
-    if len(cell_line) == 3:
-        # Orthogonal box
-        box_dims = np.array([float(v) for v in cell_line])
+    # Extract diagonal for orthogonal boxes (backward compatibility)
+    # The original code returned a 1D array [bx, by, bz]
+    if cell.ndim == 2:
+        box_dims = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
     else:
-        # Non-orthogonal box - extract diagonal for v3.0
-        box_dims = np.array([float(cell_line[0]), float(cell_line[1]), float(cell_line[2])])
+        box_dims = cell
 
     # Cache the result
     _water_template_cache = (positions, atom_names, box_dims)
