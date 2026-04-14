@@ -210,6 +210,10 @@ class MainWindow(QMainWindow):
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
         
+        # Tab 4 (Ion Insertion) connections (new in v4.0)
+        self.ion_panel.configuration_changed.connect(self._on_ion_config_changed)
+        self.ion_panel.insert_requested.connect(self._on_insert_ions)
+        
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
         self._viewmodel.interface_generation_progress.connect(self.interface_panel.progress_panel.update_progress)
@@ -555,6 +559,20 @@ class MainWindow(QMainWindow):
         print(f"Generate hydrate with config: lattice={config.lattice_type}, guest={config.guest_type}, "
               f"occupancy={config.cage_occupancy_small}/{config.cage_occupancy_large}%, "
               f"supercell={config.supercell_x}x{config.supercell_y}x{config.supercell_z}")
+    
+    def _on_ion_config_changed(self):
+        """Handle ion configuration change."""
+        config = self.ion_panel.get_configuration()
+        self._current_ion_config = config
+    
+    @Slot()
+    def _on_insert_ions(self):
+        """Handle Insert Ions button click."""
+        config = self.ion_panel.get_configuration()
+        volume = self.ion_panel.get_liquid_volume()
+        # TODO: Call IonInserter to place ions, then update 3D viewer with ion actors
+        # For now, log the action
+        print(f"Insert ions with config: concentration={config.concentration_molar} mol/L, volume={volume:.2f} nm³")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
