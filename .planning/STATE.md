@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 29 (data structures + multi-molecule GROMACS) |
-| Plan | 05 of 06 |
-| Status | In progress |
-| Last activity | 2026-04-14 — Completed 29-05-SUMMARY.md (HydratePanel integration) |
+| Plan | 06 of 06 |
+| Status | Phase complete |
+| Last activity | 2026-04-14 — Phase 29 verified (6/6 must-haves) |
 
-**Progress:** ███████░░░ 53% (5 phases, 9/15 plans executed - Phase 28 complete, Phase 29 5/6)
+**Progress:** ████░░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
 ---
 
