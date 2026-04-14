@@ -69,7 +69,7 @@ Phase 32 (Custom Molecules + Display Controls)
 Plans:
 - [x] 28-01-PLAN.md — Fix random state restoration + add T/P metadata (generator.py)
 - [x] 28-02-PLAN.md — Deduplicate GRO parser into shared module (gro_parser.py)
-- [ ] 28-03-PLAN.md — Unify is_cell_orthogonal() implementation (cell_utils.py)
+- [x] 28-03-PLAN.md — Unify is_cell_orthogonal() implementation (cell_utils.py)
 
 **Success Criteria:**
 1. GenIce2 numpy random state restored in finally block after any generation exception (Pitfall #7)
@@ -105,6 +105,15 @@ Plans:
 - [x] 29-05-PLAN.md — Integrate HydratePanel into main window
 - [x] 29-06-PLAN.md — HydrateStructureGenerator class with GenIce2 integration
 
+**Plans:** 5 plans in 3 waves (READY)
+
+Plans:
+- [x] 30-01-PLAN.md — IonInserter class with concentration calculation and water replacement
+- [x] 30-02-PLAN.md — GROMACS ion export (ion.itp generation)
+- [x] 30-03-PLAN.md — IonPanel UI widget (Tab 4)
+- [x] 30-04-PLAN.md — Ion rendering (VTK VDW sphere actors)
+- [x] 30-05-PLAN.md — Water density display in Tab 1 info panel
+
 **Success Criteria:**
 1. User can select hydrate lattice (sI, sII, sH) and see lattice info display (cage types, counts)
 2. User can select guest molecule (CH4, CO2) and specify cage occupancy (0-100%)
@@ -131,6 +140,15 @@ Plans:
 - ION-06: 3D viewer renders ions as VDW spheres (Na+ yellow, Cl- green)
 - ION-07: GROMACS export includes bundled Na+/Cl- ion parameters
 - WATER-02: Water density displayed in Tab 1 info panel
+
+**Plans:** 5 plans in 3 waves (READY)
+
+Plans:
+- [x] 30-01-PLAN.md — IonInserter class with concentration calculation and water replacement
+- [x] 30-02-PLAN.md — GROMACS ion export (ion.itp generation)
+- [x] 30-03-PLAN.md — IonPanel UI widget (Tab 4)
+- [x] 30-04-PLAN.md — Ion rendering (VTK VDW sphere actors)
+- [x] 30-05-PLAN.md — Water density display in Tab 1 info panel
 
 **Success Criteria:**
 1. User can enter NaCl concentration in mol/L and see calculated ion count (auto-updates on change)
@@ -244,11 +262,11 @@ Plans:
 |-------|------|--------|
 | 28 | Pre-requisite Fixes | ✓ Complete |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
-| 30 | Tab 4 - Ion Insertion (NaCl) | Not started |
+| 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Planned (5 plans) |
 | 31 | Tab 2 - Hydrate Generation | Not started |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ████░░░░░░ 40% (2/5 phases complete)
+**Overall:** █████░░░░ 60% (3/5 phases planned)
 
 ---
 
