@@ -95,15 +95,15 @@ Plans:
 - HYDR-04: User can set supercell repetition (nx, ny, nz)
 - HYDR-05: System generates hydrate structure via GenIce2
 
-**Plans:** 6 plans in 4 waves
+**Plans:** 6 plans in 4 waves (COMPLETE)
 
 Plans:
-- [ ] 29-01-PLAN.md — MoleculeIndex dataclass + InterfaceStructure extension
-- [ ] 29-02-PLAN.md — Hydrate configuration data structures (HydrateConfig, HydrateLatticeInfo)
-- [ ] 29-03-PLAN.md — Multi-molecule GROMACS export refactor
-- [ ] 29-04-PLAN.md — HydratePanel UI widget
-- [ ] 29-05-PLAN.md — Integrate HydratePanel into main window
-- [ ] 29-06-PLAN.md — HydrateStructureGenerator class with GenIce2 integration
+- [x] 29-01-PLAN.md — MoleculeIndex dataclass + InterfaceStructure extension
+- [x] 29-02-PLAN.md — Hydrate configuration data structures (HydrateConfig, HydrateLatticeInfo)
+- [x] 29-03-PLAN.md — Multi-molecule GROMACS export refactor
+- [x] 29-04-PLAN.md — HydratePanel UI widget
+- [x] 29-05-PLAN.md — Integrate HydratePanel into main window
+- [x] 29-06-PLAN.md — HydrateStructureGenerator class with GenIce2 integration
 
 **Success Criteria:**
 1. User can select hydrate lattice (sI, sII, sH) and see lattice info display (cage types, counts)
@@ -243,12 +243,12 @@ Plans:
 | Phase | Goal | Status |
 |-------|------|--------|
 | 28 | Pre-requisite Fixes | ✓ Complete |
-| 29 | Data Structures + Multi-Molecule GROMACS | Not started |
+| 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | Not started |
 | 31 | Tab 2 - Hydrate Generation | Not started |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ░░░░░░░░░░ 0% (5 phases planned)
+**Overall:** ████░░░░░░ 40% (2/5 phases complete)
 
 ---
 

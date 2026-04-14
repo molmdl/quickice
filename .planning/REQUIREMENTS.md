@@ -9,11 +9,11 @@ Molecule insertion milestone: hydrates + ions + custom molecules + enhanced 3D v
 
 ### Hydrates (Tab 2)
 
-- [ ] **HYDR-01**: User can select hydrate structure type (sI, sII, sH)
-- [ ] **HYDR-02**: User can select built-in guest molecule (CH4, THF, CO2, H2)
-- [ ] **HYDR-03**: User can specify cage occupancy (which cages get which guests)
-- [ ] **HYDR-04**: User can set supercell repetition (nx, ny, nz)
-- [ ] **HYDR-05**: System generates hydrate structure via GenIce2
+- [x] **HYDR-01**: User can select hydrate structure type (sI, sII, sH) ✓ (Phase 29)
+- [x] **HYDR-02**: User can select built-in guest molecule (CH4, THF, CO2, H2) ✓ (Phase 29)
+- [x] **HYDR-03**: User can specify cage occupancy (which cages get which guests) ✓ (Phase 29)
+- [x] **HYDR-04**: User can set supercell repetition (nx, ny, nz) ✓ (Phase 29)
+- [x] **HYDR-05**: System generates hydrate structure via GenIce2 ✓ (Phase 29)
 - [ ] **HYDR-06**: 3D viewer displays guest molecules in distinct style from ice framework
 - [ ] **HYDR-07**: GROMACS export produces valid .gro/.top/.itp with guest molecules
 - [ ] **HYDR-08**: System displays hydrate unit cell info (cage counts, types)
@@ -47,9 +47,9 @@ Molecule insertion milestone: hydrates + ions + custom molecules + enhanced 3D v
 
 ### GROMACS Export (Cross-Cutting)
 
-- [ ] **GRO-01**: Export produces .top with multiple [moleculetype] sections
-- [ ] **GRO-02**: Export includes correct [molecules] counts per type
-- [ ] **GRO-03**: User-provided .itp files included or referenced in export
+- [x] **GRO-01**: Export produces .top with multiple [moleculetype] sections ✓ (Phase 29)
+- [x] **GRO-02**: Export includes correct [molecules] counts per type ✓ (Phase 29)
+- [x] **GRO-03**: User-provided .itp files included or referenced in export ✓ (Phase 29)
 
 ### Water Density (v3.5 Carryover)
 
