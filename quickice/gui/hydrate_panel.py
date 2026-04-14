@@ -11,7 +11,7 @@ This module provides the HydratePanel class for hydrate configuration:
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
-    QFormLayout, QTextEdit
+    QFormLayout, QTextEdit, QPushButton
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -66,6 +66,11 @@ class HydratePanel(QWidget):
         # Lattice info display
         info_group = self._create_info_group()
         layout.addWidget(info_group)
+        
+        # Generate button
+        self.generate_button = QPushButton("Generate Hydrate")
+        self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
+        layout.addWidget(self.generate_button)
         
         layout.addStretch()
     

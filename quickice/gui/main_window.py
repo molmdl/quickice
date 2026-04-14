@@ -203,6 +203,7 @@ class MainWindow(QMainWindow):
         
         # Tab 3 (Hydrate Configuration) connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
+        self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -536,6 +537,15 @@ class MainWindow(QMainWindow):
     def _on_hydrate_config_changed(self):
         """Handle hydrate configuration change."""
         self._current_hydrate_config = self.hydrate_panel.get_configuration()
+    
+    @Slot()
+    def _on_hydrate_generate_clicked(self):
+        """Handle hydrate generation button click."""
+        config = self.hydrate_panel.get_configuration()
+        # TODO: Start generation worker (Plan 29-07)
+        print(f"Generate hydrate with config: lattice={config.lattice_type}, guest={config.guest_type}, "
+              f"occupancy={config.cage_occupancy_small}/{config.cage_occupancy_large}%, "
+              f"supercell={config.supercell_x}x{config.supercell_y}x{config.supercell_z}")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):

@@ -371,3 +371,31 @@ class HydrateLatticeInfo:
             unit_cell_molecules=lattice["unit_cell_molecules"],
             total_cages=total_cages,
         )
+
+
+@dataclass
+class HydrateStructure:
+    """Result of hydrate structure generation.
+    
+    Stores hydrate structure with water framework and guest molecules.
+    
+    Attributes:
+        positions: (N_atoms, 3) combined water + guest atom positions in nm
+        atom_names: Atom names for all atoms
+        cell: (3, 3) box cell vectors in nm
+        molecule_index: List of MoleculeIndex for each molecule
+        config: HydrateConfig used for generation
+        lattice_info: HydrateLatticeInfo from generation
+        report: Generation report string
+        guest_count: Number of guest molecules placed
+        water_count: Number of water molecules in framework
+    """
+    positions: np.ndarray
+    atom_names: list[str]
+    cell: np.ndarray
+    molecule_index: list[MoleculeIndex]
+    config: HydrateConfig
+    lattice_info: HydrateLatticeInfo
+    report: str
+    guest_count: int
+    water_count: int

@@ -20,6 +20,12 @@ from quickice.structure_generation.types import (
     GenerationResult,
     InterfaceConfig,
     InterfaceStructure,
+    HydrateConfig,
+    HydrateLatticeInfo,
+    HydrateStructure,
+    MoleculeIndex,
+    HYDRATE_LATTICES,
+    GUEST_MOLECULES,
 )
 from quickice.structure_generation.generator import (
     IceStructureGenerator,
@@ -34,6 +40,7 @@ from quickice.structure_generation.water_filler import (
     tile_structure,
     fill_region_with_water,
 )
+from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -52,6 +59,10 @@ __all__ = [
     "GenerationResult",
     "InterfaceConfig",
     "InterfaceStructure",
+    "HydrateConfig",
+    "HydrateLatticeInfo",
+    "HydrateStructure",
+    "MoleculeIndex",
     # Errors
     "StructureGenerationError",
     "UnsupportedPhaseError",
@@ -62,6 +73,7 @@ __all__ = [
     # Generator
     "IceStructureGenerator",
     "generate_candidates",
+    "HydrateStructureGenerator",
     # Interface generation
     "generate_interface",
     "validate_interface_config",
@@ -80,6 +92,8 @@ __all__ = [
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",
+    "HYDRATE_LATTICES",
+    "GUEST_MOLECULES",
     # Cell utilities
     "is_cell_orthogonal",
 ]
