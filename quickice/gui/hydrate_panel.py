@@ -1,0 +1,257 @@
+"""Hydrate configuration panel for QuickIce GUI v4.0.
+
+This module provides the HydratePanel class for hydrate configuration:
+- Lattice type selection (sI, sII, sH)
+- Guest molecule selection (CH4, THF, CO2, H2)
+- Cage occupancy controls
+- Supercell dimensions
+- Lattice info display
+"""
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
+    QFormLayout, QTextEdit
+)
+from PySide6.QtCore import Signal, Qt
+
+from quickice.structure_generation.types import (
+    HydrateConfig, HydrateLatticeInfo,
+    HYDRATE_LATTICES, GUEST_MOLECULES
+)
+
+
+class HydratePanel(QWidget):
+    """Panel for hydrate structure configuration.
+    
+    Provides UI for:
+    - Selecting hydrate lattice type
+    - Selecting guest molecule
+    - Setting cage occupancy percentages
+    - Setting supercell dimensions
+    
+    Signals:
+        configuration_changed: Emitted when any configuration changes
+        generate_requested: Emitted when generate button clicked
+    """
+    
+    configuration_changed = Signal()
+    generate_requested = Signal()
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._setup_ui()
+        self._setup_connections()
+    
+    def _setup_ui(self):
+        """Setup UI components."""
+        layout = QVBoxLayout(self)
+        
+        # Lattice selection group
+        lattice_group = self._create_lattice_group()
+        layout.addWidget(lattice_group)
+        
+        # Guest molecule group
+        guest_group = self._create_guest_group()
+        layout.addWidget(guest_group)
+        
+        # Occupancy group
+        occupancy_group = self._create_occupancy_group()
+        layout.addWidget(occupancy_group)
+        
+        # Supercell group
+        supercell_group = self._create_supercell_group()
+        layout.addWidget(supercell_group)
+        
+        # Lattice info display
+        info_group = self._create_info_group()
+        layout.addWidget(info_group)
+        
+        layout.addStretch()
+    
+    def _create_lattice_group(self) -> QGroupBox:
+        """Create lattice type selection group."""
+        group = QGroupBox("Hydrate Lattice")
+        layout = QFormLayout()
+        
+        self.lattice_combo = QComboBox()
+        for lattice_id, lattice_info in HYDRATE_LATTICES.items():
+            self.lattice_combo.addItem(
+                f"{lattice_id} - {lattice_info['description']}",
+                lattice_id
+            )
+        
+        layout.addRow("Lattice type:", self.lattice_combo)
+        group.setLayout(layout)
+        return group
+    
+    def _create_guest_group(self) -> QGroupBox:
+        """Create guest molecule selection group."""
+        group = QGroupBox("Guest Molecule")
+        layout = QFormLayout()
+        
+        self.guest_combo = QComboBox()
+        for guest_id, guest_info in GUEST_MOLECULES.items():
+            self.guest_combo.addItem(
+                f"{guest_info['name']} ({guest_info['formula']})",
+                guest_id
+            )
+        
+        layout.addRow("Guest type:", self.guest_combo)
+        
+        # Force field info label
+        self.ff_label = QLabel()
+        self.ff_label.setStyleSheet("color: gray; font-style: italic;")
+        layout.addRow("Force field:", self.ff_label)
+        self._update_ff_label()
+        
+        group.setLayout(layout)
+        return group
+    
+    def _create_occupancy_group(self) -> QGroupBox:
+        """Create cage occupancy controls group."""
+        group = QGroupBox("Cage Occupancy")
+        layout = QFormLayout()
+        
+        # Small cage occupancy
+        self.occupancy_small = QDoubleSpinBox()
+        self.occupancy_small.setRange(0.0, 100.0)
+        self.occupancy_small.setValue(100.0)
+        self.occupancy_small.setSuffix("%")
+        self.occupancy_small.setDecimals(1)
+        layout.addRow("Small cages:", self.occupancy_small)
+        
+        # Large cage occupancy
+        self.occupancy_large = QDoubleSpinBox()
+        self.occupancy_large.setRange(0.0, 100.0)
+        self.occupancy_large.setValue(100.0)
+        self.occupancy_large.setSuffix("%")
+        self.occupancy_large.setDecimals(1)
+        layout.addRow("Large cages:", self.occupancy_large)
+        
+        group.setLayout(layout)
+        return group
+    
+    def _create_supercell_group(self) -> QGroupBox:
+        """Create supercell dimensions group."""
+        group = QGroupBox("Supercell Dimensions")
+        layout = QFormLayout()
+        
+        row = QHBoxLayout()
+        self.supercell_x = QSpinBox()
+        self.supercell_x.setRange(1, 10)
+        self.supercell_x.setValue(1)
+        row.addWidget(self.supercell_x)
+        row.addWidget(QLabel("×"))
+        
+        self.supercell_y = QSpinBox()
+        self.supercell_y.setRange(1, 10)
+        self.supercell_y.setValue(1)
+        row.addWidget(self.supercell_y)
+        row.addWidget(QLabel("×"))
+        
+        self.supercell_z = QSpinBox()
+        self.supercell_z.setRange(1, 10)
+        self.supercell_z.setValue(1)
+        row.addWidget(self.supercell_z)
+        
+        layout.addRow("Repetition:", row)
+        group.setLayout(layout)
+        return group
+    
+    def _create_info_group(self) -> QGroupBox:
+        """Create lattice info display group."""
+        group = QGroupBox("Lattice Information")
+        layout = QVBoxLayout()
+        
+        self.info_text = QTextEdit()
+        self.info_text.setReadOnly(True)
+        self.info_text.setMaximumHeight(150)
+        self._update_info_display()
+        
+        layout.addWidget(self.info_text)
+        group.setLayout(layout)
+        return group
+    
+    def _setup_connections(self):
+        """Setup signal connections."""
+        self.lattice_combo.currentIndexChanged.connect(self._on_lattice_changed)
+        self.guest_combo.currentIndexChanged.connect(self._on_guest_changed)
+        self.occupancy_small.valueChanged.connect(lambda: self.configuration_changed.emit())
+        self.occupancy_large.valueChanged.connect(lambda: self.configuration_changed.emit())
+        self.supercell_x.valueChanged.connect(lambda: self.configuration_changed.emit())
+        self.supercell_y.valueChanged.connect(lambda: self.configuration_changed.emit())
+        self.supercell_z.valueChanged.connect(lambda: self.configuration_changed.emit())
+    
+    def _on_lattice_changed(self):
+        """Handle lattice type change."""
+        self._update_info_display()
+        self.configuration_changed.emit()
+    
+    def _on_guest_changed(self):
+        """Handle guest molecule change."""
+        self._update_ff_label()
+        self._update_info_display()  # Update guest fit info
+        self.configuration_changed.emit()
+    
+    def _update_ff_label(self):
+        """Update force field label based on selected guest."""
+        guest_id = self.guest_combo.currentData()
+        if guest_id and guest_id in GUEST_MOLECULES:
+            ff = GUEST_MOLECULES[guest_id].get('force_field', 'Unknown')
+            self.ff_label.setText(ff)
+    
+    def _update_info_display(self):
+        """Update lattice info display."""
+        lattice_id = self.lattice_combo.currentData()
+        guest_id = self.guest_combo.currentData()
+        
+        if not lattice_id:
+            return
+        
+        try:
+            info = HydrateLatticeInfo.from_lattice_type(lattice_id)
+        except ValueError:
+            self.info_text.setText("Invalid lattice type")
+            return
+        
+        lines = [
+            f"Lattice: {info.description}",
+            f"Water molecules per unit cell: {info.unit_cell_molecules}",
+            f"Total cages per unit cell: {info.total_cages}",
+            "",
+            "Cage types:",
+        ]
+        
+        for cage_name, count in info.cage_counts.items():
+            # Check if guest fits
+            fits = ""
+            if guest_id and guest_id in GUEST_MOLECULES:
+                # Check if guest fits in this cage (from HYDRATE_LATTICES)
+                lattice = HYDRATE_LATTICES[lattice_id]
+                for cage_size, cage_info in lattice["cages"].items():
+                    if cage_info["name"] == cage_name:
+                        if guest_id in cage_info.get("guest_fits", []):
+                            fits = " ✓"
+                        else:
+                            fits = " ✗ (too large)"
+                        break
+            lines.append(f"  {cage_name}: {count}{fits}")
+        
+        self.info_text.setText("\n".join(lines))
+    
+    def get_configuration(self) -> HydrateConfig:
+        """Get current configuration as HydrateConfig.
+        
+        Returns:
+            HydrateConfig with current UI values
+        """
+        return HydrateConfig(
+            lattice_type=self.lattice_combo.currentData(),
+            guest_type=self.guest_combo.currentData(),
+            cage_occupancy_small=self.occupancy_small.value(),
+            cage_occupancy_large=self.occupancy_large.value(),
+            supercell_x=self.supercell_x.value(),
+            supercell_y=self.supercell_y.value(),
+            supercell_z=self.supercell_z.value(),
+        )
