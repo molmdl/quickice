@@ -232,7 +232,7 @@ Plans:
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| 28 | Pre-requisite Fixes | 2/3 plans complete |
+| 28 | Pre-requisite Fixes | ✓ Complete |
 | 29 | Data Structures + Multi-Molecule GROMACS | Not started |
 | 30 | Tab 4 - Ion Insertion (NaCl) | Not started |
 | 31 | Tab 2 - Hydrate Generation | Not started |
