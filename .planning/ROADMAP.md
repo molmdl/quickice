@@ -95,6 +95,16 @@ Plans:
 - HYDR-04: User can set supercell repetition (nx, ny, nz)
 - HYDR-05: System generates hydrate structure via GenIce2
 
+**Plans:** 6 plans in 4 waves
+
+Plans:
+- [ ] 29-01-PLAN.md — MoleculeIndex dataclass + InterfaceStructure extension
+- [ ] 29-02-PLAN.md — Hydrate configuration data structures (HydrateConfig, HydrateLatticeInfo)
+- [ ] 29-03-PLAN.md — Multi-molecule GROMACS export refactor
+- [ ] 29-04-PLAN.md — HydratePanel UI widget
+- [ ] 29-05-PLAN.md — Integrate HydratePanel into main window
+- [ ] 29-06-PLAN.md — HydrateStructureGenerator class with GenIce2 integration
+
 **Success Criteria:**
 1. User can select hydrate lattice (sI, sII, sH) and see lattice info display (cage types, counts)
 2. User can select guest molecule (CH4, CO2) and specify cage occupancy (0-100%)
