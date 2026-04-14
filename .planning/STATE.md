@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 28 (pre-requisite fixes) |
-| Plan | 03 of 03 |
-| Status | Phase complete |
-| Last activity | 2026-04-14 — Completed 28-03-PLAN.md (Phase 28 complete) |
+| Phase | 29 (data structures + multi-molecule GROMACS) |
+| Plan | 01 of 06 |
+| Status | In progress |
+| Last activity | 2026-04-14 — Completed 29-01-PLAN.md (MoleculeIndex + InterfaceStructure extension) |
 
-**Progress:** ███░░░░░░░ 20% (5 phases, 3/15 plans executed - only Phase 28 done)
+**Progress:** ████░░░░░░ 27% (5 phases, 4/15 plans executed - Phase 28 complete, Phase 29 1/6)
 
 ---
 
@@ -155,9 +155,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 28-03-PLAN.md (is_cell_orthogonal consolidation)
-**Next:** Phase 29 (data structures)
+**Completed:** 29-01-PLAN.md (MoleculeIndex + InterfaceStructure extension)
+**Next:** Phase 29 Plan 02 (multi-molecule GROMACS export)
 
 ---
 
-*State updated: 2026-04-14 — v4.0 roadmap defined, ready for Phase 28 planning*
+*State updated: 2026-04-14 — Phase 29-01 complete, ready for next plan in Phase 29*
