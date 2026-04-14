@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 29 (data structures + multi-molecule GROMACS) |
-| Plan | 02 of 06 |
+| Plan | 03 of 06 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 29-02-PLAN.md (Hydrate configuration data structures) |
+| Last activity | 2026-04-14 — Completed 29-03-PLAN.md (Multi-molecule GROMACS export) |
 
-**Progress:** ████░░░░░░ 33% (5 phases, 5/15 plans executed - Phase 28 complete, Phase 29 2/6)
+**Progress:** █████░░░░░ 40% (5 phases, 6/15 plans executed - Phase 28 complete, Phase 29 3/6)
 
 ---
 
@@ -124,6 +124,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | IonInserter class | Concentration-based placement, not lattice replacement | Pending Phase 30 |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
+| MOLECULE_TO_GROMACS mapping | Internal types to GROMACS residue/itp names | ✓ Implemented (29-03) |
+| write_multi_molecule_gro_file | Multi-molecule .gro export via MoleculeIndex | ✓ Implemented (29-03) |
+| write_multi_molecule_top_file | #include-based topology with per-type counts | ✓ Implemented (29-03) |
 | Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 | Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
@@ -159,8 +162,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 29-02-PLAN.md (Hydrate configuration data structures)
-**Next:** Phase 29 Plan 03 (multi-type GROMACS export)
+**Completed:** 29-03-PLAN.md (Multi-molecule GROMACS export)
+**Next:** Phase 29 Plan 04 (multi-molecule structure builder)
 
 ---
 
