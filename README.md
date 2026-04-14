@@ -335,7 +335,7 @@ Journal of Chemical Physics, 122(23), 234511.
 DOI: https://doi.org/10.1063/1.1931662
 ```
 
-Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346
+Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/index.php/GROMACS_topology_file_for_the_TIP4P/Ice_model) and the [computational chemistry commune](http://bbs.keinsci.com/forum.php?mod=viewthread&tid=32973&page=1#pid222346)
 
 ### Molecule Count
 
