@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v4.0 (started) |
-| Phase | 28 (planning) |
-| Plan | — |
-| Status | Roadmap defined, ready for planning |
-| Last activity | 2026-04-14 — v4.0 roadmap created |
+| Milestone | v4.0 (in progress) |
+| Phase | 28 (pre-requisite fixes) |
+| Plan | 01 of 03 |
+| Status | In progress |
+| Last activity | 2026-04-14 — Completed 28-01-PLAN.md |
 
-**Progress:** ○○░░░░░░░░ 0% (5 phases, 0 plans executed)
+**Progress:** ░░░░░░░░░░ 0% (5 phases, 0 plans executed)
 
 ---
 
@@ -120,6 +120,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | IonInserter class | Concentration-based placement, not lattice replacement | Pending Phase 30 |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
+| Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
+| T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 
 ### v3.5 Shipped Decisions
 
@@ -152,8 +154,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** v4.0 roadmap defined (5 phases, 33 requirements)
-**Next:** /gsd-plan-phase 28 (pre-requisite fixes)
+**Completed:** 28-01-PLAN.md (Phase 28 pre-requisite bug fixes)
+**Next:** 28-02-PLAN.md (remaining plans in Phase 28)
 
 ---
 

@@ -67,7 +67,7 @@ Phase 32 (Custom Molecules + Display Controls)
 **Plans:** 3 plans in 1 wave (all parallel)
 
 Plans:
-- [ ] 28-01-PLAN.md — Fix random state restoration + add T/P metadata (generator.py)
+- [x] 28-01-PLAN.md — Fix random state restoration + add T/P metadata (generator.py)
 - [ ] 28-02-PLAN.md — Deduplicate GRO parser into shared module (gro_parser.py)
 - [ ] 28-03-PLAN.md — Unify is_cell_orthogonal() implementation (cell_utils.py)
 
@@ -232,13 +232,13 @@ Plans:
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| 28 | Pre-requisite Fixes | Not started |
+| 28 | Pre-requisite Fixes | 1/3 plans complete |
 | 29 | Data Structures + Multi-Molecule GROMACS | Not started |
 | 30 | Tab 4 - Ion Insertion (NaCl) | Not started |
 | 31 | Tab 2 - Hydrate Generation | Not started |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ○○░░░░░░░░ 0% (5 phases planned)
+**Overall:** ░░░░░░░░░░ 0% (5 phases planned)
 
 ---
 
