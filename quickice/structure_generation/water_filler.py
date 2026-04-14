@@ -14,6 +14,7 @@ from typing import Optional
 
 import numpy as np
 
+from quickice.structure_generation.cell_utils import is_cell_orthogonal
 from quickice.structure_generation.gro_parser import parse_gro_file
 
 
@@ -48,36 +49,6 @@ def get_cell_extent(cell: np.ndarray) -> np.ndarray:
     
     # Bounding box extent = max - min for each dimension
     return corners.max(axis=0) - corners.min(axis=0)
-
-
-def is_cell_orthogonal(cell: np.ndarray, angle_tol: float = 0.1) -> bool:
-    """Check if cell is orthogonal (all angles 90° within tolerance).
-    
-    Args:
-        cell: (3, 3) cell vectors as ROW vectors
-        angle_tol: Tolerance in degrees (default 0.1°)
-    
-    Returns:
-        True if all angles are 90° ± angle_tol
-    """
-    a, b, c = cell[0], cell[1], cell[2]
-    
-    def angle(v1, v2):
-        n1, n2 = np.linalg.norm(v1), np.linalg.norm(v2)
-        if n1 < 1e-10 or n2 < 1e-10:
-            return 90.0
-        cos_a = np.clip(np.dot(v1, v2) / (n1 * n2), -1.0, 1.0)
-        return np.degrees(np.arccos(cos_a))
-    
-    alpha = angle(b, c)  # Angle between b and c
-    beta = angle(a, c)   # Angle between a and c
-    gamma = angle(a, b)  # Angle between a and b
-    
-    return (
-        abs(alpha - 90.0) <= angle_tol
-        and abs(beta - 90.0) <= angle_tol
-        and abs(gamma - 90.0) <= angle_tol
-    )
 
 
 def compute_scaled_cell(
