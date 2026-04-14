@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 30 (ion insertion) |
-| Plan | 02 of 07 |
+| Plan | 05 of 07 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 30-02-SUMMARY.md (GROMACS ion export) |
+| Last activity | 2026-04-14 — Completed 30-05-SUMMARY.md (Water density display) |
 
 **Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
@@ -123,6 +123,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | GUEST_MOLECULES constant | ch4, thf, co2, h2 guest molecule metadata | ✓ Implemented (29-02) |
 | IonInserter class | Concentration-based placement, not lattice replacement | ✓ Implemented (30-01) |
 | gromacs_ion_export.py | ion.itp generator with [moleculetype] sections | ✓ Implemented (30-02) |
+| Water density display | IAPWS-95 in Tab 1 info panel | ✓ Implemented (30-05) |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
 | MOLECULE_TO_GROMACS mapping | Internal types to GROMACS residue/itp names | ✓ Implemented (29-03) |
@@ -164,9 +165,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 30-02-SUMMARY.md (GROMACS ion export)
-**Next:** Phase 30 Plan 03
+**Completed:** 30-05-SUMMARY.md (Water density display)
+**Next:** Phase 30 Plan 06
 
 ---
 
-*State updated: 2026-04-14 — Phase 29-02 complete, ready for next plan in Phase 29*
+*State updated: 2026-04-14 — Phase 30-05 complete, ready for next plan in Phase 30*
