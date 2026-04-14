@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 30 (ion insertion) |
-| Plan | 03 of 07 |
+| Plan | 04 of 07 |
 | Status | In progress |
-| Last activity | 2026-04-15 — Completed 30-03-SUMMARY.md (IonPanel UI) |
+| Last activity | 2026-04-14 — Completed 30-04-SUMMARY.md (Ion rendering in 3D viewer) |
 
 **Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
@@ -130,6 +130,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | write_multi_molecule_gro_file | Multi-molecule .gro export via MoleculeIndex | ✓ Implemented (29-03) |
 | write_multi_molecule_top_file | #include-based topology with per-type counts | ✓ Implemented (29-03) |
 | HydratePanel widget | UI widget for hydrate configuration (lattice/guest/occupancy) | ✓ Implemented (29-04) |
+| IonRenderer class | VDW sphere creation for Na+ (gold) and Cl- (green) in 3D viewer | ✓ Implemented (30-04) |
 | Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 | Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
@@ -165,9 +166,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 30-05-SUMMARY.md (Water density display)
-**Next:** Phase 30 Plan 06
+**Completed:** 30-04-SUMMARY.md (IonRenderer with VDW spheres)
+**Next:** Phase 30 Plan 05 or 06
 
 ---
 
-*State updated: 2026-04-14 — Phase 30-05 complete, ready for next plan in Phase 30*
+*State updated: 2026-04-14 — Phase 30-04 complete, ready for next plan in Phase 30*
