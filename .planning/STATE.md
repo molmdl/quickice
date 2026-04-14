@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 29 (data structures + multi-molecule GROMACS) |
-| Plan | 01 of 06 |
+| Plan | 02 of 06 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 29-01-PLAN.md (MoleculeIndex + InterfaceStructure extension) |
+| Last activity | 2026-04-14 — Completed 29-02-PLAN.md (Hydrate configuration data structures) |
 
-**Progress:** ████░░░░░░ 27% (5 phases, 4/15 plans executed - Phase 28 complete, Phase 29 1/6)
+**Progress:** ████░░░░░░ 33% (5 phases, 5/15 plans executed - Phase 28 complete, Phase 29 2/6)
 
 ---
 
@@ -116,7 +116,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |----------|-----------|--------|
 | No new dependencies | GenIce2 hydrate API, scipy cKDTree, VTK multi-actor already available | Pending implementation |
 | 5-phase structure | Research recommends: fixes → data structures → ion → hydrate → custom | Defined |
-| Variable atoms-per-molecule | Critical Pitfall #5 - must resolve before Tab 2/4 code works | Pending Phase 29 |
+| Variable atoms-per-molecule | Critical Pitfall #5 - resolved via MoleculeIndex dataclass | ✓ Implemented (29-01) |
+| HydrateConfig dataclass | Configuration for hydrate lattice generation with validation | ✓ Implemented (29-02) |
+| HydrateLatticeInfo dataclass | Display info for hydrate lattice selection | ✓ Implemented (29-02) |
+| HYDRATE_LATTICES constant | sI, sII, sH GenIce2 lattice info | ✓ Implemented (29-02) |
+| GUEST_MOLECULES constant | ch4, thf, co2, h2 guest molecule metadata | ✓ Implemented (29-02) |
 | IonInserter class | Concentration-based placement, not lattice replacement | Pending Phase 30 |
 | HydrateStructureGenerator | Separate pipeline from ice generation (no phase lookup, no ranking) | Pending Phase 29/31 |
 | Per-type VTK actors | One vtkMoleculeMapper + vtkActor per molecule type | Pending Phase 30 |
@@ -155,9 +159,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 29-01-PLAN.md (MoleculeIndex + InterfaceStructure extension)
-**Next:** Phase 29 Plan 02 (multi-molecule GROMACS export)
+**Completed:** 29-02-PLAN.md (Hydrate configuration data structures)
+**Next:** Phase 29 Plan 03 (multi-type GROMACS export)
 
 ---
 
-*State updated: 2026-04-14 — Phase 29-01 complete, ready for next plan in Phase 29*
+*State updated: 2026-04-14 — Phase 29-02 complete, ready for next plan in Phase 29*
