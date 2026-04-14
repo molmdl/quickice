@@ -41,6 +41,7 @@ from quickice.structure_generation.water_filler import (
     fill_region_with_water,
 )
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
+from quickice.structure_generation.ion_inserter import IonInserter
 from quickice.structure_generation.overlap_resolver import (
     detect_overlaps,
     remove_overlapping_molecules,
@@ -62,6 +63,9 @@ __all__ = [
     "HydrateConfig",
     "HydrateLatticeInfo",
     "HydrateStructure",
+    "IonConfig",
+    "IonStructure",
+    "IonInserter",
     "MoleculeIndex",
     # Errors
     "StructureGenerationError",
