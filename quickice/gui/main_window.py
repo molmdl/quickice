@@ -24,6 +24,7 @@ from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
 from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
+from quickice.gui.hydrate_panel import HydratePanel
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
@@ -62,6 +63,9 @@ class MainWindow(QMainWindow):
         
         # Store current interface result for export
         self._current_interface_result = None
+        
+        # Store current hydrate configuration for export
+        self._current_hydrate_config = None
         
         # Setup UI
         self._setup_ui()
@@ -134,8 +138,12 @@ class MainWindow(QMainWindow):
         # === Tab 2: Interface Construction ===
         self.interface_panel = InterfacePanel()
         
+        # === Tab 2: Hydrate Configuration (new in v4.0) ===
+        self.hydrate_panel = HydratePanel()
+        
         # Add tabs to tab widget
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
+        self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         
         # Set Tab 1 as default on startup
@@ -192,6 +200,9 @@ class MainWindow(QMainWindow):
         
         # Tab 2 (Interface Construction) generation connections
         self.interface_panel.generate_requested.connect(self._on_interface_generate)
+        
+        # Tab 3 (Hydrate Configuration) connections (new in v4.0)
+        self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -520,6 +531,11 @@ class MainWindow(QMainWindow):
     def _on_interface_ui_enabled_changed(self, enabled: bool):
         """Handle Tab 2 UI enabled/disabled state change."""
         self.interface_panel.set_generating(not enabled)
+    
+    @Slot()
+    def _on_hydrate_config_changed(self):
+        """Handle hydrate configuration change."""
+        self._current_hydrate_config = self.hydrate_panel.get_configuration()
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
