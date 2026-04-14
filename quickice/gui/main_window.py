@@ -26,6 +26,8 @@ from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
 from quickice.gui.ion_panel import IonPanel
+from quickice.gui.ion_renderer import render_ion_structure
+from quickice.structure_generation.ion_inserter import IonInserter
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
@@ -67,6 +69,9 @@ class MainWindow(QMainWindow):
         
         # Store current hydrate configuration for export
         self._current_hydrate_config = None
+        
+        # Store current ion actors for visibility toggling
+        self._ion_actors: list = []
         
         # Setup UI
         self._setup_ui()
@@ -568,11 +573,54 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_insert_ions(self):
         """Handle Insert Ions button click."""
+        # Get configuration from ion_panel
         config = self.ion_panel.get_configuration()
-        volume = self.ion_panel.get_liquid_volume()
-        # TODO: Call IonInserter to place ions, then update 3D viewer with ion actors
-        # For now, log the action
-        print(f"Insert ions with config: concentration={config.concentration_molar} mol/L, volume={volume:.2f} nm³")
+        
+        # Get current interface structure (from Tab 3 - Interface Construction)
+        interface = self._current_interface_result
+        
+        if interface is None:
+            QMessageBox.warning(
+                self, "No Interface",
+                "Please generate an interface structure first in Tab 3."
+            )
+            return
+        
+        # Get liquid volume from interface panel
+        liquid_volume = self.ion_panel.get_liquid_volume()
+        
+        # Create inserter and insert ions
+        inserter = IonInserter()
+        ion_structure = inserter.insert_ions(
+            interface,
+            config,
+            liquid_volume
+        )
+        
+        # Render in 3D viewer
+        actors = render_ion_structure(ion_structure)
+        
+        # Clear previous ion actors and add new ones
+        # Store reference to actors for later removal/toggling
+        for actor in self._ion_actors:
+            if hasattr(self.viewer_panel, 'dual_viewer') and self.viewer_panel.dual_viewer:
+                self.viewer_panel.dual_viewer.viewer1.renderer.RemoveActor(actor)
+                self.viewer_panel.dual_viewer.viewer2.renderer.RemoveActor(actor)
+        
+        # Add new ion actors to both viewers
+        self._ion_actors = actors
+        if hasattr(self.viewer_panel, 'dual_viewer') and self.viewer_panel.dual_viewer:
+            for actor in actors:
+                self.viewer_panel.dual_viewer.viewer1.renderer.AddActor(actor)
+                self.viewer_panel.dual_viewer.viewer2.renderer.AddActor(actor)
+            # Trigger render
+            self.viewer_panel.dual_viewer.viewer1.render_window.Render()
+            self.viewer_panel.dual_viewer.viewer2.render_window.Render()
+        
+        # Show notification
+        self.info_panel.append(
+            f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
+        )
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
