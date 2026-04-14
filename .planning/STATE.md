@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 30 (ion insertion) |
-| Plan | 05 of 07 |
+| Plan | 03 of 07 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 30-05-SUMMARY.md (Water density display) |
+| Last activity | 2026-04-15 — Completed 30-03-SUMMARY.md (IonPanel UI) |
 
 **Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
 
