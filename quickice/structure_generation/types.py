@@ -1,9 +1,109 @@
 """Data types for structure generation."""
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
+
+
+# Molecule type information: atom count, residue name, typical charge
+MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
+    "ice":   {"atoms": 3, "res_name": "SOL", "description": "Ice (TIP3P: O, H, H)"},
+    "water": {"atoms": 4, "res_name": "SOL", "description": "Water (TIP4P-ICE: OW, HW1, HW2, MW)"},
+    "na":    {"atoms": 1, "res_name": "NA",  "description": "Sodium ion"},
+    "cl":    {"atoms": 1, "res_name": "CL",  "description": "Chloride ion"},
+    "ch4":   {"atoms": 5, "res_name": "CH4", "description": "Methane"},
+    "thf":   {"atoms": 12, "res_name": "THF", "description": "Tetrahydrofuran"},
+    "co2":   {"atoms": 3, "res_name": "CO2", "description": "Carbon dioxide"},
+    "h2":    {"atoms": 2, "res_name": "H2",  "description": "Hydrogen"},
+}
+
+
+@dataclass
+class MoleculeIndex:
+    """Tracks molecule position in atom array.
+    
+    Enables handling of variable atoms-per-molecule:
+    - ions (1 atom): Na, Cl
+    - ice (3 atoms): O, H, H
+    - water (4 atoms): OW, HW1, HW2, MW (TIP4P)
+    - CH4 (5 atoms): C + 4H
+    - THF (12 atoms): C4O + 8H
+    
+    Attributes:
+        start_idx: First atom index in positions array (0-based)
+        count: Number of atoms in this molecule
+        mol_type: Molecule type string ('ice', 'water', 'na', 'cl', 'ch4', 'thf', 'co2', 'h2')
+    """
+    start_idx: int
+    count: int
+    mol_type: str
+
+
+# Hydrate lattice types with GenIce2 lattice names
+HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
+    "sI": {
+        "genice_name": "CS1",  # GenIce2 lattice name
+        "description": "Structure I hydrate",
+        "cages": {
+            "small": {"name": "5¹²", "count_per_unit_cell": 2, "guest_fits": ["ch4", "h2", "co2"]},
+            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 6, "guest_fits": ["ch4", "co2", "thf"]},
+        },
+        "unit_cell_molecules": 46,  # Water molecules in unit cell
+    },
+    "sII": {
+        "genice_name": "CS2",
+        "description": "Structure II hydrate",
+        "cages": {
+            "small": {"name": "5¹²", "count_per_unit_cell": 16, "guest_fits": ["ch4", "h2", "co2"]},
+            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf", "co2"]},
+        },
+        "unit_cell_molecules": 136,
+    },
+    "sH": {
+        "genice_name": "CS3",
+        "description": "Structure H hydrate",
+        "cages": {
+            "small": {"name": "5¹²", "count_per_unit_cell": 3, "guest_fits": ["ch4", "h2"]},
+            "medium": {"name": "4³5⁶6³", "count_per_unit_cell": 2, "guest_fits": ["ch4", "h2"]},
+            "large": {"name": "5¹²6⁸", "count_per_unit_cell": 1, "guest_fits": ["thf"]},
+        },
+        "unit_cell_molecules": 34,
+    },
+}
+
+
+# Guest molecule types with display info
+GUEST_MOLECULES: dict[str, dict[str, Any]] = {
+    "ch4": {
+        "name": "Methane",
+        "formula": "CH₄",
+        "atoms": 5,
+        "description": "Methane guest molecule",
+        "force_field": "GAFF/GAFF2",
+    },
+    "thf": {
+        "name": "Tetrahydrofuran",
+        "formula": "C₄H₈O",
+        "atoms": 12,
+        "description": "THF guest molecule (structure stabilizer)",
+        "force_field": "GAFF/GAFF2",
+    },
+    "co2": {
+        "name": "Carbon Dioxide",
+        "formula": "CO₂",
+        "atoms": 3,
+        "description": "CO₂ guest molecule",
+        "force_field": "TraPPE-small",
+    },
+    "h2": {
+        "name": "Hydrogen",
+        "formula": "H₂",
+        "atoms": 2,
+        "description": "Hydrogen guest molecule",
+        "force_field": "TraPPE-UA",
+    },
+}
 
 
 @dataclass
@@ -148,6 +248,10 @@ class InterfaceStructure:
         water_nmolecules: Number of water molecules
         mode: Interface mode used
         report: gmx solvate-like generation report string
+        molecule_index: List of MoleculeIndex entries tracking each molecule's
+            position in the positions array. Populated when multiple molecule
+            types are present. For backward compatibility, existing code using
+            ice_atom_count still works without using this field.
 
     Note:
         Ice candidates from GenIce use 3 atoms per molecule (O, H, H).
@@ -165,3 +269,105 @@ class InterfaceStructure:
     water_nmolecules: int
     mode: str
     report: str
+    molecule_index: list = field(default_factory=list)
+
+
+@dataclass
+class HydrateConfig:
+    """Configuration for hydrate structure generation.
+    
+    Captures all parameters for hydrate lattice generation.
+    
+    Attributes:
+        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH')
+        guest_type: Guest molecule type ('ch4', 'thf', 'co2', 'h2')
+        cage_occupancy_small: Occupancy percentage for small cages (0-100)
+        cage_occupancy_large: Occupancy percentage for large cages (0-100)
+        supercell_x: Supercell repetition in X direction
+        supercell_y: Supercell repetition in Y direction
+        supercell_z: Supercell repetition in Z direction
+    """
+    lattice_type: str = "sI"
+    guest_type: str = "ch4"
+    cage_occupancy_small: float = 100.0
+    cage_occupancy_large: float = 100.0
+    supercell_x: int = 1
+    supercell_y: int = 1
+    supercell_z: int = 1
+    
+    def __post_init__(self):
+        """Validate configuration parameters."""
+        if self.lattice_type not in HYDRATE_LATTICES:
+            raise ValueError(f"Unknown lattice type: {self.lattice_type}")
+        if self.guest_type not in GUEST_MOLECULES:
+            raise ValueError(f"Unknown guest type: {self.guest_type}")
+        if not (0.0 <= self.cage_occupancy_small <= 100.0):
+            raise ValueError(f"cage_occupancy_small must be 0-100, got {self.cage_occupancy_small}")
+        if not (0.0 <= self.cage_occupancy_large <= 100.0):
+            raise ValueError(f"cage_occupancy_large must be 0-100, got {self.cage_occupancy_large}")
+        if self.supercell_x < 1 or self.supercell_y < 1 or self.supercell_z < 1:
+            raise ValueError("Supercell dimensions must be >= 1")
+    
+    @classmethod
+    def from_dict(cls, d: dict) -> "HydrateConfig":
+        """Create HydrateConfig from dictionary (UI input)."""
+        return cls(
+            lattice_type=d.get("lattice_type", "sI"),
+            guest_type=d.get("guest_type", "ch4"),
+            cage_occupancy_small=d.get("cage_occupancy_small", 100.0),
+            cage_occupancy_large=d.get("cage_occupancy_large", 100.0),
+            supercell_x=d.get("supercell_x", 1),
+            supercell_y=d.get("supercell_y", 1),
+            supercell_z=d.get("supercell_z", 1),
+        )
+    
+    def get_genice_lattice_name(self) -> str:
+        """Get GenIce2 lattice name for this configuration."""
+        return HYDRATE_LATTICES[self.lattice_type]["genice_name"]
+
+
+@dataclass
+class HydrateLatticeInfo:
+    """Display information for a hydrate lattice type.
+    
+    Used to show lattice info in UI when user selects lattice type.
+    
+    Attributes:
+        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH')
+        description: Human-readable description
+        cage_types: List of cage type names (e.g., ["5¹²", "5¹²6⁴"])
+        cage_counts: Dict mapping cage type to count per unit cell
+        unit_cell_molecules: Water molecules in unit cell
+        total_cages: Total number of cages per unit cell
+    """
+    lattice_type: str
+    description: str
+    cage_types: list[str]
+    cage_counts: dict[str, int]
+    unit_cell_molecules: int
+    total_cages: int
+    
+    @classmethod
+    def from_lattice_type(cls, lattice_type: str) -> "HydrateLatticeInfo":
+        """Create HydrateLatticeInfo from lattice type string."""
+        if lattice_type not in HYDRATE_LATTICES:
+            raise ValueError(f"Unknown lattice type: {lattice_type}")
+        
+        lattice = HYDRATE_LATTICES[lattice_type]
+        cage_types = []
+        cage_counts = {}
+        total_cages = 0
+        
+        for cage_size, cage_info in lattice["cages"].items():
+            cage_types.append(cage_info["name"])
+            cage_counts[cage_info["name"]] = cage_info["count_per_unit_cell"]
+            total_cages += cage_info["count_per_unit_cell"]
+        
+        return cls(
+            lattice_type=lattice_type,
+            description=lattice["description"],
+            cage_types=cage_types,
+            cage_counts=cage_counts,
+            unit_cell_molecules=lattice["unit_cell_molecules"],
+            total_cages=total_cages,
+        )
