@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Phase | 29 (data structures + multi-molecule GROMACS) |
 | Plan | 05 of 06 |
 | Status | In progress |
-| Last activity | 2026-04-14 — Completed 29-06-PLAN.md (HydrateStructureGenerator) |
+| Last activity | 2026-04-14 — Completed 29-05-SUMMARY.md (HydratePanel integration) |
 
-**Progress:** ███████░░░ 53% (5 phases, 8/15 plans executed - Phase 28 complete, Phase 29 5/6)
+**Progress:** ███████░░░ 53% (5 phases, 9/15 plans executed - Phase 28 complete, Phase 29 5/6)
 
 ---
 
@@ -163,8 +163,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-14
-**Completed:** 29-06-PLAN.md (HydrateStructureGenerator)
-**Next:** Phase 29 Plan 07 (hydration worker integration)
+**Completed:** 29-05-SUMMARY.md (HydratePanel integration)
+**Next:** Phase 29 Plan 06 (HydrateStructureGenerator)
 
 ---
 
