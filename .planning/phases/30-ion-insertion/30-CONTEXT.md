@@ -20,8 +20,9 @@ User can insert NaCl ions into liquid phase of interface with concentration-base
 
 ### Placement behavior
 - Method: Replace water molecules in liquid region (not insert in empty space)
-- Charge neutrality: System must neutralize total charge (not necessarily equal Na+/Cl- count)
-  - Example: If interface has +2e charge, insert 2 Cl- to neutralize (not 1 Na + 1 Cl)
+- Charge neutrality: Neutralizes total charge from custom molecules (for Phase 32 compatibility)
+  - If custom molecule has +Q charge, add Q* Cl- to neutralize
+  - If custom molecule has -Q charge, add Q* Na+ to neutralize
 - Region: Skip ice region molecules (replace only in liquid region, after ice index)
 
 ### Ion rendering (3D viewer)
@@ -45,7 +46,7 @@ User can insert NaCl ions into liquid phase of interface with concentration-base
 ## Specific Ideas
 
 - "User wants to provide ion.itp - needs research on force field compatibility (KBFF vs Amber)"
-- "If arbitrary charged species input in Tab 4, system must neutralize TOTAL charge (not equal counts)"
+- "System neutralizes charge from custom molecules for Phase 32 compatibility"
 - Colors should be "paler" - less saturated gold/lime for better visual contrast with ice
 
 *Research needed for Phase 30:*
@@ -59,7 +60,7 @@ User can insert NaCl ions into liquid phase of interface with concentration-base
 ## Deferred Ideas
 
 - Custom ion force field (user provides ion.itp) — Phase 32 or separate phase
-- Support for arbitrary charged species beyond NaCl — future enhancement
+- Support for custom charged molecules — Phase 32 (Phase 30 prepares the neutralization logic)
 - g/kg mass fraction input option — not in Phase 30 scope
 
 </deferred>
