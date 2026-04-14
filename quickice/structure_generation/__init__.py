@@ -44,6 +44,7 @@ from quickice.structure_generation.gro_parser import (
     parse_gro_string,
     parse_gro_file,
 )
+from quickice.structure_generation.cell_utils import is_cell_orthogonal
 
 __all__ = [
     # Types
@@ -79,4 +80,6 @@ __all__ = [
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",
+    # Cell utilities
+    "is_cell_orthogonal",
 ]
