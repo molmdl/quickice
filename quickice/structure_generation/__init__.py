@@ -40,6 +40,10 @@ from quickice.structure_generation.overlap_resolver import (
     angstrom_to_nm,
     nm_to_angstrom,
 )
+from quickice.structure_generation.gro_parser import (
+    parse_gro_string,
+    parse_gro_file,
+)
 
 __all__ = [
     # Types
@@ -69,6 +73,9 @@ __all__ = [
     # Unit conversion helpers
     "angstrom_to_nm",
     "nm_to_angstrom",
+    # GRO parsing utilities
+    "parse_gro_string",
+    "parse_gro_file",
     # Constants
     "PHASE_TO_GENICE",
     "UNIT_CELL_MOLECULES",
