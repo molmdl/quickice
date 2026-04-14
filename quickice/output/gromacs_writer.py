@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quickice.structure_generation.types import Candidate, InterfaceStructure
+from quickice.structure_generation.types import Candidate, InterfaceStructure, MoleculeIndex, MOLECULE_TYPE_INFO
 
 
 # TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
@@ -399,3 +399,59 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write("[ molecules ]\n")
         f.write("; Compound    #mols\n")
         f.write(f"SOL          {total_molecules}\n")
+
+
+def write_multi_molecule_gro_file(
+    positions: np.ndarray,
+    molecule_index: list[MoleculeIndex],
+    cell: np.ndarray,
+    filepath: str,
+    title: str = "Multi-molecule system exported by QuickIce"
+) -> None:
+    """Write multi-molecule system to GROMACS .gro format.
+    
+    Uses MoleculeIndex list to determine atom counts per molecule type.
+    
+    Args:
+        positions: (N_atoms, 3) coordinates in nm
+        molecule_index: List of MoleculeIndex objects tracking each molecule
+        cell: (3, 3) cell vectors in nm
+        filepath: Output file path
+        title: Title line for .gro file
+    
+    Note:
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, numbers wrap at 100000.
+    """
+    n_atoms = len(positions)
+    
+    with open(filepath, 'w') as f:
+        f.write(f"{title}\n")
+        f.write(f"{n_atoms:5d}\n")
+        
+        lines = []
+        atom_num = 0
+        for mol in molecule_index:
+            gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
+            res_name = gromacs_info["res_name"]
+            
+            # Residue number wraps at 100000
+            res_num = (molecule_index.index(mol) + 1) % 100000
+            
+            # Write atoms for this molecule
+            for i in range(mol.count):
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                pos = positions[mol.start_idx + i]
+                
+                # Use generic atom naming (XX) - actual names depend on .itp
+                lines.append(f"{res_num:5d}{res_name:<5s}"
+                            f"  XX{atom_num_wrapped:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+        
+        f.writelines(lines)
+        
+        # Box vectors (triclinic format)
+        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
