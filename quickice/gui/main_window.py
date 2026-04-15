@@ -157,10 +157,10 @@ class MainWindow(QMainWindow):
         # === Tab 3: Ion Insertion (new in v4.0) ===
         self.ion_panel = IonPanel()
         
-        # Add tabs to tab widget
+        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Ion)
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
-        self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
+        self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         
         # Set Tab 1 as default on startup
@@ -658,14 +658,15 @@ class MainWindow(QMainWindow):
         # Get configuration from ion_panel
         config = self.ion_panel.get_configuration()
         
-        # Get current interface structure (from Tab 3 - Interface Construction)
+        # Get current interface structure (from Interface Construction tab)
         interface = self._current_interface_result
         
         if interface is None:
             QMessageBox.warning(
                 self, "No Interface",
-                "Please generate an interface structure first in Tab 3."
+                "Please generate an interface structure first in the Interface Construction tab."
             )
+            return
             return
         
         # Get liquid volume from interface panel

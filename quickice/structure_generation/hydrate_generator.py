@@ -33,8 +33,8 @@ class HydrateStructureGenerator:
         """Lazy import of GenIce2 to avoid startup overhead."""
         if self._genice_module is None:
             try:
-                import genice2
-                self._genice_module = genice2
+                from genice2.genice import GenIce as GenIce2
+                self._genice_module = GenIce2
             except ImportError as e:
                 raise ImportError(
                     "GenIce2 is required for hydrate generation. "
