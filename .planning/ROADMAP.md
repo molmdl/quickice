@@ -94,10 +94,12 @@ Plans:
 
 **Requirements:** None (urgent fixes)
 
-**Plans:** 0 plans (run /gsd-plan-phase 28.1 to break down)
+**Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 28.1 to break down)
+- [x] 28.1-01-PLAN.md — Fix tab ordering + ion insertion (main_window.py)
+- [x] 28.1-02-PLAN.md — Remove CO2/H2 from types + hydrate code
+- [x] 28.1-03-PLAN.md — FF corrections: Madrid2019 + atomtype ordering + CH4/THF
 
 **Details:**
 - Bugfix: Hydrate generation error
