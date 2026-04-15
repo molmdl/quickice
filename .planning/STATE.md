@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 28.1 (Urgent Bugfixes + FF Corrections) |
-| Plan | Not planned |
-| Status | Needs planning |
-| Last activity | 2026-04-15 — Phase 28.1 inserted for urgent fixes |
+| Plan | 02 of 02 complete |
+| Status | In progress |
+| Last activity | 2026-04-15 — Completed 28.1-02 (Remove CO2/H2 from hydrate generation) |
 
-**Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 needs planning)
+**Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 in progress)
 
 ---
 
@@ -127,7 +127,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydrateConfig dataclass | Configuration for hydrate lattice generation with validation | ✓ Implemented (29-02) |
 | HydrateLatticeInfo dataclass | Display info for hydrate lattice selection | ✓ Implemented (29-02) |
 | HYDRATE_LATTICES constant | sI, sII, sH GenIce2 lattice info | ✓ Implemented (29-02) |
-| GUEST_MOLECULES constant | ch4, thf, co2, h2 guest molecule metadata | ✓ Implemented (29-02) |
+| GUEST_MOLECULES constant | ch4, thf only (co2, h2 removed in 28.1-02) | ✓ Implemented (29-02, updated 28.1-02) |
 | IonInserter class | Concentration-based placement, not lattice replacement | ✓ Implemented (30-01) |
 | gromacs_ion_export.py | ion.itp generator with [moleculetype] sections | ✓ Implemented (30-02) |
 | Water density display | IAPWS-95 in Tab 1 info panel | ✓ Implemented (30-05) |
@@ -179,9 +179,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-15
-**Completed:** Phase 28.1 inserted (urgent fixes needed)
-**Next:** /gsd-plan-phase 28.1
+**Last session:** 2026-04-15 14:12
+**Stopped at:** Completed 28.1-02 (Remove CO2/H2 from hydrate generation)
+**Next:** Phase 28.1 complete, ready for next phase
 
 ---
 

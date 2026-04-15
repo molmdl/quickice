@@ -21,7 +21,7 @@ The 5-phase structure derives from research recommendations: fix pre-existing bu
 | Phase | Goal | Requirements | Success Criteria |
 |-------|------|--------------|------------------|
 | 28 - Pre-requisite Fixes | Fix 4 pre-existing bugs that block v4.0 development | — | 3 criteria |
-| 28.1 - Urgent Bugfixes + FF (INSERTED) | Fix GUI errors, replace FF parameters | — | TBD |
+| 28.1 - Urgent Bugfixes + FF (INSERTED) | Fix GUI errors, replace FF parameters | — | 3 plans complete |
 | 29 - Data Structures + Multi-Molecule GROMACS | Establish foundation for multi-molecule work | GRO-01 to GRO-03, HYDR-01 to HYDR-05 | 5 criteria |
 | 30 - Tab 4 Ion Insertion (NaCl) | User can insert NaCl ions into liquid phase | ION-01 to ION-07, WATER-02 | 5 criteria |
 | 31 - Tab 2 Hydrate Generation | User can generate hydrate structures with guest molecules | HYDR-06 to HYDR-08, WATER-03 | 4 criteria |
@@ -302,13 +302,13 @@ Plans:
 | Phase | Goal | Status |
 |-------|------|--------|
 | 28 | Pre-requisite Fixes | ✓ Complete |
-| 28.1 | Urgent Bugfixes + FF Corrections | Not started (INSERTED) |
+| 28.1 | Urgent Bugfixes + FF Corrections | ✓ Complete (3/3 plans) |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ███████░░ 70% (3.5/6 phases complete, Phase 28.1 needs planning)
+**Overall:** ████████░░ 83% (5/6 phases complete - Phase 32 pending)
 
 ---
 
