@@ -126,13 +126,13 @@ class IonInserter:
         new_atom_names = []
         new_molecule_index = []
         
-        # Track which water molecule indices are being replaced (as integers)
-        replaced_indices = set(selected)
+        # Track which water molecule start_idx values are being replaced
+        replaced_starts = set(water_mols[i].start_idx for i in selected)
         
         # First, add all non-water molecules and non-replaced water molecules
         current_idx = 0
-        for mol_idx, mol in enumerate(structure.molecule_index):
-            if mol.mol_type != "water" or mol_idx not in replaced_indices:
+        for mol in structure.molecule_index:
+            if mol.mol_type != "water" or mol.start_idx not in replaced_starts:
                 # Keep this molecule
                 start = mol.start_idx
                 end = start + mol.count
@@ -147,17 +147,21 @@ class IonInserter:
                 ))
                 current_idx += mol.count
         
-        # Build positions array for keeping track of what exists (zero out replaced waters)
-        kept_positions = structure.positions.copy()
-        for mol_idx, mol in enumerate(structure.molecule_index):
-            if mol.mol_type == "water" and mol_idx in replaced_indices:
-                # This water is being replaced - zero out its position to exclude from overlap check
+        # Build array of positions for molecules that will remain (not being replaced)
+        remain_positions = []
+        for mol in structure.molecule_index:
+            if mol.mol_type != "water" or mol.start_idx not in replaced_starts:
+                # Keep this molecule - include its atoms
                 start = mol.start_idx
                 end = start + mol.count
-                kept_positions[start:end] = 0
+                remain_positions.append(structure.positions[start:end])
         
-        # Build cKDTree for overlap checking
-        tree = cKDTree(kept_positions)
+        if remain_positions:
+            remain_positions = np.vstack(remain_positions)
+            tree = cKDTree(remain_positions)
+        else:
+            # No other molecules - no overlap to check
+            tree = None
         
         # Now add ions alternating Na+, Cl- with overlap checking
         na_count = 0
@@ -171,11 +175,12 @@ class IonInserter:
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
             
-            # Check minimum distance to existing atoms using cKDTree
-            min_dist = tree.query(water_pos, k=1)[0]
-            if min_dist < MIN_SEPARATION:
-                # Too close - skip this ion
-                continue
+            # Check minimum distance to existing atoms (water not being replaced)
+            if tree is not None:
+                min_dist = tree.query(water_pos, k=1)[0]
+                if min_dist < MIN_SEPARATION:
+                    # Too close - skip this ion
+                    continue
             
             # Also check against previously placed ions
             if ion_positions:
@@ -211,23 +216,21 @@ class IonInserter:
                 current_idx += 1
                 cl_count += 1
         
-        # Update report with overlap check info
+        # Generate report
         requested_pairs = ion_pairs
         actual_pairs = (na_count + cl_count) // 2
+        report = (
+            f"Ion insertion: requested {requested_pairs * 2} water molecules, "
+            f"placed {na_count} Na+ and {cl_count} Cl- ions\n"
+        )
         if actual_pairs < requested_pairs:
-            report += f"Overlap check: placed {actual_pairs}/{requested_pairs} pairs (some positions too close)\n"
+            report += f"Warning: could not place {requested_pairs - actual_pairs} pairs (too close to existing atoms)\n"
         
         # Concatenate all positions
         if new_positions:
             combined = np.vstack(new_positions)
         else:
             combined = np.zeros((0, 3))
-        
-        # Generate report
-        report = (
-            f"Ion insertion: replaced {ion_pairs * 2} water molecules with "
-            f"{na_count} Na+ and {cl_count} Cl- ions\n"
-        )
         
         return IonStructure(
             positions=combined,
