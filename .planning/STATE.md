@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 28.1 (Urgent Bugfixes + FF Corrections) |
-| Plan | 02 of 02 complete |
+| Plan | 03 of 03 in progress (awaiting human verification) |
 | Status | In progress |
-| Last activity | 2026-04-15 — Completed 28.1-02 (Remove CO2/H2 from hydrate generation) |
+| Last activity | 2026-04-15 — Completed 28.1-03 (Madrid2019 ion parameters, atomtype ordering, CH4/THF integration) |
 
 **Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 in progress)
 
@@ -148,6 +148,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydratePanel integration | HydratePanel with viewer section, log panel, generation workflow wired to HydrateWorker | ✓ Implemented (31-04) |
 | HydrateGROMACSExporter | Export hydrate structures to GROMACS .gro/.top/.itp with bundled guest parameters | ✓ Implemented (31-05) |
 | Bundled guest .itp files | ch4.itp (GAFF methane), thf.itp (GAFF THF) for GROMACS export | ✓ Implemented (31-05) |
+| Madrid2019 ion parameters | Na charge=0.85, Cl charge=-0.85 per research | ✓ Implemented (28.1-03) |
+| GROMACS atomtype ordering | All [atomtypes] grouped after [defaults] before #include | ✓ Implemented (28.1-03) |
+| Sobtop GAFF2 guest parameters | CH4/THF atomtypes commented in .itp, defined in main .top | ✓ Implemented (28.1-03) |
 
 ### v3.5 Shipped Decisions
 
@@ -179,9 +182,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-15 14:12
-**Stopped at:** Completed 28.1-02 (Remove CO2/H2 from hydrate generation)
-**Next:** Phase 28.1 complete, ready for next phase
+**Last session:** 2026-04-15 20:36
+**Stopped at:** Awaiting human verification for 28.1-03 (Madrid2019 ion parameters, atomtype ordering, CH4/THF)
+**Next:** Phase 28.1 verification checkpoint pending
 
 ---
 
