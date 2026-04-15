@@ -14,8 +14,6 @@ MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
     "cl":    {"atoms": 1, "res_name": "CL",  "description": "Chloride ion"},
     "ch4":   {"atoms": 5, "res_name": "CH4", "description": "Methane"},
     "thf":   {"atoms": 12, "res_name": "THF", "description": "Tetrahydrofuran"},
-    "co2":   {"atoms": 3, "res_name": "CO2", "description": "Carbon dioxide"},
-    "h2":    {"atoms": 2, "res_name": "H2",  "description": "Hydrogen"},
 }
 
 
@@ -33,7 +31,7 @@ class MoleculeIndex:
     Attributes:
         start_idx: First atom index in positions array (0-based)
         count: Number of atoms in this molecule
-        mol_type: Molecule type string ('ice', 'water', 'na', 'cl', 'ch4', 'thf', 'co2', 'h2')
+        mol_type: Molecule type string ('ice', 'water', 'na', 'cl', 'ch4', 'thf')
     """
     start_idx: int
     count: int
@@ -46,8 +44,8 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
         "genice_name": "CS1",  # GenIce2 lattice name
         "description": "Structure I hydrate",
         "cages": {
-            "small": {"name": "5¹²", "count_per_unit_cell": 2, "guest_fits": ["ch4", "h2", "co2"]},
-            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 6, "guest_fits": ["ch4", "co2", "thf"]},
+            "small": {"name": "5¹²", "count_per_unit_cell": 2, "guest_fits": ["ch4"]},
+            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 6, "guest_fits": ["ch4", "thf"]},
         },
         "unit_cell_molecules": 46,  # Water molecules in unit cell
     },
@@ -55,8 +53,8 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
         "genice_name": "CS2",
         "description": "Structure II hydrate",
         "cages": {
-            "small": {"name": "5¹²", "count_per_unit_cell": 16, "guest_fits": ["ch4", "h2", "co2"]},
-            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf", "co2"]},
+            "small": {"name": "5¹²", "count_per_unit_cell": 16, "guest_fits": ["ch4"]},
+            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf"]},
         },
         "unit_cell_molecules": 136,
     },
@@ -64,8 +62,8 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
         "genice_name": "CS3",
         "description": "Structure H hydrate",
         "cages": {
-            "small": {"name": "5¹²", "count_per_unit_cell": 3, "guest_fits": ["ch4", "h2"]},
-            "medium": {"name": "4³5⁶6³", "count_per_unit_cell": 2, "guest_fits": ["ch4", "h2"]},
+            "small": {"name": "5¹²", "count_per_unit_cell": 3, "guest_fits": ["ch4"]},
+            "medium": {"name": "4³5⁶6³", "count_per_unit_cell": 2, "guest_fits": ["ch4"]},
             "large": {"name": "5¹²6⁸", "count_per_unit_cell": 1, "guest_fits": ["thf"]},
         },
         "unit_cell_molecules": 34,
@@ -88,20 +86,6 @@ GUEST_MOLECULES: dict[str, dict[str, Any]] = {
         "atoms": 12,
         "description": "THF guest molecule (structure stabilizer)",
         "force_field": "GAFF/GAFF2",
-    },
-    "co2": {
-        "name": "Carbon Dioxide",
-        "formula": "CO₂",
-        "atoms": 3,
-        "description": "CO₂ guest molecule",
-        "force_field": "TraPPE-small",
-    },
-    "h2": {
-        "name": "Hydrogen",
-        "formula": "H₂",
-        "atoms": 2,
-        "description": "Hydrogen guest molecule",
-        "force_field": "TraPPE-UA",
     },
 }
 
@@ -280,7 +264,7 @@ class HydrateConfig:
     
     Attributes:
         lattice_type: Hydrate lattice type ('sI', 'sII', 'sH')
-        guest_type: Guest molecule type ('ch4', 'thf', 'co2', 'h2')
+        guest_type: Guest molecule type ('ch4', 'thf')
         cage_occupancy_small: Occupancy percentage for small cages (0-100)
         cage_occupancy_large: Occupancy percentage for large cages (0-100)
         supercell_x: Supercell repetition in X direction
