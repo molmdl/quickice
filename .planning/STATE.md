@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 31 (Tab 2 - Hydrate Generation) |
-| Plan | 05 of 05 |
-| Status | Phase complete |
-| Last activity | 2026-04-15 — Plan 31-05 complete (GROMACS export with bundled guest .itp files) |
+| Phase | 28.1 (Urgent Bugfixes + FF Corrections) |
+| Plan | Not planned |
+| Status | Needs planning |
+| Last activity | 2026-04-15 — Phase 28.1 inserted for urgent fixes |
 
-**Progress:** ████████████████████████ 100% (5/5 phases complete - Phase 31 complete!)
+**Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 needs planning)
 
 ---
 
@@ -45,12 +45,19 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Phase | Goal | Requirements |
 |-------|------|--------------|
 | 28 | Pre-requisite Fixes | — (internal bug fixes) |
+| 28.1 | Urgent Bugfixes + FF Corrections | — (bugfixes, FF corrections) |
 | 29 | Data Structures + Multi-Molecule GROMACS | GRO-01 to GRO-03, HYDR-01 to HYDR-05 |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ION-01 to ION-07, WATER-02 |
 | 31 | Tab 2 - Hydrate Generation | HYDR-06 to HYDR-08, WATER-03 |
 | 32 | Custom Molecules + Display Controls | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 |
 
 **Coverage:** 33/33 requirements mapped ✓
+
+---
+
+## Roadmap Evolution
+
+- Phase 28.1 inserted after Phase 28: Urgent Bugfixes + FF Corrections (URGENT) — discovered during Phase 31 execution
 
 ---
 
@@ -173,9 +180,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-15
-**Completed:** 31-05-SUMMARY.md (GROMACS export for hydrate structures)
-**Next:** Phase 32 Plan 01 (Custom molecules + display controls)
+**Completed:** Phase 28.1 inserted (urgent fixes needed)
+**Next:** /gsd-plan-phase 28.1
 
 ---
 
-*State updated: 2026-04-15 — Phase 31 complete (Tab 2 - Hydrate Generation fully implemented)*
+*State updated: 2026-04-15 — Phase 28.1 inserted after Phase 28 for urgent bugfixes and FF corrections*

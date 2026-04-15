@@ -21,6 +21,7 @@ The 5-phase structure derives from research recommendations: fix pre-existing bu
 | Phase | Goal | Requirements | Success Criteria |
 |-------|------|--------------|------------------|
 | 28 - Pre-requisite Fixes | Fix 4 pre-existing bugs that block v4.0 development | — | 3 criteria |
+| 28.1 - Urgent Bugfixes + FF (INSERTED) | Fix GUI errors, replace FF parameters | — | TBD |
 | 29 - Data Structures + Multi-Molecule GROMACS | Establish foundation for multi-molecule work | GRO-01 to GRO-03, HYDR-01 to HYDR-05 | 5 criteria |
 | 30 - Tab 4 Ion Insertion (NaCl) | User can insert NaCl ions into liquid phase | ION-01 to ION-07, WATER-02 | 5 criteria |
 | 31 - Tab 2 Hydrate Generation | User can generate hydrate structures with guest molecules | HYDR-06 to HYDR-08, WATER-03 | 4 criteria |
@@ -34,10 +35,13 @@ The 5-phase structure derives from research recommendations: fix pre-existing bu
 Phase 28 (Prerequisite Fixes)
     │
     ▼
-Phase 29 (Data Structures + GROMACS) ──────┐
+Phase 28.1 (Urgent Bugfixes + FF) ─────────┐
     │                                       │
     ▼                                       │
-Phase 30 (Ion Insertion) ◄──────────────────┤
+Phase 29 (Data Structures + GROMACS) ──────┐│
+    │                                       ││
+    ▼                                       ││
+Phase 30 (Ion Insertion) ◄──────────────────┤┘
     │                                       │
     ▼                                       │
 Phase 31 (Hydrate Generation) ◄─────────────┘
@@ -47,6 +51,7 @@ Phase 32 (Custom Molecules + Display Controls)
 ```
 
 - Phase 28 must complete before any other v4.0 phase (pre-existing bugs corrupt results)
+- Phase 28.1 must complete before Phases 29-31 (bugfixes and FF corrections)
 - Phase 29 must complete before Phases 30, 31, 32 (data structures needed)
 - Phase 30 can start after Phase 29 (reuses InterfaceStructure from Tab 3)
 - Phase 31 can start after Phase 29 (reuses multi-actor viewer pattern from Phase 30)
@@ -76,6 +81,31 @@ Plans:
 2. Temperature/Pressure metadata correctly stored in StructureResult (Pitfall #15)
 3. GRO parser deduplicated into single _parse_gro_file() function used by all importers (Pitfall #16)
 4. is_cell_orthogonal() unified with single implementation across codebase (Pitfall #21)
+
+---
+
+### Phase 28.1: Urgent Bugfixes + FF Corrections (INSERTED)
+
+**Goal:** Fix GUI generation errors and replace incorrect force field parameters
+
+**Rationale:** Critical bugs discovered during Phase 31 execution block hydrate and ion generation. Ion parameters used amberGS.ff without user approval - must replace with Madrid2019. CO2/H2 removed from UI but code not updated.
+
+**Depends on:** Phase 28 (prerequisite fixes)
+
+**Requirements:** None (urgent fixes)
+
+**Plans:** 0 plans (run /gsd-plan-phase 28.1 to break down)
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 28.1 to break down)
+
+**Details:**
+- Bugfix: Hydrate generation error
+- Bugfix: Ion insertion error
+- Bugfix: Tab ordering issues
+- FF: Replace amberGS → Madrid2019 for ions
+- FF: User will provide ch4.itp, thf.itp (GAFF)
+- Cleanup: Remove CO2/H2 from hydrate code
 
 ---
 
@@ -270,12 +300,13 @@ Plans:
 | Phase | Goal | Status |
 |-------|------|--------|
 | 28 | Pre-requisite Fixes | ✓ Complete |
+| 28.1 | Urgent Bugfixes + FF Corrections | Not started (INSERTED) |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ████████░ 80% (4/5 phases complete, Phase 31 planned)
+**Overall:** ███████░░ 70% (3.5/6 phases complete, Phase 28.1 needs planning)
 
 ---
 
