@@ -27,6 +27,7 @@ from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
 from quickice.gui.hydrate_worker import HydrateWorker
 from quickice.gui.hydrate_renderer import render_hydrate_structure
+from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure
 from quickice.structure_generation.ion_inserter import IonInserter
@@ -71,6 +72,10 @@ class MainWindow(QMainWindow):
         
         # Store current hydrate configuration for export
         self._current_hydrate_config = None
+        self._current_hydrate_result = None
+        
+        # Hydrate GROMACS exporter
+        self._hydrate_gromacs_exporter = HydrateGROMACSExporter(self)
         
         # Store current ion actors for visibility toggling
         self._ion_actors: list = []
@@ -302,6 +307,12 @@ class MainWindow(QMainWindow):
         export_interface_gromacs_action = file_menu.addAction("Export Interface for GROMACS...")
         export_interface_gromacs_action.setShortcut("Ctrl+I")
         export_interface_gromacs_action.triggered.connect(self._on_export_interface_gromacs)
+        
+        # Separator and Export Hydrate for GROMACS (Hydrate tab)
+        file_menu.addSeparator()
+        
+        export_hydrate_gromacs_action = file_menu.addAction("Export Hydrate for GROMACS...")
+        export_hydrate_gromacs_action.triggered.connect(self._on_export_hydrate_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -870,8 +881,8 @@ class MainWindow(QMainWindow):
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.gro\n"
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.top\n"
                 f"• {ranked.candidate.phase_id}_{T:.0f}K_{P:.0f}bar_c{ranked.rank}.itp"
-            )
-
+)
+    
     @Slot()
     def _on_export_interface_gromacs(self):
         """Handle Export Interface for GROMACS menu action (Tab 2)."""
@@ -897,7 +908,35 @@ class MainWindow(QMainWindow):
                 f"• interface_{iface.mode}.top\n"
                 f"• interface_{iface.mode}.itp"
             )
-
+    
+    @Slot()
+    def _on_export_hydrate_gromacs(self):
+        """Handle Export Hydrate for GROMACS menu action (Hydrate tab).
+        
+        Per plan 31-05: Exports current hydrate structure to GROMACS format.
+        """
+        if not self._current_hydrate_result:
+            QMessageBox.warning(
+                self,
+                "No Hydrate",
+                "Generate a hydrate structure first in the Hydrate Config tab."
+            )
+            return
+        
+        structure = self._current_hydrate_result
+        config = self._current_hydrate_config
+        success = self._hydrate_gromacs_exporter.export_hydrate(structure, config)
+        
+        if success:
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Hydrate structure exported successfully.\n\n"
+                f"Files: hydrate_{config.lattice_type}_{config.guest_type}.gro/.top\n"
+                f"Water: {structure.water_count} molecules\n"
+                f"Guests: {structure.guest_count} {config.guest_type}"
+            )
+    
     @Slot()
     def _on_help(self):
         """Open quick reference help dialog.
