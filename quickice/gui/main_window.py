@@ -25,6 +25,8 @@ from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, 
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
+from quickice.gui.hydrate_worker import HydrateWorker
+from quickice.gui.hydrate_renderer import render_hydrate_structure
 from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure
 from quickice.structure_generation.ion_inserter import IonInserter
@@ -559,11 +561,80 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_hydrate_generate_clicked(self):
         """Handle hydrate generation button click."""
+        # Get configuration from panel
         config = self.hydrate_panel.get_configuration()
-        # TODO: Start generation worker (Plan 29-07)
-        print(f"Generate hydrate with config: lattice={config.lattice_type}, guest={config.guest_type}, "
-              f"occupancy={config.cage_occupancy_small}/{config.cage_occupancy_large}%, "
-              f"supercell={config.supercell_x}x{config.supercell_y}x{config.supercell_z}")
+        
+        # Clear previous log and show start message
+        self.hydrate_panel.clear_log()
+        self.hydrate_panel.append_log(f"Starting {config.lattice_type} hydrate generation...")
+        
+        # Disable generate button during generation
+        self.hydrate_panel.generate_button.setEnabled(False)
+        
+        # Create and configure worker
+        self._hydrate_worker = HydrateWorker(config)
+        
+        # Connect signals
+        self._hydrate_worker.progress_updated.connect(self._on_hydrate_progress)
+        self._hydrate_worker.generation_complete.connect(self._on_hydrate_generation_complete)
+        self._hydrate_worker.generation_error.connect(self._on_hydrate_generation_error)
+        
+        # Start generation in background thread
+        self._hydrate_worker.start()
+    
+    def _on_hydrate_progress(self, message: str):
+        """Handle hydrate generation progress update.
+        
+        Args:
+            message: Progress message from worker
+        """
+        self.hydrate_panel.append_log(message)
+    
+    def _on_hydrate_generation_complete(self, result):
+        """Handle hydrate generation complete.
+        
+        Args:
+            result: HydrateStructure from generation
+        """
+        # Store result
+        self._current_hydrate_result = result
+        
+        # Log completion info
+        self.hydrate_panel.append_log(f"Generation complete!")
+        self.hydrate_panel.append_log(f"Water molecules: {result.water_count}")
+        self.hydrate_panel.append_log(f"Guest molecules: {result.guest_count}")
+        
+        # Log unit cell info
+        if hasattr(result, 'lattice_info') and result.lattice_info:
+            lattice_info = result.lattice_info
+            self.hydrate_panel.append_log(f"Lattice: {lattice_info.description}")
+            if hasattr(lattice_info, 'cage_types') and lattice_info.cage_types:
+                self.hydrate_panel.append_log(f"Cage types: {', '.join(lattice_info.cage_types)}")
+        
+        # Display structure in viewer
+        self.hydrate_panel.hydrate_viewer.set_hydrate_structure(result)
+        
+        # Re-enable generate button
+        self.hydrate_panel.generate_button.setEnabled(True)
+    
+    def _on_hydrate_generation_error(self, error_msg: str):
+        """Handle hydrate generation error.
+        
+        Args:
+            error_msg: Error message from worker
+        """
+        self.hydrate_panel.append_log(f"Error: {error_msg}")
+        
+        # Show error dialog
+        QMessageBox.critical(
+            self,
+            "Hydrate Generation Error",
+            f"Failed to generate hydrate structure:\n\n{error_msg}",
+            QMessageBox.StandardButton.Ok
+        )
+        
+        # Re-enable generate button
+        self.hydrate_panel.generate_button.setEnabled(True)
     
     def _on_ion_config_changed(self):
         """Handle ion configuration change."""

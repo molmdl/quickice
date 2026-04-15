@@ -19,6 +19,7 @@ from quickice.structure_generation.types import (
     HydrateConfig, HydrateLatticeInfo,
     HYDRATE_LATTICES, GUEST_MOLECULES
 )
+from quickice.gui.hydrate_viewer import HydrateViewerWidget
 
 
 class HydratePanel(QWidget):
@@ -40,8 +41,13 @@ class HydratePanel(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        # State tracking for generation workflow
+        self._current_structure = None
+        self._worker = None
+        
         self._setup_ui()
         self._setup_connections()
+        self._setup_viewer_section()
     
     def _setup_ui(self):
         """Setup UI components."""
@@ -177,6 +183,47 @@ class HydratePanel(QWidget):
         layout.addWidget(self.info_text)
         group.setLayout(layout)
         return group
+    
+    def _setup_viewer_section(self):
+        """Setup viewer section below configuration controls.
+        
+        Creates:
+        - Log info panel (QTextEdit) for generation progress
+        - HydrateViewerWidget for 3D structure display
+        """
+        # Create a new group for viewer section
+        viewer_group = QGroupBox("Structure Viewer")
+        viewer_layout = QVBoxLayout()
+        
+        # Log info panel - shows generation progress
+        self._log_text = QTextEdit()
+        self._log_text.setReadOnly(True)
+        self._log_text.setMaximumHeight(100)
+        self._log_text.setPlaceholderText("Generation log will appear here...")
+        viewer_layout.addWidget(self._log_text)
+        
+        # 3D viewer widget
+        self.hydrate_viewer = HydrateViewerWidget()
+        viewer_layout.addWidget(self.hydrate_viewer)
+        
+        viewer_group.setLayout(viewer_layout)
+        
+        # Add to main layout (before stretch)
+        layout = self.layout()
+        # Insert before the stretch at the end
+        layout.insertWidget(layout.count() - 1, viewer_group)
+    
+    def append_log(self, message: str):
+        """Append a message to the log display.
+        
+        Args:
+            message: Message to append
+        """
+        self._log_text.append(message)
+    
+    def clear_log(self):
+        """Clear the log display."""
+        self._log_text.clear()
     
     def _setup_connections(self):
         """Setup signal connections."""
