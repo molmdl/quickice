@@ -1,0 +1,143 @@
+; Created by Sobtop (http://sobereva.com/soft/sobtop) Version 2026.1.16 on 2026-04-15
+; Modified for QuickIce: [atomtypes] commented - types defined in main .top file
+
+; [ atomtypes ]  ; COMMENTED - types defined in main .top file
+; name   at.num      mass       charge   ptype     sigma (nm)    epsilon (kJ/mol)
+; os           8    15.999405    0.000000    A      3.156098E-01    3.037584E-01
+; c5           6    12.010736    0.000000    A      3.397710E-01    4.510352E-01
+; hc           1     1.007941    0.000000    A      2.600177E-01    8.702720E-02
+; h1           1     1.007941    0.000000    A      2.421997E-01    8.702720E-02
+
+[ moleculetype ]
+; name          nrexcl
+thf       3
+
+[ atoms ]
+;  Index   type   residue  resname   atom         cgnr     charge       mass
+     1     os         1      MOL     O              1   -0.46306291   15.999405
+     2     c5         1      MOL     CA             2   -0.01169795   12.010736
+     3     c5         1      MOL     CA             3   -0.01638506   12.010736
+     4     c5         1      MOL     CB             4    0.22201590   12.010736
+     5     c5         1      MOL     CB             5    0.22265530   12.010736
+     6     hc         1      MOL     H              6    0.01049176    1.007941
+     7     hc         1      MOL     H              7    0.01049176    1.007941
+     8     hc         1      MOL     H              8    0.01156782    1.007941
+     9     hc         1      MOL     H              9    0.01156782    1.007941
+    10     h1         1      MOL     H             10    0.00067942    1.007941
+    11     h1         1      MOL     H             11    0.00067942    1.007941
+    12     h1         1      MOL     H             12    0.00049836    1.007941
+    13     h1         1      MOL     H             13    0.00049836    1.007941
+ 
+[ bonds ]
+;  atom_i   atom_j  functype      r0 (nm)    k (kJ/mol/nm^2)
+     1        4         1        0.143460     2.306304E+05     ; O-CB, prebuilt c5-os
+     1        5         1        0.143460     2.306304E+05     ; O-CB, prebuilt c5-os
+     2        3         1        0.154830     1.841797E+05     ; CA-CA, prebuilt c5-c5
+     2        4         1        0.154830     1.841797E+05     ; CA-CB, prebuilt c5-c5
+     2        6         1        0.109540     2.898926E+05     ; CA-H, prebuilt c5-hc
+     2        7         1        0.109540     2.898926E+05     ; CA-H, prebuilt c5-hc
+     3        5         1        0.154830     1.841797E+05     ; CA-CB, prebuilt c5-c5
+     3        8         1        0.109540     2.898926E+05     ; CA-H, prebuilt c5-hc
+     3        9         1        0.109540     2.898926E+05     ; CA-H, prebuilt c5-hc
+     4       10         1        0.109720     2.876751E+05     ; CB-H, prebuilt c5-h1
+     4       11         1        0.109720     2.876751E+05     ; CB-H, prebuilt c5-h1
+     5       12         1        0.109720     2.876751E+05     ; CB-H, prebuilt c5-h1
+     5       13         1        0.109720     2.876751E+05     ; CB-H, prebuilt c5-h1
+ 
+[ angles ]
+;  atom_i   atom_j   atom_k  functype    a0 (Deg.)  k (kJ/mol/rad^2)
+     4        1        5         1       109.260      7.498565E+02     ; CB-O-CB, prebuilt c5-os-c5
+     3        2        4         1       103.830      5.174771E+02     ; CA-CA-CB, prebuilt c5-c5-c5
+     3        2        6         1       111.170      3.568952E+02     ; CA-CA-H, prebuilt c5-c5-hc
+     3        2        7         1       111.170      3.568952E+02     ; CA-CA-H, prebuilt c5-c5-hc
+     4        2        6         1       111.170      3.568952E+02     ; CB-CA-H, prebuilt c5-c5-hc
+     4        2        7         1       111.170      3.568952E+02     ; CB-CA-H, prebuilt c5-c5-hc
+     6        2        7         1       107.220      3.004949E+02     ; H-CA-H, prebuilt hc-c5-hc
+     2        3        5         1       103.830      5.174771E+02     ; CA-CA-CB, prebuilt c5-c5-c5
+     2        3        8         1       111.170      3.568952E+02     ; CA-CA-H, prebuilt c5-c5-hc
+     2        3        9         1       111.170      3.568952E+02     ; CA-CA-H, prebuilt c5-c5-hc
+     5        3        8         1       111.170      3.568952E+02     ; CB-CA-H, prebuilt c5-c5-hc
+     5        3        9         1       111.170      3.568952E+02     ; CB-CA-H, prebuilt c5-c5-hc
+     8        3        9         1       107.220      3.004949E+02     ; H-CA-H, prebuilt hc-c5-hc
+     1        4        2         1       106.140      6.479342E+02     ; O-CB-CA, prebuilt c5-c5-os
+     1        4       10         1       108.460      4.722899E+02     ; O-CB-H, prebuilt h1-c5-os
+     1        4       11         1       108.460      4.722899E+02     ; O-CB-H, prebuilt h1-c5-os
+     2        4       10         1       111.170      3.568952E+02     ; CA-CB-H, prebuilt c5-c5-h1
+     2        4       11         1       111.170      3.568952E+02     ; CA-CB-H, prebuilt c5-c5-h1
+    10        4       11         1       108.130      2.987376E+02     ; H-CB-H, prebuilt h1-c5-h1
+     1        5        3         1       106.140      6.479342E+02     ; O-CB-CA, prebuilt c5-c5-os
+     1        5       12         1       108.460      4.722899E+02     ; O-CB-H, prebuilt h1-c5-os
+     1        5       13         1       108.460      4.722899E+02     ; O-CB-H, prebuilt h1-c5-os
+     3        5       12         1       111.170      3.568952E+02     ; CA-CB-H, prebuilt c5-c5-h1
+     3        5       13         1       111.170      3.568952E+02     ; CA-CB-H, prebuilt c5-c5-h1
+    12        5       13         1       108.130      2.987376E+02     ; H-CB-H, prebuilt h1-c5-h1
+ 
+[ dihedrals ] ; propers
+;  atom_i   atom_j   atom_k   atom_l  functype   d0 (Deg.)   k (kJ/mol/rad^2)    ; Case of functype=2
+;  atom_i   atom_j   atom_k   atom_l  functype  phase (Deg.)  kd (kJ/mol) pn     ; Case of functype=9
+     1        4        2        3         9         0.000       0.00000    1     ; O-CB-CA-CA (os-c5-c5-c5) missing
+     1        4        2        6         9         0.000       0.00000    1     ; O-CB-CA-H (os-c5-c5-hc) missing
+     1        4        2        7         9         0.000       0.00000    1     ; O-CB-CA-H (os-c5-c5-hc) missing
+     1        5        3        2         9         0.000       0.00000    1     ; O-CB-CA-CA (os-c5-c5-c5) missing
+     1        5        3        8         9         0.000       0.00000    1     ; O-CB-CA-H (os-c5-c5-hc) missing
+     1        5        3        9         9         0.000       0.00000    1     ; O-CB-CA-H (os-c5-c5-hc) missing
+     2        3        5       12         9         0.000       0.00000    1     ; CA-CA-CB-H (c5-c5-c5-h1) missing
+     2        3        5       13         9         0.000       0.00000    1     ; CA-CA-CB-H (c5-c5-c5-h1) missing
+     2        4        1        5         9         0.000       0.00000    1     ; CA-CB-O-CB (c5-c5-os-c5) missing
+     3        2        4       10         9         0.000       0.00000    1     ; CA-CA-CB-H (c5-c5-c5-h1) missing
+     3        2        4       11         9         0.000       0.00000    1     ; CA-CA-CB-H (c5-c5-c5-h1) missing
+     3        5        1        4         9         0.000       0.00000    1     ; CA-CB-O-CB (c5-c5-os-c5) missing
+     4        1        5       12         9         0.000       0.00000    1     ; CB-O-CB-H (c5-os-c5-h1) missing
+     4        1        5       13         9         0.000       0.00000    1     ; CB-O-CB-H (c5-os-c5-h1) missing
+     4        2        3        5         9         0.000       0.00000    1     ; CB-CA-CA-CB (c5-c5-c5-c5) missing
+     4        2        3        8         9         0.000       0.00000    1     ; CB-CA-CA-H (c5-c5-c5-hc) missing
+     4        2        3        9         9         0.000       0.00000    1     ; CB-CA-CA-H (c5-c5-c5-hc) missing
+     5        1        4       10         9         0.000       0.00000    1     ; CB-O-CB-H (c5-os-c5-h1) missing
+     5        1        4       11         9         0.000       0.00000    1     ; CB-O-CB-H (c5-os-c5-h1) missing
+     5        3        2        6         9         0.000       0.00000    1     ; CB-CA-CA-H (c5-c5-c5-hc) missing
+     5        3        2        7         9         0.000       0.00000    1     ; CB-CA-CA-H (c5-c5-c5-hc) missing
+     6        2        3        8         9         0.000       0.00000    1     ; H-CA-CA-H (hc-c5-c5-hc) missing
+     6        2        3        9         9         0.000       0.00000    1     ; H-CA-CA-H (hc-c5-c5-hc) missing
+     6        2        4       10         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     6        2        4       11         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     7        2        3        8         9         0.000       0.00000    1     ; H-CA-CA-H (hc-c5-c5-hc) missing
+     7        2        3        9         9         0.000       0.00000    1     ; H-CA-CA-H (hc-c5-c5-hc) missing
+     7        2        4       10         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     7        2        4       11         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     8        3        5       12         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     8        3        5       13         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     9        3        5       12         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+     9        3        5       13         9         0.000       0.00000    1     ; H-CA-CB-H (hc-c5-c5-h1) missing
+
+[ pairs ] ; Yielded based on rotatable dihedrals
+;  atom_i   atom_j  functype
+     1        6         1     ; O-CB-CA-H
+     1        7         1     ; O-CB-CA-H
+     1        8         1     ; O-CB-CA-H
+     1        9         1     ; O-CB-CA-H
+     2       12         1     ; CA-CA-CB-H
+     2       13         1     ; CA-CA-CB-H
+     3       10         1     ; CA-CA-CB-H
+     3       11         1     ; CA-CA-CB-H
+     4       12         1     ; CB-O-CB-H
+     4       13         1     ; CB-O-CB-H
+     4        8         1     ; CB-CA-CA-H
+     4        9         1     ; CB-CA-CA-H
+     5       10         1     ; CB-O-CB-H
+     5       11         1     ; CB-O-CB-H
+     5        6         1     ; CB-CA-CA-H
+     5        7         1     ; CB-CA-CA-H
+     6        8         1     ; H-CA-CA-H
+     6        9         1     ; H-CA-CA-H
+     6       10         1     ; H-CA-CB-H
+     6       11         1     ; H-CA-CB-H
+     7        8         1     ; H-CA-CA-H
+     7        9         1     ; H-CA-CA-H
+     7       10         1     ; H-CA-CB-H
+     7       11         1     ; H-CA-CB-H
+     8       12         1     ; H-CA-CB-H
+     8       13         1     ; H-CA-CB-H
+     9       12         1     ; H-CA-CB-H
+     9       13         1     ; H-CA-CB-H
+
+; No improper needs to generate
