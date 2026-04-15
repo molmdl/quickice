@@ -126,13 +126,13 @@ class IonInserter:
         new_atom_names = []
         new_molecule_index = []
         
-        # Track which water molecules are kept (not replaced)
-        replaced_water_indices = set(selected)
+        # Track which water molecule indices are being replaced (as integers)
+        replaced_indices = set(selected)
         
         # First, add all non-water molecules and non-replaced water molecules
         current_idx = 0
         for mol_idx, mol in enumerate(structure.molecule_index):
-            if mol.mol_type != "water" or mol_idx not in replaced_water_indices:
+            if mol.mol_type != "water" or mol_idx not in replaced_indices:
                 # Keep this molecule
                 start = mol.start_idx
                 end = start + mol.count
@@ -147,17 +147,46 @@ class IonInserter:
                 ))
                 current_idx += mol.count
         
-        # Now add ions alternating Na+, Cl-
+        # Build positions array for keeping track of what exists (zero out replaced waters)
+        kept_positions = structure.positions.copy()
+        for mol_idx, mol in enumerate(structure.molecule_index):
+            if mol.mol_type == "water" and mol_idx in replaced_indices:
+                # This water is being replaced - zero out its position to exclude from overlap check
+                start = mol.start_idx
+                end = start + mol.count
+                kept_positions[start:end] = 0
+        
+        # Build cKDTree for overlap checking
+        tree = cKDTree(kept_positions)
+        
+        # Now add ions alternating Na+, Cl- with overlap checking
         na_count = 0
         cl_count = 0
+        ion_positions = []  # Track placed ion positions
         
         for i, water_idx in enumerate(selected):
             water_mol = water_mols[water_idx]
             start = water_mol.start_idx
-            end = start + water_mol.count
             
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
+            
+            # Check minimum distance to existing atoms using cKDTree
+            min_dist = tree.query(water_pos, k=1)[0]
+            if min_dist < MIN_SEPARATION:
+                # Too close - skip this ion
+                continue
+            
+            # Also check against previously placed ions
+            if ion_positions:
+                ion_tree = cKDTree(np.array(ion_positions))
+                min_ion_dist = ion_tree.query(water_pos, k=1)[0]
+                if min_ion_dist < MIN_SEPARATION:
+                    # Too close to other ions - skip
+                    continue
+            
+            # Valid position - add ion
+            ion_positions.append(water_pos)
             
             if i % 2 == 0:
                 # Add Na+
@@ -181,6 +210,12 @@ class IonInserter:
                 ))
                 current_idx += 1
                 cl_count += 1
+        
+        # Update report with overlap check info
+        requested_pairs = ion_pairs
+        actual_pairs = (na_count + cl_count) // 2
+        if actual_pairs < requested_pairs:
+            report += f"Overlap check: placed {actual_pairs}/{requested_pairs} pairs (some positions too close)\n"
         
         # Concatenate all positions
         if new_positions:
