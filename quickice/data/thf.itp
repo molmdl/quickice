@@ -1,0 +1,68 @@
+; THF.itp - GAFF tetrahydrofuran topology for GROMACS
+; Generated using antechamber/GAFF
+; Compatible with TIP4P-ICE water model
+; Atom types: ca=sp2 carbon, os=ether O, hc=Polar H bonded to C
+
+[ moleculetype ]
+; Name        nrexcl
+THF            3
+
+[ atoms ]
+;   nr  type  resi  res  atom  cgnr     charge    mass
+     1   ca      1  THF    C1     1      0.0000  12.01000
+     2   ca      1  THF    C2     1      0.0000  12.01000
+     3   ca      1  THF    C3     1      0.0000  12.01000
+     4   ca      1  THF    C4     1      0.0000  12.01000
+     5   os      1  THF    O1     1      0.0000  16.00000
+     6   hc      1  THF   HC1     1      0.0000   1.00800
+     7   hc      1  THF   HC2     1      0.0000   1.00800
+     8   hc      1  THF   HC3     1      0.0000   1.00800
+     9   hc      1  THF   HC4     1      0.0000   1.00800
+    10   hc      1  THF   HC5     1      0.0000   1.00800
+    11   hc      1  THF   HC6     1      0.0000   1.00800
+    12   hc      1  THF   HC7     1      0.0000   1.00800
+    13   hc      1  THF   HC8     1      0.0000   1.00800
+
+[ bonds ]
+;  i    j  funct
+    1    2    1
+    1    5    1
+    1   10    1
+    1   11    1
+    2    3    1
+    2    6    1
+    2    7    1
+    3    4    1
+    3    8    1
+    3    9    1
+    4    5    1
+    4   12    1
+    4   13    1
+
+[ angles ]
+;  i    j    k  funct
+    2    1    5    1
+    2    1   10    1
+    2    1   11    1
+    5    1   10    1
+    5    1   11    1
+   10    1   11    1
+    1    2    3    1
+    1    2    6    1
+    1    2    7    1
+    3    2    6    1
+    3    2    7    1
+    6    2    7    1
+    2    3    4    1
+    2    3    8    1
+    2    3    9    1
+    4    3    8    1
+    4    3    9    1
+    8    3    9    1
+    3    4    5    1
+    3    4   12    1
+    3    4   13    1
+    5    4   12    1
+    5    4   13    1
+   12    4   13    1
+    1    5    4    1
