@@ -1,23 +1,31 @@
 """GROMACS ion export module.
 
 Provides functions to generate ion.itp files for Na+ and Cl- ions
-with GROMACS standard atom types (NA/CL from amberGS.ff).
+with GROMACS standard atom types (Na+/Cl- from Madrid2019).
 """
 
 from pathlib import Path
 
-# GROMACS standard ion parameters (amberGS.ff)
+# Madrid2019 ion parameters
+# Reference: https://pubs.aics.org/jctc/2019/15/10_JO.pdf
 # Masses in g/mol
 NA_ATOM_MASS = 22.9898
 CL_ATOM_MASS = 35.453
 
-# GROMACS standard atom type names
+# GROMACS atom type names (Madrid2019)
 NA_ATOM_TYPE = "NA"
 CL_ATOM_TYPE = "CL"
 
-#charges  # Na+ = +1, Cl- = -1
-NA_CHARGE = 1.0
-CL_CHARGE = -1.0
+# Partial charges (Madrid2019 ion parameters)
+NA_CHARGE = 0.85
+CL_CHARGE = -0.85
+
+# VDW parameters (from Madrid2019_085.top)
+# sigma in nm, epsilon in kJ/mol
+NA_SIGMA = 0.22173668
+CL_SIGMA = 0.46990563
+NA_EPSILON = 1.47235577
+CL_EPSILON = 0.07692308
 
 
 def generate_ion_itp(na_count: int, cl_count: int) -> str:
@@ -36,7 +44,7 @@ NA            1
 
 [ atoms ]
 ;  nr  type  resi  res  atom  cgnr  charge  mass
-    1    NA      1    NA    NA     1      {NA_CHARGE:.1f}   {NA_ATOM_MASS}
+    1    NA      1    NA    NA     1      {NA_CHARGE}   {NA_ATOM_MASS}
 
 [ moleculetype ]
 ; Name        nrexcl
@@ -44,7 +52,7 @@ CL            1
 
 [ atoms ]
 ;  nr  type  resi  res  atom  cgnr  charge  mass
-    1    CL      1    CL    CL     1      {CL_CHARGE:.1f}   {CL_ATOM_MASS}
+    1    CL      1    CL    CL     1      {CL_CHARGE}   {CL_ATOM_MASS}
 """
     return itp_content
 
