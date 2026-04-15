@@ -1,7 +1,8 @@
 # Phase 31: Tab 2 - Hydrate Generation - Context
 
 **Gathered:** 2026-04-15
-**Status:** Ready for planning
+**Updated:** 2026-04-15 (FF decisions clarified)
+**Status:** BLOCKED — awaiting user-provided .itp files
 
 <domain>
 ## Phase Boundary
@@ -21,10 +22,9 @@ User can generate hydrate structures with guest molecules (CH4, THF) via GenIce2
 
 ### Guest Molecules (Phase 31)
 - **CH4, THF only** for Phase 31
-- Force field: GAFF/GAFF2
-- User will provide .itp files when prompted
-- **Remove H2** from guest options
-- **Research CO2** separately, seek approval before adding to Phase 31
+- **CO2 and H2 REMOVED** from UI — do not include
+- Force field: **User will provide .itp files**
+- .itp files go in `quickice/data/`
 
 ### Guest Rendering
 - Guests render as **ball-and-stick** (distinct from water framework)
@@ -67,6 +67,74 @@ User can generate hydrate structures with guest molecules (CH4, THF) via GenIce2
 
 </decisions>
 
+<force_field_pending>
+## Force Field Files — PENDING USER APPROVAL
+
+### Guest Molecule .itp Files Needed
+
+| Guest | .itp File | Location | Status |
+|-------|-----------|----------|--------|
+| Methane | `ch4.itp` | `quickice/data/` | ❌ User must provide |
+| THF | `thf.itp` | `quickice/data/` | ❌ User must provide |
+
+**Requirements:**
+- Must include: `[moleculetype]`, `[atoms]`, `[bonds]`, `[angles]`, `[dihedrals]` sections
+- Atom counts must match `GUEST_MOLECULES` dict:
+  - CH4: 5 atoms (1 C + 4 H)
+  - THF: 12 atoms (4 C + 1 O + 8 H)
+
+### Ion Parameters (Phase 30)
+
+**File:** `quickice/structure_generation/gromacs_ion_export.py`
+
+| Parameter | Current Value | Force Field |
+|-----------|---------------|-------------|
+| Atom type (Na) | NA | amberGS.ff |
+| Atom type (Cl) | CL | amberGS.ff |
+| Na mass | 22.9898 g/mol | amberGS.ff |
+| Cl mass | 35.453 g/mol | amberGS.ff |
+| Na charge | +1 | - |
+| Cl charge | -1 | - |
+
+**⚠️ User approval needed:**
+- Is amberGS.ff acceptable for ions?
+- Or do you have different ion parameters to provide?
+
+### Water Model (TIP4P-ice)
+
+**File:** `quickice/data/tip4p-ice.itp` (existing)
+
+- Source: sklogwiki.org (CC-BY-NC-SA 3.0)
+- Credits cited in file header
+
+**⚠️ User approval needed:**
+- Is TIP4P-ice acceptable for water model?
+- Or do you use a different water model?
+
+</force_field_pending>
+
+<code_cleanup>
+## Code Cleanup Required
+
+### Remove CO2/H2 from UI
+
+These files need modification to remove co2/h2:
+
+| File | Action |
+|------|--------|
+| `quickice/structure_generation/types.py` | Remove co2/h2 from `GUEST_MOLECULES` dict |
+| `quickice/gui/hydrate_panel.py` | Remove co2/h2 from guest_combo |
+| `quickice/structure_generation/hydrate_generator.py` | Remove co2/h2 parameter mapping |
+| `quickice/gui/hydrate_export.py` | Remove co2/h2 from `_get_guest_itp_path()` |
+
+### Remove Fake .itp Files
+
+**DELETE these files if they exist:**
+- `quickice/data/ch4.itp` (fake GAFF — user will provide real one)
+- `quickice/data/thf.itp` (fake GAFF — user will provide real one)
+
+</code_cleanup>
+
 <specifics>
 ## Specific References
 
@@ -79,14 +147,15 @@ User can generate hydrate structures with guest molecules (CH4, THF) via GenIce2
 <deferred>
 ## Deferred Ideas
 
-- **CO2 force field research** — TRAPPE-AA compatibility with TIP4P-ice needs investigation. Seek user approval before adding CO2 guest option.
+- **CO2 guest option** — TRAPPE-AA compatibility with TIP4P-ice needs investigation. User explicitly removed. Add later with proper FF research and approval.
+- **H2 guest option** — Removed from Phase 31, defer to later phase with proper FF research and approval.
 - **sH hydrate cell type** — Research whether sH can be used for interfaces. Add warning if non-orthogonal cells create gaps.
 - **Custom guest molecules** — Phase 32 path for user-uploaded .gro/.itp files
-- **H2 guest molecule** — Removed from Phase 31, defer to later phase with proper FF research
 
 </deferred>
 
 ---
 
 *Phase: 31-tab-2-hydrate-generation*
-*Context gathered: 2026-04-15*
+*Context updated: 2026-04-15*
+
