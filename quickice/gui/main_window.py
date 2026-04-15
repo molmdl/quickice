@@ -30,7 +30,7 @@ from quickice.gui.hydrate_renderer import render_hydrate_structure
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure
-from quickice.structure_generation.ion_inserter import IonInserter
+from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
 
@@ -159,9 +159,9 @@ class MainWindow(QMainWindow):
         
         # Add tabs to tab widget
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
+        self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
-        self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         
         # Set Tab 1 as default on startup
         self.tab_widget.setCurrentIndex(0)
@@ -671,11 +671,13 @@ class MainWindow(QMainWindow):
         # Get liquid volume from interface panel
         liquid_volume = self.ion_panel.get_liquid_volume()
         
-        # Create inserter and insert ions
-        inserter = IonInserter()
-        ion_structure = inserter.insert_ions(
+        # Extract concentration from config
+        concentration = config.concentration_molar
+        
+        # Call module-level insert_ions function directly
+        ion_structure = insert_ions(
             interface,
-            config,
+            concentration,
             liquid_volume
         )
         
