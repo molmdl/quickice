@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31 (Tab 2 - Hydrate Generation) |
-| Plan | 03 of 05 |
+| Plan | 04 of 05 |
 | Status | Plan complete |
-| Last activity | 2026-04-15 — Plan 31-03 complete (HydrateViewerWidget placeholder/3D viewer) |
+| Last activity | 2026-04-15 — Plan 31-04 complete (HydratePanel integration with viewer and generation workflow) |
 
-**Progress:** ██████░░░░ 76% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress - 3/5 plans done)
+**Progress:** ███████░░░ 80% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress - 4/5 plans done)
 
 ---
 
@@ -138,6 +138,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydrateWorker class | QThread subclass for background hydrate generation with signals | ✓ Implemented (31-01) |
 | HydrateRenderer dual-style | Water as lines (SetRenderAtoms=False), guests as ball-and-stick (UseBallAndStickSettings) | ✓ Implemented (31-02) |
 | HydrateViewerWidget | QWidget with stacked placeholder/3D viewer, VTK availability check, camera auto-fit | ✓ Implemented (31-03) |
+| HydratePanel integration | HydratePanel with viewer section, log panel, generation workflow wired to HydrateWorker | ✓ Implemented (31-04) |
 
 ### v3.5 Shipped Decisions
 
@@ -170,9 +171,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-15
-**Completed:** 31-03-SUMMARY.md (HydrateViewerWidget placeholder/3D viewer)
-**Next:** Phase 31 Plan 04 (HydratePanel integration)
+**Completed:** 31-04-SUMMARY.md (HydratePanel integration with viewer and generation workflow)
+**Next:** Phase 31 Plan 05 (Custom molecules + display controls)
 
 ---
 
-*State updated: 2026-04-15 — Phase 31 Plan 03 complete, ready for Plan 04*
+*State updated: 2026-04-15 — Phase 31 Plan 04 complete, ready for Plan 05*
