@@ -17,6 +17,18 @@ from quickice.structure_generation.types import (
     GUEST_MOLECULES,
 )
 
+# Map from our lattice type names to GenIce2 lattice modules
+_LATTICE_MODULES = {
+    "sI": "sI",
+    "sII": "sII",
+    "sH": "sH",
+}
+
+# Lazy-loaded GenIce2 modules (loaded in _ensure_genice_import)
+_genice_lib = None
+_gromacs_format = None
+_lattice_modules_loaded = {}
+
 
 class HydrateStructureGenerator:
     """Generator for hydrate structures using GenIce2.
@@ -27,14 +39,29 @@ class HydrateStructureGenerator:
     
     def __init__(self):
         """Initialize the generator."""
-        self._genice_module = None
+        self._genice_lib = None
+        self._gromacs_format = None
+        self._lattice_modules = {}
     
     def _ensure_genice_import(self):
         """Lazy import of GenIce2 to avoid startup overhead."""
-        if self._genice_module is None:
+        global _genice_lib, _gromacs_format, _lattice_modules_loaded
+        
+        if self._genice_lib is None:
             try:
                 import genice2.genice as genice_lib
-                self._genice_module = genice_lib
+                from genice2.formats import gromacs
+                from genice2.lattices import sI, sII, sH
+                from genice2.molecules.tip4p import Molecule as TIP4P
+                
+                self._genice_lib = genice_lib
+                self._gromacs_format = gromacs
+                self._lattice_modules = {
+                    "sI": sI,
+                    "sII": sII,
+                    "sH": sH,
+                }
+                self._water_molecule = TIP4P()
             except ImportError as e:
                 raise ImportError(
                     "GenIce2 is required for hydrate generation. "
@@ -56,14 +83,15 @@ class HydrateStructureGenerator:
         """
         self._ensure_genice_import()
         
-        # Get GenIce2 lattice name
-        lattice_name = config.get_genice_lattice_name()
+        # Get GenIce2 Lattice object
+        lattice_module = self._lattice_modules[config.lattice_type]
+        lattice = lattice_module.Lattice()
         
-        # Build GenIce2 command options
+        # Build GenIce2 options based on config
         options = self._build_genice_options(config)
         
         # Generate structure using GenIce2
-        positions, cell, atom_names = self._run_genice(lattice_name, options)
+        positions, cell, atom_names = self._run_genice(lattice, options)
         
         # Build molecule index
         molecule_index = self._build_molecule_index(atom_names, positions)
@@ -140,27 +168,31 @@ class HydrateStructureGenerator:
         
         return options
     
-    def _run_genice(self, lattice_name: str, options: list[str]) -> tuple:
+    def _run_genice(self, lattice, options: list[str]) -> tuple:
         """Run GenIce2 to generate structure.
+        
+        Args:
+            lattice: GenIce2 Lattice object
+            options: GenIce2 options (currently unused, kept for API compatibility)
         
         Returns:
             Tuple of (positions, cell, atom_names)
         """
-        genice = self._genice_module.GenIce
-        
         try:
-            # Create GenIce instance
-            ice = genice(lattice_name)
+            # Create GenIce instance with Lattice object only
+            ice = self._genice_lib.GenIce(lattice)
             
-            # Generate using options (GenIce2 uses format() method)
-            result = ice.format(format_name="gromacs", options=options)
+            # Generate using GROMACS format with water molecule
+            # water parameter is passed to generate_ice, not __init__
+            fmt = self._gromacs_format.Format()
+            result = ice.generate_ice(fmt, water=self._water_molecule)
             
             # Parse GRO format result
             return self._parse_gro_result(result)
             
         except Exception as e:
             raise RuntimeError(
-                f"GenIce2 failed to generate {lattice_name}: {e}"
+                f"GenIce2 failed to generate structure: {e}"
             )
     
     def _parse_gro_result(self, gro_string: str) -> tuple:

@@ -77,7 +77,7 @@ class HydrateGROMACSExporter:
         # Generate default filename: hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro
         lattice = config.lattice_type
         guest = config.guest_type
-        nx, ny, nz = config.nx, config.ny, config.nz
+        nx, ny, nz = config.supercell_x, config.supercell_y, config.supercell_z
         default_name = f"hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro"
         
         # Show save dialog for .gro file
