@@ -7,7 +7,6 @@ with GROMACS standard atom types (Na+/Cl- from Madrid2019).
 from pathlib import Path
 
 # Madrid2019 ion parameters
-# Reference: https://pubs.aics.org/jctc/2019/15/10_JO.pdf
 # Masses in g/mol
 NA_ATOM_MASS = 22.9898
 CL_ATOM_MASS = 35.453
