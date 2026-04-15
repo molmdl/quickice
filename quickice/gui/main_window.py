@@ -529,6 +529,11 @@ class MainWindow(QMainWindow):
         
         self.interface_panel.append_log(f"\nInterface generation complete.")
         
+        # Update ion panel with liquid volume for ion count calculation
+        # Volume = water_nmolecules * 0.0299 nm³ per molecule (TIP4P water volume)
+        liquid_vol = result.water_nmolecules * 0.0299
+        self.ion_panel.set_liquid_volume(liquid_vol)
+        
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
             self.interface_panel._interface_viewer.set_interface_structure(result)
@@ -667,19 +672,28 @@ class MainWindow(QMainWindow):
                 "Please generate an interface structure first in the Interface Construction tab."
             )
             return
-            return
         
-        # Get liquid volume from interface panel
+        # Get liquid volume from interface panel (may be 0 if not set)
         liquid_volume = self.ion_panel.get_liquid_volume()
         
         # Extract concentration from config
         concentration = config.concentration_molar
         
+        if concentration <= 0:
+            QMessageBox.warning(
+                self, "Invalid Concentration",
+                "Please enter a valid concentration greater than 0 mol/L."
+            )
+            return
+        
+        # Pass None if liquid_volume is 0 (let insert_ions calculate from cell)
+        volume_arg = None if liquid_volume <= 0 else liquid_volume
+        
         # Call module-level insert_ions function directly
         ion_structure = insert_ions(
             interface,
             concentration,
-            liquid_volume
+            volume_arg
         )
         
         # Render in 3D viewer
