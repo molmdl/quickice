@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31 (Tab 2 - Hydrate Generation) |
-| Plan | 04 of 05 |
-| Status | Plan complete |
-| Last activity | 2026-04-15 — Plan 31-04 complete (HydratePanel integration with viewer and generation workflow) |
+| Plan | 05 of 05 |
+| Status | Phase complete |
+| Last activity | 2026-04-15 — Plan 31-05 complete (GROMACS export with bundled guest .itp files) |
 
-**Progress:** ███████░░░ 80% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress - 4/5 plans done)
+**Progress:** ████████████████████████ 100% (5/5 phases complete - Phase 31 complete!)
 
 ---
 
@@ -139,6 +139,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydrateRenderer dual-style | Water as lines (SetRenderAtoms=False), guests as ball-and-stick (UseBallAndStickSettings) | ✓ Implemented (31-02) |
 | HydrateViewerWidget | QWidget with stacked placeholder/3D viewer, VTK availability check, camera auto-fit | ✓ Implemented (31-03) |
 | HydratePanel integration | HydratePanel with viewer section, log panel, generation workflow wired to HydrateWorker | ✓ Implemented (31-04) |
+| HydrateGROMACSExporter | Export hydrate structures to GROMACS .gro/.top/.itp with bundled guest parameters | ✓ Implemented (31-05) |
+| Bundled guest .itp files | ch4.itp (GAFF methane), thf.itp (GAFF THF) for GROMACS export | ✓ Implemented (31-05) |
 
 ### v3.5 Shipped Decisions
 
@@ -171,9 +173,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-15
-**Completed:** 31-04-SUMMARY.md (HydratePanel integration with viewer and generation workflow)
-**Next:** Phase 31 Plan 05 (Custom molecules + display controls)
+**Completed:** 31-05-SUMMARY.md (GROMACS export for hydrate structures)
+**Next:** Phase 32 Plan 01 (Custom molecules + display controls)
 
 ---
 
-*State updated: 2026-04-15 — Phase 31 Plan 04 complete, ready for Plan 05*
+*State updated: 2026-04-15 — Phase 31 complete (Tab 2 - Hydrate Generation fully implemented)*
