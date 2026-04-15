@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31 (Tab 2 - Hydrate Generation) |
-| Plan | 01 of 05 |
+| Plan | 02 of 05 |
 | Status | Plan complete |
-| Last activity | 2026-04-15 — Plan 31-01 complete (HydrateWorker QThread class) |
+| Last activity | 2026-04-15 — Plan 31-02 complete (HydrateRenderer dual-style VTK rendering) |
 
-**Progress:** █████░░░░░ 64% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress)
+**Progress:** ██████░░░░ 68% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress - 2/5 plans done)
 
 ---
 
@@ -136,6 +136,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 | Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
 | HydrateWorker class | QThread subclass for background hydrate generation with signals | ✓ Implemented (31-01) |
+| HydrateRenderer dual-style | Water as lines (SetRenderAtoms=False), guests as ball-and-stick (UseBallAndStickSettings) | ✓ Implemented (31-02) |
 
 ### v3.5 Shipped Decisions
 
@@ -168,9 +169,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-15
-**Completed:** 31-01-SUMMARY.md (HydrateWorker QThread class)
-**Next:** Phase 31 Plan 02
+**Completed:** 31-02-SUMMARY.md (HydrateRenderer dual-style VTK rendering)
+**Next:** Phase 31 Plan 03
 
 ---
 
-*State updated: 2026-04-15 — Phase 31 Plan 01 complete, ready for Plan 02*
+*State updated: 2026-04-15 — Phase 31 Plan 02 complete, ready for Plan 03*
