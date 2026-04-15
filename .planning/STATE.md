@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 30 (Tab 4 - Ion Insertion) |
-| Plan | 05 of 05 |
-| Status | Phase complete |
-| Last activity | 2026-04-15 — Phase 30 verified (8/8 must-haves) |
+| Phase | 31 (Tab 2 - Hydrate Generation) |
+| Plan | 01 of 05 |
+| Status | Plan complete |
+| Last activity | 2026-04-15 — Plan 31-01 complete (HydrateWorker QThread class) |
 
-**Progress:** ███████░░ 80% (4/5 phases complete - Phases 28, 29, 30)
+**Progress:** █████░░░░░ 64% (3/5 phases complete - Phases 28, 29, 30; Phase 31 in progress)
 
 ---
 
@@ -135,6 +135,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 | Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
+| HydrateWorker class | QThread subclass for background hydrate generation with signals | ✓ Implemented (31-01) |
 
 ### v3.5 Shipped Decisions
 
@@ -166,10 +167,10 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-14
-**Completed:** 30-04-SUMMARY.md (IonRenderer with VDW spheres)
-**Next:** Phase 30 Plan 05 or 06
+**Last session:** 2026-04-15
+**Completed:** 31-01-SUMMARY.md (HydrateWorker QThread class)
+**Next:** Phase 31 Plan 02
 
 ---
 
-*State updated: 2026-04-14 — Phase 30-04 complete, ready for next plan in Phase 30*
+*State updated: 2026-04-15 — Phase 31 Plan 01 complete, ready for Plan 02*
