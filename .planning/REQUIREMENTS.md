@@ -109,13 +109,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | HYDR-03 | Phase 29 | Pending |
 | HYDR-04 | Phase 29 | Pending |
 | HYDR-05 | Phase 29 | Pending |
-| ION-01 | Phase 30 | Pending |
-| ION-02 | Phase 30 | Pending |
-| ION-03 | Phase 30 | Pending |
-| ION-04 | Phase 30 | Pending |
-| ION-05 | Phase 30 | Pending |
-| ION-06 | Phase 30 | Pending |
-| ION-07 | Phase 30 | Pending |
+| ION-01 | Phase 30 | Complete |
+| ION-02 | Phase 30 | Complete |
+| ION-03 | Phase 30 | Complete |
+| ION-04 | Phase 30 | Complete |
+| ION-05 | Phase 30 | Complete |
+| ION-06 | Phase 30 | Complete |
+| ION-07 | Phase 30 | Complete |
 | HYDR-06 | Phase 31 | Pending |
 | HYDR-07 | Phase 31 | Pending |
 | HYDR-08 | Phase 31 | Pending |
@@ -131,7 +131,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | VIEW-03 | Phase 32 | Pending |
 | VIEW-04 | Phase 32 | Pending |
 | WATER-01 | Phase 29 | Pending |
-| WATER-02 | Phase 30 | Pending |
+| WATER-02 | Phase 30 | Complete |
 | WATER-03 | Phase 31 | Pending |
 | WATER-04 | Phase 32 | Pending |
 
