@@ -17,7 +17,7 @@ def _get_guest_itp_path(guest_type: str) -> Path:
     """Get the path to a bundled guest .itp file.
     
     Args:
-        guest_type: Guest molecule type ("ch4", "thf", "co2", "h2")
+        guest_type: Guest molecule type ("ch4", "thf")
     
     Returns:
         Path to the guest .itp file in the data directory
