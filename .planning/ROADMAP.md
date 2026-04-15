@@ -183,14 +183,14 @@ Plans:
 
 **Research Flags:** Phase 3 in research/SUMMARY.md flags GenIce2 hydrate API as needing deeper research during planning (guests parameter format undocumented).
 
-**Plans:** 5 plans in 3 waves (READY)
+**Plans:** 5 plans in 3 waves (PLANNED)
 
 Plans:
-- [ ] 31-01-PLAN.md — HydrateWorker QThread class (background generation with progress)
-- [ ] 31-02-PLAN.md — HydrateRenderer module (dual-style VTK rendering)
-- [ ] 31-03-PLAN.md — HydrateViewerWidget class (viewer with placeholder/3D stack)
-- [ ] 31-04-PLAN.md — Hydrate tab integration (panel + viewer + worker wiring)
-- [ ] 31-05-PLAN.md — GROMACS export with bundled ch4.itp/thf.itp
+- [x] 31-01-PLAN.md — HydrateWorker QThread class (background generation with progress)
+- [x] 31-02-PLAN.md — HydrateRenderer module (dual-style VTK rendering)
+- [x] 31-03-PLAN.md — HydrateViewerWidget class (viewer with placeholder/3D stack)
+- [x] 31-04-PLAN.md — Hydrate tab integration (panel + viewer + worker wiring)
+- [x] 31-05-PLAN.md — GROMACS export with bundled ch4.itp/thf.itp
 
 ---
 
