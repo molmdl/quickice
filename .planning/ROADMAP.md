@@ -183,6 +183,15 @@ Plans:
 
 **Research Flags:** Phase 3 in research/SUMMARY.md flags GenIce2 hydrate API as needing deeper research during planning (guests parameter format undocumented).
 
+**Plans:** 5 plans in 3 waves (READY)
+
+Plans:
+- [ ] 31-01-PLAN.md — HydrateWorker QThread class (background generation with progress)
+- [ ] 31-02-PLAN.md — HydrateRenderer module (dual-style VTK rendering)
+- [ ] 31-03-PLAN.md — HydrateViewerWidget class (viewer with placeholder/3D stack)
+- [ ] 31-04-PLAN.md — Hydrate tab integration (panel + viewer + worker wiring)
+- [ ] 31-05-PLAN.md — GROMACS export with bundled ch4.itp/thf.itp
+
 ---
 
 ### Phase 32: Custom Molecules + Display Controls
@@ -263,10 +272,10 @@ Plans:
 | 28 | Pre-requisite Fixes | ✓ Complete |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
-| 31 | Tab 2 - Hydrate Generation | Not started |
+| 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ███████░░ 80% (4/5 phases complete)
+**Overall:** ████████░ 80% (4/5 phases complete, Phase 31 planned)
 
 ---
 
