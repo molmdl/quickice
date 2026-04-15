@@ -717,7 +717,7 @@ class MainWindow(QMainWindow):
             self.viewer_panel.dual_viewer.viewer2.render_window.Render()
         
         # Show notification
-        self.info_panel.append(
+        self.info_panel.append_log(
             f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
         )
     
