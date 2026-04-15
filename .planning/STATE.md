@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 30 (ion insertion) |
-| Plan | 04 of 07 |
-| Status | In progress |
-| Last activity | 2026-04-14 — Completed 30-04-SUMMARY.md (Ion rendering in 3D viewer) |
+| Phase | 30 (Tab 4 - Ion Insertion) |
+| Plan | 05 of 05 |
+| Status | Phase complete |
+| Last activity | 2026-04-15 — Phase 30 verified (8/8 must-haves) |
 
-**Progress:** ████░░░░░ 40% (2/5 phases complete - Phases 28, 29)
+**Progress:** ███████░░ 80% (4/5 phases complete - Phases 28, 29, 30)
 
 ---
 
@@ -131,6 +131,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | write_multi_molecule_top_file | #include-based topology with per-type counts | ✓ Implemented (29-03) |
 | HydratePanel widget | UI widget for hydrate configuration (lattice/guest/occupancy) | ✓ Implemented (29-04) |
 | IonRenderer class | VDW sphere creation for Na+ (gold) and Cl- (green) in 3D viewer | ✓ Implemented (30-04) |
+| cKDTree overlap checking | Prevents ion overlap using MIN_SEPARATION (0.3 nm) | ✓ Implemented (30) |
 | Random state with finally block | Pitfall #7 - fixed in 28-01 | ✓ Implemented |
 | T/P in Candidate metadata | Pitfall #15 - fixed in 28-01 | ✓ Implemented |
 | Shared GRO parser module | Duplicate code in generator/water_filler consolidated in 28-02 | ✓ Implemented |
