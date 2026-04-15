@@ -99,10 +99,6 @@ class HydrateStructureGenerator:
             guest_param = "me"  # methane
         elif guest == "thf":
             guest_param = "thf"
-        elif guest == "co2":
-            guest_param = "co2"
-        elif guest == "h2":
-            guest_param = "h2"
         else:
             guest_param = guest
         
@@ -285,19 +281,13 @@ class HydrateStructureGenerator:
                 i += 1
             
             elif atom == "C":
-                # Carbon - could be CH4 or CO2
+                # Carbon - could be CH4
                 # Check surrounding atoms
                 if i + 2 < len(atom_names):
                     next2 = atom_names[i+1:i+3]
-                    o_count = sum(1 for a in next2 if a == "O")
                     h_count = sum(1 for a in next2 if a == "H")
                     
-                    if o_count == 2:
-                        # CO2: C, O, O
-                        molecule_index.append(MoleculeIndex(i, 3, "co2"))
-                        i += 3
-                        continue
-                    elif h_count >= 4:
+                    if h_count >= 4:
                         # CH4: C + 4H
                         molecule_index.append(MoleculeIndex(i, 5, "ch4"))
                         i += 5
@@ -308,12 +298,7 @@ class HydrateStructureGenerator:
                 i += 1
             
             elif atom == "H":
-                # Hydrogen - check if it's H2 (2 H atoms)
-                if i + 1 < len(atom_names) and atom_names[i+1] == "H":
-                    molecule_index.append(MoleculeIndex(i, 2, "h2"))
-                    i += 2
-                else:
-                    # Orphan H - skip (will be part of another molecule)
+                # Orphan H - skip (will be part of another molecule)
                     i += 1
             
             elif atom in ["NA", "Na"]:
