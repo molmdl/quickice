@@ -75,6 +75,7 @@ class HydrateViewerWidget(QWidget):
         self._vtk_available = _VTK_AVAILABLE
         self._current_structure: HydrateStructure | None = None
         self._hydrate_actors: list = []
+        self._representation_mode: str = "ball_and_stick"
         
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -332,3 +333,36 @@ class HydrateViewerWidget(QWidget):
         
         if self._vtk_available and self.render_window is not None:
             self.render_window.Render()
+    
+    def set_representation_mode(self, mode: str) -> None:
+        """Switch between VDW, ball-and-stick, and stick representation modes.
+        
+        Args:
+            mode: One of "vdw", "ball_and_stick", or "stick"
+        
+        This method re-renders the current structure with the specified mode,
+        matching Tab 1's representation settings.
+        """
+        if mode not in ("vdw", "ball_and_stick", "stick"):
+            raise ValueError(f"Invalid representation mode: {mode}. "
+                           "Must be 'vdw', 'ball_and_stick', or 'stick'")
+        
+        self._representation_mode = mode
+        
+        # Re-render if structure is loaded
+        if self._current_structure is not None and self._vtk_available:
+            self._clear_actors()
+            self._hydrate_actors = render_hydrate_structure(
+                self._current_structure, mode
+            )
+            for actor in self._hydrate_actors:
+                self.renderer.AddActor(actor)
+            self.render_window.Render()
+    
+    def get_representation_mode(self) -> str:
+        """Return current representation mode.
+        
+        Returns:
+            "vdw", "ball_and_stick", or "stick"
+        """
+        return self._representation_mode

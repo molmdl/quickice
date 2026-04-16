@@ -26,12 +26,32 @@ from vtkmodules.all import (
 # Multiply all radius scale factors by this to convert Å → nm.
 ANGSTROM_TO_NM = 0.1
 
-# Default radius scale factor for guest molecule atoms (ball-and-stick mode)
-# 0.30 Å → 0.03 nm by default, but reduced for better visibility
-DEFAULT_ATOMIC_RADIUS_SCALE = 0.20 * ANGSTROM_TO_NM  # 0.02 nm
-
-# Default bond radius for guest molecule bonds
-DEFAULT_BOND_RADIUS = 0.075 * ANGSTROM_TO_NM  # 0.0075 nm
+# Representation modes matching Tab 1's molecular_viewer.py
+# These are the EXACT values from molecular_viewer.py for consistent rendering
+def get_representation_settings(mode: str) -> dict:
+    """Get radius settings for representation mode (matching molecular_viewer.py).
+    
+    Args:
+        mode: One of "vdw", "ball_and_stick", or "stick"
+    
+    Returns:
+        Dict with 'atomic_radius_scale' and 'bond_radius' keys (already in nm)
+    """
+    if mode == "vdw":
+        return {
+            'atomic_radius_scale': 0.8 * ANGSTROM_TO_NM,  # 0.08 nm
+            'bond_radius': 0.075 * ANGSTROM_TO_NM,  # 0.0075 nm
+        }
+    elif mode == "ball_and_stick":
+        return {
+            'atomic_radius_scale': 0.25 * ANGSTROM_TO_NM,  # 0.025 nm
+            'bond_radius': 0.075 * ANGSTROM_TO_NM,  # 0.0075 nm
+        }
+    else:  # stick
+        return {
+            'atomic_radius_scale': 0.15 * ANGSTROM_TO_NM,  # 0.015 nm
+            'bond_radius': 0.15 * ANGSTROM_TO_NM,  # 0.015 nm
+        }
 
 
 # CPK coloring for guest molecules (RGB values in [0, 1])
@@ -137,17 +157,18 @@ def _build_vtk_molecule(
     return molecule
 
 
-def create_water_framework_actor(structure) -> vtkActor:
-    """Create a line-only actor for the water framework.
+def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
+    """Create an actor for the water framework with specified representation.
     
-    The water framework is rendered as bonds only (no atom spheres),
-    creating a clean wireframe appearance of the hydrogen-bonded network.
+    The water framework can be rendered as bonds only (wireframe) or with
+    ball-and-stick style matching Tab 1's representation modes.
     
     Args:
         structure: HydrateStructure with molecule_index containing water molecules
+        mode: Representation mode - "vdw", "ball_and_stick", or "stick"
     
     Returns:
-        vtkActor with water framework rendered as lines
+        vtkActor with water framework rendered in specified mode
     """
     # Extract water molecule positions from molecule_index
     water_positions = []
@@ -175,11 +196,31 @@ def create_water_framework_actor(structure) -> vtkActor:
     # Build vtkMolecule for water
     molecule = _build_vtk_molecule(all_water_positions, water_atom_names)
     
-    # Create mapper with line-only rendering
+    # Get representation settings (matching molecular_viewer.py)
+    settings = get_representation_settings(mode)
+    
+    # Create mapper with specified rendering mode
     mapper = vtkMoleculeMapper()
     mapper.SetInputData(molecule)
-    mapper.SetRenderAtoms(False)  # Don't render atom spheres
-    mapper.SetRenderBonds(True)    # Render bonds as lines
+    
+    if mode == "vdw":
+        mapper.UseVDWSpheresSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+        mapper.SetRenderBonds(True)
+    elif mode == "ball_and_stick":
+        mapper.UseBallAndStickSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+    else:  # stick
+        mapper.UseLiquoriceStickSettings()
+        mapper.SetAtomicRadiusTypeToUnitRadius()
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+    
+    # Apply radius settings (matching Tab 1's molecular_viewer.py)
+    mapper.SetAtomicRadiusScaleFactor(settings['atomic_radius_scale'])
+    mapper.SetBondRadius(settings['bond_radius'])
     
     # Set a neutral color for water bonds (blue-tinted, RGB 0-255)
     mapper.SetBondColor(127, 178, 255)  # Light blue
@@ -191,17 +232,18 @@ def create_water_framework_actor(structure) -> vtkActor:
     return actor
 
 
-def create_guest_actor(structure) -> vtkActor:
-    """Create a ball-and-stick actor for guest molecules.
+def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
+    """Create an actor for guest molecules with specified representation.
     
-    Guest molecules (CH4, THF, CO2, H2) are rendered with full ball-and-stick
-    style using CPK coloring.
+    Guest molecules (CH4, THF, CO2, H2) are rendered with the specified
+    representation mode using CPK coloring (matching Tab 1).
     
     Args:
         structure: HydrateStructure with molecule_index containing guest molecules
+        mode: Representation mode - "vdw", "ball_and_stick", or "stick"
     
     Returns:
-        vtkActor with guest molecules rendered as ball-and-stick
+        vtkActor with guest molecules rendered in specified mode
     """
     # Extract guest molecule positions (mol_type != "water")
     guest_positions = []
@@ -229,17 +271,28 @@ def create_guest_actor(structure) -> vtkActor:
     # Build vtkMolecule for guests
     molecule = _build_vtk_molecule(all_guest_positions, guest_atom_names)
     
-    # Create mapper with ball-and-stick rendering
+    # Get representation settings (matching molecular_viewer.py)
+    settings = get_representation_settings(mode)
+    
+    # Create mapper with specified rendering mode
     mapper = vtkMoleculeMapper()
     mapper.SetInputData(molecule)
     mapper.SetRenderAtoms(True)   # Render atom spheres
     mapper.SetRenderBonds(True)   # Render bonds as cylinders
-    mapper.UseBallAndStickSettings()
     
-    # Apply radius settings for better visibility
-    # Scale down atoms so they're not too large in ball-and-stick mode
-    mapper.SetAtomicRadiusScaleFactor(DEFAULT_ATOMIC_RADIUS_SCALE)
-    mapper.SetBondRadius(DEFAULT_BOND_RADIUS)
+    if mode == "vdw":
+        mapper.UseVDWSpheresSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+    elif mode == "ball_and_stick":
+        mapper.UseBallAndStickSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+    else:  # stick
+        mapper.UseLiquoriceStickSettings()
+        mapper.SetAtomicRadiusTypeToUnitRadius()
+    
+    # Apply radius settings (matching Tab 1's molecular_viewer.py)
+    mapper.SetAtomicRadiusScaleFactor(settings['atomic_radius_scale'])
+    mapper.SetBondRadius(settings['bond_radius'])
     
     # Set custom bond color for visibility (RGB 0-255)
     mapper.SetBondColor(180, 180, 180)  # Gray bonds
@@ -252,24 +305,25 @@ def create_guest_actor(structure) -> vtkActor:
     return actor
 
 
-def render_hydrate_structure(structure) -> list[vtkActor]:
-    """Render a hydrate structure with dual-style visualization.
+def render_hydrate_structure(structure, mode: str = "ball_and_stick") -> list[vtkActor]:
+    """Render a hydrate structure with specified representation.
     
     Creates VTK actors for:
-    - Water framework: rendered as lines/bonds only
-    - Guest molecules: rendered as ball-and-stick with CPK colors
+    - Water framework: rendered with specified mode
+    - Guest molecules: rendered with specified mode (matching Tab 1)
     
     Args:
         structure: HydrateStructure with water framework and guest molecules
+        mode: Representation mode - "vdw", "ball_and_stick", or "stick"
     
     Returns:
         List of vtkActor objects [water_actor, guest_actor]
     """
-    # Create water framework actor (lines)
-    water_actor = create_water_framework_actor(structure)
+    # Create water framework actor (with specified mode)
+    water_actor = create_water_framework_actor(structure, mode)
     
-    # Create guest molecules actor (ball-and-stick)
-    guest_actor = create_guest_actor(structure)
+    # Create guest molecules actor (with specified mode)
+    guest_actor = create_guest_actor(structure, mode)
     
     return [water_actor, guest_actor]
 
