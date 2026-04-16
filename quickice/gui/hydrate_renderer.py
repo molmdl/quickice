@@ -86,20 +86,21 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 }
 
 # Bond detection distance threshold (nm)
-# Covalent bonds: O-H ~0.10nm, H-H ~0.16nm, C-H ~0.11nm
+# Covalent bonds: O-H ~0.10nm, C-H ~0.11nm
+# H-H within molecules: ~0.16-0.18nm (should NOT be bonded)
 # Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
-# Use 0.20nm threshold to capture covalent bonds but NOT cross-molecule O-O
-BOND_DISTANCE_THRESHOLD = 0.20  # nm (prevents false O-O cross-molecule bonds)
+# Use 0.14nm threshold to capture C-H and O-H bonds but NOT H-H
+BOND_DISTANCE_THRESHOLD = 0.14  # nm (captures covalent bonds, excludes H-H)
 
 
-def _get_element_from_atom_name(atom_name: str) -> str:
+def _get_element_from_atom_name(atom_name: str) -> str | None:
     """Extract element symbol from atom name.
     
     Args:
-        atom_name: Atom name (e.g., "OW", "HW1", "C", "NA")
+        atom_name: Atom name (e.g., "OW", "HW1", "C", "NA", "MW")
     
     Returns:
-        Element symbol (e.g., "O", "H", "C", "N")
+        Element symbol (e.g., "O", "H", "C", "N"), or None to skip the atom
     """
     # Handle special cases for water
     if atom_name.startswith("OW"):
@@ -107,7 +108,7 @@ def _get_element_from_atom_name(atom_name: str) -> str:
     if atom_name.startswith("HW"):
         return "H"
     if atom_name.startswith("MW"):
-        return "M"  # Virtual site, treat as mass
+        return None  # Virtual site - skip this atom
     
     # Handle single-letter elements (C, O, N, H, etc.)
     if len(atom_name) == 1:
@@ -138,21 +139,28 @@ def _build_vtk_molecule(
     """
     molecule = vtkMolecule()
     
-    # Add atoms
+    # Add atoms (skipping virtual sites like MW)
     atom_ids = []
-    for i, (pos, name) in enumerate(zip(positions, atom_names)):
+    for pos, name in zip(positions, atom_names):
         element = _get_element_from_atom_name(name)
+        if element is None:
+            continue  # Skip virtual sites like MW
         # Get atomic number (default to Carbon=6 for unknown elements)
         atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
         atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
         atom_ids.append(atom_id)
     
+    # Track which original positions have atoms for bond detection
+    # (positions may have been filtered by skipping MW)
+    visible_positions = [pos for pos, name in zip(positions, atom_names) 
+                        if _get_element_from_atom_name(name) is not None]
+    
     # Detect and add bonds based on distance
-    n_atoms = len(positions)
+    n_atoms = len(visible_positions)
     for i in range(n_atoms):
         for j in range(i + 1, n_atoms):
             # Calculate distance
-            dist = np.linalg.norm(positions[i] - positions[j])
+            dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
             if dist < BOND_DISTANCE_THRESHOLD:
                 molecule.AppendBond(atom_ids[i], atom_ids[j], 1)  # Single bond
     
@@ -177,20 +185,24 @@ def _build_vtk_molecule_from_molecule(
     """
     molecule = vtkMolecule()
     
-    # Add atoms
+    # Add atoms (skipping virtual sites like MW)
     atom_ids = []
+    visible_positions = []
     for pos, name in zip(mol_positions, mol_atom_names):
         element = _get_element_from_atom_name(name)
+        if element is None:
+            continue  # Skip virtual sites like MW
         # Get atomic number (default to Carbon=6 for unknown elements)
         atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
         atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
         atom_ids.append(atom_id)
+        visible_positions.append(pos)
     
     # Detect and add bonds based on distance WITHIN this molecule only
-    n_atoms = len(mol_positions)
+    n_atoms = len(atom_ids)
     for i in range(n_atoms):
         for j in range(i + 1, n_atoms):
-            dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+            dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
             if dist < BOND_DISTANCE_THRESHOLD:
                 molecule.AppendBond(atom_ids[i], atom_ids[j], 1)  # Single bond
     
@@ -294,7 +306,7 @@ def _build_vtk_molecule_from_molecule_index(
     molecule = vtkMolecule()
     
     # Track which atoms belong to which molecule
-    mol_atom_ids = []  # List of (molecule_idx, global_atom_ids)
+    mol_atom_ids = []  # List of (molecule_idx, local_atom_ids, visible_positions)
     
     for mol_idx, mol in enumerate(molecule_index):
         if mol.mol_type != "water":
@@ -306,15 +318,20 @@ def _build_vtk_molecule_from_molecule_index(
         mol_positions = all_positions[start:end]
         mol_names = all_atom_names[start:end]
         
-        # Add atoms for this molecule
+        # Add atoms for this molecule (skipping virtual sites like MW)
         atom_ids = []
+        visible_positions = []
         for pos, name in zip(mol_positions, mol_names):
             element = _get_element_from_atom_name(name)
+            if element is None:
+                continue  # Skip virtual sites like MW
             atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
             atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
             atom_ids.append(atom_id)
+            visible_positions.append(pos)
         
-        mol_atom_ids.append((mol_idx, atom_ids, mol_positions))
+        if atom_ids:  # Only add if there are visible atoms
+            mol_atom_ids.append((mol_idx, atom_ids, visible_positions))
     
     # Add bonds only within each molecule (not across molecules)
     for mol_idx, atom_ids, mol_positions in mol_atom_ids:
@@ -366,19 +383,23 @@ def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
         mol_positions = structure.positions[start:end]
         mol_names = structure.atom_names[start:end]
         
-        # Add atoms for this molecule
+        # Add atoms for this molecule (skipping virtual sites like MW)
         atom_ids = []
+        visible_positions = []
         for pos, name in zip(mol_positions, mol_names):
             element = _get_element_from_atom_name(name)
+            if element is None:
+                continue  # Skip virtual sites like MW
             atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
             atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
             atom_ids.append(atom_id)
+            visible_positions.append(pos)
         
         # Add bonds only within this guest molecule
         n_atoms = len(atom_ids)
         for i in range(n_atoms):
             for j in range(i + 1, n_atoms):
-                dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+                dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
                 if dist < BOND_DISTANCE_THRESHOLD:
                     molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
     
