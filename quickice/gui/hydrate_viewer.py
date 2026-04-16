@@ -364,9 +364,12 @@ class HydrateViewerWidget(QWidget):
         if (self._current_structure is not None and 
             self._vtk_available and
             hasattr(self._current_structure, 'molecule_index')):
+            # Save structure reference before clearing actors
+            # (clear_actors sets _current_structure = None)
+            current_structure = self._current_structure
             self._clear_actors()
             self._hydrate_actors = render_hydrate_structure(
-                self._current_structure, mode
+                current_structure, mode
             )
             for actor in self._hydrate_actors:
                 self.renderer.AddActor(actor)
