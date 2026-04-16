@@ -11,7 +11,7 @@ This module provides the HydratePanel class for hydrate configuration:
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
-    QFormLayout, QTextEdit, QPushButton, QSplitter
+    QFormLayout, QTextEdit, QPushButton
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -47,38 +47,72 @@ class HydratePanel(QWidget):
         
         self._setup_ui()
         self._setup_connections()
-        self._setup_viewer_section()
     
     def _setup_ui(self):
-        """Setup UI components."""
-        layout = QVBoxLayout(self)
+        """Setup UI components with horizontal layout (matching Interface Panel).
+        
+        Layout:
+        - Left column: Configuration controls (lattice, guest, occupancy, supercell, info, generate)
+        - Right column: Log panel + 3D viewer (stretch=1)
+        """
+        # Create top-level horizontal layout (like InterfacePanel)
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(20)
+        
+        # === LEFT COLUMN: Configuration Controls ===
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(10)
         
         # Lattice selection group
         lattice_group = self._create_lattice_group()
-        layout.addWidget(lattice_group)
+        left_layout.addWidget(lattice_group)
         
         # Guest molecule group
         guest_group = self._create_guest_group()
-        layout.addWidget(guest_group)
+        left_layout.addWidget(guest_group)
         
         # Occupancy group
         occupancy_group = self._create_occupancy_group()
-        layout.addWidget(occupancy_group)
+        left_layout.addWidget(occupancy_group)
         
         # Supercell group
         supercell_group = self._create_supercell_group()
-        layout.addWidget(supercell_group)
+        left_layout.addWidget(supercell_group)
         
         # Lattice info display
         info_group = self._create_info_group()
-        layout.addWidget(info_group)
+        left_layout.addWidget(info_group)
         
         # Generate button
         self.generate_button = QPushButton("Generate Hydrate")
         self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
-        layout.addWidget(self.generate_button)
+        left_layout.addWidget(self.generate_button)
         
-        layout.addStretch()
+        left_layout.addStretch()
+        
+        # === RIGHT COLUMN: Viewer Section ===
+        right_layout = QVBoxLayout()
+        right_layout.setSpacing(10)
+        
+        # Log info panel - shows generation progress
+        log_group = QGroupBox("Generation Log")
+        log_layout = QVBoxLayout()
+        self._log_text = QTextEdit()
+        self._log_text.setReadOnly(True)
+        self._log_text.setMinimumHeight(100)
+        self._log_text.setPlaceholderText("Generation log will appear here...")
+        log_layout.addWidget(self._log_text)
+        log_group.setLayout(log_layout)
+        right_layout.addWidget(log_group)
+        
+        # 3D viewer widget (stretch=1 to fill remaining space)
+        self.hydrate_viewer = HydrateViewerWidget()
+        right_layout.addWidget(self.hydrate_viewer, stretch=1)
+        
+        # Add columns to top-level layout (left gets 2/5, right gets 3/5)
+        main_layout.addLayout(left_layout, stretch=2)
+        main_layout.addLayout(right_layout, stretch=3)
     
     def _create_lattice_group(self) -> QGroupBox:
         """Create lattice type selection group."""
@@ -185,87 +219,7 @@ class HydratePanel(QWidget):
         return group
     
     def _setup_viewer_section(self):
-        """Setup viewer section with horizontal splitter.
-        
-        Reorganizes the panel to use horizontal layout:
-        - Left side: Configuration groups (using existing QVBoxLayout)
-        - Right side: Viewer section (QSplitter with log + 3D viewer)
-        
-        This matches Tab 1 behavior where viewer is on the right side.
-        """
-        # Store reference to existing layout
-        main_layout = self.layout()
-        
-        # Create a new group for viewer section on the right
-        viewer_group = QGroupBox("Structure Viewer")
-        
-        # Use horizontal splitter for log + viewer on the right side
-        viewer_splitter = QSplitter(Qt.Horizontal)
-        
-        # Log info panel - shows generation progress
-        self._log_text = QTextEdit()
-        self._log_text.setReadOnly(True)
-        self._log_text.setMaximumHeight(150)
-        self._log_text.setPlaceholderText("Generation log will appear here...")
-        viewer_splitter.addWidget(self._log_text)
-        
-        # 3D viewer widget
-        self.hydrate_viewer = HydrateViewerWidget()
-        viewer_splitter.addWidget(self.hydrate_viewer)
-        
-        # Set initial sizes: 250px for log, rest to viewer
-        viewer_splitter.setSizes([250, 500])
-        
-        viewer_layout = QVBoxLayout()
-        viewer_layout.addWidget(viewer_splitter)
-        viewer_group.setLayout(viewer_layout)
-        
-        # Remove existing widget and add new splitter arrangement
-        # First, find the widget that contains all config groups
-        # We'll modify the existing main_layout to be horizontal
-        
-        # Get current main layout widget (if any added via addWidget)
-        # Instead, reorganize: wrap existing config in left widget, create right widget
-        
-        # Create container for configuration controls (left side)
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Move all existing widgets except last one to left layout
-        # (main layout has: lattice_group, guest_group, occupancy_group, supercell_group, info_group, generate_button, spacer)
-        # We need to find and move the config groups to left layout
-        for i in range(main_layout.count() - 1):
-            item = main_layout.itemAt(i)
-            if item and item.widget():
-                widget = item.widget()
-                main_layout.removeWidget(widget)
-                left_layout.addWidget(widget)
-        
-        # Add the generate button to left
-        if self.generate_button:
-            left_layout.addWidget(self.generate_button)
-        
-        left_layout.addStretch()
-        
-        # Create horizontal splitter for left config + right viewer
-        top_splitter = QSplitter(Qt.Horizontal)
-        
-        # Add left config panel
-        top_splitter.addWidget(left_widget)
-        
-        # Add right viewer group
-        top_splitter.addWidget(viewer_group)
-        
-        # Set initial sizes: 400px for config, 600px for viewer (like Tab 1)
-        top_splitter.setSizes([400, 600])
-        
-        # Remove old layout and add new splitter
-        # Clear the main layout (but keep the reference)
-        while main_layout.count():
-            main_layout.removeItem(main_layout.itemAt(0))
-        
-        main_layout.addWidget(top_splitter)
+        """Placeholder - viewer is integrated directly in _setup_ui layout now."""
     
     def append_log(self, message: str):
         """Append a message to the log display.
