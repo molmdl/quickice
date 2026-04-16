@@ -159,6 +159,44 @@ def _build_vtk_molecule(
     return molecule
 
 
+def _build_vtk_molecule_from_molecule(
+    mol_positions: np.ndarray,
+    mol_atom_names: list[str]
+) -> vtkMolecule:
+    """Build a vtkMolecule for a SINGLE molecule with proper bond detection.
+    
+    This function applies distance threshold ONLY within a single molecule,
+    preventing cross-molecule bonds.
+    
+    Args:
+        mol_positions: (N_atoms, 3) positions for atoms in ONE molecule
+        mol_atom_names: List of atom names for this molecule
+    
+    Returns:
+        vtkMolecule with atoms and bonds
+    """
+    molecule = vtkMolecule()
+    
+    # Add atoms
+    atom_ids = []
+    for pos, name in zip(mol_positions, mol_atom_names):
+        element = _get_element_from_atom_name(name)
+        # Get atomic number (default to Carbon=6 for unknown elements)
+        atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
+        atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
+        atom_ids.append(atom_id)
+    
+    # Detect and add bonds based on distance WITHIN this molecule only
+    n_atoms = len(mol_positions)
+    for i in range(n_atoms):
+        for j in range(i + 1, n_atoms):
+            dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+            if dist < BOND_DISTANCE_THRESHOLD:
+                molecule.AppendBond(atom_ids[i], atom_ids[j], 1)  # Single bond
+    
+    return molecule
+
+
 def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
     """Create an actor for the water framework with specified representation.
     
@@ -173,18 +211,19 @@ def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtk
         vtkActor with water framework rendered in specified mode
     """
     # Extract water molecule positions from molecule_index
-    water_positions = []
-    water_atom_names = []
+    water_molecules = []
     
     for mol in structure.molecule_index:
         if mol.mol_type == "water":
             # Get positions for this molecule
             start = mol.start_idx
             end = start + mol.count
-            water_positions.append(structure.positions[start:end])
-            water_atom_names.extend(structure.atom_names[start:end])
+            water_molecules.append({
+                'positions': structure.positions[start:end],
+                'atom_names': structure.atom_names[start:end]
+            })
     
-    if not water_positions:
+    if not water_molecules:
         # No water molecules - return empty hidden actor
         mapper = vtkMoleculeMapper()
         actor = vtkActor()
@@ -192,11 +231,10 @@ def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtk
         actor.VisibilityOff()
         return actor
     
-    # Concatenate all water positions
-    all_water_positions = np.vstack(water_positions)
-    
-    # Build vtkMolecule for water
-    molecule = _build_vtk_molecule(all_water_positions, water_atom_names)
+    # Build ONE vtkMolecule from all water atoms, but only bond atoms within SAME molecule
+    molecule = _build_vtk_molecule_from_molecule_index(
+        water_molecules, structure.atom_names, structure.positions, structure.molecule_index
+    )
     
     # Get representation settings (matching molecular_viewer.py)
     settings = get_representation_settings(mode)
@@ -234,6 +272,62 @@ def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtk
     return actor
 
 
+def _build_vtk_molecule_from_molecule_index(
+    molecules: list[dict],
+    all_atom_names: list[str],
+    all_positions: np.ndarray,
+    molecule_index: list
+) -> vtkMolecule:
+    """Build ONE vtkMolecule from multiple molecules, bonding only within each molecule.
+    
+    This prevents cross-molecule bonds while still showing all atoms in one actor.
+    
+    Args:
+        molecules: List of dicts with 'positions' and 'atom_names' for each molecule
+        all_atom_names: All atom names from structure
+        all_positions: All positions from structure
+        molecule_index: List of MoleculeIndex entries
+    
+    Returns:
+        Single vtkMolecule with correct intra-molecule bonds only
+    """
+    molecule = vtkMolecule()
+    
+    # Track which atoms belong to which molecule
+    mol_atom_ids = []  # List of (molecule_idx, global_atom_ids)
+    
+    for mol_idx, mol in enumerate(molecule_index):
+        if mol.mol_type != "water":
+            continue
+        
+        # Get positions for this molecule
+        start = mol.start_idx
+        end = start + mol.count
+        mol_positions = all_positions[start:end]
+        mol_names = all_atom_names[start:end]
+        
+        # Add atoms for this molecule
+        atom_ids = []
+        for pos, name in zip(mol_positions, mol_names):
+            element = _get_element_from_atom_name(name)
+            atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
+            atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
+            atom_ids.append(atom_id)
+        
+        mol_atom_ids.append((mol_idx, atom_ids, mol_positions))
+    
+    # Add bonds only within each molecule (not across molecules)
+    for mol_idx, atom_ids, mol_positions in mol_atom_ids:
+        n_atoms = len(atom_ids)
+        for i in range(n_atoms):
+            for j in range(i + 1, n_atoms):
+                dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+                if dist < BOND_DISTANCE_THRESHOLD:
+                    molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
+    
+    return molecule
+
+
 def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
     """Create an actor for guest molecules with specified representation.
     
@@ -247,19 +341,10 @@ def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
     Returns:
         vtkActor with guest molecules rendered in specified mode
     """
-    # Extract guest molecule positions (mol_type != "water")
-    guest_positions = []
-    guest_atom_names = []
+    # Check if there are any guest molecules
+    has_guest = any(mol.mol_type != "water" for mol in structure.molecule_index)
     
-    for mol in structure.molecule_index:
-        if mol.mol_type != "water":
-            # Get positions for this guest molecule
-            start = mol.start_idx
-            end = start + mol.count
-            guest_positions.append(structure.positions[start:end])
-            guest_atom_names.extend(structure.atom_names[start:end])
-    
-    if not guest_positions:
+    if not has_guest:
         # No guest molecules - return empty hidden actor
         mapper = vtkMoleculeMapper()
         actor = vtkActor()
@@ -267,11 +352,35 @@ def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
         actor.VisibilityOff()
         return actor
     
-    # Concatenate all guest positions
-    all_guest_positions = np.vstack(guest_positions)
+    # Build ONE vtkMolecule from all guest atoms, but only bond atoms within SAME molecule
+    # Use a similar approach to water - iterate through molecule_index for guests
+    molecule = vtkMolecule()
     
-    # Build vtkMolecule for guests
-    molecule = _build_vtk_molecule(all_guest_positions, guest_atom_names)
+    for mol in structure.molecule_index:
+        if mol.mol_type == "water":
+            continue  # Skip water, only process guests
+        
+        # Get positions for this guest molecule
+        start = mol.start_idx
+        end = start + mol.count
+        mol_positions = structure.positions[start:end]
+        mol_names = structure.atom_names[start:end]
+        
+        # Add atoms for this molecule
+        atom_ids = []
+        for pos, name in zip(mol_positions, mol_names):
+            element = _get_element_from_atom_name(name)
+            atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
+            atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
+            atom_ids.append(atom_id)
+        
+        # Add bonds only within this guest molecule
+        n_atoms = len(atom_ids)
+        for i in range(n_atoms):
+            for j in range(i + 1, n_atoms):
+                dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+                if dist < BOND_DISTANCE_THRESHOLD:
+                    molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
     
     # Get representation settings (matching molecular_viewer.py)
     settings = get_representation_settings(mode)

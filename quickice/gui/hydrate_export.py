@@ -120,7 +120,8 @@ class HydrateGROMACSExporter:
                 structure.molecule_index,
                 structure.cell,
                 str(path),
-                f"Hydrate structure ({lattice} + {guest}) exported by QuickIce"
+                f"Hydrate structure ({lattice} + {guest}) exported by QuickIce",
+                atom_names=structure.atom_names
             )
             
             # Build itp_files mapping for .top file

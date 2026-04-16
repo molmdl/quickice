@@ -406,7 +406,8 @@ def write_multi_molecule_gro_file(
     molecule_index: list[MoleculeIndex],
     cell: np.ndarray,
     filepath: str,
-    title: str = "Multi-molecule system exported by QuickIce"
+    title: str = "Multi-molecule system exported by QuickIce",
+    atom_names: list[str] | None = None
 ) -> None:
     """Write multi-molecule system to GROMACS .gro format.
     
@@ -418,6 +419,8 @@ def write_multi_molecule_gro_file(
         cell: (3, 3) cell vectors in nm
         filepath: Output file path
         title: Title line for .gro file
+        atom_names: Optional list of atom names. If provided, uses actual names.
+                   If None, uses generic "XX" placeholder.
     
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
@@ -444,9 +447,14 @@ def write_multi_molecule_gro_file(
                 atom_num_wrapped = atom_num % 100000
                 pos = positions[mol.start_idx + i]
                 
-                # Use generic atom naming (XX) - actual names depend on .itp
+                # Use actual atom name if provided, otherwise use generic "XX"
+                if atom_names is not None:
+                    actual_name = atom_names[mol.start_idx + i]
+                else:
+                    actual_name = "XX"
+                
                 lines.append(f"{res_num:5d}{res_name:<5s}"
-                            f"  XX{atom_num_wrapped:5d}"
+                            f"{actual_name:>5s}{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
         
         f.writelines(lines)

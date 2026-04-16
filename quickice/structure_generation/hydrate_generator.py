@@ -231,12 +231,13 @@ class HydrateStructureGenerator:
                 continue
             
             # GRO format fixed-width columns
-            # resnum (5-10), resname (10-15), atomname (15-20), x (20-28), y (28-36), z (36-44)
+            # Columns 10-15: atom name
+            # Columns 20-28, 28-36, 36-44: x, y, z in nm
             # Example: "    1SOL      O    1   1.065   0.370   0.004"
-            #                    ^15  ^20
+            #                    ^10  ^15
             
-            # Extract atom name from columns 12-17 (approximately)
-            atom_name = line[12:17].strip()
+            # Extract atom name from columns 10-15 (correct for GRO format)
+            atom_name = line[10:15].strip()
             if atom_name:
                 atom_names.append(atom_name)
             
