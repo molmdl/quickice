@@ -83,15 +83,14 @@ class HydrateStructureGenerator:
         """
         self._ensure_genice_import()
         
-        # Get GenIce2 Lattice object
-        lattice_module = self._lattice_modules[config.lattice_type]
-        lattice = lattice_module.Lattice()
+        # Get GenIce2 lattice name from config
+        lattice_name = config.get_genice_lattice_name()
         
-        # Build GenIce2 options based on config
+        # Build GenIce2 CLI options based on config
         options = self._build_genice_options(config)
         
-        # Generate structure using GenIce2
-        positions, cell, atom_names = self._run_genice(lattice, options)
+        # Generate structure using GenIce2 CLI via subprocess
+        positions, cell, atom_names = self._run_via_cli(lattice_name, options)
         
         # Build molecule index
         molecule_index = self._build_molecule_index(atom_names, positions)
@@ -99,9 +98,9 @@ class HydrateStructureGenerator:
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
         
-        # Count water and guest molecules
+        # Count water and guest molecules separately (guest = ch4, na, cl, etc.)
         water_count = sum(1 for m in molecule_index if m.mol_type == "water")
-        guest_count = sum(1 for m in molecule_index if m.mol_type != "water")
+        guest_count = sum(1 for m in molecule_index if m.mol_type == "ch4")
         
         report = self._generate_report(config, water_count, guest_count)
         
@@ -130,37 +129,35 @@ class HydrateStructureGenerator:
         else:
             guest_param = guest
         
-        # Small cage occupancy (using 5^12 cage type code)
-        # GenIce2 format: guest_type*occupancy
+        # Small cage occupancy (using GenIce2 CLI cage type codes)
+        # GenIce2 CLI format: 12=me for small, 14=me for large
         small_occ = config.cage_occupancy_small / 100.0
         large_occ = config.cage_occupancy_large / 100.0
         
-        # Build guest option for small cages (type 12 = 5^12)
+        # Build guest option for small cages (12 = 5^12 cages via CLI)
         if small_occ > 0:
             if small_occ < 1.0:
-                # Partial occupancy: put remaining guests in large cages
+                # Partial occupancy
                 options.append(f"--guest 12={guest_param}*{small_occ}")
             else:
                 options.append(f"--guest 12={guest_param}")
         
-        # Large cage occupancy (type 14 for sI/sII = 5^12 6^4, type 16 for some)
+        # Large cage occupancy (14 for sI = 5^12 6^4, 16 for sII/sH)
         if large_occ > 0:
             if large_occ < 1.0:
-                # Determine cage type for large cages based on lattice
                 if config.lattice_type == "sI":
-                    large_cage = "14"  # 5^12 6^4
+                    large_cage = "14"
                 elif config.lattice_type == "sII":
-                    large_cage = "16"  # 5^12 6^4
-                else:  # sH
+                    large_cage = "16"
+                else:
                     large_cage = "16"
                 options.append(f"--guest {large_cage}={guest_param}*{large_occ}")
             else:
-                # Full occupancy
                 if config.lattice_type == "sI":
                     options.append("--guest 14=" + guest_param)
                 elif config.lattice_type == "sII":
                     options.append("--guest 16=" + guest_param)
-                else:  # sH
+                else:
                     options.append("--guest 16=" + guest_param)
         
         # Water model - use TIP4P for better GROMACS compatibility
@@ -168,28 +165,45 @@ class HydrateStructureGenerator:
         
         return options
     
-    def _run_genice(self, lattice, options: list[str]) -> tuple:
-        """Run GenIce2 to generate structure.
+    def _run_via_cli(self, lattice_name: str, options: list[str]) -> tuple:
+        """Run GenIce2 via subprocess CLI.
         
         Args:
-            lattice: GenIce2 Lattice object
-            options: GenIce2 options (currently unused, kept for API compatibility)
+            lattice_name: GenIce2 lattice name (e.g., "CS1", "CS2", "DOH")
+            options: GenIce2 CLI-style options (e.g., ["--guest 14=me", "--guest 12=me"])
         
         Returns:
             Tuple of (positions, cell, atom_names)
         """
+        import subprocess
+        import shlex
+        
         try:
-            # Create GenIce instance with Lattice object only
-            ice = self._genice_lib.GenIce(lattice)
+            # Build command using shell-style invocation for proper argument parsing
+            cmd_args = [lattice_name] + options + ["--quiet"]
+            cmd = "genice2 " + " ".join(cmd_args)
             
-            # Generate using GROMACS format with water molecule
-            # water parameter is passed to generate_ice, not __init__
-            fmt = self._gromacs_format.Format()
-            result = ice.generate_ice(fmt, water=self._water_molecule)
+            # Run command and capture GRO output
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=60
+            )
             
             # Parse GRO format result
-            return self._parse_gro_result(result)
-            
+            return self._parse_gro_result(result.stdout)
+        
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"GenIce2 CLI failed: {e.stderr}"
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(
+                "GenIce2 CLI timed out"
+            )
         except Exception as e:
             raise RuntimeError(
                 f"GenIce2 failed to generate structure: {e}"
@@ -213,15 +227,20 @@ class HydrateStructureGenerator:
         
         for i in range(2, min(2 + n_atoms, len(lines))):
             line = lines[i]
-            # GRO format: resnum resname atomname atomnum x y z
-            # Fixed format: positions at columns 20-68
+            if not line.strip() or len(line) < 44:
+                continue
             
-            # Extract atom name (columns 10-15, but variable)
-            parts = line.split()
-            if len(parts) >= 5:
-                atom_names.append(parts[2])
+            # GRO format fixed-width columns
+            # resnum (5-10), resname (10-15), atomname (15-20), x (20-28), y (28-36), z (36-44)
+            # Example: "    1SOL      O    1   1.065   0.370   0.004"
+            #                    ^15  ^20
             
-            # Extract positions (columns 20-44, 44-52, 52-60) - in nm
+            # Extract atom name from columns 12-17 (approximately)
+            atom_name = line[12:17].strip()
+            if atom_name:
+                atom_names.append(atom_name)
+            
+            # Extract positions (columns 20-28, 28-36, 36-44) - in nm
             try:
                 x = float(line[20:28])
                 y = float(line[28:36])
@@ -281,6 +300,13 @@ class HydrateStructureGenerator:
         """Build molecule index from atom names.
         
         Groups atoms by molecule type based on atom naming patterns.
+        
+        Handles:
+        - TIP4P water: OW, HW1, HW2, MW (4 atoms)
+        - 3-site water: O, H, H (3 atoms) 
+        - United-atom methane: Me (1 atom)
+        - All-atom methane: C, H, H, H, H (5 atoms)
+        - Ions: Na, Cl (1 atom each)
         """
         molecule_index = []
         i = 0
@@ -288,67 +314,49 @@ class HydrateStructureGenerator:
         while i < len(atom_names):
             atom = atom_names[i]
             
-            # Determine molecule type based on atom patterns
-            # TIP4P water: OW, HW1, HW2, MW
-            # Methane: C, H, H, H, H
-            # CO2: C, O, O
-            # H2: H, H
-            
-            if atom == "OW" or atom == "O":
-                # Could be water or ice - check pattern
-                if i + 3 < len(atom_names):
-                    next_atoms = atom_names[i:i+4]
-                    if "HW" in next_atoms[1] or "H" in next_atoms[1]:
-                        # It's water (4 atoms: OW, HW1, HW2, MW) or ice (3 atoms: O, H, H)
-                        if "MW" in next_atoms:
-                            molecule_index.append(MoleculeIndex(i, 4, "water"))
-                            i += 4
-                        else:
-                            molecule_index.append(MoleculeIndex(i, 3, "ice"))
-                            i += 3
-                        continue
-                
-                # Single O - default to water (might be guest)
-                molecule_index.append(MoleculeIndex(i, 1, "water"))
+            # Check for guest molecules first (unique atom types)
+            if atom == "Me":
+                # United-atom methane (Me)
+                molecule_index.append(MoleculeIndex(i, 1, "ch4"))
                 i += 1
+                continue
             
-            elif atom == "C":
-                # Carbon - could be CH4
-                # Check surrounding atoms
-                if i + 2 < len(atom_names):
-                    next2 = atom_names[i+1:i+3]
-                    h_count = sum(1 for a in next2 if a == "H")
-                    
-                    if h_count >= 4:
-                        # CH4: C + 4H
-                        molecule_index.append(MoleculeIndex(i, 5, "ch4"))
-                        i += 5
-                        continue
-                
-                # Fallback
-                molecule_index.append(MoleculeIndex(i, 1, "water"))
-                i += 1
+            # Check for all-atom methane (C followed by H atoms)
+            if atom == "C" and i + 4 < len(atom_names):
+                next_atoms = atom_names[i+1:i+5]
+                if all(a == "H" for a in next_atoms):
+                    molecule_index.append(MoleculeIndex(i, 5, "ch4"))
+                    i += 5
+                    continue
             
-            elif atom == "H":
-                # Orphan H - skip (will be part of another molecule)
-                    i += 1
+            # Check for water (TIP4P: OW, HW1, HW2, MW)
+            if atom == "OW" and i + 3 < len(atom_names):
+                next_atoms = atom_names[i:i+4]
+                if next_atoms[1] == "HW1" and next_atoms[2] == "HW2" and next_atoms[3] == "MW":
+                    molecule_index.append(MoleculeIndex(i, 4, "water"))
+                    i += 4
+                    continue
             
-            elif atom in ["NA", "Na"]:
+            # Check for 3-site water (O, H, H)
+            if atom == "O" and i + 2 < len(atom_names):
+                if atom_names[i+1] == "H" and atom_names[i+2] == "H":
+                    molecule_index.append(MoleculeIndex(i, 3, "water"))
+                    i += 3
+                    continue
+            
+            # Check for ions
+            if atom in ["NA", "Na"]:
                 molecule_index.append(MoleculeIndex(i, 1, "na"))
                 i += 1
+                continue
             
-            elif atom in ["CL", "Cl"]:
+            if atom in ["CL", "Cl"]:
                 molecule_index.append(MoleculeIndex(i, 1, "cl"))
                 i += 1
+                continue
             
-            elif atom == "MW":
-                # Virtual site - skip (part of water)
-                i += 1
-            
-            else:
-                # Unknown atom type - assume water (single atom for safety)
-                molecule_index.append(MoleculeIndex(i, 1, "water"))
-                i += 1
+            # Unknown atom type - skip but count as water for now to continue scanning
+            i += 1
         
         return molecule_index
     
