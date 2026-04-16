@@ -360,8 +360,10 @@ class HydrateViewerWidget(QWidget):
         
         self._representation_mode = mode
         
-        # Re-render if structure is loaded
-        if self._current_structure is not None and self._vtk_available:
+        # Re-render if structure is loaded and has molecule_index
+        if (self._current_structure is not None and 
+            self._vtk_available and
+            hasattr(self._current_structure, 'molecule_index')):
             self._clear_actors()
             self._hydrate_actors = render_hydrate_structure(
                 self._current_structure, mode
