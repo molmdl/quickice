@@ -1,16 +1,12 @@
 ---
-status: investigating
+status: resolved
 trigger: "Hydrate viewer ball-and-stick - NoneType molecule_index error"
 created: 2026-04-16T00:00:00
-updated: 2026-04-16T00:05:00
+updated: 2026-04-16T00:10:00
 ---
 
 ## Current Focus
-next_action: "Verify bug in set_representation_mode - save structure reference before clearing actors"
-
-hypothesis: "set_representation_mode saves _current_structure reference AFTER calling _clear_actors, which sets it to None"
-test: "Trace line-by-line execution in set_representation_mode"
-expecting: "Confirm that _current_structure becomes None before render_hydrate_structure is called"
+next_action: "Verification complete"
 
 ## Symptoms
 expected: Clicking "ball and stick" button should change representation
@@ -22,7 +18,6 @@ started: Atoms/bonds display correctly now after prior fix, but representation t
 ## Eliminated
 - hypothesis: "Structure not set when representation changed"
   evidence: "User says atoms/bonds display correctly, so structure was set via set_hydrate_structure"
-  timestamp: "2026-04-16T00:03:00"
 
 ## Evidence
 - timestamp: "2026-04-16T00:03:00"
@@ -44,7 +39,16 @@ started: Atoms/bonds display correctly now after prior fix, but representation t
   implication: "set_hydrate_structure is correct, but set_representation_mode calls _clear_actors BEFORE using _current_structure"
 
 ## Resolution
-root_cause: "In set_representation_mode, _current_structure reference is lost because _clear_actors() is called before render_hydrate_structure"
-fix: [not yet applied]
-verification: [not yet applied]
-files_changed: []
+root_cause: "set_representation_mode was missing the line to restore _current_structure after calling _clear_actors()"
+fix: "Added line 383: self._current_structure = current_structure (restoring structure after _clear_actors)"
+verification: "User confirmed all 3 representations (VDW, ball-and-stick, stick) now work correctly"
+files_changed: [quickice/gui/hydrate_viewer.py]
+
+## Fix Details
+In hydrate_viewer.py set_representation_mode():
+1. Original code saved current_structure = self._current_structure before clearing
+2. Called _clear_actors() which sets self._current_structure = None
+3. Called render_hydrate_structure(current_structure, mode) - this worked because local variable was saved
+4. BUT: Never restored self._current_structure after render!
+
+Fix: Added self._current_structure = current_structure after re-rendering to maintain state.

@@ -373,6 +373,8 @@ class HydrateViewerWidget(QWidget):
             )
             for actor in self._hydrate_actors:
                 self.renderer.AddActor(actor)
+            # Restore the structure reference after re-rendering
+            self._current_structure = current_structure
             self.render_window.Render()
     
     def get_representation_mode(self) -> str:
