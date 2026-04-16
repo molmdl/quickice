@@ -11,7 +11,7 @@ This module provides the HydratePanel class for hydrate configuration:
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
-    QFormLayout, QTextEdit, QPushButton
+    QFormLayout, QTextEdit, QPushButton, QStackedWidget
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -105,6 +105,30 @@ class HydratePanel(QWidget):
         log_layout.addWidget(self._log_text)
         log_group.setLayout(log_layout)
         right_layout.addWidget(log_group)
+        
+        # Viewer toolbar with toggle buttons
+        viewer_toolbar = QStackedWidget()
+        viewer_toolbar.setMaximumHeight(40)
+        
+        # Toolbar page (index 0) - toolbar row
+        toolbar_widget = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar_widget)
+        toolbar_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Unit cell toggle button (matching Tab 1's btn_unit_cell)
+        self.btn_unit_cell = QPushButton("Unit cell")
+        self.btn_unit_cell.setCheckable(True)
+        self.btn_unit_cell.setChecked(False)
+        self.btn_unit_cell.clicked.connect(self._on_unit_cell_toggled)
+        toolbar_layout.addWidget(self.btn_unit_cell)
+        
+        toolbar_layout.addStretch()
+        
+        # Add toolbar to stacked widget
+        viewer_toolbar.addWidget(toolbar_widget)
+        
+        # Add toolbar above viewer
+        right_layout.addWidget(viewer_toolbar)
         
         # 3D viewer widget (stretch=1 to fill remaining space)
         self.hydrate_viewer = HydrateViewerWidget()
@@ -315,3 +339,11 @@ class HydratePanel(QWidget):
             supercell_y=self.supercell_y.value(),
             supercell_z=self.supercell_z.value(),
         )
+    
+    def _on_unit_cell_toggled(self):
+        """Toggle unit cell box visibility."""
+        if not self.hydrate_viewer.is_vtk_available():
+            return
+        
+        visible = self.btn_unit_cell.isChecked()
+        self.hydrate_viewer.set_unit_cell_visible(visible)

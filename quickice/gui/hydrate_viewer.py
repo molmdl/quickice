@@ -43,6 +43,13 @@ from quickice.structure_generation.types import HydrateStructure
 from quickice.gui.hydrate_renderer import render_hydrate_structure
 
 
+# Unit cell actor import - loaded only when needed
+def _get_unit_cell_creator():
+    """Lazy import for create_unit_cell_actor."""
+    from quickice.gui.vtk_utils import create_unit_cell_actor
+    return create_unit_cell_actor
+
+
 class HydrateViewerWidget(QWidget):
     """VTK-based 3D viewer for hydrate structures.
     
@@ -76,6 +83,10 @@ class HydrateViewerWidget(QWidget):
         self._current_structure: HydrateStructure | None = None
         self._hydrate_actors: list = []
         self._representation_mode: str = "ball_and_stick"
+        
+        # Unit cell state (matching molecular_viewer.py pattern)
+        self._unit_cell_actor = None
+        self._show_unit_cell = False
         
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -366,3 +377,43 @@ class HydrateViewerWidget(QWidget):
             "vdw", "ball_and_stick", or "stick"
         """
         return self._representation_mode
+    
+    def set_unit_cell_visible(self, visible: bool) -> None:
+        """Toggle unit cell boundary box visualization.
+        
+        Args:
+            visible: True to show unit cell, False to hide
+        
+        Per ADVVIZ-01: User can toggle unit cell boundary box to 
+        visualize the simulation cell.
+        """
+        self._show_unit_cell = visible
+        
+        if not self._vtk_available or self._current_structure is None:
+            return
+        
+        if visible:
+            # Remove old actor if exists
+            if self._unit_cell_actor is not None:
+                self.renderer.RemoveActor(self._unit_cell_actor)
+            
+            # Create and add new actor
+            cell = self._current_structure.cell
+            create_unit_cell_actor = _get_unit_cell_creator()
+            self._unit_cell_actor = create_unit_cell_actor(cell)
+            self.renderer.AddActor(self._unit_cell_actor)
+        
+        elif not visible and self._unit_cell_actor is not None:
+            # Remove unit cell actor
+            self.renderer.RemoveActor(self._unit_cell_actor)
+            self._unit_cell_actor = None
+        
+        self.render_window.Render()
+    
+    def get_unit_cell_visible(self) -> bool:
+        """Return whether unit cell box is visible.
+        
+        Returns:
+            True if unit cell is shown, False otherwise
+        """
+        return self._show_unit_cell

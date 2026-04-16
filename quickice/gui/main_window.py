@@ -940,8 +940,16 @@ class MainWindow(QMainWindow):
             )
             return
         
-        structure = self._current_hydrate_result
         config = self._current_hydrate_config
+        if not config:
+            QMessageBox.warning(
+                self,
+                "No Configuration",
+                "Configure a hydrate structure first in the Hydrate Config tab."
+            )
+            return
+        
+        structure = self._current_hydrate_result
         success = self._hydrate_gromacs_exporter.export_hydrate(structure, config)
         
         if success:
