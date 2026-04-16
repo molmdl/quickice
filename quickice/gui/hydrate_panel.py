@@ -122,6 +122,12 @@ class HydratePanel(QWidget):
         self.btn_unit_cell.clicked.connect(self._on_unit_cell_toggled)
         toolbar_layout.addWidget(self.btn_unit_cell)
         
+        # Representation mode toggle button (matching Tab 1's btn_representation)
+        self.btn_representation = QPushButton("Ball-and-stick")
+        self.btn_representation.setCheckable(False)  # Cycles through modes
+        self.btn_representation.clicked.connect(self._on_representation_toggled)
+        toolbar_layout.addWidget(self.btn_representation)
+        
         toolbar_layout.addStretch()
         
         # Add toolbar to stacked widget
@@ -347,3 +353,22 @@ class HydratePanel(QWidget):
         
         visible = self.btn_unit_cell.isChecked()
         self.hydrate_viewer.set_unit_cell_visible(visible)
+    
+    def _on_representation_toggled(self):
+        """Cycle through VDW, Ball-and-stick, and Stick representations."""
+        if not self.hydrate_viewer.is_vtk_available():
+            return
+        
+        # Get current mode from button text
+        current_text = self.btn_representation.text()
+        
+        # Cycle through modes: Ball-and-stick -> VDW -> Stick -> Ball-and-stick
+        if current_text == "Ball-and-stick":
+            self.btn_representation.setText("VDW")
+            self.hydrate_viewer.set_representation_mode("vdw")
+        elif current_text == "VDW":
+            self.btn_representation.setText("Stick")
+            self.hydrate_viewer.set_representation_mode("stick")
+        else:  # Stick
+            self.btn_representation.setText("Ball-and-stick")
+            self.hydrate_viewer.set_representation_mode("ball_and_stick")

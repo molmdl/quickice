@@ -123,8 +123,12 @@ class IonPanel(QWidget):
         inserter = IonInserter(config)
         
         if self._liquid_volume_nm3 > 0:
-            na_count, cl_count = inserter.calculate_ion_pairs(self._liquid_volume_nm3)
-            self.ion_count_display.setText(f"Na+ {na_count}, Cl- {cl_count} pairs")
+            # calculate_ion_pairs needs (concentration_molar, liquid_volume_nm3)
+            pair_count = inserter.calculate_ion_pairs(
+                config.concentration, 
+                self._liquid_volume_nm3
+            )
+            self.ion_count_display.setText(f"Na+ {pair_count}, Cl- {pair_count} pairs")
         else:
             self.ion_count_display.setText("Na+ 0, Cl- 0 pairs")
     

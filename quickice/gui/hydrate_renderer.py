@@ -86,10 +86,10 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 }
 
 # Bond detection distance threshold (nm)
-# Typical O-H bond ~0.1 nm (1 Å), O-O bond ~0.276 nm (2.76 Å)
-# The hydrate lattice has O-O cages at ~0.30 nm, but covalent bonds within
-# waterGuest molecules should be detected within ~0.1-0.20 nm.
-BOND_DISTANCE_THRESHOLD = 0.30  # nm (increased to capture O-O cage bonds)
+# Covalent bonds: O-H ~0.10nm, H-H ~0.16nm, C-H ~0.11nm
+# Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
+# Use 0.20nm threshold to capture covalent bonds but NOT cross-molecule O-O
+BOND_DISTANCE_THRESHOLD = 0.20  # nm (prevents false O-O cross-molecule bonds)
 
 
 def _get_element_from_atom_name(atom_name: str) -> str:
