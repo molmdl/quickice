@@ -577,8 +577,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_hydrate_generate_clicked(self):
         """Handle hydrate generation button click."""
-        # Get configuration from panel
+        # Get configuration from panel and STORE IT (for export)
         config = self.hydrate_panel.get_configuration()
+        self._current_hydrate_config = config
         
         # Clear previous log and show start message
         self.hydrate_panel.clear_log()

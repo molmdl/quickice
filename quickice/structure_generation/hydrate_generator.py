@@ -123,7 +123,7 @@ class HydrateStructureGenerator:
         # Guest molecule option
         guest = config.guest_type
         if guest == "ch4":
-            guest_param = "me"  # methane
+            guest_param = "ch4"  # all-atom methane (C + 4 H), not "me" (united atom)
         elif guest == "thf":
             guest_param = "thf"
         else:
