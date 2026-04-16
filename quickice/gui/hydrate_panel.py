@@ -11,7 +11,7 @@ This module provides the HydratePanel class for hydrate configuration:
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
-    QFormLayout, QTextEdit, QPushButton
+    QFormLayout, QTextEdit, QPushButton, QSplitter
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -185,33 +185,87 @@ class HydratePanel(QWidget):
         return group
     
     def _setup_viewer_section(self):
-        """Setup viewer section below configuration controls.
+        """Setup viewer section with horizontal splitter.
         
-        Creates:
-        - Log info panel (QTextEdit) for generation progress
-        - HydrateViewerWidget for 3D structure display
+        Reorganizes the panel to use horizontal layout:
+        - Left side: Configuration groups (using existing QVBoxLayout)
+        - Right side: Viewer section (QSplitter with log + 3D viewer)
+        
+        This matches Tab 1 behavior where viewer is on the right side.
         """
-        # Create a new group for viewer section
+        # Store reference to existing layout
+        main_layout = self.layout()
+        
+        # Create a new group for viewer section on the right
         viewer_group = QGroupBox("Structure Viewer")
-        viewer_layout = QVBoxLayout()
+        
+        # Use horizontal splitter for log + viewer on the right side
+        viewer_splitter = QSplitter(Qt.Horizontal)
         
         # Log info panel - shows generation progress
         self._log_text = QTextEdit()
         self._log_text.setReadOnly(True)
-        self._log_text.setMaximumHeight(100)
+        self._log_text.setMaximumHeight(150)
         self._log_text.setPlaceholderText("Generation log will appear here...")
-        viewer_layout.addWidget(self._log_text)
+        viewer_splitter.addWidget(self._log_text)
         
         # 3D viewer widget
         self.hydrate_viewer = HydrateViewerWidget()
-        viewer_layout.addWidget(self.hydrate_viewer)
+        viewer_splitter.addWidget(self.hydrate_viewer)
         
+        # Set initial sizes: 250px for log, rest to viewer
+        viewer_splitter.setSizes([250, 500])
+        
+        viewer_layout = QVBoxLayout()
+        viewer_layout.addWidget(viewer_splitter)
         viewer_group.setLayout(viewer_layout)
         
-        # Add to main layout (before stretch)
-        layout = self.layout()
-        # Insert before the stretch at the end
-        layout.insertWidget(layout.count() - 1, viewer_group)
+        # Remove existing widget and add new splitter arrangement
+        # First, find the widget that contains all config groups
+        # We'll modify the existing main_layout to be horizontal
+        
+        # Get current main layout widget (if any added via addWidget)
+        # Instead, reorganize: wrap existing config in left widget, create right widget
+        
+        # Create container for configuration controls (left side)
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Move all existing widgets except last one to left layout
+        # (main layout has: lattice_group, guest_group, occupancy_group, supercell_group, info_group, generate_button, spacer)
+        # We need to find and move the config groups to left layout
+        for i in range(main_layout.count() - 1):
+            item = main_layout.itemAt(i)
+            if item and item.widget():
+                widget = item.widget()
+                main_layout.removeWidget(widget)
+                left_layout.addWidget(widget)
+        
+        # Add the generate button to left
+        if self.generate_button:
+            left_layout.addWidget(self.generate_button)
+        
+        left_layout.addStretch()
+        
+        # Create horizontal splitter for left config + right viewer
+        top_splitter = QSplitter(Qt.Horizontal)
+        
+        # Add left config panel
+        top_splitter.addWidget(left_widget)
+        
+        # Add right viewer group
+        top_splitter.addWidget(viewer_group)
+        
+        # Set initial sizes: 400px for config, 600px for viewer (like Tab 1)
+        top_splitter.setSizes([400, 600])
+        
+        # Remove old layout and add new splitter
+        # Clear the main layout (but keep the reference)
+        while main_layout.count():
+            main_layout.removeItem(main_layout.itemAt(0))
+        
+        main_layout.addWidget(top_splitter)
     
     def append_log(self, message: str):
         """Append a message to the log display.

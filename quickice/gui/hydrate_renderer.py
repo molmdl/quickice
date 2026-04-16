@@ -6,6 +6,12 @@ with distinct visual styles:
 - Guest molecules: rendered as ball-and-stick with CPK colors
 
 All coordinates are in nanometers (nm).
+
+Radius Control:
+- The renderer uses hardcoded radii that can be adjusted. Default values are
+  chosen for optimal visibility of the hydrate structure (water framework
+  as lines, guest molecules as ball-and-stick).
+- For better visibility, the atomic radius scale factor can be increased.
 """
 
 import numpy as np
@@ -14,6 +20,18 @@ from vtkmodules.all import (
     vtkMolecule,
     vtkActor,
 )
+
+# Unit conversion: VTK periodic table provides radii in Angstroms (Å),
+# but QuickIce positions are in nanometers (nm).
+# Multiply all radius scale factors by this to convert Å → nm.
+ANGSTROM_TO_NM = 0.1
+
+# Default radius scale factor for guest molecule atoms (ball-and-stick mode)
+# 0.30 Å → 0.03 nm by default, but reduced for better visibility
+DEFAULT_ATOMIC_RADIUS_SCALE = 0.20 * ANGSTROM_TO_NM  # 0.02 nm
+
+# Default bond radius for guest molecule bonds
+DEFAULT_BOND_RADIUS = 0.075 * ANGSTROM_TO_NM  # 0.0075 nm
 
 
 # CPK coloring for guest molecules (RGB values in [0, 1])
@@ -218,12 +236,18 @@ def create_guest_actor(structure) -> vtkActor:
     mapper.SetRenderBonds(True)   # Render bonds as cylinders
     mapper.UseBallAndStickSettings()
     
+    # Apply radius settings for better visibility
+    # Scale down atoms so they're not too large in ball-and-stick mode
+    mapper.SetAtomicRadiusScaleFactor(DEFAULT_ATOMIC_RADIUS_SCALE)
+    mapper.SetBondRadius(DEFAULT_BOND_RADIUS)
+    
     # Set custom bond color for visibility (RGB 0-255)
     mapper.SetBondColor(180, 180, 180)  # Gray bonds
     
     # Create actor
     actor = vtkActor()
     actor.SetMapper(mapper)
+    actor.SetScale(1.0, 1.0, 1.0)
     
     return actor
 
