@@ -290,11 +290,11 @@ class HydrateStructureGenerator:
         
         cell = self._parse_box_line(box_line)
         
-        # Wrap positions into [0, L) range for each dimension
-        # GenIce2 may output some atoms with negative coordinates or slightly
-        # outside the box due to PBC handling. Wrapping ensures all atoms
-        # are correctly positioned within the unit cell boundaries.
-        positions = self._wrap_positions_to_cell(positions, cell)
+        # NOTE: Do NOT wrap positions here!
+        # Wrapping must happen in generate() with molecule grouping (line 103).
+        # If we wrap here individually, molecules spanning boundaries will be
+        # split across the cell before molecule_index is built, causing atoms
+        # to be missing from rendered molecules.
         
         return positions, cell, atom_names, residue_names, residue_seq_nums
     
@@ -331,11 +331,15 @@ class HydrateStructureGenerator:
         
         Ensures all positions are within [0, L) for each dimension, where L is
         the box length along that dimension. This handles cases where GenIce2
-        outputs atoms slightly outside the conventional cell boundaries.
+        outputs atoms with negative coordinates or slightly outside the box.
         
         IMPORTANT: Wraps by molecule (not individually) to keep molecules intact
-        across boundaries. If any atom of a molecule is outside [0, L), ALL atoms
-        of that molecule are wrapped by the same shift vector.
+        across boundaries. ALL atoms in a molecule are wrapped by the same shift
+        vector, chosen to place atoms in the primary cell [0, L) when possible.
+        
+        Strategy:
+        1. If all atoms are in the same cell (or primary cell), wrap all to primary cell
+        2. If atoms span multiple cells, wrap to the mode (most common) cell
         
         Args:
             positions: (N, 3) array of atom positions in nm
@@ -352,44 +356,95 @@ class HydrateStructureGenerator:
         # Wrap by molecule (keep molecules intact)
         wrapped = positions.copy()
         
-        for mol in molecule_index:
-            start = mol.start_idx
-            end = start + mol.count
-            mol_positions = positions[start:end]
+        # Determine if cell is orthorhombic
+        is_orthorhombic = np.allclose(cell - np.diag(np.diag(cell)), 0)
+        
+        from collections import Counter
+        
+        if is_orthorhombic:
+            L = np.diag(cell)
             
-            # Check if any atom in this molecule is outside [0, L)
-            if np.allclose(cell - np.diag(np.diag(cell)), 0):
-                # Orthorhombic cell
-                L = np.diag(cell)
-                # Find atoms outside [0, L)
-                outside = np.any((mol_positions < 0) | (mol_positions >= L), axis=1)
-            else:
-                # Triclinic cell - use fractional coordinates
-                cell_inv = np.linalg.inv(cell)
-                frac = mol_positions @ cell_inv
-                outside = np.any((frac < 0) | (frac >= 1), axis=1)
-            
-            if np.any(outside):
-                # Molecule spans boundary - calculate shift for ALL atoms
-                # Shift to bring the first outside atom back into cell
-                if np.allclose(cell - np.diag(np.diag(cell)), 0):
-                    L = np.diag(cell)
-                    # Find which dimension is outside
-                    shift = np.zeros(3)
-                    for dim in range(3):
-                        if np.any(mol_positions[:, dim] < 0):
-                            shift[dim] = -np.floor(np.min(mol_positions[:, dim] / L[dim])) * L[dim]
-                        elif np.any(mol_positions[:, dim] >= L[dim]):
-                            shift[dim] = -np.ceil(np.max(mol_positions[:, dim] / L[dim]) - 1) * L[dim]
-                else:
-                    # Triclinic: compute fractional, wrap, convert back
-                    cell_inv = np.linalg.inv(cell)
-                    frac = mol_positions @ cell_inv
-                    frac_wrapped = frac - np.floor(frac)
-                    shift = (frac_wrapped[0] - frac[0]) @ cell.T
+            for mol in molecule_index:
+                start = mol.start_idx
+                end = start + mol.count
+                mol_positions = positions[start:end]
                 
-                # Apply same shift to ALL atoms in this molecule
-                wrapped[start:end] = mol_positions + shift
+                # Compute the integer cell index for each atom
+                cell_indices = np.floor(mol_positions / L).astype(int)
+                
+                # Check if all atoms are in the same cell
+                unique_cells = set(tuple(idx) for idx in cell_indices)
+                
+                if len(unique_cells) == 1:
+                    # All atoms in same cell - wrap to primary cell (0, 0, 0)
+                    current_cell = np.array(list(unique_cells)[0])
+                    shift = -current_cell * L
+                    wrapped[start:end] = mol_positions + shift
+                else:
+                    # Atoms span multiple cells - wrap to mode cell
+                    # But prefer primary cell if it's the mode
+                    cell_tuples = [tuple(idx) for idx in cell_indices]
+                    counter = Counter(cell_tuples)
+                    most_common = counter.most_common()
+                    max_count = most_common[0][1]
+                    mode_candidates = [idx for idx, count in most_common if count == max_count]
+                    
+                    if (0, 0, 0) in mode_candidates:
+                        mode_index = np.array((0, 0, 0))
+                    else:
+                        mode_index = np.array(mode_candidates[0])
+                    
+                    # Calculate shift for EACH atom individually
+                    for i, atom_idx in enumerate(cell_indices):
+                        shift = (mode_index - atom_idx) * L
+                        wrapped[start + i] = mol_positions[i] + shift
+        else:
+            # Triclinic cell - use fractional coordinates
+            cell_inv = np.linalg.inv(cell)
+            
+            for mol in molecule_index:
+                start = mol.start_idx
+                end = start + mol.count
+                mol_positions = positions[start:end]
+                
+                # Convert to fractional coordinates
+                frac = mol_positions @ cell_inv
+                
+                # Compute the integer cell index for each atom in fractional space
+                cell_indices = np.floor(frac).astype(int)
+                
+                # Check if all atoms are in the same cell
+                unique_cells = set(tuple(idx) for idx in cell_indices)
+                
+                if len(unique_cells) == 1:
+                    # All atoms in same cell - wrap to primary cell (0, 0, 0)
+                    current_cell = np.array(list(unique_cells)[0])
+                    shift_frac = -current_cell
+                    for i in range(len(mol_positions)):
+                        frac_wrapped = frac[i] + shift_frac
+                        # Wrap to [0, 1)
+                        frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
+                        wrapped[start + i] = frac_wrapped @ cell
+                else:
+                    # Atoms span multiple cells - wrap to mode cell
+                    cell_tuples = [tuple(idx) for idx in cell_indices]
+                    counter = Counter(cell_tuples)
+                    most_common = counter.most_common()
+                    max_count = most_common[0][1]
+                    mode_candidates = [idx for idx, count in most_common if count == max_count]
+                    
+                    if (0, 0, 0) in mode_candidates:
+                        mode_index = np.array((0, 0, 0))
+                    else:
+                        mode_index = np.array(mode_candidates[0])
+                    
+                    # Calculate shift for EACH atom individually, then wrap to [0, 1)
+                    for i, atom_idx in enumerate(cell_indices):
+                        shift_frac = mode_index - atom_idx
+                        frac_wrapped = frac[i] + shift_frac
+                        # Wrap to [0, 1)
+                        frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
+                        wrapped[start + i] = frac_wrapped @ cell
         
         return wrapped
     
