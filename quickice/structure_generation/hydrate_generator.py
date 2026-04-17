@@ -92,8 +92,15 @@ class HydrateStructureGenerator:
         # Generate structure using GenIce2 CLI via subprocess
         positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_cli(lattice_name, options)
         
-        # Build molecule index
+        # Build molecule index first (needed for wrapping)
         molecule_index = self._build_molecule_index(atom_names, positions, residue_names, residue_seq_nums)
+        
+        # Wrap positions into [0, L) range for each dimension
+        # GenIce2 may output some atoms with negative coordinates or slightly
+        # outside the box due to PBC handling. Wrapping ensures all atoms
+        # are correctly positioned within the unit cell boundaries.
+        # IMPORTANT: Wrap by molecule to keep molecules intact across boundaries
+        positions = self._wrap_positions_to_cell(positions, cell, molecule_index)
         
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
@@ -319,12 +326,75 @@ class HydrateStructureGenerator:
         
         return cell
     
-    def _wrap_positions_to_cell(self, positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
+    def _wrap_positions_to_cell(self, positions: np.ndarray, cell: np.ndarray, molecule_index: list = None) -> np.ndarray:
         """Wrap atom positions into the unit cell using periodic boundary conditions.
         
         Ensures all positions are within [0, L) for each dimension, where L is
         the box length along that dimension. This handles cases where GenIce2
         outputs atoms slightly outside the conventional cell boundaries.
+        
+        IMPORTANT: Wraps by molecule (not individually) to keep molecules intact
+        across boundaries. If any atom of a molecule is outside [0, L), ALL atoms
+        of that molecule are wrapped by the same shift vector.
+        
+        Args:
+            positions: (N, 3) array of atom positions in nm
+            cell: (3, 3) cell matrix (orthorhombic or triclinic)
+            molecule_index: List of MoleculeIndex entries for grouping atoms by molecule
+        
+        Returns:
+            (N, 3) array of wrapped positions in [0, L) range
+        """
+        if molecule_index is None:
+            # Fall back to individual wrapping (legacy behavior)
+            return self._wrap_positions_individual(positions, cell)
+        
+        # Wrap by molecule (keep molecules intact)
+        wrapped = positions.copy()
+        
+        for mol in molecule_index:
+            start = mol.start_idx
+            end = start + mol.count
+            mol_positions = positions[start:end]
+            
+            # Check if any atom in this molecule is outside [0, L)
+            if np.allclose(cell - np.diag(np.diag(cell)), 0):
+                # Orthorhombic cell
+                L = np.diag(cell)
+                # Find atoms outside [0, L)
+                outside = np.any((mol_positions < 0) | (mol_positions >= L), axis=1)
+            else:
+                # Triclinic cell - use fractional coordinates
+                cell_inv = np.linalg.inv(cell)
+                frac = mol_positions @ cell_inv
+                outside = np.any((frac < 0) | (frac >= 1), axis=1)
+            
+            if np.any(outside):
+                # Molecule spans boundary - calculate shift for ALL atoms
+                # Shift to bring the first outside atom back into cell
+                if np.allclose(cell - np.diag(np.diag(cell)), 0):
+                    L = np.diag(cell)
+                    # Find which dimension is outside
+                    shift = np.zeros(3)
+                    for dim in range(3):
+                        if np.any(mol_positions[:, dim] < 0):
+                            shift[dim] = -np.floor(np.min(mol_positions[:, dim] / L[dim])) * L[dim]
+                        elif np.any(mol_positions[:, dim] >= L[dim]):
+                            shift[dim] = -np.ceil(np.max(mol_positions[:, dim] / L[dim]) - 1) * L[dim]
+                else:
+                    # Triclinic: compute fractional, wrap, convert back
+                    cell_inv = np.linalg.inv(cell)
+                    frac = mol_positions @ cell_inv
+                    frac_wrapped = frac - np.floor(frac)
+                    shift = (frac_wrapped[0] - frac[0]) @ cell.T
+                
+                # Apply same shift to ALL atoms in this molecule
+                wrapped[start:end] = mol_positions + shift
+        
+        return wrapped
+    
+    def _wrap_positions_individual(self, positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
+        """Wrap individual atom positions into the unit cell (legacy behavior).
         
         Args:
             positions: (N, 3) array of atom positions in nm

@@ -307,7 +307,8 @@ def _build_vtk_molecule_from_molecule_index(
     molecule = vtkMolecule()
     
     # Track which atoms belong to which molecule
-    mol_atom_ids = []  # List of (molecule_idx, local_atom_ids, visible_positions)
+    # Include atom names for H-H bond filtering
+    mol_atom_ids = []  # List of (molecule_idx, local_atom_ids, visible_positions, atom_names)
     
     for mol_idx, mol in enumerate(molecule_index):
         if mol.mol_type != "water":
@@ -322,6 +323,7 @@ def _build_vtk_molecule_from_molecule_index(
         # Add atoms for this molecule (skipping virtual sites like MW)
         atom_ids = []
         visible_positions = []
+        visible_names = []  # Track names for element-based filtering
         for pos, name in zip(mol_positions, mol_names):
             element = _get_element_from_atom_name(name)
             if element is None:
@@ -330,17 +332,26 @@ def _build_vtk_molecule_from_molecule_index(
             atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
             atom_ids.append(atom_id)
             visible_positions.append(pos)
+            visible_names.append(name)
         
         if atom_ids:  # Only add if there are visible atoms
-            mol_atom_ids.append((mol_idx, atom_ids, visible_positions))
+            mol_atom_ids.append((mol_idx, atom_ids, visible_positions, visible_names))
     
     # Add bonds only within each molecule (not across molecules)
-    for mol_idx, atom_ids, mol_positions in mol_atom_ids:
+    # Skip H-H bonds (intra-molecular bonds between two H atoms in water)
+    for mol_idx, atom_ids, mol_positions, atom_names in mol_atom_ids:
         n_atoms = len(atom_ids)
         for i in range(n_atoms):
             for j in range(i + 1, n_atoms):
                 dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
                 if dist < BOND_DISTANCE_THRESHOLD:
+                    # Skip H-H bonds - both atoms are H (HW1-HW2 in water, or H-H in other molecules)
+                    name_i = atom_names[i]
+                    name_j = atom_names[j]
+                    elem_i = _get_element_from_atom_name(name_i)
+                    elem_j = _get_element_from_atom_name(name_j)
+                    if elem_i == "H" and elem_j == "H":
+                        continue  # Skip H-H bonds
                     molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
     
     return molecule
