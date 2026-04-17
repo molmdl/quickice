@@ -90,10 +90,10 @@ class HydrateStructureGenerator:
         options = self._build_genice_options(config)
         
         # Generate structure using GenIce2 CLI via subprocess
-        positions, cell, atom_names, residue_names = self._run_via_cli(lattice_name, options)
+        positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_cli(lattice_name, options)
         
         # Build molecule index
-        molecule_index = self._build_molecule_index(atom_names, positions, residue_names)
+        molecule_index = self._build_molecule_index(atom_names, positions, residue_names, residue_seq_nums)
         
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
@@ -226,6 +226,7 @@ class HydrateStructureGenerator:
         positions = []
         atom_names = []
         residue_names = []  # Track residue names for guest molecule identification
+        residue_seq_nums = []  # Track residue sequence numbers for molecule grouping
         
         for i in range(2, min(2 + n_atoms, len(lines))):
             line = lines[i]
@@ -239,6 +240,13 @@ class HydrateStructureGenerator:
             # Columns 20-28, 28-36, 36-44: x, y, z in nm
             # Example: "    1ICE      OW    1   1.065   0.370   0.004"
             #           ^5  ^10     ^15
+            
+            # Extract residue sequence number (columns 0-5) for grouping molecules
+            try:
+                residue_seq = int(line[0:5].strip())
+            except ValueError:
+                residue_seq = i  # Fallback to line index
+            residue_seq_nums.append(residue_seq)
             
             # Extract residue name from columns 5-10 (needed for THF identification)
             residue_name = line[5:10].strip()
@@ -275,7 +283,13 @@ class HydrateStructureGenerator:
         
         cell = self._parse_box_line(box_line)
         
-        return positions, cell, atom_names, residue_names
+        # Wrap positions into [0, L) range for each dimension
+        # GenIce2 may output some atoms with negative coordinates or slightly
+        # outside the box due to PBC handling. Wrapping ensures all atoms
+        # are correctly positioned within the unit cell boundaries.
+        positions = self._wrap_positions_to_cell(positions, cell)
+        
+        return positions, cell, atom_names, residue_names, residue_seq_nums
     
     def _parse_box_line(self, line: str) -> np.ndarray:
         """Parse box vector line from GRO file."""
@@ -305,7 +319,43 @@ class HydrateStructureGenerator:
         
         return cell
     
-    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray, residue_names: list[str] = None) -> list[MoleculeIndex]:
+    def _wrap_positions_to_cell(self, positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
+        """Wrap atom positions into the unit cell using periodic boundary conditions.
+        
+        Ensures all positions are within [0, L) for each dimension, where L is
+        the box length along that dimension. This handles cases where GenIce2
+        outputs atoms slightly outside the conventional cell boundaries.
+        
+        Args:
+            positions: (N, 3) array of atom positions in nm
+            cell: (3, 3) cell matrix (orthorhombic or triclinic)
+        
+        Returns:
+            (N, 3) array of wrapped positions in [0, L) range
+        """
+        # For orthorhombic cells (diagonal matrix), use simple modulo
+        # For non-orthogonal cells, convert to fractional coordinates, wrap, convert back
+        if np.allclose(cell - np.diag(np.diag(cell)), 0):
+            # Orthorhombic: cell is diagonal
+            # Get box lengths from diagonal
+            L = np.diag(cell)
+            # Wrap each dimension using modulo (handles negative values too)
+            wrapped = positions % L
+            # Handle any positions that ended up at exactly L (should be 0)
+            wrapped = np.where(wrapped < 0, 0.0, wrapped)
+            wrapped = np.where(wrapped >= L, L - 1e-10, wrapped)
+            return wrapped
+        else:
+            # Triclinic cell: use fractional coordinate wrapping
+            # Convert to fractional coordinates
+            cell_inv = np.linalg.inv(cell)
+            frac = positions @ cell_inv
+            # Wrap to [0, 1)
+            frac = frac - np.floor(frac)
+            # Convert back to Cartesian
+            return frac @ cell
+    
+    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray, residue_names: list[str] = None, residue_seq_nums: list[int] = None) -> list[MoleculeIndex]:
         """Build molecule index from atom names.
         
         Groups atoms by molecule type based on atom naming patterns and residue names.
@@ -322,6 +372,7 @@ class HydrateStructureGenerator:
             atom_names: List of atom names from GRO file
             positions: Array of positions (for length reference)
             residue_names: List of residue names from GRO file (for guest identification)
+            residue_seq_nums: List of residue sequence numbers (for grouping molecules)
         """
         molecule_index = []
         i = 0
@@ -330,18 +381,24 @@ class HydrateStructureGenerator:
         if residue_names is None:
             residue_names = [""] * len(atom_names)
         
+        # Default empty residue_seq_nums if not provided
+        if residue_seq_nums is None:
+            residue_seq_nums = list(range(len(atom_names)))
+        
         while i < len(atom_names):
             atom = atom_names[i]
             residue = residue_names[i] if i < len(residue_names) else ""
             
             # Check for THF first (using residue name from GenIce2)
             # THF from GenIce2 has residue "THF" with 13 atoms: O, CA, CA, CB, CB, + 8H
+            # Each THF molecule has a unique residue sequence number
             if residue == "THF":
-                # Find all consecutive THF atoms (same residue)
+                # Find all atoms with the same residue sequence number (same THF molecule)
+                thf_seq = residue_seq_nums[i]
                 thf_start = i
                 thf_count = 0
                 j = i
-                while j < len(residue_names) and residue_names[j] == "THF":
+                while j < len(residue_seq_nums) and residue_seq_nums[j] == thf_seq:
                     thf_count += 1
                     j += 1
                 molecule_index.append(MoleculeIndex(thf_start, thf_count, "thf"))

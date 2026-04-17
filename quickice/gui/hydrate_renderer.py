@@ -86,11 +86,12 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 }
 
 # Bond detection distance threshold (nm)
-# Covalent bonds: O-H ~0.10nm, C-H ~0.11nm, C-O (THF) ~0.143-0.147nm
+# Covalent bonds: O-H ~0.10nm, C-H ~0.11nm, C-O (THF) ~0.143nm
+# C-C (THF ring): ~0.151-0.153nm
 # H-H within molecules: ~0.16-0.18nm (should NOT be bonded)
 # Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
-# Use 0.15nm threshold to capture C-H, O-H, and C-O bonds but NOT H-H
-BOND_DISTANCE_THRESHOLD = 0.15  # nm (captures covalent bonds, excludes H-H)
+# Use 0.16nm threshold to capture all covalent bonds including C-C but NOT H-H
+BOND_DISTANCE_THRESHOLD = 0.16  # nm (captures O-H, C-H, C-O, C-C bonds, excludes H-H)
 
 
 def _get_element_from_atom_name(atom_name: str) -> str | None:
