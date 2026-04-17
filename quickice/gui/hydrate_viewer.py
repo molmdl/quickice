@@ -40,7 +40,10 @@ except Exception:
 from quickice.structure_generation.types import HydrateStructure
 
 # Import renderer function
-from quickice.gui.hydrate_renderer import render_hydrate_structure
+from quickice.gui.hydrate_renderer import render_hydrate_structure, detect_hbonds_in_hydrate_structure
+
+# Import H-bond actor creator
+from quickice.gui.vtk_utils import create_hbond_actor
 
 
 # Unit cell actor import - loaded only when needed
@@ -91,6 +94,9 @@ class HydrateViewerWidget(QWidget):
         # H-bonds / water framework visibility (toggle water framework like Tab 1)
         self._water_actor = None
         self._show_water_framework = True
+        
+        # H-bond actor (separate dashed lines for hydrogen bonds)
+        self._hbond_actor = None
         
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -247,6 +253,13 @@ class HydrateViewerWidget(QWidget):
         for actor in self._hydrate_actors:
             self.renderer.AddActor(actor)
         
+        # Create H-bond actor for visualization
+        # Detect H-bonds and create dashed line actor
+        hbonds = detect_hbonds_in_hydrate_structure(structure)
+        if hbonds:
+            self._hbond_actor = create_hbond_actor(hbonds)
+            self.renderer.AddActor(self._hbond_actor)
+        
         # Auto-fit camera to frame all actors
         self._reset_camera()
         
@@ -300,6 +313,11 @@ class HydrateViewerWidget(QWidget):
         for actor in self._hydrate_actors:
             if actor is not None:
                 self.renderer.RemoveActor(actor)
+        
+        # Remove H-bond actor
+        if self._hbond_actor is not None:
+            self.renderer.RemoveActor(self._hbond_actor)
+            self._hbond_actor = None
         
         # Clear actor list
         self._hydrate_actors = []
@@ -381,6 +399,13 @@ class HydrateViewerWidget(QWidget):
             )
             for actor in self._hydrate_actors:
                 self.renderer.AddActor(actor)
+            
+            # Re-create H-bond actor
+            hbonds = detect_hbonds_in_hydrate_structure(current_structure)
+            if hbonds:
+                self._hbond_actor = create_hbond_actor(hbonds)
+                self.renderer.AddActor(self._hbond_actor)
+            
             # Restore the structure reference after re-rendering
             self._current_structure = current_structure
             self.render_window.Render()
@@ -434,26 +459,29 @@ class HydrateViewerWidget(QWidget):
         return self._show_unit_cell
     
     def set_hbonds_visible(self, visible: bool) -> None:
-        """Toggle water framework / H-bonds visibility.
+        """Toggle H-bonds visibility (dashed lines between water molecules).
         
-        For hydrate structures, this toggles the water framework actor.
-        This provides similar functionality to Tab 1's H-bonds toggle.
+        This toggles the H-bond actor (cyan dashed lines showing hydrogen bonds
+        between water molecules). The water framework itself remains always visible.
+        This matches Tab 1's H-bonds toggle behavior.
         
         Args:
-            visible: True to show water framework, False to hide
+            visible: True to show H-bonds, False to hide
         """
         self._show_water_framework = visible
         
-        if not self._vtk_available or self._water_actor is None:
+        if not self._vtk_available:
             return
         
-        self._water_actor.SetVisibility(1 if visible else 0)
-        self.render_window.Render()
+        # Toggle H-bond actor visibility
+        if self._hbond_actor is not None:
+            self._hbond_actor.SetVisibility(1 if visible else 0)
+            self.render_window.Render()
     
     def get_hbonds_visible(self) -> bool:
-        """Return whether water framework / H-bonds are visible.
+        """Return whether H-bonds are visible.
         
         Returns:
-            True if water framework is shown, False otherwise
+            True if H-bonds are shown, False otherwise
         """
         return self._show_water_framework

@@ -86,11 +86,11 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 }
 
 # Bond detection distance threshold (nm)
-# Covalent bonds: O-H ~0.10nm, C-H ~0.11nm
+# Covalent bonds: O-H ~0.10nm, C-H ~0.11nm, C-O (THF) ~0.143-0.147nm
 # H-H within molecules: ~0.16-0.18nm (should NOT be bonded)
 # Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
-# Use 0.14nm threshold to capture C-H and O-H bonds but NOT H-H
-BOND_DISTANCE_THRESHOLD = 0.14  # nm (captures covalent bonds, excludes H-H)
+# Use 0.15nm threshold to capture C-H, O-H, and C-O bonds but NOT H-H
+BOND_DISTANCE_THRESHOLD = 0.15  # nm (captures covalent bonds, excludes H-H)
 
 
 def _get_element_from_atom_name(atom_name: str) -> str | None:
@@ -506,3 +506,76 @@ def toggle_hydrate_visibility(
     """
     water_actor.SetVisibility(water_visible)
     guest_actor.SetVisibility(guest_visible)
+
+
+def detect_hbonds_in_hydrate_structure(
+    structure,
+    max_distance: float = 0.25
+) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
+    """Detect hydrogen bonds in a HydrateStructure.
+    
+    Identifies H-bonds between water molecules by finding H atoms that are 
+    close to O atoms from other water molecules.
+    
+    Args:
+        structure: HydrateStructure with water molecules in molecule_index
+        max_distance: Maximum H...O distance threshold in nanometers.
+                      Default 0.25 nm (2.5 Å) is typical for H-bonds.
+    
+    Returns:
+        List of (H_position, O_position) tuples for each detected H-bond.
+        Each position is a (x, y, z) tuple in nanometers.
+    """
+    from quickice.gui.vtk_utils import _pbc_distance, _pbc_min_image_position
+    
+    hbonds = []
+    
+    # Collect O and H atom positions from water molecules
+    o_positions = []  # [(index, position), ...]
+    h_positions = []  # [(h_idx, h_position, parent_o_idx), ...]
+    
+    for mol in structure.molecule_index:
+        if mol.mol_type != "water":
+            continue
+        
+        start = mol.start_idx
+        end = start + mol.count
+        mol_positions = structure.positions[start:end]
+        mol_names = structure.atom_names[start:end]
+        
+        # Find O and H atoms in this molecule
+        for i, (pos, name) in enumerate(zip(mol_positions, mol_names)):
+            if name.startswith("OW") or name == "O":
+                o_positions.append((start + i, pos))
+            elif name.startswith("HW") or name == "H":
+                # Find the parent O (first O before this H in the molecule)
+                parent_o_idx = None
+                for j in range(i):
+                    prev_name = mol_names[j]
+                    if prev_name.startswith("OW") or prev_name == "O":
+                        parent_o_idx = start + j
+                        break
+                if parent_o_idx is not None:
+                    h_positions.append((start + i, pos, parent_o_idx))
+    
+    # Detect H-bonds
+    cell = structure.cell
+    for h_idx, h_pos, parent_o_idx in h_positions:
+        for o_idx, o_pos in o_positions:
+            # Skip the parent O (same molecule, covalently bonded)
+            if o_idx == parent_o_idx:
+                continue
+            
+            # Calculate H...O distance with PBC
+            distance = _pbc_distance(h_pos, o_pos, cell)
+            
+            if distance < max_distance:
+                # H-bond detected: H...O
+                # Use minimum image position of O for correct visualization
+                o_min_image = _pbc_min_image_position(h_pos, o_pos, cell)
+                hbonds.append((
+                    tuple(float(h_pos[i]) for i in range(3)),
+                    tuple(float(o_min_image[i]) for i in range(3))
+                ))
+    
+    return hbonds
