@@ -128,6 +128,11 @@ class HydrateStructureGenerator:
         """Build GenIce2 command options from config."""
         options = []
         
+        # Supercell option - repeat the unit cell in x, y, z directions
+        # This uses --rep which is equivalent to --reshape with diagonal matrix
+        if config.supercell_x > 1 or config.supercell_y > 1 or config.supercell_z > 1:
+            options.append(f"--rep {config.supercell_x} {config.supercell_y} {config.supercell_z}")
+        
         # Guest molecule option
         guest = config.guest_type
         if guest == "ch4":
