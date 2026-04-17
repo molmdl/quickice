@@ -19,6 +19,7 @@ from vtkmodules.all import (
     vtkMoleculeMapper,
     vtkMolecule,
     vtkActor,
+    vtkMatrix3x3,
 )
 
 # Unit conversion: VTK periodic table provides radii in Angstroms (Å),
@@ -92,6 +93,32 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 # Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
 # Use 0.16nm threshold to capture all covalent bonds including C-C but NOT H-H
 BOND_DISTANCE_THRESHOLD = 0.16  # nm (captures O-H, C-H, C-O, C-C bonds, excludes H-H)
+
+
+def _set_molecule_lattice(molecule: vtkMolecule, cell: np.ndarray) -> None:
+    """Set the periodic boundary condition lattice on a vtkMolecule.
+    
+    This tells VTK about the unit cell dimensions, enabling correct rendering
+    of molecules at periodic boundaries (no split molecules at edges).
+    
+    The cell matrix uses ROW vectors (QuickIce convention): each row is a
+    lattice vector. VTK uses COLUMN vectors, so we transpose when setting.
+    
+    Args:
+        molecule: vtkMolecule to set lattice on
+        cell: (3, 3) cell matrix where each row is a lattice vector in nm
+              (QuickIce convention)
+    
+    Note:
+        This is the same pattern used in candidate_to_vtk_molecule() from
+        vtk_utils.py for the ice tab.
+    """
+    lattice_matrix = vtkMatrix3x3()
+    cell_transposed = cell.T  # Transpose: rows -> columns (VTK convention)
+    for i in range(3):
+        for j in range(3):
+            lattice_matrix.SetElement(i, j, float(cell_transposed[i, j]))
+    molecule.SetLattice(lattice_matrix)
 
 
 def _get_element_from_atom_name(atom_name: str) -> str | None:
@@ -248,6 +275,10 @@ def create_water_framework_actor(structure, mode: str = "ball_and_stick") -> vtk
     molecule = _build_vtk_molecule_from_molecule_index(
         water_molecules, structure.atom_names, structure.positions, structure.molecule_index
     )
+    
+    # Set the lattice for PBC handling (keeps molecules complete at boundaries)
+    # This is the same pattern used in candidate_to_vtk_molecule() for the ice tab
+    _set_molecule_lattice(molecule, structure.cell)
     
     # Get representation settings (matching molecular_viewer.py)
     settings = get_representation_settings(mode)
@@ -414,6 +445,10 @@ def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
                 dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
                 if dist < BOND_DISTANCE_THRESHOLD:
                     molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
+    
+    # Set the lattice for PBC handling (keeps molecules complete at boundaries)
+    # This is the same pattern used in candidate_to_vtk_molecule() for the ice tab
+    _set_molecule_lattice(molecule, structure.cell)
     
     # Get representation settings (matching molecular_viewer.py)
     settings = get_representation_settings(mode)
