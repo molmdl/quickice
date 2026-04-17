@@ -105,7 +105,16 @@ class IonInserter:
             New IonStructure with replaced ions
         """
         if ion_pairs <= 0:
-            return structure
+            # Return a properly typed IonStructure with zero ions
+            return IonStructure(
+                positions=structure.positions,
+                atom_names=structure.atom_names,
+                cell=structure.cell,
+                molecule_index=structure.molecule_index if hasattr(structure, 'molecule_index') else [],
+                na_count=0,
+                cl_count=0,
+                report=f"Ion insertion: requested 0 ion pairs (concentration too low or volume too small)\n",
+            )
         
         # Extract water molecules from molecule_index
         water_mols = [m for m in structure.molecule_index if m.mol_type == "water"]
@@ -114,7 +123,16 @@ class IonInserter:
             # Not enough water molecules
             ion_pairs = len(water_mols) // 2
             if ion_pairs == 0:
-                return structure
+                # Return a properly typed IonStructure with zero ions
+                return IonStructure(
+                    positions=structure.positions,
+                    atom_names=structure.atom_names,
+                    cell=structure.cell,
+                    molecule_index=structure.molecule_index if hasattr(structure, 'molecule_index') else [],
+                    na_count=0,
+                    cl_count=0,
+                    report=f"Ion insertion: not enough water molecules for ion placement\n",
+                )
         
         # Randomly select water molecules to replace
         indices = list(range(len(water_mols)))

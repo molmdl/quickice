@@ -88,6 +88,10 @@ class HydrateViewerWidget(QWidget):
         self._unit_cell_actor = None
         self._show_unit_cell = False
         
+        # H-bonds / water framework visibility (toggle water framework like Tab 1)
+        self._water_actor = None
+        self._show_water_framework = True
+        
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
         self.render_window = None
@@ -234,6 +238,10 @@ class HydrateViewerWidget(QWidget):
         
         # Render hydrate structure to get actors
         self._hydrate_actors = render_hydrate_structure(structure)
+        
+        # Track water framework actor separately for hbond toggle
+        # render_hydrate_structure returns [water_actor, guest_actor]
+        self._water_actor = self._hydrate_actors[0] if len(self._hydrate_actors) > 0 else None
         
         # Add actors to renderer
         for actor in self._hydrate_actors:
@@ -424,3 +432,28 @@ class HydrateViewerWidget(QWidget):
             True if unit cell is shown, False otherwise
         """
         return self._show_unit_cell
+    
+    def set_hbonds_visible(self, visible: bool) -> None:
+        """Toggle water framework / H-bonds visibility.
+        
+        For hydrate structures, this toggles the water framework actor.
+        This provides similar functionality to Tab 1's H-bonds toggle.
+        
+        Args:
+            visible: True to show water framework, False to hide
+        """
+        self._show_water_framework = visible
+        
+        if not self._vtk_available or self._water_actor is None:
+            return
+        
+        self._water_actor.SetVisibility(1 if visible else 0)
+        self.render_window.Render()
+    
+    def get_hbonds_visible(self) -> bool:
+        """Return whether water framework / H-bonds are visible.
+        
+        Returns:
+            True if water framework is shown, False otherwise
+        """
+        return self._show_water_framework

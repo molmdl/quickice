@@ -115,6 +115,13 @@ class HydratePanel(QWidget):
         toolbar_layout = QHBoxLayout(toolbar_widget)
         toolbar_layout.setContentsMargins(0, 0, 0, 0)
         
+        # H-bonds toggle button (matching Tab 1's btn_hbonds)
+        self.btn_hbonds = QPushButton("H-bonds")
+        self.btn_hbonds.setCheckable(True)
+        self.btn_hbonds.setChecked(True)
+        self.btn_hbonds.clicked.connect(self._on_hbonds_toggled)
+        toolbar_layout.addWidget(self.btn_hbonds)
+        
         # Unit cell toggle button (matching Tab 1's btn_unit_cell)
         self.btn_unit_cell = QPushButton("Unit cell")
         self.btn_unit_cell.setCheckable(True)
@@ -345,6 +352,14 @@ class HydratePanel(QWidget):
             supercell_y=self.supercell_y.value(),
             supercell_z=self.supercell_z.value(),
         )
+    
+    def _on_hbonds_toggled(self):
+        """Toggle water framework / H-bonds visibility."""
+        if not self.hydrate_viewer.is_vtk_available():
+            return
+        
+        visible = self.btn_hbonds.isChecked()
+        self.hydrate_viewer.set_hbonds_visible(visible)
     
     def _on_unit_cell_toggled(self):
         """Toggle unit cell box visibility."""

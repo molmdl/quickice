@@ -90,17 +90,18 @@ class HydrateStructureGenerator:
         options = self._build_genice_options(config)
         
         # Generate structure using GenIce2 CLI via subprocess
-        positions, cell, atom_names = self._run_via_cli(lattice_name, options)
+        positions, cell, atom_names, residue_names = self._run_via_cli(lattice_name, options)
         
         # Build molecule index
-        molecule_index = self._build_molecule_index(atom_names, positions)
+        molecule_index = self._build_molecule_index(atom_names, positions, residue_names)
         
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
         
-        # Count water and guest molecules separately (guest = ch4, na, cl, etc.)
+        # Count water and guest molecules separately
+        # Guest = any molecule that is not water (ch4, thf, na, cl, etc.)
         water_count = sum(1 for m in molecule_index if m.mol_type == "water")
-        guest_count = sum(1 for m in molecule_index if m.mol_type == "ch4")
+        guest_count = sum(1 for m in molecule_index if m.mol_type != "water")
         
         report = self._generate_report(config, water_count, guest_count)
         
@@ -224,6 +225,7 @@ class HydrateStructureGenerator:
         # Parse atom lines (lines 2 to n_atoms+1)
         positions = []
         atom_names = []
+        residue_names = []  # Track residue names for guest molecule identification
         
         for i in range(2, min(2 + n_atoms, len(lines))):
             line = lines[i]
@@ -231,10 +233,16 @@ class HydrateStructureGenerator:
                 continue
             
             # GRO format fixed-width columns
+            # Columns 0-5: residue sequence number (right-aligned)
+            # Columns 5-10: residue name
             # Columns 10-15: atom name
             # Columns 20-28, 28-36, 36-44: x, y, z in nm
-            # Example: "    1SOL      O    1   1.065   0.370   0.004"
-            #                    ^10  ^15
+            # Example: "    1ICE      OW    1   1.065   0.370   0.004"
+            #           ^5  ^10     ^15
+            
+            # Extract residue name from columns 5-10 (needed for THF identification)
+            residue_name = line[5:10].strip()
+            residue_names.append(residue_name)
             
             # Extract atom name from columns 10-15 (correct for GRO format)
             atom_name = line[10:15].strip()
@@ -267,7 +275,7 @@ class HydrateStructureGenerator:
         
         cell = self._parse_box_line(box_line)
         
-        return positions, cell, atom_names
+        return positions, cell, atom_names, residue_names
     
     def _parse_box_line(self, line: str) -> np.ndarray:
         """Parse box vector line from GRO file."""
@@ -297,25 +305,50 @@ class HydrateStructureGenerator:
         
         return cell
     
-    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray) -> list[MoleculeIndex]:
+    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray, residue_names: list[str] = None) -> list[MoleculeIndex]:
         """Build molecule index from atom names.
         
-        Groups atoms by molecule type based on atom naming patterns.
+        Groups atoms by molecule type based on atom naming patterns and residue names.
         
         Handles:
         - TIP4P water: OW, HW1, HW2, MW (4 atoms)
         - 3-site water: O, H, H (3 atoms) 
         - United-atom methane: Me (1 atom)
         - All-atom methane: C, H, H, H, H (5 atoms)
+        - THF: residue "THF" with O, CA, CA, CB, CB, H... (13 atoms)
         - Ions: Na, Cl (1 atom each)
+        
+        Args:
+            atom_names: List of atom names from GRO file
+            positions: Array of positions (for length reference)
+            residue_names: List of residue names from GRO file (for guest identification)
         """
         molecule_index = []
         i = 0
         
+        # Default empty residue_names if not provided
+        if residue_names is None:
+            residue_names = [""] * len(atom_names)
+        
         while i < len(atom_names):
             atom = atom_names[i]
+            residue = residue_names[i] if i < len(residue_names) else ""
             
-            # Check for guest molecules first (unique atom types)
+            # Check for THF first (using residue name from GenIce2)
+            # THF from GenIce2 has residue "THF" with 13 atoms: O, CA, CA, CB, CB, + 8H
+            if residue == "THF":
+                # Find all consecutive THF atoms (same residue)
+                thf_start = i
+                thf_count = 0
+                j = i
+                while j < len(residue_names) and residue_names[j] == "THF":
+                    thf_count += 1
+                    j += 1
+                molecule_index.append(MoleculeIndex(thf_start, thf_count, "thf"))
+                i = j
+                continue
+            
+            # Check for guest molecules (unique atom types)
             if atom == "Me":
                 # United-atom methane (Me)
                 molecule_index.append(MoleculeIndex(i, 1, "ch4"))
@@ -323,7 +356,10 @@ class HydrateStructureGenerator:
                 continue
             
             # Check for all-atom methane (C followed by H atoms)
+            # Be careful not to match THF carbon atoms (CA, CB)
             if atom == "C" and i + 4 < len(atom_names):
+                # Make sure this is actually methane (C followed by 4 H atoms)
+                # Check that residue is not THF (which uses CA, CB naming)
                 next_atoms = atom_names[i+1:i+5]
                 if all(a == "H" for a in next_atoms):
                     molecule_index.append(MoleculeIndex(i, 5, "ch4"))
@@ -340,7 +376,8 @@ class HydrateStructureGenerator:
             
             # Check for 3-site water (O, H, H)
             if atom == "O" and i + 2 < len(atom_names):
-                if atom_names[i+1] == "H" and atom_names[i+2] == "H":
+                # Make sure this isn't THF oxygen (THF has residue "THF")
+                if atom_names[i+1] == "H" and atom_names[i+2] == "H" and residue != "THF":
                     molecule_index.append(MoleculeIndex(i, 3, "water"))
                     i += 3
                     continue
