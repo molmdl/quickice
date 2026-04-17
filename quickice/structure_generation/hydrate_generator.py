@@ -92,15 +92,12 @@ class HydrateStructureGenerator:
         # Generate structure using GenIce2 CLI via subprocess
         positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_cli(lattice_name, options)
         
-        # Build molecule index first (needed for wrapping)
+        # Build molecule index (positions from genice2 are already complete molecules)
+        # NOTE: Do NOT wrap positions. GenIce2 outputs complete molecules, and wrapping
+        # by cell index causes molecules to be split when atoms span multiple periodic
+        # images. VTK's vtkMoleculeMapper handles positions outside [0,L) correctly
+        # using the lattice setting. This matches genice2 CLI behavior.
         molecule_index = self._build_molecule_index(atom_names, positions, residue_names, residue_seq_nums)
-        
-        # Wrap positions into [0, L) range for each dimension
-        # GenIce2 may output some atoms with negative coordinates or slightly
-        # outside the box due to PBC handling. Wrapping ensures all atoms
-        # are correctly positioned within the unit cell boundaries.
-        # IMPORTANT: Wrap by molecule to keep molecules intact across boundaries
-        positions = self._wrap_positions_to_cell(positions, cell, molecule_index)
         
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
