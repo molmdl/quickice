@@ -328,11 +328,11 @@ Plans:
 | 28.1 | Urgent Bugfixes + FF Corrections | ✓ Complete (3/3 plans, human verified) |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
-| 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |
+| 31 | Tab 2 - Hydrate Generation | ✓ Complete (5/5 plans, verified) |
 | 31.1 | Integration Fixes (INSERTED) | Not started |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ███████░░ 70% (5/7 phases complete - Phase 31.1, 32 pending)
+**Overall:** ████████░ 80% (4.5/6 phases complete - Phase 31.1, 32 pending)
 
 ---
 

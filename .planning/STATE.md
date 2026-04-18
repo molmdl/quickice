@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 28.1 (complete) |
-| Plan | 03 of 03 complete |
-| Status | Phase complete |
-| Last activity | 2026-04-18 — Phase 31.1 inserted (Integration Fixes: hydrate→interface, remaining ion fixes) |
+| Phase | 31 (complete) |
+| Plan | 05 of 05 complete |
+| Status | Phase complete, verified ✓ |
+| Last activity | 2026-04-18 — Phase 31 verified (hydrate generation + GROMACS export working) |
 
-**Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 in progress)
+**Progress:** ████████░ 80% (4.5/6 phases complete - Phase 31 verified, Phase 31.1 pending)
 
 ---
 

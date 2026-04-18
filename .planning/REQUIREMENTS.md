@@ -14,9 +14,9 @@ Molecule insertion milestone: hydrates + ions + custom molecules + enhanced 3D v
 - [x] **HYDR-03**: User can specify cage occupancy (which cages get which guests) ✓ (Phase 29)
 - [x] **HYDR-04**: User can set supercell repetition (nx, ny, nz) ✓ (Phase 29)
 - [x] **HYDR-05**: System generates hydrate structure via GenIce2 ✓ (Phase 29)
-- [ ] **HYDR-06**: 3D viewer displays guest molecules in distinct style from ice framework
-- [ ] **HYDR-07**: GROMACS export produces valid .gro/.top/.itp with guest molecules
-- [ ] **HYDR-08**: System displays hydrate unit cell info (cage counts, types)
+- [x] **HYDR-06**: 3D viewer displays guest molecules in distinct style from ice framework ✓ (Phase 31)
+- [x] **HYDR-07**: GROMACS export produces valid .gro/.top/.itp with guest molecules ✓ (Phase 31)
+- [x] **HYDR-08**: System displays hydrate unit cell info (cage counts, types) ✓ (Phase 31)
 
 ### Ions (Tab 4)
 
