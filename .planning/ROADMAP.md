@@ -302,7 +302,7 @@ Plans:
 | Phase | Goal | Status |
 |-------|------|--------|
 | 28 | Pre-requisite Fixes | ✓ Complete |
-| 28.1 | Urgent Bugfixes + FF Corrections | ✓ Complete (3/3 plans) |
+| 28.1 | Urgent Bugfixes + FF Corrections | ✓ Complete (3/3 plans, human verified) |
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |

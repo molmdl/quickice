@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 28.1 (Urgent Bugfixes + FF Corrections) |
-| Plan | 03 of 03 in progress (awaiting human verification) |
-| Status | In progress |
-| Last activity | 2026-04-15 — Completed 28.1-03 (Madrid2019 ion parameters, atomtype ordering, CH4/THF integration) |
+| Phase | 28.1 (complete) |
+| Plan | 03 of 03 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-18 — Phase 28.1 human verified (tab ordering approved, ion insertion partially fixed) |
 
 **Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 in progress)
 
@@ -182,9 +182,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-15 20:36
-**Stopped at:** Awaiting human verification for 28.1-03 (Madrid2019 ion parameters, atomtype ordering, CH4/THF)
-**Next:** Phase 28.1 verification checkpoint pending
+**Last session:** 2026-04-18
+**Stopped at:** Phase 28.1 human verified (approved: tab ordering Ice→Hydrate→Interface→Ion, ion insertion partially fixed)
+**Next:** Phase 29 ready - Data Structures + Multi-Molecule GROMACS required before Phases 30-32
 
 ---
 
