@@ -25,6 +25,7 @@ The 5-phase structure derives from research recommendations: fix pre-existing bu
 | 29 - Data Structures + Multi-Molecule GROMACS | Establish foundation for multi-molecule work | GRO-01 to GRO-03, HYDR-01 to HYDR-05 | 5 criteria |
 | 30 - Tab 4 Ion Insertion (NaCl) | User can insert NaCl ions into liquid phase | ION-01 to ION-07, WATER-02 | 5 criteria |
 | 31 - Tab 2 Hydrate Generation | User can generate hydrate structures with guest molecules | HYDR-06 to HYDR-08, WATER-03 | 4 criteria |
+| 31.1 - Integration Fixes (INSERTED) | Wire hydrate→interface, fix remaining ion insertion | — | 2 criteria |
 | 32 - Custom Molecules + Display Controls | User can upload custom molecules and control 3D display | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 | 5 criteria |
 
 ---
@@ -226,6 +227,28 @@ Plans:
 
 ---
 
+### Phase 31.1: Integration Fixes (INSERTED)
+
+**Goal:** Wire hydrate output to interface, fix remaining ion insertion issues
+
+**Rationale:** Critical gaps discovered: (1) hydrate generated in Tab 2 cannot feed to Interface tab, (2) ion insertion was partially fixed in 28.1, remaining issues deferred
+
+**Depends on:** Phase 31 (hydrate generation), Phase 28.1 (partial ion fix)
+
+**Requirements:** None (integration fixes)
+
+**Plans:** 2 plans in 1 wave (PLANNING)
+
+Plans:
+- [ ] 31.1-01-PLAN.md — Wire hydrate structure to Interface tab input
+- [ ] 31.1-02-PLAN.md — Complete ion insertion (remaining fixes deferred from 28.1)
+
+**Success Criteria:**
+1. Hydrate structure generated in Tab 2 can be used as input for Interface tab
+2. Ion insertion works completely (no remaining errors)
+
+---
+
 ### Phase 32: Custom Molecules + Display Controls
 
 **Goal:** User can upload custom molecules and control 3D display per molecule type
@@ -306,9 +329,10 @@ Plans:
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | Planning complete (5 plans in 3 waves) |
+| 31.1 | Integration Fixes (INSERTED) | Not started |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ████████░░ 83% (5/6 phases complete - Phase 32 pending)
+**Overall:** ███████░░ 70% (5/7 phases complete - Phase 31.1, 32 pending)
 
 ---
 

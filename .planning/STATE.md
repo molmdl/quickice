@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Phase | 28.1 (complete) |
 | Plan | 03 of 03 complete |
 | Status | Phase complete |
-| Last activity | 2026-04-18 — Phase 28.1 human verified (tab ordering approved, ion insertion partially fixed) |
+| Last activity | 2026-04-18 — Phase 31.1 inserted (Integration Fixes: hydrate→interface, remaining ion fixes) |
 
 **Progress:** ███████░░ 70% (3.5/6 phases complete - Phase 28.1 in progress)
 
@@ -58,6 +58,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Roadmap Evolution
 
 - Phase 28.1 inserted after Phase 28: Urgent Bugfixes + FF Corrections (URGENT) — discovered during Phase 31 execution
+- Phase 31.1 inserted after Phase 31: Integration Fixes (URGENT) — hydrate→interface wiring, remaining ion insertion fixes
 
 ---
 
