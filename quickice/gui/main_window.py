@@ -721,28 +721,11 @@ class MainWindow(QMainWindow):
             volume_arg
         )
         
-        # Render in 3D viewer
-        actors = render_ion_structure(ion_structure)
+        # Render in IonPanel viewer (not Tab 1 dual_viewer)
+        self.ion_panel.ion_viewer.set_ion_structure(ion_structure)
         
-        # Clear previous ion actors and add new ones
-        # Store reference to actors for later removal/toggling
-        for actor in self._ion_actors:
-            if hasattr(self.viewer_panel, 'dual_viewer') and self.viewer_panel.dual_viewer:
-                self.viewer_panel.dual_viewer.viewer1.renderer.RemoveActor(actor)
-                self.viewer_panel.dual_viewer.viewer2.renderer.RemoveActor(actor)
-        
-        # Add new ion actors to both viewers
-        self._ion_actors = actors
-        if hasattr(self.viewer_panel, 'dual_viewer') and self.viewer_panel.dual_viewer:
-            for actor in actors:
-                self.viewer_panel.dual_viewer.viewer1.renderer.AddActor(actor)
-                self.viewer_panel.dual_viewer.viewer2.renderer.AddActor(actor)
-            # Trigger render
-            self.viewer_panel.dual_viewer.viewer1.render_window.Render()
-            self.viewer_panel.dual_viewer.viewer2.render_window.Render()
-        
-        # Show notification
-        self.info_panel.append_log(
+        # Log status to IonPanel log
+        self.ion_panel.append_log(
             f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
         )
     

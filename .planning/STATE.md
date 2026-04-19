@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31.1 (in progress) |
-| Plan | 01 of 01 complete |
-| Status | Plan complete ✓ |
-| Last activity | 2026-04-19 — Plan 31.1-01 complete (IonViewerWidget created) |
+| Plan | 03 of 03 complete |
+| Status | Phase complete ✓ |
+| Last activity | 2026-04-19 — Plan 31.1-03 complete (export-to-interface capability) |
 
 **Progress:** ████████░ 80% (4.5/6 phases complete - Phase 31.1 in progress)
 
@@ -153,6 +153,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Madrid2019 ion parameters | Na charge=0.85, Cl charge=-0.85 per research | ✓ Implemented (28.1-03) |
 | GROMACS atomtype ordering | All [atomtypes] grouped after [defaults] before #include | ✓ Implemented (28.1-03) |
 | Sobtop GAFF2 guest parameters | CH4/THF atomtypes commented in .itp, defined in main .top | ✓ Implemented (28.1-03) |
+| Export-to-interface signal | PySide6 Signal transfers hydrate to Interface tab on button click | ✓ Implemented (31.1-03) |
 
 ### v3.5 Shipped Decisions
 
@@ -185,9 +186,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-19
-**Stopped at:** Completed 31.1-01-PLAN.md (IonViewerWidget created)
-**Next:** Phase 31.1 complete - IonViewerWidget ready for integration into IonPanel
+**Stopped at:** Completed 31.1-03-PLAN.md (export-to-interface capability)
+**Next:** Phase 31.1 complete - hydrate→interface workflow enabled
 
 ---
-
-*State updated: 2026-04-15 — Phase 28.1 inserted after Phase 28 for urgent bugfixes and FF corrections*
+*State updated: 2026-04-19 — Phase 31.1 complete, added export-to-interface decision*
