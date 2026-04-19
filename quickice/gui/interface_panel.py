@@ -25,18 +25,17 @@ from quickice.gui.validators import (
 )
 
 # Check if VTK is available (may fail in remote/indirect rendering environments)
-# Same logic as view.py for consistency
+# Same logic as hydrate_viewer.py and ion_viewer.py for consistency
 _VTK_AVAILABLE = False
 try:
     # Test if we can create a basic VTK render window
-    # Enable VTK if DISPLAY is set (local or X11 forwarding)
-    # User can disable with QUICKICE_FORCE_VTK=false
-    if os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'false':
-        _VTK_AVAILABLE = False
-    elif os.environ.get('DISPLAY'):
-        _VTK_AVAILABLE = True
+    # This will fail in environments with indirect rendering (SSH X11 forwarding)
+    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
+        # Likely SSH X11 forwarding - check for direct rendering
+        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
     else:
-        _VTK_AVAILABLE = False
+        # Local display or forced - assume VTK works
+        _VTK_AVAILABLE = True
     
     if _VTK_AVAILABLE:
         from quickice.gui.interface_viewer import InterfaceViewerWidget
