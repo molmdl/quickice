@@ -29,7 +29,7 @@ from quickice.gui.hydrate_worker import HydrateWorker
 from quickice.gui.hydrate_renderer import render_hydrate_structure
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.gui.ion_panel import IonPanel
-from quickice.gui.ion_renderer import render_ion_structure
+from quickice.gui.ion_renderer import render_ion_structure  # Used for export if needed
 from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
 
