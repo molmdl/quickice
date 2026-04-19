@@ -16,8 +16,8 @@ from scipy.spatial import cKDTree
 from quickice.structure_generation.types import (
     IonConfig,
     IonStructure,
-    IonStructure,
     MoleculeIndex,
+    InterfaceStructure,  # for compatibility with interface generation
 )
 
 
@@ -49,13 +49,64 @@ class IonInserter:
     
     def __init__(self, config: IonConfig | None = None, seed: int | None = None):
         """Initialize IonInserter.
-        
+
         Args:
             config: IonConfig configuration (optional, creates default if None)
             seed: Random seed for reproducibility (optional)
         """
         self.config = config if config is not None else IonConfig()
         self.rng = random.Random(seed)
+
+    def _build_molecule_index_from_structure(self, structure) -> list[MoleculeIndex]:
+        """Build molecule_index from structure metadata (InterfaceStructure compatibility).
+
+        InterfaceStructure has ice_nmolecules and water_nmolecules but no molecule_index.
+        This method reconstructs the index by counting atoms based on molecule counts:
+        - Ice uses 3 atoms per molecule (O, H, H) from GenIce2
+        - Water uses 4 atoms per molecule (OW, HW1, HW2, MW) from TIP4P-ICE
+
+        Args:
+            structure: Structure with ice_nmolecules and water_nmolecules attributes
+
+        Returns:
+            List of MoleculeIndex entries for ice and water molecules, or None if not possible
+        """
+        # Check if this is an InterfaceStructure (has ice_nmolecules but no molecule_index)
+        if not hasattr(structure, 'ice_nmolecules') or not hasattr(structure, 'water_nmolecules'):
+            return None
+
+        ice_mols = structure.ice_nmolecules
+        water_mols = structure.water_nmolecules
+
+        if ice_mols == 0 and water_mols == 0:
+            return None
+
+        mol_index = []
+        current_idx = 0
+
+        # Add ice molecules as individual entries for proper handling
+        # Ice uses 3 atoms per molecule (O, H, H)
+        if ice_mols > 0:
+            for i in range(ice_mols):
+                mol_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=3,
+                    mol_type="ice"
+                ))
+                current_idx += 3
+
+        # Add water molecules as individual entries
+        # Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
+        if water_mols > 0:
+            for i in range(water_mols):
+                mol_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=4,
+                    mol_type="water"
+                ))
+                current_idx += 4
+
+        return mol_index
     
     def calculate_ion_pairs(
         self,
@@ -104,6 +155,25 @@ class IonInserter:
         Returns:
             New IonStructure with replaced ions
         """
+        # Handle structures without molecule_index (e.g., InterfaceStructure)
+        # by building one from available metadata
+        if not structure.molecule_index:
+            # Try to build molecule_index from metadata
+            # This handles InterfaceStructure which has ice_nmolecules and water_nmolecules but no molecule_index
+            mol_index = self._build_molecule_index_from_structure(structure)
+            if mol_index is None:
+                # No water molecules found - return zero ions
+                return IonStructure(
+                    positions=structure.positions,
+                    atom_names=structure.atom_names,
+                    cell=structure.cell,
+                    molecule_index=[],
+                    na_count=0,
+                    cl_count=0,
+                    report=f"Ion insertion: no water molecules found in structure\n",
+                )
+            structure.molecule_index = mol_index
+
         if ion_pairs <= 0:
             # Return a properly typed IonStructure with zero ions
             return IonStructure(
@@ -115,10 +185,10 @@ class IonInserter:
                 cl_count=0,
                 report=f"Ion insertion: requested 0 ion pairs (concentration too low or volume too small)\n",
             )
-        
+
         # Extract water molecules from molecule_index
         water_mols = [m for m in structure.molecule_index if m.mol_type == "water"]
-        
+
         if len(water_mols) < ion_pairs * 2:
             # Not enough water molecules
             ion_pairs = len(water_mols) // 2

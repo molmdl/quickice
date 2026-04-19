@@ -67,26 +67,30 @@ class IonPanel(QWidget):
         # Concentration input group
         conc_group = self._create_concentration_group()
         left_layout.addWidget(conc_group)
-        
+
         # Ion count display group
         count_group = self._create_ion_count_group()
         left_layout.addWidget(count_group)
-        
+
         # Volume display group
         volume_group = self._create_volume_group()
         left_layout.addWidget(volume_group)
-        
+
         # Insert button
         self.insert_button = QPushButton("Insert Ions")
+        self.insert_button.setToolTip(
+            "Insert Na+ and Cl- ions into the liquid water region.\n"
+            "Calculated from concentration and liquid volume."
+        )
         self.insert_button.clicked.connect(lambda: self.insert_requested.emit())
         left_layout.addWidget(self.insert_button)
-        
+
         left_layout.addStretch()
-        
+
         # === RIGHT COLUMN: Viewer Section ===
         right_layout = QVBoxLayout()
         right_layout.setSpacing(10)
-        
+
         # Log panel - shows insertion status messages
         log_group = QGroupBox("Status Log")
         log_layout = QVBoxLayout()
@@ -97,51 +101,63 @@ class IonPanel(QWidget):
         log_layout.addWidget(self._log_text)
         log_group.setLayout(log_layout)
         right_layout.addWidget(log_group)
-        
+
         # 3D viewer widget (stretch=1 to fill remaining space)
         self.ion_viewer = IonViewerWidget()
         right_layout.addWidget(self.ion_viewer, stretch=1)
-        
+
         # Add columns to top-level layout (left gets 2/5, right gets 3/5)
         main_layout.addLayout(left_layout, stretch=2)
         main_layout.addLayout(right_layout, stretch=3)
-    
+
     def _create_concentration_group(self) -> QGroupBox:
         """Create concentration input group."""
         group = QGroupBox("NaCl Concentration")
         layout = QFormLayout()
-        
+
         self.concentration_input = QDoubleSpinBox()
         self.concentration_input.setRange(0.0, 5.0)
         self.concentration_input.setDecimals(2)
         self.concentration_input.setValue(0.0)
         self.concentration_input.setSuffix(" mol/L")
-        self.concentration_input.setToolTip("Target NaCl concentration")
-        
+        self.concentration_input.setToolTip(
+            "Target NaCl concentration in mol/L (M).\n"
+            "Typical seawater: ~0.6 M.\n"
+            "For drinking water: <0.05 M."
+        )
+
         layout.addRow("Concentration:", self.concentration_input)
         group.setLayout(layout)
         return group
-    
+
     def _create_ion_count_group(self) -> QGroupBox:
         """Create ion count display group."""
         group = QGroupBox("Ion Pairs")
         layout = QFormLayout()
-        
+
         self.ion_count_display = QLabel("Na+ 0, Cl- 0 pairs")
         self.ion_count_display.setStyleSheet("color: #666;")
-        
+        self.ion_count_display.setToolTip(
+            "Calculated number of ion pairs based on concentration and liquid volume.\n"
+            "Each pair = 1 Na+ + 1 Cl- (charge neutral)."
+        )
+
         layout.addRow("Ion count:", self.ion_count_display)
         group.setLayout(layout)
         return group
-    
+
     def _create_volume_group(self) -> QGroupBox:
         """Create volume display group."""
         group = QGroupBox("Liquid Region")
         layout = QFormLayout()
-        
+
         self.liquid_volume_label = QLabel("-- nm³")
         self.liquid_volume_label.setStyleSheet("color: #666;")
-        
+        self.liquid_volume_label.setToolTip(
+            "Volume of liquid water region in the interface structure.\n"
+            "Used to calculate ion count: N_ions = concentration × volume × NA"
+        )
+
         layout.addRow("Volume:", self.liquid_volume_label)
         group.setLayout(layout)
         return group
