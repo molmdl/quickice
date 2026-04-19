@@ -237,15 +237,17 @@ Plans:
 
 **Requirements:** None (integration fixes)
 
-**Plans:** 2 plans in 1 wave (PLANNING)
+**Plans:** 3 plans in 1 wave (READY)
 
 Plans:
-- [ ] 31.1-01-PLAN.md — Wire hydrate structure to Interface tab input
-- [ ] 31.1-02-PLAN.md — Complete ion insertion (remaining fixes deferred from 28.1)
+- [x] 31.1-01-PLAN.md — IonViewerWidget (3D viewer for ion visualization)
+- [x] 31.1-02-PLAN.md — IonPanel integration (viewer + main_window wiring)
+- [x] 31.1-03-PLAN.md — Hydrate→Interface wiring (export capability)
 
 **Success Criteria:**
-1. Hydrate structure generated in Tab 2 can be used as input for Interface tab
-2. Ion insertion works completely (no remaining errors)
+1. IonPanel has 3D viewer alongside configuration controls (like HydratePanel)
+2. Ions render to IonPanel viewer, not Tab 1 viewer (clean separation)
+3. Hydrate structure generated in Tab 2 can be used as input for Interface tab
 
 ---
 
