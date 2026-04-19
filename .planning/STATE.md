@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (in progress) |
-| Phase | 31 (complete) |
-| Plan | 05 of 05 complete |
-| Status | Phase complete, verified ✓ |
-| Last activity | 2026-04-18 — Phase 31 verified (hydrate generation + GROMACS export working) |
+| Phase | 31.1 (in progress) |
+| Plan | 01 of 01 complete |
+| Status | Plan complete ✓ |
+| Last activity | 2026-04-19 — Plan 31.1-01 complete (IonViewerWidget created) |
 
-**Progress:** ████████░ 80% (4.5/6 phases complete - Phase 31 verified, Phase 31.1 pending)
+**Progress:** ████████░ 80% (4.5/6 phases complete - Phase 31.1 in progress)
 
 ---
 
@@ -149,6 +149,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | HydratePanel integration | HydratePanel with viewer section, log panel, generation workflow wired to HydrateWorker | ✓ Implemented (31-04) |
 | HydrateGROMACSExporter | Export hydrate structures to GROMACS .gro/.top/.itp with bundled guest parameters | ✓ Implemented (31-05) |
 | Bundled guest .itp files | ch4.itp (GAFF methane), thf.itp (GAFF THF) for GROMACS export | ✓ Implemented (31-05) |
+| IonViewerWidget | QWidget with stacked placeholder/3D viewer for ion visualization | ✓ Implemented (31.1-01) |
 | Madrid2019 ion parameters | Na charge=0.85, Cl charge=-0.85 per research | ✓ Implemented (28.1-03) |
 | GROMACS atomtype ordering | All [atomtypes] grouped after [defaults] before #include | ✓ Implemented (28.1-03) |
 | Sobtop GAFF2 guest parameters | CH4/THF atomtypes commented in .itp, defined in main .top | ✓ Implemented (28.1-03) |
@@ -183,9 +184,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-18
-**Stopped at:** Phase 28.1 human verified (approved: tab ordering Ice→Hydrate→Interface→Ion, ion insertion partially fixed)
-**Next:** Phase 29 ready - Data Structures + Multi-Molecule GROMACS required before Phases 30-32
+**Last session:** 2026-04-19
+**Stopped at:** Completed 31.1-01-PLAN.md (IonViewerWidget created)
+**Next:** Phase 31.1 complete - IonViewerWidget ready for integration into IonPanel
 
 ---
 

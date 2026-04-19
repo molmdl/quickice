@@ -34,10 +34,12 @@ class HydratePanel(QWidget):
     Signals:
         configuration_changed: Emitted when any configuration changes
         generate_requested: Emitted when generate button clicked
+        export_to_interface_requested: Emitted when user wants to use hydrate as interface input
     """
     
     configuration_changed = Signal()
     generate_requested = Signal()
+    export_to_interface_requested = Signal(object)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -88,6 +90,16 @@ class HydratePanel(QWidget):
         self.generate_button = QPushButton("Generate Hydrate")
         self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
         left_layout.addWidget(self.generate_button)
+        
+        # Use in Interface button - transfer hydrate result to Interface Construction tab
+        self.use_in_interface_btn = QPushButton("Use in Interface →")
+        self.use_in_interface_btn.setToolTip(
+            "Transfer hydrate structure to Interface Construction tab.\n"
+            "Opens Interface tab with hydrate structure as input."
+        )
+        self.use_in_interface_btn.clicked.connect(self._on_use_in_interface_clicked)
+        self.use_in_interface_btn.setEnabled(False)  # Disabled until hydrate generated
+        left_layout.addWidget(self.use_in_interface_btn)
         
         left_layout.addStretch()
         
@@ -387,3 +399,23 @@ class HydratePanel(QWidget):
         else:  # Stick
             self.btn_representation.setText("Ball-and-stick")
             self.hydrate_viewer.set_representation_mode("ball_and_stick")
+    
+    def set_hydrate_structure(self, structure):
+        """Set hydrate structure for display in viewer.
+        
+        Also enables the "Use in Interface" button once structure is set.
+        """
+        self._current_structure = structure
+        self.hydrate_viewer.set_hydrate_structure(structure)
+        
+        # Enable "Use in Interface" button after generation completes
+        if structure is not None:
+            self.use_in_interface_btn.setEnabled(True)
+    
+    def _on_use_in_interface_clicked(self):
+        """Handle Use in Interface button click.
+        
+        Emits signal to transfer hydrate structure to Interface tab.
+        """
+        if self._current_structure is not None:
+            self.export_to_interface_requested.emit(self._current_structure)

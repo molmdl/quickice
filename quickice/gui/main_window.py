@@ -221,6 +221,7 @@ class MainWindow(QMainWindow):
         # Tab 3 (Hydrate Configuration) connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
+        self.hydrate_panel.export_to_interface_requested.connect(self._on_export_to_interface)
         
         # Tab 4 (Ion Insertion) connections (new in v4.0)
         self.ion_panel.configuration_changed.connect(self._on_ion_config_changed)
@@ -628,8 +629,8 @@ class MainWindow(QMainWindow):
             if hasattr(lattice_info, 'cage_types') and lattice_info.cage_types:
                 self.hydrate_panel.append_log(f"Cage types: {', '.join(lattice_info.cage_types)}")
         
-        # Display structure in viewer
-        self.hydrate_panel.hydrate_viewer.set_hydrate_structure(result)
+        # Display structure in viewer and enable "Use in Interface" button
+        self.hydrate_panel.set_hydrate_structure(result)
         
         # Re-enable generate button
         self.hydrate_panel.generate_button.setEnabled(True)
@@ -652,6 +653,29 @@ class MainWindow(QMainWindow):
         
         # Re-enable generate button
         self.hydrate_panel.generate_button.setEnabled(True)
+    
+    @Slot(object)
+    def _on_export_to_interface(self, hydrate_structure):
+        """Handle export_to_interface_requested signal from hydrate panel.
+        
+        Switches to Interface Construction tab and transfers hydrate structure.
+        
+        Args:
+            hydrate_structure: HydrateStructure to use as input
+        """
+        # Switch to Interface Construction tab (index 2)
+        self.tab_widget.setCurrentIndex(2)
+        
+        # Log the transfer
+        self.interface_panel.append_log("Transferred from Hydrate tab:")
+        self.interface_panel.append_log(f"  Water: {hydrate_structure.water_count}")
+        self.interface_panel.append_log(f"  Guest: {hydrate_structure.guest_count} molecules")
+        self.interface_panel.append_log("Configure interface parameters to build hydrate interface.")
+        
+        # Show info about hydrate→interface workflow
+        # Note: Full integration would require hydrate-to-interface conversion
+        # which is beyond this plan's scope. The user gets transferred to Interface tab
+        # where they can configure interface generation using ice candidates.
     
     def _on_ion_config_changed(self):
         """Handle ion configuration change."""
