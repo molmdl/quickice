@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31.1 (complete) |
-| Plan | 03 of 03 complete |
+| Plan | 02 of 02 complete |
 | Status | Phase complete ✓ |
-| Last activity | 2026-04-19 — Plan 31.1-03 complete (export-to-interface capability) |
+| Last activity | 2026-04-19 — Plan 31.1-02 complete (IonViewerWidget integration) |
 
-**Progress:** █████████ 100% (5.5/6 phases complete - Phase 31.1 verified ✓)
+**Progress:** █████████ 100% (6/6 phases complete - v4.0 milestone complete)
 
 ---
 
@@ -154,6 +154,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | GROMACS atomtype ordering | All [atomtypes] grouped after [defaults] before #include | ✓ Implemented (28.1-03) |
 | Sobtop GAFF2 guest parameters | CH4/THF atomtypes commented in .itp, defined in main .top | ✓ Implemented (28.1-03) |
 | Export-to-interface signal | PySide6 Signal transfers hydrate to Interface tab on button click | ✓ Implemented (31.1-03) |
+| IonPanel horizontal layout | Left col config, right col viewer+log (matching HydratePanel) | ✓ Implemented (31.1-02) |
+| Ion render to own viewer | _on_insert_ions renders to IonPanel.ion_viewer, not Tab 1 dual_viewer | ✓ Implemented (31.1-02) |
 
 ### v3.5 Shipped Decisions
 
@@ -186,8 +188,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-19
-**Stopped at:** Completed 31.1-03-PLAN.md (export-to-interface capability)
-**Next:** Phase 31.1 complete - hydrate→interface workflow enabled
+**Stopped at:** Completed 31.1-02-PLAN.md (IonViewerWidget integration)
+**Next:** Phase 31.1 complete - ready for Phase 32
 
 ---
-*State updated: 2026-04-19 — Phase 31.1 complete, added export-to-interface decision*
+*State updated: 2026-04-19 — Phase 31.1 complete (IonViewerWidget integration)*
