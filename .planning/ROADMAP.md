@@ -340,4 +340,4 @@ Plans:
 ---
 
 *Roadmap created: 2026-04-14*
-*Next: /gsd-plan-phase 28*
+*Next: /gsd-discuss-phase 32*
