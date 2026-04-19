@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (in progress) |
 | Phase | 31.1 (complete) |
-| Plan | 02 of 02 complete |
-| Status | Phase complete ✓ |
-| Last activity | 2026-04-19 — Plan 31.1-02 complete (IonViewerWidget integration) |
+| Plan | 04 of 04 complete |
+| Status | Phase complete, verified ✓ |
+| Last activity | 2026-04-19 — Phase 31.1 verified (integration fixes + hydrate→interface conversion) |
 
-**Progress:** █████████ 100% (6/6 phases complete - v4.0 milestone complete)
+**Progress:** ████████░ 83% (5/6 phases complete - Phase 32 pending)
 
 ---
 

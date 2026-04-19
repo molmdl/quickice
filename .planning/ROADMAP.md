@@ -237,12 +237,13 @@ Plans:
 
 **Requirements:** None (integration fixes)
 
-**Plans:** 3 plans in 1 wave (READY)
+**Plans:** 4 plans in 1 wave
 
 Plans:
 - [x] 31.1-01-PLAN.md — IonViewerWidget (3D viewer for ion visualization)
 - [x] 31.1-02-PLAN.md — IonPanel integration (viewer + main_window wiring)
 - [x] 31.1-03-PLAN.md — Hydrate→Interface wiring (export capability)
+- [ ] 31.1-04-PLAN.md — Hydrate-to-interface conversion (gap closure)
 
 **Success Criteria:**
 1. IonPanel has 3D viewer alongside configuration controls (like HydratePanel)
@@ -331,10 +332,10 @@ Plans:
 | 29 | Data Structures + Multi-Molecule GROMACS | ✓ Complete |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | ✓ Complete (5/5 plans, verified) |
-| 31.1 | Integration Fixes (INSERTED) | Not started |
+| 31.1 | Integration Fixes (INSERTED) | ✓ Complete (4/4 plans, verified) |
 | 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ████████░ 80% (4.5/6 phases complete - Phase 31.1, 32 pending)
+**Overall:** ████████░ 83% (5/6 phases complete - Phase 32 pending)
 
 ---
 
