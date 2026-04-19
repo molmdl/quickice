@@ -5,6 +5,8 @@ This module provides the IonPanel class for ion insertion configuration:
 - Ion pair count display
 - Liquid volume display
 - Insert Ions button
+- Log panel for status messages
+- 3D viewer for ion visualization
 
 Signals:
     configuration_changed: Emitted when concentration changes
@@ -14,12 +16,13 @@ Signals:
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QGroupBox,
-    QFormLayout, QPushButton
+    QFormLayout, QPushButton, QTextEdit
 )
 from PySide6.QtCore import Signal, Qt
 
 from quickice.structure_generation.types import IonConfig
 from quickice.structure_generation.ion_inserter import IonInserter
+from quickice.gui.ion_viewer import IonViewerWidget
 
 
 class IonPanel(QWidget):
@@ -46,27 +49,62 @@ class IonPanel(QWidget):
         self._setup_connections()
     
     def _setup_ui(self):
-        """Setup UI components."""
-        layout = QVBoxLayout(self)
+        """Setup UI components with horizontal layout (like HydratePanel).
+        
+        Layout:
+        - Left column (stretch=2): Configuration controls
+        - Right column (stretch=3): Log panel + 3D viewer
+        """
+        # Create top-level horizontal layout
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(20)
+        
+        # === LEFT COLUMN: Configuration Controls ===
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(10)
         
         # Concentration input group
         conc_group = self._create_concentration_group()
-        layout.addWidget(conc_group)
+        left_layout.addWidget(conc_group)
         
         # Ion count display group
         count_group = self._create_ion_count_group()
-        layout.addWidget(count_group)
+        left_layout.addWidget(count_group)
         
         # Volume display group
         volume_group = self._create_volume_group()
-        layout.addWidget(volume_group)
+        left_layout.addWidget(volume_group)
         
         # Insert button
         self.insert_button = QPushButton("Insert Ions")
         self.insert_button.clicked.connect(lambda: self.insert_requested.emit())
-        layout.addWidget(self.insert_button)
+        left_layout.addWidget(self.insert_button)
         
-        layout.addStretch()
+        left_layout.addStretch()
+        
+        # === RIGHT COLUMN: Viewer Section ===
+        right_layout = QVBoxLayout()
+        right_layout.setSpacing(10)
+        
+        # Log panel - shows insertion status messages
+        log_group = QGroupBox("Status Log")
+        log_layout = QVBoxLayout()
+        self._log_text = QTextEdit()
+        self._log_text.setReadOnly(True)
+        self._log_text.setMinimumHeight(80)
+        self._log_text.setPlaceholderText("Status messages will appear here...")
+        log_layout.addWidget(self._log_text)
+        log_group.setLayout(log_layout)
+        right_layout.addWidget(log_group)
+        
+        # 3D viewer widget (stretch=1 to fill remaining space)
+        self.ion_viewer = IonViewerWidget()
+        right_layout.addWidget(self.ion_viewer, stretch=1)
+        
+        # Add columns to top-level layout (left gets 2/5, right gets 3/5)
+        main_layout.addLayout(left_layout, stretch=2)
+        main_layout.addLayout(right_layout, stretch=3)
     
     def _create_concentration_group(self) -> QGroupBox:
         """Create concentration input group."""
@@ -107,6 +145,18 @@ class IonPanel(QWidget):
         layout.addRow("Volume:", self.liquid_volume_label)
         group.setLayout(layout)
         return group
+    
+    def append_log(self, message: str):
+        """Append a message to the log display.
+        
+        Args:
+            message: Message to append
+        """
+        self._log_text.append(message)
+    
+    def clear_log(self):
+        """Clear the log display."""
+        self._log_text.clear()
     
     def _setup_connections(self):
         """Setup signal connections."""
