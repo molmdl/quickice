@@ -49,6 +49,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | 29 | Data Structures + Multi-Molecule GROMACS | GRO-01 to GRO-03, HYDR-01 to HYDR-05 |
 | 30 | Tab 4 - Ion Insertion (NaCl) | ION-01 to ION-07, WATER-02 |
 | 31 | Tab 2 - Hydrate Generation | HYDR-06 to HYDR-08, WATER-03 |
+| 31.1 | Integration Fixes | hydrate→interface wiring, remaining ion fixes |
 | 32 | Custom Molecules + Display Controls | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 |
 
 **Coverage:** 33/33 requirements mapped ✓
@@ -156,6 +157,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Export-to-interface signal | PySide6 Signal transfers hydrate to Interface tab on button click | ✓ Implemented (31.1-03) |
 | IonPanel horizontal layout | Left col config, right col viewer+log (matching HydratePanel) | ✓ Implemented (31.1-02) |
 | Ion render to own viewer | _on_insert_ions renders to IonPanel.ion_viewer, not Tab 1 dual_viewer | ✓ Implemented (31.1-02) |
+| set_from_hydrate() method | Extracts dimensions from HydrateStructure.cell, pre-populates Interface panel | ✓ Implemented (31.1-04) |
 
 ### v3.5 Shipped Decisions
 
@@ -188,8 +190,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-19
-**Stopped at:** Completed 31.1-02-PLAN.md (IonViewerWidget integration)
-**Next:** Phase 31.1 complete - ready for Phase 32
+**Stopped at:** Completed 31.1-04-PLAN.md (hydrate-to-interface conversion)
+**Next:** v4.0 milestone complete - ready for Phase 32
 
 ---
-*State updated: 2026-04-19 — Phase 31.1 complete (IonViewerWidget integration)*
+*State updated: 2026-04-19 — Gap closed (hydrate→interface conversion functional)*
