@@ -9,6 +9,7 @@ This module provides the InterfacePanel class for the Interface Construction tab
 """
 
 import os
+import numpy as np
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
@@ -796,3 +797,54 @@ class InterfacePanel(QWidget):
         self.piece_info_label.setText(
             f"Candidate dimensions: {x:.2f} × {y:.2f} × {z:.2f} nm"
         )
+    
+    def set_from_hydrate(self, hydrate_structure) -> None:
+        """Pre-populate interface panel from hydrate structure.
+        
+        Extracts dimensions from the hydrate structure's unit cell and sets
+        interface inputs accordingly.
+        
+        Args:
+            hydrate_structure: HydrateStructure to derive interface from
+        """
+        from quickice.structure_generation.types import HydrateStructure
+        
+        # Extract dimensions from hydrate structure cell
+        cell = hydrate_structure.cell  # (3, 3) array, stored as ROW vectors
+        
+        # Compute box extent from lattice vector norms (each row is a lattice vector)
+        box_x = float(np.linalg.norm(cell[0]))  # Length of first lattice vector
+        box_y = float(np.linalg.norm(cell[1]))  # Length of second lattice vector
+        box_z = float(np.linalg.norm(cell[2]))  # Length of third lattice vector
+        
+        # Estimate ice thickness from water count
+        # Rough estimate: ~0.3nm per water molecule layer
+        # Get approximate layer count from cell volume
+        volume = abs(np.linalg.det(cell))
+        water_count = hydrate_structure.water_count
+        # Volume per water molecule ≈ 0.03 nm³ (TIP4P-ICE)
+        # Estimated thickness = (volume / area)^0.5
+        if water_count > 0:
+            avg_thickness = (volume / water_count) ** (1/3) * 2  # Two layers
+            # Use reasonable thickness, not too thin
+            ice_thickness = max(1.0, min(avg_thickness, 10.0))
+        else:
+            ice_thickness = 3.0  # Default fallback
+        
+        # Set mode to "Piece" (most appropriate for predefined hydrate structure)
+        self.mode_combo.setCurrentText("Piece")
+        
+        # Set box dimensions using setValue()
+        self.box_x_input.setValue(box_x)
+        self.box_y_input.setValue(box_y)
+        self.box_z_input.setValue(box_z)
+        
+        # Log the pre-population
+        self.info_panel.append_log("")
+        self.info_panel.append_log("=" * 50)
+        self.info_panel.append_log("Interface pre-populated from hydrate structure")
+        self.info_panel.append_log("=" * 50)
+        self.info_panel.append_log(f"Box: {box_x:.2f} × {box_y:.2f} × {box_z:.2f} nm")
+        self.info_panel.append_log(f"Mode: Piece (hydrate-derived)")
+        self.info_panel.append_log(f"Water molecules: {hydrate_structure.water_count}")
+        self.info_panel.append_log(f"Guest molecules: {hydrate_structure.guest_count}")
