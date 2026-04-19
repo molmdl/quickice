@@ -666,16 +666,8 @@ class MainWindow(QMainWindow):
         # Switch to Interface Construction tab (index 2)
         self.tab_widget.setCurrentIndex(2)
         
-        # Log the transfer
-        self.interface_panel.append_log("Transferred from Hydrate tab:")
-        self.interface_panel.append_log(f"  Water: {hydrate_structure.water_count}")
-        self.interface_panel.append_log(f"  Guest: {hydrate_structure.guest_count} molecules")
-        self.interface_panel.append_log("Configure interface parameters to build hydrate interface.")
-        
-        # Show info about hydrate→interface workflow
-        # Note: Full integration would require hydrate-to-interface conversion
-        # which is beyond this plan's scope. The user gets transferred to Interface tab
-        # where they can configure interface generation using ice candidates.
+        # Pre-populate interface panel from hydrate structure
+        self.interface_panel.set_from_hydrate(hydrate_structure)
     
     def _on_ion_config_changed(self):
         """Handle ion configuration change."""
