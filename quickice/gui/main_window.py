@@ -1138,6 +1138,33 @@ def _get_citation(phase_id: str) -> str:
     return citations.get(phase_id, "See IAPWS R14-08(2011) for phase data.")
 
 
+def _configure_opengl_for_remote():
+    """Configure OpenGL for remote X11 display.
+    
+    Fixes VTK segfault when running via SSH X11 forwarding.
+    The NVIDIA GLX library crashes with indirect rendering (no direct rendering support).
+    Mesa GLX handles indirect rendering correctly.
+    
+    This only applies when running remotely (DISPLAY set, no local GPU).
+    """
+    import os
+    
+    # Only apply fix for remote displays
+    display = os.environ.get('DISPLAY', '')
+    if not display:
+        return  # No display, let Qt handle it
+    
+    # SSH X11 forwarding always goes through localhost:n.n or hostname:n.n
+    # Local displays start with :0, :1, etc.
+    # Simple heuristic: if DISPLAY contains a colon and doesn't start with :0-9 locally
+    if display.startswith(':'):
+        # Could be local or remote SSH -:0 style; assume local until proven otherwise
+        return
+    
+    # For remote displays (localhost:12.0, etc.), force Mesa GLX
+    os.environ['__GLX_VENDOR_LIBRARY_NAME'] = 'mesa'
+
+
 def run_app():
     """Run the QuickIce GUI application.
     
@@ -1148,6 +1175,9 @@ def run_app():
         from quickice.gui import run_app
         run_app()
     """
+    # Configure OpenGL for remote displays before creating QApplication
+    _configure_opengl_for_remote()
+    
     import sys
     app = QApplication(sys.argv)
     
