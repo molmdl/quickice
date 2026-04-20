@@ -217,6 +217,9 @@ class MainWindow(QMainWindow):
         
         # Tab 2 (Interface Construction) generation connections
         self.interface_panel.generate_requested.connect(self._on_interface_generate)
+
+        # Tab 3 (Interface) hydrate source - when user selects hydrate in Tab 3
+        self.interface_panel.generate_hydrate_requested.connect(self._on_interface_hydrate_generate)
         
         # Tab 3 (Hydrate Configuration) connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
@@ -565,7 +568,37 @@ class MainWindow(QMainWindow):
             f"Failed to generate interface structure:\n\n{error_msg}",
             QMessageBox.StandardButton.Ok
         )
-    
+
+    @Slot()
+    def _on_interface_hydrate_generate(self):
+        """Handle generate when Source=hydrate in Tab 3.
+
+        Uses the last generated hydrate from Tab 2 to create interface.
+        """
+        # Check if we have a hydrate from Tab 2
+        hydrate = self._current_hydrate_result
+
+        if hydrate is None:
+            QMessageBox.warning(
+                self,
+                "No Hydrate",
+                "No hydrate structure available.\n\n"
+                "Please:\n"
+                "1. Go to Hydrate Config tab (Tab 2)\n"
+                "2. Generate a hydrate structure\n"
+                "3. Click 'Use in Interface →' or return here and generate"
+            )
+            return
+
+        # Pre-populate Tab 3 from hydrate (same as _on_export_to_interface)
+        self.interface_panel.set_from_hydrate(hydrate)
+
+        self.interface_panel.append_log("Interface pre-populated from hydrate.")
+        self.interface_panel.append_log(f"Hydrate: {hydrate.water_count} water molecules")
+
+        # Auto-switch to Interface tab to show the result
+        self.tab_widget.setCurrentIndex(2)
+
     @Slot()
     def _on_interface_generation_cancelled(self):
         """Handle interface generation cancelled."""

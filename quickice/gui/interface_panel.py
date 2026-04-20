@@ -20,8 +20,11 @@ from PySide6.QtCore import Signal, Qt
 
 from quickice.gui.view import ProgressPanel, InfoPanel, HelpIcon
 from quickice.gui.validators import (
-    validate_box_dimension, validate_thickness, 
+    validate_box_dimension, validate_thickness,
     validate_pocket_diameter, validate_seed
+)
+from quickice.structure_generation.types import (
+    HYDRATE_LATTICES, GUEST_MOLECULES, HydrateConfig
 )
 
 # Check if VTK is available (may fail in remote/indirect rendering environments)
@@ -61,6 +64,8 @@ class InterfacePanel(QWidget):
     candidate_selected = Signal(int)  # Emits selected candidate index
     refresh_requested = Signal()  # Emits when refresh button clicked
     generate_requested = Signal(int)  # Emits when generate clicked with selected index
+    generate_hydrate_requested = Signal()  # Emits when generate clicked with hydrate source
+    configuration_changed = Signal()  # Emits when source/type configuration changes
     
     def __init__(self, parent=None):
         """Initialize the interface construction panel.
@@ -246,9 +251,30 @@ class InterfacePanel(QWidget):
         title_label = QLabel("Interface Construction")
         title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         left_layout.addWidget(title_label)
-        
+
         left_layout.addSpacing(15)
-        
+
+        # Source selector row (Ice Candidate vs Hydrate Structure)
+        source_row = QHBoxLayout()
+        source_label = QLabel("Source:")
+        self.source_combo = QComboBox()
+        self.source_combo.addItems(["Ice Candidate", "Hydrate Structure"])
+        self.source_combo.setToolTip(
+            "Select source for interface:\n"
+            "• Ice Candidate — Use ice structure from Tab 1\n"
+            "• Hydrate Structure — Generate hydrate directly in Tab 3"
+        )
+        source_row.addWidget(source_label)
+        source_row.addWidget(HelpIcon(
+            "Source type for interface generation. Ice Candidate uses existing ice structures. "
+            "Hydrate Structure generates hydrate lattices (sI, sII, sH) directly without going to Tab 2."
+        ))
+        source_row.addWidget(self.source_combo)
+        source_row.addStretch()
+        left_layout.addLayout(source_row)
+
+        left_layout.addSpacing(15)
+
         # Mode selector row
         mode_row = QHBoxLayout()
         mode_label = QLabel("Interface mode:")
@@ -491,18 +517,50 @@ class InterfacePanel(QWidget):
     
     def _setup_connections(self):
         """Connect internal signals to slots."""
+        # Source selector to toggle ice/hydrate controls
+        self.source_combo.currentIndexChanged.connect(self._on_source_changed)
+
         # Mode selector to stacked widget
         self.mode_combo.currentIndexChanged.connect(self.stacked_widget.setCurrentIndex)
-        
+
         # Dropdown selection change
         self.candidate_dropdown.currentIndexChanged.connect(self._on_candidate_changed)
-        
+
         # Refresh button
         self.refresh_btn.clicked.connect(self._on_refresh_clicked)
-        
+
         # Generate button
         self.generate_btn.clicked.connect(self._on_generate_clicked)
     
+    def _on_source_changed(self, index: int):
+        """Handle source type change (Ice Candidate vs Hydrate Structure).
+
+        Args:
+            index: 0 = Ice Candidate, 1 = Hydrate Structure
+        """
+        is_hydrate = (index == 1)
+
+        # Show/hide ice-specific controls
+        self.mode_combo.setEnabled(not is_hydrate)
+        self.box_x_input.setEnabled(not is_hydrate)
+        self.box_y_input.setEnabled(not is_hydrate)
+        self.box_z_input.setEnabled(not is_hydrate)
+        self.seed_input.setEnabled(not is_hydrate)
+        self.candidate_dropdown.setEnabled(not is_hydrate and bool(self._candidates))
+        self.refresh_btn.setEnabled(not is_hydrate)
+
+        # Update generate button tooltip
+        if is_hydrate:
+            self.generate_btn.setToolTip("Click to generate hydrate structure")
+        else:
+            if self._candidates:
+                self.generate_btn.setToolTip("Click to generate interface structure with current configuration")
+            else:
+                self.generate_btn.setToolTip("Generate ice candidates in Tab 1 first")
+
+        # Emit configuration changed signal
+        self.configuration_changed.emit()
+
     def _on_candidate_changed(self, index: int):
         """Handle candidate dropdown selection change.
         
@@ -518,28 +576,62 @@ class InterfacePanel(QWidget):
     
     def _on_generate_clicked(self):
         """Handle generate button click.
-        
-        Validates all configuration inputs before emitting generate_requested signal.
-        Shows inline errors for invalid inputs.
+
+        Checks source type and delegates to appropriate handler:
+        - Ice Candidate: validates ice config and emits generate_requested
+        - Hydrate Structure: emits generate_hydrate_requested
         """
+        # Check source type
+        source_index = self.source_combo.currentIndex()
+        if source_index == 1:  # Hydrate Structure
+            # Delegate to hydrate handler
+            self._on_generate_hydrate_clicked()
+            return
+
+        # Ice Candidate flow (existing logic)
         if not self._candidates:
             return
-        
+
         # Clear previous errors
         self.clear_configuration_errors()
-        
+
         # Validate configuration
         if not self.validate_configuration():
             return  # Errors shown, don't proceed
-        
+
         # Get selected candidate index
         selected_idx = self.candidate_dropdown.currentIndex()
         if selected_idx < 0:
             return
-        
+
         # Emit signal with candidate index
         # Configuration will be retrieved via get_configuration() by MainWindow
         self.generate_requested.emit(selected_idx)
+
+    def _on_generate_hydrate_clicked(self):
+        """Handle generate button click when Source=hydrate.
+
+        Validates hydrate configuration and emits signal.
+        """
+        # Emit hydrate generation signal
+        self.generate_hydrate_requested.emit()
+
+    def get_hydrate_configuration(self) -> HydrateConfig:
+        """Get hydrate configuration when Source=hydrate.
+
+        Returns:
+            HydrateConfig with current UI values for hydrate generation
+        """
+        # Use default hydrate parameters when generating from Tab 3
+        return HydrateConfig(
+            lattice_type=self._hydrate_lattice_combo.currentData(),
+            guest_type=self._hydrate_guest_combo.currentData(),
+            cage_occupancy_small=self.occupancy_small.value(),
+            cage_occupancy_large=self.occupancy_large.value(),
+            supercell_x=self.supercell_x.value(),
+            supercell_y=self.supercell_y.value(),
+            supercell_z=self.supercell_z.value(),
+        )
     
     def update_candidates(self, candidates: list) -> None:
         """Update candidate dropdown with new list.
