@@ -273,6 +273,54 @@ class InterfacePanel(QWidget):
         source_row.addStretch()
         left_layout.addLayout(source_row)
 
+        # === Hydrate Configuration (shown when Source = Hydrate Structure) ===
+        self._hydrate_group = QGroupBox("Hydrate Configuration")
+        hydrate_layout = QFormLayout()
+
+        # Lattice type for hydrate
+        self._hydrate_lattice_combo = QComboBox()
+        for lattice_id, lattice_info in HYDRATE_LATTICES.items():
+            self._hydrate_lattice_combo.addItem(
+                f"{lattice_id} - {lattice_info['description']}",
+                lattice_id
+            )
+        self._hydrate_lattice_combo.setCurrentIndex(0)
+        hydrate_layout.addRow("Lattice type:", self._hydrate_lattice_combo)
+
+        # Guest molecule for hydrate
+        self._hydrate_guest_combo = QComboBox()
+        for guest_id, guest_info in GUEST_MOLECULES.items():
+            self._hydrate_guest_combo.addItem(
+                f"{guest_info['name']} ({guest_info['formula']})",
+                guest_id
+            )
+        hydrate_layout.addRow("Guest type:", self._hydrate_guest_combo)
+
+        # Supercell dimensions
+        supercell_row = QHBoxLayout()
+        self._hydrate_supercell_x = QSpinBox()
+        self._hydrate_supercell_x.setRange(1, 5)
+        self._hydrate_supercell_x.setValue(1)
+        supercell_row.addWidget(self._hydrate_supercell_x)
+        supercell_row.addWidget(QLabel("×"))
+        
+        self._hydrate_supercell_y = QSpinBox()
+        self._hydrate_supercell_y.setRange(1, 5)
+        self._hydrate_supercell_y.setValue(1)
+        supercell_row.addWidget(self._hydrate_supercell_y)
+        supercell_row.addWidget(QLabel("×"))
+        
+        self._hydrate_supercell_z = QSpinBox()
+        self._hydrate_supercell_z.setRange(1, 5)
+        self._hydrate_supercell_z.setValue(1)
+        supercell_row.addWidget(self._hydrate_supercell_z)
+        
+        hydrate_layout.addRow("Supercell:", supercell_row)
+
+        self._hydrate_group.setLayout(hydrate_layout)
+        self._hydrate_group.hide()  # Hidden by default (show when Source = Hydrate Structure)
+        left_layout.addWidget(self._hydrate_group)
+
         left_layout.addSpacing(15)
 
         # Mode selector row
@@ -540,6 +588,9 @@ class InterfacePanel(QWidget):
         """
         is_hydrate = (index == 1)
 
+        # Show/hide hydrate configuration group
+        self._hydrate_group.setVisible(is_hydrate)
+
         # Show/hide ice-specific controls
         self.mode_combo.setEnabled(not is_hydrate)
         self.box_x_input.setEnabled(not is_hydrate)
@@ -548,6 +599,9 @@ class InterfacePanel(QWidget):
         self.seed_input.setEnabled(not is_hydrate)
         self.candidate_dropdown.setEnabled(not is_hydrate and bool(self._candidates))
         self.refresh_btn.setEnabled(not is_hydrate)
+
+        # Enable generate button when hydrate source is selected
+        self.generate_btn.setEnabled(True)
 
         # Update generate button tooltip
         if is_hydrate:
@@ -893,7 +947,8 @@ class InterfacePanel(QWidget):
         """Pre-populate interface panel from hydrate structure.
         
         Extracts dimensions from the hydrate structure's unit cell and sets
-        interface inputs accordingly.
+        interface inputs accordingly. For Piece mode (ice in water), adds extra
+        space around the hydrate for the water layer.
         
         Args:
             hydrate_structure: HydrateStructure to derive interface from
@@ -904,9 +959,16 @@ class InterfacePanel(QWidget):
         cell = hydrate_structure.cell  # (3, 3) array, stored as ROW vectors
         
         # Compute box extent from lattice vector norms (each row is a lattice vector)
-        box_x = float(np.linalg.norm(cell[0]))  # Length of first lattice vector
-        box_y = float(np.linalg.norm(cell[1]))  # Length of second lattice vector
-        box_z = float(np.linalg.norm(cell[2]))  # Length of third lattice vector
+        hydrate_x = float(np.linalg.norm(cell[0]))  # Length of first lattice vector
+        hydrate_y = float(np.linalg.norm(cell[1]))  # Length of second lattice vector
+        hydrate_z = float(np.linalg.norm(cell[2]))  # Length of third lattice vector
+        
+        # Add extra space for water layer around hydrate (Piece mode: ice piece in water box)
+        # Need at least 1 nm extra on each dimension for water molecules
+        extra_space = 1.0  # nm
+        box_x = hydrate_x + extra_space
+        box_y = hydrate_y + extra_space
+        box_z = hydrate_z + extra_space
         
         # Estimate ice thickness from water count
         # Rough estimate: ~0.3nm per water molecule layer
@@ -925,7 +987,7 @@ class InterfacePanel(QWidget):
         # Set mode to "Piece" (most appropriate for predefined hydrate structure)
         self.mode_combo.setCurrentText("Piece")
         
-        # Set box dimensions using setValue()
+        # Set box dimensions using setValue() - includes extra space for water layer
         self.box_x_input.setValue(box_x)
         self.box_y_input.setValue(box_y)
         self.box_z_input.setValue(box_z)
@@ -935,7 +997,8 @@ class InterfacePanel(QWidget):
         self.info_panel.append_log("=" * 50)
         self.info_panel.append_log("Interface pre-populated from hydrate structure")
         self.info_panel.append_log("=" * 50)
-        self.info_panel.append_log(f"Box: {box_x:.2f} × {box_y:.2f} × {box_z:.2f} nm")
-        self.info_panel.append_log(f"Mode: Piece (hydrate-derived)")
+        self.info_panel.append_log(f"Hydrate cell: {hydrate_x:.2f} × {hydrate_y:.2f} × {hydrate_z:.2f} nm")
+        self.info_panel.append_log(f"Box (with water layer): {box_x:.2f} × {box_y:.2f} × {box_z:.2f} nm")
+        self.info_panel.append_log(f"Mode: Piece (hydrate in water)")
         self.info_panel.append_log(f"Water molecules: {hydrate_structure.water_count}")
         self.info_panel.append_log(f"Guest molecules: {hydrate_structure.guest_count}")

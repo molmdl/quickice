@@ -118,7 +118,7 @@ class IonPanel(QWidget):
         self.concentration_input = QDoubleSpinBox()
         self.concentration_input.setRange(0.0, 5.0)
         self.concentration_input.setDecimals(2)
-        self.concentration_input.setValue(0.0)
+        self.concentration_input.setValue(0.5)  # Default 0.5 M NaCl
         self.concentration_input.setSuffix(" mol/L")
         self.concentration_input.setToolTip(
             "Target NaCl concentration in mol/L (M).\n"

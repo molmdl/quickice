@@ -574,7 +574,10 @@ class MainWindow(QMainWindow):
         """Handle generate when Source=hydrate in Tab 3.
 
         Uses the last generated hydrate from Tab 2 to create interface.
+        Treats hydrate as template/seed for ice-water interface (same logic as ice candidate).
         """
+        from quickice.structure_generation.types import InterfaceConfig
+        
         # Check if we have a hydrate from Tab 2
         hydrate = self._current_hydrate_result
 
@@ -590,14 +593,35 @@ class MainWindow(QMainWindow):
             )
             return
 
-        # Pre-populate Tab 3 from hydrate (same as _on_export_to_interface)
-        self.interface_panel.set_from_hydrate(hydrate)
+        # Convert hydrate to candidate (same as ice candidate for interface generation)
+        try:
+            candidate = hydrate.to_candidate()
+        except ValueError as e:
+            QMessageBox.warning(
+                self,
+                "Conversion Error",
+                f"Cannot convert hydrate to interface template:\n\n{str(e)}"
+            )
+            return
 
-        self.interface_panel.append_log("Interface pre-populated from hydrate.")
-        self.interface_panel.append_log(f"Hydrate: {hydrate.water_count} water molecules")
+        # Get configuration from interface panel (set_from_hydrate already pre-populated the values)
+        config_dict = self.interface_panel.get_configuration()
+        config = InterfaceConfig.from_dict(config_dict)
 
-        # Auto-switch to Interface tab to show the result
-        self.tab_widget.setCurrentIndex(2)
+        # Log the generation start
+        self.interface_panel.progress_panel.reset()
+        self.interface_panel.progress_panel.set_generating()
+        self.interface_panel.clear_log()
+        self.interface_panel.append_log(f"Starting {config.mode} interface generation...")
+        self.interface_panel.append_log(f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm")
+        self.interface_panel.append_log(f"  Template: Hydrate ({hydrate.water_count} water molecules)")
+        
+        # Add hydrate lattice info if available
+        if hasattr(hydrate, 'lattice_info') and hydrate.lattice_info:
+            self.interface_panel.append_log(f"  Lattice: {hydrate.lattice_info.description}")
+
+        # Start interface generation (same flow as ice candidate)
+        self._viewmodel.start_interface_generation(candidate, config)
 
     @Slot()
     def _on_interface_generation_cancelled(self):
