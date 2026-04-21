@@ -463,7 +463,7 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
             continue
         
         # Check ice/water boundary using raw index i
-        # Ice atoms: indices 0 to ice_atom_count-1 (no MW in ice)
+        # Ice atoms: indices 0 to ice_atom_count-1 (may include MW for hydrate ice)
         # Water atoms: indices ice_atom_count onward (MW skipped above)
         if i < iface.ice_atom_count:
             # Ice atom
@@ -474,24 +474,46 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
             idx = water_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
             water_indices.append(idx)
     
+    # Detect atoms per molecule in ice region
+    # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
+    # TIP4P/hydrate ice: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
+    ice_region_atom_names = iface.atom_names[:iface.ice_atom_count]
+    has_ow_in_ice = "OW" in ice_region_atom_names
+    has_mw_in_ice = "MW" in ice_region_atom_names
+    atoms_per_ice_mol = 4 if (has_ow_in_ice or has_mw_in_ice) else 3
+    
     # Add bonds for ice molecules
-    # Ice uses 3 visible atoms per molecule (O, H, H) - no MW to skip
-    # Supports both classic ice (O, H, H) and TIP4P hydrate (OW, HW1, HW2)
+    # Ice uses 3 visible atoms per molecule (O, H, H) after MW is skipped
+    # For classic ice (uses "O"): validate exact ordering (O, H, H)
+    # For TIP4P/hydrate ice (uses "OW"): atoms may be in any order after tiling/wrapping
     for mol_idx in range(iface.ice_nmolecules):
-        # VERIFY atom ordering before creating bonds
-        ice_names_per_mol = iface.atom_names[mol_idx * 3: mol_idx * 3 + 3]
-        classic_ice = ["O", "H", "H"]
-        tip4p_ice = ["OW", "HW1", "HW2"]
-        if ice_names_per_mol not in [classic_ice, tip4p_ice]:
+        # Get raw atom names for this molecule (for validation of classic ice)
+        raw_start = mol_idx * atoms_per_ice_mol
+        raw_end = raw_start + atoms_per_ice_mol
+        
+        if not has_ow_in_ice and not has_mw_in_ice:
+            # Classic ice (uses "O"): validate exact ordering (O first, then H, H)
+            if raw_end <= len(iface.atom_names):
+                ice_names_per_mol = iface.atom_names[raw_start:raw_end]
+                classic_ice = ["O", "H", "H"]
+                if ice_names_per_mol != classic_ice:
+                    raise ValueError(
+                        f"Invalid ice atom ordering for molecule {mol_idx}: expected {classic_ice}, "
+                        f"got {ice_names_per_mol}. "
+                        f"Ice bond creation requires atoms to be ordered as oxygen followed by two hydrogens."
+                    )
+        
+        # Verify we have 3 visible atoms (MW filtered out)
+        mol_start = mol_idx * 3
+        if mol_start + 3 > len(ice_indices):
             raise ValueError(
-                f"Invalid ice atom ordering for molecule {mol_idx}: expected {classic_ice} or {tip4p_ice}, "
-                f"got {ice_names_per_mol}. "
-                f"Ice bond creation requires atoms to be ordered as oxygen followed by two hydrogens."
+                f"Not enough visible atoms for ice molecule {mol_idx}: "
+                f"need 3, have {len(ice_indices) - mol_start}"
             )
         
-        o_idx = ice_indices[mol_idx * 3]
-        h1_idx = ice_indices[mol_idx * 3 + 1]
-        h2_idx = ice_indices[mol_idx * 3 + 2]
+        o_idx = ice_indices[mol_start]
+        h1_idx = ice_indices[mol_start + 1]
+        h2_idx = ice_indices[mol_start + 2]
         # Single bond (bond order 1) for both O-H bonds
         ice_mol.AppendBond(o_idx, h1_idx, 1)
         ice_mol.AppendBond(o_idx, h2_idx, 1)
