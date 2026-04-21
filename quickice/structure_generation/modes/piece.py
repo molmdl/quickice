@@ -21,10 +21,25 @@ from quickice.structure_generation.overlap_resolver import (
 )
 from quickice.phase_mapping.water_density import water_density_gcm3
 
-# Ice atom names template (GenIce: 3 atoms per molecule)
-# Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
-# Acceptable for typical use. For very large systems (>10k), this is modest overhead.
-ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
+
+def detect_atoms_per_molecule(atom_names: list[str]) -> int:
+    """Detect atoms per molecule from atom names pattern.
+    
+    Handles:
+    - Ice (GenIce): 3 atoms per molecule (O, H, H)
+    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
+    
+    Args:
+        atom_names: List of atom names from candidate
+    
+    Returns:
+        Atoms per molecule (3 for ice, 4 for TIP4P)
+    """
+    if len(atom_names) >= 4:
+        # Check first atom for TIP4P pattern (OW at index 0)
+        if atom_names[0] == "OW":
+            return 4
+    return 3  # Default to GenIce ice (3 atoms)
 
 
 def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
@@ -81,12 +96,16 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Box dimensions
     box_dims = np.array([config.box_x, config.box_y, config.box_z])
 
+    # Detect atoms per molecule from candidate atom names
+    # Handles both GenIce ice (3 atoms: O, H, H) and TIP4P/hydrate (4 atoms: OW, HW1, HW2, MW)
+    atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+
     # Tile ice to fill piece region (essentially just the candidate itself)
     tiled_ice_positions, ice_nmolecules = tile_structure(
         candidate.positions,
         ice_dims,
         ice_dims,
-        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        atoms_per_molecule=atoms_per_mol,
         cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
@@ -100,9 +119,13 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     offset = box_dims / 2.0 - ice_dims / 2.0
     centered_ice_positions = tiled_ice_positions + offset
 
-    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
-    # Uses module-level template for consistency
-    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
+    # Build ice atom names from candidate's atom pattern (dynamically detected)
+    # For ice: ["O", "H", "H"] repeating
+    # For hydrate/TIP4P: ["OW", "HW1", "HW2", "MW"] repeating
+    ice_atom_names = []
+    pattern_start = candidate.atom_names[:atoms_per_mol]
+    for _ in range(ice_nmolecules):
+        ice_atom_names.extend(pattern_start)
 
     # Calculate water density from ice temperature/pressure
     T = candidate.metadata.get('temperature', 273.15)
@@ -116,10 +139,10 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     )
 
     # Detect overlaps between centered ice O and water O
-    # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule)
+    # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...]
     # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule)
     if len(centered_ice_positions) > 0 and len(water_positions) > 0:
-        ice_o_positions = centered_ice_positions[::3]
+        ice_o_positions = centered_ice_positions[::atoms_per_mol]
         water_o_positions = water_positions[::4]
 
         overlapping_mol_indices = detect_overlaps(

@@ -23,9 +23,6 @@ from quickice.gui.validators import (
     validate_box_dimension, validate_thickness,
     validate_pocket_diameter, validate_seed
 )
-from quickice.structure_generation.types import (
-    HYDRATE_LATTICES, GUEST_MOLECULES, HydrateConfig
-)
 
 # Check if VTK is available (may fail in remote/indirect rendering environments)
 # Same logic as hydrate_viewer.py and ion_viewer.py for consistency
@@ -272,54 +269,6 @@ class InterfacePanel(QWidget):
         source_row.addWidget(self.source_combo)
         source_row.addStretch()
         left_layout.addLayout(source_row)
-
-        # === Hydrate Configuration (shown when Source = Hydrate Structure) ===
-        self._hydrate_group = QGroupBox("Hydrate Configuration")
-        hydrate_layout = QFormLayout()
-
-        # Lattice type for hydrate
-        self._hydrate_lattice_combo = QComboBox()
-        for lattice_id, lattice_info in HYDRATE_LATTICES.items():
-            self._hydrate_lattice_combo.addItem(
-                f"{lattice_id} - {lattice_info['description']}",
-                lattice_id
-            )
-        self._hydrate_lattice_combo.setCurrentIndex(0)
-        hydrate_layout.addRow("Lattice type:", self._hydrate_lattice_combo)
-
-        # Guest molecule for hydrate
-        self._hydrate_guest_combo = QComboBox()
-        for guest_id, guest_info in GUEST_MOLECULES.items():
-            self._hydrate_guest_combo.addItem(
-                f"{guest_info['name']} ({guest_info['formula']})",
-                guest_id
-            )
-        hydrate_layout.addRow("Guest type:", self._hydrate_guest_combo)
-
-        # Supercell dimensions
-        supercell_row = QHBoxLayout()
-        self._hydrate_supercell_x = QSpinBox()
-        self._hydrate_supercell_x.setRange(1, 5)
-        self._hydrate_supercell_x.setValue(1)
-        supercell_row.addWidget(self._hydrate_supercell_x)
-        supercell_row.addWidget(QLabel("×"))
-        
-        self._hydrate_supercell_y = QSpinBox()
-        self._hydrate_supercell_y.setRange(1, 5)
-        self._hydrate_supercell_y.setValue(1)
-        supercell_row.addWidget(self._hydrate_supercell_y)
-        supercell_row.addWidget(QLabel("×"))
-        
-        self._hydrate_supercell_z = QSpinBox()
-        self._hydrate_supercell_z.setRange(1, 5)
-        self._hydrate_supercell_z.setValue(1)
-        supercell_row.addWidget(self._hydrate_supercell_z)
-        
-        hydrate_layout.addRow("Supercell:", supercell_row)
-
-        self._hydrate_group.setLayout(hydrate_layout)
-        self._hydrate_group.hide()  # Hidden by default (show when Source = Hydrate Structure)
-        left_layout.addWidget(self._hydrate_group)
 
         left_layout.addSpacing(15)
 
@@ -588,10 +537,7 @@ class InterfacePanel(QWidget):
         """
         is_hydrate = (index == 1)
 
-        # Show/hide hydrate configuration group
-        self._hydrate_group.setVisible(is_hydrate)
-
-        # Show/hide ice-specific controls
+        # Show/hide ice-specific controls based on source type
         self.mode_combo.setEnabled(not is_hydrate)
         self.box_x_input.setEnabled(not is_hydrate)
         self.box_y_input.setEnabled(not is_hydrate)
@@ -605,7 +551,7 @@ class InterfacePanel(QWidget):
 
         # Update generate button tooltip
         if is_hydrate:
-            self.generate_btn.setToolTip("Click to generate hydrate structure")
+            self.generate_btn.setToolTip("Click to generate hydrate interface structure")
         else:
             if self._candidates:
                 self.generate_btn.setToolTip("Click to generate interface structure with current configuration")
@@ -669,23 +615,6 @@ class InterfacePanel(QWidget):
         """
         # Emit hydrate generation signal
         self.generate_hydrate_requested.emit()
-
-    def get_hydrate_configuration(self) -> HydrateConfig:
-        """Get hydrate configuration when Source=hydrate.
-
-        Returns:
-            HydrateConfig with current UI values for hydrate generation
-        """
-        # Use default hydrate parameters when generating from Tab 3
-        return HydrateConfig(
-            lattice_type=self._hydrate_lattice_combo.currentData(),
-            guest_type=self._hydrate_guest_combo.currentData(),
-            cage_occupancy_small=self.occupancy_small.value(),
-            cage_occupancy_large=self.occupancy_large.value(),
-            supercell_x=self.supercell_x.value(),
-            supercell_y=self.supercell_y.value(),
-            supercell_z=self.supercell_z.value(),
-        )
     
     def update_candidates(self, candidates: list) -> None:
         """Update candidate dropdown with new list.
