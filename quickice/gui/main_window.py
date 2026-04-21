@@ -769,7 +769,7 @@ class MainWindow(QMainWindow):
         
         # Pass None if liquid_volume is 0 (let insert_ions calculate from cell)
         volume_arg = None if liquid_volume <= 0 else liquid_volume
-        
+
         # Call module-level insert_ions function directly
         ion_structure = insert_ions(
             interface,
@@ -777,9 +777,14 @@ class MainWindow(QMainWindow):
             volume_arg
         )
 
-        # Render in IonPanel viewer (not Tab 1 dual_viewer)
+        # Render in IonPanel viewer: first show interface (ice + water bonds),
+        # then add ions (spheres) on top
+        self.ion_panel.ion_viewer.set_interface_structure(interface)
         self.ion_panel.ion_viewer.set_ion_structure(ion_structure)
-        
+
+        # Mark that ions have been inserted (for any future reference)
+        self.ion_panel.hide_placeholder()
+
         # Log status to IonPanel log
         self.ion_panel.append_log(
             f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
