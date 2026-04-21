@@ -776,7 +776,7 @@ class MainWindow(QMainWindow):
             concentration,
             volume_arg
         )
-        
+
         # Render in IonPanel viewer (not Tab 1 dual_viewer)
         self.ion_panel.ion_viewer.set_ion_structure(ion_structure)
         

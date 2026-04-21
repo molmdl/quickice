@@ -236,20 +236,22 @@ class IonInserter:
                 current_idx += mol.count
         
         # Build array of positions for molecules that will remain (not being replaced)
+        # ONLY check against ICE molecules - not against water being retained,
+        # since water molecules are already at proper liquid density
         remain_positions = []
         for mol in structure.molecule_index:
-            if mol.mol_type != "water" or mol.start_idx not in replaced_starts:
-                # Keep this molecule - include its atoms
+            # Only keep ice (not water being replaced OR retained)
+            if mol.mol_type == "ice":
                 start = mol.start_idx
                 end = start + mol.count
                 remain_positions.append(structure.positions[start:end])
-        
+
         if remain_positions:
             remain_positions = np.vstack(remain_positions)
-            tree = cKDTree(remain_positions)
+            ice_tree = cKDTree(remain_positions)
         else:
-            # No other molecules - no overlap to check
-            tree = None
+            # No ice molecules - no overlap to check against ice
+            ice_tree = None
         
         # Now add ions alternating Na+, Cl- with overlap checking
         na_count = 0
@@ -263,11 +265,11 @@ class IonInserter:
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
             
-            # Check minimum distance to existing atoms (water not being replaced)
-            if tree is not None:
-                min_dist = tree.query(water_pos, k=1)[0]
+            # Check minimum distance to ICE molecules only (not water - water already at liquid density)
+            if ice_tree is not None:
+                min_dist = ice_tree.query(water_pos, k=1)[0]
                 if min_dist < MIN_SEPARATION:
-                    # Too close - skip this ion
+                    # Too close to ice - skip this ion
                     continue
             
             # Also check against previously placed ions
