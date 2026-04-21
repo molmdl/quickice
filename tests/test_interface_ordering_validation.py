@@ -190,3 +190,46 @@ def test_interface_tip3p_style_water():
         interface_to_vtk_molecules(iface)
     
     assert "Invalid water atom ordering" in str(exc_info.value)
+
+
+def test_interface_tip4p_hydrate():
+    """Test that TIP4P hydrate (OW, HW1, HW2) works for ice region."""
+    # TIP4P hydrate uses OW, HW1, HW2 instead of classic ice O, H, H
+    ice_positions = np.array([
+        [0.0, 0.0, 0.0],   # OW
+        [0.1, 0.0, 0.0],   # HW1
+        [-0.1, 0.0, 0.0],  # HW2
+    ])
+    ice_atom_names = ["OW", "HW1", "HW2"]  # TIP4P hydrate
+    ice_atom_count = 3
+    ice_nmolecules = 1
+    
+    # Valid water (TIP4P style)
+    water_positions = np.array([
+        [2.0, 0.0, 0.0],
+        [2.1, 0.0, 0.0],
+        [1.9, 0.0, 0.0],
+        [2.0, 0.0, 0.0],
+    ])
+    water_atom_names = ["OW", "HW1", "HW2", "MW"]
+    water_nmolecules = 1
+    
+    positions = np.vstack([ice_positions, water_positions])
+    atom_names = ice_atom_names + water_atom_names
+    
+    iface = InterfaceStructure(
+        positions=positions,
+        atom_names=atom_names,
+        cell=np.eye(3) * 3.0,
+        ice_atom_count=ice_atom_count,
+        water_atom_count=len(water_atom_names),
+        ice_nmolecules=ice_nmolecules,
+        water_nmolecules=water_nmolecules,
+        mode="test",
+        report=""
+    )
+    
+    # Should succeed - TIP4P hydrate is now supported
+    ice_mol, water_mol = interface_to_vtk_molecules(iface)
+    assert ice_mol.GetNumberOfAtoms() == 3
+    assert ice_mol.GetNumberOfBonds() == 2  # 2 bonds per ice molecule

@@ -476,12 +476,15 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     
     # Add bonds for ice molecules
     # Ice uses 3 visible atoms per molecule (O, H, H) - no MW to skip
+    # Supports both classic ice (O, H, H) and TIP4P hydrate (OW, HW1, HW2)
     for mol_idx in range(iface.ice_nmolecules):
         # VERIFY atom ordering before creating bonds
         ice_names_per_mol = iface.atom_names[mol_idx * 3: mol_idx * 3 + 3]
-        if ice_names_per_mol != ["O", "H", "H"]:
+        classic_ice = ["O", "H", "H"]
+        tip4p_ice = ["OW", "HW1", "HW2"]
+        if ice_names_per_mol not in [classic_ice, tip4p_ice]:
             raise ValueError(
-                f"Invalid ice atom ordering for molecule {mol_idx}: expected ['O', 'H', 'H'], "
+                f"Invalid ice atom ordering for molecule {mol_idx}: expected {classic_ice} or {tip4p_ice}, "
                 f"got {ice_names_per_mol}. "
                 f"Ice bond creation requires atoms to be ordered as oxygen followed by two hydrogens."
             )
