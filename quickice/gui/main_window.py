@@ -556,15 +556,10 @@ class MainWindow(QMainWindow):
 
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
-            # Check if we're using hydrate source - if so, render hydrate structure with guests
-            # instead of the water-only interface
-            hydrate = self._current_hydrate_result
-            if hydrate is not None and self.interface_panel.source_combo.currentIndex() == 1:
-                # Hydrate source: render full hydrate with guest molecules
-                self.interface_panel._interface_viewer.set_hydrate_structure(hydrate)
-            else:
-                # Ice candidate: render regular interface
-                self.interface_panel._interface_viewer.set_interface_structure(result)
+            # Always render the generated interface result (ice + water)
+            # The interface was generated from hydrate (hydrate.to_candidate() -> assemble_piece)
+            # which correctly combines hydrate framework with water layer
+            self.interface_panel._interface_viewer.set_interface_structure(result)
             self.interface_panel.hide_placeholder()
         else:
             # VTK not available - show message in log
