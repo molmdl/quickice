@@ -79,6 +79,13 @@ class IonGROMACSExporter:
             ion_itp_path = path.with_name('ion.itp')
             write_ion_itp(ion_itp_path, na_count, cl_count)
             
+            # Copy water topology file (tip4p-ice.itp) for SOL molecules
+            import shutil
+            from quickice.output.gromacs_writer import get_tip4p_itp_path
+            itp_source = get_tip4p_itp_path()
+            water_itp_path = path.with_name("tip4p-ice.itp")
+            shutil.copy(itp_source, water_itp_path)
+            
             return True
         except Exception as e:
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
