@@ -721,7 +721,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         f.write("1               2               yes             0.0     0.0\n\n")
         
         # Include water itp
-        f.write('#include "water.itp"\n')
+        f.write('#include "tip4p-ice.itp"\n')
 
         # Include ion itp (from ion export - combined NA+CL in single file)
         f.write('#include "ion.itp"\n\n')
