@@ -540,9 +540,10 @@ class InterfacePanel(QWidget):
         # Enable mode selector for both ice and hydrate sources
         # Slab, Pocket, and Piece modes all work with hydrate structures
         self.mode_combo.setEnabled(True)
-        self.box_x_input.setEnabled(not is_hydrate)
-        self.box_y_input.setEnabled(not is_hydrate)
-        self.box_z_input.setEnabled(not is_hydrate)
+        # Box dimensions: always enabled (piece mode uses them; slab/pocket modes derive from candidate)
+        self.box_x_input.setEnabled(True)
+        self.box_y_input.setEnabled(True)
+        self.box_z_input.setEnabled(True)
         self.seed_input.setEnabled(not is_hydrate)
         self.candidate_dropdown.setEnabled(not is_hydrate and bool(self._candidates))
         self.refresh_btn.setEnabled(not is_hydrate)

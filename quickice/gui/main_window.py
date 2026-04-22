@@ -531,32 +531,40 @@ class MainWindow(QMainWindow):
     @Slot(object)
     def _on_interface_generation_complete(self, result):
         """Handle interface generation complete.
-        
+
         Args:
             result: InterfaceStructure from generation
         """
         self._current_interface_result = result
-        
+
         # Update progress
         self.interface_panel.progress_panel.set_complete()
         self.interface_panel.set_generating(False)
-        
+
         # Log the generation report
         if result.report:
             self.interface_panel.append_log("\n" + "=" * 50)
             self.interface_panel.append_log(result.report)
             self.interface_panel.append_log("=" * 50)
-        
+
         self.interface_panel.append_log(f"\nInterface generation complete.")
-        
+
         # Update ion panel with liquid volume for ion count calculation
         # Volume = water_nmolecules * 0.0299 nm³ per molecule (TIP4P water volume)
         liquid_vol = result.water_nmolecules * 0.0299
         self.ion_panel.set_liquid_volume(liquid_vol)
-        
+
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
-            self.interface_panel._interface_viewer.set_interface_structure(result)
+            # Check if we're using hydrate source - if so, render hydrate structure with guests
+            # instead of the water-only interface
+            hydrate = self._current_hydrate_result
+            if hydrate is not None and self.interface_panel.source_combo.currentIndex() == 1:
+                # Hydrate source: render full hydrate with guest molecules
+                self.interface_panel._interface_viewer.set_hydrate_structure(hydrate)
+            else:
+                # Ice candidate: render regular interface
+                self.interface_panel._interface_viewer.set_interface_structure(result)
             self.interface_panel.hide_placeholder()
         else:
             # VTK not available - show message in log

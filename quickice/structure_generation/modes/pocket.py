@@ -13,6 +13,26 @@ import numpy as np
 # Acceptable for typical use. For very large systems (>10k), this is modest overhead.
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
+
+def detect_atoms_per_molecule(atom_names: list[str]) -> int:
+    """Detect atoms per molecule from atom names pattern.
+
+    Handles:
+    - Ice (GenIce): 3 atoms per molecule (O, H, H)
+    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
+
+    Args:
+        atom_names: List of atom names from candidate
+
+    Returns:
+        Atoms per molecule (3 for ice, 4 for TIP4P)
+    """
+    if len(atom_names) >= 4:
+        # Check first atom for TIP4P pattern (OW at index 0)
+        if atom_names[0] == "OW":
+            return 4
+    return 3  # Default to GenIce ice (3 atoms)
+
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.water_filler import (
@@ -60,6 +80,10 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Store cell matrix for triclinic-aware tiling
     cell_matrix = candidate.cell
 
+    # Detect atoms per molecule from candidate atom names
+    # Handles both GenIce ice (3 atoms) and TIP4P/hydrate (4 atoms)
+    atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions to multiples of ice unit cell
     # This ensures continuous periodic images without gaps at boundaries
@@ -88,7 +112,7 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         candidate.positions,
         ice_cell_dims,
         box_dims,
-        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
         cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
@@ -98,13 +122,16 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             mode="pocket"
         )
 
-    # Build ice atom names BEFORE removing molecules (CRITICAL for correct filtering)
-    # Ice has 3 atoms per molecule: O, H, H from GenIce
-    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * ice_nmolecules
+    # Build ice atom names dynamically based on detected atoms per molecule
+    # GenIce ice: ["O", "H", "H"], TIP4P/hydrate: ["OW", "HW1", "HW2", "MW"]
+    if atoms_per_mol == 4:
+        ice_atom_names = ["OW", "HW1", "HW2", "MW"] * ice_nmolecules
+    else:
+        ice_atom_names = ["O", "H", "H"] * ice_nmolecules
 
     # Remove ice molecules inside the cavity (shape-dependent)
-    # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule from GenIce)
-    ice_o_positions = ice_positions[::3]
+    # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...]
+    ice_o_positions = ice_positions[::atoms_per_mol]
     
     # Calculate which ice molecules are inside the cavity based on shape
     if config.pocket_shape == "sphere":
@@ -131,13 +158,13 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         ice_positions, ice_nmolecules = remove_overlapping_molecules(
             ice_positions,
             ice_inside_cavity,
-            atoms_per_molecule=3  # GenIce: O, H, H
+            atoms_per_molecule=atoms_per_mol  # Detected: 3 for ice, 4 for TIP4P/hydrate
         )
         # Filter ice atom names to match positions (CRITICAL: must use same ice_inside_cavity)
         ice_atom_names = filter_atom_names(
             ice_atom_names,
             ice_inside_cavity,
-            atoms_per_molecule=3
+            atoms_per_molecule=atoms_per_mol
         )
 
     # OPTIMIZATION: Fill only the bounding box of the cavity instead of entire box

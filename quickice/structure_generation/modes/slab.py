@@ -13,6 +13,26 @@ import numpy as np
 # Acceptable for typical use. For very large systems (>10k), this is modest overhead.
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
+
+def detect_atoms_per_molecule(atom_names: list[str]) -> int:
+    """Detect atoms per molecule from atom names pattern.
+
+    Handles:
+    - Ice (GenIce): 3 atoms per molecule (O, H, H)
+    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
+
+    Args:
+        atom_names: List of atom names from candidate
+
+    Returns:
+        Atoms per molecule (3 for ice, 4 for TIP4P)
+    """
+    if len(atom_names) >= 4:
+        # Check first atom for TIP4P pattern (OW at index 0)
+        if atom_names[0] == "OW":
+            return 4
+    return 3  # Default to GenIce ice (3 atoms)
+
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.water_filler import (
     tile_structure,
@@ -59,6 +79,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # Store cell matrix for triclinic-aware tiling
     cell_matrix = candidate.cell
 
+    # Detect atoms per molecule from candidate atom names
+    # Handles both GenIce ice (3 atoms) and TIP4P/hydrate (4 atoms)
+    atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions and ice thickness to multiples of ice unit cell
     # This ensures continuous periodic images without gaps at boundaries
@@ -89,7 +113,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         candidate.positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
         cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
 
@@ -98,7 +122,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         candidate.positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-        atoms_per_molecule=3,  # GenIce ice: O, H, H
+        atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
         cell_matrix=cell_matrix  # Triclinic-aware tiling
     )
     # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
@@ -141,9 +165,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
     total_ice_nmolecules = bottom_ice_nmolecules + top_ice_nmolecules
 
-    # Build ice atom names (3 atoms per molecule: O, H, H from GenIce)
-    # Uses module-level template for consistency
-    ice_atom_names = ICE_ATOM_NAMES_TEMPLATE * total_ice_nmolecules
+    # Build ice atom names dynamically based on detected atoms per molecule
+    # GenIce ice: ["O", "H", "H"], TIP4P/hydrate: ["OW", "HW1", "HW2", "MW"]
+    if atoms_per_mol == 4:
+        ice_atom_names = ["OW", "HW1", "HW2", "MW"] * total_ice_nmolecules
+    else:
+        ice_atom_names = ["O", "H", "H"] * total_ice_nmolecules
 
     # Calculate water density from ice temperature/pressure
     T = candidate.metadata.get('temperature', 273.15)
