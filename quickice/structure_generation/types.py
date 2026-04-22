@@ -422,52 +422,66 @@ class HydrateStructure:
 
     def to_candidate(self) -> Candidate:
         """Convert hydrate structure to ice Candidate for interface generation.
-        
-        Uses the hydrate water framework (excluding guest molecules) as the ice piece.
+
+        Preserves BOTH water framework and guest molecules from the hydrate.
         The hydrate lattice becomes the candidate structure that will be used
-        to create the ice/water interface.
-        
+        to create the ice/water interface, preserving all guest molecules.
+
         Returns:
-            Candidate with hydrate water framework positions, using hydrate's lattice type as phase_id
+            Candidate with hydrate water framework AND guest molecule positions,
+            using hydrate's lattice type as phase_id. Total molecules = water_count + guest_count.
         """
-        # Extract water-only positions (exclude guest molecules)
+        # Extract all molecule positions (water framework + guest molecules)
         # molecule_index contains (start_idx, count, mol_type) for each molecule
-        water_positions = []
-        water_atom_names = []
-        
+        all_positions = []
+        all_atom_names = []
+        guest_types = []  # Track guest types for metadata
+
         for idx in self.molecule_index:
             start_idx = idx.start_idx
             count = idx.count
             mol_type = idx.mol_type
-            # Only include water molecules (frameworks), not guest molecules
-            if mol_type == "water":
-                water_positions.append(self.positions[start_idx:start_idx + count])
-                water_atom_names.extend(self.atom_names[start_idx:start_idx + count])
-        
-        if not water_positions:
+            # Include ALL molecules: water framework AND guest molecules
+            all_positions.append(self.positions[start_idx:start_idx + count])
+            all_atom_names.extend(self.atom_names[start_idx:start_idx + count])
+            # Track guest types (not water)
+            if mol_type != "water":
+                guest_types.append(mol_type)
+
+        if not all_positions:
             raise ValueError(
                 "Cannot convert empty hydrate structure to candidate. "
-                "Hydrate has no water molecules."
+                "Hydrate has no molecules."
             )
-        
-        # Concatenate all water positions
-        water_positions = np.vstack(water_positions)
-        
+
+        # Concatenate all positions (water + guests together)
+        all_positions = np.vstack(all_positions)
+
+        # Count unique guest types for metadata
+        guest_type_counts = {}
+        for gtype in guest_types:
+            guest_type_counts[gtype] = guest_type_counts.get(gtype, 0) + 1
+
         # Use lattice info to create a descriptive phase_id
         lattice_id = self.config.lattice_type
         phase_id = f"hydrate_{lattice_id}"
-        
+
+        # Calculate total molecules (water + guests)
+        total_molecules = self.water_count + self.guest_count
+
         return Candidate(
-            positions=np.array(water_positions),
-            atom_names=list(water_atom_names),
+            positions=np.array(all_positions),
+            atom_names=list(all_atom_names),
             cell=self.cell.copy(),
-            nmolecules=self.water_count,
+            nmolecules=total_molecules,
             phase_id=phase_id,
             seed=self.config.supercell_x * 100 + self.config.supercell_y * 10 + self.config.supercell_z,
             metadata={
                 "lattice_type": lattice_id,
                 "lattice_description": self.lattice_info.description,
+                "water_count": self.water_count,
                 "guest_count": self.guest_count,
+                "guest_type_counts": guest_type_counts,
                 "original_hydrate": True,
             }
         )

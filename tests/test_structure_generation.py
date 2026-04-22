@@ -623,3 +623,130 @@ class TestIntegrationWithPhase2:
         assert result.phase_id == "ice_vi"
         assert len(result.candidates) == 10
         assert result.actual_nmolecules >= 50
+
+
+class TestHydrateStructureToCandidate:
+    """Tests for HydrateStructure.to_candidate() method."""
+
+    def test_to_candidate_preserves_guest_molecules(self):
+        """to_candidate() should preserve guest molecules from hydrate.
+
+        This is a regression test for the bug where guest molecules (CH4, THF)
+        were lost when converting hydrate to candidate for interface generation.
+        """
+        from quickice.structure_generation.types import (
+            HydrateStructure,
+            HydrateConfig,
+            HydrateLatticeInfo,
+            MoleculeIndex,
+        )
+
+        # Create a mock hydrate structure:
+        # - 2 water molecules (4 atoms each: OW, HW1, HW2, MW)
+        # - 1 CH4 guest molecule (5 atoms: C + 4H)
+        positions = np.array([
+            # Water 1 (TIP4P: OW, HW1, HW2, MW)
+            [0, 0, 0], [0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.05],
+            # Water 2
+            [1, 0, 0], [1.1, 0, 0], [1, 0.1, 0], [1, 0, 0.05],
+            # CH4 guest molecule (C + 4H)
+            [0.5, 0.5, 0.5], [0.6, 0.5, 0.5], [0.5, 0.6, 0.5],
+            [0.5, 0.5, 0.6], [0.4, 0.5, 0.5],
+        ])
+        atom_names = ['OW', 'HW1', 'HW2', 'MW', 'OW', 'HW1', 'HW2', 'MW',
+                      'C', 'H', 'H', 'H', 'H']
+        cell = np.eye(3) * 3.0
+        molecule_index = [
+            MoleculeIndex(0, 4, 'water'),
+            MoleculeIndex(8, 4, 'water'),
+            MoleculeIndex(4, 5, 'ch4'),  # Guest molecule at index 4
+        ]
+
+        config = HydrateConfig(
+            lattice_type='sI',
+            guest_type='ch4',
+            supercell_x=1,
+            supercell_y=1,
+            supercell_z=1,
+        )
+        lattice_info = HydrateLatticeInfo.from_lattice_type('sI')
+
+        hydrate = HydrateStructure(
+            positions=positions,
+            atom_names=atom_names,
+            cell=cell,
+            molecule_index=molecule_index,
+            config=config,
+            lattice_info=lattice_info,
+            report='Test hydrate',
+            guest_count=1,
+            water_count=2,
+        )
+
+        # Convert to candidate
+        candidate = hydrate.to_candidate()
+
+        # Verify guest molecules ARE PRESERVED (regression test)
+        assert 'C' in candidate.atom_names, "Carbon from CH4 guest should be in candidate"
+        assert candidate.metadata['guest_count'] == 1, "Guest count should be 1"
+        assert candidate.metadata['water_count'] == 2, "Water count should be 2"
+        assert candidate.metadata['guest_type_counts'] == {'ch4': 1}, "Guest type should be tracked"
+
+        # Verify total molecules = water + guests
+        assert candidate.nmolecules == 3, "Total molecules should be 2 water + 1 guest = 3"
+
+    def test_to_candidate_preserves_multiple_guest_types(self):
+        """to_candidate() should preserve multiple guest types (sII hydrate with CH4 + THF)."""
+        from quickice.structure_generation.types import (
+            HydrateStructure,
+            HydrateConfig,
+            HydrateLatticeInfo,
+            MoleculeIndex,
+        )
+
+        # Create mock sII hydrate with both CH4 and THF guests
+        # - 2 water molecules (8 atoms)
+        # - 1 CH4 (5 atoms)
+        # - 1 THF (12 atoms) - C4O + 8H
+        positions = np.zeros((25, 3))  # 8 + 5 + 12 = 25 atoms
+        atom_names = (
+            ['OW', 'HW1', 'HW2', 'MW'] * 2 +  # 2 waters = 8 atoms
+            ['C', 'H', 'H', 'H', 'H'] +  # CH4 = 5 atoms
+            ['C', 'C', 'C', 'C', 'O'] +  # THF heavy atoms
+            ['H'] * 8  # THF hydrogens
+        )
+        cell = np.eye(3) * 3.0
+        molecule_index = [
+            MoleculeIndex(0, 4, 'water'),
+            MoleculeIndex(8, 4, 'water'),
+            MoleculeIndex(4, 5, 'ch4'),
+            MoleculeIndex(9, 12, 'thf'),
+        ]
+
+        config = HydrateConfig(
+            lattice_type='sII',
+            guest_type='ch4',
+            supercell_x=1,
+            supercell_y=1,
+            supercell_z=1,
+        )
+        lattice_info = HydrateLatticeInfo.from_lattice_type('sII')
+
+        hydrate = HydrateStructure(
+            positions=positions,
+            atom_names=atom_names,
+            cell=cell,
+            molecule_index=molecule_index,
+            config=config,
+            lattice_info=lattice_info,
+            report='Test sII hydrate',
+            guest_count=2,  # 1 CH4 + 1 THF
+            water_count=2,
+        )
+
+        candidate = hydrate.to_candidate()
+
+        # Verify both guest types preserved
+        assert 'C' in candidate.atom_names, "Carbon atoms should be in candidate"
+        assert candidate.metadata['guest_count'] == 2, "Should have 2 guests"
+        assert candidate.metadata['guest_type_counts'] == {'ch4': 1, 'thf': 1}
