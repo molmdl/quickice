@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quickice.structure_generation.types import Candidate, InterfaceStructure, MoleculeIndex, MOLECULE_TYPE_INFO
+from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
 
 
 # TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
@@ -592,3 +592,148 @@ def write_multi_molecule_top_file(
         f.write("; Compound        #mols\n")
         for line in molecules_lines:
             f.write(f"{line}\n")
+
+
+def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
+    """Write ion structure to GROMACS .gro format.
+    
+    Exports water molecules (4-atom TIP4P-ICE format) plus Na+ and Cl- ions.
+    Uses molecule_index to determine which atoms are water vs ions.
+    
+    Args:
+        ion_structure: IonStructure object with water + ion positions
+        filepath: Output file path for .gro file
+    
+    Note:
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
+    """
+    # Count total atoms: water (4 atoms/mol) + ions (1 atom/mol)
+    water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
+    total_atoms = water_count * 4 + ion_structure.na_count + ion_structure.cl_count
+    
+    atom_num = 0
+    res_num = 0
+    
+    with open(filepath, 'w') as f:
+        # Title line
+        f.write(f"Ice/water + ions ({ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-) exported by QuickIce\n")
+        
+        # Number of atoms
+        f.write(f"{total_atoms:5d}\n")
+        
+        # Build all atom lines in memory for better I/O performance
+        lines = []
+        
+        # Process each molecule from molecule_index
+        for mol in ion_structure.molecule_index:
+            if mol.mol_type == "water":
+                # Water molecule: 4 atoms (OW, HW1, HW2, MW)
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                
+                start = mol.start_idx
+                # Get positions - water has OW, HW1, HW2 (MW computed)
+                o_pos = ion_structure.positions[start]
+                h1_pos = ion_structure.positions[start + 1]
+                h2_pos = ion_structure.positions[start + 2]
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                
+                # OW (oxygen)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                            f"   OW{atom_num_wrapped:5d}"
+                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                
+                # HW1 (hydrogen 1)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                            f"  HW1{atom_num_wrapped:5d}"
+                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                
+                # HW2 (hydrogen 2)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                            f"  HW2{atom_num_wrapped:5d}"
+                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                
+                # MW (virtual site)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                            f"   MW{atom_num_wrapped:5d}"
+                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+            
+            elif mol.mol_type == "na":
+                # Na+ ion
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                pos = ion_structure.positions[mol.start_idx]
+                lines.append(f"{res_num_wrapped:5d}NA   "
+                            f"   NA{atom_num_wrapped:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+            
+            elif mol.mol_type == "cl":
+                # Cl- ion
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                pos = ion_structure.positions[mol.start_idx]
+                lines.append(f"{res_num_wrapped:5d}CL   "
+                            f"   CL{atom_num_wrapped:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+        
+        f.writelines(lines)
+        
+        # Box vectors (triclinic format)
+        cell = ion_structure.cell
+        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+
+def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
+    """Write GROMACS topology file for ion structure.
+    
+    Uses SOL molecule type for water, NA for sodium, CL for chloride.
+    
+    Args:
+        ion_structure: IonStructure object with water and ion counts
+        filepath: Output file path for .top file
+    """
+    water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
+    
+    with open(filepath, 'w') as f:
+        # Header
+        f.write("; Generated by QuickIce\n")
+        f.write("; TIP4P-ICE water model with NaCl ions\n")
+        f.write(f"; Structure: {water_count} water + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl-\n\n")
+        
+        # Default GROMACS directives
+        f.write("[ defaults ]\n")
+        f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
+        f.write("1               2               yes             0.0     0.0\n\n")
+        
+        # Include water itp
+        f.write('#include "water.itp"\n')
+        
+        # Include ion itp (from Madrid2019)
+        f.write('#include "na.itp"\n')
+        f.write('#include "cl.itp"\n\n')
+        
+        # [ system ] section
+        f.write("[ system ]\n")
+        f.write(f"Ice/water + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl- ions\n\n")
+        
+        # [ molecules ] section
+        f.write("[ molecules ]\n")
+        f.write("; Compound        #mols\n")
+        f.write(f"SOL              {water_count}\n")
+        f.write(f"NA               {ion_structure.na_count}\n")
+        f.write(f"CL               {ion_structure.cl_count}\n")

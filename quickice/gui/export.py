@@ -17,7 +17,72 @@ from vtkmodules.all import (
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
-from quickice.structure_generation.types import Candidate, InterfaceStructure
+from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure
+
+
+class IonGROMACSExporter:
+    """Handle GROMACS file export for ion structures.
+    
+    Per Issue 1: Exports ion structure from Ion tab to GROMACS format.
+    Exports: ice + water + ions (Na+, Cl-).
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize ion GROMACS exporter."""
+        self.parent = parent_widget
+    
+    def export_ion_gromacs(self, ion_structure: IonStructure) -> bool:
+        """Export ion structure to GROMACS format.
+
+        Args:
+            ion_structure: IonStructure with water + ion positions
+
+        Returns:
+            True if export succeeded
+        """
+        # Generate default filename with ion counts
+        na_count = ion_structure.na_count
+        cl_count = ion_structure.cl_count
+        default_name = f"ions_{na_count}na_{cl_count}cl.gro"
+
+        # Show save dialog for .gro file
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Export Ions for GROMACS",
+            default_name,
+            "GRO Files (*.gro);;All Files (*)",
+            "GRO Files (*.gro)"
+        )
+        
+        if not filepath:
+            return False
+        
+        # Ensure .gro extension
+        path = Path(filepath)
+        if path.suffix.lower() != '.gro':
+            path = path.with_suffix('.gro')
+        
+        # Generate companion filename using stem
+        top_path = path.with_name(path.stem + '.top')
+        
+        try:
+            # Write .gro file
+            from quickice.output.gromacs_writer import write_ion_gro_file
+            write_ion_gro_file(ion_structure, str(path))
+            
+            # Write .top file
+            from quickice.output.gromacs_writer import write_ion_top_file
+            write_ion_top_file(ion_structure, str(top_path))
+            
+            # Create ion.itp with ion parameters
+            from quickice.structure_generation.gromacs_ion_export import generate_ion_itp
+            ion_itp_path = path.with_name(path.stem + '_ions.itp')
+            generate_ion_itp(ion_itp_path, na_count, cl_count)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
+            return False
 
 
 class PDBExporter:
