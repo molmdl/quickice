@@ -21,7 +21,7 @@ from PySide6.QtCore import Qt, Slot
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
-from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter, IonGROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
         self._viewport_exporter = ViewportExporter(self)
         self._gromacs_exporter = GROMACSExporter(self)
         self._interface_gromacs_exporter = InterfaceGROMACSExporter(self)
+        self._ion_gromacs_exporter = IonGROMACSExporter(self)
         
         # Store current generation result for export
         self._current_result = None
@@ -76,6 +77,9 @@ class MainWindow(QMainWindow):
         
         # Hydrate GROMACS exporter
         self._hydrate_gromacs_exporter = HydrateGROMACSExporter(self)
+        
+        # Store current ion structure for export (Issue 1)
+        self._current_ion_result = None
         
         # Store current ion actors for visibility toggling
         self._ion_actors: list = []
@@ -224,7 +228,6 @@ class MainWindow(QMainWindow):
         # Tab 3 (Hydrate Configuration) connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
-        self.hydrate_panel.export_to_interface_requested.connect(self._on_export_to_interface)
         
         # Tab 4 (Ion Insertion) connections (new in v4.0)
         self.ion_panel.configuration_changed.connect(self._on_ion_config_changed)
@@ -324,6 +327,12 @@ class MainWindow(QMainWindow):
         
         export_hydrate_gromacs_action = file_menu.addAction("Export Hydrate for GROMACS...")
         export_hydrate_gromacs_action.triggered.connect(self._on_export_hydrate_gromacs)
+        
+        # Separator and Export Ions for GROMACS (Ion tab - Issue 1)
+        file_menu.addSeparator()
+        
+        export_ion_gromacs_action = file_menu.addAction("Export Ions for GROMACS...")
+        export_ion_gromacs_action.triggered.connect(self._on_export_ion_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -723,6 +732,7 @@ class MainWindow(QMainWindow):
         """Handle export_to_interface_requested signal from hydrate panel.
         
         Switches to Interface Construction tab and transfers hydrate structure.
+        Also renders hydrate with guest molecules in viewer (Issue 2).
         
         Args:
             hydrate_structure: HydrateStructure to use as input
@@ -732,6 +742,11 @@ class MainWindow(QMainWindow):
         
         # Pre-populate interface panel from hydrate structure
         self.interface_panel.set_from_hydrate(hydrate_structure)
+        
+        # Render hydrate structure with guest molecules in viewer (Issue 2)
+        if self.interface_panel.is_vtk_available():
+            self.interface_panel._interface_viewer.set_hydrate_structure(hydrate_structure)
+            self.interface_panel.hide_placeholder()
     
     def _on_ion_config_changed(self):
         """Handle ion configuration change."""
@@ -776,6 +791,9 @@ class MainWindow(QMainWindow):
             concentration,
             volume_arg
         )
+
+        # Store for export (Issue 1)
+        self._current_ion_result = ion_structure
 
         # Render in IonPanel viewer: first show interface (ice + water bonds),
         # then add ions (spheres) on top
@@ -1029,6 +1047,38 @@ class MainWindow(QMainWindow):
                 f"Files: hydrate_{config.lattice_type}_{config.guest_type}.gro/.top\n"
                 f"Water: {structure.water_count} molecules\n"
                 f"Guests: {structure.guest_count} {config.guest_type}"
+            )
+    
+    @Slot()
+    def _on_export_ion_gromacs(self):
+        """Handle Export Ions for GROMACS menu action (Ion tab).
+        
+        Per Issue 1: Exports ion structure to GROMACS format.
+        Exports: ice + water + ions (Na+, Cl-).
+        """
+        # Check if ions have been inserted
+        if not hasattr(self, '_current_ion_result') or self._current_ion_result is None:
+            QMessageBox.warning(
+                self,
+                "No Ions",
+                "Insert ions first in the Ion Insertion tab."
+            )
+            return
+        
+        ion_structure = self._current_ion_result
+        success = self._ion_gromacs_exporter.export_ion_gromacs(ion_structure)
+        
+        if success:
+            # Count water molecules
+            water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Ion structure exported successfully.\n\n"
+                f"Files: ions_{ion_structure.na_count}na_{ion_structure.cl_count}cl.gro/.top\n"
+                f"Water: {water_count} molecules\n"
+                f"Na+: {ion_structure.na_count} ions\n"
+                f"Cl-: {ion_structure.cl_count} ions"
             )
     
     @Slot()

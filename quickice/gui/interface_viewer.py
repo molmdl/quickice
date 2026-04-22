@@ -2,6 +2,8 @@
 
 This module provides the InterfaceViewerWidget class for rendering
 ice-water interface structures with phase-distinct coloring.
+
+Issue 2: Also supports rendering hydrate guest molecules alongside interface.
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
@@ -14,16 +16,18 @@ from vtkmodules.all import (
 )
 
 import numpy as np
-from quickice.structure_generation.types import InterfaceStructure
+from quickice.structure_generation.types import InterfaceStructure, HydrateStructure
 from quickice.gui.vtk_utils import (
     interface_to_vtk_molecules,
     create_bond_lines_actor,
     create_unit_cell_actor,
 )
+from quickice.gui.hydrate_renderer import render_hydrate_structure
 
 # Color constants for phase-distinct visualization
 ICE_COLOR = (0.0, 0.8, 0.8)         # Cyan
 WATER_COLOR = (0.39, 0.58, 0.93)    # Cornflower blue
+GUEST_COLOR = (0.8, 0.8, 0.8)        # Gray for guest molecules
 BOND_LINE_WIDTH = 1.5
 ANGSTROM_TO_NM = 0.1
 
@@ -55,8 +59,10 @@ class InterfaceViewerWidget(QWidget):
         
         # State tracking
         self._current_structure: InterfaceStructure | None = None
+        self._current_hydrate: HydrateStructure | None = None
         self._ice_bond_actor: vtkActor | None = None
         self._water_bond_actor: vtkActor | None = None
+        self._guest_actor: vtkActor | None = None  # For guest molecules (Issue 2)
         self._unit_cell_actor: vtkActor | None = None
         
         # Set up VTK rendering pipeline
@@ -137,6 +143,45 @@ class InterfaceViewerWidget(QWidget):
         # Add all actors to renderer (bond lines and unit cell only)
         self.renderer.AddActor(self._ice_bond_actor)
         self.renderer.AddActor(self._water_bond_actor)
+        self.renderer.AddActor(self._unit_cell_actor)
+        
+        # Auto-fit camera to frame all actors
+        self._reset_camera()
+        
+        # Render the scene
+        self.render_window.Render()
+    
+    def set_hydrate_structure(self, structure: HydrateStructure) -> None:
+        """Load and display a hydrate structure as interface (Issue 2).
+        
+        Renders:
+        - Water framework: lines (same as interface)
+        - Guest molecules: ball-and-stick (same as HydrateViewer)
+        
+        Args:
+            structure: A HydrateStructure containing water and guest molecules.
+        """
+        # Clear previous actors
+        self._clear_actors()
+        
+        # Store the structure reference
+        self._current_hydrate = structure
+        self._current_structure = None  # Not an interface
+        
+        # Render water framework as lines (like interface)
+        # Use hydrate renderer to create water framework actor
+        hydrate_actors = render_hydrate_structure(structure, "ball_and_stick")
+        
+        # hydrate_actors[0] = water_actor, [1] = guest_actor
+        self._water_bond_actor = hydrate_actors[0]
+        self._guest_actor = hydrate_actors[1]
+        
+        # Create unit cell actor
+        self._unit_cell_actor = create_unit_cell_actor(structure.cell)
+        
+        # Add actors to renderer
+        self.renderer.AddActor(self._water_bond_actor)
+        self.renderer.AddActor(self._guest_actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
         # Auto-fit camera to frame all actors
@@ -249,13 +294,19 @@ class InterfaceViewerWidget(QWidget):
             self.renderer.RemoveActor(self._water_bond_actor)
             self._water_bond_actor = None
         
+        # Remove guest actor (Issue 2)
+        if self._guest_actor is not None:
+            self.renderer.RemoveActor(self._guest_actor)
+            self._guest_actor = None
+        
         # Remove unit cell actor
         if self._unit_cell_actor is not None:
             self.renderer.RemoveActor(self._unit_cell_actor)
             self._unit_cell_actor = None
         
-        # Clear current structure
+        # Clear current structures
         self._current_structure = None
+        self._current_hydrate = None
     
     def clear(self) -> None:
         """Clear the current structure from the viewer.

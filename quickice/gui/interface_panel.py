@@ -537,8 +537,9 @@ class InterfacePanel(QWidget):
         """
         is_hydrate = (index == 1)
 
-        # Show/hide ice-specific controls based on source type
-        self.mode_combo.setEnabled(not is_hydrate)
+        # Enable mode selector for both ice and hydrate sources
+        # Slab, Pocket, and Piece modes all work with hydrate structures
+        self.mode_combo.setEnabled(True)
         self.box_x_input.setEnabled(not is_hydrate)
         self.box_y_input.setEnabled(not is_hydrate)
         self.box_z_input.setEnabled(not is_hydrate)
