@@ -74,10 +74,10 @@ class IonGROMACSExporter:
             from quickice.output.gromacs_writer import write_ion_top_file
             write_ion_top_file(ion_structure, str(top_path))
             
-            # Create ion.itp with ion parameters
-            from quickice.structure_generation.gromacs_ion_export import generate_ion_itp
-            ion_itp_path = path.with_name(path.stem + '_ions.itp')
-            generate_ion_itp(ion_itp_path, na_count, cl_count)
+            # Create ion.itp with ion parameters (named ion.itp to match .top references)
+            from quickice.structure_generation.gromacs_ion_export import write_ion_itp
+            ion_itp_path = path.with_name('ion.itp')
+            write_ion_itp(ion_itp_path, na_count, cl_count)
             
             return True
         except Exception as e:

@@ -722,10 +722,9 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         
         # Include water itp
         f.write('#include "water.itp"\n')
-        
-        # Include ion itp (from Madrid2019)
-        f.write('#include "na.itp"\n')
-        f.write('#include "cl.itp"\n\n')
+
+        # Include ion itp (from ion export - combined NA+CL in single file)
+        f.write('#include "ion.itp"\n\n')
         
         # [ system ] section
         f.write("[ system ]\n")
