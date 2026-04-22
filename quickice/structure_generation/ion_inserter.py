@@ -61,9 +61,10 @@ class IonInserter:
         """Build molecule_index from structure metadata (InterfaceStructure compatibility).
 
         InterfaceStructure has ice_nmolecules and water_nmolecules but no molecule_index.
-        This method reconstructs the index by counting atoms based on molecule counts:
-        - Ice uses 3 atoms per molecule (O, H, H) from GenIce2
-        - Water uses 4 atoms per molecule (OW, HW1, HW2, MW) from TIP4P-ICE
+        This method reconstructs the index by detecting actual atoms per molecule:
+        - Hydrate framework uses TIP4P with 4 atoms per molecule (OW, HW1, HW2, MW)
+        - GenIce ice uses 3 atoms per molecule (O, H, H)
+        - Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
 
         Args:
             structure: Structure with ice_nmolecules and water_nmolecules attributes
@@ -81,19 +82,24 @@ class IonInserter:
         if ice_mols == 0 and water_mols == 0:
             return None
 
+        # Detect atoms per molecule from atom_names pattern
+        # Hydrate framework: first atom is "OW" -> 4 atoms
+        # GenIce ice: first atom is "O" -> 3 atoms
+        ice_atoms_per_mol = 4 if (structure.atom_names and structure.atom_names[0] == "OW") else 3
+
         mol_index = []
         current_idx = 0
 
         # Add ice molecules as individual entries for proper handling
-        # Ice uses 3 atoms per molecule (O, H, H)
+        # Detect actual atoms per molecule (hydrate = 4, ice = 3)
         if ice_mols > 0:
             for i in range(ice_mols):
                 mol_index.append(MoleculeIndex(
                     start_idx=current_idx,
-                    count=3,
+                    count=ice_atoms_per_mol,
                     mol_type="ice"
                 ))
-                current_idx += 3
+                current_idx += ice_atoms_per_mol
 
         # Add water molecules as individual entries
         # Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
