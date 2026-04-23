@@ -294,15 +294,37 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             "\n".join(adjustments)
         )
     
-    report = (
-        f"Generated pocket interface structure\n"
-        f"  Ice molecules: {ice_nmolecules}\n"
-        f"  Water molecules: {water_nmolecules}\n"
-        f"  Total molecules: {total_molecules}\n"
-        f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
-        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
-        f"{adjustment_report}"
-    )
+    # Build report
+    total_molecules = ice_nmolecules + water_nmolecules
+    
+    # Extract guest type counts from candidate metadata if present (from hydrate conversion)
+    guest_type_counts = {}
+    if hasattr(candidate, 'metadata') and candidate.metadata:
+        guest_type_counts = candidate.metadata.get("guest_type_counts", {})
+    
+    # Add guest info to report if present
+    if guest_type_counts:
+        guest_report = ", ".join(f"{count} {gtype}" for gtype, count in guest_type_counts.items())
+        report = (
+            f"Generated pocket interface structure\n"
+            f"  Ice molecules: {ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Guest molecules: {guest_report}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
+            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+            f"{adjustment_report}"
+        )
+    else:
+        report = (
+            f"Generated pocket interface structure\n"
+            f"  Ice molecules: {ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
+            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+            f"{adjustment_report}"
+        )
 
     return InterfaceStructure(
         positions=all_positions,
@@ -313,5 +335,6 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         ice_nmolecules=ice_nmolecules,
         water_nmolecules=water_nmolecules,
         mode="pocket",
-        report=report
+        report=report,
+        guest_type_counts=guest_type_counts
     )

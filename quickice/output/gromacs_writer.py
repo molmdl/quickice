@@ -27,6 +27,88 @@ MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "h2":    {"res_name": "H2",  "itp_file": "h2.itp",     "mol_name": "H2"},
 }
 
+# Guest atom types that indicate non-water molecules in hydrate
+GUEST_ATOM_TYPES = {"C", "Me", "CA", "CB", "CC", "CD", "CE", "OC", "C"}
+
+
+def extract_guest_molecules(positions: np.ndarray, atom_names: list[str]) -> tuple[list, list, list]:
+    """Extract guest molecule data from positions and atom_names.
+    
+    Identifies guest molecules (CH4, THF, etc.) from atom_names and returns
+    their positions, atom names, and a list of (start_idx, count, atom_type).
+    
+    Args:
+        positions: (N_atoms, 3) atom positions
+        atom_names: List of atom names
+    
+    Returns:
+        Tuple of (guest_positions, guest_atom_names, guest_indices)
+        - guest_positions: List of position arrays for each guest molecule
+        - guest_atom_names: Flat list of guest atom names
+        - guest_indices: List of (start_idx, count, atom_type) for each guest
+    """
+    # Detect guest-like atoms based on atom names
+    # CH4 (all-atom): starts with C followed by H atoms
+    # CH4 (united-atom): single "Me" atom
+    # THF: O, C, H atoms with residue name patterns
+    
+    guest_molecules = []
+    i = 0
+    while i < len(atom_names):
+        atom = atom_names[i]
+        
+        # Check for united-atom methane (Me)
+        if atom == "Me":
+            guest_molecules.append((i, 1, "ch4"))
+            i += 1
+            continue
+        
+        # Check for all-atom methane (C followed by 4 H atoms)
+        if atom == "C" and i + 4 < len(atom_names):
+            next_atoms = atom_names[i+1:i+5]
+            if all(a == "H" for a in next_atoms):
+                guest_molecules.append((i, 5, "ch4"))
+                i += 5
+                continue
+        
+        # Check for THF (check oxygen first, then carbons)
+        # THF ring: O, CA, CB, CC, CD (5 atoms)
+        if atom == "O" and i + 4 < len(atom_names):
+            next_atoms = atom_names[i+1:i+5]
+            # THF has carbons CA, CB, CC, CD and may have hydrogens
+            if next_atoms[0] == "CA" and next_atoms[1] in ["CB", "CA"]:
+                # Count all non-hydrogen atoms for THF
+                thf_count = 1  # Start with O
+                for j in range(i+1, min(i+8, len(atom_names))):
+                    if atom_names[j] in ["CA", "CB", "CC", "CD", "OC"]:
+                        thf_count += 1
+                    elif atom_names[j] == "H":
+                        # Continue counting hydrogens but stop after carbons done
+                        pass
+                    else:
+                        break
+                guest_molecules.append((i, thf_count, "thf"))
+                i += thf_count
+                continue
+        
+        # Not a guest atom, move to next
+        i += 1
+    
+    if not guest_molecules:
+        return [], [], []
+    
+    # Extract positions and atom names for guests
+    guest_positions = []
+    guest_atom_names = []
+    guest_indices = []
+    
+    for start_idx, count, mol_type in guest_molecules:
+        guest_positions.append(positions[start_idx:start_idx + count])
+        guest_atom_names.extend(atom_names[start_idx:start_idx + count])
+        guest_indices.append((start_idx, count, mol_type))
+    
+    return guest_positions, guest_atom_names, guest_indices
+
 
 def write_gro_file(candidate: Candidate, filepath: str) -> None:
     """Write candidate to GROMACS .gro format.
@@ -240,8 +322,11 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     (OW, HW1, HW2, MW) at export time. Water molecules (4-atom: OW, HW1, HW2, MW)
     pass through unchanged.
     
+    When guest molecules are present (detected from guest_type_counts), their .itp
+    files are also needed. Guest atoms are written at the end of the file.
+    
     Args:
-        iface: InterfaceStructure object with combined ice + water positions
+        iface: InterfaceStructure object with combined ice + water + guest positions
         filepath: Output file path for .gro file
     
     Note:
@@ -249,17 +334,52 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
         For systems with >99999 residues, residue numbers wrap at 100000.
     """
-    # Total atoms: ice (3 atoms/mol) + water (4 atoms/mol) normalized to 4-atom TIP4P-ICE
-    # Each ice molecule gets 1 MW virtual site added, so output is 4 atoms per molecule
-    # Ice: nmol * 3 input atoms -> nmol * 4 output atoms (MW added)
-    # Water: nmol * 4 input atoms -> nmol * 4 output atoms (unchanged)
-    n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4
+    # First, extract guest molecule data from interface if present
+    # Guest molecules are at the END of the positions array
+    # Total positions should include: ice_atoms + water_atoms + guest_atoms
+    
+    # Calculate guest atom count from positions - known counts
+    # InterfaceStructure positions layout:
+    # - First: ice_atoms = ice_nmolecules * 3 (for GenIce) or ice_nmolecules * 4 (for hydrate source)
+    # - Next: water_atoms = water_nmolecules * 4
+    # - Last: guest_atoms (if any)
+    
+    # Determine atom counts from interface
+    ice_atoms_in_file = len(iface.positions) - iface.water_atom_count
+    water_atoms_in_file = iface.water_atom_count
+    
+    # Check for guest atoms by comparing to expected ice + water
+    # If there's extra content, those are guest atoms
+    guest_atoms_in_file = 0
+    
+    # Calculate expected atoms if all ice (3-atom) + water (4-atom)
+    expected_ice_water = (iface.ice_nmolecules * 3) + (iface.water_nmolecules * 4)
+    
+    # Check if this is hydrate-derived (4-atom ice framework)
+    # If first atoms are OW (not O), it's likely hydrate source
+    is_hydrate_source = len(iface.atom_names) > 0 and iface.atom_names[0] == "OW"
+    
+    if is_hydrate_source:
+        # hydrate source: ice part is actually 4-atom water framework
+        expected_ice_water = (iface.ice_nmolecules * 4) + (iface.water_nmolecules * 4)
+    
+    # Guest atoms = total positions - expected ice/water
+    guest_atoms_in_file = max(0, len(iface.positions) - expected_ice_water)
+    
+    # If guest atoms exist, detect and write them
+    guest_atoms_count = guest_atoms_in_file
+    
+    # Total output atoms: ice (normalized to 4) + water (4) + guests (as-is)
+    n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4 + guest_atoms_count
     
     atom_num = 0
 
     with open(filepath, 'w') as f:
-        # Title line
-        f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
+        # Title line - include guest info if present
+        if guest_atoms_count > 0:
+            f.write(f"Ice/water interface ({iface.mode}) + guests exported by QuickIce\n")
+        else:
+            f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
 
         # Number of atoms
         f.write(f"{n_atoms:5d}\n")
@@ -267,49 +387,79 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         # Build all atom lines in memory for better I/O performance
         lines = []
 
-        # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
+        # ICE/WATER MOLECULES (first part of positions array)
+        # Determine atoms per molecule from atom_names
+        if is_hydrate_source:
+            # Hydrate source: 4 atoms per molecule (TIP4P format)
+            atoms_per_mol = 4
+        else:
+            # GenIce: 3 atoms per molecule
+            atoms_per_mol = 3
+
+        # Process ice part (which is either 3-atom or 4-atom water framework)
+        ice_start = 0
+        ice_end = ice_atoms_in_file  # This uses len(positions) - water_atom_count
+        # FIX: For hydrate source (4-atom), recalculate correctly
+        if is_hydrate_source:
+            ice_end = iface.ice_nmolecules * 4  # Correct boundary
+        
         for mol_idx in range(iface.ice_nmolecules):
-            base_idx = mol_idx * 3  # Ice uses 3 atoms per molecule
-            o_pos = iface.positions[base_idx]
-            h1_pos = iface.positions[base_idx + 1]
-            h2_pos = iface.positions[base_idx + 2]
-            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+            base_idx = mol_idx * atoms_per_mol
+            
+            if atoms_per_mol == 3:
+                # GenIce 3-atom ice → normalize to 4-atom TIP4P-ICE
+                o_pos = iface.positions[base_idx]
+                h1_pos = iface.positions[base_idx + 1]
+                h2_pos = iface.positions[base_idx + 2]
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                
+                # Wrap residue number at 100000
+                res_num = (mol_idx + 1) % 100000
 
-            # Wrap residue number at 100000 (GROMACS convention for large systems)
-            res_num = (mol_idx + 1) % 100000
+                # OW (oxygen)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"   OW{atom_num_wrapped:5d}"
+                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
-            # OW (oxygen)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   OW{atom_num_wrapped:5d}"
-                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                # HW1 (hydrogen 1)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW1{atom_num_wrapped:5d}"
+                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
-            # HW1 (hydrogen 1)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW1{atom_num_wrapped:5d}"
-                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                # HW2 (hydrogen 2)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW2{atom_num_wrapped:5d}"
+                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
-            # HW2 (hydrogen 2)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW2{atom_num_wrapped:5d}"
-                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                # MW (virtual site)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"   MW{atom_num_wrapped:5d}"
+                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+            else:
+                # Already TIP4P format (4 atoms: OW, HW1, HW2, MW)
+                atom_names = ["OW", "HW1", "HW2", "MW"]
+                res_num = (mol_idx + 1) % 100000
+                
+                for i, atom_name in enumerate(atom_names):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    pos = iface.positions[base_idx + i]
+                    lines.append(f"{res_num:5d}SOL  "
+                                f"{atom_name:>4s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
-            # MW (virtual site)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   MW{atom_num_wrapped:5d}"
-                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
-
-        # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
+        # WATER MOLECULES: 4 atoms per molecule (already TIP4P format)
+        water_start = ice_end
         for mol_idx in range(iface.water_nmolecules):
-            base_idx = iface.ice_atom_count + mol_idx * 4  # Water starts after ice
-            # Wrap residue number at 100000 (GROMACS convention for large systems)
+            base_idx = water_start + mol_idx * 4
             res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
 
             atom_names = ["OW", "HW1", "HW2", "MW"]
@@ -320,6 +470,57 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 lines.append(f"{res_num:5d}SOL  "
                             f"{atom_name:>4s}{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+        # GUEST MOLECULES (at the end of positions array, if any)
+        if guest_atoms_count > 0:
+            # FIX: calculate guest_start correctly
+            ice_atoms_num = (iface.ice_nmolecules * 4) if is_hydrate_source else (iface.ice_nmolecules * 3)
+            guest_start = ice_atoms_num + (iface.water_nmolecules * 4)
+            
+            # Detect guest molecule type and count atoms per molecule
+            # Try to determine molecule type from atom names
+            mol_type = "CH4"  # Default
+            atoms_per_guest = 5  # Default for CH4
+            
+            # Check atom names to determine type
+            if guest_start < len(iface.atom_names):
+                first_guest_atom = iface.atom_names[guest_start]
+                if first_guest_atom == "Me":
+                    mol_type = "CH4"
+                    atoms_per_guest = 1
+                else:
+                    # Count atoms in first guest molecule by scanning
+                    # Look for pattern: C + H*H*H*H = CH4 (5 atoms)
+                    guest_atom_names = iface.atom_names[guest_start:]
+                    if len(guest_atom_names) >= 5:
+                        if guest_atom_names[0] == "C" and all(a == "H" for a in guest_atom_names[1:5]):
+                            mol_type = "CH4"
+                            atoms_per_guest = 5
+                        elif "CA" in guest_atom_names or "CB" in guest_atom_names:
+                            mol_type = "THF"
+                            # Count atoms until we find next molecule or end
+                            atoms_per_guest = len(guest_atom_names)
+            
+            # Write guest molecules
+            gromacs_info = MOLECULE_TO_GROMACS.get(mol_type.lower(), {"res_name": "UNK"})
+            res_name = gromacs_info["res_name"]
+            
+            guest_mol_idx = 0
+            while guest_start + guest_mol_idx * atoms_per_guest < len(iface.positions):
+                mol_start = guest_start + guest_mol_idx * atoms_per_guest
+                res_num = (iface.ice_nmolecules + iface.water_nmolecules + guest_mol_idx + 1) % 100000
+                
+                for i in range(atoms_per_guest):
+                    if mol_start + i >= len(iface.positions):
+                        break
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    pos = iface.positions[mol_start + i]
+                    atom_name = iface.atom_names[mol_start + i]
+                    lines.append(f"{res_num:5d}{res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                guest_mol_idx += 1
 
         f.writelines(lines)
         
@@ -600,24 +801,39 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     Exports water molecules (4-atom TIP4P-ICE format) plus Na+ and Cl- ions.
     Uses molecule_index to determine which atoms are water vs ions.
     
+    Also exports guest molecules if present (from hydrate-derived interfaces).
+    
     Args:
-        ion_structure: IonStructure object with water + ion positions
+        ion_structure: IonStructure object with water + ion + guest positions
         filepath: Output file path for .gro file
     
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
     """
-    # Count total atoms: water (4 atoms/mol) + ions (1 atom/mol)
+    # Count total atoms: water (4 atoms/mol) + ions (1 atom/mol) + guests (if any)
     water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
-    total_atoms = water_count * 4 + ion_structure.na_count + ion_structure.cl_count
+    
+    # Check for guest molecules
+    guest_atoms = 0
+    if hasattr(ion_structure, 'guest_type_counts') and ion_structure.guest_type_counts:
+        # Detect guest atoms from remaining positions not in molecule_index
+        # molecule_index covers water and ions only
+        # Find positions after all known molecules
+        known_atoms = sum(m.count for m in ion_structure.molecule_index)
+        guest_atoms = max(0, len(ion_structure.positions) - known_atoms)
+    
+    total_atoms = water_count * 4 + ion_structure.na_count + ion_structure.cl_count + guest_atoms
     
     atom_num = 0
     res_num = 0
     
     with open(filepath, 'w') as f:
         # Title line
-        f.write(f"Ice/water + ions ({ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-) exported by QuickIce\n")
+        guest_info = ""
+        if guest_atoms > 0:
+            guest_info = f" + {ion_structure.guest_type_counts}"
+        f.write(f"Ice/water + ions ({ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-){guest_info} exported by QuickIce\n")
         
         # Number of atoms
         f.write(f"{total_atoms:5d}\n")
@@ -688,6 +904,41 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 lines.append(f"{res_num_wrapped:5d}CL   "
                             f"   CL{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+        
+        # Guest molecules (at the end of positions array)
+        if guest_atoms > 0:
+            known_atoms = sum(m.count for m in ion_structure.molecule_index)
+            guest_start = known_atoms
+            
+            # Determine guest molecule type from atom names
+            mol_type = "CH4"
+            atoms_per_guest = 5
+            if guest_start < len(ion_structure.atom_names):
+                first_atom = ion_structure.atom_names[guest_start]
+                if first_atom == "Me":
+                    mol_type = "CH4"
+                    atoms_per_guest = 1
+            
+            gromacs_info = MOLECULE_TO_GROMACS.get(mol_type.lower(), {"res_name": "UNK"})
+            res_name = gromacs_info["res_name"]
+            
+            guest_mol_idx = 0
+            while guest_start + guest_mol_idx * atoms_per_guest < len(ion_structure.positions):
+                mol_start = guest_start + guest_mol_idx * atoms_per_guest
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                
+                for i in range(atoms_per_guest):
+                    if mol_start + i >= len(ion_structure.positions):
+                        break
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    pos = ion_structure.positions[mol_start + i]
+                    atom_name = ion_structure.atom_names[mol_start + i]
+                    lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                guest_mol_idx += 1
         
         f.writelines(lines)
         

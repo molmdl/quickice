@@ -251,6 +251,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # Build report (gmx solvate convention: molecules present, not removed)
     total_molecules = total_ice_nmolecules + water_nmolecules
     
+    # Extract guest type counts from candidate metadata if present (from hydrate conversion)
+    guest_type_counts = {}
+    if hasattr(candidate, 'metadata') and candidate.metadata:
+        guest_type_counts = candidate.metadata.get("guest_type_counts", {})
+    
     # Include periodicity adjustments in report
     adjustment_report = ""
     if adjustments:
@@ -259,14 +264,27 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             "\n".join(adjustments)
         )
     
-    report = (
-        f"Generated slab interface structure\n"
-        f"  Ice molecules: {total_ice_nmolecules}\n"
-        f"  Water molecules: {water_nmolecules}\n"
-        f"  Total molecules: {total_molecules}\n"
-        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
-        f"{adjustment_report}"
-    )
+    # Add guest info to report if present
+    if guest_type_counts:
+        guest_report = ", ".join(f"{count} {gtype}" for gtype, count in guest_type_counts.items())
+        report = (
+            f"Generated slab interface structure\n"
+            f"  Ice molecules: {total_ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Guest molecules: {guest_report}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+            f"{adjustment_report}"
+        )
+    else:
+        report = (
+            f"Generated slab interface structure\n"
+            f"  Ice molecules: {total_ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+            f"{adjustment_report}"
+        )
 
     return InterfaceStructure(
         positions=all_positions,
@@ -277,5 +295,6 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         ice_nmolecules=total_ice_nmolecules,
         water_nmolecules=water_nmolecules,
         mode="slab",
-        report=report
+        report=report,
+        guest_type_counts=guest_type_counts
     )

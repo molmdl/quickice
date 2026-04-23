@@ -794,7 +794,11 @@ class MainWindow(QMainWindow):
             concentration,
             volume_arg
         )
-
+        
+        # Propagate guest metadata from interface to ion structure
+        if hasattr(interface, 'guest_type_counts') and interface.guest_type_counts:
+            ion_structure.guest_type_counts = interface.guest_type_counts
+        
         # Store for export (Issue 1)
         self._current_ion_result = ion_structure
 

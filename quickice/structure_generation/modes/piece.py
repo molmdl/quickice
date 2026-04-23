@@ -190,14 +190,33 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
 
     # Build report (gmx solvate convention)
     total_molecules = ice_nmolecules + water_nmolecules
-    report = (
-        f"Generated piece interface structure\n"
-        f"  Ice molecules: {ice_nmolecules}\n"
-        f"  Water molecules: {water_nmolecules}\n"
-        f"  Total molecules: {total_molecules}\n"
-        f"  Ice piece: {ice_dims[0]:.2f} x {ice_dims[1]:.2f} x {ice_dims[2]:.2f} nm\n"
-        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
-    )
+    
+    # Extract guest type counts from candidate metadata if present (from hydrate conversion)
+    guest_type_counts = {}
+    if hasattr(candidate, 'metadata') and candidate.metadata:
+        guest_type_counts = candidate.metadata.get("guest_type_counts", {})
+    
+    # Add guest info to report if present
+    if guest_type_counts:
+        guest_report = ", ".join(f"{count} {gtype}" for gtype, count in guest_type_counts.items())
+        report = (
+            f"Generated piece interface structure\n"
+            f"  Ice molecules: {ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Guest molecules: {guest_report}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Ice piece: {ice_dims[0]:.2f} x {ice_dims[1]:.2f} x {ice_dims[2]:.2f} nm\n"
+            f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
+        )
+    else:
+        report = (
+            f"Generated piece interface structure\n"
+            f"  Ice molecules: {ice_nmolecules}\n"
+            f"  Water molecules: {water_nmolecules}\n"
+            f"  Total molecules: {total_molecules}\n"
+            f"  Ice piece: {ice_dims[0]:.2f} x {ice_dims[1]:.2f} x {ice_dims[2]:.2f} nm\n"
+            f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
+        )
 
     return InterfaceStructure(
         positions=all_positions,
@@ -208,5 +227,6 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         ice_nmolecules=ice_nmolecules,
         water_nmolecules=water_nmolecules,
         mode="piece",
-        report=report
+        report=report,
+        guest_type_counts=guest_type_counts
     )
