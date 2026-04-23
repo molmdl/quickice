@@ -168,14 +168,14 @@ class InterfaceViewerWidget(QWidget):
         
         if has_guest_molecules:
             # Separate ice from guest atoms in the ice region
-        ice_atom_types = {"O", "H", "OW", "HW1", "HW2", "MW"}  # Water framework atom types
-        ice_only_indices = []
-        guest_in_ice_region = []
-        for i, name in enumerate(ice_atom_names):
-            if name in ice_atom_types:
-                ice_only_indices.append(i)
-            else:
-                guest_in_ice_region.append(i)
+            ice_atom_types = {"O", "H", "OW", "HW1", "HW2", "MW"}  # Water framework atom types
+            ice_only_indices = []
+            guest_in_ice_region = []
+            for i, name in enumerate(ice_atom_names):
+                if name in ice_atom_types:
+                    ice_only_indices.append(i)
+                else:
+                    guest_in_ice_region.append(i)
             
             # Extract ice-only positions for bond line rendering
             ice_positions = structure.positions[:structure.ice_atom_count]
