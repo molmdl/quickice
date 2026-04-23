@@ -149,16 +149,18 @@ class InterfaceViewerWidget(QWidget):
         # (adjacent to C atoms, not water-bound)
         # For now, include all H atoms in ice region after water atoms if C present
         if guest_atom_indices:
-            # If we have guest C atoms, check for H atoms in ice region
-            # that might be from guests
+            # For performance: use set for O(1) lookups instead of O(n) list lookup
+            guest_indices_set = set(guest_atom_indices)
             ice_atom_count_for_h = structure.ice_atom_count
             for i in range(ice_atom_count_for_h):
                 name = structure.atom_names[i]
                 if name == "H":
                     # This H could be from guest - include it
                     # (Over-inclusive is fine, will only add bonds that are close enough)
-                    if i not in guest_atom_indices:
+                    # Use set for O(1) lookup instead of O(n) list lookup
+                    if i not in guest_indices_set:
                         guest_atom_indices.append(i)
+                        guest_indices_set.add(i)
         
         # Alternative simpler check: presence of C atoms indicates guest
         has_carbon = "C" in structure.atom_names[:structure.ice_atom_count]
