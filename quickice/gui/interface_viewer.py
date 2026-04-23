@@ -113,115 +113,20 @@ class InterfaceViewerWidget(QWidget):
         creates actors for atoms, bonds, and unit cell, then displays with
         Z-axis side-view camera.
         
-        For hydrate-derived interfaces (with guest molecules), also renders
-        guest molecules as ball-and-stick (Issue 2 fix).
-        
         Args:
-            structure: An InterfaceStructure containing ice and water atoms,
-                       and optionally guest molecules.
+            structure: An InterfaceStructure containing ice and water atoms.
         """
-        print("[DEBUG interface_viewer.py] set_interface_structure() START")
-        print(f"[DEBUG interface_viewer.py] ice_atom_count: {structure.ice_atom_count}, water_atom_count: {structure.water_atom_count}")
-        print(f"[DEBUG interface_viewer.py] total atoms: {len(structure.positions)}")
-        
         # Clear previous actors
         self._clear_actors()
-        print("[DEBUG interface_viewer.py] After _clear_actors()")
         
         # Store the structure reference
         self._current_structure = structure
-        print("[DEBUG interface_viewer.py] After storing structure reference")
         
-        # Extract atoms into ice/water/guest categories
-        ice_atom_names = structure.atom_names[:structure.ice_atom_count]
-        water_atom_names = structure.atom_names[structure.ice_atom_count:]
-        
-        # Define standard ice/water atom types
-        # For hydrate structures, we identify guests by atom type
-        # Water atoms: OW (oxygen), HW1/HW2 (hydrogens), MW (virtual site)
-        # Ice atoms (from hydrate lattice): OW, HW1, HW2, MW (same as water in TIP4P)
-        # Guest atoms: C, O (THF), H (from guests)
-        
-        # Simplest approach: Guest molecules are identified by C atoms (always from CH4/THF)
-        # Also include any H atoms that are adjacent to C atoms
-        guest_atom_indices = []
-        
-        # First pass: identify C atoms (definitely guest for hydrate)
-        for i, name in enumerate(structure.atom_names):
-            if name == "C":  # Carbon - always guest in hydrate
-                guest_atom_indices.append(i)
-        
-        # Second pass: identify H atoms that are likely from guests
-        # (adjacent to C atoms, not water-bound)
-        # For now, include all H atoms in ice region after water atoms if C present
-        if guest_atom_indices:
-            print(f"[DEBUG interface_viewer.py] Guest atoms detected: {len(guest_atom_indices)}")
-            # For performance: use set for O(1) lookups instead of O(n) list lookup
-            guest_indices_set = set(guest_atom_indices)
-            ice_atom_count_for_h = structure.ice_atom_count
-            for i in range(ice_atom_count_for_h):
-                name = structure.atom_names[i]
-                if name == "H":
-                    # This H could be from guest - include it
-                    # (Over-inclusive is fine, will only add bonds that are close enough)
-                    # Use set for O(1) lookup instead of O(n) list lookup
-                    if i not in guest_indices_set:
-                        guest_atom_indices.append(i)
-                        guest_indices_set.add(i)
-        else:
-            print("[DEBUG interface_viewer.py] No guest atoms detected")
-        
-        # Alternative simpler check: presence of C atoms indicates guest
-        has_carbon = "C" in structure.atom_names[:structure.ice_atom_count]
-        
-        # Check if this is a hydrate-derived interface (has guest molecules)
-        has_guest_molecules = len(guest_atom_indices) > 0
-        
-        if has_guest_molecules:
-            # Separate ice from guest atoms in the ice region
-            ice_atom_types = {"O", "H", "OW", "HW1", "HW2", "MW"}  # Water framework atom types
-            ice_only_indices = []
-            guest_in_ice_region = []
-            for i, name in enumerate(ice_atom_names):
-                if name in ice_atom_types:
-                    ice_only_indices.append(i)
-                else:
-                    guest_in_ice_region.append(i)
-            
-            # Extract ice-only positions for bond line rendering
-            ice_positions = structure.positions[:structure.ice_atom_count]
-            ice_only_positions = ice_positions[ice_only_indices]
-            
-            # Extract guest positions (from ice region that are guest atoms)
-            guest_positions = structure.positions[guest_atom_indices]
-            guest_names = [structure.atom_names[i] for i in guest_atom_indices]
-            
-            # Create ice VTK molecule (only ice atoms)
-            ice_mol = self._create_vtk_molecule_from_indices(
-                ice_only_positions,
-                [ice_atom_names[i] for i in ice_only_indices]
-            )
-        else:
-            # Standard interface (no guests) - use existing logic
-            ice_mol = None
-        
-        # Get water molecule for water bonds
-        water_start = structure.ice_atom_count
-        water_positions = structure.positions[water_start:]
-        water_mol = self._create_vtk_molecule_from_indices(
-            water_positions,
-            water_atom_names
-        )
+        # Convert to separate ice and water VTK molecules
+        ice_mol, water_mol = interface_to_vtk_molecules(structure)
         
         # Extract bonds from each molecule with PBC wrapping
-        if ice_mol is not None:
-            ice_bonds = self._extract_bonds(ice_mol, structure.cell)
-        else:
-            # Fallback: convert full structure using existing method
-            ice_mol, water_mol_fallback = interface_to_vtk_molecules(structure)
-            ice_bonds = self._extract_bonds(ice_mol, structure.cell)
-            water_mol = water_mol_fallback
-        
+        ice_bonds = self._extract_bonds(ice_mol, structure.cell)
         water_bonds = self._extract_bonds(water_mol, structure.cell)
         
         # Create bond line actors
@@ -232,25 +137,12 @@ class InterfaceViewerWidget(QWidget):
             water_bonds, WATER_COLOR, BOND_LINE_WIDTH
         )
         
-        # Create guest actor if present (ball-and-stick style)
-        if has_guest_molecules:
-            # Create a mock HydrateStructure for guest rendering
-            # This uses the same rendering as HydrateViewer
-            guest_actor = self._create_guest_actor_from_indices(
-                guest_positions,
-                guest_names,
-                structure.cell
-            )
-            self._guest_actor = guest_actor
-        
         # Create unit cell actor
         self._unit_cell_actor = create_unit_cell_actor(structure.cell)
         
-        # Add actors to renderer
+        # Add all actors to renderer (bond lines and unit cell only)
         self.renderer.AddActor(self._ice_bond_actor)
         self.renderer.AddActor(self._water_bond_actor)
-        if has_guest_molecules and self._guest_actor is not None:
-            self.renderer.AddActor(self._guest_actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
         # Auto-fit camera to frame all actors
@@ -258,7 +150,6 @@ class InterfaceViewerWidget(QWidget):
         
         # Render the scene
         self.render_window.Render()
-        print("[DEBUG interface_viewer.py] set_interface_structure() END")
     
     def set_hydrate_structure(self, structure: HydrateStructure) -> None:
         """Load and display a hydrate structure as interface (Issue 2).
@@ -298,131 +189,6 @@ class InterfaceViewerWidget(QWidget):
         
         # Render the scene
         self.render_window.Render()
-    
-    def _create_vtk_molecule_from_indices(
-        self,
-        positions: np.ndarray,
-        atom_names: list[str]
-    ) -> vtkMolecule:
-        """Create a vtkMolecule from positions and atom names.
-        
-        Args:
-            positions: (N_atoms, 3) positions in nm
-            atom_names: List of atom names
-        
-        Returns:
-            vtkMolecule with atoms and bonds
-        """
-        from vtkmodules.all import vtkMolecule
-        
-        # Build a simple molecule using distance-based bonding
-        # Similar to hydrate_renderer's approach
-        molecule = vtkMolecule()
-        
-        # Add atoms
-        atom_ids = []
-        element_map = {
-            "O": 8, "OW": 8,
-            "H": 1, "HW1": 1, "HW2": 1,
-            "C": 6,
-        }
-        
-        for pos, name in zip(positions, atom_names):
-            atomic_num = element_map.get(name, 6)  # Default to carbon
-            atom_id = molecule.AppendAtom(atomic_num, float(pos[0]), float(pos[1]), float(pos[2]))
-            atom_ids.append(atom_id)
-        
-        # Add bonds based on distance (same threshold as hydrate_renderer)
-        BOND_THRESHOLD = 0.16  # nm
-        n_atoms = len(atom_ids)
-        for i in range(n_atoms):
-            for j in range(i + 1, n_atoms):
-                dist = np.linalg.norm(positions[i] - positions[j])
-                if dist < BOND_THRESHOLD:
-                    # Skip H-H bonds
-                    if atom_names[i] == "H" and atom_names[j] == "H":
-                        continue
-                    molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
-        
-        return molecule
-    
-    def _create_guest_actor_from_indices(
-        self,
-        positions: np.ndarray,
-        atom_names: list[str],
-        cell: np.ndarray
-    ) -> vtkActor:
-        """Create a ball-and-stick actor for guest molecules.
-        
-        Args:
-            positions: (N_atoms, 3) guest positions in nm
-            atom_names: List of atom names for guests
-            cell: (3, 3) cell matrix for PBC
-        
-        Returns:
-            vtkActor with ball-and-stick rendering
-        """
-        from vtkmodules.all import vtkMoleculeMapper, vtkMolecule, vtkActor, vtkMatrix3x3
-        
-        molecule = vtkMolecule()
-        
-        # Add atoms
-        element_map = {
-            "C": 6, "H": 1, "O": 8,
-        }
-        
-        for pos, name in zip(positions, atom_names):
-            atomic_num = element_map.get(name, 6)
-            molecule.AppendAtom(atomic_num, float(pos[0]), float(pos[1]), float(pos[2]))
-        
-        # Add bonds based on distance within molecules
-        # Group atoms by molecule type (simplified: assume sorted by molecule)
-        # For now, use simple distance-based bonding
-        BOND_THRESHOLD = 0.16  # nm
-        n_atoms = molecule.GetNumberOfAtoms()
-        
-        # Get atom positions from molecule
-        for i in range(n_atoms):
-            for j in range(i + 1, n_atoms):
-                atom_i = molecule.GetAtom(i)
-                atom_j = molecule.GetAtom(j)
-                pos_i = np.array(atom_i.GetPosition())
-                pos_j = np.array(atom_j.GetPosition())
-                dist = np.linalg.norm(pos_i - pos_j)
-                if dist < BOND_THRESHOLD:
-                    # Skip H-H bonds
-                    name_i = atom_names[i]
-                    name_j = atom_names[j]
-                    if name_i == "H" and name_j == "H":
-                        continue
-                    molecule.AppendBond(i, j, 1)
-        
-        # Set lattice for PBC
-        lattice = vtkMatrix3x3()
-        cell_t = cell.T
-        for i in range(3):
-            for j in range(3):
-                lattice.SetElement(i, j, float(cell_t[i, j]))
-        molecule.SetLattice(lattice)
-        
-        # Create mapper with ball-and-stick settings
-        mapper = vtkMoleculeMapper()
-        mapper.SetInputData(molecule)
-        mapper.UseBallAndStickSettings()
-        mapper.SetAtomicRadiusTypeToVDWRadius()
-        mapper.SetAtomicRadiusScaleFactor(0.25 * ANGSTROM_TO_NM)
-        mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)
-        mapper.SetRenderAtoms(True)
-        mapper.SetRenderBonds(True)
-        
-        # Set bond color for guests (matching hydrate_renderer)
-        mapper.SetBondColor(180, 180, 180)  # Gray
-        
-        # Create actor
-        actor = vtkActor()
-        actor.SetMapper(mapper)
-        
-        return actor
     
     def _extract_bonds(self, mol, cell: np.ndarray = None) -> list:
         """Extract bond positions from a VTK molecule with PBC wrapping.

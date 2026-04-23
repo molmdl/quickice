@@ -61,22 +61,16 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
-                   For hydrate-derived candidates, contains water framework + guests.
         config: Interface configuration with mode, box dimensions, thicknesses, etc.
 
     Returns:
         InterfaceStructure with combined ice + water positions.
-        Ice atoms come FIRST, then water atoms. Guest molecules are rendered
-        by the viewer (not tiled).
+        Ice atoms come FIRST, then water atoms.
 
     Raises:
         InterfaceGenerationError: If generation fails or triclinic cell detected.
     """
     from quickice.structure_generation.errors import InterfaceGenerationError
-    
-    print(f"[DEBUG slab.py] assemble_slab() START - mode={config.mode}")
-    print(f"[DEBUG slab.py] Candidate: phase={candidate.phase_id}, nmol={candidate.nmolecules}")
-    print(f"[DEBUG slab.py] Box: {config.box_x} x {config.box_y} x {config.box_z}, ice={config.ice_thickness}, water={config.water_thickness}")
 
     # Get ice cell dimensions for tiling (bounding box extent)
     # Works for both orthogonal and triclinic cells
@@ -85,33 +79,9 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # Store cell matrix for triclinic-aware tiling
     cell_matrix = candidate.cell
 
-    # Check if this is a hydrate-derived candidate
-    # For hydrate candidates, the structure is: water framework + guest molecules
-    # We only tile the WATER framework (4 atoms per molecule for TIP4P)
-    # Guests are handled separately - don't tile them!
-    is_hydrate = candidate.metadata.get("original_hydrate", False)
-    
-    # Extract water positions only for hydrate candidates
-    # molecule_index tells us which atoms belong to water vs guests
-    if is_hydrate:
-        water_positions = []
-        for idx_entry in candidate.metadata.get("molecule_index", []):
-            if idx_entry.mol_type == "water":
-                start = idx_entry.start_idx
-                count = idx_entry.count
-                water_positions.append(candidate.positions[start:start + count])
-        if water_positions:
-            water_framework_positions = np.vstack(water_positions)
-        else:
-            # Fallback: assume TIP4P water (4 atoms per molecule)
-            water_framework_positions = candidate.positions
-        # Use positions specifically for water framework tiling
-        tiling_positions = water_framework_positions
-        atoms_per_mol = 4  # TIP4P water always has 4 atoms per molecule
-    else:
-        # Standard ice candidate (GenIce: 3 atoms per molecule)
-        tiling_positions = candidate.positions
-        atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+    # Detect atoms per molecule from candidate atom names
+    # Handles both GenIce ice (3 atoms) and TIP4P/hydrate (4 atoms)
+    atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
 
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions and ice thickness to multiples of ice unit cell
@@ -139,43 +109,22 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     box_dims = np.array([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Tile ice for bottom layer: fill [adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]
-    # For hydrate: use water_framework_positions only (not guest molecules)
-    # For ice: use candidate.positions directly
-    if is_hydrate:
-        bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
-            tiling_positions,
-            ice_cell_dims,
-            np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-            atoms_per_molecule=atoms_per_mol,  # 4 for TIP4P water
-            cell_matrix=cell_matrix  # Triclinic-aware tiling
-        )
+    bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
+        candidate.positions,
+        ice_cell_dims,
+        np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
+        atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
+    )
 
-        # Tile ice for top layer: same target region, then shift Z
-        top_ice_positions, top_ice_nmolecules = tile_structure(
-            tiling_positions,
-            ice_cell_dims,
-            np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-            atoms_per_molecule=atoms_per_mol,  # 4 for TIP4P water
-            cell_matrix=cell_matrix  # Triclinic-aware tiling
-        )
-    else:
-        # Standard ice candidate tiling
-        bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
-            candidate.positions,
-            ice_cell_dims,
-            np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-            atoms_per_molecule=atoms_per_mol,  # 3 for ice
-            cell_matrix=cell_matrix  # Triclinic-aware tiling
-        )
-
-        # Tile ice for top layer: same target region, then shift Z
-        top_ice_positions, top_ice_nmolecules = tile_structure(
-            candidate.positions,
-            ice_cell_dims,
-            np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
-            atoms_per_molecule=atoms_per_mol,  # 3 for ice
-            cell_matrix=cell_matrix  # Triclinic-aware tiling
-        )
+    # Tile ice for top layer: same target region, then shift Z
+    top_ice_positions, top_ice_nmolecules = tile_structure(
+        candidate.positions,
+        ice_cell_dims,
+        np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
+        atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
+        cell_matrix=cell_matrix  # Triclinic-aware tiling
+    )
     # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
     top_ice_positions = top_ice_positions.copy()
     top_ice_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
@@ -216,42 +165,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
     total_ice_nmolecules = bottom_ice_nmolecules + top_ice_nmolecules
 
-    # For hydrate: add guest molecules to combined_ice_positions for later (not atom names yet)
-    if is_hydrate and candidate.metadata.get("molecule_index"):
-        # Extract guest positions from original candidate (for output to viewer)
-        guest_positions = []
-        for idx_entry in candidate.metadata.get("molecule_index", []):
-            if idx_entry.mol_type != "water":
-                start = idx_entry.start_idx
-                count = idx_entry.count
-                guest_positions.append(candidate.positions[start:start + count])
-        
-        if guest_positions:
-            guest_positions_arr = np.vstack(guest_positions)
-            # Add guests to combined ice positions (after water framework tiles)
-            combined_ice_positions = np.vstack([combined_ice_positions, guest_positions_arr])
-            # Note: We'll extend ice_atom_names AFTER it's created below
-
     # Build ice atom names dynamically based on detected atoms per molecule
     # GenIce ice: ["O", "H", "H"], TIP4P/hydrate: ["OW", "HW1", "HW2", "MW"]
     if atoms_per_mol == 4:
         ice_atom_names = ["OW", "HW1", "HW2", "MW"] * total_ice_nmolecules
     else:
         ice_atom_names = ["O", "H", "H"] * total_ice_nmolecules
-    
-    # For hydrate: add guest atom names AFTER ice_atom_names is created
-    if is_hydrate and candidate.metadata.get("molecule_index"):
-        # Extract guest atom names from original candidate
-        guest_atom_names = []
-        for idx_entry in candidate.metadata.get("molecule_index", []):
-            if idx_entry.mol_type != "water":
-                start = idx_entry.start_idx
-                count = idx_entry.count
-                guest_atom_names.extend(candidate.atom_names[start:start + count])
-        
-        if guest_atom_names:
-            # Extend ice atom names to include guests (viewer finds them by atom type)
-            ice_atom_names.extend(guest_atom_names)
 
     # Calculate water density from ice temperature/pressure
     T = candidate.metadata.get('temperature', 273.15)
@@ -271,21 +190,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         water_positions[:, 2] += adjusted_ice_thickness
 
     # Detect overlaps between ice O and water O
-    # For hydrate: only check water framework O atoms (skip guests)
-    # For ice: use simple slice indexing
+    # Ice O atoms: indices [0, 3, 6, ...] (3 atoms per molecule)
+    # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule)
     if len(combined_ice_positions) > 0 and len(water_positions) > 0:
-        if is_hydrate:
-            # Only check water framework oxygen atoms
-            # Water is tiled from tiling_positions (4 atoms/molecule)
-            # Get water positions before guests were added
-            if tiling_positions is not None:
-                ice_o_positions = tiling_positions[::4]  # TIP4P: OW at 0, 4, 8...
-            else:
-                ice_o_positions = combined_ice_positions[::atoms_per_mol]
-        else:
-            # Standard ice
-            ice_o_positions = combined_ice_positions[::3]  # O at 0, 3, 6...
-        water_o_positions = water_positions[::4]  # TIP4P water: OW at 0, 4, 8...
+        ice_o_positions = combined_ice_positions[::3]
+        water_o_positions = water_positions[::4]
 
         overlapping_mol_indices = detect_overlaps(
             ice_o_positions,
@@ -313,18 +222,16 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         trimmed_water_positions = water_positions
 
     # Combine all positions: ice FIRST, then water
-    # For hydrate: we already added guests to combined_ice_positions above
-    
-    if len(bottom_ice_positions) > 0 and len(trimmed_water_positions) > 0:
+    if len(combined_ice_positions) > 0 and len(trimmed_water_positions) > 0:
         all_positions = np.vstack([combined_ice_positions, trimmed_water_positions])
-    elif len(bottom_ice_positions) > 0:
+    elif len(combined_ice_positions) > 0:
         all_positions = combined_ice_positions
     elif len(trimmed_water_positions) > 0:
         all_positions = trimmed_water_positions
     else:
         all_positions = np.zeros((0, 3), dtype=float)
 
-    # Combine atom names: ice atoms already contain water framework, possibly guests
+    # Combine atom names
     all_atom_names = ice_atom_names + water_atom_names
 
     # Compute counts
@@ -344,11 +251,6 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # Build report (gmx solvate convention: molecules present, not removed)
     total_molecules = total_ice_nmolecules + water_nmolecules
     
-    # Extract guest type counts from candidate metadata if present (from hydrate conversion)
-    guest_type_counts = {}
-    if hasattr(candidate, 'metadata') and candidate.metadata:
-        guest_type_counts = candidate.metadata.get("guest_type_counts", {})
-    
     # Include periodicity adjustments in report
     adjustment_report = ""
     if adjustments:
@@ -357,27 +259,14 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             "\n".join(adjustments)
         )
     
-    # Add guest info to report if present
-    if guest_type_counts:
-        guest_report = ", ".join(f"{count} {gtype}" for gtype, count in guest_type_counts.items())
-        report = (
-            f"Generated slab interface structure\n"
-            f"  Ice molecules: {total_ice_nmolecules}\n"
-            f"  Water molecules: {water_nmolecules}\n"
-            f"  Guest molecules: {guest_report}\n"
-            f"  Total molecules: {total_molecules}\n"
-            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
-            f"{adjustment_report}"
-        )
-    else:
-        report = (
-            f"Generated slab interface structure\n"
-            f"  Ice molecules: {total_ice_nmolecules}\n"
-            f"  Water molecules: {water_nmolecules}\n"
-            f"  Total molecules: {total_molecules}\n"
-            f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
-            f"{adjustment_report}"
-        )
+    report = (
+        f"Generated slab interface structure\n"
+        f"  Ice molecules: {total_ice_nmolecules}\n"
+        f"  Water molecules: {water_nmolecules}\n"
+        f"  Total molecules: {total_molecules}\n"
+        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+        f"{adjustment_report}"
+    )
 
     return InterfaceStructure(
         positions=all_positions,
@@ -388,7 +277,5 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         ice_nmolecules=total_ice_nmolecules,
         water_nmolecules=water_nmolecules,
         mode="slab",
-        report=report,
-        guest_type_counts=guest_type_counts
+        report=report
     )
-    print(f"[DEBUG slab.py] assemble_slab() END - ice_atoms={ice_atom_count}, water_atoms={water_atom_count}")

@@ -535,10 +535,6 @@ class MainWindow(QMainWindow):
         Args:
             result: InterfaceStructure from generation
         """
-        print("[DEBUG main_window.py] _on_interface_generation_complete() CALLED!")
-        print(f"[DEBUG main_window.py] result type: {type(result).__name__}")
-        print(f"[DEBUG main_window.py] ice_atoms: {result.ice_atom_count}, water_atoms: {result.water_atom_count}")
-        
         self._current_interface_result = result
 
         # Update progress
@@ -560,12 +556,10 @@ class MainWindow(QMainWindow):
 
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
-            print("[DEBUG main_window.py] VTK available - calling set_interface_structure()...")
             # Always render the generated interface result (ice + water)
             # The interface was generated from hydrate (hydrate.to_candidate() -> assemble_piece)
             # which correctly combines hydrate framework with water layer
             self.interface_panel._interface_viewer.set_interface_structure(result)
-            print("[DEBUG main_window.py] set_interface_structure() completed!")
             self.interface_panel.hide_placeholder()
         else:
             # VTK not available - show message in log
@@ -800,11 +794,7 @@ class MainWindow(QMainWindow):
             concentration,
             volume_arg
         )
-        
-        # Propagate guest metadata from interface to ion structure
-        if hasattr(interface, 'guest_type_counts') and interface.guest_type_counts:
-            ion_structure.guest_type_counts = interface.guest_type_counts
-        
+
         # Store for export (Issue 1)
         self._current_ion_result = ion_structure
 

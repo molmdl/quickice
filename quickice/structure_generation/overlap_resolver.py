@@ -56,19 +56,11 @@ def detect_overlaps(
     if len(ice_o_positions_nm) == 0 or len(water_o_positions_nm) == 0:
         return set()
 
-    # CRITICAL: Wrap coordinates to [0, box) before passing to cKDTree
-    # scipy.spatial.cKDTree with boxsize parameter requires non-negative coordinates
-    # This handles edge cases where tiling or shifting might produce coordinates
-    # slightly outside the box (e.g., -1e-10 due to floating-point precision)
-    box = np.asarray(box_dims_nm)
-    ice_wrapped = np.mod(ice_o_positions_nm, box)  # Handle negative values
-    water_wrapped = np.mod(water_o_positions_nm, box)
-
     # Build cKDTree with PBC via boxsize parameter
     # CRITICAL: boxsize handles periodic boundaries automatically
     box_list = box_dims_nm.tolist()
-    ice_tree = cKDTree(ice_wrapped, boxsize=box_list)
-    water_tree = cKDTree(water_wrapped, boxsize=box_list)
+    ice_tree = cKDTree(ice_o_positions_nm, boxsize=box_list)
+    water_tree = cKDTree(water_o_positions_nm, boxsize=box_list)
 
     # Find all pairs within threshold
     # pairs[water_idx] contains list of ice indices within threshold

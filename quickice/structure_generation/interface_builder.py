@@ -326,28 +326,17 @@ def generate_interface(
     Raises:
         InterfaceGenerationError: If validation fails or generation fails.
     """
-    print(f"[DEBUG interface_builder.py] generate_interface() START - mode={config.mode}")
-    print(f"[DEBUG interface_builder.py] Candidate phase_id: {candidate.phase_id}, nmol={candidate.nmolecules}")
-    
     # Validate configuration before generation
     validate_interface_config(config, candidate)
-    print("[DEBUG interface_builder.py] Validation passed")
-    
+
     # Route to mode
     try:
-        print(f"[DEBUG interface_builder.py] Routing to mode: {config.mode}")
         if config.mode == "slab":
-            result = assemble_slab(candidate, config)
-            print(f"[DEBUG interface_builder.py] assemble_slab() returned")
-            return result
+            return assemble_slab(candidate, config)
         elif config.mode == "pocket":
-            result = assemble_pocket(candidate, config)
-            print(f"[DEBUG interface_builder.py] assemble_pocket() returned")
-            return result
+            return assemble_pocket(candidate, config)
         elif config.mode == "piece":
-            result = assemble_piece(candidate, config)
-            print(f"[DEBUG interface_builder.py] assemble_piece() returned")
-            return result
+            return assemble_piece(candidate, config)
         else:
             # Should never reach here due to validation, but just in case
             raise InterfaceGenerationError(

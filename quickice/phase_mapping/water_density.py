@@ -75,18 +75,14 @@ def water_density_kgm3(T_K: float, P_MPa: float) -> float:
             # Sanity check: density should be in reasonable range
             # Water density at extreme conditions: 100-2000 kg/m³
             # Very low values (< 100) indicate numerical issues or invalid input
-            # Also handle None case (IAPWS95 returns None for P=0)
-            if rho is None:
-                return FALLBACK_DENSITY_GCM3 * 1000
             if 100 < rho < 2000:
                 return rho
             else:
                 return FALLBACK_DENSITY_GCM3 * 1000
-    except (NotImplementedError, ValueError, OverflowError, TypeError):
+    except (NotImplementedError, ValueError, OverflowError):
         # NotImplementedError: Conditions outside formulation range
         # ValueError: Invalid input values (e.g., negative T or P)
         # OverflowError: Numerical overflow in extreme conditions
-        # TypeError: IAPWS95 returns None for P=0 (caught by comparison with None above, but also protect)
         return FALLBACK_DENSITY_GCM3 * 1000
 
 

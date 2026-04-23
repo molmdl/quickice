@@ -254,8 +254,6 @@ class InterfaceStructure:
     mode: str
     report: str
     molecule_index: list = field(default_factory=list)
-    # Optional metadata (populated when source is hydrate)
-    guest_type_counts: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -338,7 +336,6 @@ class IonStructure:
         na_count: Number of Na+ ions placed
         cl_count: Number of Cl- ions placed
         report: Generation report string
-        guest_type_counts: Optional dict of guest types from hydrate (e.g., {"ch4": 8})
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -347,7 +344,6 @@ class IonStructure:
     na_count: int
     cl_count: int
     report: str
-    guest_type_counts: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -472,11 +468,6 @@ class HydrateStructure:
 
         # Calculate total molecules (water + guests)
         total_molecules = self.water_count + self.guest_count
-        
-        # Preserve molecule_index for export (needed for guest molecule handling)
-        # Copy the list to avoid reference issues
-        from copy import deepcopy
-        preserved_molecule_index = deepcopy(self.molecule_index)
 
         return Candidate(
             positions=np.array(all_positions),
@@ -492,6 +483,5 @@ class HydrateStructure:
                 "guest_count": self.guest_count,
                 "guest_type_counts": guest_type_counts,
                 "original_hydrate": True,
-                "molecule_index": preserved_molecule_index,
             }
         )
