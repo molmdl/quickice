@@ -192,31 +192,39 @@ class InterfaceGenerationWorker(QObject):
                 self.cancelled.emit()
                 return
             
-            self.status.emit("Validating configuration...")
-            self.progress.emit(10)
-            
             # Import inside run() for thread safety
             from quickice.structure_generation import generate_interface
             from quickice.structure_generation.errors import InterfaceGenerationError
             
+            print("[DEBUG workers.py] START InterfaceGenerationWorker.run()")
+            print(f"[DEBUG workers.py] Candidate: {self._candidate.phase_id}, {self._candidate.nmolecules} molecules")
+            print(f"[DEBUG workers.py] Config mode: {self._config.mode}, box: {self._config.box_x} x {self._config.box_y} x {self._config.box_z}")
             self.status.emit("Generating interface structure...")
             self.progress.emit(30)
             
             # Run generation
             result = generate_interface(self._candidate, self._config)
             
+            print(f"[DEBUG workers.py] generate_interface() returned successfully!")
+            
+            print("[DEBUG workers.py] Emitting finished signal...")
             self.progress.emit(90)
             self.status.emit("Complete")
             self.progress.emit(100)
             
             gen_result = InterfaceGenerationResult(success=True, result=result)
             self.finished.emit(gen_result)
+            print("[DEBUG workers.py] finished signal emitted!")
             
         except InterfaceGenerationError as e:
+            print(f"[DEBUG workers.py] InterfaceGenerationError: {e}")
             error_result = InterfaceGenerationResult(success=False, error=str(e))
             self.error.emit(str(e))
             self.finished.emit(error_result)
         except Exception as e:
+            print(f"[DEBUG workers.py] Unexpected exception: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             error_result = InterfaceGenerationResult(
                 success=False, 
                 error=f"Interface generation failed ({type(e).__name__}): {e}"
