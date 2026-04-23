@@ -120,11 +120,17 @@ class InterfaceViewerWidget(QWidget):
             structure: An InterfaceStructure containing ice and water atoms,
                        and optionally guest molecules.
         """
+        print("[DEBUG interface_viewer.py] set_interface_structure() START")
+        print(f"[DEBUG interface_viewer.py] ice_atom_count: {structure.ice_atom_count}, water_atom_count: {structure.water_atom_count}")
+        print(f"[DEBUG interface_viewer.py] total atoms: {len(structure.positions)}")
+        
         # Clear previous actors
         self._clear_actors()
+        print("[DEBUG interface_viewer.py] After _clear_actors()")
         
         # Store the structure reference
         self._current_structure = structure
+        print("[DEBUG interface_viewer.py] After storing structure reference")
         
         # Extract atoms into ice/water/guest categories
         ice_atom_names = structure.atom_names[:structure.ice_atom_count]
@@ -149,6 +155,7 @@ class InterfaceViewerWidget(QWidget):
         # (adjacent to C atoms, not water-bound)
         # For now, include all H atoms in ice region after water atoms if C present
         if guest_atom_indices:
+            print(f"[DEBUG interface_viewer.py] Guest atoms detected: {len(guest_atom_indices)}")
             # For performance: use set for O(1) lookups instead of O(n) list lookup
             guest_indices_set = set(guest_atom_indices)
             ice_atom_count_for_h = structure.ice_atom_count
@@ -161,6 +168,8 @@ class InterfaceViewerWidget(QWidget):
                     if i not in guest_indices_set:
                         guest_atom_indices.append(i)
                         guest_indices_set.add(i)
+        else:
+            print("[DEBUG interface_viewer.py] No guest atoms detected")
         
         # Alternative simpler check: presence of C atoms indicates guest
         has_carbon = "C" in structure.atom_names[:structure.ice_atom_count]
@@ -249,6 +258,7 @@ class InterfaceViewerWidget(QWidget):
         
         # Render the scene
         self.render_window.Render()
+        print("[DEBUG interface_viewer.py] set_interface_structure() END")
     
     def set_hydrate_structure(self, structure: HydrateStructure) -> None:
         """Load and display a hydrate structure as interface (Issue 2).

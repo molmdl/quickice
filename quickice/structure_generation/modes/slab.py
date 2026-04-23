@@ -73,6 +73,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         InterfaceGenerationError: If generation fails or triclinic cell detected.
     """
     from quickice.structure_generation.errors import InterfaceGenerationError
+    
+    print(f"[DEBUG slab.py] assemble_slab() START - mode={config.mode}")
+    print(f"[DEBUG slab.py] Candidate: phase={candidate.phase_id}, nmol={candidate.nmolecules}")
+    print(f"[DEBUG slab.py] Box: {config.box_x} x {config.box_y} x {config.box_z}, ice={config.ice_thickness}, water={config.water_thickness}")
 
     # Get ice cell dimensions for tiling (bounding box extent)
     # Works for both orthogonal and triclinic cells
@@ -387,3 +391,4 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         report=report,
         guest_type_counts=guest_type_counts
     )
+    print(f"[DEBUG slab.py] assemble_slab() END - ice_atoms={ice_atom_count}, water_atoms={water_atom_count}")

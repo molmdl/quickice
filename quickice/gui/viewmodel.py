@@ -254,13 +254,17 @@ class MainViewModel(QObject):
     
     @Slot(object)
     def _on_interface_finished(self, result):
+        print(f"[DEBUG viewmodel.py] _on_interface_finished() called - success={result.success}")
         self._is_interface_generating = False
         self.interface_ui_enabled_changed.emit(True)
         
         if result.success:
+            print(f"[DEBUG viewmodel.py] Emitting interface_generation_complete signal")
             self._last_interface_result = result.result
             self.interface_generation_complete.emit(result.result)
+            print("[DEBUG viewmodel.py] interface_generation_complete signal emitted!")
         else:
+            print(f"[DEBUG viewmodel.py] Emitting interface_generation_error signal: {result.error}")
             self.interface_generation_error.emit(result.error or "Unknown error")
     
     @Slot(str)

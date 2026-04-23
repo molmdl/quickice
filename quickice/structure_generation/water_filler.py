@@ -300,6 +300,7 @@ def tile_structure(
     Raises:
         ValueError: If atoms_per_molecule cannot be determined and heuristic fails.
     """
+    print(f"[DEBUG water_filler.py] tile_structure() START - {len(positions)} atoms, target_region={target_region}")
     if len(positions) == 0:
         return np.zeros((0, 3), dtype=float), 0
 
@@ -575,6 +576,7 @@ def tile_structure(
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
 
+    print(f"[DEBUG water_filler.py] tile_structure() END - {len(tiled_positions)} atoms, {n_molecules} molecules")
     return tiled_positions, n_molecules
 
 
@@ -603,8 +605,11 @@ def fill_region_with_water(
             - atom_names: list of atom names ["OW", "HW1", "HW2", "MW", ...]
             - nmolecules: number of water molecules in the region
     """
+    print(f"[DEBUG water_filler.py] fill_region_with_water() START - region_dims={region_dims}, density={target_density}")
+    
     # Load water template
     template_positions, template_atom_names, template_box = load_water_template()
+    print(f"[DEBUG water_filler.py] Water template loaded: {len(template_positions)} atoms, box={template_box}")
 
     # Apply density scaling if target_density is specified
     if target_density is not None:
@@ -641,4 +646,5 @@ def fill_region_with_water(
     # Use the constant template for ONE molecule, not the full template which may have many
     all_atom_names = WATER_ATOM_NAMES_TEMPLATE * n_molecules
 
+    print(f"[DEBUG water_filler.py] fill_region_with_water() END - {len(tiled_positions)} atoms, {n_molecules} molecules")
     return tiled_positions, all_atom_names, n_molecules
