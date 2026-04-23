@@ -17,8 +17,8 @@ TIP4P_ICE_ALPHA = 0.13458335
 
 # Mapping from internal molecule type to GROMACS names
 MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
-    "ice":   {"res_name": "SOL", "itp_file": "water.itp", "mol_name": "SOL"},
-    "water": {"res_name": "SOL", "itp_file": "water.itp", "mol_name": "SOL"},
+    "ice":   {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
+    "water": {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
     "na":    {"res_name": "NA",  "itp_file": "na.itp",     "mol_name": "NA"},
     "cl":    {"res_name": "CL",  "itp_file": "cl.itp",     "mol_name": "CL"},
     "ch4":   {"res_name": "CH4", "itp_file": "ch4.itp",    "mol_name": "CH4"},
