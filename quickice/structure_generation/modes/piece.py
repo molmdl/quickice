@@ -96,18 +96,53 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Box dimensions
     box_dims = np.array([config.box_x, config.box_y, config.box_z])
 
-    # Detect atoms per molecule from candidate atom names
-    # Handles both GenIce ice (3 atoms: O, H, H) and TIP4P/hydrate (4 atoms: OW, HW1, HW2, MW)
-    atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+    # Check if this is a hydrate-derived candidate
+    # For hydrate candidates, the structure is: water framework + guest molecules
+    # We only tile the WATER framework (4 atoms per molecule for TIP4P)
+    # Guests are handled separately - don't tile them!
+    is_hydrate = candidate.metadata.get("original_hydrate", False)
+    
+    # Extract water positions only for hydrate candidates
+    # molecule_index tells us which atoms belong to water vs guests
+    if is_hydrate:
+        water_positions = []
+        for idx_entry in candidate.metadata.get("molecule_index", []):
+            if idx_entry.mol_type == "water":
+                start = idx_entry.start_idx
+                count = idx_entry.count
+                water_positions.append(candidate.positions[start:start + count])
+        if water_positions:
+            water_framework_positions = np.vstack(water_positions)
+        else:
+            # Fallback: assume TIP4P water (4 atoms per molecule)
+            water_framework_positions = candidate.positions
+        # Use positions specifically for water framework tiling
+        tiling_positions = water_framework_positions
+        atoms_per_mol = 4  # TIP4P water always has 4 atoms per molecule
+    else:
+        # Standard ice candidate (GenIce: 3 atoms per molecule)
+        tiling_positions = candidate.positions
+        atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
 
     # Tile ice to fill piece region (essentially just the candidate itself)
-    tiled_ice_positions, ice_nmolecules = tile_structure(
-        candidate.positions,
-        ice_dims,
-        ice_dims,
-        atoms_per_molecule=atoms_per_mol,
-        cell_matrix=cell_matrix  # Triclinic-aware tiling
-    )
+    # For hydrate: use water_framework_positions only (not guest molecules)
+    # For ice: use candidate.positions directly
+    if is_hydrate:
+        tiled_ice_positions, ice_nmolecules = tile_structure(
+            tiling_positions,
+            ice_dims,
+            ice_dims,
+            atoms_per_molecule=atoms_per_mol,  # 4 for TIP4P water
+            cell_matrix=cell_matrix  # Triclinic-aware tiling
+        )
+    else:
+        tiled_ice_positions, ice_nmolecules = tile_structure(
+            candidate.positions,
+            ice_dims,
+            ice_dims,
+            atoms_per_molecule=atoms_per_mol,  # 3 for ice  
+            cell_matrix=cell_matrix  # Triclinic-aware tiling
+        )
 
     if len(tiled_ice_positions) == 0:
         raise InterfaceGenerationError(
@@ -169,6 +204,30 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         )
 
     # Combine: ice (centered) FIRST, then water
+    # For hydrate: include guest molecules in output so viewer can find and render them
+    if is_hydrate and candidate.metadata.get("molecule_index"):
+        # Extract guest positions from original candidate (for output to viewer)
+        guest_positions = []
+        guest_atom_names = []
+        for idx_entry in candidate.metadata.get("molecule_index", []):
+            if idx_entry.mol_type != "water":
+                start = idx_entry.start_idx
+                count = idx_entry.count
+                guest_positions.append(candidate.positions[start:start + count])
+                guest_atom_names.extend(candidate.atom_names[start:start + count])
+        
+        if guest_positions:
+            guest_positions_arr = np.vstack(guest_positions)
+            # Center guest positions like ice
+            guest_positions_arr = guest_positions_arr + offset
+            # Add guests to combined structure
+            if len(centered_ice_positions) > 0:
+                centered_ice_positions = np.vstack([centered_ice_positions, guest_positions_arr])
+            else:
+                centered_ice_positions = guest_positions_arr
+            # Extend ice atom names to include guests
+            ice_atom_names.extend(guest_atom_names)
+    
     if len(centered_ice_positions) > 0 and len(water_positions) > 0:
         all_positions = np.vstack([centered_ice_positions, water_positions])
     elif len(centered_ice_positions) > 0:
