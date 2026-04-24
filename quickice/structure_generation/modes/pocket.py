@@ -4,6 +4,11 @@ Creates a water-filled cavity inside an ice matrix at the box center.
 Supports two cavity shapes: sphere and cubic.
 Ice molecules inside the cavity are removed, water fills the cavity,
 and overlapping water molecules at the boundary are removed.
+
+For hydrate->interface conversion:
+- Extracts guest molecules from hydrate candidate
+- Places guests in the pocket region (center cavity)
+- Preserves guest molecules in InterfaceStructure for rendering/export
 """
 
 import numpy as np
@@ -32,6 +37,86 @@ def detect_atoms_per_molecule(atom_names: list[str]) -> int:
         if atom_names[0] == "OW":
             return 4
     return 3  # Default to GenIce ice (3 atoms)
+
+
+def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[list[int], list[int]]:
+    """Detect indices of guest molecules vs water framework in candidate positions.
+    
+    For hydrate candidates:
+    - Water framework atoms: OW, HW1, HW2, MW (TIP4P pattern)
+    - Guest atoms: anything else (Me, C, H, etc.)
+    """
+    water_indices = []
+    guest_indices = []
+    
+    i = 0
+    while i < len(atom_names):
+        if i + atoms_per_mol <= len(atom_names):
+            first_atom = atom_names[i]
+            if first_atom == "OW":
+                water_indices.extend(range(i, i + atoms_per_mol))
+                i += atoms_per_mol
+            else:
+                guest_atoms = _count_guest_atoms(atom_names, i)
+                guest_indices.extend(range(i, i + guest_atoms))
+                i += guest_atoms
+        else:
+            guest_indices.extend(range(i, len(atom_names)))
+            i = len(atom_names)
+    
+    return water_indices, guest_indices
+
+
+def _count_guest_atoms(atom_names: list[str], start: int) -> int:
+    """Count atoms in a guest molecule starting at index."""
+    if start >= len(atom_names):
+        return 0
+    
+    first_atom = atom_names[start]
+    
+    if first_atom == "Me":
+        return 1
+    
+    if first_atom == "C":
+        count = 0
+        i = start
+        while i < len(atom_names) and i < start + 5:
+            count += 1
+            i += 1
+        return count
+    
+    if first_atom == "O":
+        count = 0
+        i = start
+        while i < len(atom_names) and i < start + 15:
+            count += 1
+            i += 1
+            if i < len(atom_names) and atom_names[i] in ["O", "OW"]:
+                break
+        return count
+    
+    if first_atom == "C" and start + 2 < len(atom_names):
+        if atom_names[start + 1] == "O" and atom_names[start + 2] == "O":
+            return 3
+    
+    return 1
+
+
+def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> int:
+    """Count the number of distinct guest molecules from guest atom indices."""
+    if not guest_indices:
+        return 0
+    
+    count = 0
+    i = 0
+    while i < len(guest_indices):
+        atom_idx = guest_indices[i]
+        atoms_in_mol = _count_guest_atoms(atom_names, atom_idx)
+        count += 1
+        i += atoms_in_mol
+    
+    return count
+
 
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
@@ -84,6 +169,31 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # Handles both GenIce ice (3 atoms) and TIP4P/hydrate (4 atoms)
     atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
 
+    # === HYDRATE FIX: Extract guest molecules from hydrate candidates ===
+    is_hydrate = candidate.metadata.get("original_hydrate", False)
+    raw_guest_positions = None
+    guest_atom_names = []
+    guest_nmolecules = 0
+    
+    # For hydrate, we need to tile ONLY water-framework atoms (not guests)
+    water_framework_positions = candidate.positions
+    water_framework_atom_names = candidate.atom_names
+    
+    if is_hydrate:
+        # Extract guest atoms from candidate positions
+        water_indices, guest_indices = _detect_guest_atoms(
+            candidate.atom_names, atoms_per_mol
+        )
+        
+        if guest_indices:
+            raw_guest_positions = candidate.positions[guest_indices].copy()
+            guest_atom_names = [candidate.atom_names[i] for i in guest_indices]
+            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices)
+            
+            # For tiling, use ONLY water-framework atoms
+            water_framework_positions = candidate.positions[water_indices]
+            water_framework_atom_names = [candidate.atom_names[i] for i in water_indices]
+
     # ADJUST DIMENSIONS FOR PERIODICITY
     # Round box dimensions to multiples of ice unit cell
     # This ensures continuous periodic images without gaps at boundaries
@@ -108,8 +218,9 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     radius = config.pocket_diameter / 2.0
 
     # Tile ice to fill entire box (using adjusted dimensions)
+    # For hydrate: tile only water-framework (guests extracted separately)
     ice_positions, ice_nmolecules = tile_structure(
-        candidate.positions,
+        water_framework_positions,
         ice_cell_dims,
         box_dims,
         atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
@@ -235,9 +346,36 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             atoms_per_molecule=4
         )
 
+    # === HYDRATE FIX: Tile and place guests in pocket region ===
+    processed_guest_positions = None
+    processed_guest_atom_names = []
+    
+    if is_hydrate and raw_guest_positions is not None and len(raw_guest_positions) > 0:
+        # Tile guests in pocket region
+        pocket_dims = np.array([2 * radius, 2 * radius, 2 * radius])
+        guest_cell_dims = get_cell_extent(candidate.cell)
+        
+        tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
+            raw_guest_positions,
+            guest_cell_dims,
+            pocket_dims,
+            atoms_per_molecule=atoms_per_mol,
+            cell_matrix=cell_matrix
+        )
+        
+        # Translate guests from [0, 2r] to [center-r, center+r]
+        if len(tilable_guest_positions) > 0:
+            tilable_guest_positions = tilable_guest_positions.copy()
+            tilable_guest_positions = tilable_guest_positions + fill_origin
+        
+        processed_guest_positions = tilable_guest_positions
+        processed_guest_atom_names = guest_atom_names
+        guest_nmolecules = tiled_guest_nmolecules
+
     # Detect overlaps between remaining ice and cavity water
+    # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...] (3 or 4 per molecule)
     if len(ice_positions) > 0 and len(water_positions) > 0:
-        ice_o_positions = ice_positions[::3]
+        ice_o_positions = ice_positions[::atoms_per_mol]
         water_o_positions = water_positions[::4]
 
         overlapping_mol_indices = detect_overlaps(
@@ -263,28 +401,40 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             atoms_per_molecule=4
         )
 
-    # Combine: ice (outside cavity) FIRST, then water (in cavity)
-    if len(ice_positions) > 0 and len(water_positions) > 0:
-        all_positions = np.vstack([ice_positions, water_positions])
-    elif len(ice_positions) > 0:
-        all_positions = ice_positions
-    elif len(water_positions) > 0:
-        all_positions = water_positions
+# === HYDRATE FIX: Combine all positions including guests ===
+    # Order: ice (outside cavity), then guests (in cavity), then water (in cavity)
+    all_parts = []
+    all_names_parts = []
+    
+    if len(ice_positions) > 0:
+        all_parts.append(ice_positions)
+        all_names_parts.append(ice_atom_names)
+    
+    if processed_guest_positions is not None and len(processed_guest_positions) > 0:
+        all_parts.append(processed_guest_positions)
+        all_names_parts.append(processed_guest_atom_names)
+    
+    if len(water_positions) > 0:
+        all_parts.append(water_positions)
+        all_names_parts.append(water_atom_names)
+    
+    if all_parts:
+        all_positions = np.vstack(all_parts)
+        all_atom_names = sum(all_names_parts, [])
     else:
         all_positions = np.zeros((0, 3), dtype=float)
-
-    # Combine atom names
-    all_atom_names = ice_atom_names + water_atom_names
+        all_atom_names = []
 
     # Compute counts
     ice_atom_count = len(ice_positions)
+    guest_atom_count = len(processed_guest_positions) if processed_guest_positions is not None else 0
     water_atom_count = len(water_positions)
 
     # Build cell matrix (using adjusted dimensions)
     cell = np.diag([adjusted_box_x, adjusted_box_y, adjusted_box_z])
 
     # Build report (gmx solvate convention)
-    total_molecules = ice_nmolecules + water_nmolecules
+    total_molecules = ice_nmolecules + guest_nmolecules + water_nmolecules
     
     # Include periodicity adjustments in report
     adjustment_report = ""
@@ -293,6 +443,31 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             f"\n\nPeriodicity adjustments (for continuous images):\n" +
             "\n".join(adjustments)
         )
+    
+    report = (
+        f"Generated pocket interface structure\n"
+        f"  Ice molecules: {ice_nmolecules}\n"
+        f"  Guest molecules: {guest_nmolecules}\n"
+        f"  Water molecules: {water_nmolecules}\n"
+        f"  Total molecules: {total_molecules}\n"
+        f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
+        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
+        f"{adjustment_report}"
+    )
+
+    return InterfaceStructure(
+        positions=all_positions,
+        atom_names=all_atom_names,
+        cell=cell,
+        ice_atom_count=ice_atom_count,
+        water_atom_count=water_atom_count,
+        ice_nmolecules=ice_nmolecules,
+        water_nmolecules=water_nmolecules,
+        mode="pocket",
+        report=report,
+        guest_atom_count=guest_atom_count,
+        guest_nmolecules=guest_nmolecules
+    )
     
     report = (
         f"Generated pocket interface structure\n"
