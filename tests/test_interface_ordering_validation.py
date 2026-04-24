@@ -48,11 +48,12 @@ def test_interface_ice_atom_ordering_validation():
     )
     
     # Should succeed
-    ice_mol, water_mol = interface_to_vtk_molecules(iface)
+    ice_mol, water_mol, guest_mol = interface_to_vtk_molecules(iface)
     assert ice_mol.GetNumberOfAtoms() == 6
     assert ice_mol.GetNumberOfBonds() == 4  # 2 bonds per ice molecule
     assert water_mol.GetNumberOfAtoms() == 3  # MW skipped
     assert water_mol.GetNumberOfBonds() == 2  # 2 bonds for 1 water
+    assert guest_mol is None  # No guests in this test
 
 
 def test_interface_invalid_ice_ordering_detected():
@@ -193,15 +194,17 @@ def test_interface_tip3p_style_water():
 
 
 def test_interface_tip4p_hydrate():
-    """Test that TIP4P hydrate (OW, HW1, HW2) works for ice region."""
-    # TIP4P hydrate uses OW, HW1, HW2 instead of classic ice O, H, H
+    """Test that TIP4P hydrate (OW, HW1, HW2, MW) works for ice region."""
+    # TIP4P hydrate uses OW, HW1, HW2, MW instead of classic ice O, H, H
+    # Note: MW is skipped during rendering, so 3 visible atoms per molecule
     ice_positions = np.array([
         [0.0, 0.0, 0.0],   # OW
         [0.1, 0.0, 0.0],   # HW1
         [-0.1, 0.0, 0.0],  # HW2
+        [0.0, 0.0, 0.0],   # MW (virtual site, skipped in rendering)
     ])
-    ice_atom_names = ["OW", "HW1", "HW2"]  # TIP4P hydrate
-    ice_atom_count = 3
+    ice_atom_names = ["OW", "HW1", "HW2", "MW"]  # TIP4P hydrate
+    ice_atom_count = 4  # 4 atoms including MW
     ice_nmolecules = 1
     
     # Valid water (TIP4P style)
@@ -230,6 +233,9 @@ def test_interface_tip4p_hydrate():
     )
     
     # Should succeed - TIP4P hydrate is now supported
-    ice_mol, water_mol = interface_to_vtk_molecules(iface)
-    assert ice_mol.GetNumberOfAtoms() == 3
+    ice_mol, water_mol, guest_mol = interface_to_vtk_molecules(iface)
+    assert ice_mol.GetNumberOfAtoms() == 3  # MW skipped, 3 visible atoms
     assert ice_mol.GetNumberOfBonds() == 2  # 2 bonds per ice molecule
+    assert water_mol.GetNumberOfAtoms() == 3  # MW skipped
+    assert water_mol.GetNumberOfBonds() == 2  # 2 bonds for 1 water
+    assert guest_mol is None  # No guests in this test

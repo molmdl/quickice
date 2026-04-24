@@ -410,83 +410,124 @@ def create_unit_cell_actor(cell: np.ndarray) -> vtkActor:
     return actor
 
 
-def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, vtkMolecule]:
-    """Convert an InterfaceStructure into separate ice and water VTK molecules.
+def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, vtkMolecule, vtkMolecule | None]:
+    """Convert an InterfaceStructure into separate ice, water, and optionally guest VTK molecules.
     
-    Splits the combined interface structure into two vtkMolecule objects for
-    phase-distinct visualization: one for ice atoms (cyan) and one for water
-    atoms (cornflower blue).
+    Splits the combined interface structure into vtkMolecule objects for
+    phase-distinct visualization: one for ice atoms (cyan), one for water
+    atoms (cornflower blue), and optionally one for guest molecules (gray).
     
     Args:
-        iface: An InterfaceStructure containing combined ice + water atoms.
-               Ice atoms come first, followed by water atoms.
-               ice_atom_count marks the boundary between phases.
+        iface: An InterfaceStructure containing combined ice + guests + water atoms.
+               Ice atoms: indices 0 to ice_atom_count-1
+               Guest atoms: indices ice_atom_count to ice_atom_count + guest_atom_count-1 (if guest_atom_count > 0)
+               Water atoms: indices ice_atom_count + guest_atom_count onward
+               ice_atom_count marks the boundary between ice and guests/water.
+               guest_atom_count marks the boundary between guests and water.
     
     Returns:
-        A tuple of (ice_mol, water_mol) where:
-        - ice_mol: vtkMolecule with ice atoms (O, H, H pattern, 3 per molecule)
-        - water_mol: vtkMolecule with water atoms (OW, HW1, HW2, MW pattern, 
-                     but MW virtual sites are skipped, so 3 visible per molecule)
+        A tuple of (ice_mol, water_mol, guest_mol) where:
+        - ice_mol: vtkMolecule with ice/water-framework atoms (O, H, H pattern OR OW, HW1, HW2 pattern)
+        - water_mol: vtkMolecule with water atoms (OW, HW1, HW2, MW pattern, but MW virtual sites skipped)
+        - guest_mol: vtkMolecule with guest atoms (Me, C, H, etc.), or None if no guests
     
     Note:
         MW (massless virtual site) atoms are skipped during conversion as they
-        are not visualized. Ice has 3 atoms per molecule (O, H, H) with no MW.
-        Water has 4 atoms per molecule (OW, HW1, HW2, MW). The atom_names array
-        contains ice atoms first (indices 0 to ice_atom_count-1) followed by
-        water atoms (indices ice_atom_count onward). MW atoms only appear in the
-        water region, so skipping them before the boundary check is safe.
+        are not visualized.
+        
+        Atom arrangement in InterfaceStructure:
+        - For classic ice interface: [ice] + [water]
+        - For hydrate interface: [ice/hydrate water framework] + [guests] + [water box]
+        
+        The function detects hydrate ice by checking for "OW" in the ice atom names.
+        For hydrate ice (4 atoms/mol: OW, HW1, HW2, MW), MW is skipped, so we have
+        3 visible atoms per molecule for bonding.
     """
     ice_mol = vtkMolecule()
     water_mol = vtkMolecule()
+    guest_mol = vtkMolecule() if iface.guest_atom_count > 0 else None
     
     # CRITICAL: Initialize before adding atoms (VTK requirement)
     ice_mol.Initialize()
     water_mol.Initialize()
+    if guest_mol is not None:
+        guest_mol.Initialize()
     
-    # Map atom names to atomic numbers (same pattern as candidate_to_vtk_molecule)
+    # Map atom names to atomic numbers
+    # Supports:
+    # - Classic ice: O, H, H (3 atoms/mol)
+    # - TIP4P/hydrate water: OW, HW1, HW2, MW (4 atoms/mol, MW skipped)
+    # - Guests: various (Me, C, H, O, etc.)
     atomic_numbers = {
-        "O": 8, "H": 1,  # Ice atoms (TIP3P-style)
-        "OW": 8, "HW1": 1, "HW2": 1,  # Water atoms (TIP4P real atoms)
+        "O": 8, "H": 1,  # Classic ice atoms
+        "OW": 8, "HW1": 1, "HW2": 1,  # TIP4P water atoms (real)
         "MW": None,  # TIP4P virtual site - skip
+    }
+    
+    # Additional atom types for guests
+    guest_atomic_numbers = {
+        "C": 6, "H": 1, "O": 8, "N": 7, "S": 16, "P": 15,
+        "F": 9, "Cl": 17, "Br": 35, "I": 53,
+        # United-atom methane
+        "Me": 6,
     }
     
     # Track indices in each molecule for bond creation
     ice_indices = []
     water_indices = []
+    guest_indices = []
+    
+    # Define boundaries:
+    # ice_end = ice_atom_count (start of guests or water)
+    # guest_end = ice_atom_count + guest_atom_count (start of water, only if guests exist)
+    # If guest_atom_count > 0, guests are at indices [ice_atom_count, ice_atom_count + guest_atom_count)
+    # If guest_atom_count == 0, water starts at ice_atom_count
+    ice_end = iface.ice_atom_count
+    guest_start = ice_end
+    guest_end = ice_end + iface.guest_atom_count
+    water_start = guest_end
     
     # Add atoms to appropriate molecule, skipping MW virtual sites
     for i, (name, pos) in enumerate(zip(iface.atom_names, iface.positions)):
-        atomic_num = atomic_numbers.get(name)
-        
-        # Skip MW virtual sites (atomic_num is None)
-        if atomic_num is None:
-            continue
-        
-        # Check ice/water boundary using raw index i
-        # Ice atoms: indices 0 to ice_atom_count-1 (may include MW for hydrate ice)
-        # Water atoms: indices ice_atom_count onward (MW skipped above)
-        if i < iface.ice_atom_count:
-            # Ice atom
-            idx = ice_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
-            ice_indices.append(idx)
+        # Check which region this atom belongs to
+        if i < ice_end:
+            # Ice/water-framework atom
+            atomic_num = atomic_numbers.get(name)
+            if atomic_num is not None:  # Skip MW
+                idx = ice_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
+                ice_indices.append(idx)
+        elif iface.guest_atom_count > 0 and guest_start <= i < guest_end:
+            # Guest atom
+            atomic_num = guest_atomic_numbers.get(name, 6)  # Default to carbon
+            idx = guest_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
+            guest_indices.append(idx)
         else:
-            # Water atom
-            idx = water_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
-            water_indices.append(idx)
+            # Water atom (if not in guest range)
+            atomic_num = atomic_numbers.get(name)
+            if atomic_num is not None:  # Skip MW
+                idx = water_mol.AppendAtom(atomic_num, pos[0], pos[1], pos[2])
+                water_indices.append(idx)
     
     # Detect atoms per molecule in ice region
     # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
     # TIP4P/hydrate ice: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
-    ice_region_atom_names = iface.atom_names[:iface.ice_atom_count]
+    ice_region_atom_names = iface.atom_names[:ice_end]
     has_ow_in_ice = "OW" in ice_region_atom_names
     has_mw_in_ice = "MW" in ice_region_atom_names
     atoms_per_ice_mol = 4 if (has_ow_in_ice or has_mw_in_ice) else 3
+    
+    # Number of ice molecules (may differ from original if guests were in ice count)
+    # If ice_nmolecules + guest_nmolecules were combined, we need to separate them
+    # Original ice molecules = ice positions / atoms_per_ice_mol
+    actual_ice_nmolecules = ice_end // atoms_per_ice_mol
+    # Guest molecules are in their own section (calculated separately)
+    actual_guest_nmolecules = iface.guest_nmolecules if hasattr(iface, 'guest_nmolecules') else 0
     
     # Add bonds for ice molecules
     # Ice uses 3 visible atoms per molecule (O, H, H) after MW is skipped
     # For classic ice (uses "O"): validate exact ordering (O, H, H)
     # For TIP4P/hydrate ice (uses "OW"): atoms may be in any order after tiling/wrapping
-    for mol_idx in range(iface.ice_nmolecules):
+    for mol_idx in range(actual_ice_nmolecules):
         # Get raw atom names for this molecule (for validation of classic ice)
         raw_start = mol_idx * atoms_per_ice_mol
         raw_end = raw_start + atoms_per_ice_mol
@@ -518,6 +559,31 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         ice_mol.AppendBond(o_idx, h1_idx, 1)
         ice_mol.AppendBond(o_idx, h2_idx, 1)
     
+    # Add guest bonds (distance-based, within same molecule only)
+    # Guests are placed after ice, so we need to track where each guest molecule starts
+    if guest_indices and actual_guest_nmolecules > 0:
+        guest_atom_names = iface.atom_names[guest_start:guest_end]
+        
+        # Group atoms by molecule
+        mol_start = 0
+        for mol_idx in range(actual_guest_nmolecules):
+            # Count atoms in this guest molecule
+            guest_atoms = _count_guest_atoms_for_rendering(guest_atom_names, mol_start)
+            mol_end = mol_start + guest_atoms
+            
+            # Add bonds within this molecule
+            for i in range(mol_start, mol_end):
+                for j in range(i + 1, mol_end):
+                    # Distance-based bond detection (threshold: 0.16 nm)
+                    dist = np.linalg.norm(
+                        np.array(iface.positions[guest_start + i]) - 
+                        np.array(iface.positions[guest_start + j])
+                    )
+                    if dist < 0.16:  # Covalent bond threshold
+                        guest_mol.AppendBond(guest_indices[i], guest_indices[j], 1)
+            
+            mol_start = mol_end
+    
     # Add bonds for water molecules
     # Water uses 4 atoms per molecule (OW, HW1, HW2, MW) but MW is skipped
     # So we have 3 visible atoms per molecule in water_indices
@@ -526,8 +592,8 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         # water_indices has MW already filtered out, so we check the raw iface.atom_names
         # to verify the pattern before MW was skipped
         # Each water molecule has 4 atoms in iface: [OW, HW1, HW2, MW, OW, HW1, HW2, MW, ...]
-        # Water starts at iface.ice_atom_count
-        water_start_in_full = iface.ice_atom_count + mol_idx * 4
+        # Water starts at water_start (which is guest_end or ice_end)
+        water_start_in_full = water_start + mol_idx * 4
         water_names_check = iface.atom_names[water_start_in_full: water_start_in_full + 4]
         if water_names_check != ["OW", "HW1", "HW2", "MW"]:
             raise ValueError(
@@ -545,7 +611,59 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     
     # Do NOT set lattice on either molecule (interface structures use create_unit_cell_actor instead)
     
-    return ice_mol, water_mol
+    return ice_mol, water_mol, guest_mol
+
+
+def _count_guest_atoms_for_rendering(atom_names: list[str], start: int) -> int:
+    """Count atoms in a guest molecule starting at index.
+    
+    Guest types:
+    - Me: 1 atom (united-atom methane)
+    - C: 5 atoms (all-atom methane: C + 4H)
+    - For THF: starts with O or C (13 atoms)
+    
+    Args:
+        atom_names: List of atom names
+        start: Starting index
+    
+    Returns:
+        Number of atoms in this guest molecule
+    """
+    if start >= len(atom_names):
+        return 0
+    
+    first_atom = atom_names[start]
+    
+    # United-atom methane (Me) - single carbon
+    if first_atom == "Me":
+        return 1
+    
+    # All-atom methane (C + 4H)
+    if first_atom == "C":
+        count = 0
+        i = start
+        while i < len(atom_names) and i < start + 5:
+            count += 1
+            i += 1
+        return count
+    
+    # THF (starts with O or C)
+    if first_atom in ["O", "C"]:
+        count = 0
+        i = start
+        while i < len(atom_names):
+            if i < len(atom_names) and (atom_names[i] == "OW" or 
+               (i == start and atom_names[i] in ["O", "C"])):
+                if i > start:  # Found start of next molecule
+                    break
+            count += 1
+            i += 1
+            if count > 20:
+                break
+        return max(count, 1)
+    
+    # Default: treat as 1 atom guest
+    return 1
 
 
 def create_bond_lines_actor(

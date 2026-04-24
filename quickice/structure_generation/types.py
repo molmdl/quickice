@@ -221,27 +221,31 @@ class InterfaceStructure:
     Stores combined ice + water positions with phase distinction.
 
     Attributes:
-        positions: (N_atoms, 3) combined ice + water atom positions in nm.
-            Ice atoms come FIRST, then water atoms.
-        atom_names: Atom names for all atoms (ice names then water names)
+        positions: (N_atoms, 3) combined ice + water + guest atom positions in nm.
+            Ice atoms come FIRST, then guests (if any), then water atoms.
+        atom_names: Atom names for all atoms (ice names then guest names then water names)
         cell: (3, 3) box cell vectors in nm, stored as ROW vectors.
             Each row is a lattice vector. See Candidate.cell for details.
-        ice_atom_count: Number of ice atoms (marks split between ice and water)
+        ice_atom_count: Number of ice atoms (marks split between ice and guests/water)
         water_atom_count: Number of water atoms
         ice_nmolecules: Number of ice molecules
         water_nmolecules: Number of water molecules
         mode: Interface mode used
         report: gmx solvate-like generation report string
+        guest_atom_count: Number of guest atoms (0 if no guests, marks split between guests and water)
         molecule_index: List of MoleculeIndex entries tracking each molecule's
             position in the positions array. Populated when multiple molecule
             types are present. For backward compatibility, existing code using
             ice_atom_count still works without using this field.
+        guest_nmolecules: Number of guest molecules (0 if no guests)
 
     Note:
         Ice candidates from GenIce use 3 atoms per molecule (O, H, H).
+        Hydrate ice uses 4 atoms per molecule (OW, HW1, HW2, MW).
         Water from tip4p.gro uses 4 atoms per molecule (OW, HW1, HW2, MW).
-        The InterfaceStructure stores them combined with ice_atom_count marking
-        the boundary. Do NOT normalize atom counts—that is an export concern.
+        Guest molecules vary (CH4: 5 atoms, THF: 12 atoms).
+        The InterfaceStructure stores them combined with ice_atom_count and
+        guest_atom_count marking the boundaries. Do NOT normalize atom counts.
     """
 
     positions: np.ndarray
@@ -253,7 +257,9 @@ class InterfaceStructure:
     water_nmolecules: int
     mode: str
     report: str
+    guest_atom_count: int = 0
     molecule_index: list = field(default_factory=list)
+    guest_nmolecules: int = 0
 
 
 @dataclass

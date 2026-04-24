@@ -258,8 +258,8 @@ class IonViewerWidget(QWidget):
         # Store the structure reference
         self._current_interface = structure
 
-        # Convert to separate ice and water VTK molecules
-        ice_mol, water_mol = _interface_to_vtk_molecules(structure)
+        # Convert to separate ice, water, and guest VTK molecules
+        ice_mol, water_mol, guest_mol = _interface_to_vtk_molecules(structure)
 
         # Extract bonds from each molecule with PBC wrapping
         ice_bonds = self._extract_bonds(ice_mol, structure.cell)

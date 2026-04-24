@@ -135,6 +135,35 @@ def _count_guest_atoms(atom_names: list[str], start: int) -> int:
     return 1
 
 
+def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> int:
+    """Count the number of distinct guest molecules from guest atom indices.
+    
+    The guest_indices list contains all atom indices belonging to guests.
+    Since atoms are grouped by molecule (not by type), we need to count
+    how many distinct molecules exist in this list.
+    
+    Args:
+        atom_names: Full list of atom names (for counting atoms per molecule)
+        guest_indices: List of atom indices belonging to guests
+    
+    Returns:
+        Number of distinct guest molecules
+    """
+    if not guest_indices:
+        return 0
+    
+    count = 0
+    i = 0
+    while i < len(guest_indices):
+        atom_idx = guest_indices[i]
+        # Count atoms in this molecule using _count_guest_atoms
+        atoms_in_mol = _count_guest_atoms(atom_names, atom_idx)
+        count += 1
+        i += atoms_in_mol
+    
+    return count
+
+
 def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
     """Assemble piece interface structure: ice centered in water box.
 
@@ -207,6 +236,11 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     guest_atom_names = []
     guest_nmolecules = 0
     
+    # For hydrate, we need to tile ONLY water-framework atoms (not guests)
+    # Store water-framework-only positions for tiling
+    water_framework_positions = candidate.positions
+    water_framework_atom_names = candidate.atom_names
+    
     if is_hydrate:
         # Extract guest atoms from candidate positions
         # Water framework = OW-based, Guest = anything else (Me, C, etc.)
@@ -218,17 +252,28 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             # Extract guest positions - center them in the box
             guest_positions = candidate.positions[guest_indices].copy()
             guest_atom_names = [candidate.atom_names[i] for i in guest_indices]
-            guest_nmolecules = len(guest_indices)
+            
+            # Count guest MOLECULES, not atoms
+            # Each unique starting index is a different molecule
+            # Since _detect_guest_atoms returns consecutive atom indices per molecule,
+            # we count how many distinct molecules by counting the starts
+            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices)
             
             # Translate guest to box center (same as ice)
             guest_center = np.mean(guest_positions, axis=0)
             box_center = box_dims / 2.0
             offset = box_center - guest_center
             guest_positions = guest_positions + offset
-
+            
+            # For tiling, use ONLY water-framework atoms (filtered)
+            # This prevents tile_structure from failing with mixed atom types
+            water_framework_positions = candidate.positions[water_indices]
+            water_framework_atom_names = [candidate.atom_names[i] for i in water_indices]
+    
     # Tile ice to fill piece region (essentially just the candidate itself)
+    # For hydrate: use water-framework-only positions (guests removed)
     tiled_ice_positions, ice_nmolecules = tile_structure(
-        candidate.positions,
+        water_framework_positions,
         ice_dims,
         ice_dims,
         atoms_per_molecule=atoms_per_mol,
@@ -248,8 +293,10 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Build ice atom names from candidate's atom pattern (dynamically detected)
     # For ice: ["O", "H", "H"] repeating
     # For hydrate/TIP4P: ["OW", "HW1", "HW2", "MW"] repeating
+    # Use water_framework_atom_names if hydrate (to avoid guest atom types)
     ice_atom_names = []
-    pattern_start = candidate.atom_names[:atoms_per_mol]
+    pattern_source = water_framework_atom_names if is_hydrate else candidate.atom_names
+    pattern_start = pattern_source[:atoms_per_mol]
     for _ in range(ice_nmolecules):
         ice_atom_names.extend(pattern_start)
 
@@ -340,23 +387,20 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     ]
     report = "\n".join(report_lines)
 
-    # For hydrate: pass guest atoms in ice_atom_count for rendering
-    # The interface viewer detects guest atoms based on atom types (Me, C, etc.)
-    # So we need ice_atom_count to include guests for proper rendering
-    if is_hydrate and guest_nmolecules > 0:
-        # Combined ice + guest for rendering (interface viewer distinguishes by atom type)
-        total_ice_guest_count = ice_atom_count + guest_atom_count
-    else:
-        total_ice_guest_count = ice_atom_count
-
+    # Return InterfaceStructure with proper atom separation
+    # ice = water framework atoms only (OW-based)
+    # guest = guest molecules (Me, C, etc.)
+    # water = water box molecules (OW-based, TIP4P)
     return InterfaceStructure(
         positions=all_positions,
         atom_names=all_atom_names,
         cell=cell,
-        ice_atom_count=total_ice_guest_count,  # Now includes guests for hydrate
+        ice_atom_count=ice_atom_count,  # Ice (hydrate water framework) atom count
         water_atom_count=water_atom_count,
-        ice_nmolecules=ice_nmolecules + guest_nmolecules,  # Include guests in ice count
+        ice_nmolecules=ice_nmolecules,
         water_nmolecules=water_nmolecules,
         mode="piece",
-        report=report
+        report=report,
+        guest_atom_count=guest_atom_count,  # Guest atoms (default 0)
+        guest_nmolecules=guest_nmolecules  # Guest molecule count (default 0)
     )

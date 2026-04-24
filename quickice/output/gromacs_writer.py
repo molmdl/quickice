@@ -238,10 +238,16 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     
     Ice molecules (3-atom: O, H, H) are normalized to 4-atom TIP4P-ICE format
     (OW, HW1, HW2, MW) at export time. Water molecules (4-atom: OW, HW1, HW2, MW)
-    pass through unchanged.
+    pass through unchanged. Guest molecules (CH4, THF, etc.) are exported with
+    their native atom types.
+    
+    Atom arrangement in InterfaceStructure:
+    - Ice: indices 0 to ice_atom_count-1 (3 atoms/mol for classic ice, 4 atoms/mol for hydrate)
+    - Guests: indices ice_atom_count to ice_atom_count + guest_atom_count-1 (if guest_atom_count > 0)
+    - Water: indices ice_atom_count + guest_atom_count onward (4 atoms/mol)
     
     Args:
-        iface: InterfaceStructure object with combined ice + water positions
+        iface: InterfaceStructure object with combined ice + guests + water positions
         filepath: Output file path for .gro file
     
     Note:
@@ -249,11 +255,14 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
         For systems with >99999 residues, residue numbers wrap at 100000.
     """
-    # Total atoms: ice (3 atoms/mol) + water (4 atoms/mol) normalized to 4-atom TIP4P-ICE
-    # Each ice molecule gets 1 MW virtual site added, so output is 4 atoms per molecule
-    # Ice: nmol * 3 input atoms -> nmol * 4 output atoms (MW added)
-    # Water: nmol * 4 input atoms -> nmol * 4 output atoms (unchanged)
-    n_atoms = (iface.ice_nmolecules + iface.water_nmolecules) * 4
+    # Calculate total atoms:
+    # - Ice: ice_nmolecules * 3 input atoms -> ice_nmolecules * 4 output atoms (MW added)
+    # - Guests: guest_atom_count (no MW, pass through as-is)
+    # - Water: water_nmolecules * 4 (pass through as-is)
+    ice_output_atoms = iface.ice_nmolecules * 4  # MW virtual site added
+    guest_output_atoms = iface.guest_atom_count if iface.guest_atom_count > 0 else 0
+    water_output_atoms = iface.water_nmolecules * 4
+    n_atoms = ice_output_atoms + guest_output_atoms + water_output_atoms
     
     atom_num = 0
 
@@ -266,13 +275,36 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
 
         # Build all atom lines in memory for better I/O performance
         lines = []
+        
+        # Define boundaries
+        ice_end = iface.ice_atom_count
+        guest_start = ice_end
+        guest_end = ice_end + iface.guest_atom_count
+        water_start = guest_end
+        
+        # Detect atoms per ice molecule
+        # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
+        # Hydrate: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
+        ice_region_atom_names = iface.atom_names[:ice_end]
+        has_ow_in_ice = "OW" in ice_region_atom_names
+        atoms_per_ice_mol = 4 if has_ow_in_ice else 3
 
         # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
+        # OR: 4 atoms per molecule (OW, HW1, HW2, MW) → normalize to 4-atom
         for mol_idx in range(iface.ice_nmolecules):
-            base_idx = mol_idx * 3  # Ice uses 3 atoms per molecule
+            base_idx = mol_idx * atoms_per_ice_mol
             o_pos = iface.positions[base_idx]
-            h1_pos = iface.positions[base_idx + 1]
-            h2_pos = iface.positions[base_idx + 2]
+            
+            # Get H positions based on atoms per molecule
+            if atoms_per_ice_mol == 3:
+                # Classic ice: O, H, H
+                h1_pos = iface.positions[base_idx + 1]
+                h2_pos = iface.positions[base_idx + 2]
+            else:
+                # Hydrate: OW, HW1, HW2, MW
+                h1_pos = iface.positions[base_idx + 1]
+                h2_pos = iface.positions[base_idx + 2]
+            
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
             # Wrap residue number at 100000 (GROMACS convention for large systems)
@@ -306,11 +338,56 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                         f"   MW{atom_num_wrapped:5d}"
                         f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
+        # GUEST MOLECULES: pass through with native atom types
+        # Determine guest residue name based on atom type
+        guest_residue_names = {
+            "Me": "CH4",  # United-atom methane
+            "C": "CH4",   # All-atom methane (first atom is C)
+        }
+        
+        if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
+            guest_atom_names = iface.atom_names[guest_start:guest_end]
+            
+            # Determine residue name based on first guest atom
+            if guest_atom_names:
+                first_atom = guest_atom_names[0]
+                if first_atom == "Me":
+                    guest_res_name = "CH4"
+                elif first_atom == "C":
+                    guest_res_name = "CH4"
+                elif first_atom in ["O", "c"]:  # THF starts with O or lowercase c
+                    guest_res_name = "THF"
+                else:
+                    guest_res_name = "UNK"
+            else:
+                guest_res_name = "UNK"
+            
+            # Group atoms by molecule and write
+            mol_start = 0
+            for mol_idx in range(iface.guest_nmolecules):
+                guest_atoms = _count_guest_atoms(guest_atom_names, mol_start)
+                mol_end = mol_start + guest_atoms
+                
+                # Wrap residue number
+                res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
+                
+                for local_idx in range(mol_start, mol_end):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    actual_atom_idx = guest_start + local_idx
+                    pos = iface.positions[actual_atom_idx]
+                    atom_name = guest_atom_names[local_idx]
+                    lines.append(f"{res_num:5d}{guest_res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                
+                mol_start = mol_end
+
         # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
         for mol_idx in range(iface.water_nmolecules):
-            base_idx = iface.ice_atom_count + mol_idx * 4  # Water starts after ice
+            base_idx = water_start + mol_idx * 4
             # Wrap residue number at 100000 (GROMACS convention for large systems)
-            res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
+            res_num = (iface.ice_nmolecules + iface.guest_nmolecules + mol_idx + 1) % 100000
 
             atom_names = ["OW", "HW1", "HW2", "MW"]
             for i, atom_name in enumerate(atom_names):
@@ -330,16 +407,62 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
 
 
+def _count_guest_atoms(atom_names: list[str], start: int) -> int:
+    """Count atoms in a guest molecule starting at index.
+    
+    Args:
+        atom_names: List of atom names in guest region
+        start: Starting index within atom_names
+    
+    Returns:
+        Number of atoms in this guest molecule
+    """
+    if start >= len(atom_names):
+        return 0
+    
+    first_atom = atom_names[start]
+    
+    # United-atom methane (Me) - single carbon
+    if first_atom == "Me":
+        return 1
+    
+    # All-atom methane (C + 4H)
+    if first_atom == "C":
+        count = 0
+        i = start
+        while i < len(atom_names) and i < start + 5:
+            count += 1
+            i += 1
+        return count
+    
+    # THF (starts with O or C for the ring oxygen/carbon)
+    if first_atom in ["O", "C"]:
+        count = 0
+        i = start
+        while i < len(atom_names):
+            if atom_names[i] == "OW":
+                break
+            count += 1
+            i += 1
+            if count > 20:  # Safety limit
+                break
+        return max(count, 1)
+    
+    # Default: treat as 1 atom guest
+    return 1
+
+
 def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
     """Write GROMACS topology file for interface structure.
     
-    Uses a single SOL molecule type with combined ice + water molecule count.
+    Writes topology with SOL (water) for ice + water, and CH4/THF for guests
+    if present. Uses #include directives for molecule definitions.
     
     Args:
-        iface: InterfaceStructure object with ice_nmolecules and water_nmolecules
+        iface: InterfaceStructure object with ice, guest, and water counts
         filepath: Output file path for .top file
     """
-    total_molecules = iface.ice_nmolecules + iface.water_nmolecules
+    total_molecules = iface.ice_nmolecules + iface.guest_nmolecules + iface.water_nmolecules
     
     with open(filepath, 'w') as f:
         # Header
@@ -353,52 +476,59 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
         f.write("1               2               yes             0.5     0.8333\n\n")
         
-        # [ atomtypes ] - define custom atom types for TIP4P-ICE
+        # [ atomtypes ] - define custom atom types for TIP4P-ICE and guests
         f.write("[ atomtypes ]\n")
         f.write("; name  bond_type  atomic_number  mass  charge  ptype  V              W\n")
         f.write("OW_ice      OW_ice     8           15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
         f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
-        f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n\n")
+        f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n")
         
-        # [ moleculetype ] - define SOL (water)
-        f.write("[ moleculetype ]\n")
-        f.write("; Name        nrexcl\n")
-        f.write("SOL          2\n\n")
+        # Guest atom types if guests are present
+        if iface.guest_atom_count > 0:
+            # CH4 atom types (GAFF2) - common for methane
+            f.write("; CH4 atom types (GAFF2)\n")
+            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
         
-        # [ atoms ] - define atoms in molecule
-        f.write("[ atoms ]\n")
-        f.write(";   nr  type  resi  res  atom  cgnr     charge    mass\n")
-        f.write("   1   OW_ice    1  SOL    OW     1       0.0  16.00000\n")
-        f.write("   2   HW_ice    1  SOL   HW1     1     0.5897   1.00800\n")
-        f.write("   3   HW_ice    1  SOL   HW2     1     0.5897   1.00800\n")
-        f.write("   4   MW        1  SOL    MW     1    -1.1794   0.00000\n\n")
+        f.write("\n")
         
-        # [ settles ] - TIP4P water geometry (for rigid water)
-        f.write("[ settles ]\n")
-        f.write("; i  funct  doh     dhh\n")
-        f.write("  1    1    0.09572  0.15139\n\n")
+        # Include molecule definitions (after atomtypes, as GROMACS requires)
+        f.write("; Molecule definitions\n")
+        f.write('#include "tip4p-ice.itp"\n')
         
-        # [ virtual_sites3 ] - define MW virtual site
-        f.write("[ virtual_sites3 ]\n")
-        f.write("; Vsite from                    funct  a          b\n")
-        f.write("   4     1       2       3       1      0.13458335 0.13458335\n\n")
+        if iface.guest_nmolecules > 0:
+            # Determine guest type from atom names
+            if iface.guest_atom_count > 0:
+                ice_end = iface.ice_atom_count
+                first_guest_atom = iface.atom_names[ice_end] if ice_end < len(iface.atom_names) else "C"
+                if first_guest_atom in ["Me", "C"]:
+                    f.write('#include "ch4.itp"\n')
+                elif first_guest_atom in ["O", "C"]:  # THF
+                    f.write('#include "thf.itp"\n')
         
-        # [ exclusions ] - exclude virtual site from non-bonded
-        f.write("[ exclusions ]\n")
-        f.write("  1  2  3  4\n")
-        f.write("  2  1  3  4\n")
-        f.write("  3  1  2  4\n")
-        f.write("  4  1  2  3\n\n")
+        f.write("\n")
         
         # [ system ] - system-level section
         f.write("[ system ]\n")
         f.write("; Name\n")
         f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n\n")
         
-        # [ molecules ] - molecule counts (SINGLE combined count)
+        # [ molecules ] - molecule counts
         f.write("[ molecules ]\n")
         f.write("; Compound    #mols\n")
-        f.write(f"SOL          {total_molecules}\n")
+        f.write(f"SOL          {iface.ice_nmolecules + iface.water_nmolecules}\n")
+        
+        if iface.guest_nmolecules > 0:
+            # Determine guest residue name
+            if iface.guest_atom_count > 0:
+                ice_end = iface.ice_atom_count
+                first_guest_atom = iface.atom_names[ice_end] if ice_end < len(iface.atom_names) else "C"
+                if first_guest_atom in ["Me", "C"]:
+                    f.write(f"CH4          {iface.guest_nmolecules}\n")
+                elif first_guest_atom in ["O", "c"]:
+                    f.write(f"THF          {iface.guest_nmolecules}\n")
+                else:
+                    f.write(f"UNK          {iface.guest_nmolecules}\n")
 
 
 def write_multi_molecule_gro_file(

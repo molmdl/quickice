@@ -13,6 +13,7 @@ from vtkmodules.all import (
     vtkRenderer,
     vtkInteractorStyleTrackballCamera,
     vtkActor,
+    vtkMolecule,
 )
 
 import numpy as np
@@ -109,12 +110,17 @@ class InterfaceViewerWidget(QWidget):
     def set_interface_structure(self, structure: InterfaceStructure) -> None:
         """Load and display an interface structure.
         
-        Converts the InterfaceStructure to separate ice and water VTK molecules,
-        creates actors for atoms, bonds, and unit cell, then displays with
-        Z-axis side-view camera.
+        Converts the InterfaceStructure to separate ice, water, and optionally guest
+        VTK molecules, creates actors for atoms, bonds, and unit cell, then displays
+        with Z-axis side-view camera.
+        
+        For hydrate interfaces with guest molecules, renders:
+        - Ice/water framework: cyan bonds
+        - Guest molecules: gray ball-and-stick (using hydrate_renderer)
+        - Water box: cornflower blue bonds
         
         Args:
-            structure: An InterfaceStructure containing ice and water atoms.
+            structure: An InterfaceStructure containing ice, optional guests, and water atoms.
         """
         # Clear previous actors
         self._clear_actors()
@@ -122,14 +128,14 @@ class InterfaceViewerWidget(QWidget):
         # Store the structure reference
         self._current_structure = structure
         
-        # Convert to separate ice and water VTK molecules
-        ice_mol, water_mol = interface_to_vtk_molecules(structure)
+        # Convert to separate ice, water, and guest VTK molecules
+        ice_mol, water_mol, guest_mol = interface_to_vtk_molecules(structure)
         
         # Extract bonds from each molecule with PBC wrapping
         ice_bonds = self._extract_bonds(ice_mol, structure.cell)
         water_bonds = self._extract_bonds(water_mol, structure.cell)
         
-        # Create bond line actors
+        # Create bond line actors for ice and water
         self._ice_bond_actor = create_bond_lines_actor(
             ice_bonds, ICE_COLOR, BOND_LINE_WIDTH
         )
@@ -137,12 +143,26 @@ class InterfaceViewerWidget(QWidget):
             water_bonds, WATER_COLOR, BOND_LINE_WIDTH
         )
         
+        # Create guest actor if guests exist
+        if guest_mol is not None and structure.guest_atom_count > 0:
+            # Use hydrate_renderer to create ball-and-stick guest visualization
+            # Import here to avoid circular imports
+            from quickice.gui.hydrate_renderer import _build_vtk_molecule
+            guest_actor = self._create_guest_ball_and_stick_actor(
+                structure, guest_mol
+            )
+            self._guest_actor = guest_actor
+        else:
+            self._guest_actor = None
+        
         # Create unit cell actor
         self._unit_cell_actor = create_unit_cell_actor(structure.cell)
         
         # Add all actors to renderer (bond lines and unit cell only)
         self.renderer.AddActor(self._ice_bond_actor)
         self.renderer.AddActor(self._water_bond_actor)
+        if self._guest_actor is not None:
+            self.renderer.AddActor(self._guest_actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
         # Auto-fit camera to frame all actors
@@ -150,6 +170,38 @@ class InterfaceViewerWidget(QWidget):
         
         # Render the scene
         self.render_window.Render()
+    
+    def _create_guest_ball_and_stick_actor(self, structure: InterfaceStructure, guest_mol: vtkMolecule) -> vtkActor:
+        """Create a ball-and-stick actor for guest molecules.
+        
+        Uses vtkMoleculeMapper with ball-and-stick settings for CPK coloring
+        and proper bond rendering.
+        
+        Args:
+            structure: InterfaceStructure containing guest data
+            guest_mol: vtkMolecule with guest atoms
+        
+        Returns:
+            vtkActor configured for ball-and-stick visualization
+        """
+        from vtkmodules.all import vtkMoleculeMapper
+        
+        # Create mapper with ball-and-stick settings
+        mapper = vtkMoleculeMapper()
+        mapper.SetInputData(guest_mol)
+        mapper.UseBallAndStickSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+        mapper.SetAtomicRadiusScaleFactor(0.25 * ANGSTROM_TO_NM)  # 0.025 nm
+        mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)  # 0.0075 nm
+        mapper.SetBondColor(180, 180, 180)  # Gray bonds
+        
+        # Create actor
+        actor = vtkActor()
+        actor.SetMapper(mapper)
+        
+        return actor
     
     def set_hydrate_structure(self, structure: HydrateStructure) -> None:
         """Load and display a hydrate structure as interface (Issue 2).
