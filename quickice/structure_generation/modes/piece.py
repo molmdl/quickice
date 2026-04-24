@@ -386,7 +386,7 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm",
     ]
     report = "\n".join(report_lines)
-
+    
     # Return InterfaceStructure with proper atom separation
     # ice = water framework atoms only (OW-based)
     # guest = guest molecules (Me, C, etc.)
