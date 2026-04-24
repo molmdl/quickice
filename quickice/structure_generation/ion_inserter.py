@@ -121,28 +121,33 @@ class IonInserter:
     ) -> int:
         """Calculate number of ion pairs from concentration and volume.
         
-        Uses: N_ions = C_M × V_L × NA
+        Uses: N = C_M × V_L × NA
         
         Where:
-            - C_M = concentration in mol/L
+            - C_M = concentration in mol/L (molarity of NaCl salt)
             - V_L = liquid volume in nm³ converted to L (× 1e-24)
             - NA = Avogadro's number
+        
+        Note: 1 M NaCl = 1 mol NaCl per liter = produces 2 mol ions (Na+ + Cl-)
+        The factor of 2 is handled automatically when inserting alternating ions.
         
         Args:
             concentration_molar: NaCl concentration in mol/L (M)
             liquid_volume_nm3: Liquid region volume in nm³
             
         Returns:
-            Number of ion pairs (each pair = 1 Na+ + 1 Cl-)
+            Number of NaCl formula units (each becomes 1 Na+ + 1 Cl- ion pair)
         """
         # Convert nm³ to L: 1 nm³ = 1e-24 L
         volume_liters = liquid_volume_nm3 * 1e-24
         
-        # Calculate total number of ions
-        n_ions = concentration_molar * volume_liters * AVOGADRO
+        # Calculate number of NaCl formula units from molarity
+        # C_M (mol/L) × V (L) = moles of NaCl
+        # moles × NA = number of NaCl formula units
+        n_formula_units = concentration_molar * volume_liters * AVOGADRO
         
-        # Return ion pairs (round to nearest int)
-        return int(round(n_ions / 2))
+        # Return formula units (each will be inserted as a Na+/Cl- ion pair)
+        return int(round(n_formula_units))
     
     def replace_water_with_ions(
         self,

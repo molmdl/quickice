@@ -3,6 +3,11 @@
 Centers an ice crystal inside a water box. The ice piece dimensions
 are derived from the candidate cell, and overlapping water molecules
 are removed.
+
+This module also handles hydrate->interface conversion:
+- Extracts guest molecules from hydrate candidate
+- Places guests around ice piece (same as ice, near interface)
+- Preserves guest molecules in InterfaceStructure for rendering/export
 """
 
 import numpy as np
@@ -42,20 +47,115 @@ def detect_atoms_per_molecule(atom_names: list[str]) -> int:
     return 3  # Default to GenIce ice (3 atoms)
 
 
+def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[list[int], list[int]]:
+    """Detect indices of guest molecules vs water framework in candidate positions.
+    
+    For hydrate candidates:
+    - Water framework atoms: OW, HW1, HW2, MW (TIP4P pattern)
+    - Guest atoms: anything else (Me, C, H, etc.)
+    
+    Args:
+        atom_names: List of atom names from candidate
+        atoms_perMol: Expected atoms per molecule (4 for TIP4P/hydrate)
+    
+    Returns:
+        Tuple of (water_framework_atom_indices, guest_atom_indices) as lists
+    """
+    water_indices = []
+    guest_indices = []
+    
+    i = 0
+    while i < len(atom_names):
+        # Check first atom of each molecule
+        if i + atoms_perMol <= len(atom_names):
+            first_atom = atom_names[i]
+            # Water framework: first atom is OW (TIP4P water oxygen)
+            if first_atom == "OW":
+                water_indices.extend(range(i, i + atoms_perMol))
+                i += atoms_perMol
+            else:
+                # This is a guest molecule (united-atom CH4 'Me', all-atom CH4 'C', etc.)
+                # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
+                # Detect based on atom type
+                guest_atoms = _count_guest_atoms(atom_names, i)
+                guest_indices.extend(range(i, i + guest_atoms))
+                i += guest_atoms
+        else:
+            # Shouldn't happen if data is consistent
+            break
+    
+    return water_indices, guest_indices
+
+
+def _count_guest_atoms(atom_names: list[str], start: int) -> int:
+    """Count atoms in a guest molecule starting at index.
+    
+    Guest types:
+    - Me: 1 atom (united-atom methane)
+    - C: 5 atoms (all-atom methane: C + 4H)
+    - For THF: starts with O or C (13 atoms total with H)
+    """
+    if start >= len(atom_names):
+        return 0
+    
+    first_atom = atom_names[start]
+    
+    # United-atom methane (Me) - single carbon
+    if first_atom == "Me":
+        return 1
+    
+    # All-atom methane (C + 4H)
+    if first_atom == "C":
+        # Count up to 5 atoms (C + up to 4H)
+        count = 0
+        i = start
+        while i < len(atom_names) and i < start + 5:
+            count += 1
+            i += 1
+        return count
+    
+    # THF (starts with O or C, 12-13 atoms)
+    if first_atom in ["O", "C"]:
+        # Try to count all atoms in this molecule (looking for next O or start pattern)
+        # Or count up to 20 atoms (generous upper bound for THF + H)
+        count = 0
+        i = start
+        # Simple approach: count all atoms until we hit OW (water) or run out
+        while i < len(atom_names):
+            if atom_names[i] == "OW":
+                break
+            count += 1
+            i += 1
+            # Safety limit
+            if count > 20:
+                break
+        return max(count, 1)
+    
+    # Default: treat as 1 atom guest
+    return 1
+
+
 def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceStructure:
     """Assemble piece interface structure: ice centered in water box.
 
     The ice piece is centered in the water box. Overlapping water molecules
     are removed. The ice piece dimensions are derived from the candidate cell.
 
+    For hydrate->interface conversion:
+    - Also extracts and preserves guest molecules from candidate
+    - Guests are placed in the middle layer (ice-water interface region)
+    - Guest molecules are preserved in output for rendering/export
+
     For v3.0, only orthogonal boxes are supported (cube/rectangular prism).
 
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).
+                  OR hydrate candidate with metadata["original_hydrate"] = True
         config: Interface configuration with box dimensions.
 
     Returns:
-        InterfaceStructure with ice (centered) + water positions.
+        InterfaceStructure with ice (centered) + guest + water positions.
+        If hydrate: preserves guest molecules in ice_atom_count + guest_atoms structure
 
     Raises:
         InterfaceGenerationError: If box is smaller than ice piece or generation fails.
@@ -99,6 +199,32 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Detect atoms per molecule from candidate atom names
     # Handles both GenIce ice (3 atoms: O, H, H) and TIP4P/hydrate (4 atoms: OW, HW1, HW2, MW)
     atoms_per_mol = detect_atoms_per_molecule(candidate.atom_names)
+
+    # === HYDRATE FIX: Extract guest molecules from candidate ===
+    # Check if this is a hydrate candidate (from hydrate->interface flow)
+    is_hydrate = candidate.metadata.get("original_hydrate", False)
+    guest_positions = None
+    guest_atom_names = []
+    guest_nmolecules = 0
+    
+    if is_hydrate:
+        # Extract guest atoms from candidate positions
+        # Water framework = OW-based, Guest = anything else (Me, C, etc.)
+        water_indices, guest_indices = _detect_guest_atoms(
+            candidate.atom_names, atoms_per_mol
+        )
+        
+        if guest_indices:
+            # Extract guest positions - center them in the box
+            guest_positions = candidate.positions[guest_indices].copy()
+            guest_atom_names = [candidate.atom_names[i] for i in guest_indices]
+            guest_nmolecules = len(guest_indices)
+            
+            # Translate guest to box center (same as ice)
+            guest_center = np.mean(guest_positions, axis=0)
+            box_center = box_dims / 2.0
+            offset = box_center - guest_center
+            guest_positions = guest_positions + offset
 
     # Tile ice to fill piece region (essentially just the candidate itself)
     tiled_ice_positions, ice_nmolecules = tile_structure(
@@ -168,44 +294,68 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             atoms_per_molecule=4
         )
 
-    # Combine: ice (centered) FIRST, then water
-    if len(centered_ice_positions) > 0 and len(water_positions) > 0:
-        all_positions = np.vstack([centered_ice_positions, water_positions])
-    elif len(centered_ice_positions) > 0:
-        all_positions = centered_ice_positions
-    elif len(water_positions) > 0:
-        all_positions = water_positions
+    # === HYDRATE FIX: Combine: ice (centered) + guest + water ===
+    # Order: ice first, then guest, then water (all in same positions array)
+    all_parts = []
+    all_names_parts = []
+    
+    if len(centered_ice_positions) > 0:
+        all_parts.append(centered_ice_positions)
+        all_names_parts.append(ice_atom_names)
+    
+    if guest_positions is not None and len(guest_positions) > 0:
+        all_parts.append(guest_positions)
+        all_names_parts.append(guest_atom_names)
+    
+    if len(water_positions) > 0:
+        all_parts.append(water_positions)
+        all_names_parts.append(water_atom_names)
+    
+    if all_parts:
+        all_positions = np.vstack(all_parts)
+        all_atom_names = sum(all_names_parts, [])
     else:
         all_positions = np.zeros((0, 3), dtype=float)
-
-    # Combine atom names
-    all_atom_names = ice_atom_names + water_atom_names
+        all_atom_names = []
 
     # Compute counts
+    # For hydrate: ice + guest atoms = ice_atom_count + guest atoms (combined for rendering)
     ice_atom_count = len(centered_ice_positions)
+    guest_atom_count = len(guest_positions) if guest_positions is not None else 0
     water_atom_count = len(water_positions)
 
     # Build cell matrix
     cell = np.diag([config.box_x, config.box_y, config.box_z])
 
     # Build report (gmx solvate convention)
-    total_molecules = ice_nmolecules + water_nmolecules
-    report = (
-        f"Generated piece interface structure\n"
-        f"  Ice molecules: {ice_nmolecules}\n"
-        f"  Water molecules: {water_nmolecules}\n"
-        f"  Total molecules: {total_molecules}\n"
-        f"  Ice piece: {ice_dims[0]:.2f} x {ice_dims[1]:.2f} x {ice_dims[2]:.2f} nm\n"
-        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm"
-    )
+    total_molecules = ice_nmolecules + guest_nmolecules + water_nmolecules
+    report_lines = [
+        f"Generated piece interface structure",
+        f"  Ice molecules: {ice_nmolecules}",
+        f"  Guest molecules: {guest_nmolecules}",
+        f"  Water molecules: {water_nmolecules}",
+        f"  Total molecules: {total_molecules}",
+        f"  Ice piece: {ice_dims[0]:.2f} x {ice_dims[1]:.2f} x {ice_dims[2]:.2f} nm",
+        f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm",
+    ]
+    report = "\n".join(report_lines)
+
+    # For hydrate: pass guest atoms in ice_atom_count for rendering
+    # The interface viewer detects guest atoms based on atom types (Me, C, etc.)
+    # So we need ice_atom_count to include guests for proper rendering
+    if is_hydrate and guest_nmolecules > 0:
+        # Combined ice + guest for rendering (interface viewer distinguishes by atom type)
+        total_ice_guest_count = ice_atom_count + guest_atom_count
+    else:
+        total_ice_guest_count = ice_atom_count
 
     return InterfaceStructure(
         positions=all_positions,
         atom_names=all_atom_names,
         cell=cell,
-        ice_atom_count=ice_atom_count,
+        ice_atom_count=total_ice_guest_count,  # Now includes guests for hydrate
         water_atom_count=water_atom_count,
-        ice_nmolecules=ice_nmolecules,
+        ice_nmolecules=ice_nmolecules + guest_nmolecules,  # Include guests in ice count
         water_nmolecules=water_nmolecules,
         mode="piece",
         report=report
