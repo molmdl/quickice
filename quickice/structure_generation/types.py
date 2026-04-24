@@ -59,7 +59,7 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
         "unit_cell_molecules": 136,
     },
     "sH": {
-        "genice_name": "CS3",
+        "genice_name": "sH",
         "description": "Structure H hydrate",
         "cages": {
             "small": {"name": "5¹²", "count_per_unit_cell": 3, "guest_fits": ["ch4"]},
