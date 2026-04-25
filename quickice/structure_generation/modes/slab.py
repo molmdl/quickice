@@ -383,8 +383,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     # === HYDRATE FIX: Tile and shift guests to water region (after dimension adjustments) ===
     processed_guest_positions = None
     processed_guest_atom_names = []
+    original_guest_nmolecules = 0  # Default: no hydrate guests
     
     if is_hydrate and raw_guest_positions is not None and len(raw_guest_positions) > 0:
+        # Store initial guest molecule count BEFORE tiling (for atom name expansion)
+        original_guest_nmolecules = guest_nmolecules
+        
         # Calculate water region bounds for tiling guests
         water_region_dims = np.array([
             adjusted_box_x, 
@@ -395,10 +399,28 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         # Get extent of original guest structure (for tiling)
         guest_cell_dims = get_cell_extent(candidate.cell)
         
-        # Tile guests across the water region
-        # Use detected atoms per molecule for guest type
-        guest_atoms_per_mol = atoms_per_mol
+        # Determine atoms per GUEST molecule (not water framework)
+        # Guests can have different atom counts than water framework
+        # Me = 1 atom, CH4 = 5 atoms, THF = 13+ atoms
+        if raw_guest_positions is not None and len(raw_guest_positions) > 0:
+            # Detect from first guest atom type
+            if guest_atom_names[0] == "Me":
+                guest_atoms_per_mol = 1
+            elif guest_atom_names[0] == "C":
+                # Could be CH4 (5 atoms) or CO2 (3 atoms) - detect from second atom
+                if len(guest_atom_names) >= 2 and guest_atom_names[1] == "O":
+                    guest_atoms_per_mol = 3  # CO2
+                else:
+                    guest_atoms_per_mol = 5  # CH4
+            elif guest_atom_names[0] == "O":
+                # THF or similar
+                guest_atoms_per_mol = len(guest_atom_names)  # All guest atoms
+            else:
+                guest_atoms_per_mol = 1  # Default
+        else:
+            guest_atoms_per_mol = 4  # Fallback
         
+        # Tile guests across the water region
         tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
@@ -413,7 +435,24 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             tilable_guest_positions[:, 2] += adjusted_ice_thickness
         
         processed_guest_positions = tilable_guest_positions
-        processed_guest_atom_names = guest_atom_names
+        
+        # FIX: Tile the guest atom names to match the tiled molecule count
+        # original_guest_nmolecules (e.g., 8) -> tiled_guest_nmolecules (e.g., ~180)
+        # Need to expand atom names to match positions
+        if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
+            tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
+            # Tile atom names: repeat the original guest atom names for each tiled copy
+            processed_guest_atom_names = guest_atom_names * tiling_factor
+            # Handle remainder if tiling_factor * original < tiled
+            remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
+            if remainder > 0:
+                # Add atom names for remaining guest molecules (partial tiling)
+                # Count atoms per guest molecule in original
+                atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
+                if atoms_per_guest > 0:
+                    processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
+        else:
+            processed_guest_atom_names = []
         
         # Update guest molecule count to reflect actual tiled count
         guest_nmolecules = tiled_guest_nmolecules

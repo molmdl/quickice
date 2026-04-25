@@ -349,17 +349,34 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     # === HYDRATE FIX: Tile and place guests in pocket region ===
     processed_guest_positions = None
     processed_guest_atom_names = []
+    original_guest_nmolecules = 0  # Default: no hydrate guests
     
     if is_hydrate and raw_guest_positions is not None and len(raw_guest_positions) > 0:
+        # Store initial guest molecule count BEFORE tiling
+        original_guest_nmolecules = guest_nmolecules
+        
         # Tile guests in pocket region
         pocket_dims = np.array([2 * radius, 2 * radius, 2 * radius])
         guest_cell_dims = get_cell_extent(candidate.cell)
+        
+        # Determine atoms per GUEST molecule (not water framework)
+        if guest_atom_names[0] == "Me":
+            guest_atoms_per_mol = 1
+        elif guest_atom_names[0] == "C":
+            if len(guest_atom_names) >= 2 and guest_atom_names[1] == "O":
+                guest_atoms_per_mol = 3  # CO2
+            else:
+                guest_atoms_per_mol = 5  # CH4
+        elif guest_atom_names[0] == "O":
+            guest_atoms_per_mol = len(guest_atom_names)
+        else:
+            guest_atoms_per_mol = 1
         
         tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
             pocket_dims,
-            atoms_per_molecule=atoms_per_mol,
+            atoms_per_molecule=guest_atoms_per_mol,
             cell_matrix=cell_matrix
         )
         
@@ -369,7 +386,19 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             tilable_guest_positions = tilable_guest_positions + fill_origin
         
         processed_guest_positions = tilable_guest_positions
-        processed_guest_atom_names = guest_atom_names
+        
+        # FIX: Tile the guest atom names to match the tiled molecule count
+        if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
+            tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
+            processed_guest_atom_names = guest_atom_names * tiling_factor
+            remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
+            if remainder > 0:
+                atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
+                if atoms_per_guest > 0:
+                    processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
+        else:
+            processed_guest_atom_names = []
+        
         guest_nmolecules = tiled_guest_nmolecules
 
     # Detect overlaps between remaining ice and cavity water
@@ -467,26 +496,4 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         report=report,
         guest_atom_count=guest_atom_count,
         guest_nmolecules=guest_nmolecules
-    )
-    
-    report = (
-        f"Generated pocket interface structure\n"
-        f"  Ice molecules: {ice_nmolecules}\n"
-        f"  Water molecules: {water_nmolecules}\n"
-        f"  Total molecules: {total_molecules}\n"
-        f"  Cavity diameter: {config.pocket_diameter:.2f} nm\n"
-        f"  Box: {adjusted_box_x:.2f} x {adjusted_box_y:.2f} x {adjusted_box_z:.2f} nm"
-        f"{adjustment_report}"
-    )
-
-    return InterfaceStructure(
-        positions=all_positions,
-        atom_names=all_atom_names,
-        cell=cell,
-        ice_atom_count=ice_atom_count,
-        water_atom_count=water_atom_count,
-        ice_nmolecules=ice_nmolecules,
-        water_nmolecules=water_nmolecules,
-        mode="pocket",
-        report=report
     )
