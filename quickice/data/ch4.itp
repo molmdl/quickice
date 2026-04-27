@@ -12,11 +12,11 @@ ch4       3
 
 [ atoms ]
 ;  Index   type   residue  resname   atom         cgnr     charge       mass
-     1     c3         1      MOL     C              1   -0.46580968   12.010736
-     2     hc         1      MOL     H              2    0.11645242    1.007941
-     3     hc         1      MOL     H              3    0.11645242    1.007941
-     4     hc         1      MOL     H              4    0.11645242    1.007941
-     5     hc         1      MOL     H              5    0.11645242    1.007941
+     1     c3         1      CH4    C              1   -0.46580968   12.010736
+     2     hc         1      CH4    H              2    0.11645242    1.007941
+     3     hc         1      CH4    H              3    0.11645242    1.007941
+     4     hc         1      CH4    H              4    0.11645242    1.007941
+     5     hc         1      CH4    H              5    0.11645242    1.007941
  
 [ bonds ]
 ;  atom_i   atom_j  functype      r0 (nm)    k (kJ/mol/nm^2)
