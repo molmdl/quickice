@@ -5,6 +5,7 @@ from generated ice structure candidates using the TIP4P-ICE water model.
 """
 
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -13,6 +14,88 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure, I
 
 # TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
 TIP4P_ICE_ALPHA = 0.13458335
+
+
+def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
+    """Parse residue name from a GROMACS .itp file's [ atoms ] section.
+    
+    The residue name is found in column 4 of the [ atoms ] section lines.
+    
+    Args:
+        itp_path: Path to the .itp file
+        
+    Returns:
+        Residue name string (e.g., "CH4", "THF"), or None if not found
+    """
+    try:
+        with open(itp_path, 'r') as f:
+            in_atoms_section = False
+            for line in f:
+                line = line.strip()
+                
+                # Check for [ atoms ] section header
+                if line.startswith('['):
+                    if 'atoms' in line.lower():
+                        in_atoms_section = True
+                    else:
+                        in_atoms_section = False
+                    continue
+                
+                # Skip comments and empty lines
+                if not line or line.startswith(';'):
+                    continue
+                
+                # Parse [ atoms ] section line
+                # Format: nr  type  resi  res  atom  cgnr  charge  mass
+                if in_atoms_section:
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        # Column 4 (0-indexed: 3) is residue name
+                        res_name = parts[3]
+                        return res_name
+    except (IOError, OSError):
+        pass
+    
+    return None
+
+
+def get_guest_residue_name(guest_type: str) -> str:
+    """Get the residue name for a guest molecule type from its itp file.
+    
+    Reads the residue name from the bundled itp file in quickice/data/.
+    Falls back to hardcoded values if the itp file cannot be read.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf", etc.)
+    
+    Returns:
+        Residue name from the itp file (e.g., "CH4", "THF")
+    """
+    # Try to read from bundled itp file
+    try:
+        import quickice
+        package_dir = Path(quickice.__file__).parent
+        itp_path = package_dir / "data" / f"{guest_type}.itp"
+        
+        if not itp_path.exists():
+            # Fallback to project root (for development)
+            itp_path = Path(__file__).parent.parent / "data" / f"{guest_type}.itp"
+        
+        if itp_path.exists():
+            res_name = parse_itp_residue_name(itp_path)
+            if res_name:
+                return res_name
+    except Exception:
+        pass
+    
+    # Fallback to hardcoded values (preserves backward compatibility)
+    FALLBACK_RESIDUE_NAMES = {
+        "ch4": "CH4",
+        "thf": "THF",
+        "co2": "CO2",
+        "h2": "H2",
+    }
+    return FALLBACK_RESIDUE_NAMES.get(guest_type, "UNK")
 
 
 # Mapping from internal molecule type to GROMACS names
@@ -339,26 +422,34 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                         f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
         # GUEST MOLECULES: pass through with native atom types
-        # Determine guest residue name based on atom type
-        guest_residue_names = {
-            "Me": "CH4",  # United-atom methane
-            "C": "CH4",   # All-atom methane (first atom is C)
-        }
+        # Determine guest residue name by reading from itp file
         
         if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
             guest_atom_names = iface.atom_names[guest_start:guest_end]
             
-            # Determine residue name based on first guest atom
+            # Determine guest type based on first guest atom
             if guest_atom_names:
                 first_atom = guest_atom_names[0]
                 if first_atom == "Me":
-                    guest_res_name = "CH4"
+                    guest_type = "ch4"
                 elif first_atom == "C":
-                    guest_res_name = "CH4"
+                    # Could be CH4 (5 atoms) or THF (13 atoms starting with C)
+                    # Count atoms to determine
+                    count = _count_guest_atoms(guest_atom_names, 0)
+                    if count <= 5:
+                        guest_type = "ch4"
+                    else:
+                        guest_type = "thf"
                 elif first_atom in ["O", "c"]:  # THF starts with O or lowercase c
-                    guest_res_name = "THF"
+                    guest_type = "thf"
                 else:
-                    guest_res_name = "UNK"
+                    guest_type = None
+            else:
+                guest_type = None
+            
+            # Get residue name from itp file (not hardcoded)
+            if guest_type:
+                guest_res_name = get_guest_residue_name(guest_type)
             else:
                 guest_res_name = "UNK"
             
@@ -519,14 +610,26 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write(f"SOL          {iface.ice_nmolecules + iface.water_nmolecules}\n")
         
         if iface.guest_nmolecules > 0:
-            # Determine guest residue name
+            # Determine guest residue name from itp file
             if iface.guest_atom_count > 0:
                 ice_end = iface.ice_atom_count
                 first_guest_atom = iface.atom_names[ice_end] if ice_end < len(iface.atom_names) else "C"
                 if first_guest_atom in ["Me", "C"]:
-                    f.write(f"CH4          {iface.guest_nmolecules}\n")
+                    # Could be CH4 (5 atoms) or THF (13 atoms starting with C)
+                    # Count atoms to determine
+                    count = _count_guest_atoms(iface.atom_names[ice_end:ice_end + 20], 0)
+                    if count <= 5:
+                        guest_type = "ch4"
+                    else:
+                        guest_type = "thf"
                 elif first_guest_atom in ["O", "c"]:
-                    f.write(f"THF          {iface.guest_nmolecules}\n")
+                    guest_type = "thf"
+                else:
+                    guest_type = None
+                
+                if guest_type:
+                    guest_res_name = get_guest_residue_name(guest_type)
+                    f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
                 else:
                     f.write(f"UNK          {iface.guest_nmolecules}\n")
 
@@ -565,8 +668,12 @@ def write_multi_molecule_gro_file(
         lines = []
         atom_num = 0
         for mol in molecule_index:
-            gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
-            res_name = gromacs_info["res_name"]
+            # Get residue name from itp file for guest molecules
+            if mol.mol_type in ["ch4", "thf", "co2", "h2"]:
+                res_name = get_guest_residue_name(mol.mol_type)
+            else:
+                gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
+                res_name = gromacs_info["res_name"]
             
             # Residue number wraps at 100000
             res_num = (molecule_index.index(mol) + 1) % 100000
@@ -632,10 +739,14 @@ def write_multi_molecule_top_file(
     # Build [ molecules ] section entries in order of first appearance
     molecules_lines = []
     for mol_type in unique_types:
-        gromacs_info = MOLECULE_TO_GROMACS.get(mol_type, {"mol_name": "UNK"})
-        mol_name = gromacs_info["mol_name"]
+        # Get residue name from itp file if available
+        if mol_type in ["ch4", "thf", "co2", "h2"]:
+            res_name = get_guest_residue_name(mol_type)
+        else:
+            gromacs_info = MOLECULE_TO_GROMACS.get(mol_type, {"mol_name": "UNK"})
+            res_name = gromacs_info.get("mol_name", "UNK")
         count = counts[mol_type]
-        molecules_lines.append(f"{mol_name:<15s} {count:10d}")
+        molecules_lines.append(f"{res_name:<15s} {count:10d}")
     
     # Build list of .itp files to include
     itp_includes: list[str] = []

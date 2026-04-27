@@ -222,6 +222,8 @@ class IonInserter:
             ion_pairs = len(water_mols) // 2
             if ion_pairs == 0:
                 # Return a properly typed IonStructure with zero ions
+                guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+                guest_atom_count = getattr(structure, 'guest_atom_count', 0)
                 return IonStructure(
                     positions=structure.positions,
                     atom_names=structure.atom_names,
@@ -230,6 +232,8 @@ class IonInserter:
                     na_count=0,
                     cl_count=0,
                     report=f"Ion insertion: not enough water molecules for ion placement\n",
+                    guest_nmolecules=guest_nmolecules,
+                    guest_atom_count=guest_atom_count,
                 )
         
         # Randomly select water molecules to replace
@@ -350,6 +354,10 @@ class IonInserter:
         else:
             combined = np.zeros((0, 3))
         
+        # Preserve guest molecule information from input structure
+        guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+        
         return IonStructure(
             positions=combined,
             atom_names=new_atom_names,
@@ -358,6 +366,8 @@ class IonInserter:
             na_count=na_count,
             cl_count=cl_count,
             report=report,
+            guest_nmolecules=guest_nmolecules,
+            guest_atom_count=guest_atom_count,
         )
 
 

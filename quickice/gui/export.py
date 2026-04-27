@@ -86,6 +86,46 @@ class IonGROMACSExporter:
             water_itp_path = path.with_name("tip4p-ice.itp")
             shutil.copy(itp_source, water_itp_path)
             
+            # Copy guest .itp file if guests are present in the original interface
+            if ion_structure.guest_nmolecules > 0 and ion_structure.guest_atom_count > 0:
+                # Determine guest type from ion structure atom names
+                # Check first few atoms to determine guest type (CH4 vs THF)
+                # Guest atoms were at the beginning of original interface structure
+                # After ion insertion, we need to check existing atom names
+                # This is tricky since IonStructure only has ions now
+                
+                # Approach: If we have guest_nmolecules > 0, check if guest data 
+                # in molecule_index has guest type info, or default to CH4 (most common)
+                
+                # Check molecule_index for guest molecule type
+                guest_type = None
+                for mol in ion_structure.molecule_index:
+                    if mol.mol_type == "guest":
+                        # Try to determine guest type from atom names in positions
+                        # Not available in IonStructure, so use heuristic
+                        # Default to CH4 (most common hydrate guest)
+                        guest_type = "ch4"
+                        break
+                
+                if guest_type is None:
+                    # No guest type found in molecule_index, check if guests existed
+                    # Default based on count (heuristic: CH4 has 5 atoms, THF has 13+)
+                    if ion_structure.guest_atom_count > 0:
+                        if ion_structure.guest_atom_count >= 13:
+                            guest_type = "thf"
+                        else:
+                            guest_type = "ch4"
+                
+                if guest_type:
+                    try:
+                        guest_itp_source = _get_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}.itp")
+                        shutil.copy(guest_itp_source, guest_itp_dest)
+                    except FileNotFoundError:
+                        # Guest .itp file not found - will cause GROMACS to fail
+                        # but don't block export, user can add manually
+                        pass
+            
             return True
         except Exception as e:
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")

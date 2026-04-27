@@ -342,6 +342,8 @@ class IonStructure:
         na_count: Number of Na+ ions placed
         cl_count: Number of Cl- ions placed
         report: Generation report string
+        guest_nmolecules: Number of guest molecules (from input interface)
+        guest_atom_count: Number of guest atoms (from input interface)
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -350,6 +352,8 @@ class IonStructure:
     na_count: int
     cl_count: int
     report: str
+    guest_nmolecules: int = 0
+    guest_atom_count: int = 0
 
 
 @dataclass
