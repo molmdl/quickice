@@ -380,7 +380,9 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     else:
         trimmed_water_positions = water_positions
 
-    # === HYDRATE FIX: Tile and shift guests to water region (after dimension adjustments) ===
+    # === HYDRATE FIX: Tile guests in ICE regions, NOT water region ===
+    # Guests should be IN the hydrate (ice) layers, distributed in both bottom and top ice
+    # Bottom ice: Z = [0, ice_thickness], Top ice: Z = [ice_thickness + water_thickness, box_z]
     processed_guest_positions = None
     processed_guest_atom_names = []
     original_guest_nmolecules = 0  # Default: no hydrate guests
@@ -389,11 +391,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         # Store initial guest molecule count BEFORE tiling (for atom name expansion)
         original_guest_nmolecules = guest_nmolecules
         
-        # Calculate water region bounds for tiling guests
-        water_region_dims = np.array([
+        # Calculate ICE region bounds for tiling guests (NOT water region)
+        # Use ice region dimensions (same as bottom ice layer)
+        ice_region_dims = np.array([
             adjusted_box_x, 
             adjusted_box_y, 
-            config.water_thickness
+            adjusted_ice_thickness
         ])
         
         # Get extent of original guest structure (for tiling)
@@ -420,19 +423,26 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         else:
             guest_atoms_per_mol = 4  # Fallback
         
-        # Tile guests across the water region
+        # Tile guests in ICE region (NOT water region)
         tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
-            water_region_dims,
+            ice_region_dims,
             atoms_per_molecule=guest_atoms_per_mol,
             cell_matrix=cell_matrix
         )
         
-        # Shift guests to water region: Z = [adjusted_ice_thickness, adjusted_ice_thickness + water_thickness]
+        # DISTRIBUTE guests in BOTTOM and TOP ice regions
         if len(tilable_guest_positions) > 0:
             tilable_guest_positions = tilable_guest_positions.copy()
-            tilable_guest_positions[:, 2] += adjusted_ice_thickness
+            # Split: half in bottom ice, half in top ice
+            n_bottom = len(tilable_guest_positions) // 2
+            bottom_guests = tilable_guest_positions[:n_bottom]
+            top_guests = tilable_guest_positions[n_bottom:]
+            # Top ice guests: shift to Z = [adjusted_ice_thickness + water_thickness, box_z]
+            top_guests[:, 2] += adjusted_ice_thickness + config.water_thickness
+            # Combine both
+            tilable_guest_positions = np.vstack([bottom_guests, top_guests])
         
         processed_guest_positions = tilable_guest_positions
         
