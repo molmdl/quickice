@@ -445,6 +445,33 @@ class GROMACSExporter:
             return False
 
 
+def _get_guest_itp_path(guest_type: str) -> Path:
+    """Get the path to a bundled guest .itp file.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf")
+    
+    Returns:
+        Path to the guest .itp file in the data directory
+    
+    Raises:
+        FileNotFoundError: If no .itp file exists for the guest type
+    """
+    import quickice
+    package_dir = Path(quickice.__file__).parent
+    itp_path = package_dir / "data" / f"{guest_type}.itp"
+    
+    if itp_path.exists():
+        return itp_path
+    
+    # Fallback to project root (for development)
+    fallback = Path(__file__).parent.parent / "data" / f"{guest_type}.itp"
+    if fallback.exists():
+        return fallback
+    
+    raise FileNotFoundError(f"No .itp file found for guest type: {guest_type}")
+
+
 class InterfaceGROMACSExporter:
     """Handle GROMACS file export for interface structures (.gro, .top, .itp).
     
@@ -510,11 +537,36 @@ class InterfaceGROMACSExporter:
             from quickice.output.gromacs_writer import write_interface_top_file
             write_interface_top_file(interface_structure, str(top_path))
             
-            # Copy .itp file from data directory
+            # Copy .itp files from data directory
             import shutil
             from quickice.output.gromacs_writer import get_tip4p_itp_path
-            itp_source = get_tip4p_itp_path()
-            shutil.copy(itp_source, itp_path)
+            
+            # Copy water .itp file
+            water_itp_source = get_tip4p_itp_path()
+            shutil.copy(water_itp_source, itp_path)
+            
+            # Copy guest .itp file if guests are present
+            if interface_structure.guest_nmolecules > 0 and interface_structure.guest_atom_count > 0:
+                # Determine guest type from first guest atom name
+                ice_end = interface_structure.ice_atom_count
+                first_guest_atom = interface_structure.atom_names[ice_end] if ice_end < len(interface_structure.atom_names) else "C"
+                
+                if first_guest_atom in ["Me", "C"]:
+                    guest_type = "ch4"
+                elif first_guest_atom in ["O", "c"]:
+                    guest_type = "thf"
+                else:
+                    guest_type = None
+                
+                if guest_type:
+                    try:
+                        guest_itp_source = _get_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}.itp")
+                        shutil.copy(guest_itp_source, guest_itp_dest)
+                    except FileNotFoundError:
+                        # Guest .itp file not found - will cause GROMACS to fail
+                        # but don't block export, user can add manually
+                        pass
             
             return True
         except Exception as e:
