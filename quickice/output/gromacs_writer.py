@@ -16,6 +16,66 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure, I
 TIP4P_ICE_ALPHA = 0.13458335
 
 
+# Canonical atom order for guest molecules (matching .itp definitions)
+# GenIce2 outputs atoms in different order than .itp expects
+GUEST_ATOM_ORDER = {
+    # CH4: .itp expects [C, H, H, H, H], GenIce2 outputs [H, H, H, H, C]
+    "ch4": ["C", "H", "H", "H", "H"],
+    # THF: .itp expects [O, CA, CA, CB, CB, H...], GenIce2 outputs [H... O first]
+    # THF canonical order from thf.itp
+    "thf": ["O", "CA", "CA", "CB", "CB"],
+}
+
+
+def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> list[str]:
+    """Reorder guest atoms to match canonical .itp definition.
+    
+    GenIce2 outputs atoms in a different order than GROMACS .itp files define.
+    This function reorders atoms to match the .itp canonical order.
+    
+    CH4 example:
+      - GenIce2 output order: H, H, H, H, C (hydrogen first)
+      - ITP canonical order: C, H, H, H, H (carbon first)
+    
+    Args:
+        atom_names: List of atom names in GenIce2 output order
+        mol_type: Molecule type ('ch4', 'thf')
+    
+    Returns:
+        List of atom names reordered to match .itp
+    """
+    if mol_type not in GUEST_ATOM_ORDER:
+        return atom_names
+    
+    canonical = GUEST_ATOM_ORDER[mol_type]
+    if len(atom_names) != len(canonical):
+        # Can't reorder - might be different molecule type
+        return atom_names
+    
+    # Build reorder mapping from current to canonical indices
+    # atom_names has: positions of each atom type in current order
+    # We need to map to positions in canonical order
+    
+    # Find indices in current order for each canonical atom
+    reorder = []
+    for target_atom in canonical:
+        # Find this atom in current names
+        for idx, name in enumerate(atom_names):
+            if name == target_atom and idx not in reorder:
+                reorder.append(idx)
+                break
+        else:
+            # Not found - keep original position
+            if len(reorder) < len(atom_names):
+                reorder.append(len(reorder))
+    
+    # Apply reorder
+    if reorder and all(i < len(atom_names) for i in reorder):
+        return [atom_names[i] for i in reorder]
+    
+    return atom_names
+
+
 def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
     """Parse residue name from a GROMACS .itp file's [ atoms ] section.
     
@@ -459,15 +519,21 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 guest_atoms = _count_guest_atoms(guest_atom_names, mol_start)
                 mol_end = mol_start + guest_atoms
                 
+                # Get this molecule's atom names
+                mol_atom_names = guest_atom_names[mol_start:mol_end]
+                
+                # Reorder to match .itp canonical order (C first for ch4, O first for thf)
+                if guest_type == "ch4" or guest_type == "thf":
+                    mol_atom_names = reorder_guest_atoms(mol_atom_names, guest_type)
+                
                 # Wrap residue number
                 res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
                 
-                for local_idx in range(mol_start, mol_end):
+                for i, atom_name in enumerate(mol_atom_names):
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    actual_atom_idx = guest_start + local_idx
+                    actual_atom_idx = guest_start + i
                     pos = iface.positions[actual_atom_idx]
-                    atom_name = guest_atom_names[local_idx]
                     lines.append(f"{res_num:5d}{guest_res_name:<5s}"
                                 f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
@@ -678,6 +744,17 @@ def write_multi_molecule_gro_file(
             # Residue number wraps at 100000
             res_num = (molecule_index.index(mol) + 1) % 100000
             
+            # Get atom names for this molecule
+            mol_atom_names = []
+            if atom_names is not None:
+                mol_atom_names = atom_names[mol.start_idx:mol.start_idx + mol.count]
+            
+            # Reorder guest atoms to match .itp canonical order
+            # For water, ice (TIP4P), ion molecules: use as-is
+            # For guest molecules (CH4, THF): reorder to match .itp
+            if mol.mol_type in ["ch4", "thf"] and mol_atom_names:
+                mol_atom_names = reorder_guest_atoms(mol_atom_names, mol.mol_type)
+            
             # Write atoms for this molecule
             for i in range(mol.count):
                 atom_num += 1
@@ -685,8 +762,8 @@ def write_multi_molecule_gro_file(
                 pos = positions[mol.start_idx + i]
                 
                 # Use actual atom name if provided, otherwise use generic "XX"
-                if atom_names is not None:
-                    actual_name = atom_names[mol.start_idx + i]
+                if mol_atom_names:
+                    actual_name = mol_atom_names[i]
                 else:
                     actual_name = "XX"
                 
