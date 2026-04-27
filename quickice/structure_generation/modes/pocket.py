@@ -372,20 +372,58 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         else:
             guest_atoms_per_mol = 1
         
+        # FIX: Guests should be in ICE region, NOT in water cavity!
+        # Tile guests in full box (to be with ICE), then remove ones inside cavity
+        # Use full box dimensions (same as ice tiling)
+        box_guest_dims = box_dims
+        
         tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
-            pocket_dims,
+            box_guest_dims,
             atoms_per_molecule=guest_atoms_per_mol,
             cell_matrix=cell_matrix
         )
         
-        # Translate guests from [0, 2r] to [center-r, center+r]
-        if len(tilable_guest_positions) > 0:
-            tilable_guest_positions = tilable_guest_positions.copy()
-            tilable_guest_positions = tilable_guest_positions + fill_origin
+        # Remove guests inside cavity (keep ONLY guests in ice region, outside cavity)
+        if len(tilable_guest_positions) > 0 and config.pocket_diameter > 0:
+            # Find guest O atoms (first atom of each guest molecule)
+            if guest_atoms_per_mol > 0:
+                guest_o_idx = np.arange(0, len(tilable_guest_positions), guest_atoms_per_mol)
+                guest_o_positions = tilable_guest_positions[guest_o_idx]
+                
+                # Calculate distances from center
+                distances = np.linalg.norm(guest_o_positions - center, axis=1)
+                
+                # Keep guests OUTSIDE cavity (dist >= radius)
+                outside_mask = distances >= radius
+                
+                if not np.any(outside_mask):
+                    # No guests outside cavity - tile more aggressively
+                    tilable_guest_positions = None
+                    tiled_guest_nmolecules = 0
+                else:
+                    # Filter to keep only outside-cavity guests
+                    # For each kept molecule, keep all its atoms
+                    keep_mols = np.where(outside_mask)[0]
+                    new_positions = []
+                    for mol_idx in keep_mols:
+                        start = mol_idx * guest_atoms_per_mol
+                        end = start + guest_atoms_per_mol
+                        if end <= len(tilable_guest_positions):
+                            new_positions.append(tilable_guest_positions[start:end])
+                    
+                    if new_positions:
+                        tilable_guest_positions = np.vstack(new_positions)
+                        tiled_guest_nmolecules = len(keep_mols)
+                    else:
+                        tilable_guest_positions = None
+                        tiled_guest_nmolecules = 0
         
-        processed_guest_positions = tilable_guest_positions
+        if tilable_guest_positions is not None and len(tilable_guest_positions) > 0:
+            processed_guest_positions = tilable_guest_positions
+        else:
+            processed_guest_positions = None
         
         # FIX: Tile the guest atom names to match the tiled molecule count
         if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
