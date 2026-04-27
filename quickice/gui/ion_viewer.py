@@ -33,6 +33,8 @@ try:
         from vtkmodules.all import (
             vtkRenderer,
             vtkInteractorStyleTrackballCamera,
+            vtkActor,
+            vtkMolecule,
         )
 except Exception:
     _VTK_AVAILABLE = False
@@ -68,7 +70,9 @@ def _load_interface_utils():
 # Interface visualization constants (same as InterfaceViewerWidget)
 ICE_COLOR = (0.0, 0.8, 0.8)         # Cyan
 WATER_COLOR = (0.39, 0.58, 0.93)    # Cornflower blue
+GUEST_COLOR = (0.8, 0.8, 0.8)        # Gray for guest molecules
 BOND_LINE_WIDTH = 1.5
+ANGSTROM_TO_NM = 0.1
 
 
 class IonViewerWidget(QWidget):
@@ -109,6 +113,7 @@ class IonViewerWidget(QWidget):
         self._current_ion_structure: IonStructure | None = None
         self._interface_actors: list = []
         self._ion_actors: list = []
+        self._guest_actor = None  # For guest molecules (vtkActor when VTK available)
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -270,12 +275,23 @@ class IonViewerWidget(QWidget):
         water_actor = _create_bond_lines_actor(water_bonds, WATER_COLOR, BOND_LINE_WIDTH)
         unit_cell_actor = _create_unit_cell_actor(structure.cell)
 
+        # Create guest actor if guests exist (same fix as interface_viewer.py)
+        if guest_mol is not None and structure.guest_atom_count > 0:
+            guest_actor = self._create_guest_ball_and_stick_actor(structure, guest_mol)
+            self._guest_actor = guest_actor
+        else:
+            self._guest_actor = None
+
         # Store actors
         self._interface_actors.extend([ice_actor, water_actor, unit_cell_actor])
 
         # Add actors to renderer
         for actor in self._interface_actors:
             self.renderer.AddActor(actor)
+
+        # Add guest actor if exists
+        if self._guest_actor is not None:
+            self.renderer.AddActor(self._guest_actor)
 
         # Auto-fit camera to frame all actors
         self._reset_camera()
@@ -336,6 +352,38 @@ class IonViewerWidget(QWidget):
             bonds.append((p1, p2))
 
         return bonds
+
+    def _create_guest_ball_and_stick_actor(self, structure, guest_mol) -> vtkActor:
+        """Create a ball-and-stick actor for guest molecules.
+        
+        Uses vtkMoleculeMapper with ball-and-stick settings for CPK coloring
+        and proper bond rendering. Same as interface_viewer.py.
+        
+        Args:
+            structure: InterfaceStructure containing guest data
+            guest_mol: vtkMolecule with guest atoms
+        
+        Returns:
+            vtkActor configured for ball-and-stick visualization
+        """
+        from vtkmodules.all import vtkMoleculeMapper, vtkActor
+        
+        # Create mapper with ball-and-stick settings
+        mapper = vtkMoleculeMapper()
+        mapper.SetInputData(guest_mol)
+        mapper.UseBallAndStickSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+        mapper.SetAtomicRadiusScaleFactor(0.25 * ANGSTROM_TO_NM)  # 0.025 nm
+        mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)  # 0.0075 nm
+        mapper.SetBondColor(180, 180, 180)  # Gray bonds
+        
+        # Create actor
+        actor = vtkActor()
+        actor.SetMapper(mapper)
+        
+        return actor
 
     def set_ion_structure(self, structure: IonStructure) -> None:
         """Load and display an ion structure.
@@ -429,6 +477,11 @@ class IonViewerWidget(QWidget):
 
         # Clear actor list
         self._interface_actors = []
+
+        # Also remove guest actor if it exists
+        if self._guest_actor is not None:
+            self.renderer.RemoveActor(self._guest_actor)
+            self._guest_actor = None
 
     def _clear_ion_actors(self) -> None:
         """Remove ion actors from renderer."""
