@@ -65,12 +65,13 @@ class IonInserter:
         - Hydrate framework uses TIP4P with 4 atoms per molecule (OW, HW1, HW2, MW)
         - GenIce ice uses 3 atoms per molecule (O, H, H)
         - Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
+        - Guest molecules come after ice but before water
 
         Args:
             structure: Structure with ice_nmolecules and water_nmolecules attributes
 
         Returns:
-            List of MoleculeIndex entries for ice and water molecules, or None if not possible
+            List of MoleculeIndex entries for ice, guest, and water molecules, or None if not possible
         """
         # Check if this is an InterfaceStructure (has ice_nmolecules but no molecule_index)
         if not hasattr(structure, 'ice_nmolecules') or not hasattr(structure, 'water_nmolecules'):
@@ -78,8 +79,9 @@ class IonInserter:
 
         ice_mols = structure.ice_nmolecules
         water_mols = structure.water_nmolecules
+        guest_mols = getattr(structure, 'guest_nmolecules', 0)
 
-        if ice_mols == 0 and water_mols == 0:
+        if ice_mols == 0 and water_mols == 0 and guest_mols == 0:
             return None
 
         # Detect atoms per molecule from atom_names pattern
@@ -100,6 +102,21 @@ class IonInserter:
                     mol_type="ice"
                 ))
                 current_idx += ice_atoms_per_mol
+
+        # Add guest molecules if present
+        # Guests come after ice in the positions array
+        if guest_mols > 0:
+            guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+            # Calculate atoms per guest molecule
+            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 0
+            if guest_atoms_per_mol > 0:
+                for i in range(guest_mols):
+                    mol_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=guest_atoms_per_mol,
+                        mol_type="guest"
+                    ))
+                    current_idx += guest_atoms_per_mol
 
         # Add water molecules as individual entries
         # Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
@@ -247,12 +264,12 @@ class IonInserter:
                 current_idx += mol.count
         
         # Build array of positions for molecules that will remain (not being replaced)
-        # ONLY check against ICE molecules - not against water being retained,
-        # since water molecules are already at proper liquid density
+        # Check against BOTH ice AND guest molecules to prevent ions from penetrating
+        # into the hydrate crystallite region (cages contain guest molecules)
         remain_positions = []
         for mol in structure.molecule_index:
-            # Only keep ice (not water being replaced OR retained)
-            if mol.mol_type == "ice":
+            # Only keep ice and guest (not water being replaced OR retained)
+            if mol.mol_type in ("ice", "guest"):
                 start = mol.start_idx
                 end = start + mol.count
                 remain_positions.append(structure.positions[start:end])
@@ -276,11 +293,11 @@ class IonInserter:
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
             
-            # Check minimum distance to ICE molecules only (not water - water already at liquid density)
+            # Check minimum distance to ice AND guest molecules (both define the hydrate crystallite region)
             if ice_tree is not None:
                 min_dist = ice_tree.query(water_pos, k=1)[0]
                 if min_dist < MIN_SEPARATION:
-                    # Too close to ice - skip this ion
+                    # Too close to hydrate - skip this ion
                     continue
             
             # Also check against previously placed ions
