@@ -81,8 +81,9 @@ def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[l
                 guest_indices.extend(range(i, i + guest_atoms))
                 i += guest_atoms
         else:
-            # Shouldn't happen if data is consistent
-            break
+            # Not enough atoms for full molecule - treat remaining as guest
+            guest_indices.extend(range(i, len(atom_names)))
+            i = len(atom_names)
     
     return water_indices, guest_indices
 
