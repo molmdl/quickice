@@ -1124,103 +1124,146 @@ def write_multi_molecule_top_file(
 
 def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     """Write ion structure to GROMACS .gro format.
-    
-    Exports water molecules (4-atom TIP4P-ICE format) plus Na+ and Cl- ions.
-    Uses molecule_index to determine which atoms are water vs ions.
-    
+
+    Exports molecules in ORDER: SOL (ice+water), guest, NA, CL.
+    This matches the expected topology order and GROMACS requirements.
+
     Args:
-        ion_structure: IonStructure object with water + ion positions
+        ion_structure: IonStructure object with molecule_index
         filepath: Output file path for .gro file
-    
+
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
     """
-    # Count total atoms: water (4 atoms/mol) + ions (1 atom/mol) + guest (variable atoms/mol)
-    water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
-    guest_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "guest")
-    # Also sum guest atoms (each guest may have different atom count)
-    guest_atoms = sum(m.count for m in ion_structure.molecule_index if m.mol_type == "guest")
-    total_atoms = water_count * 4 + ion_structure.na_count + ion_structure.cl_count + guest_atoms
-    
+    # Build an ordered list of molecules: SOL (ice+water) first, then guest, then NA, then CL
+    ordered_mols = []
+    # Pass 1: SOL molecules (ice + water)
+    for mol in ion_structure.molecule_index:
+        if mol.mol_type in ("ice", "water"):
+            ordered_mols.append(("sol", mol))
+    # Pass 2: guest molecules
+    for mol in ion_structure.molecule_index:
+        if mol.mol_type == "guest":
+            ordered_mols.append(("guest", mol))
+    # Pass 3: NA ions
+    for mol in ion_structure.molecule_index:
+        if mol.mol_type == "na":
+            ordered_mols.append(("na", mol))
+    # Pass 4: CL ions
+    for mol in ion_structure.molecule_index:
+        if mol.mol_type == "cl":
+            ordered_mols.append(("cl", mol))
+
+    # Count total atoms for header
+    total_atoms = 0
+    for mol_type, mol in ordered_mols:
+        if mol_type == "sol":
+            if mol.mol_type == "ice":
+                # Ice: 3 input atoms -> 4 output atoms (OW, HW1, HW2, MW)
+                total_atoms += 4
+            else:
+                # Water: 4 atoms
+                total_atoms += mol.count
+        elif mol_type == "guest":
+            total_atoms += mol.count
+        else:  # na or cl
+            total_atoms += 1  # 1 atom per ion
+
     atom_num = 0
     res_num = 0
-    
+
     with open(filepath, 'w') as f:
         # Title line
-        f.write(f"Ice/water + ions ({ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-) exported by QuickIce\n")
-        
+        na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
+        cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
+        f.write(f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-) exported by QuickIce\n")
+
         # Number of atoms
         f.write(f"{total_atoms:5d}\n")
-        
+
         # Build all atom lines in memory for better I/O performance
         lines = []
-        
-        # Process each molecule from molecule_index
-        for mol in ion_structure.molecule_index:
-            if mol.mol_type == "water":
-                # Water molecule: 4 atoms (OW, HW1, HW2, MW)
+
+        for mol_type, mol in ordered_mols:
+            if mol_type == "sol":
+                # SOL molecule (ice or water)
                 res_num += 1
                 res_num_wrapped = res_num % 100000
-                
+
                 start = mol.start_idx
-                # Get positions - water has OW, HW1, HW2 (MW computed)
-                o_pos = ion_structure.positions[start]
-                h1_pos = ion_structure.positions[start + 1]
-                h2_pos = ion_structure.positions[start + 2]
-                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-                
-                # OW (oxygen)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num_wrapped:5d}SOL  "
-                            f"   OW{atom_num_wrapped:5d}"
-                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-                
-                # HW1 (hydrogen 1)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num_wrapped:5d}SOL  "
-                            f"  HW1{atom_num_wrapped:5d}"
-                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-                
-                # HW2 (hydrogen 2)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num_wrapped:5d}SOL  "
-                            f"  HW2{atom_num_wrapped:5d}"
-                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-                
-                # MW (virtual site)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num_wrapped:5d}SOL  "
-                            f"   MW{atom_num_wrapped:5d}"
-                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
-            
-            elif mol.mol_type == "na":
-                # Na+ ion
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                pos = ion_structure.positions[mol.start_idx]
-                lines.append(f"{res_num_wrapped:5d}NA   "
-                            f"   NA{atom_num_wrapped:5d}"
-                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-            
-            elif mol.mol_type == "cl":
-                # Cl- ion
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                pos = ion_structure.positions[mol.start_idx]
-                lines.append(f"{res_num_wrapped:5d}CL   "
-                            f"   CL{atom_num_wrapped:5d}"
-                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-            
-            elif mol.mol_type == "guest":
+
+                if mol.mol_type == "ice":
+                    # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                    o_pos = ion_structure.positions[start]
+                    h1_pos = ion_structure.positions[start + 1]
+                    h2_pos = ion_structure.positions[start + 2]
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+                    # OW (oxygen)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   OW{atom_num_wrapped:5d}"
+                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                    # HW1 (hydrogen 1)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW1{atom_num_wrapped:5d}"
+                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                    # HW2 (hydrogen 2)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW2{atom_num_wrapped:5d}"
+                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                    # MW (virtual site)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   MW{atom_num_wrapped:5d}"
+                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+                else:  # water
+                    # Water: 4 atoms (OW, HW1, HW2, MW)
+                    o_pos = ion_structure.positions[start]
+                    h1_pos = ion_structure.positions[start + 1]
+                    h2_pos = ion_structure.positions[start + 2]
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+                    # OW (oxygen)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   OW{atom_num_wrapped:5d}"
+                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                    # HW1 (hydrogen 1)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW1{atom_num_wrapped:5d}"
+                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                    # HW2 (hydrogen 2)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW2{atom_num_wrapped:5d}"
+                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                    # MW (virtual site)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   MW{atom_num_wrapped:5d}"
+                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+            elif mol_type == "guest":
                 # Guest molecule (CH4, THF, etc.) - write all atoms
                 res_num += 1
                 res_num_wrapped = res_num % 100000
@@ -1256,9 +1299,31 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                     lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
                                 f"{atom_name[0:4]:>4s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-        
+
+            elif mol_type == "na":
+                # NA ion
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                pos = ion_structure.positions[mol.start_idx]
+                lines.append(f"{res_num_wrapped:5d}NA   "
+                            f"   NA{atom_num_wrapped:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+            elif mol_type == "cl":
+                # CL ion
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                pos = ion_structure.positions[mol.start_idx]
+                lines.append(f"{res_num_wrapped:5d}CL   "
+                            f"   CL{atom_num_wrapped:5d}"
+                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
         f.writelines(lines)
-        
+
         # Box vectors (triclinic format)
         cell = ion_structure.cell
         f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
@@ -1269,17 +1334,20 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     """Write GROMACS topology file for ion structure.
 
-    Uses SOL molecule type for water, NA for sodium, CL for chloride.
+    Uses SOL molecule type for water and ice, NA for sodium, CL for chloride.
     Includes guest molecules if present, with dynamic residue name from itp.
-    Writes [molecules] section in same order as write_ion_gro_file() to ensure
-    molecule order matches between .gro and .top files.
+    Writes [molecules] section in order: SOL (ice+water), guest, NA, CL.
 
     Args:
-        ion_structure: IonStructure object with water and ion counts
+        ion_structure: IonStructure object with molecule_index
         filepath: Output file path for .top file
     """
-    water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
+    # Count molecules by type across ENTIRE molecule_index
+    # This ensures proper grouping (all SOL together, not stuttering)
+    sol_count = sum(1 for m in ion_structure.molecule_index if m.mol_type in ("water", "ice"))
     guest_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "guest")
+    na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
+    cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
 
     # Detect guest type from atom names (for including correct .itp and residue name)
     guest_type = None
@@ -1303,7 +1371,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         if guest_count > 0:
             f.write(" and guest molecules")
         f.write("\n")
-        f.write(f"; Structure: {water_count} water + {guest_count} guests + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl-\n\n")
+        f.write(f"; Structure: {sol_count} SOL (ice+water) + {guest_count} guests + {na_count} Na+ + {cl_count} Cl-\n\n")
 
         # Default GROMACS directives
         f.write("[ defaults ]\n")
@@ -1327,63 +1395,25 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
 
         # [ system ] section
         f.write("[ system ]\n")
-        system_name = f"Ice/water + {guest_count} guests + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl- ions"
+        system_name = f"Ice/water + {guest_count} guests + {na_count} Na+ + {cl_count} Cl- ions"
         f.write(f"{system_name}\n\n")
 
-        # [ molecules ] section - written in SAME ORDER as write_ion_gro_file()
-        # This ensures .gro and .top have matching molecule order
+        # [ molecules ] section - written in ORDER: SOL, guest, NA, CL
+        # This matches write_ion_gro_file() output order
         # GROMACS uses [molecules] to know how to group consecutive atoms into molecules
-        # The ORDER must match the actual sequence of molecules in the .gro file
         f.write("[ molecules ]\n")
         f.write("; Compound        #mols\n")
 
-        # Group consecutive molecules of the same type
-        # This handles the case where molecule_index has: ice, ice, guest, guest, water, water, na, cl
-        # And produces: SOL 2, GUEST 2, SOL 2, NA 1, CL 1
-        # (Because ice and water both map to SOL but may be in different groups)
-        current_group_type = None
-        current_group_res_name = None
-        current_group_count = 0
+        # Write grouped counts (not stuttering)
+        # Order: SOL (ice+water combined), guest, NA, CL
+        if sol_count > 0:
+            f.write(f"{'SOL':<17s}{sol_count}\n")
 
-        for mol in ion_structure.molecule_index:
-            if mol.mol_type == "guest":
-                # Get residue name for this specific guest molecule
-                start = mol.start_idx
-                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
-                this_guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                this_res_name = get_guest_residue_name(this_guest_type) if this_guest_type else "GUE"
-                mol_type_key = "guest"
-                res_name = this_res_name
-            elif mol.mol_type == "water":
-                mol_type_key = "water"
-                res_name = "SOL"
-            elif mol.mol_type == "na":
-                mol_type_key = "na"
-                res_name = "NA"
-            elif mol.mol_type == "cl":
-                mol_type_key = "cl"
-                res_name = "CL"
-            elif mol.mol_type == "ice":
-                # Ice uses same molecule type as water in .top
-                mol_type_key = "ice"
-                res_name = "SOL"
-            else:
-                continue  # Skip unknown types
+        if guest_count > 0:
+            f.write(f"{guest_res_name:<17s}{guest_count}\n")
 
-            # Check if this molecule is consecutive with the current group
-            if current_group_type == mol_type_key and current_group_res_name == res_name:
-                # Same type and res_name, add to current group
-                current_group_count += 1
-            else:
-                # Different type or res_name, write the previous group if exists
-                if current_group_type is not None:
-                    f.write(f"{current_group_res_name:<17s}{current_group_count}\n")
+        if na_count > 0:
+            f.write(f"{'NA':<17s}{na_count}\n")
 
-                # Start new group
-                current_group_type = mol_type_key
-                current_group_res_name = res_name
-                current_group_count = 1
-
-        # Write the last group
-        if current_group_type is not None:
-            f.write(f"{current_group_res_name:<17s}{current_group_count}\n")
+        if cl_count > 0:
+            f.write(f"{'CL':<17s}{cl_count}\n")

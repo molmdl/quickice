@@ -338,12 +338,69 @@ class IonInserter:
                 current_idx += 1
                 cl_count += 1
         
+        # Ensure charge neutrality: na_count must equal cl_count
+        # Remove excess ions from the end (prefer removing from end to minimize disruption)
+        while na_count > cl_count:
+            # Find and remove the last NA from new_molecule_index
+            for idx in range(len(new_molecule_index) - 1, -1, -1):
+                if new_molecule_index[idx].mol_type == "na":
+                    # Remove this NA
+                    new_molecule_index.pop(idx)
+                    new_atom_names.pop(idx)
+                    new_positions.pop(idx)
+                    na_count -= 1
+                    break
+        
+        while cl_count > na_count:
+            # Find and remove the last CL from new_molecule_index
+            for idx in range(len(new_molecule_index) - 1, -1, -1):
+                if new_molecule_index[idx].mol_type == "cl":
+                    # Remove this CL
+                    new_molecule_index.pop(idx)
+                    new_atom_names.pop(idx)
+                    new_positions.pop(idx)
+                    cl_count -= 1
+                    break
+        
+        # Regenerate start_idx values for molecule_index
+        # (they may be wrong after removing entries)
+        current_idx = 0
+        for mol in new_molecule_index:
+            mol.start_idx = current_idx
+            current_idx += mol.count
+        
         # Generate report
         requested_pairs = ion_pairs
         actual_pairs = (na_count + cl_count) // 2
         report = (
             f"Ion insertion: requested {requested_pairs * 2} water molecules, "
             f"placed {na_count} Na+ and {cl_count} Cl- ions\n"
+        )
+        if actual_pairs < requested_pairs:
+            report += f"Warning: could not place {requested_pairs - actual_pairs} pairs (too close to existing atoms)\n"
+        if na_count != cl_count:
+            report += f"Warning: removed excess ions to maintain charge neutrality\n"
+        
+        # Concatenate all positions
+        if new_positions:
+            combined = np.vstack(new_positions)
+        else:
+            combined = np.zeros((0, 3))
+        
+        # Preserve guest molecule information from input structure
+        guest_nmolecules = getattr(structure, 'guest_nmolecules',0)
+        guest_atom_count = getattr(structure, 'guest_atom_count',0)
+        
+        return IonStructure(
+            positions=combined,
+            atom_names=new_atom_names,
+            cell=structure.cell,
+            molecule_index=new_molecule_index,
+            na_count=na_count,
+            cl_count=cl_count,
+            report=report,
+            guest_nmolecules=guest_nmolecules,
+            guest_atom_count=guest_atom_count,
         )
         if actual_pairs < requested_pairs:
             report += f"Warning: could not place {requested_pairs - actual_pairs} pairs (too close to existing atoms)\n"
