@@ -70,6 +70,8 @@ class QuickReferenceDialog(QDialog):
             "Ctrl+D — Save phase diagram\n"
             "Ctrl+G — Export for GROMACS\n"
             "Ctrl+I — Export interface for GROMACS\n"
+            "Ctrl+E — Export hydrate for GROMACS\n"
+            "Ctrl+J — Export ions for GROMACS\n"
             "Ctrl+Alt+S — Save viewport screenshot"
         )
         shortcuts_text.setTextInteractionFlags(
@@ -93,7 +95,18 @@ class QuickReferenceDialog(QDialog):
             "8. Set box dimensions and mode-specific parameters\n"
             "9. Select a candidate and click Generate Interface\n"
             "10. View result (ice=cyan, water=cornflower blue)\n"
-            "11. Export interface for GROMACS (Ctrl+I)"
+            "11. Export interface for GROMACS (Ctrl+I)\n"
+            "\n"
+            "Tab 3 — Hydrate Config:\n"
+            "12. Switch to Hydrate Config tab\n"
+            "13. Select lattice type (sI, sII, sH) and guest type (empty, CH₄, etc.)\n"
+            "14. Set unit cell repetitions and generate hydrate structure\n"
+            "15. Export hydrate for GROMACS (Ctrl+E)\n"
+            "\n"
+            "Tab 4 — Ion Insertion:\n"
+            "16. Switch to Ion Insertion tab (requires interface from Tab 2)\n"
+            "17. Set ion concentration and insert ions into interface\n"
+            "18. Export ions for GROMACS (Ctrl+J)"
         )
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)

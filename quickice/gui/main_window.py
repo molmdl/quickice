@@ -265,13 +265,6 @@ class MainWindow(QMainWindow):
         cancel_action.setShortcut(Qt.Key.Key_Escape)
         cancel_action.triggered.connect(self._on_cancel_clicked)
         self.addAction(cancel_action)
-
-        # Ctrl+E to export hydrate (per Issue 3 fix)
-        # This is a window-level shortcut, independent of current tab
-        export_hydrate_action = QAction(self)
-        export_hydrate_action.setShortcut(Qt.CTRL | Qt.Key_E)
-        export_hydrate_action.triggered.connect(self._on_export_hydrate_gromacs)
-        self.addAction(export_hydrate_action)
     
     def _create_menu_bar(self):
         """Create menu bar with File menu.
@@ -326,12 +319,14 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         
         export_hydrate_gromacs_action = file_menu.addAction("Export Hydrate for GROMACS...")
+        export_hydrate_gromacs_action.setShortcut("Ctrl+E")
         export_hydrate_gromacs_action.triggered.connect(self._on_export_hydrate_gromacs)
         
         # Separator and Export Ions for GROMACS (Ion tab - Issue 1)
         file_menu.addSeparator()
         
         export_ion_gromacs_action = file_menu.addAction("Export Ions for GROMACS...")
+        export_ion_gromacs_action.setShortcut("Ctrl+J")
         export_ion_gromacs_action.triggered.connect(self._on_export_ion_gromacs)
         
         # Help menu
