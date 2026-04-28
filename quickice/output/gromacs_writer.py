@@ -877,10 +877,15 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n\n")
         
         # [ molecules ] - molecule counts
+        # MUST match .gro file order: ice SOL -> guest -> water SOL
         f.write("[ molecules ]\n")
         f.write("; Compound    #mols\n")
-        f.write(f"SOL          {iface.ice_nmolecules + iface.water_nmolecules}\n")
         
+        # Ice SOL (first part of .gro file)
+        if iface.ice_nmolecules > 0:
+            f.write(f"SOL          {iface.ice_nmolecules}\n")
+        
+        # Guest molecules (middle part of .gro file)
         if iface.guest_nmolecules > 0:
             # Determine guest residue name from itp file
             if iface.guest_atom_count > 0:
@@ -904,6 +909,10 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
                     f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
                 else:
                     f.write(f"UNK          {iface.guest_nmolecules}\n")
+        
+        # Water SOL (last part of .gro file)
+        if iface.water_nmolecules > 0:
+            f.write(f"SOL          {iface.water_nmolecules}\n")
 
 
 def write_multi_molecule_gro_file(
@@ -1372,12 +1381,45 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
             f.write(" and guest molecules")
         f.write("\n")
         f.write(f"; Structure: {sol_count} SOL (ice+water) + {guest_count} guests + {na_count} Na+ + {cl_count} Cl-\n\n")
-
-        # Default GROMACS directives
+        
+        # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
         f.write("1               2               yes             0.0     0.0\n\n")
-
+        
+        # [ atomtypes ] - MUST be before #include directives
+        # TIP4P-ICE water atom types
+        f.write("[ atomtypes ]\n")
+        f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
+        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
+        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
+        
+        # Madrid2019 ion atom types (if ions present)
+        if na_count > 0 or cl_count > 0:
+            f.write("; Ion atom types (Madrid2019)\n")
+            if na_count > 0:
+                f.write("NA        NA        11            22.9898  0.0     A      2.21737e-1    1.47236e0\n")
+            if cl_count > 0:
+                f.write("CL        CL        17            35.453   0.0     A      4.69906e-1    7.69231e-2\n")
+        
+        # GAFF2 atom types for guests (if present)
+        if guest_count > 0:
+            if guest_type == "ch4":
+                f.write("; CH4 atom types (GAFF2)\n")
+                f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            elif guest_type == "thf":
+                f.write("; THF atom types (GAFF2)\n")
+                f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
+                f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+                f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
+        
+        f.write("\n")
+        
+        # Include molecule definitions (AFTER atomtypes)
+        f.write("; Molecule definitions\n")
         # Include water itp
         f.write('#include "tip4p-ice.itp"\n')
 
@@ -1407,13 +1449,13 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         # Write grouped counts (not stuttering)
         # Order: SOL (ice+water combined), guest, NA, CL
         if sol_count > 0:
-            f.write(f"{'SOL':<17s}{sol_count}\n")
+            f.write(f"SOL              {sol_count}\n")
 
         if guest_count > 0:
             f.write(f"{guest_res_name:<17s}{guest_count}\n")
 
         if na_count > 0:
-            f.write(f"{'NA':<17s}{na_count}\n")
+            f.write(f"NA               {na_count}\n")
 
         if cl_count > 0:
-            f.write(f"{'CL':<17s}{cl_count}\n")
+            f.write(f"CL               {cl_count}\n")
