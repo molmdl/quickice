@@ -1271,6 +1271,8 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
 
     Uses SOL molecule type for water, NA for sodium, CL for chloride.
     Includes guest molecules if present, with dynamic residue name from itp.
+    Writes [molecules] section in same order as write_ion_gro_file() to ensure
+    molecule order matches between .gro and .top files.
 
     Args:
         ion_structure: IonStructure object with water and ion counts
@@ -1328,12 +1330,60 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         system_name = f"Ice/water + {guest_count} guests + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl- ions"
         f.write(f"{system_name}\n\n")
 
-        # [ molecules ] section
+        # [ molecules ] section - written in SAME ORDER as write_ion_gro_file()
+        # This ensures .gro and .top have matching molecule order
+        # GROMACS uses [molecules] to know how to group consecutive atoms into molecules
+        # The ORDER must match the actual sequence of molecules in the .gro file
         f.write("[ molecules ]\n")
         f.write("; Compound        #mols\n")
-        f.write(f"SOL              {water_count}\n")
-        # Write guest molecule counts with dynamic residue name
-        if guest_count > 0:
-            f.write(f"{guest_res_name:<17s}{guest_count}\n")
-        f.write(f"NA               {ion_structure.na_count}\n")
-        f.write(f"CL               {ion_structure.cl_count}\n")
+
+        # Group consecutive molecules of the same type
+        # This handles the case where molecule_index has: ice, ice, guest, guest, water, water, na, cl
+        # And produces: SOL 2, GUEST 2, SOL 2, NA 1, CL 1
+        # (Because ice and water both map to SOL but may be in different groups)
+        current_group_type = None
+        current_group_res_name = None
+        current_group_count = 0
+
+        for mol in ion_structure.molecule_index:
+            if mol.mol_type == "guest":
+                # Get residue name for this specific guest molecule
+                start = mol.start_idx
+                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
+                this_guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                this_res_name = get_guest_residue_name(this_guest_type) if this_guest_type else "GUE"
+                mol_type_key = "guest"
+                res_name = this_res_name
+            elif mol.mol_type == "water":
+                mol_type_key = "water"
+                res_name = "SOL"
+            elif mol.mol_type == "na":
+                mol_type_key = "na"
+                res_name = "NA"
+            elif mol.mol_type == "cl":
+                mol_type_key = "cl"
+                res_name = "CL"
+            elif mol.mol_type == "ice":
+                # Ice uses same molecule type as water in .top
+                mol_type_key = "ice"
+                res_name = "SOL"
+            else:
+                continue  # Skip unknown types
+
+            # Check if this molecule is consecutive with the current group
+            if current_group_type == mol_type_key and current_group_res_name == res_name:
+                # Same type and res_name, add to current group
+                current_group_count += 1
+            else:
+                # Different type or res_name, write the previous group if exists
+                if current_group_type is not None:
+                    f.write(f"{current_group_res_name:<17s}{current_group_count}\n")
+
+                # Start new group
+                current_group_type = mol_type_key
+                current_group_res_name = res_name
+                current_group_count = 1
+
+        # Write the last group
+        if current_group_type is not None:
+            f.write(f"{current_group_res_name:<17s}{current_group_count}\n")
