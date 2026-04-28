@@ -408,6 +408,13 @@ def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
     from collections import Counter
     counts = Counter(sample)
 
+    # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
+    # Check BEFORE CH4 since THF also has C and H
+    # GenIce2 THF: O, C, C, C, C, H, H, H, H, H, C, H, H (13 atoms)
+    if counts.get('O', 0) >= 1 and counts.get('C', 0) >= 4:
+        # Return first 13 atoms as likely THF
+        return sample[:13]
+
     # CH4: 1 C + 4 H = 5 atoms
     if counts.get('C', 0) >= 1 and counts.get('H', 0) >= 4:
         # Find C and 4 H atoms
@@ -422,12 +429,6 @@ def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
             if len(mol_atoms) == 5:
                 break
         return mol_atoms[:5]
-
-    # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
-    # GenIce2 THF: O, C, C, C, C, H, H, H, H, H, C, H, H (13 atoms)
-    if counts.get('O', 0) >= 1 and counts.get('C', 0) >= 4:
-        # Return first 13 atoms as likely THF
-        return sample[:13]
 
     # H2: just H atoms
     if set(sample[:2]) == {'H'} and len(sample) >= 2:
@@ -666,6 +667,53 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
                 f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
                 f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+
+def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
+    """Detect guest molecule type from atom names.
+    
+    Analyzes the atom composition to determine the guest molecule type.
+    This is needed because molecule_index may store mol_type as "guest"
+    (generic) rather than the specific type like "ch4" or "thf".
+    
+    Args:
+        atom_names: List of atom names for one or more guest molecules
+        
+    Returns:
+        Guest type string ("ch4", "thf", "co2", "h2") or None if undetected
+    """
+    if not atom_names:
+        return None
+    
+    # Get atoms for one molecule to identify type
+    mol_atoms = _get_molecule_atoms(atom_names)
+    
+    if not mol_atoms:
+        return None
+    
+    mol_unique = set(mol_atoms)
+    
+    # THF: Has O, C, and H (check BEFORE CH4 since THF also has C and H)
+    if 'O' in mol_unique and 'C' in mol_unique:
+        return "thf"
+    
+    # CH4: Only C and H, no O, typically 5 atoms
+    elif 'C' in mol_unique and 'H' in mol_unique and 'O' not in mol_unique:
+        return "ch4"
+    
+    # H2: Only H atoms (2 atoms)
+    elif mol_unique == {'H'}:
+        return "h2"
+    
+    # CO2: C and O atoms (3 atoms, no H)
+    elif 'C' in mol_unique and 'O' in mol_unique and 'H' not in mol_unique:
+        return "co2"
+    
+    # United-atom methane
+    elif mol_unique == {'Me'}:
+        return "ch4"
+    
+    return None
 
 
 def _count_guest_atoms(atom_names: list[str], start: int) -> int:
@@ -1176,15 +1224,37 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 # Guest molecule (CH4, THF, etc.) - write all atoms
                 res_num += 1
                 res_num_wrapped = res_num % 100000
-                
+
                 start = mol.start_idx
-                for atom_offset in range(mol.count):
+                # Get atom names and positions for this molecule
+                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
+                mol_positions = ion_structure.positions[start:start + mol.count]
+
+                # Detect guest type from atom names
+                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+
+                # Get residue name from itp file (not hardcoded)
+                if guest_type:
+                    guest_res_name = get_guest_residue_name(guest_type)
+                else:
+                    guest_res_name = "GUE"  # Fallback
+
+                # Reorder guest atoms to match .itp canonical order
+                # (e.g., CH4: C first instead of H first from GenIce2)
+                reorder_mapping = None
+                if guest_type in ["ch4", "thf"]:
+                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                    # Also reorder positions to match the reordered names
+                    if reorder_mapping is not None:
+                        mol_positions = [mol_positions[i] for i in reorder_mapping]
+
+                for i in range(mol.count):
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    atom_name = ion_structure.atom_names[start + atom_offset]
-                    pos = ion_structure.positions[start + atom_offset]
-                    lines.append(f"{res_num_wrapped:5d}GUE  "
-                                f"{atom_name[0:4]:4s}{atom_num_wrapped:5d}"
+                    atom_name = mol_atom_names[i]
+                    pos = mol_positions[i]
+                    lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
+                                f"{atom_name[0:4]:>4s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
         
         f.writelines(lines)
@@ -1198,17 +1268,32 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
 def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     """Write GROMACS topology file for ion structure.
-    
+
     Uses SOL molecule type for water, NA for sodium, CL for chloride.
-    Includes guest molecules if present.
-    
+    Includes guest molecules if present, with dynamic residue name from itp.
+
     Args:
         ion_structure: IonStructure object with water and ion counts
         filepath: Output file path for .top file
     """
     water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
     guest_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "guest")
-    
+
+    # Detect guest type from atom names (for including correct .itp and residue name)
+    guest_type = None
+    guest_res_name = "GUE"  # Fallback
+    if guest_count > 0 and ion_structure.guest_atom_count > 0:
+        # Get atom names for the first guest molecule to detect type
+        # Find the first guest molecule in molecule_index
+        for mol in ion_structure.molecule_index:
+            if mol.mol_type == "guest":
+                start = mol.start_idx
+                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
+                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                if guest_type:
+                    guest_res_name = get_guest_residue_name(guest_type)
+                break
+
     with open(filepath, 'w') as f:
         # Header
         f.write("; Generated by QuickIce\n")
@@ -1217,35 +1302,38 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
             f.write(" and guest molecules")
         f.write("\n")
         f.write(f"; Structure: {water_count} water + {guest_count} guests + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl-\n\n")
-        
+
         # Default GROMACS directives
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
         f.write("1               2               yes             0.0     0.0\n\n")
-        
+
         # Include water itp
         f.write('#include "tip4p-ice.itp"\n')
 
         # Include guest itp if guests present
         if guest_count > 0:
-            # Need to include guest parameters - for now use generic guest.itp
-            # In production, would need proper guest .itp files based on guest type
-            f.write('#include "guest.itp"\n')
-        
+            if guest_type:
+                # Include the specific .itp file based on guest type
+                f.write(f'#include "{guest_type}.itp"\n')
+            else:
+                # Fallback to generic guest.itp
+                f.write('#include "guest.itp"\n')
+
         # Include ion itp (from ion export - combined NA+CL in single file)
         f.write('#include "ion.itp"\n\n')
-        
+
         # [ system ] section
         f.write("[ system ]\n")
         system_name = f"Ice/water + {guest_count} guests + {ion_structure.na_count} Na+ + {ion_structure.cl_count} Cl- ions"
         f.write(f"{system_name}\n\n")
-        
+
         # [ molecules ] section
         f.write("[ molecules ]\n")
         f.write("; Compound        #mols\n")
         f.write(f"SOL              {water_count}\n")
-        # Write guest molecule counts (group all guests as GUE)
+        # Write guest molecule counts with dynamic residue name
         if guest_count > 0:
-            f.write(f"GUE              {guest_count}\n")
+            f.write(f"{guest_res_name:<17s}{guest_count}\n")
         f.write(f"NA               {ion_structure.na_count}\n")
         f.write(f"CL               {ion_structure.cl_count}\n")
