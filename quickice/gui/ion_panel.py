@@ -233,3 +233,10 @@ class IonPanel(QWidget):
             IonInserter configured with current IonConfig
         """
         return IonInserter(self.get_configuration())
+    
+    def hide_placeholder(self) -> None:
+        """Hide the placeholder, show the 3D viewer.
+        
+        Delegates to the internal IonViewerWidget.
+        """
+        self.ion_viewer.hide_placeholder()
