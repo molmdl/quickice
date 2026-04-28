@@ -27,7 +27,7 @@ GUEST_ATOM_ORDER = {
 }
 
 
-def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> list[str]:
+def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> tuple[list[str], list[int] | None]:
     """Reorder guest atoms to match canonical .itp definition.
     
     GenIce2 outputs atoms in a different order than GROMACS .itp files define.
@@ -42,19 +42,23 @@ def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> list[str]:
         mol_type: Molecule type ('ch4', 'thf')
     
     Returns:
-        List of atom names reordered to match .itp
+        Tuple of (reordered atom names, reorder mapping)
+        - reordered atom names: List of atom names reordered to match .itp
+        - reorder mapping: List of indices such that reordered[i] = original[reorder[i]]
+          Returns None if no reordering needed (mol_type not in GUEST_ATOM_ORDER)
     """
     if mol_type not in GUEST_ATOM_ORDER:
-        return atom_names
+        return atom_names, None
     
     canonical = GUEST_ATOM_ORDER[mol_type]
     if len(atom_names) != len(canonical):
         # Can't reorder - might be different molecule type
-        return atom_names
+        return atom_names, None
     
     # Build reorder mapping from current to canonical indices
-    # atom_names has: positions of each atom type in current order
-    # We need to map to positions in canonical order
+    # reorder[i] = index in original atom_names that should be at position i in canonical order
+    # So: reordered_names[i] = atom_names[reorder[i]]
+    # And: reordered_positions[i] = positions[reorder[i]]
     
     # Find indices in current order for each canonical atom
     reorder = []
@@ -69,11 +73,12 @@ def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> list[str]:
             if len(reorder) < len(atom_names):
                 reorder.append(len(reorder))
     
-    # Apply reorder
+    # Apply reorder to names
     if reorder and all(i < len(atom_names) for i in reorder):
-        return [atom_names[i] for i in reorder]
+        reordered_names = [atom_names[i] for i in reorder]
+        return reordered_names, reorder
     
-    return atom_names
+    return atom_names, None
 
 
 def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
@@ -376,6 +381,74 @@ def compute_mw_position(o_pos: np.ndarray, h1_pos: np.ndarray, h2_pos: np.ndarra
     return o_pos + TIP4P_ICE_ALPHA * (h1_pos - o_pos) + TIP4P_ICE_ALPHA * (h2_pos - o_pos)
 
 
+def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
+    """Extract atom names for one complete guest molecule from the list.
+
+    Handles various guest molecule types and their atom naming conventions.
+    Works regardless of atom order (unlike _count_guest_atoms which assumes
+    certain atoms come first).
+
+    Args:
+        atom_names: List of atom names in guest region
+
+    Returns:
+        List of atom names for the first complete molecule,
+        or empty list if cannot determine
+    """
+    if not atom_names:
+        return []
+
+    # Strategy: detect molecule by counting atoms of each type
+    # and looking for patterns
+
+    # Check first 20 atoms max to avoid infinite loop
+    sample = atom_names[:20]
+
+    # Count atoms by type
+    from collections import Counter
+    counts = Counter(sample)
+
+    # CH4: 1 C + 4 H = 5 atoms
+    if counts.get('C', 0) >= 1 and counts.get('H', 0) >= 4:
+        # Find C and 4 H atoms
+        mol_atoms = []
+        h_count = 0
+        for atom in sample:
+            if atom == 'C' and 'C' not in mol_atoms:
+                mol_atoms.append(atom)
+            elif atom == 'H' and h_count < 4:
+                mol_atoms.append(atom)
+                h_count += 1
+            if len(mol_atoms) == 5:
+                break
+        return mol_atoms[:5]
+
+    # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
+    # GenIce2 THF: O, C, C, C, C, H, H, H, H, H, C, H, H (13 atoms)
+    if counts.get('O', 0) >= 1 and counts.get('C', 0) >= 4:
+        # Return first 13 atoms as likely THF
+        return sample[:13]
+
+    # H2: just H atoms
+    if set(sample[:2]) == {'H'} and len(sample) >= 2:
+        return ['H', 'H']
+
+    # CO2: C and O atoms
+    if counts.get('C', 0) >= 1 and counts.get('O', 0) >= 2:
+        return ['C', 'O', 'O']
+
+    # If first atom is Me (united-atom methane), return 1 atom
+    if sample[0] == 'Me':
+        return ['Me']
+
+    # Fallback: try using _count_guest_atoms
+    count = _count_guest_atoms(atom_names, 0)
+    if count > 0:
+        return atom_names[:count]
+
+    return []
+
+
 def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     """Write interface structure to GROMACS .gro format.
     
@@ -487,21 +560,49 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
             guest_atom_names = iface.atom_names[guest_start:guest_end]
             
-            # Determine guest type based on first guest atom
+            # Determine guest type by analyzing all atom names
+            # GenIce2 outputs atoms in different order than .itp:
+            #   CH4: H, H, H, H, C (hydrogen first)
+            #   THF: O, C, C, C, C, H, H, H, H, H, H, C, H (oxygen first in some versions)
+            # Need to detect based on atom composition, not just first atom
+            
             if guest_atom_names:
-                first_atom = guest_atom_names[0]
-                if first_atom == "Me":
-                    guest_type = "ch4"
-                elif first_atom == "C":
-                    # Could be CH4 (5 atoms) or THF (13 atoms starting with C)
-                    # Count atoms to determine
-                    count = _count_guest_atoms(guest_atom_names, 0)
-                    if count <= 5:
-                        guest_type = "ch4"
-                    else:
+                # Count unique atom types to identify molecule
+                unique_atoms = set(guest_atom_names[:10])  # Check first 10 atoms
+                
+                # CH4: Only has C and H atoms (5 atoms total)
+                # THF: Has C, H, and O atoms (13 atoms total)
+                # CO2: Has C and O atoms
+                # H2: Has only H atoms
+                
+                # Get atoms for one molecule
+                mol_atoms = _get_molecule_atoms(guest_atom_names)
+                
+                if mol_atoms:
+                    mol_unique = set(mol_atoms)
+                    
+                    # CH4 detection: only C and H, typically 5 atoms
+                    if 'C' in mol_unique and 'H' in mol_unique and 'O' not in mol_unique:
+                        # Could be CH4 (5 atoms) - verify count
+                        if len(mol_atoms) == 5:
+                            guest_type = "ch4"
+                        else:
+                            # Unexpected - log warning but try ch4
+                            import logging
+                            logger = logging.getLogger(__name__)
+                            logger.warning(f"Unexpected CH4-like molecule with {len(mol_atoms)} atoms")
+                            guest_type = "ch4"  # Try anyway
+                    # THF detection: has C, H, and O, typically 12-13 atoms
+                    elif 'O' in mol_unique and 'C' in mol_unique:
                         guest_type = "thf"
-                elif first_atom in ["O", "c"]:  # THF starts with O or lowercase c
-                    guest_type = "thf"
+                    # H2 detection: only H
+                    elif mol_unique == {'H'}:
+                        guest_type = "h2"
+                    # CO2 detection: C and O
+                    elif mol_unique == {'C', 'O'}:
+                        guest_type = "co2"
+                    else:
+                        guest_type = None
                 else:
                     guest_type = None
             else:
@@ -519,21 +620,24 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 guest_atoms = _count_guest_atoms(guest_atom_names, mol_start)
                 mol_end = mol_start + guest_atoms
                 
-                # Get this molecule's atom names
+                # Get this molecule's atom names and positions
                 mol_atom_names = guest_atom_names[mol_start:mol_end]
+                mol_positions = iface.positions[guest_start + mol_start:guest_start + mol_end]
                 
                 # Reorder to match .itp canonical order (C first for ch4, O first for thf)
+                reorder_mapping = None
                 if guest_type == "ch4" or guest_type == "thf":
-                    mol_atom_names = reorder_guest_atoms(mol_atom_names, guest_type)
+                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                    # Also reorder positions to match the reordered names
+                    if reorder_mapping is not None:
+                        mol_positions = [mol_positions[i] for i in reorder_mapping]
                 
                 # Wrap residue number
                 res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
                 
-                for i, atom_name in enumerate(mol_atom_names):
+                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    actual_atom_idx = guest_start + i
-                    pos = iface.positions[actual_atom_idx]
                     lines.append(f"{res_num:5d}{guest_res_name:<5s}"
                                 f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
@@ -566,45 +670,99 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
 
 def _count_guest_atoms(atom_names: list[str], start: int) -> int:
     """Count atoms in a guest molecule starting at index.
-    
+
+    Handles GenIce2 output where atom order may not match .itp canonical order.
+    For CH4, GenIce2 outputs H, H, H, H, C (H first), while .itp expects C first.
+
     Args:
         atom_names: List of atom names in guest region
         start: Starting index within atom_names
-    
+
     Returns:
         Number of atoms in this guest molecule
     """
     if start >= len(atom_names):
         return 0
-    
-    first_atom = atom_names[start]
-    
+
+    # Strategy: look at the next several atoms to determine molecule type
+    # Check up to 15 atoms ahead to identify the pattern
+    sample = atom_names[start:min(start + 15, len(atom_names))]
+
+    if not sample:
+        return 0
+
+    first_atom = sample[0]
+
     # United-atom methane (Me) - single carbon
     if first_atom == "Me":
         return 1
-    
-    # All-atom methane (C + 4H)
-    if first_atom == "C":
-        count = 0
-        i = start
-        while i < len(atom_names) and i < start + 5:
-            count += 1
-            i += 1
-        return count
-    
-    # THF (starts with O or C for the ring oxygen/carbon)
+
+    # All-atom methane: C + 4H = 5 atoms
+    # GenIce2 may output as: H, H, H, H, C (H first) or C, H, H, H, H (C first)
+    if first_atom == "C" or (first_atom == "H" and len(sample) >= 5):
+        # Check if this looks like CH4
+        # Count C and H atoms in the sample
+        c_count = sum(1 for a in sample if a == 'C')
+        h_count = sum(1 for a in sample if a == 'H')
+
+        # CH4 has exactly 1 C and 4 H
+        if c_count >= 1 and h_count >= 4 and (c_count + h_count) >= 5:
+            # Return 5 atoms for CH4
+            # Find where the 5-atom group ends
+            count = 0
+            c_found = 0
+            h_found = 0
+            for atom in sample:
+                if atom == 'C' and c_found == 0:
+                    c_found += 1
+                    count += 1
+                elif atom == 'H' and h_found < 4:
+                    h_found += 1
+                    count += 1
+                if count >= 5:
+                    break
+            return max(count, 5)  # At least 5 for CH4
+
+    # THF: C5H8O = 14 atoms, but GenIce2 outputs 13 atoms (some versions)
+    # Atoms: O, C, C, C, C, H, H, H, H, H, H, C, H, H (14) or similar
     if first_atom in ["O", "C"]:
-        count = 0
-        i = start
-        while i < len(atom_names):
-            if atom_names[i] == "OW":
-                break
-            count += 1
-            i += 1
-            if count > 20:  # Safety limit
-                break
-        return max(count, 1)
-    
+        # Check if this looks like THF (has O, multiple C, multiple H)
+        has_oxygen = any(a == 'O' for a in sample)
+        has_carbon = sum(1 for a in sample if a == 'C') >= 4
+        if has_oxygen and has_carbon:
+            # Count until we see a pattern break (OW, or different atom type)
+            count = 0
+            i = start
+            while i < len(atom_names):
+                if atom_names[i] == "OW":
+                    break
+                count += 1
+                i += 1
+                if count > 20:  # Safety limit
+                    break
+            return max(count, 13)  # At least 13 for THF
+        elif first_atom == "C":
+            # Just carbon atoms - might be part of THF or other molecule
+            count = 0
+            i = start
+            while i < len(atom_names) and count < 15:
+                count += 1
+                i += 1
+            return count
+
+    # H2: two hydrogen atoms
+    if first_atom == "H":
+        # Check if next atom is also H (H2 molecule)
+        if len(sample) >= 2 and sample[1] == 'H':
+            return 2
+        # Otherwise might be CH4 with H first - but we handled that above
+        # Default: assume single H atom
+        return 1
+
+    # CO2: C and O atoms
+    if first_atom == "C" and any(a == 'O' for a in sample[:3]):
+        return 3  # C + O + O
+
     # Default: treat as 1 atom guest
     return 1
 
@@ -744,8 +902,9 @@ def write_multi_molecule_gro_file(
             # Residue number wraps at 100000
             res_num = (molecule_index.index(mol) + 1) % 100000
             
-            # Get atom names for this molecule
+            # Get atom names and positions for this molecule
             mol_atom_names = []
+            mol_positions = positions[mol.start_idx:mol.start_idx + mol.count]
             if atom_names is not None:
                 mol_atom_names = atom_names[mol.start_idx:mol.start_idx + mol.count]
             
@@ -753,13 +912,16 @@ def write_multi_molecule_gro_file(
             # For water, ice (TIP4P), ion molecules: use as-is
             # For guest molecules (CH4, THF): reorder to match .itp
             if mol.mol_type in ["ch4", "thf"] and mol_atom_names:
-                mol_atom_names = reorder_guest_atoms(mol_atom_names, mol.mol_type)
+                mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, mol.mol_type)
+                # Also reorder positions to match the reordered names
+                if reorder_mapping is not None:
+                    mol_positions = [mol_positions[i] for i in reorder_mapping]
             
             # Write atoms for this molecule
             for i in range(mol.count):
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                pos = positions[mol.start_idx + i]
+                pos = mol_positions[i]
                 
                 # Use actual atom name if provided, otherwise use generic "XX"
                 if mol_atom_names:
