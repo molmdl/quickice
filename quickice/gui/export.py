@@ -581,9 +581,10 @@ class InterfaceGROMACSExporter:
             import shutil
             from quickice.output.gromacs_writer import get_tip4p_itp_path
             
-            # Copy water .itp file
+            # Copy water .itp file (must match the #include "tip4p-ice.itp" in .top file)
             water_itp_source = get_tip4p_itp_path()
-            shutil.copy(water_itp_source, itp_path)
+            water_itp_dest = path.with_name("tip4p-ice.itp")
+            shutil.copy(water_itp_source, water_itp_dest)
             
             # Copy guest .itp file if guests are present
             if interface_structure.guest_nmolecules > 0 and interface_structure.guest_atom_count > 0:

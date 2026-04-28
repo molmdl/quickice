@@ -657,7 +657,7 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 atom_num_wrapped = atom_num % 100000
                 pos = iface.positions[base_idx + i]
                 lines.append(f"{res_num:5d}SOL  "
-                            f"{atom_name:>4s}{atom_num_wrapped:5d}"
+                            f"{atom_name:>5s}{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
         f.writelines(lines)

@@ -122,11 +122,11 @@ class HydrateGROMACSExporter:
                 str(path),
                 f"Hydrate structure ({lattice} + {guest}) exported by QuickIce",
                 atom_names=structure.atom_names
-            )
-            
+             )
+
             # Build itp_files mapping for .top file
-            # Maps internal guest type to bundled itp path
-            itp_files = {config.guest_type: str(guest_itp_path)}
+            # Maps internal guest type to itp filename (not full path - use relative path in #include)
+            itp_files = {config.guest_type: guest_itp_path.name}
             
             # Write .top file with #include for guest .itp
             write_multi_molecule_top_file(
