@@ -386,22 +386,14 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     processed_guest_positions = None
     processed_guest_atom_names = []
     original_guest_nmolecules = 0  # Default: no hydrate guests
-    
+
     if is_hydrate and raw_guest_positions is not None and len(raw_guest_positions) > 0:
         # Store initial guest molecule count BEFORE tiling (for atom name expansion)
         original_guest_nmolecules = guest_nmolecules
-        
-        # Calculate ICE region bounds for tiling guests (NOT water region)
-        # Use ice region dimensions (same as bottom ice layer)
-        ice_region_dims = np.array([
-            adjusted_box_x, 
-            adjusted_box_y, 
-            adjusted_ice_thickness
-        ])
-        
+
         # Get extent of original guest structure (for tiling)
         guest_cell_dims = get_cell_extent(candidate.cell)
-        
+
         # Determine atoms per GUEST molecule (not water framework)
         # Guests can have different atom counts than water framework
         # Me = 1 atom, CH4 = 5 atoms, THF = 13+ atoms
@@ -422,59 +414,85 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                 guest_atoms_per_mol = 1  # Default
         else:
             guest_atoms_per_mol = 4  # Fallback
-        
-        # Tile guests in ICE region (NOT water region)
-        tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
+
+        # FIX: Tile guests SEPARATELY for bottom and top ice layers
+        # This ensures proper spatial distribution matching the ice framework tiling
+        ice_region_dims = np.array([
+            adjusted_box_x,
+            adjusted_box_y,
+            adjusted_ice_thickness
+        ])
+
+        # Tile guests for BOTTOM ice layer (Z = [0, ice_thickness])
+        bottom_guest_positions, bottom_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
             ice_region_dims,
             atoms_per_molecule=guest_atoms_per_mol,
             cell_matrix=cell_matrix
         )
-        
-        # DISTRIBUTE guests in BOTTOM and TOP ice regions
-        if len(tilable_guest_positions) > 0:
-            # Calculate number of molecules (not atoms!) to put in bottom vs top
-            # CRITICAL: Must split by molecule count, not atom count!
-            n_molecules = len(tilable_guest_positions) // guest_atoms_per_mol
-            n_bottom_mols = n_molecules // 2
-            n_bottom_atoms = n_bottom_mols * guest_atoms_per_mol
 
-            bottom_guests = tilable_guest_positions[:n_bottom_atoms]
-            top_guests = tilable_guest_positions[n_bottom_atoms:]
+        # Tile guests for TOP ice layer (same dimensions), then shift Z
+        top_guest_positions, top_guest_nmolecules = tile_structure(
+            raw_guest_positions,
+            guest_cell_dims,
+            ice_region_dims,
+            atoms_per_molecule=guest_atoms_per_mol,
+            cell_matrix=cell_matrix
+        )
 
-            # Top ice guests: shift to Z = [adjusted_ice_thickness + water_thickness, box_z]
-            top_guests = top_guests.copy()
-            top_guests[:, 2] += adjusted_ice_thickness + config.water_thickness
+        # Shift top guests to their actual position
+        # Top ice starts at Z = adjusted_ice_thickness + water_thickness
+        if len(top_guest_positions) > 0:
+            top_guest_positions = top_guest_positions.copy()
+            top_guest_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
 
-            # CRITICAL: Wrap top guests as whole molecules after shifting
+            # Wrap top guests as whole molecules after shifting
             # The shift can cause molecules near the boundary to span PBC
             # Wrap each molecule as a unit to keep all atoms together
-            n_top_molecules = len(top_guests) // guest_atoms_per_mol
+            n_top_molecules = len(top_guest_positions) // guest_atoms_per_mol
             for mol_idx in range(n_top_molecules):
                 start = mol_idx * guest_atoms_per_mol
                 end = start + guest_atoms_per_mol
-                mol_atoms = top_guests[start:end]
+                mol_atoms = top_guest_positions[start:end]
                 # Calculate center of mass Z
                 com_z = mol_atoms[:, 2].mean()
                 # If COM is outside [0, box_z), shift the entire molecule
                 if com_z < 0:
                     # Shift up by one box
-                    top_guests[start:end, 2] += adjusted_box_z
+                    top_guest_positions[start:end, 2] += adjusted_box_z
                 elif com_z >= adjusted_box_z:
                     # Shift down by one box
-                    top_guests[start:end, 2] -= adjusted_box_z
+                    top_guest_positions[start:end, 2] -= adjusted_box_z
 
-            # Combine both
-            tilable_guest_positions = np.vstack([bottom_guests, top_guests])
+        # Combine bottom and top guests
+        all_guest_parts = []
+        total_guest_nmolecules = 0
+
+        if len(bottom_guest_positions) > 0:
+            all_guest_parts.append(bottom_guest_positions)
+            total_guest_nmolecules += bottom_guest_nmolecules
+
+        if len(top_guest_positions) > 0:
+            all_guest_parts.append(top_guest_positions)
+            total_guest_nmolecules += top_guest_nmolecules
+
+        if all_guest_parts:
+            tilable_guest_positions = np.vstack(all_guest_parts)
+            tiled_guest_nmolecules = total_guest_nmolecules
+        else:
+            tilable_guest_positions = np.zeros((0, 3), dtype=float)
+            tiled_guest_nmolecules = 0
 
         
         processed_guest_positions = tilable_guest_positions
-        
+
         # FIX: Tile the guest atom names to match the tiled molecule count
-        # original_guest_nmolecules (e.g., 8) -> tiled_guest_nmolecules (e.g., ~180)
+        # original_guest_nmolecules (e.g., 8) -> tiled_guest_nmolecules (e.g., ~180 per layer * 2 layers)
         # Need to expand atom names to match positions
         if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
+            # Calculate tiling factor: how many times the original guest structure was tiled
+            # tiled_guest_nmolecules is the TOTAL for both layers
             tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
             # Tile atom names: repeat the original guest atom names for each tiled copy
             processed_guest_atom_names = guest_atom_names * tiling_factor
@@ -488,7 +506,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                     processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
         else:
             processed_guest_atom_names = []
-        
+
         # Update guest molecule count to reflect actual tiled count
         guest_nmolecules = tiled_guest_nmolecules
 
