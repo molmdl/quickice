@@ -184,7 +184,17 @@ class IonPanel(QWidget):
         self.configuration_changed.emit()
     
     def _update_ion_count(self):
-        """Update ion count display based on current concentration and volume."""
+        """Update ion count display based on current concentration and volume.
+        
+        NOTE: The displayed count is a theoretical estimate based on concentration
+        and volume. The actual number of ions inserted may be lower due to:
+        1. Limited available water molecules for replacement
+        2. MIN_SEPARATION constraint (0.3 nm) from ice/guest molecules
+        3. MIN_SEPARATION constraint from already-placed ions
+        4. Charge neutrality adjustment
+        
+        The display shows "up to N" to indicate this is a maximum estimate.
+        """
         config = self.get_configuration()
         inserter = IonInserter(config)
         
@@ -194,7 +204,16 @@ class IonPanel(QWidget):
                 config.concentration_molar, 
                 self._liquid_volume_nm3
             )
-            self.ion_count_display.setText(f"Na+ {pair_count}, Cl- {pair_count} pairs")
+            # Show "up to N" to indicate actual count may be lower
+            self.ion_count_display.setText(f"Up to {pair_count} Na⁺/Cl⁻ pairs")
+            self.ion_count_display.setToolTip(
+                f"Theoretical maximum: {pair_count} ion pairs.\n"
+                f"Actual count may be lower due to:\n"
+                f"• Limited water molecules for replacement\n"
+                f"• Minimum 0.3nm separation from ice/guest\n"
+                f"• Minimum 0.3nm separation from other ions\n"
+                f"• Charge neutrality requirements"
+            )
         else:
             self.ion_count_display.setText("Na+ 0, Cl- 0 pairs")
     

@@ -46,6 +46,10 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
     - Water framework atoms: OW, HW1, HW2, MW (TIP4P pattern)
     - Guest atoms: anything else (Me, C, H, etc.)
     
+    IMPORTANT: Water molecules (starting with OW) are NEVER classified as guests,
+    even if they appear at unexpected positions. This prevents misclassification
+    of water molecules as guest molecules.
+    
     Args:
         atom_names: List of atom names from candidate
         atoms_per_mol: Expected atoms per molecule (4 for TIP4P/hydrate)
@@ -70,8 +74,28 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
                 # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
                 # Detect based on atom type
                 guest_atoms = _count_guest_atoms(atom_names, i)
-                guest_indices.extend(range(i, i + guest_atoms))
-                i += guest_atoms
+                
+                # SAFEGUARD: Check if the detected "guest" is actually a water molecule
+                # that was misidentified due to counting errors
+                if guest_atoms > 0:
+                    # Check if any atoms in this range are OW (water oxygen)
+                    # If so, this is NOT a guest - it's water
+                    end_idx = min(i + guest_atoms, len(atom_names))
+                    has_ow = any(atom_names[j] == "OW" for j in range(i, end_idx))
+                    
+                    if has_ow:
+                        # This is actually a water molecule - add to water_indices
+                        # and skip to the next OW to re-sync
+                        # Find the next OW and add 4 atoms as water
+                        water_indices.extend(range(i, end_idx))
+                        i = end_idx
+                    else:
+                        # Legitimate guest - add to guest_indices
+                        guest_indices.extend(range(i, i + guest_atoms))
+                        i += guest_atoms
+                else:
+                    # No atoms detected - skip 1 to avoid infinite loop
+                    i += 1
         else:
             # Not enough atoms for full molecule - treat as guest
             guest_indices.extend(range(i, len(atom_names)))
@@ -85,7 +109,9 @@ def _count_guest_atoms(atom_names: list[str], start: int) -> int:
     
     Guest types:
     - Me: 1 atom (united-atom methane)
-    - C: 5 atoms (all-atom methane: C + 4H)
+    - C: 5 atoms (all-atom methane: C + 4H) - C-first format
+    - H: 5 atoms (all-atom methane: H, H, H, H, C) - H-first format (GenIce2 output)
+    - H: 2 atoms (H2 molecule)
     - For THF: starts with O or C (13 atoms)
     
     Args:
@@ -104,7 +130,7 @@ def _count_guest_atoms(atom_names: list[str], start: int) -> int:
     if first_atom == "Me":
         return 1
     
-    # All-atom methane (C + 4H)
+    # All-atom methane (C + 4H) - C-first format
     if first_atom == "C":
         count = 0
         i = start
@@ -112,6 +138,30 @@ def _count_guest_atoms(atom_names: list[str], start: int) -> int:
             count += 1
             i += 1
         return count
+    
+    # All-atom methane (H, H, H, H, C) - H-first format from GenIce2
+    # OR H2 molecule (2 H atoms)
+    if first_atom == "H":
+        # Check next several atoms to distinguish CH4 from H2
+        # GenIce2 outputs CH4 as: H, H, H, H, C (5 atoms)
+        # H2 is just: H, H (2 atoms)
+        sample_size = min(start + 6, len(atom_names))
+        sample = atom_names[start:sample_size]
+        
+        # Count C and H atoms in sample
+        c_count = sum(1 for a in sample if a == 'C')
+        h_count = sum(1 for a in sample if a == 'H')
+        
+        # CH4 pattern: 4 H + 1 C = 5 atoms
+        if h_count >= 4 and c_count >= 1:
+            return 5
+        
+        # H2 pattern: 2 H atoms, no C
+        if h_count >= 2 and c_count == 0:
+            return 2
+        
+        # Single H atom (fallback)
+        return 1
     
     # THF starts with O (oxygen)
     if first_atom == "O":
