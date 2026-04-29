@@ -433,16 +433,15 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         )
         
         # DISTRIBUTE guests in BOTTOM and TOP ice regions
-        if len(tileable_guest_positions) > 0:
-            tileable_guest_positions = tileable_guest_positions.copy()
+        if len(tilable_guest_positions) > 0:
             # Calculate number of molecules (not atoms!) to put in bottom vs top
             # CRITICAL: Must split by molecule count, not atom count!
-            n_molecules = len(tileable_guest_positions) // guest_atoms_per_mol
+            n_molecules = len(tilable_guest_positions) // guest_atoms_per_mol
             n_bottom_mols = n_molecules // 2
             n_bottom_atoms = n_bottom_mols * guest_atoms_per_mol
 
-            bottom_guests = tileable_guest_positions[:n_bottom_atoms]
-            top_guests = tileable_guest_positions[n_bottom_atoms:]
+            bottom_guests = tilable_guest_positions[:n_bottom_atoms]
+            top_guests = tilable_guest_positions[n_bottom_atoms:]
 
             # Top ice guests: shift to Z = [adjusted_ice_thickness + water_thickness, box_z]
             top_guests = top_guests.copy()
@@ -467,7 +466,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                     top_guests[start:end, 2] -= adjusted_box_z
 
             # Combine both
-            tileable_guest_positions = np.vstack([bottom_guests, top_guests])
+            tilable_guest_positions = np.vstack([bottom_guests, top_guests])
 
         
         processed_guest_positions = tilable_guest_positions
