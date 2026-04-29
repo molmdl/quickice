@@ -433,16 +433,42 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         )
         
         # DISTRIBUTE guests in BOTTOM and TOP ice regions
-        if len(tilable_guest_positions) > 0:
-            tilable_guest_positions = tilable_guest_positions.copy()
-            # Split: half in bottom ice, half in top ice
-            n_bottom = len(tilable_guest_positions) // 2
-            bottom_guests = tilable_guest_positions[:n_bottom]
-            top_guests = tilable_guest_positions[n_bottom:]
+        if len(tileable_guest_positions) > 0:
+            tileable_guest_positions = tileable_guest_positions.copy()
+            # Calculate number of molecules (not atoms!) to put in bottom vs top
+            # CRITICAL: Must split by molecule count, not atom count!
+            n_molecules = len(tileable_guest_positions) // guest_atoms_per_mol
+            n_bottom_mols = n_molecules // 2
+            n_bottom_atoms = n_bottom_mols * guest_atoms_per_mol
+
+            bottom_guests = tileable_guest_positions[:n_bottom_atoms]
+            top_guests = tileable_guest_positions[n_bottom_atoms:]
+
             # Top ice guests: shift to Z = [adjusted_ice_thickness + water_thickness, box_z]
+            top_guests = top_guests.copy()
             top_guests[:, 2] += adjusted_ice_thickness + config.water_thickness
+
+            # CRITICAL: Wrap top guests as whole molecules after shifting
+            # The shift can cause molecules near the boundary to span PBC
+            # Wrap each molecule as a unit to keep all atoms together
+            n_top_molecules = len(top_guests) // guest_atoms_per_mol
+            for mol_idx in range(n_top_molecules):
+                start = mol_idx * guest_atoms_per_mol
+                end = start + guest_atoms_per_mol
+                mol_atoms = top_guests[start:end]
+                # Calculate center of mass Z
+                com_z = mol_atoms[:, 2].mean()
+                # If COM is outside [0, box_z), shift the entire molecule
+                if com_z < 0:
+                    # Shift up by one box
+                    top_guests[start:end, 2] += adjusted_box_z
+                elif com_z >= adjusted_box_z:
+                    # Shift down by one box
+                    top_guests[start:end, 2] -= adjusted_box_z
+
             # Combine both
-            tilable_guest_positions = np.vstack([bottom_guests, top_guests])
+            tileable_guest_positions = np.vstack([bottom_guests, top_guests])
+
         
         processed_guest_positions = tilable_guest_positions
         
