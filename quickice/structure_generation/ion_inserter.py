@@ -60,41 +60,43 @@ class IonInserter:
     def _build_molecule_index_from_structure(self, structure) -> list[MoleculeIndex]:
         """Build molecule_index from structure metadata (InterfaceStructure compatibility).
 
-        InterfaceStructure has ice_nmolecules and water_nmolecules but no molecule_index.
-        This method reconstructs the index by detecting actual atoms per molecule:
-        - Hydrate framework uses TIP4P with 4 atoms per molecule (OW, HW1, HW2, MW)
-        - GenIce ice uses 3 atoms per molecule (O, H, H)
-        - Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
-        - Guest molecules come after ice but before water
+        InterfaceStructure has ice_atom_count, guest_atom_count, water_atom_count attributes
+        that mark the exact boundaries in the positions array. This method uses those
+        counts to build molecule_index entries.
+
+        Order in positions array:
+        - Ice atoms: 0 to ice_atom_count-1
+        - Guest atoms: ice_atom_count to ice_atom_count + guest_atom_count - 1
+        - Water atoms: ice_atom_count + guest_atom_count onward
 
         Args:
-            structure: Structure with ice_nmolecules and water_nmolecules attributes
+            structure: Structure with ice_atom_count, guest_atom_count, water_atom_count attributes
 
         Returns:
             List of MoleculeIndex entries for ice, guest, and water molecules, or None if not possible
         """
-        # Check if this is an InterfaceStructure (has ice_nmolecules but no molecule_index)
-        if not hasattr(structure, 'ice_nmolecules') or not hasattr(structure, 'water_nmolecules'):
+        # Check if this is an InterfaceStructure (has ice_atom_count)
+        if not hasattr(structure, 'ice_atom_count'):
             return None
 
-        ice_mols = structure.ice_nmolecules
-        water_mols = structure.water_nmolecules
+        ice_mols = getattr(structure, 'ice_nmolecules', 0)
+        water_mols = getattr(structure, 'water_nmolecules', 0)
         guest_mols = getattr(structure, 'guest_nmolecules', 0)
+        ice_atom_count = getattr(structure, 'ice_atom_count', 0)
+        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+        water_atom_count = getattr(structure, 'water_atom_count', 0)
 
         if ice_mols == 0 and water_mols == 0 and guest_mols == 0:
             return None
 
-        # Detect atoms per molecule from atom_names pattern
-        # Hydrate framework: first atom is "OW" -> 4 atoms
-        # GenIce ice: first atom is "O" -> 3 atoms
-        ice_atoms_per_mol = 4 if (structure.atom_names and structure.atom_names[0] == "OW") else 3
-
         mol_index = []
         current_idx = 0
 
-        # Add ice molecules as individual entries for proper handling
-        # Detect actual atoms per molecule (hydrate = 4, ice = 3)
-        if ice_mols > 0:
+        # Add ice molecules
+        # Use ice_atom_count to determine where ice region ends
+        if ice_mols > 0 and ice_atom_count > 0:
+            # Calculate atoms per ice molecule from actual counts
+            ice_atoms_per_mol = ice_atom_count // ice_mols if ice_mols > 0 else 4
             for i in range(ice_mols):
                 mol_index.append(MoleculeIndex(
                     start_idx=current_idx,
@@ -103,31 +105,31 @@ class IonInserter:
                 ))
                 current_idx += ice_atoms_per_mol
 
-        # Add guest molecules if present
-        # Guests come after ice in the positions array
-        if guest_mols > 0:
-            guest_atom_count = getattr(structure, 'guest_atom_count', 0)
-            # Calculate atoms per guest molecule
-            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 0
-            if guest_atoms_per_mol > 0:
-                for i in range(guest_mols):
-                    mol_index.append(MoleculeIndex(
-                        start_idx=current_idx,
-                        count=guest_atoms_per_mol,
-                        mol_type="guest"
-                    ))
-                    current_idx += guest_atoms_per_mol
+        # Add guest molecules
+        # Use guest_atom_count to determine guest region size
+        if guest_mols > 0 and guest_atom_count > 0:
+            # Calculate atoms per guest molecule from actual counts
+            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 5
+            for i in range(guest_mols):
+                mol_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=guest_atoms_per_mol,
+                    mol_type="guest"
+                ))
+                current_idx += guest_atoms_per_mol
 
-        # Add water molecules as individual entries
-        # Water uses 4 atoms per molecule (OW, HW1, HW2, MW)
-        if water_mols > 0:
+        # Add water molecules
+        # Use water_atom_count to determine water region size
+        if water_mols > 0 and water_atom_count > 0:
+            # Water always uses 4 atoms per molecule (TIP4P)
+            water_atoms_per_mol = water_atom_count // water_mols if water_mols > 0 else 4
             for i in range(water_mols):
                 mol_index.append(MoleculeIndex(
                     start_idx=current_idx,
-                    count=4,
+                    count=water_atoms_per_mol,
                     mol_type="water"
                 ))
-                current_idx += 4
+                current_idx += water_atoms_per_mol
 
         return mol_index
     
