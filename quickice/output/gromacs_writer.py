@@ -57,27 +57,37 @@ def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> tuple[list[str]
     
     # Build reorder mapping from current to canonical indices
     # reorder[i] = index in original atom_names that should be at position i in canonical order
-    # So: reordered_names[i] = atom_names[reorder[i]]
-    # And: reordered_positions[i] = positions[reorder[i]]
-    
+    # So: reordered_positions[i] = positions[reorder[i]]
+    # The output atom NAMES should be the CANONICAL names, not the input names.
+
     # Find indices in current order for each canonical atom
     reorder = []
     for target_atom in canonical:
         # Find this atom in current names
+        found = False
         for idx, name in enumerate(atom_names):
-            if name == target_atom and idx not in reorder:
+            # Match by canonical name (C, H) or common type (c3, hc)
+            if idx not in reorder and (
+                name == target_atom or  # Exact match (already canonical)
+                (target_atom == "C" and name in ["c3", "C", "Me"]) or  # Carbon
+                (target_atom == "H" and name in ["hc", "H"]) or  # Hydrogen
+                (target_atom == "O" and name in ["os", "O"]) or  # Oxygen
+                (target_atom == "CA" and name in ["c5", "CA"]) or  # Aromatic carbon
+                (target_atom == "CB" and name in ["c5", "CB"])  # Aliphatic carbon
+            ):
                 reorder.append(idx)
+                found = True
                 break
-        else:
+        if not found:
             # Not found - keep original position
             if len(reorder) < len(atom_names):
                 reorder.append(len(reorder))
-    
-    # Apply reorder to names
+
+    # Return CANONICAL names (not reordered input names!)
+    # The input atom_names might be types (c3, hc) but .gro needs names (C, H)
     if reorder and all(i < len(atom_names) for i in reorder):
-        reordered_names = [atom_names[i] for i in reorder]
-        return reordered_names, reorder
-    
+        return list(canonical), reorder
+
     return atom_names, None
 
 
@@ -1306,7 +1316,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                     atom_name = mol_atom_names[i]
                     pos = mol_positions[i]
                     lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
-                                f"{atom_name[0:4]:>4s}{atom_num_wrapped:5d}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
             elif mol_type == "na":
