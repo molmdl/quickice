@@ -1,77 +1,51 @@
 ---
 status: investigating
-trigger: "Ion Export Atom Order Mismatch - CH4 missing and extra water molecule"
-created: 2026-04-29T00:00:00Z
-updated: 2026-04-29T00:05:00Z
-symptoms_prefilled: true
-goal: find_root_cause_only
+trigger: "Debug the atom order mismatch bug in QuickIce GROMACS ion export that only occurs with 2x2x2 (larger) hydrate systems"
+created: 2025-04-29T00:00:00Z
+updated: 2025-04-29T19:00:00Z
 ---
 
 ## Current Focus
-
-hypothesis: A water molecule is being included in guest_indices during hydrate guest extraction, causing atom count mismatch during tiling
-test: Trace _detect_guest_atoms logic to find where water molecule gets added to guest_indices
-expecting: Find the specific condition that causes a water molecule to be misclassified as guest
-next_action: Check _count_guest_atoms for CH4 handling and verify if atoms_per_mol affects water detection
+hypothesis: The `ion_structure.atom_names` array has water atom names at the position of the last guest. This is built by `replace_water_with_ions()` which reads from `interface_structure.atom_names[start_idx:end_idx]` where start_idx comes from `_build_molecule_index_from_structure()`. If `guest_atom_count` stored in InterfaceStructure is less than 9150 (actual), `guest_atoms_per_mol` would be calculated as 4 instead of 5, causing all start_idx values to be wrong.
+test: Check if `guest_atom_count` in the actual InterfaceStructure passed to insert_ions() differs from 9150. Need to verify: 1) Is the stored `guest_atom_count` consistent with `len(positions)` for the guest region? 2) Is `processed_guest_positions` length correctly calculated in slab.py? 3) Is there any case where `len(processed_guest_positions)` != `tiled_guest_nmolecules * guest_atoms_per_mol`?
+expecting: Find that `guest_atom_count` stored in InterfaceStructure is 9145-9149 instead of 9150, OR find that `processed_guest_positions` has wrong length due to tile_structure() returning inconsistent position count vs molecule count.
+next_action: Write a test script to directly load the hydrate candidate and trace through slab.py assemble_slab() to check the exact values of `processed_guest_positions` length, `tiled_guest_nmolecules`, and the resulting `guest_atom_count`.
 
 ## Symptoms
-
-expected: 1830 CH4 molecules, no extra water, then ions in correct order
-actual: 1829 CH4 molecules, 1 extra water (H2 residue), then ions - causing atom order mismatch
-errors: GROMACS grompp fails with atom name mismatch (C-H, H-OW) at positions 77970-77971
-reproduction: Export hydrate→interface→ion workflow
-started: Unknown - discovered in user testing
+expected: 1830 CH4 guest molecules (each with 5 atoms: C, H, H, H, H)
+actual: 1829 CH4 + 1 H2 residue with atoms [H, OW, HW1, HW2, MW] (WRONG!)
+errors: Last guest molecule gets water atom names instead of CH4 atom names
+reproduction: Generate 2x2x2 sI hydrate → Create interface → Insert ions → Export → Check last CH4
+started: Bug only appears with 2x2x2 hydrate, not with 1x1x1
 
 ## Eliminated
-
-- hypothesis: GenIce2 outputs CH4 in wrong order (H first)
-  evidence: GenIce2 outputs CH4 as [C, H, H, H, H] - correct order
-  timestamp: 2026-04-29T00:02:00Z
-
-- hypothesis: _count_guest_atoms has bug with CH4 counting
-  evidence: _count_guest_atoms correctly returns 5 for CH4 starting with C
-  timestamp: 2026-04-29T00:03:00Z
+- hypothesis: _build_molecule_index_from_structure() incorrectly detects ice_atoms_per_mol=3
+  evidence: Debug script shows ice_atoms_per_mol=4 is correctly detected (first atom is "OW")
+  timestamp: 2025-04-29T19:00:00Z
 
 ## Evidence
+- timestamp: 2025-04-29T00:00:00Z
+  checked: Interface GRO file (interface_slab.gro)
+  found: 78326 total atoms, ice=49752 atoms (12438 molecules × 4), guests=9150 atoms (1830 × 5), water=19424 atoms (4856 × 4)
+  implication: Interface export is CORRECT - atom layout is correct
+  
+- timestamp: 2025-04-29T00:00:00Z
+  checked: Ion GRO file (ions_40na_40cl.gro)
+  found: Residue 19036 labeled "H2" with atoms [H, OW, HW1, HW2, MW] at atom index 77969 - WRONG!
+  implication: Last guest molecule's atom names are corrupted - water atoms instead of CH4 atoms
 
-- timestamp: 2026-04-29T00:00:00Z
-  checked: GRO file atom positions 77970-77974
-  found: Residue 19036 named "H2" has atoms [H, OW, HW1, HW2, MW] - a TIP4P water with wrong atom order
-  implication: Water molecule is being misidentified as H2 guest type
+- timestamp: 2025-04-29T19:00:00Z
+  checked: Debug script simulating _build_molecule_index_from_structure() with CORRECT metadata
+  found: molecule_index is CORRECT when ice_nmolecules=12438, ice_atoms_per_mol=4, guest_nmolecules=1830
+  implication: The bug is NOT in _build_molecule_index_from_structure() logic - it's in the INPUT METADATA
 
-- timestamp: 2026-04-29T00:00:30Z
-  checked: GRO file header and counts
-  found: 9145 CH4 atoms (1829 CH4), 5 "H2" atoms (1 misidentified water), 39 NA, 39 CL
-  implication: The 1830th expected CH4 is actually a water molecule
-
-- timestamp: 2026-04-29T00:01:00Z
-  checked: detect_guest_type_from_atoms() in gromacs_writer.py
-  found: When atoms [H, OW, HW1, HW2, MW] are passed, _get_molecule_atoms returns ['H', 'H'], then mol_unique == {'H'} triggers "h2" type
-  implication: The detection logic correctly identifies based on atom composition, but the input is wrong - a water molecule shouldn't be in guest region
-
-- timestamp: 2026-04-29T00:02:30Z
-  checked: GenIce2 CH4 output format
-  found: GenIce2 outputs CH4 as [C, H, H, H, H] with residue "CH4", which matches expected .itp order
-  implication: The issue is NOT in GenIce2 output, but in QuickIce processing
-
-- timestamp: 2026-04-29T00:03:30Z
-  checked: _detect_guest_atoms logic in slab.py
-  found: Function expects OW first for water, but if first atom is not OW, calls _count_guest_atoms. The _count_guest_atoms default case returns 1 for unrecognized atoms like "H"
-  implication: If a molecule starts with "H", only 1 atom would be added to guest_indices, potentially leaving the next atom (OW) for the next iteration
-
-- timestamp: 2026-04-29T00:04:00Z
-  checked: tile_structure and atom name tiling in slab.py
-  found: tile_structure filters molecules by atoms_per_molecule, but atom name tiling uses tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules. Also, atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules assumes all guests have same atom count
-  implication: If guest_atom_names includes a water molecule (4 atoms) among CH4 (5 atoms), the atoms_per_guest calculation is wrong
-
-- timestamp: 2026-04-29T00:04:30Z
-  checked: GRO file residue pattern around problem area
-  found: Residue 19035CH4 ends with H77969, then residue 19036H2 has [H77970, OW77971, HW177972, HW277973, MW77974]. The H77970 at (5.101, 6.001, 10.802) is ~0.11nm from OW77971 at (5.038, 5.938, 10.739)
-  implication: The extra H atom is close to the OW, suggesting it might be a CH4 hydrogen that got separated from its carbon
+- timestamp: 2025-04-29T19:00:00Z
+  checked: Actual GRO file molecule counts
+  found: Ice=12438, Guests=1830, Water=4856. User reported ice_nmolecules=22952 (WRONG!)
+  implication: The InterfaceStructure.ice_nmolecules is set to wrong value (22952 instead of 12438)
 
 ## Resolution
-
-root_cause:
+root_cause: 
 fix:
 verification:
 files_changed: []
