@@ -536,29 +536,38 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
         
         processed_guest_positions = tilable_guest_positions
-
-        # FIX: Tile the guest atom names to match the tiled molecule count
-        # original_guest_nmolecules (e.g., 8) -> tiled_guest_nmolecules (e.g., ~180 per layer * 2 layers)
-        # Need to expand atom names to match positions
-        if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
-            # Calculate tiling factor: how many times the original guest structure was tiled
-            # tiled_guest_nmolecules is the TOTAL for both layers
-            tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
-            # Tile atom names: repeat the original guest atom names for each tiled copy
-            processed_guest_atom_names = guest_atom_names * tiling_factor
-            # Handle remainder if tiling_factor * original < tiled
-            remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
-            if remainder > 0:
-                # Add atom names for remaining guest molecules (partial tiling)
-                # Count atoms per guest molecule in original
-                atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
-                if atoms_per_guest > 0:
-                    processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
+         
+        # FIX: Compute guest atom names based on ACTUAL tiled positions
+        # Previous approach used tiling_factor which assumes tile_structure() returns
+        # exactly (tiling_factor * original_guest_nmolecules) molecules.
+        # But tile_structure() FILTERS molecules at boundaries (water_filler.py lines 488-500),
+        # causing processed_guest_atom_names to be SHORTER than processed_guest_positions.
+        # FIX: Use actual length of processed_guest_positions to compute atom names.
+        if len(processed_guest_positions) > 0 and original_guest_nmolecules > 0:
+            # Calculate atoms per guest molecule in the original structure
+            atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules
+            
+            if atoms_per_guest > 0:
+                # Calculate actual number of guest molecules in tiled positions
+                actual_guest_nmolecules = len(processed_guest_positions) // atoms_per_guest
+                
+                # Repeat the guest atom names pattern for each actual molecule
+                # Use only the first (atoms_per_guest) atoms from guest_atom_names
+                # to handle the case where guest_atom_names might have irregular length
+                guest_pattern = guest_atom_names[:atoms_per_guest]
+                processed_guest_atom_names = guest_pattern * actual_guest_nmolecules
+            else:
+                processed_guest_atom_names = []
         else:
             processed_guest_atom_names = []
-
+        
         # Update guest molecule count to reflect actual tiled count
-        guest_nmolecules = tiled_guest_nmolecules
+        # Use actual count from positions, not tiled_guest_nmolecules (which may be filtered)
+        if len(processed_guest_positions) > 0 and original_guest_nmolecules > 0:
+            atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules
+            guest_nmolecules = len(processed_guest_positions) // atoms_per_guest if atoms_per_guest > 0 else 0
+        else:
+            guest_nmolecules = 0
 
     # === HYDRATE FIX: Combine all positions including guests ===
     # Order: ice FIRST, then guests (in water region), then water
