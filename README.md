@@ -354,6 +354,21 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 3. **File → Export Ions for GROMACS** (Ctrl+J)
 4. Exported files include Madrid2019 Na⁺/Cl⁻ parameters
 
+### Guest Molecules: GAFF2
+
+CH₄ (methane) and THF (tetrahydrofuran) guest molecules use GAFF2 force field parameters with RESP2(0.5) partial charges:
+
+**GAFF2 Preparation Method:**
+
+GAFF2 parameters were prepared using Sobtop 2026.1.16 and Multiwfn 3.8(dev) with RESP2 partial charges using default settings in the bundled RESP2.sh script.
+
+**Multiwfn citations:**
+- Tian Lu, Feiwu Chen, Multiwfn: A Multifunctional Wavefunction Analyzer, J. Comput. Chem. 33, 580-592 (2012) DOI: 10.1002/jcc.22885
+- Tian Lu, A comprehensive electron wavefunction analysis toolbox for chemists, Multiwfn, J. Chem. Phys., 161, 082503 (2024) DOI: 10.1063/5.0216272
+
+**Sobtop citation:**
+- Tian Lu, Sobtop, Version 2026.1.16, http://sobereva.com/soft/Sobtop (accessed on 15 Apr 2026)
+
 ### Water Model: TIP4P-ICE
 
 The TIP4P-ICE water model is optimized for ice simulations:

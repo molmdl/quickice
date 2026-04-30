@@ -6,22 +6,10 @@ This directory has sample gromacs-ready files of 3 systems supported by QuickIce
 
 Each system was exported at the initial generation step, slab interface generation, and after ion insertion.
 
-# Forcefield parameters
-
-- Ions: Madrid2019
-- Water/ice: TIP4P-ice
-- CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and Sobtop.
-
-## GAFF2 Preparation Method Citation
-
-GAFF2 parameters were prepared using Sobtop 2026.1.16 and Multiwfn 3.8(dev) with RESP2 partial charges using default settings in the bundled RESP2.sh script.
-
-**Multiwfn citation:**
-- Tian Lu, Feiwu Chen, Multiwfn: A Multifunctional Wavefunction Analyzer, J. Comput. Chem. 33, 580-592 (2012) DOI: 10.1002/jcc.22885
-- Tian Lu, A comprehensive electron wavefunction analysis toolbox for chemists, Multiwfn, J. Chem. Phys., 161, 082503 (2024) DOI: 10.1063/5.0216272
-
-**Sobtop citation:**
-- Tian Lu, Sobtop, Version 2026.1.16, http://sobereva.com/soft/Sobtop (accessed on 15 Apr 2026)
+# Forcefield parameters (see docs for citation)
+Ions: Madrid2019
+water/ice: TIP4P-ice
+CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and Sobtop.
 
 # Directory structure
 ├── README.md
