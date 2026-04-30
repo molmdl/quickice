@@ -265,9 +265,9 @@ Plans:
 **Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 31.2-01-PLAN.md — Update README.md (v3.0→v4.0, features, shortcuts)
-- [ ] 31.2-02-PLAN.md — Update gui-guide.md (tabs, hydrate/ion sections)
-- [ ] 31.2-03-PLAN.md — Add tooltips to hydrate_panel.py + screenshot placeholders
+- [x] 31.2-01-PLAN.md — Update README.md (v3.0→v4.0, features, shortcuts)
+- [x] 31.2-02-PLAN.md — Update gui-guide.md (tabs, hydrate/ion sections)
+- [x] 31.2-03-PLAN.md — Add tooltips to hydrate_panel.py + screenshot placeholders
 
 **Success Criteria:**
 1. README.md has no v3.0 references, includes hydrate/ion features
@@ -317,11 +317,13 @@ Plans:
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | ✓ Complete (5/5 plans, verified) |
 | 31.1 | Integration Fixes (INSERTED) | ✓ Complete (4/4 plans, verified) |
+| 31.2 | Documentation Audit (INSERTED) | ✓ Complete (3/3 plans, verified) |
 
-**Overall:** ██████████ 100% (4/4 phases complete - v4.0 shipped)
+**Overall:** ██████████ 100% (v4.0 complete - all phases shipped)
 
 ---
 
 *Roadmap created: 2026-04-14*
 *Phase 32 (Custom Molecules) deferred to v4.5*
-*Next: /gsd-plan-phase 31.2*
+*v4.0 documentation audit complete: 2026-04-30*
+*Next: /gsd-complete-milestone*
