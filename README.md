@@ -14,9 +14,9 @@ QuickIce is also a minimal GUI of basic [GenIce2](https://github.com/genice-dev/
 
 **What is QuickIce?**
 
-QuickIce generates plausible ice crystal structure candidates and constructs ice-water interfaces from given thermodynamic conditions (temperature and pressure). The v3.0 GUI introduces **interface construction** — build slab, pocket, and piece geometries for molecular dynamics simulations of ice-water systems.
+QuickIce generates plausible ice crystal structure candidates and constructs ice-water interfaces from given thermodynamic conditions (temperature and pressure). The v4.0 GUI introduces **interface construction** and **molecule insertion** — build slab, pocket, and piece geometries for molecular dynamics simulations of ice-water systems, generate clathrate hydrate structures, and insert ions into liquid phases.
 
-**Interface construction** is a major feature available in the GUI (Tab 2), enabling:
+**Interface construction** is a major feature available in the GUI (Tab 3), enabling:
 - **Slab interfaces** — Layered ice-water boundaries for surface studies
 - **Pocket interfaces** — Water cavities within ice for confined water studies
 - **Piece interfaces** — Ice crystals embedded in water for nucleation studies
@@ -67,7 +67,7 @@ Water density for interface generation uses IAPWS-95 formulation for accuracy.
 ### One-Time Setup
 
 ```bash
-# Create conda environment (includes v3.0 GUI dependencies)
+# Create conda environment (includes v4.0 GUI dependencies)
 conda env create -f envronment.yml
 ```
 
@@ -86,7 +86,7 @@ python quickice.py --help
 
 ### GUI Usage
 
-QuickIce v3.0 includes an optional GUI application with ice-water interface construction. To launch:
+QuickIce v4.0 includes an optional GUI application with ice-water interface construction. To launch:
 
 ```bash
 python -m quickice.gui
@@ -94,8 +94,8 @@ python -m quickice.gui
 
 For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
 
-![QuickIce v3.0 GUI — Ice Generation and Interface Construction tabs](docs/images/quickice-v3-gui.png)
-*QuickIce GUI showing ice generation and interface construction tabs*
+![QuickIce v4.0 GUI — Ice Generation, Hydrate, Interface, and Ion tabs](docs/images/quickice-v3-gui.png)
+*QuickIce GUI showing ice generation, hydrate configuration, interface construction, and ion insertion tabs*
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
@@ -346,7 +346,7 @@ The molecule count input specifies a **minimum** number of molecules. GenIce2 cr
 For more details, see:
 
 - **[CLI Reference](docs/cli-reference.md)** - Complete command-line documentation
-- **[GUI Guide](docs/gui-guide.md)** - QuickIce v3.0 graphical interface documentation
+- **[GUI Guide](docs/gui-guide.md)** - QuickIce v4.0 graphical interface documentation
 - **[Ranking Algorithm](docs/ranking.md)** - How candidates are scored and ranked
 - **[Design Principles](docs/principles.md)** - Project architecture and decisions
 
