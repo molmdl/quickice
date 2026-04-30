@@ -23,6 +23,7 @@ from PySide6.QtCore import Signal, Qt
 from quickice.structure_generation.types import IonConfig
 from quickice.structure_generation.ion_inserter import IonInserter
 from quickice.gui.ion_viewer import IonViewerWidget
+from quickice.gui.view import HelpIcon
 
 
 class IonPanel(QWidget):
@@ -77,13 +78,16 @@ class IonPanel(QWidget):
         left_layout.addWidget(volume_group)
 
         # Insert button
+        insert_row = QHBoxLayout()
         self.insert_button = QPushButton("Insert Ions")
-        self.insert_button.setToolTip(
+        self.insert_button.clicked.connect(lambda: self.insert_requested.emit())
+        insert_row.addWidget(self.insert_button)
+        insert_row.addWidget(HelpIcon(
             "Insert Na+ and Cl- ions into the liquid water region.\n"
             "Calculated from concentration and liquid volume."
-        )
-        self.insert_button.clicked.connect(lambda: self.insert_requested.emit())
-        left_layout.addWidget(self.insert_button)
+        ))
+        insert_row.addStretch()
+        left_layout.addLayout(insert_row)
 
         left_layout.addStretch()
 
@@ -115,18 +119,21 @@ class IonPanel(QWidget):
         group = QGroupBox("NaCl Concentration")
         layout = QFormLayout()
 
+        conc_row = QHBoxLayout()
         self.concentration_input = QDoubleSpinBox()
         self.concentration_input.setRange(0.0, 5.0)
         self.concentration_input.setDecimals(2)
         self.concentration_input.setValue(0.5)  # Default 0.5 M NaCl
         self.concentration_input.setSuffix(" mol/L")
-        self.concentration_input.setToolTip(
+        conc_row.addWidget(self.concentration_input)
+        conc_row.addWidget(HelpIcon(
             "Target NaCl concentration in mol/L (M).\n"
             "Typical seawater: ~0.6 M.\n"
             "For drinking water: <0.05 M."
-        )
+        ))
+        conc_row.addStretch()
 
-        layout.addRow("Concentration:", self.concentration_input)
+        layout.addRow("Concentration:", conc_row)
         group.setLayout(layout)
         return group
 
@@ -135,14 +142,17 @@ class IonPanel(QWidget):
         group = QGroupBox("Ion Pairs")
         layout = QFormLayout()
 
+        count_row = QHBoxLayout()
         self.ion_count_display = QLabel("Na+ 0, Cl- 0 pairs")
         self.ion_count_display.setStyleSheet("color: #666;")
-        self.ion_count_display.setToolTip(
+        count_row.addWidget(self.ion_count_display)
+        count_row.addWidget(HelpIcon(
             "Calculated number of ion pairs based on concentration and liquid volume.\n"
             "Each pair = 1 Na+ + 1 Cl- (charge neutral)."
-        )
+        ))
+        count_row.addStretch()
 
-        layout.addRow("Ion count:", self.ion_count_display)
+        layout.addRow("Ion count:", count_row)
         group.setLayout(layout)
         return group
 
@@ -151,14 +161,17 @@ class IonPanel(QWidget):
         group = QGroupBox("Liquid Region")
         layout = QFormLayout()
 
+        vol_row = QHBoxLayout()
         self.liquid_volume_label = QLabel("-- nm³")
         self.liquid_volume_label.setStyleSheet("color: #666;")
-        self.liquid_volume_label.setToolTip(
+        vol_row.addWidget(self.liquid_volume_label)
+        vol_row.addWidget(HelpIcon(
             "Volume of liquid water region in the interface structure.\n"
             "Used to calculate ion count: N_ions = concentration × volume × NA"
-        )
+        ))
+        vol_row.addStretch()
 
-        layout.addRow("Volume:", self.liquid_volume_label)
+        layout.addRow("Volume:", vol_row)
         group.setLayout(layout)
         return group
     
@@ -206,14 +219,6 @@ class IonPanel(QWidget):
             )
             # Show "up to N" to indicate actual count may be lower
             self.ion_count_display.setText(f"Up to {pair_count} Na⁺/Cl⁻ pairs")
-            self.ion_count_display.setToolTip(
-                f"Theoretical maximum: {pair_count} ion pairs.\n"
-                f"Actual count may be lower due to:\n"
-                f"• Limited water molecules for replacement\n"
-                f"• Minimum 0.3nm separation from ice/guest\n"
-                f"• Minimum 0.3nm separation from other ions\n"
-                f"• Charge neutrality requirements"
-            )
         else:
             self.ion_count_display.setText("Na+ 0, Cl- 0 pairs")
     
