@@ -575,7 +575,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             guest_nmolecules = 0
 
     # === HYDRATE FIX: Combine all positions including guests ===
-    # Order: ice FIRST, then guests (in water region), then water
+    # Order: ice FIRST, then water, then guests LAST
+    # This ensures all SOL molecules (ice + water) are contiguous in GRO file,
+    # matching GROMACS requirement that molecules of same type be grouped together.
+    # Guest molecules come after all water molecules.
     all_parts = []
     all_names_parts = []
     
@@ -583,13 +586,13 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         all_parts.append(combined_ice_positions)
         all_names_parts.append(ice_atom_names)
     
-    if processed_guest_positions is not None and len(processed_guest_positions) > 0:
-        all_parts.append(processed_guest_positions)
-        all_names_parts.append(processed_guest_atom_names)
-    
     if len(trimmed_water_positions) > 0:
         all_parts.append(trimmed_water_positions)
         all_names_parts.append(water_atom_names)
+    
+    if processed_guest_positions is not None and len(processed_guest_positions) > 0:
+        all_parts.append(processed_guest_positions)
+        all_names_parts.append(processed_guest_atom_names)
     
     if all_parts:
         all_positions = np.vstack(all_parts)
