@@ -342,13 +342,19 @@ class IonInserter:
         
         # Ensure charge neutrality: na_count must equal cl_count
         # Remove excess ions from the end (prefer removing from end to minimize disruption)
+        # 
+        # IMPORTANT: new_atom_names is a FLAT list of atoms, while new_molecule_index
+        # and new_positions are lists of MOLECULES. We cannot use molecule index (idx)
+        # to pop from new_atom_names - we must use the molecule's start_idx and count
+        # to remove the correct atoms.
         while na_count > cl_count:
             # Find and remove the last NA from new_molecule_index
             for idx in range(len(new_molecule_index) - 1, -1, -1):
                 if new_molecule_index[idx].mol_type == "na":
-                    # Remove this NA
-                    new_molecule_index.pop(idx)
-                    new_atom_names.pop(idx)
+                    # Remove this NA using its start_idx and count
+                    mol = new_molecule_index.pop(idx)
+                    # Remove atoms from flat atom_names list using molecule's start_idx
+                    del new_atom_names[mol.start_idx:mol.start_idx + mol.count]
                     new_positions.pop(idx)
                     na_count -= 1
                     break
@@ -357,9 +363,10 @@ class IonInserter:
             # Find and remove the last CL from new_molecule_index
             for idx in range(len(new_molecule_index) - 1, -1, -1):
                 if new_molecule_index[idx].mol_type == "cl":
-                    # Remove this CL
-                    new_molecule_index.pop(idx)
-                    new_atom_names.pop(idx)
+                    # Remove this CL using its start_idx and count
+                    mol = new_molecule_index.pop(idx)
+                    # Remove atoms from flat atom_names list using molecule's start_idx
+                    del new_atom_names[mol.start_idx:mol.start_idx + mol.count]
                     new_positions.pop(idx)
                     cl_count -= 1
                     break
@@ -392,30 +399,6 @@ class IonInserter:
         # Preserve guest molecule information from input structure
         guest_nmolecules = getattr(structure, 'guest_nmolecules',0)
         guest_atom_count = getattr(structure, 'guest_atom_count',0)
-        
-        return IonStructure(
-            positions=combined,
-            atom_names=new_atom_names,
-            cell=structure.cell,
-            molecule_index=new_molecule_index,
-            na_count=na_count,
-            cl_count=cl_count,
-            report=report,
-            guest_nmolecules=guest_nmolecules,
-            guest_atom_count=guest_atom_count,
-        )
-        if actual_pairs < requested_pairs:
-            report += f"Warning: could not place {requested_pairs - actual_pairs} pairs (too close to existing atoms)\n"
-        
-        # Concatenate all positions
-        if new_positions:
-            combined = np.vstack(new_positions)
-        else:
-            combined = np.zeros((0, 3))
-        
-        # Preserve guest molecule information from input structure
-        guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
-        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
         return IonStructure(
             positions=combined,
