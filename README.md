@@ -333,12 +333,26 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 3. Select candidate from the dropdown (left viewport selection to choose the one exported for gromacs)
 4. Files are saved to the output directory
 
-### Interface GROMACS Export (Tab 2)
+### Interface GROMACS Export (Tab 3)
 
 1. Generate ice candidates in Tab 1 first
-2. Switch to Interface Construction tab (Tab 2)
+2. Switch to Interface Construction tab (Tab 3)
 3. Select mode (Slab/Pocket/Piece), configure parameters, click Generate Interface
 4. **File → Export Interface for GROMACS** (Ctrl+I)
+
+### Hydrate GROMACS Export (Tab 2)
+
+1. Configure hydrate structure in Tab 2 (lattice, guest, occupancy)
+2. Click Generate Hydrate
+3. **File → Export Hydrate for GROMACS** (Ctrl+E)
+4. Exported files include bundled guest molecule parameters (ch4.itp, thf.itp)
+
+### Ion GROMACS Export (Tab 4)
+
+1. Generate interface in Tab 3 first
+2. Insert ions in Tab 4 (configure concentration, click Insert Ions)
+3. **File → Export Ions for GROMACS** (Ctrl+J)
+4. Exported files include Madrid2019 Na⁺/Cl⁻ parameters
 
 ### Water Model: TIP4P-ICE
 
