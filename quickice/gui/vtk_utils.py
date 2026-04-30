@@ -418,12 +418,12 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     atoms (cornflower blue), and optionally one for guest molecules (gray).
     
     Args:
-        iface: An InterfaceStructure containing combined ice + guests + water atoms.
+        iface: An InterfaceStructure containing combined ice + water + guest atoms.
                Ice atoms: indices 0 to ice_atom_count-1
-               Guest atoms: indices ice_atom_count to ice_atom_count + guest_atom_count-1 (if guest_atom_count > 0)
-               Water atoms: indices ice_atom_count + guest_atom_count onward
-               ice_atom_count marks the boundary between ice and guests/water.
-               guest_atom_count marks the boundary between guests and water.
+               Water atoms: indices ice_atom_count to ice_atom_count + water_atom_count-1
+               Guest atoms: indices ice_atom_count + water_atom_count onward (if guest_atom_count > 0)
+               ice_atom_count marks the boundary between ice and water.
+               water_atom_count marks the boundary between water and guests.
     
     Returns:
         A tuple of (ice_mol, water_mol, guest_mol) where:
@@ -437,7 +437,7 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         
         Atom arrangement in InterfaceStructure:
         - For classic ice interface: [ice] + [water]
-        - For hydrate interface: [ice/hydrate water framework] + [guests] + [water box]
+        - For hydrate interface: [ice/hydrate water framework] + [water box] + [guests]
         
         The function detects hydrate ice by checking for "OW" in the ice atom names.
         For hydrate ice (4 atoms/mol: OW, HW1, HW2, MW), MW is skipped, so we have
@@ -478,14 +478,14 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
     guest_indices = []
     
     # Define boundaries:
-    # ice_end = ice_atom_count (start of guests or water)
-    # guest_end = ice_atom_count + guest_atom_count (start of water, only if guests exist)
-    # If guest_atom_count > 0, guests are at indices [ice_atom_count, ice_atom_count + guest_atom_count)
-    # If guest_atom_count == 0, water starts at ice_atom_count
+    # NEW ORDERING (after commit 90afe86): ice → water → guest
+    # This ensures all SOL molecules (ice + water) are contiguous for GROMACS.
+    # OLD ORDERING was: ice → guest → water
     ice_end = iface.ice_atom_count
-    guest_start = ice_end
-    guest_end = ice_end + iface.guest_atom_count
-    water_start = guest_end
+    water_start = ice_end
+    water_end = ice_end + iface.water_atom_count
+    guest_start = water_end
+    guest_end = water_end + iface.guest_atom_count
     
     # Add atoms to appropriate molecule, skipping MW virtual sites
     for i, (name, pos) in enumerate(zip(iface.atom_names, iface.positions)):
@@ -630,7 +630,7 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         # water_indices has MW already filtered out, so we check the raw iface.atom_names
         # to verify the pattern before MW was skipped
         # Each water molecule has 4 atoms in iface: [OW, HW1, HW2, MW, OW, HW1, HW2, MW, ...]
-        # Water starts at water_start (which is guest_end or ice_end)
+        # Water starts at water_start (which is ice_end)
         water_start_in_full = water_start + mol_idx * 4
         water_names_check = iface.atom_names[water_start_in_full: water_start_in_full + 4]
         if water_names_check != ["OW", "HW1", "HW2", "MW"]:
