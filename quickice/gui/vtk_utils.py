@@ -560,11 +560,49 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         ice_mol.AppendBond(o_idx, h2_idx, 1)
     
     # Add guest bonds (distance-based, within same molecule only)
-    # Guests are placed after ice, so we need to track where each guest molecule starts
-    if guest_indices and actual_guest_nmolecules > 0:
+    # Use molecule_index to correctly identify each guest molecule's boundaries
+    # This is the same approach used in hydrate_renderer.py for guest molecules
+    if guest_indices and iface.molecule_index:
+        # Build mapping from global position index to guest_mol atom index
+        # guest_mol contains atoms in order: guest_start, guest_start+1, ..., guest_end-1
+        # (excluding any skipped atoms like MW, but guests don't have MW)
+        # guest_indices[i] = i for simple cases
+        
+        # Iterate through molecule_index to find guest molecules
+        for mol in iface.molecule_index:
+            if mol.mol_type == "water":
+                continue  # Skip water molecules
+            
+            # Get the global atom indices for this guest molecule
+            mol_start_global = mol.start_idx
+            mol_end_global = mol_start_global + mol.count
+            
+            # Convert global indices to guest_mol indices
+            # guest_mol contains atoms from guest_start to guest_end
+            # mol_start_global should be >= guest_start and < guest_end
+            if mol_start_global < guest_start or mol_end_global > guest_end:
+                continue  # This molecule is not in the guest range
+            
+            # Calculate guest_mol indices (relative to guest_start)
+            mol_start = mol_start_global - guest_start
+            mol_end = mol_end_global - guest_start
+            
+            # Add bonds within this molecule using distance detection
+            for i in range(mol_start, mol_end):
+                for j in range(i + 1, mol_end):
+                    # Distance-based bond detection (threshold: 0.16 nm)
+                    dist = np.linalg.norm(
+                        np.array(iface.positions[guest_start + i]) - 
+                        np.array(iface.positions[guest_start + j])
+                    )
+                    if dist < 0.16:  # Covalent bond threshold
+                        guest_mol.AppendBond(guest_indices[i], guest_indices[j], 1)
+    
+    # Fallback for backward compatibility: if molecule_index is empty, use old method
+    elif guest_indices and actual_guest_nmolecules > 0:
         guest_atom_names = iface.atom_names[guest_start:guest_end]
         
-        # Group atoms by molecule
+        # Group atoms by molecule (legacy method - may not work for complex guests)
         mol_start = 0
         for mol_idx in range(actual_guest_nmolecules):
             # Count atoms in this guest molecule
@@ -620,7 +658,7 @@ def _count_guest_atoms_for_rendering(atom_names: list[str], start: int) -> int:
     Guest types:
     - Me: 1 atom (united-atom methane)
     - C: 5 atoms (all-atom methane: C + 4H)
-    - For THF: starts with O or C (13 atoms)
+    - For THF: starts with O (13 atoms, stops at next O or OW)
     
     Args:
         atom_names: List of atom names
@@ -647,20 +685,38 @@ def _count_guest_atoms_for_rendering(atom_names: list[str], start: int) -> int:
             i += 1
         return count
     
-    # THF (starts with O or C)
-    if first_atom in ["O", "C"]:
+    # THF starts with O (oxygen)
+    # THF has 13 atoms: O, CA, CA, CB, CB, + 8H
+    # Next THF molecule starts with O, water starts with OW
+    if first_atom == "O":
         count = 0
         i = start
-        while i < len(atom_names):
-            if i < len(atom_names) and (atom_names[i] == "OW" or 
-               (i == start and atom_names[i] in ["O", "C"])):
-                if i > start:  # Found start of next molecule
-                    break
+        while i < len(atom_names) and i < start + 15:  # Max 15 atoms (generous for THF variants)
             count += 1
             i += 1
-            if count > 20:
+            # Stop if we hit another O (next THF) or OW (water)
+            if i < len(atom_names) and atom_names[i] in ["O", "OW"]:
                 break
-        return max(count, 1)
+        return count
+    
+    # H-first methane (H, H, H, H, C) from GenIce2 or H2 molecule
+    if first_atom == "H":
+        # Check next atoms to distinguish CH4 from H2
+        sample_size = min(start + 6, len(atom_names))
+        sample = atom_names[start:sample_size]
+        c_count = sum(1 for a in sample if a == 'C')
+        h_count = sum(1 for a in sample if a == 'H')
+        
+        # CH4 pattern: 4 H + 1 C = 5 atoms
+        if h_count >= 4 and c_count >= 1:
+            return 5
+        
+        # H2 pattern: 2 H atoms, no C
+        if h_count >= 2 and c_count == 0:
+            return 2
+        
+        # Single H atom (fallback)
+        return 1
     
     # Default: treat as 1 atom guest
     return 1
