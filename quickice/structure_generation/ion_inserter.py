@@ -64,10 +64,10 @@ class IonInserter:
         that mark the exact boundaries in the positions array. This method uses those
         counts to build molecule_index entries.
 
-        Order in positions array:
+        Order in positions array (after commit 90afe86):
         - Ice atoms: 0 to ice_atom_count-1
-        - Guest atoms: ice_atom_count to ice_atom_count + guest_atom_count - 1
-        - Water atoms: ice_atom_count + guest_atom_count onward
+        - Water atoms: ice_atom_count to ice_atom_count + water_atom_count - 1
+        - Guest atoms: ice_atom_count + water_atom_count onward
 
         Args:
             structure: Structure with ice_atom_count, guest_atom_count, water_atom_count attributes
@@ -105,20 +105,7 @@ class IonInserter:
                 ))
                 current_idx += ice_atoms_per_mol
 
-        # Add guest molecules
-        # Use guest_atom_count to determine guest region size
-        if guest_mols > 0 and guest_atom_count > 0:
-            # Calculate atoms per guest molecule from actual counts
-            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 5
-            for i in range(guest_mols):
-                mol_index.append(MoleculeIndex(
-                    start_idx=current_idx,
-                    count=guest_atoms_per_mol,
-                    mol_type="guest"
-                ))
-                current_idx += guest_atoms_per_mol
-
-        # Add water molecules
+        # Add water molecules (comes BEFORE guests in positions array)
         # Use water_atom_count to determine water region size
         if water_mols > 0 and water_atom_count > 0:
             # Water always uses 4 atoms per molecule (TIP4P)
@@ -130,6 +117,19 @@ class IonInserter:
                     mol_type="water"
                 ))
                 current_idx += water_atoms_per_mol
+
+        # Add guest molecules (comes AFTER water in positions array)
+        # Use guest_atom_count to determine guest region size
+        if guest_mols > 0 and guest_atom_count > 0:
+            # Calculate atoms per guest molecule from actual counts
+            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 5
+            for i in range(guest_mols):
+                mol_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=guest_atoms_per_mol,
+                    mol_type="guest"
+                ))
+                current_idx += guest_atoms_per_mol
 
         return mol_index
     
