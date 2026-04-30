@@ -1,9 +1,9 @@
 ---
 status: complete
 phase: 31-tab-2-hydrate-generation
-source: [31-01-SUMMARY.md through 31-05-SUMMARY.md]
-started: 2026-05-01T00:00:00Z
-updated: 2026-05-01T00:00:00Z
+source: [31-01-SUMMARY.md, 31-02-SUMMARY.md, 31-03-SUMMARY.md, 31-04-SUMMARY.md, 31-05-SUMMARY.md]
+started: 2026-05-01T12:00:00Z
+updated: 2026-05-01T12:15:00Z
 ---
 
 ## Current Test
@@ -13,27 +13,29 @@ updated: 2026-05-01T00:00:00Z
 ## Tests
 
 ### 1. Hydrate Structure Generation
-expected: User can configure hydrate parameters (lattice, guest, occupancy, supercell) and click Generate to create hydrate structure. Progress updates appear during generation, no UI freezing.
+expected: In Tab 2, user can configure hydrate parameters (lattice, guest, occupancy, supercell) and click Generate. Generation completes without errors, shows progress updates, and UI remains responsive (not frozen).
 result: pass
-notes: Generation completes successfully, progress updates work, background threading functions correctly.
 
-### 2. Dual-Style Rendering
-expected: 3D viewer displays water framework and guest molecules in distinct styles. Original spec: water as lines (bonds-only), guests as ball-and-stick.
-result: pass (modified)
-notes: Implementation evolved to use 3-display-style toggle (matching Tab 1 pattern) instead of fixed dual-style. User confirmed this is the intended behavior and works correctly.
+### 2. Hydrate 3D Visualization
+expected: After generating hydrate, 3D viewer shows water framework and guest molecules correctly. Display style toggle (lines/ball-and-stick/CPK) changes rendering style for both molecule types.
+result: pass
 
 ### 3. Hydrate GROMACS Export
-expected: User can export hydrate to GROMACS via File menu or Ctrl+J. Export produces .gro, .top, and copies bundled guest .itp file (ch4.itp or thf.itp).
+expected: After generating hydrate, File → Export Hydrate for GROMACS (Ctrl+J) produces valid .gro, .top, and .itp files with bundled guest .itp file (ch4.itp or thf.itp) containing correct GAFF parameters.
 result: pass
-notes: All export files generated correctly, guest .itp files bundled with correct parameters.
 
-### 4. Hydrate Unit Cell Info Display
-expected: After generation, hydrate unit cell info displays: cage types (512, 51262), cage counts, and guest occupancy settings.
+### 4. Hydrate Unit Cell Info
+expected: After generation, info panel shows hydrate unit cell information including cage types (512, 51262), cage counts, and guest occupancy settings.
 result: pass
-notes: Info logged to panel correctly after generation completes.
 
----
+## Summary
 
-**Phase 31 UAT Status:** COMPLETE (all tests passed)
-**User Verified:** 2026-05-01
-**Note:** Rendering style implementation evolved from fixed dual-style to user-selectable 3-style toggle (matching Tab 1 pattern), which user confirmed as intended behavior.
+total: 4
+passed: 4
+issues: 0
+pending: 0
+skipped: 0
+
+## Gaps
+
+[none]
