@@ -1,6 +1,6 @@
 # QuickIce GUI Guide
 
-This guide covers the QuickIce v3.0 graphical user interface.
+This guide covers the QuickIce v4.0 graphical user interface.
 
 ## Overview
 
@@ -9,7 +9,7 @@ The QuickIce GUI provides an intuitive visual interface for:
 - Real-time 3D molecular structure visualization
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, PNG, SVG)
-- Interface Construction for ice-water systems (Tab 2)
+- Interface Construction for ice-water systems (Tab 3)
 
 ## Getting Started
 
@@ -23,9 +23,11 @@ For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 ### Main Window Layout
 
-The main window is divided into two tabs:
+The main window is divided into four tabs:
 - **Tab 1 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
-- **Tab 2 (Interface Construction)**: Build ice-water interfaces for MD simulations
+- **Tab 2 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
+- **Tab 3 (Interface Construction)**: Build ice-water interfaces for MD simulations
+- **Tab 4 (Ion Insertion)**: Insert NaCl ions into liquid water regions
 
 ### Basic Workflow
 
@@ -172,7 +174,7 @@ The File menu provides multiple export formats:
 
 ### Export for GROMACS
 
-QuickIce v3.0 adds interface construction with direct GROMACS export for molecular dynamics simulations.
+QuickIce v4.0 adds interface construction with direct GROMACS export for molecular dynamics simulations.
 
 **Menu Path:** File → Export for GROMACS (Ctrl+G)
 
@@ -201,9 +203,11 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 | Ctrl+D | Save phase diagram |
 | Ctrl+Alt+S | Save viewport screenshot |
 | Ctrl+G | Export for GROMACS (Tab 1) |
-| Ctrl+I | Export interface for GROMACS (Tab 2) |
+| Ctrl+E | Export hydrate for GROMACS (Tab 2) |
+| Ctrl+J | Export ions for GROMACS (Tab 4) |
+| Ctrl+I | Export interface for GROMACS (Tab 3) |
 
-## Interface Construction (Tab 2)
+## Interface Construction (Tab 3)
 
 
 The second tab builds ice-water interface structures from candidates 
@@ -212,8 +216,8 @@ of ice-water interfaces, confined water, or ice nucleation studies.
 
 ### Prerequisites
 
-Generate ice candidates in Tab 1 (Ice Generation) before using Tab 2. 
-The candidate dropdown in Tab 2 is populated from Tab 1's results.
+Generate ice candidates in Tab 1 (Ice Generation) before using Tab 3. 
+The candidate dropdown in Tab 3 is populated from Tab 1's results.
 Click "Refresh candidates" to sync after generating new candidates in Tab 1.
 
 ### Phase Compatibility
@@ -271,11 +275,11 @@ QuickIce supports three interface geometries.
 
 ### Visualization
 
-Tab 2 uses phase-distinct coloring to distinguish ice and water:
+Tab 3 uses phase-distinct coloring to distinguish ice and water:
 
 - **Ice phase**: Cyan atoms with line-based bonds
 - **Water phase**: Cornflower blue atoms with line-based bonds
-- H-bonds are hidden by default in Tab 2
+- H-bonds are hidden by default in Tab 3
 - Camera defaults to Z-axis side view for slab interfaces
 
 ### Transformation Indicator
