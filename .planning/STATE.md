@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 |-------|-------|
 | Milestone | v4.0 (shipped) |
 | Phase | 31.2 (in progress) |
-| Plan | 01 of 03 complete |
+| Plan | 02 of 03 complete |
 | Status | In progress |
-| Last activity | 2026-04-30 — Completed 31.2-01-PLAN.md (README update) |
+| Last activity | 2026-04-30 — Completed 31.2-02-PLAN.md (gui-guide update) |
 
 **Progress:** ██████████ 100% (v4.0 shipped, documentation audit in progress)
 
@@ -192,9 +192,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-30T11:40:25Z
-**Stopped at:** Completed 31.2-01-PLAN.md (README update)
+**Last session:** 2026-04-30T11:43:01Z
+**Stopped at:** Completed 31.2-02-PLAN.md (gui-guide update)
 **Resume file:** None
+
+---
+*State updated: 2026-04-30 — Plan 31.2-02 complete (gui-guide updated for v4.0)*
 
 ---
 *State updated: 2026-04-30 — Completed 31.2-01-PLAN.md (README.md updated for v4.0)*
