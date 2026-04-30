@@ -207,6 +207,78 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 | Ctrl+J | Export ions for GROMACS (Tab 4) |
 | Ctrl+I | Export interface for GROMACS (Tab 3) |
 
+## Hydrate Config (Tab 2)
+
+The second tab generates clathrate hydrate structures with guest molecules using GenIce2.
+
+### Overview
+
+Hydrate Config allows you to:
+- Select hydrate lattice type (sI, sII, sH)
+- Choose guest molecules (CH₄, THF)
+- Configure cage occupancy
+- Set supercell dimensions
+- Export to GROMACS with bundled force field parameters
+
+### Lattice Types
+
+| Lattice | Description | Typical Guests |
+|---------|-------------|----------------|
+| sI | Structure I | CH₄, CO₂ |
+| sII | Structure II | THF, larger guests |
+| sH | Structure H | Requires helper molecule |
+
+### Guest Molecules
+
+| Guest | Formula | Force Field | Fits In |
+|-------|---------|-------------|---------|
+| CH₄ | Methane | GAFF | sI small cages, sII small cages |
+| THF | Tetrahydrofuran | GAFF | sII large cages |
+
+### Cage Occupancy
+
+- **Small cages:** Occupancy percentage for small cages (0-100%)
+- **Large cages:** Occupancy percentage for large cages (0-100%)
+- Default: 100% (fully occupied)
+- Lower values create partial occupancy for mixed-guest systems
+
+### Supercell Dimensions
+
+Set unit cell repetitions (nx × ny × nz):
+- Higher values = larger structures
+- Typical: 1-3 for testing, 3-5 for production
+- Affects total molecule count and computational cost
+
+### Workflow
+
+1. Select lattice type (sI, sII, or sH)
+2. Select guest molecule (CH₄ or THF)
+3. Adjust cage occupancy if needed
+4. Set supercell dimensions
+5. Click "Generate Hydrate"
+6. View structure in 3D viewer
+7. Export for GROMACS (Ctrl+E)
+
+### 3D Viewer
+
+The hydrate viewer displays:
+- **Water framework:** Cyan atoms with line-based bonds
+- **Guest molecules:** Ball-and-stick representation
+- Toggle H-bonds and unit cell visibility with toolbar buttons
+
+### Export for GROMACS
+
+**File → Export Hydrate for GROMACS (Ctrl+E)**
+
+Exported files:
+- `hydrate_{lattice}.gro` — Coordinates
+- `hydrate_{lattice}.top` — Topology
+- `ch4.itp` or `thf.itp` — Guest molecule parameters (GAFF)
+
+The water framework uses TIP4P-ICE for ice compatibility.
+
+---
+
 ## Interface Construction (Tab 3)
 
 
