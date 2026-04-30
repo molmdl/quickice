@@ -110,7 +110,7 @@ python -m quickice.gui
 
 For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
 
-![QuickIce v4.0 GUI — Ice Generation, Hydrate, Interface, and Ion tabs](docs/images/quickice-v3-gui.png)
+![QuickIce v4.0 GUI — Ice Generation, Hydrate, Interface, and Ion tabs](docs/images/quickice-v4-gui.png)
 *QuickIce GUI showing ice generation, hydrate configuration, interface construction, and ion insertion tabs*
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).

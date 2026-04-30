@@ -31,7 +31,7 @@ The main window is divided into four tabs:
 
 ### Basic Workflow
 
-![QuickIce GUI](images/quickice-v3-gui.png)
+![QuickIce GUI](images/quickice-v4-gui.png)
 *QuickIce GUI v3.0 — Ice Generation and Interface Construction tabs*
 **Note:** v4.0 adds Hydrate Config (Tab 2) and Ion Insertion (Tab 4). Screenshot update pending.
 
@@ -223,8 +223,7 @@ Hydrate Config allows you to:
 
 ### Hydrate Panel Interface
 
-<!-- TODO: Add screenshot: docs/images/tab2-hydrate-panel.png -->
-<!-- Screenshot should show: lattice dropdown, guest dropdown, occupancy controls, supercell inputs, generate button, and 3D viewer -->
+[Hydrate Panel](docs/images/tab2-hydrate-panel.png)
 
 *Screenshot of Hydrate Config tab showing configuration controls and 3D viewer*
 
@@ -399,8 +398,7 @@ Generate an interface structure in Tab 3 first. Ion insertion requires:
 
 ### Ion Panel Interface
 
-<!-- TODO: Add screenshot: docs/images/tab4-ion-panel.png -->
-<!-- Screenshot should show: concentration input, ion count display, volume display, insert button, and 3D viewer -->
+[Ion Panel](docs/images/tab4-ion-panel.png)
 
 *Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
 
