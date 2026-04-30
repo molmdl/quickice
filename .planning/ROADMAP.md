@@ -26,6 +26,7 @@ The 4-phase structure delivered: pre-existing bug fixes, multi-molecule data str
 | 30 - Tab 4 Ion Insertion (NaCl) | User can insert NaCl ions into liquid phase | ION-01 to ION-07, WATER-02 | 5 criteria |
 | 31 - Tab 2 Hydrate Generation | User can generate hydrate structures with guest molecules | HYDR-06 to HYDR-08, WATER-03 | 4 criteria |
 | 31.1 - Integration Fixes (INSERTED) | Wire hydrate→interface, fix remaining ion insertion | — | 2 criteria |
+| 31.2 - Documentation Audit for v4.0 (INSERTED) | Audit and update docs for hydrate/ion features | — | TBD |
 
 ---
 
@@ -251,6 +252,31 @@ Plans:
 
 ---
 
+### Phase 31.2: Documentation Audit for v4.0 (INSERTED)
+
+**Goal:** Audit and update documentation for v4.0 hydrate/ion features
+
+**Rationale:** v4.0 shipped with new hydrate (Tab 2) and ion insertion (Tab 4) features, but documentation still references v3.0. Need to audit README, docs, in-app help, and tooltips for completeness.
+
+**Depends on:** Phase 31.1 (integration fixes)
+
+**Requirements:** None (documentation)
+
+**Plans:** 3 plans in 1 wave (all parallel)
+
+Plans:
+- [ ] 31.2-01-PLAN.md — Update README.md (v3.0→v4.0, features, shortcuts)
+- [ ] 31.2-02-PLAN.md — Update gui-guide.md (tabs, new sections)
+- [ ] 31.2-03-PLAN.md — Add tooltips to hydrate_panel.py + screenshot placeholders
+
+**Success Criteria:**
+1. README.md has no v3.0 references, includes hydrate/ion features
+2. gui-guide.md has Tab 2 (Hydrate), Tab 3 (Interface), Tab 4 (Ion) sections
+3. hydrate_panel.py has 8 tooltips matching ion_panel.py pattern
+4. Screenshot placeholders documented for missing images
+
+---
+
 ## Coverage Map
 
 | Requirement | Phase | Status |
@@ -298,4 +324,4 @@ Plans:
 
 *Roadmap created: 2026-04-14*
 *Phase 32 (Custom Molecules) deferred to v4.5*
-*Next: v4.0 milestone complete*
+*Next: /gsd-plan-phase 31.2*
