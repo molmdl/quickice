@@ -223,7 +223,7 @@ Hydrate Config allows you to:
 
 ### Hydrate Panel Interface
 
-[Hydrate Panel](docs/images/tab2-hydrate-panel.png)
+![Hydrate Panel](docs/images/tab2-hydrate-panel.png)
 
 *Screenshot of Hydrate Config tab showing configuration controls and 3D viewer*
 
@@ -398,7 +398,7 @@ Generate an interface structure in Tab 3 first. Ion insertion requires:
 
 ### Ion Panel Interface
 
-[Ion Panel](docs/images/tab4-ion-panel.png)
+![Ion Panel](docs/images/tab4-ion-panel.png)
 
 *Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
 
