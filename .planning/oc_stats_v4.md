@@ -1,21 +1,21 @@
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                            908 │
-│Messages                                         26,853 │
+│Sessions                                            913 │
+│Messages                                         27,021 │
 │Days                                                 36 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                      $441.07 │
-│Avg Cost/Day                                     $12.25 │
+│Total Cost                                      $449.62 │
+│Avg Cost/Day                                     $12.49 │
 │Avg Tokens/Session                                 1.5M │
-│Median Tokens/Session                            932.9K │
-│Input                                            273.1M │
-│Output                                             9.5M │
-│Cache Read                                      1032.2M │
+│Median Tokens/Session                            933.1K │
+│Input                                            273.5M │
+│Output                                             9.6M │
+│Cache Read                                      1040.6M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -47,12 +47,12 @@
 │  Cost                                         $10.0363 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5                             │
-│  Messages                                        1,198 │
-│  Input Tokens                                     4.3M │
-│  Output Tokens                                  601.0K │
-│  Cache Read                                      80.5M │
+│  Messages                                        1,319 │
+│  Input Tokens                                     4.6M │
+│  Output Tokens                                  657.9K │
+│  Cache Read                                      87.8M │
 │  Cache Write                                         0 │
-│  Cost                                         $86.5402 │
+│  Cost                                         $94.4445 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5.1                                │
 │  Messages                                          984 │
@@ -70,6 +70,14 @@
 │  Cache Write                                         0 │
 │  Cost                                          $0.0000 │
 ├────────────────────────────────────────────────────────┤
+│ synthetic/hf:MiniMaxAI/MiniMax-M2.5                    │
+│  Messages                                           60 │
+│  Input Tokens                                   107.4K │
+│  Output Tokens                                   15.7K │
+│  Cache Read                                       1.5M │
+│  Cache Write                                         0 │
+│  Cost                                          $1.0167 │
+├────────────────────────────────────────────────────────┤
 │ openrouter/minimax/minimax-m2.7                        │
 │  Messages                                           44 │
 │  Input Tokens                                   520.7K │
@@ -77,14 +85,6 @@
 │  Cache Read                                       2.5M │
 │  Cache Write                                         0 │
 │  Cost                                          $0.3739 │
-├────────────────────────────────────────────────────────┤
-│ synthetic/hf:MiniMaxAI/MiniMax-M2.5                    │
-│  Messages                                           32 │
-│  Input Tokens                                    55.6K │
-│  Output Tokens                                   10.0K │
-│  Cache Read                                     506.7K │
-│  Cache Write                                         0 │
-│  Cost                                          $0.3673 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:nvidia/Kimi-K2.5-NVFP4                    │
 │  Messages                                           26 │
@@ -99,14 +99,14 @@
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 12794 (39.7%)  │
-│ read               ██████████████       8984 (27.9%)   │
-│ edit               ██████               4063 (12.6%)   │
-│ grep               ██                   1828 ( 5.7%)   │
-│ glob               ██                   1410 ( 4.4%)   │
-│ write              █                    1240 ( 3.8%)   │
-│ task               █                    750 ( 2.3%)    │
-│ question           █                    545 ( 1.7%)    │
+│ bash               ████████████████████ 12867 (39.7%)  │
+│ read               ██████████████       9062 (27.9%)   │
+│ edit               ██████               4084 (12.6%)   │
+│ grep               ██                   1842 ( 5.7%)   │
+│ glob               ██                   1422 ( 4.4%)   │
+│ write              █                    1257 ( 3.9%)   │
+│ task               █                    752 ( 2.3%)    │
+│ question           █                    559 ( 1.7%)    │
 │ webfetch           █                    440 ( 1.4%)    │
 │ invalid            █                    102 ( 0.3%)    │
 │ todowrite          █                     37 ( 0.1%)    │

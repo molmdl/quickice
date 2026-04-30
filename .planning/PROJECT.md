@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A portable, cross-platform GUI application for generating plausible ice structures and ice-water interfaces; QuickIce is also a minimal GUI of basic GenIce2 functions with extended capabilities. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures (slab, pocket, piece modes) with GROMACS export.
+A portable, cross-platform GUI application for generating plausible ice structures, ice-water interfaces, and hydrate systems. QuickIce provides a minimal GUI of basic GenIce2 functions with extended capabilities including hydrate generation with guest molecules (CH4, THF), NaCl ion insertion, and multi-molecule GROMACS export. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures with GROMACS-ready outputs.
 
 ## Core Value
 
-Generate plausible ice structure candidates and interfaces quickly with an intuitive visual interface.
+Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface.
 
 ## Requirements
 
@@ -76,13 +76,21 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - ✓ Crystal system documentation corrected — v3.5
 - ✓ GROMACS atom wrapping for large systems (>99k atoms) — v3.5
 
+**v4.0 Molecule Insertion:**
+- ✓ Hydrate generation with GenIce2 (sI, sII, sH structures) — v4.0
+- ✓ Guest molecule support (CH4, THF) with cage occupancy — v4.0
+- ✓ Dual-style 3D rendering (water lines, guest ball-and-stick) — v4.0
+- ✓ Multi-molecule GROMACS export with bundled guest .itp — v4.0
+- ✓ Ion insertion with concentration-based Na+/Cl- placement — v4.0
+- ✓ Madrid2019 ion parameters (charge=±0.85) — v4.0
+- ✓ Ion visualization as VDW spheres (gold Na+, green Cl-) — v4.0
+- ✓ Water density display in Tab 1 info panel (IAPWS-95) — v4.0
+- ✓ Hydrate→Interface workflow via Tab 3 source dropdown — v4.0
+- ✓ Four-tab workflow (Ice, Hydrate, Interface, Ion) — v4.0
+
 ### Active
 
-**v4.0 Molecule Insertion:**
-- Tab 2: Molecules to ice (GenIce hydrates, custom molecules)
-- Tab 4: Insert to liquid (NaCl ions, custom molecules)
-- Display styles per molecule type in 3D viewer
-- Water density integration (Phase 23 carryover)
+(None — ready for next milestone planning)
 
 ### Out of Scope
 
@@ -98,24 +106,16 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - Automated interface geometry optimization
 - Multiple salt types (KCl, MgCl2)
 
-## Current Milestone: v4.0 Molecule Insertion
-
-**Goal:** Add molecule insertion capabilities to interface systems via new tabs
-
-**Target features:**
-- Tab 2: Molecules to Ice (GenIce hydrates, custom molecules)
-- Tab 4: Insert to Liquid (NaCl ions, custom molecules to liquid phase)
-- 3D viewer enhancements (display styles per molecule type)
-- Water density display (carryover from v3.5 Phase 23)
-
 ## Current State
 
-**Version:** v3.5 (shipped 2026-04-13)
+**Version:** v4.0 (shipped 2026-05-01)
 **Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib, iapws
-**Code:** ~17,018 lines of Python (test files excluded)
+**Code:** ~21,370 lines of Python (quickice package)
 **Test Coverage:** 307+ tests passing
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
 **Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
+**Hydrate Structures:** sI, sII, sH with CH4/THF guests
+**Ion Types:** NaCl (Madrid2019 parameters)
 **Interface Modes:** Slab, Pocket (sphere/cubic), Piece
 **CLI Interface Generation:** Full support for all modes with parameter control
 **Triclinic Support:** Ice V, Ice VI work natively; Ice II blocked
@@ -147,16 +147,23 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 | Ice Ic upper pressure ~204 MPa | Ih-II curve boundary | ✓ Confirmed — scientifically accurate |
 | Ice Ih bounded at T=150K | Avoid Ice Ic overlap | ✓ Confirmed — clean phase regions |
 | Metastability documentation | Scientific transparency | ✓ Confirmed — literature citations added |
-| QTabWidget two-tab workflow | Separate ice gen from interface | ✓ Confirmed — clean separation |
+| QTabWidget multi-tab workflow | Separate ice/hydrate/interface/ion | ✓ Confirmed — v4.0 |
 | QStackedWidget mode switching | Mode-specific controls | ✓ Confirmed — clean UI |
 | scipy cKDTree for PBC | Automatic periodic boundaries | ✓ Confirmed — robust overlap detection |
 | Line-based bonds (Tab 2) | Performance for large systems | ✓ Confirmed — smooth rendering |
-| Single SOL molecule type | Simplifies GROMACS topology | ✓ Confirmed — works with GROMACS |
+| Multi-molecule GROMACS export | [molecules] counts per type | ✓ Confirmed — v4.0 |
 | Ctrl+I for interface export | No conflict with Ctrl+G | ✓ Confirmed — intuitive shortcut |
 | IAPWS library for density | Already in environment, scientifically accurate | ✓ Confirmed — v3.5 |
 | Native triclinic handling | Transformation creates gaps during tiling | ✓ Confirmed — v3.5 |
 | Ice II blocked for interfaces | Rhombohedral crystal incompatible | ✓ Confirmed — v3.5 |
 | GROMACS atom wrapping at 100k | Standard convention for large systems | ✓ Confirmed — v3.5 |
+| MoleculeIndex dataclass | Variable atoms-per-molecule tracking | ✓ Confirmed — v4.0 |
+| Madrid2019 ion parameters | Scientifically validated charges (±0.85) | ✓ Confirmed — v4.0 |
+| GAFF2 guest parameters | CH4/THF topology for GROMACS | ✓ Confirmed — v4.0 |
+| Dual-style hydrate rendering | Water lines + guest ball-and-stick | ✓ Confirmed — v4.0 |
+| Concentration-based ion placement | mol/L → ion count calculation | ✓ Confirmed — v4.0 |
+| Per-type VTK actors | Multi-molecule visualization | ✓ Confirmed — v4.0 |
+| Tab order: Ice→Hydrate→Interface→Ion | User-approved deviation from spec | ✓ Confirmed — v4.0 |
 
 ## Context
 
@@ -167,15 +174,16 @@ Generate plausible ice structure candidates and interfaces quickly with an intui
 - v2.0 adds PySide6 GUI with interactive phase diagram and VTK 3D viewer
 - v3.0 adds two-tab interface with ice-water interface generation and GROMACS export
 - v3.5 adds IAPWS density calculations, triclinic support, and CLI interface generation
+- v4.0 adds four-tab workflow with hydrate generation, ion insertion, and multi-molecule export
 
 ## Constraints
 
 - **Runtime**: Minimal resource usage — lightweight model
 - **Output**: PDB format plus image exports, GROMACS-ready inputs
 - **Dependencies**: Only Python libraries in current conda environment
-- **Scope**: Water ice only, generation only
+- **Scope**: Water ice and hydrate systems, generation only
 - **Installation**: Do NOT auto-install dependencies. Add to environment.yml, seek approval, wait for user to install.
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-04-14 after v4.0 milestone started*
+*Last updated: 2026-05-01 after v4.0 milestone completion*

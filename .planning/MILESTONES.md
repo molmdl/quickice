@@ -1,5 +1,34 @@
 # Project Milestones: QuickIce
 
+## v4.0 Molecule Insertion (Shipped: 2026-05-01)
+
+**Delivered:** Hydrate generation (Tab 2), NaCl ion insertion (Tab 4), multi-molecule GROMACS export
+
+**Phases completed:** 28-31.2 (7 phases, 29 plans total)
+
+**Key accomplishments:**
+- Hydrate generation with GenIce2 (sI, sII, sH structures with CH4/THF guests)
+- Dual-style 3D rendering (water framework as lines, guests as ball-and-stick)
+- Ion insertion with concentration-based Na+/Cl- placement (Madrid2019 parameters)
+- Multi-molecule GROMACS export with bundled guest .itp files
+- Hydrate→Interface workflow via Tab 3 source dropdown
+- Water density display in Tab 1 info panel (IAPWS-95)
+
+**Stats:**
+- ~21,370 lines of Python (quickice package)
+- 7 phases, 29 plans, 4 inserted decimal phases
+- 19/33 requirements satisfied, 11 deferred to v4.5
+- 17 days (2026-04-14 → 2026-05-01)
+- ~290 commits
+
+**Git range:** `feat(28-01)` → `docs(31.2-03)`
+
+**What's next:** v4.5 (custom molecule upload + display controls) or v5.0
+
+**Archive:** [.planning/milestones/v4.0-ROADMAP.md](./milestones/v4.0-ROADMAP.md)
+
+---
+
 ## v3.5 Interface Enhancements (Shipped: 2026-04-13)
 
 **Delivered:** Ice Ih IAPWS density, native triclinic handling, CLI interface generation, and documentation corrections
