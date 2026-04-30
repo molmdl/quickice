@@ -377,6 +377,71 @@ Exported files use a single combined SOL molecule type:
 Ice molecules are normalized from 3-atom (O, H, H) to 4-atom (O, H1, H2, MW) 
 TIP4P-ICE format at export time. Water molecules pass through unchanged (already 4-atom TIP4P-ICE).
 
+## Ion Insertion (Tab 4)
+
+The fourth tab inserts NaCl ions into liquid water regions of interface structures.
+
+### Prerequisites
+
+Generate an interface structure in Tab 3 first. Ion insertion requires:
+- An existing interface structure (ice + liquid water)
+- Liquid volume > 0 for ion placement
+
+### Concentration Input
+
+- **NaCl concentration:** Target concentration in mol/L (M)
+- Range: 0.0 - 5.0 M
+- Typical seawater: ~0.6 M
+- Drinking water: <0.05 M
+
+### Ion Count Calculation
+
+The system automatically calculates ion pairs based on:
+```
+N_pairs = concentration (mol/L) × volume (nm³) × 10⁻²⁴ × N_A
+```
+
+Where N_A is Avogadro's number. The display shows "Up to N" because actual count may be lower due to:
+- Limited water molecules for replacement
+- Minimum 0.3 nm separation constraint
+- Charge neutrality requirements
+
+### Workflow
+
+1. Generate interface in Tab 3 first
+2. Switch to Ion Insertion tab (Tab 4)
+3. Set NaCl concentration
+4. Click "Insert Ions"
+5. View ions in 3D viewer (Na⁺ = gold, Cl⁻ = green)
+6. Export for GROMACS (Ctrl+J)
+
+### 3D Viewer
+
+The ion viewer displays:
+- **Na⁺ ions:** Gold spheres (VDW representation)
+- **Cl⁻ ions:** Green spheres (VDW representation)
+- Existing ice/water structure shown in background
+
+### Charge Neutrality
+
+The system enforces charge neutrality:
+- Equal Na⁺ and Cl⁻ counts
+- Ions replace water molecules in liquid region (not ice)
+- Madrid2019 force field parameters used (Na⁺ charge = +0.85, Cl⁻ charge = -0.85)
+
+### Export for GROMACS
+
+**File → Export Ions for GROMACS (Ctrl+J)**
+
+Exported files:
+- `interface_with_ions.gro` — Coordinates with ions
+- `interface_with_ions.top` — Topology with Na⁺/Cl⁻
+- `ion.itp` — Madrid2019 ion parameters
+
+The water model remains TIP4P-ICE for compatibility with ice simulations.
+
+---
+
 ## Help Menu
 
 Access the **Help → Quick Reference** menu for:
