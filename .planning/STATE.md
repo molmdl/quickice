@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Phase | 31.2 (complete) |
 | Plan | 03 of 03 complete |
 | Status | v4.0 milestone complete with documentation ✓ |
-| Last activity | 2026-04-30 — Phase 31.2 complete, documentation audit finished |
+| Last activity | 2026-04-30 — Quick task 006: Added GAFF2 citation to sample README |
 
 **Progress:** ██████████ 100% (v4.0 complete - all phases shipped with documentation)
 
@@ -177,6 +177,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 (None)
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 006 | Add GAFF2 preparation method citation to sample_output/gui_v4/README.md | 2026-04-30 | 82790dd | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
+
 ---
 
 ## Archive Reference
@@ -195,8 +201,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-30
-**Stopped at:** Phase 31.2 complete - v4.0 documentation audit finished
-**Next:** /gsd-complete-milestone
+**Stopped at:** Quick task 006 complete - GAFF2 citation added
+**Next:** Ready for next task: /gsd-quick
 
 ---
-*State updated: 2026-04-30 — Phase 31.2 complete, v4.0 milestone finished with documentation*
+*State updated: 2026-04-30 — Quick task 006 complete, GAFF2 citation added*
