@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (shipped) |
-| Phase | 31.1 (complete) |
-| Plan | 04 of 04 complete |
-| Status | v4.0 milestone complete ✓ |
-| Last activity | 2026-04-30 — Phase 32 deferred to v4.5, v4.0 shipped |
+| Phase | 31.2 (in progress) |
+| Plan | 01 of 03 complete |
+| Status | In progress |
+| Last activity | 2026-04-30 — Completed 31.2-01-PLAN.md (README update) |
 
-**Progress:** ██████████ 100% (4/4 phases complete - v4.0 shipped)
+**Progress:** ██████████ 100% (v4.0 shipped, documentation audit in progress)
 
 ---
 
@@ -159,6 +159,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | IonPanel horizontal layout | Left col config, right col viewer+log (matching HydratePanel) | ✓ Implemented (31.1-02) |
 | Ion render to own viewer | _on_insert_ions renders to IonPanel.ion_viewer, not Tab 1 dual_viewer | ✓ Implemented (31.1-02) |
 | set_from_hydrate() method | Extracts dimensions from HydrateStructure.cell, pre-populates Interface panel | ✓ Implemented (31.1-04) |
+| README v4.0 update | All v3.0 references updated, hydrate/ion features documented | ✓ Implemented (31.2-01) |
+| Tab numbering in docs | Ice→Hydrate→Interface→Ion (Tab 1-4) | ✓ Documented (31.2-01) |
 
 ### v3.5 Shipped Decisions
 
@@ -190,9 +192,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-30
-**Stopped at:** Phase 31.2 inserted (documentation audit)
-**Next:** /gsd-plan-phase 31.2
+**Last session:** 2026-04-30T11:40:25Z
+**Stopped at:** Completed 31.2-01-PLAN.md (README update)
+**Resume file:** None
 
 ---
-*State updated: 2026-04-30 — Phase 31.2 inserted for documentation audit*
+*State updated: 2026-04-30 — Completed 31.2-01-PLAN.md (README.md updated for v4.0)*
