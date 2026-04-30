@@ -368,7 +368,13 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             else:
                 guest_atoms_per_mol = 5  # CH4
         elif guest_atom_names[0] == "O":
-            guest_atoms_per_mol = len(guest_atom_names)
+            # THF or similar - calculate atoms per guest molecule
+            # guest_atom_names contains all guest atoms, need to divide by number of molecules
+            if original_guest_nmolecules > 0:
+                guest_atoms_per_mol = len(guest_atom_names) // original_guest_nmolecules
+            else:
+                # Fallback: THF typically has 13 atoms
+                guest_atoms_per_mol = 13
         else:
             guest_atoms_per_mol = 1
         

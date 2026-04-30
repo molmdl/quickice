@@ -458,8 +458,13 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                 else:
                     guest_atoms_per_mol = 5  # CH4
             elif guest_atom_names[0] == "O":
-                # THF or similar
-                guest_atoms_per_mol = len(guest_atom_names)  # All guest atoms
+                # THF or similar - calculate atoms per guest molecule
+                # guest_atom_names contains all guest atoms, need to divide by number of molecules
+                if original_guest_nmolecules > 0:
+                    guest_atoms_per_mol = len(guest_atom_names) // original_guest_nmolecules
+                else:
+                    # Fallback: THF typically has 13 atoms
+                    guest_atoms_per_mol = 13
             else:
                 guest_atoms_per_mol = 1  # Default
         else:
