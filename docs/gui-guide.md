@@ -32,7 +32,8 @@ The main window is divided into four tabs:
 ### Basic Workflow
 
 ![QuickIce GUI](images/quickice-v3-gui.png)
-*Main QuickIce GUI window with phase diagram and 3D viewer*
+*QuickIce GUI v3.0 — Ice Generation and Interface Construction tabs*
+**Note:** v4.0 adds Hydrate Config (Tab 2) and Ion Insertion (Tab 4). Screenshot update pending.
 
 1. Enter temperature (K), pressure (MPa), and molecule count
 2. Click on the phase diagram OR type values directly
@@ -220,6 +221,13 @@ Hydrate Config allows you to:
 - Set supercell dimensions
 - Export to GROMACS with bundled force field parameters
 
+### Hydrate Panel Interface
+
+<!-- TODO: Add screenshot: docs/images/tab2-hydrate-panel.png -->
+<!-- Screenshot should show: lattice dropdown, guest dropdown, occupancy controls, supercell inputs, generate button, and 3D viewer -->
+
+*Screenshot of Hydrate Config tab showing configuration controls and 3D viewer*
+
 ### Lattice Types
 
 | Lattice | Description | Typical Guests |
@@ -386,6 +394,13 @@ The fourth tab inserts NaCl ions into liquid water regions of interface structur
 Generate an interface structure in Tab 3 first. Ion insertion requires:
 - An existing interface structure (ice + liquid water)
 - Liquid volume > 0 for ion placement
+
+### Ion Panel Interface
+
+<!-- TODO: Add screenshot: docs/images/tab4-ion-panel.png -->
+<!-- Screenshot should show: concentration input, ion count display, volume display, insert button, and 3D viewer -->
+
+*Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
 
 ### Concentration Input
 
