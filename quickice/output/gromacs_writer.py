@@ -420,8 +420,10 @@ def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
 
     # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
     # Check BEFORE CH4 since THF also has C and H
-    # GenIce2 THF: O, C, C, C, C, H, H, H, H, H, C, H, H (13 atoms)
-    if counts.get('O', 0) >= 1 and counts.get('C', 0) >= 4:
+    # GenIce2 THF: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
+    # Atoms can be named C, CA, or CB for carbons
+    carbon_count = sum(counts.get(atom, 0) for atom in ['C', 'CA', 'CB', 'c3', 'c5'])
+    if counts.get('O', 0) >= 1 and carbon_count >= 4:
         # Return first 13 atoms as likely THF
         return sample[:13]
 
@@ -578,44 +580,8 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             # Need to detect based on atom composition, not just first atom
             
             if guest_atom_names:
-                # Count unique atom types to identify molecule
-                unique_atoms = set(guest_atom_names[:10])  # Check first 10 atoms
-                
-                # CH4: Only has C and H atoms (5 atoms total)
-                # THF: Has C, H, and O atoms (13 atoms total)
-                # CO2: Has C and O atoms
-                # H2: Has only H atoms
-                
-                # Get atoms for one molecule
-                mol_atoms = _get_molecule_atoms(guest_atom_names)
-                
-                if mol_atoms:
-                    mol_unique = set(mol_atoms)
-                    
-                    # CH4 detection: only C and H, typically 5 atoms
-                    if 'C' in mol_unique and 'H' in mol_unique and 'O' not in mol_unique:
-                        # Could be CH4 (5 atoms) - verify count
-                        if len(mol_atoms) == 5:
-                            guest_type = "ch4"
-                        else:
-                            # Unexpected - log warning but try ch4
-                            import logging
-                            logger = logging.getLogger(__name__)
-                            logger.warning(f"Unexpected CH4-like molecule with {len(mol_atoms)} atoms")
-                            guest_type = "ch4"  # Try anyway
-                    # THF detection: has C, H, and O, typically 12-13 atoms
-                    elif 'O' in mol_unique and 'C' in mol_unique:
-                        guest_type = "thf"
-                    # H2 detection: only H
-                    elif mol_unique == {'H'}:
-                        guest_type = "h2"
-                    # CO2 detection: C and O
-                    elif mol_unique == {'C', 'O'}:
-                        guest_type = "co2"
-                    else:
-                        guest_type = None
-                else:
-                    guest_type = None
+                # Detect guest type using the centralized function
+                guest_type = detect_guest_type_from_atoms(guest_atom_names)
             else:
                 guest_type = None
             
@@ -703,12 +669,18 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
     
     mol_unique = set(mol_atoms)
     
-    # THF: Has O, C, and H (check BEFORE CH4 since THF also has C and H)
-    if 'O' in mol_unique and 'C' in mol_unique:
+    # Check for carbon atoms (can be named C, CA, CB, c3, c5, etc.)
+    has_carbon = any(atom in mol_unique for atom in ['C', 'CA', 'CB', 'c3', 'c5'])
+    has_oxygen = 'O' in mol_unique
+    has_hydrogen = 'H' in mol_unique
+    
+    # THF: Has O and carbon atoms (CA, CB, or C) (check BEFORE CH4)
+    # THF atoms are: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
+    if has_oxygen and has_carbon:
         return "thf"
     
     # CH4: Only C and H, no O, typically 5 atoms
-    elif 'C' in mol_unique and 'H' in mol_unique and 'O' not in mol_unique:
+    elif has_carbon and has_hydrogen and not has_oxygen:
         return "ch4"
     
     # H2: Only H atoms (2 atoms)
@@ -716,7 +688,7 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
         return "h2"
     
     # CO2: C and O atoms (3 atoms, no H)
-    elif 'C' in mol_unique and 'O' in mol_unique and 'H' not in mol_unique:
+    elif has_carbon and has_oxygen and not has_hydrogen:
         return "co2"
     
     # United-atom methane
@@ -782,31 +754,20 @@ def _count_guest_atoms(atom_names: list[str], start: int) -> int:
             return max(count, 5)  # At least 5 for CH4
 
     # THF: C5H8O = 14 atoms, but GenIce2 outputs 13 atoms (some versions)
-    # Atoms: O, C, C, C, C, H, H, H, H, H, H, C, H, H (14) or similar
-    if first_atom in ["O", "C"]:
-        # Check if this looks like THF (has O, multiple C, multiple H)
-        has_oxygen = any(a == 'O' for a in sample)
-        has_carbon = sum(1 for a in sample if a == 'C') >= 4
-        if has_oxygen and has_carbon:
-            # Count until we see a pattern break (OW, or different atom type)
-            count = 0
-            i = start
-            while i < len(atom_names):
-                if atom_names[i] == "OW":
-                    break
-                count += 1
-                i += 1
-                if count > 20:  # Safety limit
-                    break
-            return max(count, 13)  # At least 13 for THF
-        elif first_atom == "C":
-            # Just carbon atoms - might be part of THF or other molecule
-            count = 0
-            i = start
-            while i < len(atom_names) and count < 15:
-                count += 1
-                i += 1
-            return count
+    # Atoms: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
+    # Note: Carbon atoms can be named C, CA, or CB
+    if first_atom == "O":
+        # THF starts with O and has 13 atoms
+        return 13
+    
+    if first_atom in ["C", "CA", "CB"]:
+        # Check if this looks like THF (has O in next few atoms)
+        if start + 1 < len(atom_names):
+            next_atoms = atom_names[start:start + 15]
+            if 'O' in next_atoms:
+                # THF has O, return 13
+                return 13
+        # Just carbon - might be CH4 or CO2, handled elsewhere
 
     # H2: two hydrogen atoms
     if first_atom == "H":
