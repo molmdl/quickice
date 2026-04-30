@@ -41,8 +41,8 @@ jobs:
         shell: bash
         run: |
           cd dist
-          7z a -tzip quickice-v3.0.0-windows-x86_64.zip package/
-          mv quickice-v3.0.0-windows-x86_64.zip ../
+          7z a -tzip quickice-v4.0.0-windows-x86_64.zip package/
+          mv quickice-v4.0.0-windows-x86_64.zip ../
       
       - name: Upload artifact
         uses: actions/upload-artifact@v7
