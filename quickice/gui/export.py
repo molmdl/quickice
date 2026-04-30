@@ -89,32 +89,27 @@ class IonGROMACSExporter:
             # Copy guest .itp file if guests are present in the original interface
             if ion_structure.guest_nmolecules > 0 and ion_structure.guest_atom_count > 0:
                 # Determine guest type from ion structure atom names
-                # Check first few atoms to determine guest type (CH4 vs THF)
-                # Guest atoms were at the beginning of original interface structure
-                # After ion insertion, we need to check existing atom names
-                # This is tricky since IonStructure only has ions now
+                # Use the detect_guest_type_from_atoms function for consistent detection
+                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
                 
-                # Approach: If we have guest_nmolecules > 0, check if guest data 
-                # in molecule_index has guest type info, or default to CH4 (most common)
+                guest_type = None
                 
                 # Check molecule_index for guest molecule type
-                guest_type = None
                 for mol in ion_structure.molecule_index:
                     if mol.mol_type == "guest":
-                        # Try to determine guest type from atom names in positions
-                        # Not available in IonStructure, so use heuristic
-                        # Default to CH4 (most common hydrate guest)
-                        guest_type = "ch4"
-                        break
+                        # Get atom names for this guest molecule
+                        mol_atom_names = ion_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+                        guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                        if guest_type:
+                            break
                 
-                if guest_type is None:
-                    # No guest type found in molecule_index, check if guests existed
-                    # Default based on count (heuristic: CH4 has 5 atoms, THF has 13+)
-                    if ion_structure.guest_atom_count > 0:
-                        if ion_structure.guest_atom_count >= 13:
-                            guest_type = "thf"
-                        else:
-                            guest_type = "ch4"
+                # Fallback: use heuristic based on atom count
+                if guest_type is None and ion_structure.guest_nmolecules > 0:
+                    atoms_per_guest = ion_structure.guest_atom_count // ion_structure.guest_nmolecules
+                    if atoms_per_guest >= 10:
+                        guest_type = "thf"
+                    else:
+                        guest_type = "ch4"
                 
                 if guest_type:
                     try:
