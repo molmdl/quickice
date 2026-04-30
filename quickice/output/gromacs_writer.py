@@ -819,9 +819,42 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n")
         
         # Guest atom types if guests are present
-        if iface.guest_atom_count > 0:
-            # CH4 atom types (GAFF2) - common for methane
-            f.write("; CH4 atom types (GAFF2)\n")
+        # Detect guest type from atom names (similar to write_ion_top_file)
+        guest_type = None
+        if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
+            # Get atom names for the guest region
+            # NEW ORDER: ice → water → guests
+            # Guest atoms start at ice_atom_count + water_atom_count
+            guest_start = iface.ice_atom_count + iface.water_atom_count
+            guest_end = guest_start + iface.guest_atom_count
+            guest_atom_names = iface.atom_names[guest_start:guest_end]
+            guest_type = detect_guest_type_from_atoms(guest_atom_names)
+        
+        if iface.guest_atom_count > 0 and guest_type:
+            if guest_type == "ch4":
+                # CH4 atom types (GAFF2)
+                f.write("; CH4 atom types (GAFF2)\n")
+                f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            elif guest_type == "thf":
+                # THF atom types (GAFF2)
+                f.write("; THF atom types (GAFF2)\n")
+                f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
+                f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+                f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
+            elif guest_type == "co2":
+                # CO2 atom types (GAFF2)
+                f.write("; CO2 atom types (GAFF2)\n")
+                f.write("c_2       c_2       6             12.0107  0.0     A      3.39955e-1    4.39089e-1\n")
+                f.write("o_2       o_2       8             15.9994  0.0     A      3.02714e-1    8.80314e-1\n")
+            elif guest_type == "h2":
+                # H2 atom types (GAFF2)
+                f.write("; H2 atom types (GAFF2)\n")
+                f.write("hn        hn        1              1.0080  0.0     A      0.0           0.0\n")
+        elif iface.guest_atom_count > 0:
+            # Fallback: unknown guest type, write CH4 atomtypes as default
+            f.write("; CH4 atom types (GAFF2) - default for unknown guest\n")
             f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
             f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
         
@@ -831,15 +864,9 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write("; Molecule definitions\n")
         f.write('#include "tip4p-ice.itp"\n')
         
-        if iface.guest_nmolecules > 0:
-            # Determine guest type from atom names
-            if iface.guest_atom_count > 0:
-                ice_end = iface.ice_atom_count
-                first_guest_atom = iface.atom_names[ice_end] if ice_end < len(iface.atom_names) else "C"
-                if first_guest_atom in ["Me", "C"]:
-                    f.write('#include "ch4.itp"\n')
-                elif first_guest_atom in ["O", "C"]:  # THF
-                    f.write('#include "thf.itp"\n')
+        if iface.guest_nmolecules > 0 and guest_type:
+            # Include the correct .itp file based on detected guest type
+            f.write(f'#include "{guest_type}.itp"\n')
         
         f.write("\n")
         
@@ -849,42 +876,22 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n\n")
         
         # [ molecules ] - molecule counts
-        # MUST match .gro file order: ice SOL -> guest -> water SOL
+        # MUST match .gro file order: ice SOL -> water SOL -> guests
+        # (all SOL molecules are contiguous after slab.py fix)
         f.write("[ molecules ]\n")
         f.write("; Compound    #mols\n")
         
-        # Ice SOL (first part of .gro file)
-        if iface.ice_nmolecules > 0:
-            f.write(f"SOL          {iface.ice_nmolecules}\n")
+        # All SOL molecules (ice + water combined)
+        total_sol = iface.ice_nmolecules + iface.water_nmolecules
+        if total_sol > 0:
+            f.write(f"SOL          {total_sol}\n")
         
-        # Guest molecules (middle part of .gro file)
+        # Guest molecules (after all SOL in .gro file)
         if iface.guest_nmolecules > 0:
-            # Determine guest residue name from itp file
-            if iface.guest_atom_count > 0:
-                ice_end = iface.ice_atom_count
-                first_guest_atom = iface.atom_names[ice_end] if ice_end < len(iface.atom_names) else "C"
-                if first_guest_atom in ["Me", "C"]:
-                    # Could be CH4 (5 atoms) or THF (13 atoms starting with C)
-                    # Count atoms to determine
-                    count = _count_guest_atoms(iface.atom_names[ice_end:ice_end + 20], 0)
-                    if count <= 5:
-                        guest_type = "ch4"
-                    else:
-                        guest_type = "thf"
-                elif first_guest_atom in ["O", "c"]:
-                    guest_type = "thf"
-                else:
-                    guest_type = None
-                
-                if guest_type:
-                    guest_res_name = get_guest_residue_name(guest_type)
-                    f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
-                else:
-                    f.write(f"UNK          {iface.guest_nmolecules}\n")
-        
-        # Water SOL (last part of .gro file)
-        if iface.water_nmolecules > 0:
-            f.write(f"SOL          {iface.water_nmolecules}\n")
+            # Use already-detected guest_type from above
+            if guest_type:
+                guest_res_name = get_guest_residue_name(guest_type)
+                f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
 
 
 def write_multi_molecule_gro_file(
