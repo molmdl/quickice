@@ -6,7 +6,7 @@
 >
 > - While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
-A portable condition-based ice structure candidate generator from thermodynamic conditions with a simple Ice-water interface builder. 
+A portable condition-based ice structure candidate generator from thermodynamic conditions with a simple Ice-water interface builder. QuickIce also generates clathrate hydrate structures and inserts ions into interface systems (GUI-only). 
 
 QuickIce is also a minimal GUI of basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with extended capabilities.
 
@@ -20,6 +20,22 @@ QuickIce generates plausible ice crystal structure candidates and constructs ice
 - **Slab interfaces** — Layered ice-water boundaries for surface studies
 - **Pocket interfaces** — Water cavities within ice for confined water studies
 - **Piece interfaces** — Ice crystals embedded in water for nucleation studies
+
+**Hydrate generation** (Tab 2, GUI-only) and **ion insertion** (Tab 4, GUI-only) extend QuickIce for molecular insertion studies:
+
+**Hydrate generation:**
+- Generate clathrate hydrate structures (sI, sII, sH)
+- Select guest molecules (CH₄, THF)
+- Configure cage occupancy and supercell size
+- Export to GROMACS with bundled force field parameters
+
+**Ion insertion:**
+- Insert Na⁺/Cl⁻ ions into liquid water regions
+- Concentration-based ion count calculation
+- Automatic charge neutrality enforcement
+- Export to GROMACS with Madrid2019 ion parameters
+
+*Note: Hydrate and ion features are available in the GUI only. CLI support may be added in a future release.*
 
 Given temperature and pressure, QuickIce:
 
