@@ -86,6 +86,11 @@ class HydratePanel(QWidget):
         
         # Generate button
         self.generate_button = QPushButton("Generate Hydrate")
+        self.generate_button.setToolTip(
+            "Generate hydrate structure with current configuration.\n"
+            "Uses GenIce2 for structure generation.\n"
+            "Structure appears in 3D viewer on the right."
+        )
         self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
         left_layout.addWidget(self.generate_button)
 
@@ -162,6 +167,12 @@ class HydratePanel(QWidget):
                 f"{lattice_id} - {lattice_info['description']}",
                 lattice_id
             )
+        self.lattice_combo.setToolTip(
+            "Hydrate lattice structure type.\n"
+            "• sI — Structure I (CH₄, CO₂ hydrates)\n"
+            "• sII — Structure II (THF hydrates)\n"
+            "• sH — Structure H (requires helper molecule)"
+        )
         
         layout.addRow("Lattice type:", self.lattice_combo)
         group.setLayout(layout)
@@ -178,6 +189,12 @@ class HydratePanel(QWidget):
                 f"{guest_info['name']} ({guest_info['formula']})",
                 guest_id
             )
+        self.guest_combo.setToolTip(
+            "Guest molecule type for hydrate cages.\n"
+            "• CH₄ — Methane (fits in small cages)\n"
+            "• THF — Tetrahydrofuran (fits in large cages)\n"
+            "Force field: GAFF parameters bundled in export."
+        )
         
         layout.addRow("Guest type:", self.guest_combo)
         
@@ -201,6 +218,11 @@ class HydratePanel(QWidget):
         self.occupancy_small.setValue(100.0)
         self.occupancy_small.setSuffix("%")
         self.occupancy_small.setDecimals(1)
+        self.occupancy_small.setToolTip(
+            "Occupancy percentage for small cages (0-100%).\n"
+            "Default: 100% (fully occupied).\n"
+            "Lower values create partial occupancy."
+        )
         layout.addRow("Small cages:", self.occupancy_small)
         
         # Large cage occupancy
@@ -209,6 +231,11 @@ class HydratePanel(QWidget):
         self.occupancy_large.setValue(100.0)
         self.occupancy_large.setSuffix("%")
         self.occupancy_large.setDecimals(1)
+        self.occupancy_large.setToolTip(
+            "Occupancy percentage for large cages (0-100%).\n"
+            "Default: 100% (fully occupied).\n"
+            "Lower values create partial occupancy."
+        )
         layout.addRow("Large cages:", self.occupancy_large)
         
         group.setLayout(layout)
@@ -223,18 +250,33 @@ class HydratePanel(QWidget):
         self.supercell_x = QSpinBox()
         self.supercell_x.setRange(1, 10)
         self.supercell_x.setValue(1)
+        self.supercell_x.setToolTip(
+            "Unit cell repetition in X direction.\n"
+            "Range: 1-10. Typical: 1-3 for testing, 3-5 for production.\n"
+            "Higher values = larger structure = more molecules."
+        )
         row.addWidget(self.supercell_x)
         row.addWidget(QLabel("×"))
         
         self.supercell_y = QSpinBox()
         self.supercell_y.setRange(1, 10)
         self.supercell_y.setValue(1)
+        self.supercell_y.setToolTip(
+            "Unit cell repetition in Y direction.\n"
+            "Range: 1-10. Typical: 1-3 for testing, 3-5 for production.\n"
+            "Higher values = larger structure = more molecules."
+        )
         row.addWidget(self.supercell_y)
         row.addWidget(QLabel("×"))
         
         self.supercell_z = QSpinBox()
         self.supercell_z.setRange(1, 10)
         self.supercell_z.setValue(1)
+        self.supercell_z.setToolTip(
+            "Unit cell repetition in Z direction.\n"
+            "Range: 1-10. Typical: 1-3 for testing, 3-5 for production.\n"
+            "Higher values = larger structure = more molecules."
+        )
         row.addWidget(self.supercell_z)
         
         layout.addRow("Repetition:", row)
