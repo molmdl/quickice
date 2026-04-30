@@ -262,11 +262,11 @@ Plans:
 
 **Requirements:** None (documentation)
 
-**Plans:** 3 plans in 1 wave (all parallel)
+**Plans:** 3 plans in 2 waves
 
 Plans:
 - [ ] 31.2-01-PLAN.md — Update README.md (v3.0→v4.0, features, shortcuts)
-- [ ] 31.2-02-PLAN.md — Update gui-guide.md (tabs, new sections)
+- [ ] 31.2-02-PLAN.md — Update gui-guide.md (tabs, hydrate/ion sections)
 - [ ] 31.2-03-PLAN.md — Add tooltips to hydrate_panel.py + screenshot placeholders
 
 **Success Criteria:**

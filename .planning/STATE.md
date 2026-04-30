@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
-**Current Focus:** v4.0 Molecule Insertion (4 phases - shipped)
+**Current Focus:** v4.0 Molecule Insertion (5 phases - 31.2 pending)
 
 ---
 
@@ -50,8 +50,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | 30 | Tab 4 - Ion Insertion (NaCl) | ION-01 to ION-07, WATER-02 |
 | 31 | Tab 2 - Hydrate Generation | HYDR-06 to HYDR-08, WATER-03 |
 | 31.1 | Integration Fixes | hydrate→interface wiring, remaining ion fixes |
+| 31.2 | Documentation Audit | README, gui-guide, tooltips, screenshots |
 
-**Coverage:** 21/21 requirements mapped ✓
+**Coverage:** 24/24 requirements mapped ✓
 
 ---
 
@@ -190,8 +191,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Session Continuity
 
 **Last session:** 2026-04-30
-**Stopped at:** v4.0 milestone shipped (Phase 32 deferred to v4.5)
-**Next:** Ready for v4.5 planning or other work
+**Stopped at:** Phase 31.2 inserted (documentation audit)
+**Next:** /gsd-plan-phase 31.2
 
 ---
-*State updated: 2026-04-30 — v4.0 milestone shipped (Phase 32 deferred to v4.5)*
+*State updated: 2026-04-30 — Phase 31.2 inserted for documentation audit*
