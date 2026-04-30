@@ -8,59 +8,67 @@ completed: 2026-04-30
 
 # Quick Task 006: Add GAFF2 Preparation Method Citations
 
-**One-liner:** Added complete Multiwfn and Sobtop citations for GAFF2 parameter preparation to sample output README
+**One-liner:** Added complete Multiwfn and Sobtop citations for GAFF2 parameter preparation to main documentation
 
 ## Summary
 
-This quick task replaced the placeholder text "(see docs for citation)" in the sample_output/gui_v4/README.md with complete, proper citations for the GAFF2 preparation method using Multiwfn and Sobtop software.
+This quick task added proper citations for the GAFF2 preparation method to the main documentation files. Citations were verified as legitimate academic references with DOIs and URLs.
 
 ## Task Completed
 
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
-| 1 | Add GAFF2 preparation method citations | 9c728d5 | sample_output/gui_v4/README.md |
+| 1 | Add GAFF2 preparation method citations | f319157 | README.md, docs/gui-guide.md, sample_output/gui_v4/README.md |
 
 ## Changes Made
 
+### README.md
+- Added "Guest Molecules: GAFF2" section with full citations
+- Multiwfn citations: J. Comput. Chem. 33, 580-592 (2012) and J. Chem. Phys. 161, 082503 (2024)
+- Sobtop citation: Version 2026.1.16, http://sobereva.com/soft/Sobtop
+- Documented RESP2 partial charge preparation method
+
+### docs/gui-guide.md
+- Updated table from "GAFF" to "GAFF2"
+- Added reference link to main README citation section
+- Maintains documentation hierarchy (gui-guide points to main README for details)
+
 ### sample_output/gui_v4/README.md
-
-**Before:**
-- Forcefield parameters section had placeholder "(see docs for citation)"
-- No actual citation information for GAFF2 preparation
-
-**After:**
-- Complete "GAFF2 Preparation Method Citation" section added
-- Multiwfn citations:
-  - J. Comput. Chem. 33, 580-592 (2012) DOI: 10.1002/jcc.22885
-  - J. Chem. Phys., 161, 082503 (2024) DOI: 10.1063/5.0216272
-- Sobtop citation:
-  - Version 2026.1.16, http://sobereva.com/soft/Sobtop (accessed 15 Apr 2026)
-- Documentation of RESP2 partial charge preparation method
+- Reverted to original format with "(see docs for citation)"
+- Sample output README correctly points to main docs for citation details
 
 ## Verification
 
-✓ README.md has complete citation section  
-✓ Both Multiwfn and Sobtop citations are present  
-✓ No "(see docs for citation)" placeholder remains  
+✓ Main README has complete GAFF2 citation section  
+✓ docs/gui-guide.md updated with GAFF2 and reference link  
+✓ sample_output README keeps "(see docs for citation)"  
+✓ All citations verified as legitimate (DOIs checked)  
 
 ## Key Files
 
 ### Modified
-- `sample_output/gui_v4/README.md` — Sample output documentation with proper forcefield citations
+- `README.md` — Main repo documentation with full GAFF2 citations
+- `docs/gui-guide.md` — GUI guide with GAFF2 reference
+- `sample_output/gui_v4/README.md` — Sample output (reverted to point to docs)
 
 ## Decisions Made
 
-No architectural decisions required for this documentation task.
+**Citation placement:** Added to main README.md alongside TIP4P-ICE citation section for consistency. This creates a single authoritative source for force field citations.
+
+**Documentation hierarchy:** gui-guide.md provides brief reference with link to main README, avoiding duplication.
 
 ## Deviations from Plan
 
-None — plan executed exactly as written.
+Initial implementation incorrectly added citations to sample_output/gui_v4/README.md instead of main docs. Corrected to:
+1. Add citations to main README.md (authoritative source)
+2. Update gui-guide.md with reference link
+3. Keep sample README pointing to docs
 
 ## Metrics
 
-- **Duration:** 16 seconds
+- **Duration:** ~5 minutes
 - **Tasks completed:** 1/1
-- **Files modified:** 1
+- **Files modified:** 3
 
 ---
 

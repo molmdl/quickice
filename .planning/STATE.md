@@ -181,7 +181,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 006 | Add GAFF2 preparation method citation to sample_output/gui_v4/README.md | 2026-04-30 | 82790dd | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
+| 006 | Add GAFF2 preparation method citation to main documentation | 2026-04-30 | f319157 | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
 
 ---
 
