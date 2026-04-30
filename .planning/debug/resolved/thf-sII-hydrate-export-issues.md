@@ -21,10 +21,10 @@ expected:
 4. Ion export: GRO file should use THF resname (not GUE), topology should include thf.itp (not missing guest.itp), exported ITP should be thf.itp (not ch4.itp)
 
 actual:
-1. Both tabs: Not all hydrate unit cells filled with guest
-2. Both tabs: No bonds between CPK atoms of THF in interface 3D viewer
-3. Interface tab: GRO has NO guest molecules (grep shows nothing), but TOP declares "THF 192". TOP also has SOL split into two groups (4780 SOL, 192 THF, 2432 SOL) instead of grouped together
-4. Ion tab: GRO uses "GUE" resname instead of "THF", TOP includes non-existent "guest.itp" and declares "GUE 192" (should be thf.itp and THF 192), exported ch4.itp instead of thf.itp
+1. Both tabs: Not all hydrate unit cells filled with guest ✓ RESOLVED (fixed by guest_atoms_per_mol correction)
+2. Both tabs: No bonds between CPK atoms of THF in interface 3D viewer ✓ RESOLVED (fixed in vtk_utils.py)
+3. Interface tab: GRO has NO guest molecules (grep shows nothing), but TOP declares "THF 192". TOP also has SOL split into two groups (4780 SOL, 192 THF, 2432 SOL) instead of grouped together ⚠️ PARTIALLY FIXED (guest now in GRO, but SOL still split)
+4. Ion tab: GRO uses "GUE" resname instead of "THF", TOP includes non-existent "guest.itp" and declares "GUE 192" (should be thf.itp and THF 192), exported ch4.itp instead of thf.itp ✓ RESOLVED
 
 errors: No explicit errors reported, but structural mismatches between files
 
