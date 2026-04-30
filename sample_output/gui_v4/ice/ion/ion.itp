@@ -1,0 +1,15 @@
+[ moleculetype ]
+; Name        nrexcl
+NA            1
+
+[ atoms ]
+;  nr  type  resi  res  atom  cgnr  charge  mass
+    1    NA      1    NA    NA     1      0.85   22.9898
+
+[ moleculetype ]
+; Name        nrexcl
+CL            1
+
+[ atoms ]
+;  nr  type  resi  res  atom  cgnr  charge  mass
+    1    CL      1    CL    CL     1      -0.85   35.453
