@@ -2,7 +2,7 @@
 
 **Version:** 4.0  
 **Goal:** Add molecule insertion capabilities to interface systems via new tabs  
-**Phases:** 5  
+**Phases:** 4  
 **Depth:** comprehensive  
 **Started:** 2026-04-14  
 
@@ -10,9 +10,9 @@
 
 ## Overview
 
-QuickIce v4.0 adds molecule insertion capabilities: hydrates (Tab 2), NaCl ions (Tab 4), custom molecules, and enhanced 3D viewer controls. The milestone builds on v3.5's interface generation with new generation pipelines that handle multiple molecule types, per-type VTK rendering, and multi-molecule GROMACS export.
+QuickIce v4.0 adds molecule insertion capabilities: hydrates (Tab 2), NaCl ions (Tab 4), and enhanced 3D viewer controls. The milestone built on v3.5's interface generation with new generation pipelines that handle multiple molecule types, per-type VTK rendering, and multi-molecule GROMACS export.
 
-The 5-phase structure derives from research recommendations: fix pre-existing bugs first, establish multi-molecule data structures, then build ion insertion (simpler path), hydrate generation (new GenIce2 API), and custom molecule support with display controls.
+The 4-phase structure delivered: pre-existing bug fixes, multi-molecule data structures, ion insertion with concentration calculation, and hydrate generation with GenIce2 integration. Phase 32 (Custom Molecules) deferred to v4.5 as display controls were already implemented.
 
 ---
 
@@ -26,7 +26,6 @@ The 5-phase structure derives from research recommendations: fix pre-existing bu
 | 30 - Tab 4 Ion Insertion (NaCl) | User can insert NaCl ions into liquid phase | ION-01 to ION-07, WATER-02 | 5 criteria |
 | 31 - Tab 2 Hydrate Generation | User can generate hydrate structures with guest molecules | HYDR-06 to HYDR-08, WATER-03 | 4 criteria |
 | 31.1 - Integration Fixes (INSERTED) | Wire hydrate→interface, fix remaining ion insertion | — | 2 criteria |
-| 32 - Custom Molecules + Display Controls | User can upload custom molecules and control 3D display | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 | 5 criteria |
 
 ---
 
@@ -48,15 +47,15 @@ Phase 30 (Ion Insertion) ◄─────────────────�
 Phase 31 (Hydrate Generation) ◄─────────────┘
     │
     ▼
-Phase 32 (Custom Molecules + Display Controls)
+Phase 31.1 (Integration Fixes)
 ```
 
 - Phase 28 must complete before any other v4.0 phase (pre-existing bugs corrupt results)
 - Phase 28.1 must complete before Phases 29-31 (bugfixes and FF corrections)
-- Phase 29 must complete before Phases 30, 31, 32 (data structures needed)
+- Phase 29 must complete before Phases 30, 31 (data structures needed)
 - Phase 30 can start after Phase 29 (reuses InterfaceStructure from Tab 3)
 - Phase 31 can start after Phase 29 (reuses multi-actor viewer pattern from Phase 30)
-- Phase 32 depends on Phases 29, 30, 31 (needs all molecule type patterns established)
+- Phase 31.1 depends on Phases 28.1, 31 (hydrate→interface wiring, remaining ion fixes)
 
 ---
 
@@ -252,35 +251,6 @@ Plans:
 
 ---
 
-### Phase 32: Custom Molecules + Display Controls
-
-**Goal:** User can upload custom molecules and control 3D display per molecule type
-
-**Rationale:** Both Tab 2 and Tab 4 need custom molecule support. Building it last lets the basic NaCl and CH4 flows stabilize first. File upload and validation add complexity best handled when core paths work.
-
-**Requirements:**
-- CUST-01: User can upload custom .gro file
-- CUST-02: User can upload custom .itp topology file
-- CUST-03: System validates .gro/.itp consistency (atom counts)
-- CUST-04: User can select random placement mode in liquid phase
-- CUST-05: System checks overlap after custom molecule placement
-- CUST-06: 3D viewer renders custom molecules distinct from water/ions
-- CUST-07: GROMACS export includes custom molecule .itp
-- VIEW-01: System renders 5 molecule types (ice, liquid, ions, small molecules, large molecules)
-- VIEW-02: User can toggle visibility per molecule type
-- VIEW-03: User can select display style per molecule type (lines, ball-stick, VDW, stick)
-- VIEW-04: User can select color per molecule type
-- WATER-04: IAPWS density lookup cached (@lru_cache)
-
-**Success Criteria:**
-1. User can upload .gro + .itp files for custom molecule and see them render in 3D viewer
-2. Validation error shows if .gro atom count doesn't match .itp [atoms] count
-3. User can toggle visibility for each molecule type independently (ice, water, ions, small, large)
-4. User can change display style per molecule type (lines for water, VDW for ions, ball-stick for guests)
-5. IAPWS density lookups are cached (verify: repeated T/P lookups return cached value instantly)
-
----
-
 ## Coverage Map
 
 | Requirement | Phase | Status |
@@ -303,23 +273,11 @@ Plans:
 | HYDR-06 | Phase 31 | Pending |
 | HYDR-07 | Phase 31 | Pending |
 | HYDR-08 | Phase 31 | Pending |
-| CUST-01 | Phase 32 | Pending |
-| CUST-02 | Phase 32 | Pending |
-| CUST-03 | Phase 32 | Pending |
-| CUST-04 | Phase 32 | Pending |
-| CUST-05 | Phase 32 | Pending |
-| CUST-06 | Phase 32 | Pending |
-| CUST-07 | Phase 32 | Pending |
-| VIEW-01 | Phase 32 | Pending |
-| VIEW-02 | Phase 32 | Pending |
-| VIEW-03 | Phase 32 | Pending |
-| VIEW-04 | Phase 32 | Pending |
 | WATER-01 | Phase 29 | Pending |
 | WATER-02 | Phase 30 | Pending |
 | WATER-03 | Phase 31 | Pending |
-| WATER-04 | Phase 32 | Pending |
 
-**Coverage:** 33/33 requirements mapped ✓
+**Coverage:** 24/24 requirements mapped ✓
 
 ---
 
@@ -333,11 +291,11 @@ Plans:
 | 30 | Tab 4 - Ion Insertion (NaCl) | ✓ Complete |
 | 31 | Tab 2 - Hydrate Generation | ✓ Complete (5/5 plans, verified) |
 | 31.1 | Integration Fixes (INSERTED) | ✓ Complete (4/4 plans, verified) |
-| 32 | Custom Molecules + Display Controls | Not started |
 
-**Overall:** ████████░ 83% (5/6 phases complete - Phase 32 pending)
+**Overall:** ██████████ 100% (4/4 phases complete - v4.0 shipped)
 
 ---
 
 *Roadmap created: 2026-04-14*
-*Next: /gsd-discuss-phase 32*
+*Phase 32 (Custom Molecules) deferred to v4.5*
+*Next: v4.0 milestone complete*

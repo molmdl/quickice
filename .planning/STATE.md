@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates and interfaces quickly with intuitive visual interface
-**Current Focus:** v4.0 Molecule Insertion (5 phases defined)
+**Current Focus:** v4.0 Molecule Insertion (4 phases - shipped)
 
 ---
 
@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v4.0 (in progress) |
+| Milestone | v4.0 (shipped) |
 | Phase | 31.1 (complete) |
 | Plan | 04 of 04 complete |
-| Status | Phase complete, verified ✓ |
-| Last activity | 2026-04-19 — Phase 31.1 verified (integration fixes + hydrate→interface conversion) |
+| Status | v4.0 milestone complete ✓ |
+| Last activity | 2026-04-30 — Phase 32 deferred to v4.5, v4.0 shipped |
 
-**Progress:** ████████░ 83% (5/6 phases complete - Phase 32 pending)
+**Progress:** ██████████ 100% (4/4 phases complete - v4.0 shipped)
 
 ---
 
@@ -50,9 +50,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | 30 | Tab 4 - Ion Insertion (NaCl) | ION-01 to ION-07, WATER-02 |
 | 31 | Tab 2 - Hydrate Generation | HYDR-06 to HYDR-08, WATER-03 |
 | 31.1 | Integration Fixes | hydrate→interface wiring, remaining ion fixes |
-| 32 | Custom Molecules + Display Controls | CUST-01 to CUST-07, VIEW-01 to VIEW-04, WATER-04 |
 
-**Coverage:** 33/33 requirements mapped ✓
+**Coverage:** 21/21 requirements mapped ✓
 
 ---
 
@@ -60,6 +59,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 - Phase 28.1 inserted after Phase 28: Urgent Bugfixes + FF Corrections (URGENT) — discovered during Phase 31 execution
 - Phase 31.1 inserted after Phase 31: Integration Fixes (URGENT) — hydrate→interface wiring, remaining ion insertion fixes
+- Phase 32 (Custom Molecules + Display Controls) deferred to v4.5 on 2026-04-30 — display controls already implemented, custom molecule upload not needed for v4.0
 
 ---
 
@@ -189,9 +189,9 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-19
-**Stopped at:** Completed 31.1-04-PLAN.md (hydrate-to-interface conversion)
-**Next:** v4.0 milestone complete - ready for Phase 32
+**Last session:** 2026-04-30
+**Stopped at:** v4.0 milestone shipped (Phase 32 deferred to v4.5)
+**Next:** Ready for v4.5 planning or other work
 
 ---
-*State updated: 2026-04-19 — Gap closed (hydrate→interface conversion functional)*
+*State updated: 2026-04-30 — v4.0 milestone shipped (Phase 32 deferred to v4.5)*
