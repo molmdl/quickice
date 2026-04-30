@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.0 (shipped) |
-| Phase | 31.2 (in progress) |
-| Plan | 02 of 03 complete |
-| Status | In progress |
-| Last activity | 2026-04-30 — Completed 31.2-02-PLAN.md (gui-guide update) |
+| Phase | 31.2 (complete) |
+| Plan | 03 of 03 complete |
+| Status | Phase complete |
+| Last activity | 2026-04-30 — Completed 31.2-03-PLAN.md (tooltips + screenshot placeholders) |
 
-**Progress:** ██████████ 100% (v4.0 shipped, documentation audit in progress)
+**Progress:** ██████████ 100% (v4.0 shipped, documentation audit complete)
 
 ---
 
@@ -161,6 +161,8 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 | set_from_hydrate() method | Extracts dimensions from HydrateStructure.cell, pre-populates Interface panel | ✓ Implemented (31.1-04) |
 | README v4.0 update | All v3.0 references updated, hydrate/ion features documented | ✓ Implemented (31.2-01) |
 | Tab numbering in docs | Ice→Hydrate→Interface→Ion (Tab 1-4) | ✓ Documented (31.2-01) |
+| Hydrate panel tooltips | 8 tooltips for all input controls matching ion_panel.py pattern | ✓ Implemented (31.2-03) |
+| Screenshot placeholders | TODO sections for hydrate/ion panels in gui-guide.md | ✓ Implemented (31.2-03) |
 
 ### v3.5 Shipped Decisions
 
@@ -192,12 +194,15 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Session Continuity
 
-**Last session:** 2026-04-30T11:43:01Z
-**Stopped at:** Completed 31.2-02-PLAN.md (gui-guide update)
+**Last session:** 2026-04-30T12:15:17Z
+**Stopped at:** Completed 31.2-03-PLAN.md (tooltips + screenshot placeholders)
 **Resume file:** None
 
 ---
-*State updated: 2026-04-30 — Plan 31.2-02 complete (gui-guide updated for v4.0)*
+*State updated: 2026-04-30 — Plan 31.2-03 complete (tooltips + screenshot placeholders)*
+
+---
+*State updated: 2026-04-30 — Completed 31.2-02-PLAN.md (gui-guide updated for v4.0)*
 
 ---
 *State updated: 2026-04-30 — Completed 31.2-01-PLAN.md (README.md updated for v4.0)*
