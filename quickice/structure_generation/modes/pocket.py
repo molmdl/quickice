@@ -475,7 +475,8 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         )
 
 # === HYDRATE FIX: Combine all positions including guests ===
-    # Order: ice (outside cavity), then guests (in cavity), then water (in cavity)
+    # Order: ice (outside cavity), then water (in cavity), then guests LAST (in cavity)
+    # This ensures all SOL molecules (ice + water) are contiguous for GROMACS export.
     all_parts = []
     all_names_parts = []
     
@@ -483,13 +484,13 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         all_parts.append(ice_positions)
         all_names_parts.append(ice_atom_names)
     
-    if processed_guest_positions is not None and len(processed_guest_positions) > 0:
-        all_parts.append(processed_guest_positions)
-        all_names_parts.append(processed_guest_atom_names)
-    
     if len(water_positions) > 0:
         all_parts.append(water_positions)
         all_names_parts.append(water_atom_names)
+    
+    if processed_guest_positions is not None and len(processed_guest_positions) > 0:
+        all_parts.append(processed_guest_positions)
+        all_names_parts.append(processed_guest_atom_names)
     
     if all_parts:
         all_positions = np.vstack(all_parts)

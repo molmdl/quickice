@@ -342,8 +342,9 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             atoms_per_molecule=4
         )
 
-    # === HYDRATE FIX: Combine: ice (centered) + guest + water ===
-    # Order: ice first, then guest, then water (all in same positions array)
+    # === HYDRATE FIX: Combine: ice (centered) + water + guest ===
+    # Order: ice first, then water, then guest LAST (all in same positions array)
+    # This ensures all SOL molecules (ice + water) are contiguous for GROMACS export.
     all_parts = []
     all_names_parts = []
     
@@ -351,13 +352,13 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         all_parts.append(centered_ice_positions)
         all_names_parts.append(ice_atom_names)
     
-    if guest_positions is not None and len(guest_positions) > 0:
-        all_parts.append(guest_positions)
-        all_names_parts.append(guest_atom_names)
-    
     if len(water_positions) > 0:
         all_parts.append(water_positions)
         all_names_parts.append(water_atom_names)
+    
+    if guest_positions is not None and len(guest_positions) > 0:
+        all_parts.append(guest_positions)
+        all_names_parts.append(guest_atom_names)
     
     if all_parts:
         all_positions = np.vstack(all_parts)
