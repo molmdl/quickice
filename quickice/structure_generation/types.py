@@ -222,17 +222,17 @@ class InterfaceStructure:
 
     Attributes:
         positions: (N_atoms, 3) combined ice + water + guest atom positions in nm.
-            Ice atoms come FIRST, then guests (if any), then water atoms.
-        atom_names: Atom names for all atoms (ice names then guest names then water names)
+            Ice atoms come FIRST, then water, then guest atoms LAST.
+        atom_names: Atom names for all atoms (ice names, then water names, then guest names)
         cell: (3, 3) box cell vectors in nm, stored as ROW vectors.
             Each row is a lattice vector. See Candidate.cell for details.
-        ice_atom_count: Number of ice atoms (marks split between ice and guests/water)
+        ice_atom_count: Number of ice atoms (marks split between ice and water)
         water_atom_count: Number of water atoms
         ice_nmolecules: Number of ice molecules
         water_nmolecules: Number of water molecules
         mode: Interface mode used
         report: gmx solvate-like generation report string
-        guest_atom_count: Number of guest atoms (0 if no guests, marks split between guests and water)
+        guest_atom_count: Number of guest atoms (0 if no guests, marks split between water and guests)
         molecule_index: List of MoleculeIndex entries tracking each molecule's
             position in the positions array. Populated when multiple molecule
             types are present. For backward compatibility, existing code using
@@ -244,8 +244,14 @@ class InterfaceStructure:
         Hydrate ice uses 4 atoms per molecule (OW, HW1, HW2, MW).
         Water from tip4p.gro uses 4 atoms per molecule (OW, HW1, HW2, MW).
         Guest molecules vary (CH4: 5 atoms, THF: 12 atoms).
-        The InterfaceStructure stores them combined with ice_atom_count and
-        guest_atom_count marking the boundaries. Do NOT normalize atom counts.
+        The InterfaceStructure stores them combined with ice_atom_count,
+        water_atom_count, and guest_atom_count marking the boundaries.
+        Do NOT normalize atom counts.
+        
+    Ordering (after commit 90afe86):
+        positions[0:ice_atom_count] = ice atoms
+        positions[ice_atom_count:ice_atom_count+water_atom_count] = water atoms
+        positions[ice_atom_count+water_atom_count:] = guest atoms
     """
 
     positions: np.ndarray
