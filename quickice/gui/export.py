@@ -583,16 +583,14 @@ class InterfaceGROMACSExporter:
             
             # Copy guest .itp file if guests are present
             if interface_structure.guest_nmolecules > 0 and interface_structure.guest_atom_count > 0:
-                # Determine guest type from first guest atom name
-                ice_end = interface_structure.ice_atom_count
-                first_guest_atom = interface_structure.atom_names[ice_end] if ice_end < len(interface_structure.atom_names) else "C"
+                # Determine guest type from atom names
+                # Guest atoms start at ice_atom_count + water_atom_count (after commit 90afe86)
+                # Use the detect_guest_type_from_atoms function for consistent detection
+                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
                 
-                if first_guest_atom in ["Me", "C"]:
-                    guest_type = "ch4"
-                elif first_guest_atom in ["O", "c"]:
-                    guest_type = "thf"
-                else:
-                    guest_type = None
+                guest_start = interface_structure.ice_atom_count + interface_structure.water_atom_count
+                guest_atom_names = interface_structure.atom_names[guest_start:guest_start + interface_structure.guest_atom_count]
+                guest_type = detect_guest_type_from_atoms(guest_atom_names)
                 
                 if guest_type:
                     try:
