@@ -358,16 +358,6 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 3. **File → Export Ions for GROMACS** (Ctrl+J)
 4. Exported files include Madrid2019 Na⁺/Cl⁻ parameters
 
-### Ion Force Field: Madrid2019
-
-Na⁺ and Cl⁻ ions use the Madrid2019 force field:
-
-Zeron, I. M., Pérez-Villasenor, F., & Vega, C. (2019).
-A molecular dynamics study of the ion-ion and ion-water interaction 
-parameters for NaCl in water using the Madrid-2019 force field.
-Journal of Chemical Physics, 151, 134504.
-DOI: https://doi.org/10.1063/1.5121394
-
 ### Guest Molecules: GAFF2
 
 CH₄ (methane) and THF (tetrahydrofuran) guest molecules use GAFF2 force field parameters with RESP2(0.5) partial charges:
