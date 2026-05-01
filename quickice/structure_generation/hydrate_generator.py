@@ -86,11 +86,8 @@ class HydrateStructureGenerator:
         # Get GenIce2 lattice name from config
         lattice_name = config.get_genice_lattice_name()
         
-        # Build GenIce2 CLI options based on config
-        options = self._build_genice_options(config)
-        
-        # Generate structure using GenIce2 CLI via subprocess
-        positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_cli(lattice_name, options)
+        # Generate structure using GenIce2 Python API (not CLI)
+        positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_api(lattice_name, config)
         
         # Build molecule index (positions from genice2 are already complete molecules)
         # NOTE: Do NOT wrap positions. GenIce2 outputs complete molecules, and wrapping
@@ -121,99 +118,93 @@ class HydrateStructureGenerator:
             water_count=water_count,
         )
     
-    def _build_genice_options(self, config: HydrateConfig) -> list[str]:
-        """Build GenIce2 command options from config."""
-        options = []
+    def _run_via_api(self, lattice_name: str, config: HydrateConfig) -> tuple:
+        """Run GenIce2 via Python API.
         
-        # Supercell option - repeat the unit cell in x, y, z directions
-        # This uses --rep which is equivalent to --reshape with diagonal matrix
-        if config.supercell_x > 1 or config.supercell_y > 1 or config.supercell_z > 1:
-            options.append(f"--rep {config.supercell_x} {config.supercell_y} {config.supercell_z}")
-        
-        # Guest molecule option
-        guest = config.guest_type
-        if guest == "ch4":
-            guest_param = "ch4"  # all-atom methane (C + 4 H), not "me" (united atom)
-        elif guest == "thf":
-            guest_param = "thf"
-        else:
-            guest_param = guest
-        
-        # Small cage occupancy (using GenIce2 CLI cage type codes)
-        # GenIce2 CLI format: 12=me for small, 14=me for large
-        small_occ = config.cage_occupancy_small / 100.0
-        large_occ = config.cage_occupancy_large / 100.0
-        
-        # Build guest option for small cages (12 = 5^12 cages via CLI)
-        if small_occ > 0:
-            if small_occ < 1.0:
-                # Partial occupancy
-                options.append(f"--guest 12={guest_param}*{small_occ}")
-            else:
-                options.append(f"--guest 12={guest_param}")
-        
-        # Large cage occupancy (14 for sI = 5^12 6^4, 16 for sII/sH)
-        if large_occ > 0:
-            if large_occ < 1.0:
-                if config.lattice_type == "sI":
-                    large_cage = "14"
-                elif config.lattice_type == "sII":
-                    large_cage = "16"
-                else:
-                    large_cage = "16"
-                options.append(f"--guest {large_cage}={guest_param}*{large_occ}")
-            else:
-                if config.lattice_type == "sI":
-                    options.append("--guest 14=" + guest_param)
-                elif config.lattice_type == "sII":
-                    options.append("--guest 16=" + guest_param)
-                else:
-                    options.append("--guest 16=" + guest_param)
-        
-        # Water model - use TIP4P for better GROMACS compatibility
-        options.append("--water tip4p")
-        
-        return options
-    
-    def _run_via_cli(self, lattice_name: str, options: list[str]) -> tuple:
-        """Run GenIce2 via subprocess CLI.
+        Uses GenIce2 Python API directly instead of CLI subprocess,
+        which ensures compatibility with PyInstaller bundled executables.
         
         Args:
             lattice_name: GenIce2 lattice name (e.g., "CS1", "CS2", "DOH")
-            options: GenIce2 CLI-style options (e.g., ["--guest 14=me", "--guest 12=me"])
-        
+            config: HydrateConfig with lattice, guest, occupancy, supercell
+            
         Returns:
-            Tuple of (positions, cell, atom_names)
+            Tuple of (positions, cell, atom_names, residue_names, residue_seq_nums)
         """
-        import subprocess
-        import shlex
+        from genice2.genice import GenIce
+        from genice2.plugin import safe_import
+        from genice2.valueparser import parse_guest
+        from collections import defaultdict
         
         try:
-            # Build command using shell-style invocation for proper argument parsing
-            cmd_args = [lattice_name] + options + ["--quiet"]
-            cmd = "genice2 " + " ".join(cmd_args)
+            # Load lattice module
+            lattice = safe_import('lattice', lattice_name).Lattice()
             
-            # Run command and capture GRO output
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=60
+            # Build supercell matrix
+            supercell_matrix = np.diag([
+                config.supercell_x,
+                config.supercell_y,
+                config.supercell_z
+            ])
+            
+            # Create GenIce instance with supercell
+            ice = GenIce(lattice, reshape=supercell_matrix)
+            
+            # Load TIP4P water model (4-point: OW, HW1, HW2, MW)
+            water = safe_import('molecule', 'tip4p').Molecule()
+            
+            # Load GROMACS formatter
+            formatter = safe_import('format', 'gromacs').Format()
+            
+            # Build guests dictionary from config
+            # Format: {"12": {"ch4": 0.5}, "14": {"ch4": 1.0}}
+            guests = defaultdict(dict)
+            
+            guest_type = config.guest_type
+            small_occ = config.cage_occupancy_small / 100.0
+            large_occ = config.cage_occupancy_large / 100.0
+            
+            # Map guest type to GenIce2 molecule name
+            if guest_type == "ch4":
+                guest_name = "ch4"  # all-atom methane
+            elif guest_type == "thf":
+                guest_name = "thf"
+            else:
+                guest_name = guest_type
+            
+            # Small cages (12 = 5^12 cages)
+            if small_occ > 0:
+                guest_spec = f"12={guest_name}"
+                if small_occ < 1.0:
+                    guest_spec = f"12={guest_name}*{small_occ}"
+                parse_guest(guests, guest_spec)
+            
+            # Large cages
+            if large_occ > 0:
+                # Determine large cage type based on lattice
+                if config.lattice_type == "sI":
+                    large_cage = "14"  # 5^12 6^4 for sI
+                elif config.lattice_type == "sII":
+                    large_cage = "16"  # 5^12 6^4 for sII
+                else:
+                    large_cage = "16"  # Default for sH
+                
+                guest_spec = f"{large_cage}={guest_name}"
+                if large_occ < 1.0:
+                    guest_spec = f"{large_cage}={guest_name}*{large_occ}"
+                parse_guest(guests, guest_spec)
+            
+            # Generate hydrate structure using GenIce API
+            gro_string = ice.generate_ice(
+                formatter=formatter,
+                water=water,
+                guests=guests,
+                depol='strict'
             )
             
             # Parse GRO format result
-            return self._parse_gro_result(result.stdout)
+            return self._parse_gro_result(gro_string)
         
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                f"GenIce2 CLI failed: {e.stderr}"
-            )
-        except subprocess.TimeoutExpired:
-            raise RuntimeError(
-                "GenIce2 CLI timed out"
-            )
         except Exception as e:
             raise RuntimeError(
                 f"GenIce2 failed to generate structure: {e}"
