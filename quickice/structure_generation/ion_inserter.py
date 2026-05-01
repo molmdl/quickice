@@ -270,22 +270,24 @@ class IonInserter:
                 current_idx += mol.count
         
         # Build array of positions for molecules that will remain (not being replaced)
-        # Check against BOTH ice AND guest molecules to prevent ions from penetrating
-        # into the hydrate crystallite region (cages contain guest molecules)
+        # Check against ice, guest, AND water molecules to prevent ions from overlapping
+        # with any existing atoms. This handles both ice/water interfaces AND hydrate structures
+        # where the hydrate water framework is labeled as "water" not "ice".
         remain_positions = []
         for mol in structure.molecule_index:
-            # Only keep ice and guest (not water being replaced OR retained)
-            if mol.mol_type in ("ice", "guest"):
+            # Keep all molecules except water being replaced
+            # This includes: ice, guest, AND water molecules that will remain
+            if mol.start_idx not in replaced_starts:
                 start = mol.start_idx
                 end = start + mol.count
                 remain_positions.append(structure.positions[start:end])
 
         if remain_positions:
             remain_positions = np.vstack(remain_positions)
-            ice_tree = cKDTree(remain_positions)
+            existing_atoms_tree = cKDTree(remain_positions)
         else:
-            # No ice molecules - no overlap to check against ice
-            ice_tree = None
+            # No existing molecules - no overlap to check
+            existing_atoms_tree = None
         
         # Now add ions alternating Na+, Cl- with overlap checking
         na_count = 0
@@ -299,11 +301,12 @@ class IonInserter:
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
             
-            # Check minimum distance to ice AND guest molecules (both define the hydrate crystallite region)
-            if ice_tree is not None:
-                min_dist = ice_tree.query(water_pos, k=1)[0]
+            # Check minimum distance to all existing atoms (ice, water, guest)
+            # This prevents ions from overlapping with any molecule in the structure
+            if existing_atoms_tree is not None:
+                min_dist = existing_atoms_tree.query(water_pos, k=1)[0]
                 if min_dist < MIN_SEPARATION:
-                    # Too close to hydrate - skip this ion
+                    # Too close to existing atoms - skip this ion
                     continue
             
             # Also check against previously placed ions
