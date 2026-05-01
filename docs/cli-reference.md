@@ -142,7 +142,7 @@ Display the current QuickIce version.
 **Usage:**
 ```bash
 python quickice.py --version
-# Output: python quickice.py 3.0.0
+# Output: python quickice.py 4.0.0
 ```
 
 ---

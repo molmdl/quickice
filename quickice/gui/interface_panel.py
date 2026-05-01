@@ -1,4 +1,4 @@
-"""Interface construction panel for QuickIce GUI v3.0.
+"""Interface construction panel for QuickIce GUI v4.0.
 
 This module provides the InterfacePanel class for the Interface Construction tab:
 - Candidate selection dropdown for ice candidate selection

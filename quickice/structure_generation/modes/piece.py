@@ -176,7 +176,7 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     - Guests are placed in the middle layer (ice-water interface region)
     - Guest molecules are preserved in output for rendering/export
 
-    For v3.0, only orthogonal boxes are supported (cube/rectangular prism).
+    For v4.0, only orthogonal boxes are supported (cube/rectangular prism).
 
     Args:
         candidate: Ice structure candidate from GenIce (3 atoms per molecule: O, H, H).

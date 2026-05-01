@@ -32,7 +32,7 @@ The main window is divided into four tabs:
 ### Basic Workflow
 
 ![QuickIce GUI](images/quickice-v4-gui.png)
-*QuickIce GUI v3.0 — Ice Generation and Interface Construction tabs*
+*QuickIce GUI v4.0 — Ice Generation, Hydrate, Interface, and Ion tabs*
 **Note:** v4.0 adds Hydrate Config (Tab 2) and Ion Insertion (Tab 4). Screenshot update pending.
 
 1. Enter temperature (K), pressure (MPa), and molecule count

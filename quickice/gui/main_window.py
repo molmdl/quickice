@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
         """Setup UI components with two-tab layout.
         
         Tab 1: Ice Generation (existing functionality)
-        Tab 2: Interface Construction (new in v3.0)
+        Tab 2: Interface Construction (new in v4.0)
         """
         # Create tab widget as central container
         self.tab_widget = QTabWidget()

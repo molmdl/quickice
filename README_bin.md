@@ -3,7 +3,7 @@
 * Linux binary: 
     * Download `quickice-v4.0.0-linux-x86_64.tar.gz` under "Assets".
     * How to use the binary:
-        1. extract the tarball: `tar xfz quickice-v3.0.0-linux-x86_64.tar.gz`
+        1. extract the tarball: `tar xfz quickice-v4.0.0-linux-x86_64.tar.gz`
         2. cd to the package directory: `cd package` 
             * On local linux machine with full features: `./quickice-gui/quickice-gui`
             * Remotely via ssh, enable the 3D viewer if the system support: `QUICKICE_FORCE_VTK=true ./quickice-gui/quickice-gui`

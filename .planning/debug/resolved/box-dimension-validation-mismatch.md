@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: resolved
 trigger: "Box Dimension Validation Mismatch - Documentation claims 0.5-100 nm, code enforces >= 1.0 nm"
 created: 2026-05-02T00:00:00Z
 updated: 2026-05-02T00:00:00Z
@@ -10,7 +10,7 @@ updated: 2026-05-02T00:00:00Z
 hypothesis: Documentation and GUI are wrong; 1.0 nm is scientifically correct minimum
 test: Verify all tests pass and behavior matches documentation
 expecting: All tests pass, 0.6 nm rejected, 1.0 nm accepted
-next_action: Archive debug session
+next_action: Debug session complete
 
 ## Symptoms
 
@@ -53,5 +53,5 @@ started: Unknown - always been this way
 
 root_cause: Documentation bug and GUI inconsistency. The correct minimum is 1.0 nm based on scientific rationale (water molecule diameter ~0.28 nm, ice unit cells 0.6-0.9 nm). Documentation incorrectly stated 0.5-100 nm, and GUI components incorrectly allowed 0.5 nm minimum.
 fix: Updated docs/cli-reference.md from 0.5-100 nm to 1.0-100 nm. Updated quickice/gui/validators.py to enforce 1.0 nm minimum. Updated quickice/gui/interface_panel.py input ranges to 1.0 nm minimum. Added comprehensive tests for validate_box_dimension in tests/test_validators.py with 11 new tests.
-verification: All 52 validation tests pass. Manual verification confirms 0.6 nm is rejected and 1.0 nm is accepted. Documentation now matches code behavior. GUI components now enforce correct minimum.
+verification: All 45 validation tests pass. Manual verification confirms 0.6 nm is rejected and 1.0 nm is accepted. Documentation now matches code behavior. GUI components now enforce correct minimum.
 files_changed: [docs/cli-reference.md, quickice/gui/validators.py, quickice/gui/interface_panel.py, tests/test_validators.py]
