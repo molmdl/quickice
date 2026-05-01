@@ -337,29 +337,25 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     top_ice_positions = top_ice_positions.copy()
     top_ice_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
 
-    # PBC wrap check: ensure top ice atoms are within [0, adjusted_box_z)
+    # PBC wrap: wrap molecules that span the boundary after shifting
     # After shift, atoms should be in [adjusted_ice_thickness + water_thickness, adjusted_box_z)
-    # but we wrap defensively to handle floating-point precision issues
-    # and catch any configuration errors early.
-    top_ice_z = top_ice_positions[:, 2]
-    if len(top_ice_z) > 0:
-        # Check for atoms that would wrap to bottom layer (Z < 0 or Z >= adjusted_box_z)
-        below_zero = top_ice_z < 0
-        above_boxz = top_ice_z >= adjusted_box_z
-
-        if np.any(below_zero) or np.any(above_boxz):
-            # This should never happen if validation is correct, but handle defensively
-            from quickice.structure_generation.errors import InterfaceGenerationError
-            n_below = np.sum(below_zero)
-            n_above = np.sum(above_boxz)
-            raise InterfaceGenerationError(
-                f"PBC overlap detected: {n_below} top ice atoms have Z < 0, "
-                f"{n_above} atoms have Z >= box_z ({adjusted_box_z:.2f} nm). "
-                f"This indicates a configuration error: box_z should equal "
-                f"2*ice_thickness + water_thickness = {2*adjusted_ice_thickness + config.water_thickness:.2f} nm. "
-                f"Got ice_thickness={adjusted_ice_thickness:.2f} nm, water_thickness={config.water_thickness:.2f} nm.",
-                mode=config.mode
-            )
+    # but tile_structure() allows atoms outside [0, target_region), so some may exceed box_z.
+    # Wrap molecules as whole units to preserve molecular integrity.
+    if len(top_ice_positions) > 0:
+        n_molecules = len(top_ice_positions) // atoms_per_mol
+        for mol_idx in range(n_molecules):
+            start = mol_idx * atoms_per_mol
+            end = start + atoms_per_mol
+            mol_atoms = top_ice_positions[start:end]
+            # Calculate center of mass Z
+            com_z = mol_atoms[:, 2].mean()
+            # If COM is outside [0, box_z), shift the entire molecule
+            if com_z < 0:
+                # Shift up by one box
+                top_ice_positions[start:end, 2] += adjusted_box_z
+            elif com_z >= adjusted_box_z:
+                # Shift down by one box
+                top_ice_positions[start:end, 2] -= adjusted_box_z
 
     # Combine ice positions (bottom + top)
     if len(bottom_ice_positions) > 0 and len(top_ice_positions) > 0:
