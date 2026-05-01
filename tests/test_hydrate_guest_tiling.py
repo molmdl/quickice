@@ -140,13 +140,14 @@ def test_slab_hydrate_guest_tiling():
     # Check that we have guest molecules
     assert iface.guest_nmolecules > 0, "No guest molecules generated!"
     
-    # Extract guest positions (they come after ice positions)
-    # In the output: [ice_positions, guest_positions, water_positions]
+    # Extract guest positions (they come AFTER ice AND water positions)
+    # In the output: [ice_positions, water_positions, guest_positions]
     ice_atoms = iface.ice_atom_count
+    water_atoms = iface.water_atom_count
     guest_atoms = iface.guest_atom_count
     
-    guest_start = ice_atoms
-    guest_end = ice_atoms + guest_atoms
+    guest_start = ice_atoms + water_atoms
+    guest_end = ice_atoms + water_atoms + guest_atoms
     
     guest_positions = iface.positions[guest_start:guest_end]
     
@@ -219,11 +220,12 @@ def test_slab_hydrate_guest_z_coverage():
     
     iface = assemble_slab(candidate, config)
     
-    # Get guest positions
+    # Get guest positions (they come AFTER ice AND water positions)
     ice_atoms = iface.ice_atom_count
+    water_atoms = iface.water_atom_count
     guest_atoms = iface.guest_atom_count
     
-    guest_positions = iface.positions[ice_atoms:ice_atoms + guest_atoms]
+    guest_positions = iface.positions[ice_atoms + water_atoms:ice_atoms + water_atoms + guest_atoms]
     
     # Check Z-distribution within each ice layer
     # There should be guests throughout the layer, not just at one Z-level

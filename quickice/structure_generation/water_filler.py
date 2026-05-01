@@ -474,30 +474,57 @@ def tile_structure(
     n_tiles = nx * ny * nz
     all_positions = (positions[np.newaxis, :, :] + offsets[:, np.newaxis, :]).reshape(-1, 3)
 
-    # CRITICAL: Filter at MOLECULE boundaries, not individual atoms
-    # This prevents incomplete molecules that cause index overflow bugs
-    # Also filter out molecules that span the PBC boundary (atoms outside [0, target_region))
+    # CRITICAL: Wrap and filter molecules as UNITS
+    # This preserves molecular integrity when molecules span the PBC boundary.
+    # Molecules with atoms outside [0, target_region) are wrapped based on their
+    # center of mass, then individual atoms are clamped into the box.
+    n_tiled_molecules = len(all_positions) // atoms_per_molecule
     tol = 1e-10
 
-    # Count total molecules in tiled structure
-    n_tiled_molecules = len(all_positions) // atoms_per_molecule
-
-    # Check each molecule: keep only if ALL its atoms are inside target region
-    # AND all atoms are >= 0 (lower bound check)
-    # This filters out molecules that span the PBC boundary of the original unit cell
     keep_molecules = []
     for mol_idx in range(n_tiled_molecules):
         start_atom = mol_idx * atoms_per_molecule
         end_atom = start_atom + atoms_per_molecule
         mol_atoms = all_positions[start_atom:end_atom]
 
-        # Check if ALL atoms of this molecule are inside target region [0, target_region)
-        all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
-        all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
-        all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
-
-        if all_inside_x and all_inside_y and all_inside_z:
-            keep_molecules.append(mol_idx)
+        # Wrap molecule to fit inside the target region
+        # This handles molecules that span PBC boundaries (e.g., hydrate guests at origin)
+        # Strategy: wrap based on center of mass, then clamp atoms that extend slightly beyond
+        
+        # Step 1: Shift molecule so its COM is in [0, target_region)
+        for dim in range(3):
+            com = mol_atoms[:, dim].mean()
+            # Wrap COM into [0, target_region)
+            # Use modulo operation for cleaner wrapping
+            if com < 0:
+                # Shift up by enough boxes to bring COM into range
+                n_boxes = int(np.ceil(-com / target_region[dim]))
+                all_positions[start_atom:end_atom, dim] += n_boxes * target_region[dim]
+                mol_atoms = all_positions[start_atom:end_atom]
+            elif com >= target_region[dim]:
+                # Shift down by enough boxes to bring COM into range
+                n_boxes = int(np.floor(com / target_region[dim]))
+                all_positions[start_atom:end_atom, dim] -= n_boxes * target_region[dim]
+                mol_atoms = all_positions[start_atom:end_atom]
+        
+        # Step 2: Clamp individual atoms into [0, target_region)
+        # This handles atoms that extend slightly beyond boundaries due to molecular size
+        for dim in range(3):
+            # Wrap atoms that are < 0 by adding target_region
+            below_zero = mol_atoms[:, dim] < 0
+            if np.any(below_zero):
+                mol_atoms[below_zero, dim] += target_region[dim]
+            
+            # Wrap atoms that are >= target_region by subtracting target_region
+            above_box = mol_atoms[:, dim] >= target_region[dim]
+            if np.any(above_box):
+                mol_atoms[above_box, dim] -= target_region[dim]
+            
+            # Update all_positions with the clamped atoms
+            all_positions[start_atom:end_atom, dim] = mol_atoms[:, dim]
+        
+        # After wrapping and clamping, accept the molecule
+        keep_molecules.append(mol_idx)
 
     if not keep_molecules:
         return np.zeros((0, 3), dtype=float), 0
