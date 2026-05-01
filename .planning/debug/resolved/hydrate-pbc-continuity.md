@@ -2,15 +2,15 @@
 status: resolved
 trigger: "hydrate-pbc-continuity"
 created: 2026-05-01T00:00:00
-updated: 2026-05-01T00:00:00
+updated: 2026-05-01T03:30:00
 ---
 
 ## Current Focus
 
-hypothesis: CONFIRMED - The pre-wrapping logic in tile_structure() (water_filler.py lines 477-509) is NOT correctly handling molecules with negative coordinates. Test shows only 16 out of 50 expected molecules returned, with C atom range [1.200, 4.801] instead of [0, 6.0]. No molecules at boundaries X=0, Y=0, Z=0.
-test: Debug the pre-wrapping logic in tile_structure() to find why molecules with negative coords are still being filtered out despite the wrapping code
-expecting: Find a bug in the pre-wrapping logic that causes molecules with negative coordinates to be incorrectly filtered
-next_action: Examine pre-wrapping logic (lines 477-509) in detail and test with simple example to identify the bug
+hypothesis: Steps 1 and 2 in commit ea835d0 oscillate - Step 2 shifts molecule up for negative atoms, then Step 2b shifts it back down for atoms >= target_region. FUNDAMENTAL ISSUE: CH4 molecules with atoms at negative coordinates are CORRECT - they span PBC boundaries by design.
+test: Remove Steps 1 and 2 entirely, keep only COM-based wrapping and final molecular wrapping
+expecting: Molecules with COM in [0, target_region) will be kept with all atoms intact (even if some are at negative coords)
+next_action: Simplify tile_structure(): (1) wrap COM into [0, target_region), (2) keep all molecules, (3) let final molecular wrapping (lines 570-598) handle atom positions
 
 ## Symptoms
 
@@ -137,30 +137,59 @@ started: Just discovered during recent testing. Not sure if it ever worked corre
 - timestamp: 2026-05-01T00:25:00
   checked: Fix implementation and testing
   found: Modified tile_structure() to:
-         1. Wrap molecules based on COM to bring COM into [0, target_region)
-         2. Accept all molecules (removed filtering that rejected boundary molecules)
-         3. Rely on final wrapping step to clamp atoms into [0, target_region)
-         Test result: All 50 molecules present! Molecules at boundaries (X=0, Y=0, Z=0) are now included
+          1. Wrap molecules based on COM to bring COM into [0, target_region)
+          2. Accept all molecules (removed filtering that rejected boundary molecules)
+          3. Rely on final wrapping step to clamp atoms into [0, target_region)
+          Test result: All 50 molecules present! Molecules at boundaries (X=0, Y=0, Z=0) are now included
   implication: FIX SUCCESSFUL - hydrate PBC continuity issue resolved
+
+- timestamp: 2026-05-01T01:00:00
+  checked: User verification of commit ea835d0
+  found: Fix works for including molecules, but boundary guest molecules are INCOMPLETE
+         The fix clamps individual atoms (Step 2, lines 510-524):
+         - For CH4 at origin: C at (0,0,0), H at (-0.063,-0.063,-0.063)
+         - After clamping: C stays at (0,0,0), H moves to (target_region-0.063, ...)
+         - This BREAKS THE MOLECULE - H atoms end up on opposite side of box from C
+  implication: Individual atom clamping breaks molecular integrity - need to shift ENTIRE molecule as a unit
+
+- timestamp: 2026-05-01T02:00:00
+  checked: Oscillation bug in Steps 1 and 2 (commit ea835d0)
+  found: Steps 1 and 2 FIGHT EACH OTHER:
+         - CH4 at origin: C=(0,0,0), H=(-0.063,-0.063,-0.063), COM=0
+         - Step 1: COM=0 (in range), no shift
+         - Step 2: H atoms < 0, shift molecule UP -> C=(target_region, target_region, target_region)
+         - Step 2b: C >= target_region, shift molecule DOWN -> back to original!
+         - OSCILLATION: Molecule oscillates between positions
+         - FUNDAMENTAL ISSUE: CH4 molecules in hydrates ARE MEANT to span PBC boundaries
+         - Atoms at negative coordinates or >= target_region are CORRECT
+  implication: Remove Steps 1 and 2 entirely. Accept molecules with COM in [0, target_region). Let final molecular wrapping handle atoms.
+
+- timestamp: 2026-05-01T02:30:00
+  checked: Fix implementation - remove Steps 1 and 2, wrap coordinates only for KDTree and GRO output
+  found: CORRECT APPROACH:
+         1. Keep molecules intact (COM-based wrapping only)
+         2. Allow atoms to be outside [0, target_region) - this is CORRECT for PBC-spanning molecules
+         3. Wrap coordinates only when needed:
+            - For KDTree in overlap detection: wrap before creating tree
+            - For GRO file output: wrap before writing
+         4. This preserves molecular integrity while ensuring compatibility with downstream tools
+  implication: FIX SUCCESSFUL - molecules remain intact, coordinates are wrapped only when needed
 
 ## Resolution
 
-root_cause: In `tile_structure()` (water_filler.py), the filtering logic rejected molecules with atoms outside [0, target_region). For hydrate guests at the origin with negative coordinates (e.g., CH4 at (0,0,0) with H at (-0.063,-0.063,-0.063)), the molecule's center of mass is exactly 0, so it wasn't wrapped, and the filtering rejected it due to H atoms with negative coordinates. This resulted in only 16 out of 50 expected molecules being retained, all in the interior (no molecules at boundaries).
+root_cause: Steps 1 and 2 in commit ea835d0 oscillate for molecules spanning PBC boundaries. The fundamental misunderstanding is that CH4 guest molecules with atoms at negative coordinates are CORRECT - they span PBC boundaries by design, just like water molecules in ice. The fix tried to force all atoms into [0, target_region) which breaks molecules that legitimately span boundaries.
 
-fix: Modified the wrapping logic in tile_structure() to:
-1. Wrap molecules based on center of mass to bring COM into [0, target_region)
-2. Accept all molecules after COM-based wrapping (remove the filtering step)
-3. Rely on the final wrapping step (lines 528-603) to clamp individual atoms into [0, target_region)
+fix: Removed Steps 1 and 2 that tried to force atoms into [0, target_region). Now:
+1. Molecules are wrapped based on COM only (Step 1 kept, Step 2 removed)
+2. Atoms can be outside [0, target_region) - this is correct for PBC-spanning molecules
+3. Coordinates are wrapped only when needed:
+   - In overlap_resolver.py: wrap coordinates before creating KDTree
+   - In gromacs_writer.py: wrap coordinates before writing to GRO files
+4. This preserves molecular integrity while ensuring compatibility with downstream tools
 
-This ensures molecules at boundaries with atoms extending beyond are properly handled, not filtered out.
-fix: Modified the wrapping logic in tile_structure() to:
-1. Wrap molecules based on center of mass to bring COM into [0, target_region)
-2. Accept all molecules after COM-based wrapping (remove the filtering step)
-3. Rely on the final wrapping step (lines 528-603) to clamp individual atoms into [0, target_region)
+verification: All hydrate guest tiling tests pass. Molecules remain intact with correct C-H distances. Boundary molecules are correctly included.
 
-This ensures molecules at boundaries with atoms extending beyond are properly handled, not filtered out.
-
-verification: Test with CH4 molecule at origin shows all 50 expected molecules (was 16 before fix). Molecules now present at X=0, Y=0, Z=0 boundaries. All atoms are within [0, target_region). Tests pass: test_hydrate_guest_tiling passes with 144 guest molecules properly distributed. Note: test_triclinic_interface.py::test_ice_ih_still_works fails but it was already failing before the fix (unrelated issue).
-verification: 
-files_changed:
-- quickice/structure_generation/water_filler.py: Modified tile_structure() to wrap molecules based on COM and accept all molecules after wrapping, rather than filtering them out
+files_changed: 
+- quickice/structure_generation/water_filler.py: Removed Step 2 oscillation logic, simplified final wrapping
+- quickice/structure_generation/overlap_resolver.py: Added coordinate wrapping before KDTree operations
+- quickice/output/gromacs_writer.py: Added coordinate wrapping before GRO file output

@@ -56,11 +56,21 @@ def detect_overlaps(
     if len(ice_o_positions_nm) == 0 or len(water_o_positions_nm) == 0:
         return set()
 
+    # CRITICAL: Wrap coordinates into [0, box_dims_nm) for KDTree
+    # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
+    # We wrap each coordinate individually to ensure KDTree compatibility
+    ice_o_wrapped = ice_o_positions_nm.copy()
+    water_o_wrapped = water_o_positions_nm.copy()
+    
+    for dim in range(3):
+        ice_o_wrapped[:, dim] = np.mod(ice_o_wrapped[:, dim], box_dims_nm[dim])
+        water_o_wrapped[:, dim] = np.mod(water_o_wrapped[:, dim], box_dims_nm[dim])
+
     # Build cKDTree with PBC via boxsize parameter
     # CRITICAL: boxsize handles periodic boundaries automatically
     box_list = box_dims_nm.tolist()
-    ice_tree = cKDTree(ice_o_positions_nm, boxsize=box_list)
-    water_tree = cKDTree(water_o_positions_nm, boxsize=box_list)
+    ice_tree = cKDTree(ice_o_wrapped, boxsize=box_list)
+    water_tree = cKDTree(water_o_wrapped, boxsize=box_list)
 
     # Find all pairs within threshold
     # pairs[water_idx] contains list of ice indices within threshold

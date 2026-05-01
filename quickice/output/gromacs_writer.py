@@ -12,6 +12,27 @@ import numpy as np
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
 
 
+def wrap_positions_into_box(positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
+    """Wrap positions into the simulation box [0, cell[i,i]).
+    
+    For molecules spanning PBC boundaries, some atoms may be outside [0, boxsize).
+    This function wraps each coordinate individually into the box for GRO file output.
+    
+    Args:
+        positions: (N, 3) atom positions in nm
+        cell: (3, 3) cell vectors as ROW vectors
+    
+    Returns:
+        (N, 3) positions wrapped into [0, cell[i,i])
+    """
+    wrapped = positions.copy()
+    for dim in range(3):
+        # Wrap using modulo: coord % box_size
+        # np.mod handles negative numbers correctly
+        wrapped[:, dim] = np.mod(wrapped[:, dim], cell[dim, dim])
+    return wrapped
+
+
 # TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
 TIP4P_ICE_ALPHA = 0.13458335
 
@@ -211,12 +232,17 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     nmol = candidate.nmolecules
     n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW (MW computed from O, H, H)
     
+    # Wrap positions into box for GRO file output
+    # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
+    # We wrap them here for valid GRO format
+    wrapped_positions = wrap_positions_into_box(candidate.positions, candidate.cell)
+    
     # Bounds check: ensure positions array is large enough
     # Ice candidates have 3 atoms per molecule (O, H, H), not 4
     expected_atoms = nmol * 3
-    if len(candidate.positions) < expected_atoms:
+    if len(wrapped_positions) < expected_atoms:
         raise ValueError(
-            f"positions has {len(candidate.positions)} atoms but "
+            f"positions has {len(wrapped_positions)} atoms but "
             f"nmolecules={nmol} needs {expected_atoms} (3 atoms per ice molecule)"
         )
     
@@ -237,10 +263,10 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
         for mol_idx in range(nmol):
             base_idx = mol_idx * 3  # Ice has 3 atoms per molecule: O, H, H
             
-            # Read O, H1, H2 positions from Candidate
-            o_pos = candidate.positions[base_idx]
-            h1_pos = candidate.positions[base_idx + 1]
-            h2_pos = candidate.positions[base_idx + 2]
+            # Read O, H1, H2 positions from wrapped positions
+            o_pos = wrapped_positions[base_idx]
+            h1_pos = wrapped_positions[base_idx + 1]
+            h2_pos = wrapped_positions[base_idx + 2]
             
             # Compute MW virtual site position
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
@@ -493,6 +519,11 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     guest_output_atoms = iface.guest_atom_count if iface.guest_atom_count > 0 else 0
     n_atoms = ice_output_atoms + water_output_atoms + guest_output_atoms
     
+    # Wrap positions into box for GRO file output
+    # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
+    # We wrap them here for valid GRO format
+    wrapped_positions = wrap_positions_into_box(iface.positions, iface.cell)
+    
     atom_num = 0
 
     with open(filepath, 'w') as f:
@@ -522,17 +553,17 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         # OR: 4 atoms per molecule (OW, HW1, HW2, MW) → normalize to 4-atom
         for mol_idx in range(iface.ice_nmolecules):
             base_idx = mol_idx * atoms_per_ice_mol
-            o_pos = iface.positions[base_idx]
+            o_pos = wrapped_positions[base_idx]
             
             # Get H positions based on atoms per molecule
             if atoms_per_ice_mol == 3:
                 # Classic ice: O, H, H
-                h1_pos = iface.positions[base_idx + 1]
-                h2_pos = iface.positions[base_idx + 2]
+                h1_pos = wrapped_positions[base_idx + 1]
+                h2_pos = wrapped_positions[base_idx + 2]
             else:
                 # Hydrate: OW, HW1, HW2, MW
-                h1_pos = iface.positions[base_idx + 1]
-                h2_pos = iface.positions[base_idx + 2]
+                h1_pos = wrapped_positions[base_idx + 1]
+                h2_pos = wrapped_positions[base_idx + 2]
             
             mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
@@ -578,7 +609,7 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             for i, atom_name in enumerate(atom_names):
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                pos = iface.positions[base_idx + i]
+                pos = wrapped_positions[base_idx + i]
                 lines.append(f"{res_num:5d}SOL  "
                             f"{atom_name:>5s}{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
@@ -615,7 +646,7 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 
                 # Get this molecule's atom names and positions
                 mol_atom_names = guest_atom_names[mol_start:mol_end]
-                mol_positions = iface.positions[guest_start + mol_start:guest_start + mol_end]
+                mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
                 
                 # Reorder to match .itp canonical order (C first for ch4, O first for thf)
                 reorder_mapping = None

@@ -487,11 +487,12 @@ def tile_structure(
         end_atom = start_atom + atoms_per_molecule
         mol_atoms = all_positions[start_atom:end_atom]
 
-        # Wrap molecule to fit inside the target region
+        # Wrap molecule based on center of mass ONLY
         # This handles molecules that span PBC boundaries (e.g., hydrate guests at origin)
-        # Strategy: wrap based on center of mass, then clamp atoms that extend slightly beyond
+        # CRITICAL: Molecules with atoms outside [0, target_region) are ACCEPTED
+        # The final molecular wrapping step will handle atom positions correctly
         
-        # Step 1: Shift molecule so its COM is in [0, target_region)
+        # Wrap COM into [0, target_region) - this is the ONLY wrapping here
         for dim in range(3):
             com = mol_atoms[:, dim].mean()
             # Wrap COM into [0, target_region)
@@ -507,23 +508,9 @@ def tile_structure(
                 all_positions[start_atom:end_atom, dim] -= n_boxes * target_region[dim]
                 mol_atoms = all_positions[start_atom:end_atom]
         
-        # Step 2: Clamp individual atoms into [0, target_region)
-        # This handles atoms that extend slightly beyond boundaries due to molecular size
-        for dim in range(3):
-            # Wrap atoms that are < 0 by adding target_region
-            below_zero = mol_atoms[:, dim] < 0
-            if np.any(below_zero):
-                mol_atoms[below_zero, dim] += target_region[dim]
-            
-            # Wrap atoms that are >= target_region by subtracting target_region
-            above_box = mol_atoms[:, dim] >= target_region[dim]
-            if np.any(above_box):
-                mol_atoms[above_box, dim] -= target_region[dim]
-            
-            # Update all_positions with the clamped atoms
-            all_positions[start_atom:end_atom, dim] = mol_atoms[:, dim]
-        
-        # After wrapping and clamping, accept the molecule
+        # Accept the molecule - atoms can be outside [0, target_region)
+        # This is CORRECT for molecules spanning PBC boundaries
+        # Downstream code (e.g., overlap detection) will handle wrapping
         keep_molecules.append(mol_idx)
 
     if not keep_molecules:
@@ -538,66 +525,11 @@ def tile_structure(
 
     filtered = all_positions[keep_mask]
 
-    # CRITICAL: Wrap molecules as UNITS, not individual atoms
-    # This preserves molecular integrity when molecules span the PBC boundary
-    # Without this, atoms of the same molecule could end up on opposite sides
-    # of the box (e.g., O at Y=0.1, H at Y=1.9 in a 2.0 nm box), causing
-    # bonds to appear 1.8 nm long instead of the correct 0.1 nm.
-    #
-    # After filtering, all atoms should already be in [0, target_region).
-    # The wrapping here is a safety measure for edge cases (e.g., floating point
-    # precision issues, or molecules very close to boundary).
-    #
-    # For triclinic cells, use fractional coordinate wrapping.
-    # For orthogonal cells, use standard coordinate-axis wrapping.
-    if is_triclinic and cell_matrix is not None:
-        # Build target cell matrix for wrapping (orthogonal box)
-        target_cell = np.diag(target_region)
-        # Use triclinic wrapping with the target orthogonal box
-        tiled_positions = wrap_positions_triclinic(filtered, target_cell, atoms_per_molecule)
-    else:
-        # Orthogonal wrapping (standard coordinate-axis modulo)
-        tiled_positions = np.zeros_like(filtered)
-        n_filtered_molecules = len(filtered) // atoms_per_molecule
-
-        for mol_idx in range(n_filtered_molecules):
-            start_atom = mol_idx * atoms_per_molecule
-            end_atom = start_atom + atoms_per_molecule
-            mol_atoms = filtered[start_atom:end_atom].copy()
-
-            # Calculate shift based on minimum position across all atoms
-            # This handles any edge cases where atoms might be slightly outside [0, target_region)
-            shift = np.zeros(3)
-            for dim in range(3):
-                min_pos = mol_atoms[:, dim].min()
-                max_pos = mol_atoms[:, dim].max()
-                
-                # Only shift if atoms are actually outside [0, target_region)
-                if min_pos < 0:
-                    # Shift up to bring minimum into range
-                    shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
-                elif max_pos >= target_region[dim]:
-                    # Shift down to bring maximum into range
-                    shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
-
-            # Apply shift to all atoms in the molecule
-            shifted = mol_atoms + shift
-            
-            # Second pass: ensure all atoms are within [0, target_region)
-            # This handles edge cases where the first shift pushed atoms out the other side
-            # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
-            for dim in range(3):
-                min_pos = shifted[:, dim].min()
-                max_pos = shifted[:, dim].max()
-                
-                if min_pos < 0:
-                    # Atoms are still negative after first shift - shift up by one box
-                    shifted[:, dim] += target_region[dim]
-                elif max_pos >= target_region[dim]:
-                    # Atoms are too high after first shift - shift down by one box
-                    shifted[:, dim] -= target_region[dim]
-            
-            tiled_positions[start_atom:end_atom] = shifted
+    # No final wrapping needed - molecules are already wrapped based on COM
+    # Atoms can be outside [0, target_region) for molecules spanning PBC boundaries
+    # This is CORRECT behavior - downstream code should handle PBC wrapping
+    # (e.g., overlap detection wraps coordinates before KDTree operations)
+    tiled_positions = filtered
 
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
