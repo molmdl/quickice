@@ -45,9 +45,9 @@ def wrap_molecules_into_box(
     molecules across periodic boundary conditions.
     
     For each molecule:
-    1. Calculate center (using first atom as reference)
-    2. Wrap center into box
-    3. Apply same shift to all atoms in molecule
+    1. Detect if atoms are split across PBC (distance > box_size/2)
+    2. Unwrap atoms to be together in same periodic image
+    3. Wrap the whole molecule into [0, box_size)
     
     Args:
         positions: (N, 3) atom positions in nm
@@ -64,24 +64,47 @@ def wrap_molecules_into_box(
         count = mol.count
         
         # Get positions for this molecule
-        mol_positions = wrapped[start:start + count]
+        mol_positions = wrapped[start:start + count].copy()
         
-        # Use first atom as reference point for wrapping
-        # (could use center of mass, but first atom is simpler and works)
-        ref_pos = mol_positions[0].copy()
+        # Step 1: Unwrap atoms that are split across PBC
+        # Use first atom as reference
+        ref_pos = mol_positions[0]
         
-        # Calculate shift needed to wrap reference atom into box
+        # For each other atom, check if it's split across PBC
+        for i in range(1, len(mol_positions)):
+            delta = mol_positions[i] - ref_pos
+            
+            # Check each dimension
+            for dim in range(3):
+                box_size = cell[dim, dim]
+                if box_size > 0:
+                    # If distance is > box_size/2, the atom is on the other side of the box
+                    if delta[dim] > box_size / 2:
+                        # Atom is "ahead" - shift it back
+                        mol_positions[i, dim] -= box_size
+                    elif delta[dim] < -box_size / 2:
+                        # Atom is "behind" - shift it forward
+                        mol_positions[i, dim] += box_size
+        
+        # Step 2: Now wrap the whole molecule into [0, box_size)
+        # Use center of molecule as reference
+        center = np.mean(mol_positions, axis=0)
+        
+        # Calculate shift to wrap center into [0, box_size)
         shift = np.zeros(3)
         for dim in range(3):
             box_size = cell[dim, dim]
-            # Wrap reference position into [0, box_size)
-            ref_wrapped = np.mod(ref_pos[dim], box_size)
-            # Calculate shift needed
-            shift[dim] = ref_wrapped - ref_pos[dim]
+            if box_size > 0:
+                # Wrap center into [0, box_size)
+                center_wrapped = np.mod(center[dim], box_size)
+                # Calculate shift needed
+                shift[dim] = center_wrapped - center[dim]
         
         # Apply shift to all atoms in molecule
-        if np.any(shift != 0):
-            wrapped[start:start + count] += shift
+        mol_positions += shift
+        
+        # Store wrapped positions
+        wrapped[start:start + count] = mol_positions
     
     return wrapped
 
