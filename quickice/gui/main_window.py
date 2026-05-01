@@ -725,27 +725,6 @@ class MainWindow(QMainWindow):
         # Re-enable generate button
         self.hydrate_panel.generate_button.setEnabled(True)
     
-    @Slot(object)
-    def _on_export_to_interface(self, hydrate_structure):
-        """Handle export_to_interface_requested signal from hydrate panel.
-        
-        Switches to Interface Construction tab and transfers hydrate structure.
-        Also renders hydrate with guest molecules in viewer (Issue 2).
-        
-        Args:
-            hydrate_structure: HydrateStructure to use as input
-        """
-        # Switch to Interface Construction tab (index 2)
-        self.tab_widget.setCurrentIndex(2)
-        
-        # Pre-populate interface panel from hydrate structure
-        self.interface_panel.set_from_hydrate(hydrate_structure)
-        
-        # Render hydrate structure with guest molecules in viewer (Issue 2)
-        if self.interface_panel.is_vtk_available():
-            self.interface_panel._interface_viewer.set_hydrate_structure(hydrate_structure)
-            self.interface_panel.hide_placeholder()
-    
     def _on_ion_config_changed(self):
         """Handle ion configuration change."""
         config = self.ion_panel.get_configuration()

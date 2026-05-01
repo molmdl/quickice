@@ -441,11 +441,3 @@ class HydratePanel(QWidget):
         """Set hydrate structure for display in viewer."""
         self._current_structure = structure
         self.hydrate_viewer.set_hydrate_structure(structure)
-    
-    def _on_use_in_interface_clicked(self):
-        """Handle Use in Interface button click.
-        
-        Emits signal to transfer hydrate structure to Interface tab.
-        """
-        if self._current_structure is not None:
-            self.export_to_interface_requested.emit(self._current_structure)
