@@ -432,8 +432,8 @@ quickice/
 │   ├── phase_mapping/   # T,P → ice polymorph lookup
 │   ├── structure_generation/  # GenIce2 integration
 │   ├── ranking/         # Candidate scoring
-├── data/                # Reference data files
-├── output/              # Default output directory
+│   ├── output/          # PDB/GROMACS export module
+│   └── data/            # Bundled force field files
 ├── sample_output/       # Sample CLI output directory
 ├── environment.yml      # Conda environment file
 ├── setup.sh             # Environment file to source in a new shell
