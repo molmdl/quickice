@@ -1,21 +1,21 @@
 {
-  "mode": "yolo",
+  "mode": "interactiv3",
   "depth": "comprehensive",
-  "parallelization": true,
+  "parallelization": false,
   "commit_docs": true,
   "model_profile": "balanced",
   "profiles": {
     "active_profile": "balanced",
     "presets": {
       "quality": {
-        "planning": "openrouter/z-ai/glm-5",
-        "execution": "openrouter/z-ai/glm-5",
-        "verification": "openrouter/z-ai/glm-5"
+        "planning": "synthetic/hf:zai-org/GLM-5",
+        "execution": "synthetic/hf:zai-org/GLM-5",
+        "verification": "synthetic/hf:zai-org/GLM-5"
       },
       "balanced": {
-        "planning": "openrouter/z-ai/glm-5",
-        "execution": "openrouter/z-ai/glm-5",
-        "verification": "openrouter/minimax/minimax-m2.5"
+        "planning": "synthetic/hf:zai-org/GLM-5",
+        "execution": "synthetic/hf:zai-org/GLM-5",
+        "verification": "synthetic/hf:zai-org/GLM-5"
       },
       "budget": {
         "planning": "opencode/big-pickle",
