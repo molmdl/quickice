@@ -385,6 +385,17 @@ Input values are outside the valid range. Check the validation rules above.
 
 ---
 
+## Validation
+
+QuickIce validates generated structures using spglib for crystal
+symmetry analysis:
+
+- Repository: https://github.com/atztogo/spglib
+- Paper: "Spglib: a software library for crystal symmetry search"
+- DOI: https://doi.org/10.1080/27660400.2024.2384822
+
+---
+
 ## See Also
 
 - [Ranking Methodology](./ranking.md) - How candidates are scored and ranked
