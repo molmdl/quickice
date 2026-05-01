@@ -295,6 +295,39 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     adjusted_box_x, nx = round_to_periodicity(config.box_x, ice_cell_dims[0])
     adjusted_box_y, ny = round_to_periodicity(config.box_y, ice_cell_dims[1])
     adjusted_ice_thickness, nz_ice = round_to_periodicity(config.ice_thickness, ice_cell_dims[2])
+    
+    # Adjust water thickness to multiples of water template cell
+    # This prevents overwrapping that causes overlapping water molecules
+    # CRITICAL: Water template cell is scaled by density, so we must calculate the scaled dimension
+    from quickice.structure_generation.water_filler import (
+        TEMPLATE_DENSITY_GCM3,
+        load_water_template
+    )
+    
+    # Get water template cell dimension
+    _, _, water_template_box = load_water_template()
+    water_template_cell = water_template_box[0]  # Assuming cubic template
+    
+    # Calculate water density and scaled cell dimension
+    T = candidate.metadata.get('temperature', 273.15)
+    P = candidate.metadata.get('pressure', 0.101325)
+    target_water_density = water_density_gcm3(T, P)
+    scale = (TEMPLATE_DENSITY_GCM3 / target_water_density) ** (1.0 / 3.0)
+    scaled_water_cell = water_template_cell * scale
+    
+    # CRITICAL: Box dimensions must be multiples of BOTH ice and water cells
+    # to prevent overwrapping in water layer
+    # Adjust box_x and box_y to next multiple of water cell if needed
+    if adjusted_box_x % scaled_water_cell > 0.001:
+        # Round up to next multiple of water cell
+        nx_water = int(np.ceil(adjusted_box_x / scaled_water_cell))
+        adjusted_box_x = nx_water * scaled_water_cell
+    if adjusted_box_y % scaled_water_cell > 0.001:
+        ny_water = int(np.ceil(adjusted_box_y / scaled_water_cell))
+        adjusted_box_y = ny_water * scaled_water_cell
+    
+    # Adjust water thickness to multiple of scaled cell
+    adjusted_water_thickness, nz_water = round_to_periodicity(config.water_thickness, scaled_water_cell)
 
     # Track adjustments for reporting
     adjustments = []
@@ -304,10 +337,12 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         adjustments.append(f"  box_y: {config.box_y:.3f} → {adjusted_box_y:.3f} nm ({ny} cells)")
     if abs(adjusted_ice_thickness - config.ice_thickness) > 0.001:
         adjustments.append(f"  ice_thickness: {config.ice_thickness:.3f} → {adjusted_ice_thickness:.3f} nm ({nz_ice} cells)")
+    if abs(adjusted_water_thickness - config.water_thickness) > 0.001:
+        adjustments.append(f"  water_thickness: {config.water_thickness:.3f} → {adjusted_water_thickness:.3f} nm ({nz_water} cells)")
 
-    # Recalculate box_z to match adjusted ice thickness
+    # Recalculate box_z to match adjusted ice and water thickness
     # box_z = 2 * ice_thickness + water_thickness
-    adjusted_box_z = 2 * adjusted_ice_thickness + config.water_thickness
+    adjusted_box_z = 2 * adjusted_ice_thickness + adjusted_water_thickness
     if abs(adjusted_box_z - config.box_z) > 0.001:
         adjustments.append(f"  box_z: {config.box_z:.3f} → {adjusted_box_z:.3f} nm (auto-adjusted)")
 
@@ -335,7 +370,7 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     )
     # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
     top_ice_positions = top_ice_positions.copy()
-    top_ice_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
+    top_ice_positions[:, 2] += adjusted_ice_thickness + adjusted_water_thickness
 
     # PBC wrap: wrap molecules that span the boundary after shifting
     # After shift, atoms should be in [adjusted_ice_thickness + water_thickness, adjusted_box_z)
@@ -377,19 +412,14 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     else:
         ice_atom_names = ["O", "H", "H"] * total_ice_nmolecules
 
-    # Calculate water density from ice temperature/pressure
-    T = candidate.metadata.get('temperature', 273.15)
-    P = candidate.metadata.get('pressure', 0.101325)
-    target_water_density = water_density_gcm3(T, P)
-
-    # Fill water in middle region: [adjusted_box_x, adjusted_box_y, water_thickness]
-    # Note: water thickness is NOT adjusted - it's the gap between ice layers
+    # Fill water in middle region: [adjusted_box_x, adjusted_box_y, adjusted_water_thickness]
+    # Water thickness is adjusted to water template cell periodicity to prevent overwrapping
     water_positions, water_atom_names, water_nmolecules = fill_region_with_water(
-        np.array([adjusted_box_x, adjusted_box_y, config.water_thickness]),
+        np.array([adjusted_box_x, adjusted_box_y, adjusted_water_thickness]),
         target_density=target_water_density
     )
 
-    # Shift water to Z = [adjusted_ice_thickness, adjusted_ice_thickness + water_thickness]
+    # Shift water to Z = [adjusted_ice_thickness, adjusted_ice_thickness + adjusted_water_thickness]
     if len(water_positions) > 0:
         water_positions = water_positions.copy()
         water_positions[:, 2] += adjusted_ice_thickness
@@ -493,10 +523,10 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         )
 
         # Shift top guests to their actual position
-        # Top ice starts at Z = adjusted_ice_thickness + water_thickness
+        # Top ice starts at Z = adjusted_ice_thickness + adjusted_water_thickness
         if len(top_guest_positions) > 0:
             top_guest_positions = top_guest_positions.copy()
-            top_guest_positions[:, 2] += adjusted_ice_thickness + config.water_thickness
+            top_guest_positions[:, 2] += adjusted_ice_thickness + adjusted_water_thickness
 
             # Wrap top guests as whole molecules after shifting
             # The shift can cause molecules near the boundary to span PBC

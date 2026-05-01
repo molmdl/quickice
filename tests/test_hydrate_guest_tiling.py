@@ -231,11 +231,38 @@ def test_slab_hydrate_guest_z_coverage():
     # There should be guests throughout the layer, not just at one Z-level
     z_coords = guest_positions[:, 2]
     
-    # Define layer boundaries
+    # Get actual box dimensions from interface (may be adjusted for periodicity)
+    box = iface.cell
+    if box.ndim == 2:
+        actual_box_z = box[2, 2]
+    else:
+        actual_box_z = box[2]
+    
+    # For slab mode: box_z = 2 * ice_thickness + water_thickness
+    # Extract actual dimensions from interface positions
+    # Ice atoms come first, so we can get ice Z range from first ice atoms
+    # Use OW atoms (every 4th for hydrate) to avoid H atoms
+    ice_ow_positions = iface.positions[:iface.ice_atom_count:4]
+    if len(ice_ow_positions) > 0:
+        ice_z_min = ice_ow_positions[:, 2].min()
+        ice_z_max = ice_ow_positions[:, 2].max()
+        # Determine if this is bottom or top ice
+        if ice_z_min < actual_box_z / 2:
+            # Bottom ice
+            actual_ice_thickness = ice_z_max - ice_z_min + 0.2  # Add margin for atom size
+        else:
+            # This shouldn't happen - we should have both layers
+            actual_ice_thickness = config.ice_thickness
+    else:
+        actual_ice_thickness = config.ice_thickness
+    
+    actual_water_thickness = actual_box_z - 2 * actual_ice_thickness
+    
+    # Define layer boundaries using actual dimensions
     bottom_min = 0.0
-    bottom_max = config.ice_thickness
-    top_min = config.ice_thickness + config.water_thickness
-    top_max = config.box_z
+    bottom_max = actual_ice_thickness
+    top_min = actual_ice_thickness + actual_water_thickness
+    top_max = actual_box_z
     
     # Check bottom layer coverage
     bottom_mask = (z_coords >= bottom_min) & (z_coords < bottom_max)
@@ -246,7 +273,7 @@ def test_slab_hydrate_guest_z_coverage():
         print(f"\nBottom layer guest Z-range: {bottom_z.min():.3f} to {bottom_z.max():.3f} (span: {z_range:.3f} nm)")
         
         # Should span most of the ice layer (at least 80% of ice_thickness)
-        expected_span = config.ice_thickness * 0.8
+        expected_span = actual_ice_thickness * 0.8
         assert z_range >= expected_span, \
             f"Bottom layer guests don't cover enough Z-range: {z_range:.3f} < {expected_span:.3f}"
     
@@ -259,7 +286,7 @@ def test_slab_hydrate_guest_z_coverage():
         print(f"Top layer guest Z-range: {top_z.min():.3f} to {top_z.max():.3f} (span: {z_range:.3f} nm)")
         
         # Should span most of the ice layer
-        expected_span = config.ice_thickness * 0.8
+        expected_span = actual_ice_thickness * 0.8
         assert z_range >= expected_span, \
             f"Top layer guests don't cover enough Z-range: {z_range:.3f} < {expected_span:.3f}"
 
