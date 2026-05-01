@@ -306,10 +306,26 @@ def tile_structure(
     lx, ly, lz = target_region
     a, b, c = cell_dims
 
-    # Calculate tiling counts (ceil to ensure full coverage)
-    nx = math.ceil(lx / a) if a > 0 else 1
-    ny = math.ceil(ly / b) if b > 0 else 1
-    nz = math.ceil(lz / c) if c > 0 else 1
+    # Calculate tiling counts
+    # Use ceil for coverage, but avoid over-tiling when structure already fits
+    # CRITICAL FIX: If structure covers >= 95% of target, use n=1 to prevent overlaps
+    # This fixes hydrate->interface conversion where hydrate cell ~7.2nm but target box 7.45nm
+    tolerance = 0.05  # 5% tolerance
+    
+    def calc_tile_count(target_dim, cell_dim):
+        """Calculate number of tiles needed, avoiding over-tiling."""
+        if cell_dim <= 0:
+            return 1
+        ratio = target_dim / cell_dim
+        # If structure already covers >= 95% of target, don't create extra tile
+        if ratio <= 1.0 + tolerance:
+            return 1
+        else:
+            return math.ceil(ratio)
+    
+    nx = calc_tile_count(lx, a)
+    ny = calc_tile_count(ly, b)
+    nz = calc_tile_count(lz, c)
 
     # Determine atoms_per_molecule
     # This must be done BEFORE tiling to correctly filter molecules
