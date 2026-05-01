@@ -307,12 +307,12 @@ class InterfacePanel(QWidget):
         # X dimension
         self.box_x_input = QDoubleSpinBox()
         self.box_x_input.setSuffix(" nm")
-        self.box_x_input.setRange(0.5, 100.0)
+        self.box_x_input.setRange(1.0, 100.0)
         self.box_x_input.setDecimals(2)
         self.box_x_input.setSingleStep(0.5)
         self.box_x_input.setValue(5.0)
         self.box_x_input.setToolTip(
-            "Box X dimension in nm (0.5–100).\n"
+            "Box X dimension in nm (1.0–100).\n"
             "\n"
             "For POCKET mode: X must exceed pocket diameter.\n"
             "For PIECE mode: X must exceed ice candidate width."
@@ -325,12 +325,12 @@ class InterfacePanel(QWidget):
         # Y dimension
         self.box_y_input = QDoubleSpinBox()
         self.box_y_input.setSuffix(" nm")
-        self.box_y_input.setRange(0.5, 100.0)
+        self.box_y_input.setRange(1.0, 100.0)
         self.box_y_input.setDecimals(2)
         self.box_y_input.setSingleStep(0.5)
         self.box_y_input.setValue(5.0)
         self.box_y_input.setToolTip(
-            "Box Y dimension in nm (0.5–100).\n"
+            "Box Y dimension in nm (1.0–100).\n"
             "\n"
             "For POCKET mode: Y must exceed pocket diameter.\n"
             "For PIECE mode: Y must exceed ice candidate depth."
@@ -343,12 +343,12 @@ class InterfacePanel(QWidget):
         # Z dimension
         self.box_z_input = QDoubleSpinBox()
         self.box_z_input.setSuffix(" nm")
-        self.box_z_input.setRange(0.5, 100.0)
+        self.box_z_input.setRange(1.0, 100.0)
         self.box_z_input.setDecimals(2)
         self.box_z_input.setSingleStep(0.5)
         self.box_z_input.setValue(9.0)
         self.box_z_input.setToolTip(
-            "Box Z dimension in nm (0.5–100).\n"
+            "Box Z dimension in nm (1.0–100).\n"
             "\n"
             "For SLAB mode, box_z MUST equal:\n"
             "  2 × ice_thickness + water_thickness\n"

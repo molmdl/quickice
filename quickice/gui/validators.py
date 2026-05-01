@@ -122,7 +122,7 @@ def validate_box_dimension(value: str) -> Tuple[bool, str]:
         >>> validate_box_dimension("5.0")
         (True, "")
         >>> validate_box_dimension("0.1")
-        (False, "Box dimension must be between 0.5 and 100 nm")
+        (False, "Box dimension must be between 1.0 and 100 nm")
         >>> validate_box_dimension("abc")
         (False, "Box dimension must be a number")
     """
@@ -131,9 +131,9 @@ def validate_box_dimension(value: str) -> Tuple[bool, str]:
     except ValueError:
         return (False, "Box dimension must be a number")
     
-    if dim < 0.5 or dim > 100.0:
+    if dim < 1.0 or dim > 100.0:
         return (False, 
-                f"Box dimension must be between 0.5 and 100 nm. "
+                f"Box dimension must be between 1.0 and 100 nm. "
                 f"Got {dim:.2f} nm. "
                 f"Typical values: 5–10 nm for small systems, 20–50 nm for large systems."
         )

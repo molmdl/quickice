@@ -280,7 +280,7 @@ The `--mode` parameter specifies the interface geometry:
 
 All interface modes require box dimensions:
 
-- `--box-x`, `--box-y`, `--box-z`: Simulation box dimensions in nanometers (0.5–100 nm)
+- `--box-x`, `--box-y`, `--box-z`: Simulation box dimensions in nanometers (1.0–100 nm)
 
 **Slab mode constraint:** Box Z must equal `2 × ice_thickness + water_thickness`.
 
