@@ -25,7 +25,11 @@ QuickIce generates plausible ice crystal structure candidates and constructs ice
 
 **Hydrate generation:**
 - Generate clathrate hydrate structures (sI, sII, sH)
-- Select guest molecules (CH₄, THF)
+- **Guest Molecules:**
+  - CH₄ (methane)
+  - THF (tetrahydrofuran)
+  - CO₂ (carbon dioxide)
+  - H₂ (hydrogen)
 - Configure cage occupancy and supercell size
 - Export to GROMACS with bundled force field parameters
 
@@ -84,7 +88,7 @@ Water density for interface generation uses IAPWS-95 formulation for accuracy.
 
 ```bash
 # Create conda environment (includes v4.0 GUI dependencies)
-conda env create -f envronment.yml
+conda env create -f environment.yml
 ```
 
 ### Setup Environment
@@ -354,6 +358,16 @@ The `--gromacs` flag enables GROMACS format output. Use `--candidate N` to selec
 3. **File → Export Ions for GROMACS** (Ctrl+J)
 4. Exported files include Madrid2019 Na⁺/Cl⁻ parameters
 
+### Ion Force Field: Madrid2019
+
+Na⁺ and Cl⁻ ions use the Madrid2019 force field:
+
+Zeron, I. M., Pérez-Villasenor, F., & Vega, C. (2019).
+A molecular dynamics study of the ion-ion and ion-water interaction 
+parameters for NaCl in water using the Madrid-2019 force field.
+Journal of Chemical Physics, 151, 134504.
+DOI: https://doi.org/10.1063/1.5121394
+
 ### Guest Molecules: GAFF2
 
 CH₄ (methane) and THF (tetrahydrofuran) guest molecules use GAFF2 force field parameters with RESP2(0.5) partial charges:
@@ -418,6 +432,8 @@ quickice/
 │   ├── phase_mapping/   # T,P → ice polymorph lookup
 │   ├── structure_generation/  # GenIce2 integration
 │   ├── ranking/         # Candidate scoring
+├── data/                # Reference data files
+├── output/              # Default output directory
 ├── sample_output/       # Sample CLI output directory
 ├── environment.yml      # Conda environment file
 ├── setup.sh             # Environment file to source in a new shell
