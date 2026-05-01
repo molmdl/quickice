@@ -33,6 +33,59 @@ def wrap_positions_into_box(positions: np.ndarray, cell: np.ndarray) -> np.ndarr
     return wrapped
 
 
+def wrap_molecules_into_box(
+    positions: np.ndarray,
+    molecule_index: list,
+    cell: np.ndarray
+) -> np.ndarray:
+    """Wrap positions into simulation box keeping molecules intact.
+    
+    Unlike wrap_positions_into_box which wraps each atom independently,
+    this function wraps molecules as whole units to prevent splitting
+    molecules across periodic boundary conditions.
+    
+    For each molecule:
+    1. Calculate center (using first atom as reference)
+    2. Wrap center into box
+    3. Apply same shift to all atoms in molecule
+    
+    Args:
+        positions: (N, 3) atom positions in nm
+        molecule_index: List of MoleculeIndex objects defining molecule boundaries
+        cell: (3, 3) cell vectors as ROW vectors
+    
+    Returns:
+        (N, 3) positions with molecules wrapped as whole units
+    """
+    wrapped = positions.copy()
+    
+    for mol in molecule_index:
+        start = mol.start_idx
+        count = mol.count
+        
+        # Get positions for this molecule
+        mol_positions = wrapped[start:start + count]
+        
+        # Use first atom as reference point for wrapping
+        # (could use center of mass, but first atom is simpler and works)
+        ref_pos = mol_positions[0].copy()
+        
+        # Calculate shift needed to wrap reference atom into box
+        shift = np.zeros(3)
+        for dim in range(3):
+            box_size = cell[dim, dim]
+            # Wrap reference position into [0, box_size)
+            ref_wrapped = np.mod(ref_pos[dim], box_size)
+            # Calculate shift needed
+            shift[dim] = ref_wrapped - ref_pos[dim]
+        
+        # Apply shift to all atoms in molecule
+        if np.any(shift != 0):
+            wrapped[start:start + count] += shift
+    
+    return wrapped
+
+
 # TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
 TIP4P_ICE_ALPHA = 0.13458335
 
@@ -521,8 +574,13 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     
     # Wrap positions into box for GRO file output
     # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
-    # We wrap them here for valid GRO format
-    wrapped_positions = wrap_positions_into_box(iface.positions, iface.cell)
+    # We wrap them here for valid GRO format, keeping molecules intact
+    if iface.molecule_index:
+        # Use molecule-aware wrapping if molecule_index is available
+        wrapped_positions = wrap_molecules_into_box(iface.positions, iface.molecule_index, iface.cell)
+    else:
+        # Fallback to atom-by-atom wrapping (may split molecules)
+        wrapped_positions = wrap_positions_into_box(iface.positions, iface.cell)
     
     atom_num = 0
 
@@ -1189,6 +1247,13 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
         else:  # na or cl
             total_atoms += 1  # 1 atom per ion
 
+    # Wrap positions into box for GRO file output
+    # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
+    # We wrap them here for valid GRO format, keeping molecules intact
+    wrapped_positions = wrap_molecules_into_box(
+        ion_structure.positions, ion_structure.molecule_index, ion_structure.cell
+    )
+
     atom_num = 0
     res_num = 0
 
@@ -1214,9 +1279,9 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
                 if mol.mol_type == "ice":
                     # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
-                    o_pos = ion_structure.positions[start]
-                    h1_pos = ion_structure.positions[start + 1]
-                    h2_pos = ion_structure.positions[start + 2]
+                    o_pos = wrapped_positions[start]
+                    h1_pos = wrapped_positions[start + 1]
+                    h2_pos = wrapped_positions[start + 2]
                     mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
                     # OW (oxygen)
@@ -1249,9 +1314,9 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
                 else:  # water
                     # Water: 4 atoms (OW, HW1, HW2, MW)
-                    o_pos = ion_structure.positions[start]
-                    h1_pos = ion_structure.positions[start + 1]
-                    h2_pos = ion_structure.positions[start + 2]
+                    o_pos = wrapped_positions[start]
+                    h1_pos = wrapped_positions[start + 1]
+                    h2_pos = wrapped_positions[start + 2]
                     mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
                     # OW (oxygen)
@@ -1290,7 +1355,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 start = mol.start_idx
                 # Get atom names and positions for this molecule
                 mol_atom_names = ion_structure.atom_names[start:start + mol.count]
-                mol_positions = ion_structure.positions[start:start + mol.count]
+                mol_positions = wrapped_positions[start:start + mol.count]
 
                 # Detect guest type from atom names
                 guest_type = detect_guest_type_from_atoms(mol_atom_names)
@@ -1325,7 +1390,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 res_num_wrapped = res_num % 100000
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                pos = ion_structure.positions[mol.start_idx]
+                pos = wrapped_positions[mol.start_idx]
                 lines.append(f"{res_num_wrapped:5d}NA   "
                             f"   NA{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
@@ -1336,7 +1401,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 res_num_wrapped = res_num % 100000
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                pos = ion_structure.positions[mol.start_idx]
+                pos = wrapped_positions[mol.start_idx]
                 lines.append(f"{res_num_wrapped:5d}CL   "
                             f"   CL{atom_num_wrapped:5d}"
                             f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
