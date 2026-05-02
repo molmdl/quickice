@@ -308,7 +308,7 @@ All supported ice phases except Ice II work with interface construction. The fol
 - **Ice Ih, Ice Ic, Ice III, Ice VI, Ice VII, Ice VIII** — Native orthogonal cells
 - **Ice V** — Monoclinic cell, automatically transformed to orthogonal for interface generation
 
-Ice II (rhombohedral) is not supported for interface generation — it cannot form orthogonal supercells due to a fundamental crystallographic constraint. A status message appears in the interface log when transformation occurs for Ice V.
+Ice II (rhombohedral) is not supported for interface generation — it cannot form orthogonal supercells due to its rhombohedral crystal symmetry, which is incompatible with the orthogonal box requirements for interface generation. A status message appears in the interface log when transformation occurs for Ice V.
 
 ### Interface Modes
 
