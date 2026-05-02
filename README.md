@@ -415,7 +415,8 @@ Key limitations:
 quickice/
 ├── quickice.py          # CLI entry point
 ├── quickice/            # Main package
-│   ├── main.py          # Workflow orchestration
+│   ├── __init__.py
+│   ├── main.py          # Workflow orchestration
 │   ├── cli/             # Command-line parsing
 │   ├── gui/             # Graphical User Interface
 │   ├── validation/      # Input validation
