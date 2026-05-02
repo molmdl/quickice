@@ -1,10 +1,5 @@
 # Prompt 4: Code Quality Improvements
 
-**Workflow:** `/gsd-plan-phase`
-**Priority:** MEDIUM
-
----
-
 ## Prompt to Paste
 
 ```

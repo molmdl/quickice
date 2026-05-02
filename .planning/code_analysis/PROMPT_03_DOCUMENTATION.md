@@ -1,6 +1,5 @@
 # Prompt 3: Documentation Updates
 
-**Workflow:** Direct prompt (no command)
 **Priority:** MEDIUM
 
 ---
@@ -20,7 +19,9 @@ Update documentation:
 
 5. docs/gui-guide.md:306-311 - Explain why Ice II cannot be used (rhombohedral symmetry)
 
-6. README.md:429-439 - Add coverage test command: pytest --cov=quickice tests/
+[defer] 6. README.md:429-439 - Add coverage test command: pytest --cov=quickice tests/
 
 7. README.md:33-36 - Note that ion .itp files are generated dynamically
+
+Constraint: keep clear and concise, only write if it is fact, only edit upon my approval
 ```

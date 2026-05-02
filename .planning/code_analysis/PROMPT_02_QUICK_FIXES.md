@@ -22,11 +22,5 @@ Fix these issues:
    - quickice/gui/molecular_viewer.py:29-31
    - quickice/gui/hydrate_renderer.py:25-27
 
-4. Add Madrid2019 citation to README.md
-
-5. Add CO₂ and H₂ to guest molecule list in README.md
-
-6. Update project structure in README.md:410-425 to include output/ and data/
-
-7. Add spglib citation to docs/cli-reference.md
+4. Add spglib citation to docs/cli-reference.md
 ```
