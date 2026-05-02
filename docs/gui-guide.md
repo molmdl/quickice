@@ -416,6 +416,12 @@ The system automatically calculates ion pairs based on:
 N_pairs = concentration (mol/L) × volume (nm³) × 10⁻²⁴ × N_A
 ```
 
+The ion count calculation:
+1. Converts volume from nm³ to L (× 10⁻²⁴)
+2. Multiplies by concentration (mol/L) to get moles of ions
+3. Multiplies by Avogadro's number (N_A) to get ion pairs
+4. Enforces equal Na⁺/Cl⁻ counts for charge neutrality
+
 Where N_A is Avogadro's number. The display shows "Up to N" because actual count may be lower due to:
 - Limited water molecules for replacement
 - Minimum 0.3 nm separation constraint
