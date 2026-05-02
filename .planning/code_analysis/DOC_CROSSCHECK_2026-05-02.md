@@ -333,17 +333,7 @@ See CLI Reference for details on --interface flag
 
 ---
 
-### 14. GAFF2 Citation Format (MINOR)
-
-**Location:** `README.md` lines 359-370
-
-**Issue:** Multiwfn and Sobtop citations use future dates (2026) which appear to be forward-dated.
-
-**Recommendation:** Verify these are correct publication years or if they're planned/tool version numbers.
-
----
-
-### 15. Project Structure Outdated (MINOR)
+### 14. Project Structure Outdated (MINOR) (resolved)
 
 **Location:** `README.md` lines 410-425
 
@@ -448,30 +438,6 @@ GUI requires Qt 6.10.2
 
 ---
 
-## Missing Documentation
-
-### 19. Madrid2019 Ion Force Field Details
-
-**Location:** Code implementation only
-
-**Issue:** Ion insertion uses Madrid2019 force field parameters, but no citation or reference is provided in the documentation.
-
-**Fix Required:**
-Add to README.md:
-```markdown
-### Ion Force Field: Madrid2019
-
-Na⁺ and Cl⁻ ions use the Madrid2019 force field:
-
-Zeron, I. M., Pérez-Villasenor, F., & Vega, C. (2019).
-A molecular dynamics study of the ion-ion and ion-water interaction 
-parameters for NaCl in water using the Madrid-2019 force field.
-Journal of Chemical Physics, 151, 134504.
-DOI: https://doi.org/10.1063/1.5121394
-```
-
----
-
 ### 20. Water Density Calculation Method
 
 **Location:** Code implementation; minimal docs
@@ -512,7 +478,7 @@ Add brief descriptions:
 
 ---
 
-### 22. spglib Citation Missing from CLI Reference
+### 22. spglib Citation Missing from CLI Reference (resolved)
 
 **Location:** `README.md` lines 464-467; `docs/cli-reference.md` missing
 

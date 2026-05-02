@@ -28,8 +28,6 @@ QuickIce generates plausible ice crystal structure candidates and constructs ice
 - **Guest Molecules:**
   - CH₄ (methane)
   - THF (tetrahydrofuran)
-  - CO₂ (carbon dioxide)
-  - H₂ (hydrogen)
 - Configure cage occupancy and supercell size
 - Export to GROMACS with bundled force field parameters
 
@@ -38,6 +36,7 @@ QuickIce generates plausible ice crystal structure candidates and constructs ice
 - Concentration-based ion count calculation
 - Automatic charge neutrality enforcement
 - Export to GROMACS with Madrid2019 ion parameters
+- Ion parameter files (ion.itp) are generated at export time using Madrid2019 force field values
 
 *Note: Hydrate and ion features are available in the GUI only. CLI support may be added in a future release.*
 
@@ -67,7 +66,7 @@ QuickIce uses:
 - **GenIce2** for structure generation with proper hydrogen bonding networks
 - **Knowledge-based ranking** based on lattice energy estimates and density matching
 
-Water density for interface generation uses IAPWS-95 formulation for accuracy.
+Water density calculations for interface generation use the IAPWS-95 formulation for accuracy across the temperature-pressure range.
 
 ## Installation
 
