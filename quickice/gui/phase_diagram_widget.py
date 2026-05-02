@@ -10,6 +10,7 @@ Classes:
     PhaseDiagramPanel: Complete widget with canvas and info panel
 """
 
+import logging
 from typing import Tuple, Optional, Dict, List
 
 import numpy as np
@@ -29,6 +30,8 @@ from quickice.output.phase_diagram import (
     IAPWS_MELTING_RANGES,
 )
 from quickice.phase_mapping import get_triple_point
+
+logger = logging.getLogger(__name__)
 
 
 class PhaseDetector:
@@ -75,8 +78,8 @@ class PhaseDetector:
                 try:
                     st = IAPWS97(T=T, x=0)  # Saturated liquid
                     vapor_vertices.append((T, st.P))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Could not get saturation pressure at T={T}: {e}")
             
             # From the end of saturation curve (500K, P_sat), go down to bottom
             vapor_vertices.append((500.0, P_min))
@@ -86,8 +89,8 @@ class PhaseDetector:
             
             if len(vapor_vertices) > 3:
                 self._phase_polygons["vapor"] = ShapelyPolygon(vapor_vertices)
-        except ImportError:
-            pass  # IAPWS not available
+        except ImportError as e:
+            logger.info(f"IAPWS not available, vapor region will not be displayed: {e}")
     
     # Tolerance for boundary detection (pressure only)
     # Uses relative tolerance: 5% of pressure with 0.01 MPa floor
@@ -477,8 +480,8 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
                     st = IAPWS97(T=T, x=0)  # Saturated liquid
                     # IAPWS returns MPa
                     lv_P.append(st.P)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Could not get liquid-vapor boundary at T={T}: {e}")
             
             if len(lv_P) > 0:
                 lv_T = lv_T[:len(lv_P)]
@@ -490,9 +493,9 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
                     alpha=0.8,
                     zorder=7
                 )
-        except ImportError:
+        except ImportError as e:
             # IAPWS not available, skip liquid-vapor boundary
-            pass
+            logger.info(f"IAPWS not available, skipping liquid-vapor boundary: {e}")
     
     def _plot_triple_points(self):
         """Mark triple points on the diagram."""

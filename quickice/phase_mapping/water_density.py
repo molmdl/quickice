@@ -24,10 +24,13 @@ Note:
     density of 0.9998 g/cm³ (water density at 0°C, 1 atm - the melting point).
 """
 
+import logging
 import warnings
 from functools import lru_cache
 
 from iapws import IAPWS95
+
+logger = logging.getLogger(__name__)
 
 # Fallback density when IAPWS calculation fails or is out of range
 # This is the density at 273.15 K (0°C), 0.101325 MPa (1 atm) - the melting point
@@ -78,11 +81,13 @@ def water_density_kgm3(T_K: float, P_MPa: float) -> float:
             if 100 < rho < 2000:
                 return rho
             else:
+                logger.warning(f"Using fallback density for water at T={T_K}K, P={P_MPa}MPa (calculated density {rho} out of range)")
                 return FALLBACK_DENSITY_GCM3 * 1000
     except (NotImplementedError, ValueError, OverflowError):
         # NotImplementedError: Conditions outside formulation range
         # ValueError: Invalid input values (e.g., negative T or P)
         # OverflowError: Numerical overflow in extreme conditions
+        logger.warning(f"Using fallback density for water at T={T_K}K, P={P_MPa}MPa")
         return FALLBACK_DENSITY_GCM3 * 1000
 
 

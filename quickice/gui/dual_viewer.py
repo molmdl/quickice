@@ -4,6 +4,8 @@ This module provides the DualViewerWidget class for displaying multiple
 structure candidates in separate synchronized viewports.
 """
 
+import logging
+
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QComboBox
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QShowEvent
@@ -12,6 +14,8 @@ from vtkmodules.all import vtkCommand
 
 from quickice.gui.molecular_viewer import MolecularViewerWidget
 from quickice.ranking.types import RankedCandidate
+
+logger = logging.getLogger(__name__)
 
 
 class DualViewerWidget(QWidget):
@@ -307,8 +311,8 @@ class DualViewerWidget(QWidget):
         
         try:
             self.set_candidate_for_viewer(0, index)
-        except IndexError:
-            pass  # Invalid index, ignore
+        except IndexError as e:
+            logger.debug(f"Invalid selector index in left viewer: {e}")
     
     def _on_selector2_changed(self, index: int) -> None:
         """Handle right candidate selector dropdown change.
@@ -321,8 +325,8 @@ class DualViewerWidget(QWidget):
         
         try:
             self.set_candidate_for_viewer(1, index)
-        except IndexError:
-            pass  # Invalid index, ignore
+        except IndexError as e:
+            logger.debug(f"Invalid selector index in right viewer: {e}")
     
     def update_selectors(self, candidates: list[RankedCandidate]) -> None:
         """Update candidate selector dropdowns with available candidates.

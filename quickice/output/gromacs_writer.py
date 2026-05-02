@@ -4,10 +4,13 @@ Provides functions to write GROMACS coordinate (.gro) and topology (.top) files
 from generated ice structure candidates using the TIP4P-ICE water model.
 """
 
+import logging
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
 
@@ -225,8 +228,8 @@ def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
                         # Column 4 (0-indexed: 3) is residue name
                         res_name = parts[3]
                         return res_name
-    except (IOError, OSError):
-        pass
+    except (IOError, OSError) as e:
+        logger.warning(f"Could not read ITP file: {e}")
     
     return None
 
@@ -257,8 +260,8 @@ def get_guest_residue_name(guest_type: str) -> str:
             res_name = parse_itp_residue_name(itp_path)
             if res_name:
                 return res_name
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Could not read guest residue name from ITP file: {e}")
     
     # Fallback to hardcoded values (preserves backward compatibility)
     FALLBACK_RESIDUE_NAMES = {
@@ -307,6 +310,10 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     """
     nmol = candidate.nmolecules
     n_atoms = nmol * 4  # 4-point water: O, H1, H2, MW (MW computed from O, H, H)
+    
+    # Warn if GRO atom limit exceeded (numbers wrap at 100,000)
+    if n_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
     
     # Wrap positions into box for GRO file output
     # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
@@ -594,6 +601,10 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     water_output_atoms = iface.water_nmolecules * 4
     guest_output_atoms = iface.guest_atom_count if iface.guest_atom_count > 0 else 0
     n_atoms = ice_output_atoms + water_output_atoms + guest_output_atoms
+    
+    # Warn if GRO atom limit exceeded (numbers wrap at 100,000)
+    if n_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
     
     # Wrap positions into box for GRO file output
     # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)
@@ -1033,6 +1044,10 @@ def write_multi_molecule_gro_file(
     """
     n_atoms = len(positions)
     
+    # Warn if GRO atom limit exceeded (numbers wrap at 100,000)
+    if n_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
+    
     with open(filepath, 'w') as f:
         f.write(f"{title}\n")
         f.write(f"{n_atoms:5d}\n")
@@ -1269,6 +1284,10 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
             total_atoms += mol.count
         else:  # na or cl
             total_atoms += 1  # 1 atom per ion
+
+    # Warn if GRO atom limit exceeded (numbers wrap at 100,000)
+    if total_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {total_atoms} atoms)")
 
     # Wrap positions into box for GRO file output
     # Molecules spanning PBC boundaries can have atoms outside [0, boxsize)

@@ -20,10 +20,13 @@ Note:
     For conditions outside this range, the module returns a fallback density.
 """
 
+import logging
 import warnings
 from functools import lru_cache
 
 from iapws._iapws import _Ice
+
+logger = logging.getLogger(__name__)
 
 # Fallback density when IAPWS calculation fails or is out of range
 # This is the density at 273.15 K, 1 atm (0.101325 MPa)
@@ -68,6 +71,7 @@ def ice_ih_density_kgm3(T_K: float, P_MPa: float) -> float:
         # NotImplementedError: P > 208.566 MPa or T > 273.16 K (out of IAPWS range)
         # ValueError: Invalid input values
         # OverflowError: Numerical overflow in extreme conditions
+        logger.warning(f"Using fallback density for ice Ih at T={T_K}K, P={P_MPa}MPa")
         return FALLBACK_DENSITY_GCM3 * 1000
 
 

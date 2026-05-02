@@ -10,6 +10,8 @@ This module provides the MainWindow class that assembles all GUI components:
 - Keyboard shortcuts (Enter to generate, Escape to cancel)
 """
 
+import logging
+
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton, 
     QMessageBox, QApplication, QSplitter, QMenuBar, QMenu,
@@ -17,6 +19,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Slot
+
+logger = logging.getLogger(__name__)
 
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
@@ -842,8 +846,8 @@ class MainWindow(QMainWindow):
             # Only update if values are in valid range
             if 50 <= temp <= 500 and 0.1 <= pressure <= 10000:
                 self.diagram_panel.set_coordinates(temp, pressure)
-        except (ValueError, TypeError):
-            pass  # Invalid input, don't update marker
+        except (ValueError, TypeError) as e:
+            logger.info(f"Invalid user input for temperature/pressure: {e}")
     
     @Slot()
     def _on_save_pdb_left(self):
