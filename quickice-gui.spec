@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 # Packages to exclude (development-only and unused)
 EXCLUDES = [
-    # Testing
+    # Testing frameworks
     'pytest', 'iniconfig', 'pluggy', 'pygments', '_pytest',
     
     # PyInstaller (build-time only)
@@ -12,6 +12,30 @@ EXCLUDES = [
     # Unused packages
     'gsw',  # Gibbs Sea Water - not used
     'git_filter_repo',  # Git tool - not used
+    
+    # Test modules (collected by collect_all but not needed at runtime)
+    'numpy.tests', 'numpy._pyinstaller.tests', 'numpy.f2py.tests',
+    'numpy._core.tests', 'numpy.lib.tests', 'numpy.linalg.tests',
+    'numpy.fft.tests', 'numpy.ma.tests', 'numpy.matrixlib.tests',
+    'numpy.polynomial.tests', 'numpy.testing.tests', 'numpy.typing.tests',
+    'numpy.random.tests',
+    'scipy.tests', 'scipy.special.tests', 'scipy.stats.tests',
+    'scipy.spatial.tests', 'scipy.spatial.transform.tests',
+    'scipy.sparse.tests', 'scipy.linalg.tests', 'scipy.optimize.tests',
+    'scipy.integrate.tests', 'scipy.interpolate.tests', 'scipy.io.tests',
+    'scipy.ndimage.tests', 'scipy.signal.tests', 'scipy.cluster.tests',
+    'networkx.tests', 'networkx.algorithms.tests',
+    'networkx.algorithms.approximation.tests', 'networkx.algorithms.assortativity.tests',
+    'networkx.algorithms.bipartite.tests', 'networkx.algorithms.centrality.tests',
+    'networkx.algorithms.community.tests', 'networkx.algorithms.components.tests',
+    'networkx.algorithms.connectivity.tests', 'networkx.algorithms.flow.tests',
+    'networkx.algorithms.isomorphism.tests', 'networkx.algorithms.link_analysis.tests',
+    'networkx.algorithms.operators.tests', 'networkx.algorithms.shortest_paths.tests',
+    'networkx.algorithms.traversal.tests', 'networkx.algorithms.tree.tests',
+    'networkx.classes.tests', 'networkx.drawing.tests', 'networkx.generators.tests',
+    'networkx.linalg.tests', 'networkx.readwrite.tests',
+    'shapely.tests', 'shapely.tests.legacy',
+    'matplotlib.tests',
 ]
 
 # Collect all data files, binaries, and hidden imports from packages
