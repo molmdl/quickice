@@ -258,7 +258,17 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
         For systems with >99999 residues, residue numbers wrap at 100000.
+        
+    Units:
+        All coordinates are in nm (GROMACS standard).
     """
+    # Units: nm (GROMACS standard)
+    # Validate coordinates are in reasonable range for nm units
+    if iface.positions is not None:
+        max_coord = np.max(np.abs(iface.positions))
+        if max_coord > 100:
+            logger.warning(f"Coordinates may be in Å instead of nm (max={max_coord:.1f}, GROMACS uses nm)")
+    
     # Calculate total atoms:
     # - Ice: ice_nmolecules * 3 input atoms -> ice_nmolecules * 4 output atoms (MW added)
     # - Water: water_nmolecules * 4 (pass through as-is)
@@ -619,7 +629,17 @@ def write_multi_molecule_gro_file(
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, numbers wrap at 100000.
+        
+    Units:
+        All coordinates are in nm (GROMACS standard).
     """
+    # Units: nm (GROMACS standard)
+    # Validate coordinates are in reasonable range for nm units
+    if positions is not None and len(positions) > 0:
+        max_coord = np.max(np.abs(positions))
+        if max_coord > 100:
+            logger.warning(f"Coordinates may be in Å instead of nm (max={max_coord:.1f}, GROMACS uses nm)")
+    
     n_atoms = len(positions)
     
     # Warn if GRO atom limit exceeded (numbers wrap at 100,000)

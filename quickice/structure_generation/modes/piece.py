@@ -48,7 +48,7 @@ def detect_atoms_per_molecule(atom_names: list[str]) -> int:
     return 3  # Default to GenIce ice (3 atoms)
 
 
-def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[list[int], list[int]]:
+def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
     For hydrate candidates:
@@ -57,7 +57,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[l
     
     Args:
         atom_names: List of atom names from candidate
-        atoms_perMol: Expected atoms per molecule (4 for TIP4P/hydrate)
+        atoms_per_mol: Expected atoms per molecule (4 for TIP4P/hydrate)
     
     Returns:
         Tuple of (water_framework_atom_indices, guest_atom_indices) as lists
@@ -68,12 +68,12 @@ def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[l
     i = 0
     while i < len(atom_names):
         # Check first atom of each molecule
-        if i + atoms_perMol <= len(atom_names):
+        if i + atoms_per_mol <= len(atom_names):
             first_atom = atom_names[i]
             # Water framework: first atom is OW (TIP4P water oxygen)
             if first_atom == "OW":
-                water_indices.extend(range(i, i + atoms_perMol))
-                i += atoms_perMol
+                water_indices.extend(range(i, i + atoms_per_mol))
+                i += atoms_per_mol
             else:
                 # This is a guest molecule (united-atom CH4 'Me', all-atom CH4 'C', etc.)
                 # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
@@ -267,7 +267,16 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
     # Detect overlaps between centered ice O and water O
     # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...]
     # Water O atoms: indices [0, 4, 8, ...] (4 atoms per molecule)
+    
+    # Bounds validation: ensure atoms_per_mol is valid
+    if atoms_per_mol <= 0:
+        raise InterfaceGenerationError(f"Invalid atoms_per_molecule: {atoms_per_mol}")
+    
     if len(centered_ice_positions) > 0 and len(water_positions) > 0:
+        # Bounds check: ensure slicing indices are valid
+        if atoms_per_mol > len(centered_ice_positions):
+            logger.warning(f"atoms_per_mol ({atoms_per_mol}) exceeds array length ({len(centered_ice_positions)})")
+        
         ice_o_positions = centered_ice_positions[::atoms_per_mol]
         water_o_positions = water_positions[::4]
 
