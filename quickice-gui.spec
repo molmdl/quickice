@@ -36,6 +36,13 @@ EXCLUDES = [
     'networkx.linalg.tests', 'networkx.readwrite.tests',
     'shapely.tests', 'shapely.tests.legacy',
     'matplotlib.tests',
+    # scipy unused modules (safe to exclude - no transitive dependencies)
+    'scipy.cluster', 'scipy.cluster.tests',
+    'scipy.integrate', 'scipy.integrate.tests',
+    'scipy.io', 'scipy.io.tests',
+    'scipy.ndimage', 'scipy.ndimage.tests',
+    'scipy.signal', 'scipy.signal.tests',
+    'scipy.stats', 'scipy.stats.tests',
 ]
 
 # Collect all data files, binaries, and hidden imports from packages
@@ -43,11 +50,15 @@ datas = [('quickice/data', 'quickice/data')]
 binaries = []
 hiddenimports = []
 
+# scipy - only spatial and interpolate (with their transitive dependencies)
+hiddenimports += collect_submodules('scipy.spatial')
+hiddenimports += collect_submodules('scipy.interpolate')
+
 # Collect runtime dependencies
 RUNTIME_PACKAGES = [
     'vtk', 'vtkmodules',
     'iapws', 'genice2', 'genice_core',
-    'matplotlib', 'scipy', 'numpy', 
+    'matplotlib', 'numpy', 
     'shapely', 'networkx', 'spglib',
 ]
 
