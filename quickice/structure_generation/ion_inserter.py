@@ -270,20 +270,31 @@ class IonInserter:
                 current_idx += mol.count
         
         # Build array of positions for molecules that will remain (not being replaced)
-        # Check against ice, guest, AND water molecules to prevent ions from overlapping
-        # with any existing atoms. This handles both ice/water interfaces AND hydrate structures
-        # where the hydrate water framework is labeled as "water" not "ice".
-        # 
-        # IMPORTANT: Exclude MW (massless virtual site) atoms from overlap checking.
+        # Check against ice and guest molecules to prevent ions from overlapping
+        # with the solid framework (ice or hydrate water framework).
+        #
+        # IMPORTANT: Do NOT check against water molecules!
+        # - Liquid water molecules are close together (O-O ~0.28 nm)
+        # - MIN_SEPARATION is 0.3 nm
+        # - Checking water molecules would reject ALL ion placements
+        # - We're replacing water with ions, so water positions are valid targets
+        #
+        # For hydrate structures:
+        # - Hydrate water framework is labeled as "ice" in InterfaceStructure
+        # - Guest molecules are labeled as "guest"
+        # - Liquid water is labeled as "water"
+        # So checking only ice+guest correctly excludes liquid water while
+        # protecting the hydrate framework.
+        #
+        # Also exclude MW (massless virtual site) atoms from overlap checking.
         # MW atoms are virtual interaction sites in TIP4P water models (TIP4P-ICE, TIP4P-Ew, etc.)
         # They have mass=0 and are used for electrostatic calculations only.
         # Including them in overlap checking causes false positives because MW atoms are
         # placed very close (~0.015 nm) to oxygen atoms by design.
         remain_positions = []
         for mol in structure.molecule_index:
-            # Keep all molecules except water being replaced
-            # This includes: ice, guest, AND water molecules that will remain
-            if mol.start_idx not in replaced_starts:
+            # Only check ice and guest molecules (not water!)
+            if mol.mol_type in ("ice", "guest"):
                 start = mol.start_idx
                 end = start + mol.count
                 # Filter out MW atoms (virtual sites) before adding to overlap check
@@ -311,8 +322,8 @@ class IonInserter:
             # Get water position (use oxygen for placement)
             water_pos = structure.positions[start]  # First atom is O
             
-            # Check minimum distance to all existing atoms (ice, water, guest)
-            # This prevents ions from overlapping with any molecule in the structure
+            # Check minimum distance to ice and guest molecules (solid framework)
+            # This prevents ions from overlapping with the ice/hydrate framework
             if existing_atoms_tree is not None:
                 min_dist = existing_atoms_tree.query(water_pos, k=1)[0]
                 if min_dist < MIN_SEPARATION:
