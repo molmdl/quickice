@@ -229,11 +229,11 @@ Hydrate Config allows you to:
 
 ### Lattice Types
 
-| Lattice | Description | Typical Guests |
-|---------|-------------|----------------|
-| sI | Structure I | CH₄, CO₂ |
-| sII | Structure II | THF, larger guests |
-| sH | Structure H | Requires helper molecule |
+| Lattice | Description | Typical Guests | Cage Types |
+|---------|-------------|----------------|------------|
+| sI | Structure I | CH₄, CO₂ | 2 small + 6 large cages |
+| sII | Structure II | THF, larger guests | 16 small + 8 large cages |
+| sH | Structure H | Requires helper molecule | 3 small + 2 medium + 1 large |
 
 ### Guest Molecules
 
