@@ -126,7 +126,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 016 | Minimize bundle dependencies (scipy/matplotlib/shapely exclusions) | 2026-05-03 | b31261f | [016-minimize-bundle-dependencies](./quick/016-minimize-bundle-dependencies/) |
+| 016 | Minimize bundle dependencies (scipy/matplotlib/shapely) | 2026-05-03 | 35793e0 | [016-minimize-bundle-dependencies](./quick/016-minimize-bundle-dependencies/) |
 | 008 | Optimize PyInstaller bundle size | 2026-05-03 | deae8b8 | [008-optimize-pyinstaller-bundle-size](./quick/008-optimize-pyinstaller-bundle-size/) |
 | 007 | Code quality improvements (logging, deduplication, validation) | 2026-05-02 | 886ce83 | [007-code-quality-improvements-logging-dedu](./quick/007-code-quality-improvements-logging-dedu/) |
 | 006 | Add GAFF2 preparation method citation to main documentation | 2026-04-30 | f319157 | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
