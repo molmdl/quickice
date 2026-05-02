@@ -78,7 +78,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
                 # This is a guest molecule (united-atom CH4 'Me', all-atom CH4 'C', etc.)
                 # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
                 # Detect based on atom type
-                guest_atoms = _count_guest_atoms(atom_names, i)
+                guest_atoms = count_guest_atoms(atom_names, i)
                 guest_indices.extend(range(i, i + guest_atoms))
                 i += guest_atoms
         else:

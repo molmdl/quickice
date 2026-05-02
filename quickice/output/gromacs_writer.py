@@ -15,7 +15,19 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure, I
 
 logger = logging.getLogger(__name__)
 
-from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
+TIP4P_ICE_ALPHA = 0.13458335
+
+
+MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
+    "ice":   {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
+    "water": {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
+    "na":    {"res_name": "NA",  "itp_file": "na.itp",     "mol_name": "NA"},
+    "cl":    {"res_name": "CL",  "itp_file": "cl.itp",     "mol_name": "CL"},
+    "ch4":   {"res_name": "CH4", "itp_file": "ch4.itp",    "mol_name": "CH4"},
+    "thf":   {"res_name": "THF", "itp_file": "thf.itp",    "mol_name": "THF"},
+    "co2":   {"res_name": "CO2", "itp_file": "co2.itp",    "mol_name": "CO2"},
+    "h2":    {"res_name": "H2",  "itp_file": "h2.itp",     "mol_name": "H2"},
+}
 
 
 def wrap_positions_into_box(positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
@@ -235,6 +247,222 @@ def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
         logger.warning(f"Could not read ITP file: {e}")
     
     return None
+
+
+def get_guest_residue_name(guest_type: str) -> str:
+    """Get the residue name for a guest molecule type from its itp file.
+    
+    Reads the residue name from the bundled itp file in quickice/data/.
+    Falls back to hardcoded values if the itp file cannot be read.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf", etc.)
+    
+    Returns:
+        Residue name from the itp file (e.g., "CH4", "THF")
+    """
+    try:
+        import quickice
+        package_dir = Path(quickice.__file__).parent
+        itp_path = package_dir / "data" / f"{guest_type}.itp"
+        
+        if not itp_path.exists():
+            itp_path = Path(__file__).parent.parent / "data" / f"{guest_type}.itp"
+        
+        if itp_path.exists():
+            res_name = parse_itp_residue_name(itp_path)
+            if res_name:
+                return res_name
+    except Exception as e:
+        logger.warning(f"Could not read guest residue name from ITP file: {e}")
+    
+    FALLBACK_RESIDUE_NAMES = {
+        "ch4": "CH4",
+        "thf": "THF",
+        "co2": "CO2",
+        "h2": "H2",
+    }
+    return FALLBACK_RESIDUE_NAMES.get(guest_type, "UNK")
+
+
+def write_gro_file(candidate: Candidate, filepath: str) -> None:
+    """Write candidate to GROMACS .gro format.
+    
+    Args:
+        candidate: Candidate object with positions, atom_names, cell, nmolecules
+        filepath: Output file path for .gro file
+    
+    Note:
+        candidate.nmolecules may differ from the user's requested count due to
+        crystal structure constraints. GenIce2 creates supercells to satisfy
+        space group symmetry, so the actual count can be larger. For example:
+          - ice Ih with requested nmol=216 may generate 432 molecules (2× supercell)
+          - ice Ih with requested nmol=4 may generate 16 molecules (4× supercell)
+        This is expected behavior and ensures the structure is physically valid.
+        
+        Ice structures store 3 atoms per molecule (O, H, H). The MW virtual site
+        is computed at export time to produce TIP4P-ICE format (4 atoms per molecule).
+        
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
+        For systems with >99999 residues, residue numbers wrap at 100000.
+    """
+    nmol = candidate.nmolecules
+    n_atoms = nmol * 4
+    
+    if n_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
+    
+    wrapped_positions = wrap_positions_into_box(candidate.positions, candidate.cell)
+    
+    expected_atoms = nmol * 3
+    if len(wrapped_positions) < expected_atoms:
+        raise ValueError(
+            f"positions has {len(wrapped_positions)} atoms but "
+            f"nmolecules={nmol} needs {expected_atoms} (3 atoms per ice molecule)"
+        )
+    
+    with open(filepath, 'w') as f:
+        f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
+        f.write(f"{n_atoms:5d}\n")
+
+        lines = []
+        atom_num = 0
+        for mol_idx in range(nmol):
+            base_idx = mol_idx * 3
+            
+            o_pos = wrapped_positions[base_idx]
+            h1_pos = wrapped_positions[base_idx + 1]
+            h2_pos = wrapped_positions[base_idx + 2]
+            
+            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+            res_num = (mol_idx + 1) % 100000
+
+            atom_num += 1
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   OW{atom_num_wrapped:5d}"
+                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+            atom_num += 1
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW1{atom_num_wrapped:5d}"
+                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+            atom_num += 1
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"  HW2{atom_num_wrapped:5d}"
+                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+            atom_num += 1
+            atom_num_wrapped = atom_num % 100000
+            lines.append(f"{res_num:5d}SOL  "
+                        f"   MW{atom_num_wrapped:5d}"
+                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+        f.writelines(lines)
+        
+        cell = candidate.cell
+        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+
+def write_top_file(candidate: Candidate, filepath: str) -> None:
+    """Write GROMACS topology file.
+    
+    Args:
+        candidate: Candidate object with nmolecules and phase_id
+        filepath: Output file path for .top file
+    """
+    nmol = candidate.nmolecules
+    
+    with open(filepath, 'w') as f:
+        f.write("; Generated by QuickIce\n")
+        f.write("; TIP4P-ICE water model\n\n")
+        
+        f.write("; Defaults compitable with the Amber forcefield\n")
+        f.write("[ defaults ]\n")
+        f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
+        
+        f.write("[ atomtypes ]\n")
+        f.write("; name  bond_type  atomic_number  mass  charge  ptype  V              W\n")
+        f.write("OW_ice      OW_ice     8           15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
+        f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n\n")
+        
+        f.write("[ moleculetype ]\n")
+        f.write("; Name        nrexcl\n")
+        f.write("SOL          2\n\n")
+        
+        f.write("[ atoms ]\n")
+        f.write(";   nr  type  resi  res  atom  cgnr     charge    mass\n")
+        f.write("   1   OW_ice    1  SOL    OW     1       0.0  16.00000\n")
+        f.write("   2   HW_ice    1  SOL   HW1     1     0.5897   1.00800\n")
+        f.write("   3   HW_ice    1  SOL   HW2     1     0.5897   1.00800\n")
+        f.write("   4   MW        1  SOL    MW     1    -1.1794   0.00000\n\n")
+        
+        f.write("[ settles ]\n")
+        f.write("; i  funct  doh     dhh\n")
+        f.write("  1    1    0.09572  0.15139\n\n")
+        
+        f.write("[ virtual_sites3 ]\n")
+        f.write("; Vsite from                    funct  a          b\n")
+        f.write("   4     1       2       3       1      0.13458335 0.13458335\n\n")
+        
+        f.write("[ exclusions ]\n")
+        f.write("  1  2  3  4\n")
+        f.write("  2  1  3  4\n")
+        f.write("  3  1  2  4\n")
+        f.write("  4  1  2  3\n\n")
+        
+        f.write("[ system ]\n")
+        f.write("; Name\n")
+        f.write(f"{candidate.phase_id} exported by QuickIce\n\n")
+        
+        f.write("[ molecules ]\n")
+        f.write("; Compound    #mols\n")
+        f.write(f"SOL          {nmol}\n")
+
+
+def get_tip4p_itp_path() -> Path:
+    """Get the path to the bundled tip4p-ice.itp file.
+    
+    Returns:
+        Path to the tip4p-ice.itp file in the data directory
+    """
+    import quickice
+    package_dir = Path(quickice.__file__).parent
+    itp_path = package_dir / "data" / "tip4p-ice.itp"
+    
+    if itp_path.exists():
+        return itp_path
+    
+    return Path(__file__).parent.parent / "data" / "tip4p-ice.itp"
+
+
+def compute_mw_position(o_pos: np.ndarray, h1_pos: np.ndarray, h2_pos: np.ndarray) -> np.ndarray:
+    """Compute MW virtual site position for TIP4P-ICE water model.
+    
+    The MW (massless virtual site) is positioned along the bisector of the H-O-H angle.
+    
+    Args:
+        o_pos: Oxygen position as (3,) array in nm
+        h1_pos: Hydrogen 1 position as (3,) array in nm
+        h2_pos: Hydrogen 2 position as (3,) array in nm
+    
+    Returns:
+        MW position as (3,) array in nm
+    
+    Formula:
+        MW = O + α*(H1-O) + α*(H2-O)
+        where α = 0.13458335 (TIP4P-ICE specific)
+    """
+    return o_pos + TIP4P_ICE_ALPHA * (h1_pos - o_pos) + TIP4P_ICE_ALPHA * (h2_pos - o_pos)
 
 
 def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:

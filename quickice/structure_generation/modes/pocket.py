@@ -59,7 +59,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
                 water_indices.extend(range(i, i + atoms_per_mol))
                 i += atoms_per_mol
             else:
-                guest_atoms = _count_guest_atoms(atom_names, i)
+                guest_atoms = count_guest_atoms(atom_names, i)
                 guest_indices.extend(range(i, i + guest_atoms))
                 i += guest_atoms
         else:

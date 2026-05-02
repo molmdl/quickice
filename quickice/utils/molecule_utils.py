@@ -43,7 +43,9 @@ def count_guest_atoms(atom_names: list[str], start: int) -> int:
 
     first_atom = sample[0]
 
-    # United-atom methane (Me) - single carbon
+    if first_atom in ["OW", "HW1", "HW2", "MW"]:
+        return 0
+
     if first_atom == "Me":
         return 1
 
