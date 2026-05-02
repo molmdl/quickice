@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 | Phase | — |
 | Plan | — |
 | Status | Ready for next milestone |
-| Last activity | 2026-05-01 — v4.0 milestone archived |
+| Last activity | 2026-05-03 — Quick task 008: PyInstaller bundle optimization |
 
 **Progress:** ██████████ 100% (v4.0 complete)
 
@@ -126,7 +126,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 008 | Optimize PyInstaller bundle size (spec file optimizations) | 2026-05-03 | dc2adf6 | [008-optimize-pyinstaller-bundle-size](./quick/008-optimize-pyinstaller-bundle-size/) |
+| 008 | Optimize PyInstaller bundle size | 2026-05-03 | deae8b8 | [008-optimize-pyinstaller-bundle-size](./quick/008-optimize-pyinstaller-bundle-size/) |
 | 007 | Code quality improvements (logging, deduplication, validation) | 2026-05-02 | 886ce83 | [007-code-quality-improvements-logging-dedu](./quick/007-code-quality-improvements-logging-dedu/) |
 | 006 | Add GAFF2 preparation method citation to main documentation | 2026-04-30 | f319157 | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
 
