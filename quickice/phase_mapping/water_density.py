@@ -78,7 +78,8 @@ def water_density_kgm3(T_K: float, P_MPa: float) -> float:
             # Sanity check: density should be in reasonable range
             # Water density at extreme conditions: 100-2000 kg/m³
             # Very low values (< 100) indicate numerical issues or invalid input
-            if 100 < rho < 2000:
+            # Note: IAPWS95 may return None for invalid conditions (e.g., P=0)
+            if rho is not None and 100 < rho < 2000:
                 return rho
             else:
                 logger.warning(f"Using fallback density for water at T={T_K}K, P={P_MPa}MPa (calculated density {rho} out of range)")
