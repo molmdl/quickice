@@ -43,6 +43,11 @@ EXCLUDES = [
     'scipy.ndimage', 'scipy.ndimage.tests',
     'scipy.signal', 'scipy.signal.tests',
     'scipy.stats', 'scipy.stats.tests',
+    # matplotlib unused modules
+    'matplotlib.animation', 'matplotlib.animation.tests',
+    # shapely unused modules
+    'shapely.ops', 'shapely.ops.tests',
+    'shapely.prepared', 'shapely.prepared.tests',
 ]
 
 # Collect all data files, binaries, and hidden imports from packages
