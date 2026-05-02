@@ -183,7 +183,7 @@ class HydrateStructureGenerator:
             if large_occ > 0:
                 # Determine large cage type based on lattice
                 if config.lattice_type == "sI":
-                    large_cage = "14"  # 5^12 6^4 for sI
+                    large_cage = "14"  # 5^12 6^2 for sI
                 elif config.lattice_type == "sII":
                     large_cage = "16"  # 5^12 6^4 for sII
                 else:

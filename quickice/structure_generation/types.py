@@ -45,7 +45,7 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
         "description": "Structure I hydrate",
         "cages": {
             "small": {"name": "5¹²", "count_per_unit_cell": 2, "guest_fits": ["ch4"]},
-            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 6, "guest_fits": ["ch4", "thf"]},
+            "large": {"name": "5¹²6²", "count_per_unit_cell": 6, "guest_fits": ["ch4", "thf"]},
         },
         "unit_cell_molecules": 46,  # Water molecules in unit cell
     },
