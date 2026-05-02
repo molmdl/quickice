@@ -53,7 +53,10 @@ Temperature and pressure are mapped to an ice polymorph using:
 - Triple point data from literature
 - Linear interpolation for solid-solid boundaries (medium confidence)
 
-The mapping identifies which ice phase is stable at the input conditions. QuickIce can generate structures for 8 ice polymorphs (Ih, Ic, II, III, V, VI, VII, VIII). Phase detection also identifies regions for Ice IX, X, XI, XV (not generatable due to GenIce2 limitations), liquid water, and vapor.
+Phase detection identifies regions for:
+- 8 generatable phases (Ih, Ic, II, III, V, VI, VII, VIII)
+- 4 detectable-only phases (IX, X, XI, XV) — no GenIce2 lattices available
+- Liquid water and vapor regions
 
 ### Phase 3: Structure Generation
 
