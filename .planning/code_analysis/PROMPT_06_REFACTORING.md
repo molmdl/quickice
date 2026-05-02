@@ -1,6 +1,5 @@
 # Prompt 6: Code Refactoring
 
-**Workflow:** `/gsd-plan-phase`
 **Priority:** LOW
 
 ---
