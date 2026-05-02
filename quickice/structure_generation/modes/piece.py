@@ -12,6 +12,7 @@ This module also handles hydrate->interface conversion:
 
 import numpy as np
 
+from quickice.utils.molecule_utils import count_guest_atoms
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.water_filler import (
@@ -88,54 +89,6 @@ def _detect_guest_atoms(atom_names: list[str], atoms_perMol: int = 4) -> tuple[l
     return water_indices, guest_indices
 
 
-def _count_guest_atoms(atom_names: list[str], start: int) -> int:
-    """Count atoms in a guest molecule starting at index.
-    
-    Guest types:
-    - Me: 1 atom (united-atom methane)
-    - C: 5 atoms (all-atom methane: C + 4H)
-    - For THF: starts with O or C (13 atoms total with H)
-    """
-    if start >= len(atom_names):
-        return 0
-    
-    first_atom = atom_names[start]
-    
-    # United-atom methane (Me) - single carbon
-    if first_atom == "Me":
-        return 1
-    
-    # All-atom methane (C + 4H)
-    if first_atom == "C":
-        # Count up to 5 atoms (C + up to 4H)
-        count = 0
-        i = start
-        while i < len(atom_names) and i < start + 5:
-            count += 1
-            i += 1
-        return count
-    
-    # THF (starts with O or C, 12-13 atoms)
-    if first_atom in ["O", "C"]:
-        # Try to count all atoms in this molecule (looking for next O or start pattern)
-        # Or count up to 20 atoms (generous upper bound for THF + H)
-        count = 0
-        i = start
-        # Simple approach: count all atoms until we hit OW (water) or run out
-        while i < len(atom_names):
-            if atom_names[i] == "OW":
-                break
-            count += 1
-            i += 1
-            # Safety limit
-            if count > 20:
-                break
-        return max(count, 1)
-    
-    # Default: treat as 1 atom guest
-    return 1
-
-
 def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> int:
     """Count the number of distinct guest molecules from guest atom indices.
     
@@ -157,8 +110,7 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> i
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        # Count atoms in this molecule using _count_guest_atoms
-        atoms_in_mol = _count_guest_atoms(atom_names, atom_idx)
+        atoms_in_mol = count_guest_atoms(atom_names, atom_idx)
         count += 1
         i += atoms_in_mol
     

@@ -13,6 +13,8 @@ For hydrate->interface conversion:
 
 import numpy as np
 
+from quickice.utils.molecule_utils import count_guest_atoms
+
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
 # Acceptable for typical use. For very large systems (>10k), this is modest overhead.
@@ -67,41 +69,6 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
     return water_indices, guest_indices
 
 
-def _count_guest_atoms(atom_names: list[str], start: int) -> int:
-    """Count atoms in a guest molecule starting at index."""
-    if start >= len(atom_names):
-        return 0
-    
-    first_atom = atom_names[start]
-    
-    if first_atom == "Me":
-        return 1
-    
-    if first_atom == "C":
-        count = 0
-        i = start
-        while i < len(atom_names) and i < start + 5:
-            count += 1
-            i += 1
-        return count
-    
-    if first_atom == "O":
-        count = 0
-        i = start
-        while i < len(atom_names) and i < start + 15:
-            count += 1
-            i += 1
-            if i < len(atom_names) and atom_names[i] in ["O", "OW"]:
-                break
-        return count
-    
-    if first_atom == "C" and start + 2 < len(atom_names):
-        if atom_names[start + 1] == "O" and atom_names[start + 2] == "O":
-            return 3
-    
-    return 1
-
-
 def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> int:
     """Count the number of distinct guest molecules from guest atom indices."""
     if not guest_indices:
@@ -111,7 +78,7 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int]) -> i
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        atoms_in_mol = _count_guest_atoms(atom_names, atom_idx)
+        atoms_in_mol = count_guest_atoms(atom_names, atom_idx)
         count += 1
         i += atoms_in_mol
     
