@@ -673,6 +673,77 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                 f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
 
 
+def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
+    """Extract atom names for one complete guest molecule from the list.
+
+    Handles various guest molecule types and their atom naming conventions.
+    Works regardless of atom order (unlike count_guest_atoms which assumes
+    certain atoms come first).
+
+    Args:
+        atom_names: List of atom names in guest region
+
+    Returns:
+        List of atom names for the first complete molecule,
+        or empty list if cannot determine
+    """
+    if not atom_names:
+        return []
+
+    # Strategy: detect molecule by counting atoms of each type
+    # and looking for patterns
+
+    # Check first 20 atoms max to avoid infinite loop
+    sample = atom_names[:20]
+
+    # Count atoms by type
+    from collections import Counter
+    counts = Counter(sample)
+
+    # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
+    # Check BEFORE CH4 since THF also has C and H
+    # GenIce2 THF: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
+    # Atoms can be named C, CA, or CB for carbons
+    carbon_count = sum(counts.get(atom, 0) for atom in ['C', 'CA', 'CB', 'c3', 'c5'])
+    if counts.get('O', 0) >= 1 and carbon_count >= 4:
+        # Return first 13 atoms as likely THF
+        return sample[:13]
+
+    # CH4: 1 C + 4 H = 5 atoms
+    if counts.get('C', 0) >= 1 and counts.get('H', 0) >= 4:
+        # Find C and 4 H atoms
+        mol_atoms = []
+        h_count = 0
+        for atom in sample:
+            if atom == 'C' and 'C' not in mol_atoms:
+                mol_atoms.append(atom)
+            elif atom == 'H' and h_count < 4:
+                mol_atoms.append(atom)
+                h_count += 1
+            if len(mol_atoms) == 5:
+                break
+        return mol_atoms[:5]
+
+    # H2: just H atoms
+    if set(sample[:2]) == {'H'} and len(sample) >= 2:
+        return ['H', 'H']
+
+    # CO2: C and O atoms
+    if counts.get('C', 0) >= 1 and counts.get('O', 0) >= 2:
+        return ['C', 'O', 'O']
+
+    # If first atom is Me (united-atom methane), return 1 atom
+    if sample[0] == 'Me':
+        return ['Me']
+
+    # Fallback: try using count_guest_atoms from molecule_utils
+    count = count_guest_atoms(atom_names, 0)
+    if count > 0:
+        return atom_names[:count]
+
+    return []
+
+
 def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
     """Detect guest molecule type from atom names.
     
