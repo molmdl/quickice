@@ -307,47 +307,12 @@ def tile_structure(
     a, b, c = cell_dims
 
     # Calculate tiling counts
-    # Use ceil for coverage, but avoid over-tiling when structure already fits
-    # CRITICAL FIX: If structure covers >= 95% of target, use n=1 to prevent overlaps
-    # This fixes hydrate->interface conversion where hydrate cell ~7.2nm but target box 7.45nm
-    tolerance = 0.05  # 5% tolerance
-    
-    def calc_tile_count(target_dim, cell_dim):
-        """Calculate number of tiles needed, avoiding over-tiling.
-        
-        CRITICAL FIX: Prevents duplicates by recognizing when target dimension
-        is nearly an exact multiple of cell dimension. If within tolerance,
-        uses the exact multiple instead of ceiling, which prevents creating
-        an extra tile that would wrap back and create duplicates.
-        
-        Examples:
-        - target=3.601, cell=1.2 → ratio=3.001 → rounds to 3, within tolerance → use 3 (not 4)
-        - target=3.5, cell=1.2 → ratio=2.92 → rounds to 3, within tolerance → use 3
-        - target=3.9, cell=1.2 → ratio=3.25 → rounds to 3, NOT within tolerance → use 4
-        """
-        if cell_dim <= 0:
-            return 1
-        
-        ratio = target_dim / cell_dim
-        
-        # Check if target is within tolerance of an exact multiple
-        # This handles the case where target ≈ n * cell_dim
-        rounded = round(ratio)
-        if rounded >= 1:
-            # Calculate what the exact multiple would give us
-            exact_dim = rounded * cell_dim
-            # Check if this is within tolerance of target
-            # Use relative tolerance: |target - exact| / target < tolerance
-            if target_dim > 0 and abs(target_dim - exact_dim) / target_dim < tolerance:
-                # Target is nearly an exact multiple - use the rounded value
-                return rounded
-        
-        # Otherwise, use ceiling to ensure coverage
-        return max(1, math.ceil(ratio))
-    
-    nx = calc_tile_count(lx, a)
-    ny = calc_tile_count(ly, b)
-    nz = calc_tile_count(lz, c)
+    # Use ceil to ensure complete coverage and continuous periodic images.
+    # CRITICAL: Box dimensions are already adjusted to cell periodicity by 
+    # round_to_periodicity in slab.py, so simple ceil is sufficient.
+    nx = math.ceil(lx / a) if a > 0 else 1
+    ny = math.ceil(ly / b) if b > 0 else 1
+    nz = math.ceil(lz / c) if c > 0 else 1
 
     # Determine atoms_per_molecule
     # This must be done BEFORE tiling to correctly filter molecules

@@ -228,16 +228,17 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
     scale = (TEMPLATE_DENSITY_GCM3 / target_water_density) ** (1.0 / 3.0)
     scaled_water_cell = water_template_cell * scale
     
-    # CRITICAL: Box dimensions must be multiples of BOTH ice and water cells
-    # to prevent overwrapping in water layer
-    # Adjust box_x and box_y to next multiple of water cell if needed
-    if adjusted_box_x % scaled_water_cell > 0.001:
-        # Round up to next multiple of water cell
-        nx_water = int(np.ceil(adjusted_box_x / scaled_water_cell))
-        adjusted_box_x = nx_water * scaled_water_cell
-    if adjusted_box_y % scaled_water_cell > 0.001:
-        ny_water = int(np.ceil(adjusted_box_y / scaled_water_cell))
-        adjusted_box_y = ny_water * scaled_water_cell
+    # CRITICAL FIX: Do NOT adjust box_x and box_y to water cell periodicity!
+    # Box dimensions should be multiples of ICE cell dimensions only.
+    # This ensures continuous periodic images for ice/hydrate framework.
+    # Water layer can tile into any box dimensions (doesn't need perfect periodicity).
+    #
+    # Previous code adjusted box dimensions to multiples of BOTH ice and water cells,
+    # which created a conflict because:
+    # - Ice cells are non-cubic (e.g., 2.35×2.21×2.71 nm)
+    # - Water template is cubic (1.87 nm)
+    # This forced box dimensions to water cell periodicity, breaking ice PBC.
+    # See: ice-hydrate-regression debug session for details.
     
     # Adjust water thickness to multiple of scaled cell
     adjusted_water_thickness, nz_water = round_to_periodicity(config.water_thickness, scaled_water_cell)
