@@ -26,5 +26,5 @@ Ice/water interface (slab) exported by QuickIce
 
 [ molecules ]
 ; Compound    #mols
-SOL          9717
-CH4        894
+SOL          16600
+CH4        1728
