@@ -599,6 +599,31 @@ def tile_structure(
     else:
         keep_molecules = []
 
+    # CRITICAL FIX: Filter molecules with atoms outside [0, target_region)
+    # This restores the OLD behavior to ensure continuous periodic images.
+    # Molecules with atoms outside the box would break PBC continuity.
+    # After COM wrapping, some molecules may still have atoms outside the box.
+    # We must filter these out to prevent:
+    # 1. Atoms appearing at negative coordinates
+    # 2. Water molecules overlapping with guest molecules outside the box
+    # 3. Discontinuous periodic images
+    if keep_molecules:
+        final_keep_molecules = []
+        for mol_idx in keep_molecules:
+            start_atom = mol_idx * atoms_per_molecule
+            end_atom = start_atom + atoms_per_molecule
+            mol_atoms = all_positions[start_atom:end_atom]
+            
+            # Check if ALL atoms are inside [0, target_region)
+            all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
+            all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
+            all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
+            
+            if all_inside_x and all_inside_y and all_inside_z:
+                final_keep_molecules.append(mol_idx)
+        
+        keep_molecules = final_keep_molecules
+
     if not keep_molecules:
         return np.zeros((0, 3), dtype=float), 0
 
@@ -615,6 +640,9 @@ def tile_structure(
     # Atoms can be outside [0, target_region) for molecules spanning PBC boundaries
     # This is CORRECT behavior - downstream code should handle PBC wrapping
     # (e.g., overlap detection wraps coordinates before KDTree operations)
+    # 
+    # UPDATE: The above comment was WRONG. Atoms MUST be within [0, target_region)
+    # for proper periodic images. The filtering step above ensures this.
     tiled_positions = filtered
 
     # Molecule count is exact (no truncation needed)
