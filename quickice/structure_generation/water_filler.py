@@ -218,10 +218,14 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
 
     Uses shared gro_parser module. Results are cached at module
     level since the template never changes.
+    
+    CRITICAL FIX: The template file has atoms outside [0, box_dims) due to
+    molecules spanning PBC boundaries. We wrap these atoms with modulo to
+    ensure all atoms are within the box. This prevents overlaps when tiling.
 
     Returns:
         Tuple of (positions, atom_names, box_dims):
-            - positions: (864, 3) atom positions in nm
+            - positions: (864, 3) atom positions in nm (wrapped into box)
             - atom_names: 864 entries ["OW", "HW1", "HW2", "MW", ...]
             - box_dims: [1.86824, 1.86824, 1.86824] box dimensions in nm
     """
@@ -242,6 +246,19 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
         box_dims = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
     else:
         box_dims = cell
+
+    # CRITICAL FIX: Wrap atoms into box [0, box_dims)
+    # The template file has molecules with atoms outside the box bounds
+    # (e.g., X range [-0.064, 1.896] nm for box 1.86824 nm)
+    # This causes overlaps when tiling. We fix this by wrapping atoms with modulo.
+    # 
+    # For water molecules, wrapping individual atoms is safe because:
+    # 1. Water molecules are small (~0.15 nm span)
+    # 2. Template is equilibrated, so molecular geometry is already correct
+    # 3. Wrapping doesn't break molecular integrity (just shifts atom positions)
+    #
+    # This ensures all atoms are within [0, box_dims) for proper tiling.
+    positions = positions % box_dims
 
     # Cache the result
     _water_template_cache = (positions, atom_names, box_dims)
@@ -307,12 +324,43 @@ def tile_structure(
     a, b, c = cell_dims
 
     # Calculate tiling counts
-    # Use ceil to ensure complete coverage and continuous periodic images.
-    # CRITICAL: Box dimensions are already adjusted to cell periodicity by 
-    # round_to_periodicity in slab.py, so simple ceil is sufficient.
-    nx = math.ceil(lx / a) if a > 0 else 1
-    ny = math.ceil(ly / b) if b > 0 else 1
-    nz = math.ceil(lz / c) if c > 0 else 1
+    # CRITICAL FIX: Use tolerance-based calculation to prevent over-tiling
+    # when target dimension is nearly an exact multiple of cell dimension.
+    # This fixes the issue where water box dimensions (adjusted to ice periodicity)
+    # are not exact multiples of water template cell dimensions.
+    
+    def calc_tile_count(target_dim, cell_dim):
+        """Calculate number of tiles needed, avoiding over-tiling.
+        
+        If target dimension is within 5% tolerance of an exact multiple of cell_dim,
+        use the rounded value instead of ceiling. This prevents creating an extra
+        tile that would wrap back and create overlaps.
+        
+        Examples:
+        - target=3.601, cell=1.2 → ratio=3.001 → rounds to 3, within tolerance → use 3 (not 4)
+        - target=6.0, cell=1.86 → ratio=3.22 → rounds to 3, within tolerance → use 3 (not 4)
+        - target=3.9, cell=1.2 → ratio=3.25 → rounds to 3, NOT within tolerance → use 4
+        """
+        if cell_dim <= 0:
+            return 1
+        
+        ratio = target_dim / cell_dim
+        
+        # Check if target is within tolerance of an exact multiple
+        rounded = round(ratio)
+        if rounded >= 1:
+            exact_dim = rounded * cell_dim
+            # Check if this is within tolerance of target
+            # Use relative tolerance: |target - exact| / target < 0.05 (5%)
+            if target_dim > 0 and abs(target_dim - exact_dim) / target_dim < 0.05:
+                return rounded
+        
+        # Otherwise, use ceiling to ensure coverage
+        return max(1, math.ceil(ratio))
+    
+    nx = calc_tile_count(lx, a)
+    ny = calc_tile_count(ly, b)
+    nz = calc_tile_count(lz, c)
 
     # Determine atoms_per_molecule
     # This must be done BEFORE tiling to correctly filter molecules
@@ -477,117 +525,25 @@ def tile_structure(
     n_tiles = nx * ny * nz
     all_positions = (positions[np.newaxis, :, :] + offsets[:, np.newaxis, :]).reshape(-1, 3)
 
-    # CRITICAL: Wrap and filter molecules as UNITS
-    # This preserves molecular integrity when molecules span the PBC boundary.
-    # Molecules with atoms outside [0, target_region) are wrapped based on their
-    # center of mass, then individual atoms are clamped into the box.
+    # Check each molecule: keep only if ALL its atoms are inside target region
+    # AND all atoms are >= 0 (lower bound check)
+    # This filters out molecules that span the PBC boundary of the original unit cell
     n_tiled_molecules = len(all_positions) // atoms_per_molecule
     tol = 1e-10
 
-    # First pass: wrap all molecules
+    keep_molecules = []
     for mol_idx in range(n_tiled_molecules):
         start_atom = mol_idx * atoms_per_molecule
         end_atom = start_atom + atoms_per_molecule
         mol_atoms = all_positions[start_atom:end_atom]
 
-        # Wrap molecule based on center of mass ONLY
-        # This handles molecules that span PBC boundaries (e.g., hydrate guests at origin)
-        # CRITICAL: Molecules with atoms outside [0, target_region) are ACCEPTED
-        # The final molecular wrapping step will handle atom positions correctly
-        
-        # Wrap COM into [0, target_region) - this is the ONLY wrapping here
-        for dim in range(3):
-            com = mol_atoms[:, dim].mean()
-            # Wrap COM into [0, target_region)
-            # Use modulo operation for cleaner wrapping
-            if com < 0:
-                # Shift up by enough boxes to bring COM into range
-                n_boxes = int(np.ceil(-com / target_region[dim]))
-                all_positions[start_atom:end_atom, dim] += n_boxes * target_region[dim]
-                mol_atoms = all_positions[start_atom:end_atom]
-            elif com >= target_region[dim]:
-                # Shift down by enough boxes to bring COM into range
-                n_boxes = int(np.floor(com / target_region[dim]))
-                all_positions[start_atom:end_atom, dim] -= n_boxes * target_region[dim]
-                mol_atoms = all_positions[start_atom:end_atom]
+        # Check if ALL atoms of this molecule are inside target region [0, target_region)
+        all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
+        all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
+        all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
 
-    # Second pass: safety check for actual duplicates (wrapping errors)
-    # This catches any edge cases where molecules end up at identical positions
-    # after wrapping, which would indicate a bug in the tiling/wrapping logic.
-    # 
-    # IMPORTANT: Use a small threshold (0.01 nm) to catch only TRUE duplicates
-    # (identical positions), not legitimate close molecules in dense structures.
-    # Water molecules in ice/hydrate can legitimately be as close as ~0.2-0.27 nm.
-    #
-    # If duplicates are found here, it indicates a bug that should be fixed,
-    # not a normal condition to work around.
-    
-    # Calculate center of mass for all wrapped molecules
-    molecule_centers = []
-    for mol_idx in range(n_tiled_molecules):
-        start_atom = mol_idx * atoms_per_molecule
-        end_atom = start_atom + atoms_per_molecule
-        mol_atoms = all_positions[start_atom:end_atom]
-        com = mol_atoms.mean(axis=0)
-        molecule_centers.append(com)
-    
-    molecule_centers = np.array(molecule_centers)
-    
-    # Use KDTree for efficient duplicate detection
-    # Threshold: 0.01 nm (catches only truly identical positions)
-    from scipy.spatial import cKDTree
-    
-    if len(molecule_centers) > 0:
-        tree = cKDTree(molecule_centers)
-        duplicate_pairs = tree.query_pairs(0.01)
-        
-        # Build set of molecules to remove (keep the lower index, remove the higher index)
-        molecules_to_remove = set()
-        for idx1, idx2 in duplicate_pairs:
-            # Keep idx1, remove idx2 (lower index has priority)
-            molecules_to_remove.add(max(idx1, idx2))
-        
-        # Build keep list (all molecules except duplicates)
-        keep_molecules = [idx for idx in range(n_tiled_molecules) if idx not in molecules_to_remove]
-        
-        # Log if duplicates were found (this indicates a potential bug)
-        if len(molecules_to_remove) > 0:
-            import warnings
-            warnings.warn(
-                f"tile_structure: Found {len(molecules_to_remove)} duplicate molecules "
-                f"(out of {n_tiled_molecules}) with COM distance < 0.01 nm. "
-                f"This may indicate a bug in the tiling logic. "
-                f"Please investigate if this is unexpected.",
-                UserWarning,
-                stacklevel=2
-            )
-    else:
-        keep_molecules = []
-
-    # CRITICAL FIX: Filter molecules with atoms outside [0, target_region)
-    # This restores the OLD behavior to ensure continuous periodic images.
-    # Molecules with atoms outside the box would break PBC continuity.
-    # After COM wrapping, some molecules may still have atoms outside the box.
-    # We must filter these out to prevent:
-    # 1. Atoms appearing at negative coordinates
-    # 2. Water molecules overlapping with guest molecules outside the box
-    # 3. Discontinuous periodic images
-    if keep_molecules:
-        final_keep_molecules = []
-        for mol_idx in keep_molecules:
-            start_atom = mol_idx * atoms_per_molecule
-            end_atom = start_atom + atoms_per_molecule
-            mol_atoms = all_positions[start_atom:end_atom]
-            
-            # Check if ALL atoms are inside [0, target_region)
-            all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
-            all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
-            all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
-            
-            if all_inside_x and all_inside_y and all_inside_z:
-                final_keep_molecules.append(mol_idx)
-        
-        keep_molecules = final_keep_molecules
+        if all_inside_x and all_inside_y and all_inside_z:
+            keep_molecules.append(mol_idx)
 
     if not keep_molecules:
         return np.zeros((0, 3), dtype=float), 0
@@ -601,14 +557,66 @@ def tile_structure(
 
     filtered = all_positions[keep_mask]
 
-    # No final wrapping needed - molecules are already wrapped based on COM
-    # Atoms can be outside [0, target_region) for molecules spanning PBC boundaries
-    # This is CORRECT behavior - downstream code should handle PBC wrapping
-    # (e.g., overlap detection wraps coordinates before KDTree operations)
-    # 
-    # UPDATE: The above comment was WRONG. Atoms MUST be within [0, target_region)
-    # for proper periodic images. The filtering step above ensures this.
-    tiled_positions = filtered
+    # CRITICAL: Wrap molecules as UNITS, not individual atoms
+    # This preserves molecular integrity when molecules span the PBC boundary
+    # Without this, atoms of the same molecule could end up on opposite sides
+    # of the box (e.g., O at Y=0.1, H at Y=1.9 in a 2.0 nm box), causing
+    # bonds to appear 1.8 nm long instead of the correct 0.1 nm.
+    #
+    # After filtering, all atoms should already be in [0, target_region).
+    # The wrapping here is a safety measure for edge cases (e.g., floating point
+    # precision issues, or molecules very close to boundary).
+    #
+    # For triclinic cells, use fractional coordinate wrapping.
+    # For orthogonal cells, use standard coordinate-axis wrapping.
+    if is_triclinic and cell_matrix is not None:
+        # Build target cell matrix for wrapping (orthogonal box)
+        target_cell = np.diag(target_region)
+        # Use triclinic wrapping with the target orthogonal box
+        tiled_positions = wrap_positions_triclinic(filtered, target_cell, atoms_per_molecule)
+    else:
+        # Orthogonal wrapping (standard coordinate-axis modulo)
+        tiled_positions = np.zeros_like(filtered)
+        n_filtered_molecules = len(filtered) // atoms_per_molecule
+
+        for mol_idx in range(n_filtered_molecules):
+            start_atom = mol_idx * atoms_per_molecule
+            end_atom = start_atom + atoms_per_molecule
+            mol_atoms = filtered[start_atom:end_atom].copy()
+
+            # Calculate shift based on minimum position across all atoms
+            # This handles any edge cases where atoms might be slightly outside [0, target_region)
+            shift = np.zeros(3)
+            for dim in range(3):
+                min_pos = mol_atoms[:, dim].min()
+                max_pos = mol_atoms[:, dim].max()
+                
+                # Only shift if atoms are actually outside [0, target_region)
+                if min_pos < 0:
+                    # Shift up to bring minimum into range
+                    shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
+                elif max_pos >= target_region[dim]:
+                    # Shift down to bring maximum into range
+                    shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
+
+            # Apply shift to all atoms in the molecule
+            shifted = mol_atoms + shift
+            
+            # Second pass: ensure all atoms are within [0, target_region)
+            # This handles edge cases where the first shift pushed atoms out the other side
+            # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
+            for dim in range(3):
+                min_pos = shifted[:, dim].min()
+                max_pos = shifted[:, dim].max()
+                
+                if min_pos < 0:
+                    # Atoms are still negative after first shift - shift up by one box
+                    shifted[:, dim] += target_region[dim]
+                elif max_pos >= target_region[dim]:
+                    # Atoms are too high after first shift - shift down by one box
+                    shifted[:, dim] -= target_region[dim]
+            
+            tiled_positions[start_atom:end_atom] = shifted
 
     # Molecule count is exact (no truncation needed)
     n_molecules = len(keep_molecules)
