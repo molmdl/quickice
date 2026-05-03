@@ -219,13 +219,15 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
     Uses shared gro_parser module. Results are cached at module
     level since the template never changes.
     
-    CRITICAL FIX: The template file has atoms outside [0, box_dims) due to
-    molecules spanning PBC boundaries. We wrap these atoms with modulo to
-    ensure all atoms are within the box. This prevents overlaps when tiling.
+    NOTE: The template file has molecules spanning PBC boundaries (atoms
+    outside [0, box_dims)). This is CORRECT - we should NOT wrap individual
+    atoms as that would break molecular integrity. Instead, tile_structure()
+    handles these molecules correctly by filtering out incomplete molecules
+    at the molecule level (filter_molecules=True).
 
     Returns:
         Tuple of (positions, atom_names, box_dims):
-            - positions: (864, 3) atom positions in nm (wrapped into box)
+            - positions: (864, 3) atom positions in nm
             - atom_names: 864 entries ["OW", "HW1", "HW2", "MW", ...]
             - box_dims: [1.86824, 1.86824, 1.86824] box dimensions in nm
     """
@@ -246,19 +248,6 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
         box_dims = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
     else:
         box_dims = cell
-
-    # CRITICAL FIX: Wrap atoms into box [0, box_dims)
-    # The template file has molecules with atoms outside the box bounds
-    # (e.g., X range [-0.064, 1.896] nm for box 1.86824 nm)
-    # This causes overlaps when tiling. We fix this by wrapping atoms with modulo.
-    # 
-    # For water molecules, wrapping individual atoms is safe because:
-    # 1. Water molecules are small (~0.15 nm span)
-    # 2. Template is equilibrated, so molecular geometry is already correct
-    # 3. Wrapping doesn't break molecular integrity (just shifts atom positions)
-    #
-    # This ensures all atoms are within [0, box_dims) for proper tiling.
-    positions = positions % box_dims
 
     # Cache the result
     _water_template_cache = (positions, atom_names, box_dims)
