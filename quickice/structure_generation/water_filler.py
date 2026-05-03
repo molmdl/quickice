@@ -313,15 +313,37 @@ def tile_structure(
     tolerance = 0.05  # 5% tolerance
     
     def calc_tile_count(target_dim, cell_dim):
-        """Calculate number of tiles needed, avoiding over-tiling."""
+        """Calculate number of tiles needed, avoiding over-tiling.
+        
+        CRITICAL FIX: Prevents duplicates by recognizing when target dimension
+        is nearly an exact multiple of cell dimension. If within tolerance,
+        uses the exact multiple instead of ceiling, which prevents creating
+        an extra tile that would wrap back and create duplicates.
+        
+        Examples:
+        - target=3.601, cell=1.2 → ratio=3.001 → rounds to 3, within tolerance → use 3 (not 4)
+        - target=3.5, cell=1.2 → ratio=2.92 → rounds to 3, within tolerance → use 3
+        - target=3.9, cell=1.2 → ratio=3.25 → rounds to 3, NOT within tolerance → use 4
+        """
         if cell_dim <= 0:
             return 1
+        
         ratio = target_dim / cell_dim
-        # If structure already covers >= 95% of target, don't create extra tile
-        if ratio <= 1.0 + tolerance:
-            return 1
-        else:
-            return math.ceil(ratio)
+        
+        # Check if target is within tolerance of an exact multiple
+        # This handles the case where target ≈ n * cell_dim
+        rounded = round(ratio)
+        if rounded >= 1:
+            # Calculate what the exact multiple would give us
+            exact_dim = rounded * cell_dim
+            # Check if this is within tolerance of target
+            # Use relative tolerance: |target - exact| / target < tolerance
+            if target_dim > 0 and abs(target_dim - exact_dim) / target_dim < tolerance:
+                # Target is nearly an exact multiple - use the rounded value
+                return rounded
+        
+        # Otherwise, use ceiling to ensure coverage
+        return max(1, math.ceil(ratio))
     
     nx = calc_tile_count(lx, a)
     ny = calc_tile_count(ly, b)
@@ -497,7 +519,7 @@ def tile_structure(
     n_tiled_molecules = len(all_positions) // atoms_per_molecule
     tol = 1e-10
 
-    keep_molecules = []
+    # First pass: wrap all molecules
     for mol_idx in range(n_tiled_molecules):
         start_atom = mol_idx * atoms_per_molecule
         end_atom = start_atom + atoms_per_molecule
@@ -523,11 +545,59 @@ def tile_structure(
                 n_boxes = int(np.floor(com / target_region[dim]))
                 all_positions[start_atom:end_atom, dim] -= n_boxes * target_region[dim]
                 mol_atoms = all_positions[start_atom:end_atom]
+
+    # Second pass: safety check for actual duplicates (wrapping errors)
+    # This catches any edge cases where molecules end up at identical positions
+    # after wrapping, which would indicate a bug in the tiling/wrapping logic.
+    # 
+    # IMPORTANT: Use a small threshold (0.01 nm) to catch only TRUE duplicates
+    # (identical positions), not legitimate close molecules in dense structures.
+    # Water molecules in ice/hydrate can legitimately be as close as ~0.2-0.27 nm.
+    #
+    # If duplicates are found here, it indicates a bug that should be fixed,
+    # not a normal condition to work around.
+    
+    # Calculate center of mass for all wrapped molecules
+    molecule_centers = []
+    for mol_idx in range(n_tiled_molecules):
+        start_atom = mol_idx * atoms_per_molecule
+        end_atom = start_atom + atoms_per_molecule
+        mol_atoms = all_positions[start_atom:end_atom]
+        com = mol_atoms.mean(axis=0)
+        molecule_centers.append(com)
+    
+    molecule_centers = np.array(molecule_centers)
+    
+    # Use KDTree for efficient duplicate detection
+    # Threshold: 0.01 nm (catches only truly identical positions)
+    from scipy.spatial import cKDTree
+    
+    if len(molecule_centers) > 0:
+        tree = cKDTree(molecule_centers)
+        duplicate_pairs = tree.query_pairs(0.01)
         
-        # Accept the molecule - atoms can be outside [0, target_region)
-        # This is CORRECT for molecules spanning PBC boundaries
-        # Downstream code (e.g., overlap detection) will handle wrapping
-        keep_molecules.append(mol_idx)
+        # Build set of molecules to remove (keep the lower index, remove the higher index)
+        molecules_to_remove = set()
+        for idx1, idx2 in duplicate_pairs:
+            # Keep idx1, remove idx2 (lower index has priority)
+            molecules_to_remove.add(max(idx1, idx2))
+        
+        # Build keep list (all molecules except duplicates)
+        keep_molecules = [idx for idx in range(n_tiled_molecules) if idx not in molecules_to_remove]
+        
+        # Log if duplicates were found (this indicates a potential bug)
+        if len(molecules_to_remove) > 0:
+            import warnings
+            warnings.warn(
+                f"tile_structure: Found {len(molecules_to_remove)} duplicate molecules "
+                f"(out of {n_tiled_molecules}) with COM distance < 0.01 nm. "
+                f"This may indicate a bug in the tiling logic. "
+                f"Please investigate if this is unexpected.",
+                UserWarning,
+                stacklevel=2
+            )
+    else:
+        keep_molecules = []
 
     if not keep_molecules:
         return np.zeros((0, 3), dtype=float), 0
