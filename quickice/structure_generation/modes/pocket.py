@@ -350,12 +350,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         # Use full box dimensions (same as ice tiling)
         box_guest_dims = box_dims
         
+        # FIX: Use filter_molecules=False for guests because GenIce2 outputs complete molecules
+        # already positioned in cage locations. Filtering removes guests that span PBC boundaries.
         tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
             box_guest_dims,
             atoms_per_molecule=guest_atoms_per_mol,
-            cell_matrix=cell_matrix
+            cell_matrix=cell_matrix,
+            filter_molecules=False  # Don't filter guests - they're already complete molecules
         )
         
         # Remove guests inside cavity (keep ONLY guests in ice region, outside cavity)

@@ -419,12 +419,15 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         ])
 
         # Tile guests for BOTTOM ice layer (Z = [0, ice_thickness])
+        # FIX: Use filter_molecules=False for guests because GenIce2 outputs complete molecules
+        # already positioned in cage locations. Filtering removes guests that span PBC boundaries.
         bottom_guest_positions, bottom_guest_nmolecules = tile_structure(
             raw_guest_positions,
             guest_cell_dims,
             ice_region_dims,
             atoms_per_molecule=guest_atoms_per_mol,
-            cell_matrix=cell_matrix
+            cell_matrix=cell_matrix,
+            filter_molecules=False  # Don't filter guests - they're already complete molecules
         )
 
         # Tile guests for TOP ice layer (same dimensions), then shift Z
@@ -433,7 +436,8 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             guest_cell_dims,
             ice_region_dims,
             atoms_per_molecule=guest_atoms_per_mol,
-            cell_matrix=cell_matrix
+            cell_matrix=cell_matrix,
+            filter_molecules=False  # Don't filter guests - they're already complete molecules
         )
 
         # Shift top guests to their actual position

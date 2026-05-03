@@ -272,12 +272,12 @@ def tile_structure(
     target_region: np.ndarray,
     atoms_per_molecule: Optional[int] = None,
     cell_matrix: Optional[np.ndarray] = None,
+    filter_molecules: bool = True,
 ) -> tuple[np.ndarray, int]:
     """Tile a structure to fill a target rectangular region using cell periodicity.
 
     Replicates the input structure by shifting copies along each axis to
-    cover the target region. Atoms that fall outside the target region are
-    filtered out. Positions are wrapped into the target region using modulo.
+    cover the target region. Positions are wrapped into the target region using modulo.
 
     Works for ice (3 atoms/molecule from GenIce) or water (4 atoms/molecule
     from tip4p.gro). The caller is responsible for replicating atom_names.
@@ -308,6 +308,10 @@ def tile_structure(
         cell_matrix: (3, 3) cell vectors as ROW vectors [a, b, c] (optional).
             Required for triclinic cells to enable lattice-vector tiling.
             For orthogonal cells, this can be omitted.
+        filter_molecules: If True (default), filter out molecules with atoms
+            outside [0, target_region). If False, keep all molecules and wrap them
+            into the target region. Set to False for guest molecules from GenIce2
+            which are already complete molecules positioned in cage locations.
 
     Returns:
         Tuple of (tiled_positions, n_molecules):
@@ -525,37 +529,48 @@ def tile_structure(
     n_tiles = nx * ny * nz
     all_positions = (positions[np.newaxis, :, :] + offsets[:, np.newaxis, :]).reshape(-1, 3)
 
-    # Check each molecule: keep only if ALL its atoms are inside target region
-    # AND all atoms are >= 0 (lower bound check)
-    # This filters out molecules that span the PBC boundary of the original unit cell
+    # Filter molecules based on filter_molecules parameter
+    # When filter_molecules=True (default): Remove molecules with atoms outside target region
+    # When filter_molecules=False: Keep all molecules and wrap them later
     n_tiled_molecules = len(all_positions) // atoms_per_molecule
-    tol = 1e-10
+    
+    if filter_molecules:
+        # Check each molecule: keep only if ALL its atoms are inside target region
+        # AND all atoms are >= 0 (lower bound check)
+        # This filters out molecules that span the PBC boundary of the original unit cell
+        tol = 1e-10
 
-    keep_molecules = []
-    for mol_idx in range(n_tiled_molecules):
-        start_atom = mol_idx * atoms_per_molecule
-        end_atom = start_atom + atoms_per_molecule
-        mol_atoms = all_positions[start_atom:end_atom]
+        keep_molecules = []
+        for mol_idx in range(n_tiled_molecules):
+            start_atom = mol_idx * atoms_per_molecule
+            end_atom = start_atom + atoms_per_molecule
+            mol_atoms = all_positions[start_atom:end_atom]
 
-        # Check if ALL atoms of this molecule are inside target region [0, target_region)
-        all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
-        all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
-        all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
+            # Check if ALL atoms of this molecule are inside target region [0, target_region)
+            all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
+            all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
+            all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
 
-        if all_inside_x and all_inside_y and all_inside_z:
-            keep_molecules.append(mol_idx)
+            if all_inside_x and all_inside_y and all_inside_z:
+                keep_molecules.append(mol_idx)
 
-    if not keep_molecules:
-        return np.zeros((0, 3), dtype=float), 0
+        if not keep_molecules:
+            return np.zeros((0, 3), dtype=float), 0
 
-    # Build keep mask for atoms of complete molecules
-    keep_mask = np.zeros(len(all_positions), dtype=bool)
-    for mol_idx in keep_molecules:
-        start_atom = mol_idx * atoms_per_molecule
-        end_atom = start_atom + atoms_per_molecule
-        keep_mask[start_atom:end_atom] = True
+        # Build keep mask for atoms of complete molecules
+        keep_mask = np.zeros(len(all_positions), dtype=bool)
+        for mol_idx in keep_molecules:
+            start_atom = mol_idx * atoms_per_molecule
+            end_atom = start_atom + atoms_per_molecule
+            keep_mask[start_atom:end_atom] = True
 
-    filtered = all_positions[keep_mask]
+        filtered = all_positions[keep_mask]
+        n_kept_molecules = len(keep_molecules)
+    else:
+        # Keep all molecules - no filtering
+        # This is used for guest molecules from GenIce2 which are already complete
+        filtered = all_positions
+        n_kept_molecules = n_tiled_molecules
 
     # CRITICAL: Wrap molecules as UNITS, not individual atoms
     # This preserves molecular integrity when molecules span the PBC boundary
@@ -563,9 +578,9 @@ def tile_structure(
     # of the box (e.g., O at Y=0.1, H at Y=1.9 in a 2.0 nm box), causing
     # bonds to appear 1.8 nm long instead of the correct 0.1 nm.
     #
-    # After filtering, all atoms should already be in [0, target_region).
-    # The wrapping here is a safety measure for edge cases (e.g., floating point
-    # precision issues, or molecules very close to boundary).
+    # After filtering (if filter_molecules=True), all atoms should already be in [0, target_region).
+    # If filter_molecules=False, atoms may be outside [0, target_region) and need wrapping.
+    # The wrapping here ensures all atoms are within [0, target_region).
     #
     # For triclinic cells, use fractional coordinate wrapping.
     # For orthogonal cells, use standard coordinate-axis wrapping.
@@ -619,7 +634,7 @@ def tile_structure(
             tiled_positions[start_atom:end_atom] = shifted
 
     # Molecule count is exact (no truncation needed)
-    n_molecules = len(keep_molecules)
+    n_molecules = n_kept_molecules
 
     return tiled_positions, n_molecules
 
