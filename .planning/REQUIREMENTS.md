@@ -13,7 +13,8 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 - [ ] **ARCH-02**: MoleculetypeRegistry tracks molecule types and generates unique GROMACS names
 - [ ] **ARCH-03**: ITP parser module extracts molecule name, atom types, atom count from .itp files
 - [ ] **ARCH-04**: Molecule validator module checks GRO/ITP consistency (atom count, residue name)
-- [ ] **ARCH-05**: Tab reordering (Ion moves from Tab 4 to Tab 6) with updated cross-tab data flow
+- [ ] **ARCH-05a**: TabIndex enum defines constants for current tab positions (Phase 32, Ion at position 3)
+- [ ] **ARCH-05b**: Tab reordering when new tabs added (Ion moves from position 3 to position 5 in Phase 35)
 - [ ] **ARCH-06**: Data transfer mechanism between tabs (exact flow to be determined during implementation)
 - [ ] **ARCH-07**: Keyboard shortcut Ctrl+S (or Ctrl+E) for GROMACS export from active tab
 
@@ -101,7 +102,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ARCH-02 | Phase 32 | Pending |
 | ARCH-03 | Phase 32 | Pending |
 | ARCH-04 | Phase 32 | Pending |
-| ARCH-05 | Phase 32 | Pending |
+| ARCH-05a | Phase 32 | Pending |
+| ARCH-05b | Phase 35 | Pending |
 | ARCH-06 | Phase 32 | Pending |
 | ARCH-07 | Phase 35 | Pending |
 | SOLUTE-01 | Phase 33 | Pending |

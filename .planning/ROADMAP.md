@@ -16,21 +16,21 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 **Goal:** User can rely on stable tab infrastructure and molecule type tracking before new features are added
 **Depends on:** v4.0 (Phase 31.2)
-**Requirements:** ARCH-01, ARCH-02, ARCH-03, ARCH-04, ARCH-05, ARCH-06, GROMACS-02
+**Requirements:** ARCH-01, ARCH-02, ARCH-03, ARCH-04, ARCH-05a, ARCH-06, GROMACS-02
 
 **Success Criteria:**
-1. Developer can reference tabs by TabIndex constants pre-defined for final positions (ION=5), preventing bugs when Ion moves from position 3 to 5 in future phases
+1. Developer can reference tabs by TabIndex constants matching current positions (ION=3), preventing bugs when Ion moves to position 5 in Phase 35
 2. User receives specific error messages when uploading invalid .gro/.itp files (atom count mismatch, residue name inconsistency)
 3. Developer can reference tabs by named constants (TabIndex.ICE, TabIndex.HYDRATE, etc.) without hardcoded integers
 4. GROMACS export distinguishes hydrate guests (CH4_HYD, THF_HYD) from liquid solutes (CH4_LIQ, THF_LIQ) in topology files
 
 **Details:**
-- TabIndex enum for tab position constants
+- TabIndex enum for tab position constants (defines current positions, Ion at position 3)
 - MoleculetypeRegistry for tracking molecule types and generating unique GROMACS names
 - itp_parser.py for parsing GROMACS .itp topology files (~80 lines)
 - molecule_validator.py for GRO/ITP consistency checking
-- Tab reordering: Ion moves Tab 4 → Tab 6
-- Cross-tab data flow verification after reordering
+- Tab reordering preparation: Ion currently at position 3, will move to position 5 in Phase 35
+- Cross-tab data flow verification (current flows work correctly)
 
 **Plans:**
 - [ ] 32-01-PLAN.md — Foundation: TabIndex enum, MoleculetypeRegistry, ITP parser
@@ -92,7 +92,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
 **Depends on:** Phase 32, Phase 33, Phase 34
-**Requirements:** ARCH-07, GROMACS-01, GROMACS-03, DOCS-01, DOCS-02, DOCS-03, DOCS-04, DOCS-05
+**Requirements:** ARCH-05b, ARCH-07, GROMACS-01, GROMACS-03, DOCS-01, DOCS-02, DOCS-03, DOCS-04, DOCS-05
 
 **Success Criteria:**
 1. User can navigate all 6 tabs (Ice, Hydrate, Interface, Solute, Custom, Ion) without data flow errors
