@@ -103,6 +103,35 @@ class MainWindow(QMainWindow):
         Ice Generation tab (existing functionality)
         Interface Construction tab (new in v4.0)
         """
+        # Current tab structure (v4.0):
+        # Tab 0 (TabIndex.ICE): Ice Generation
+        # Tab 1 (TabIndex.HYDRATE): Hydrate Config
+        # Tab 2 (TabIndex.INTERFACE): Interface Construction
+        # Tab 3 (TabIndex.ION): Ion Insertion
+        #
+        # Planned tab order (v4.5, Phases 33-35):
+        # Tab 0 (TabIndex.ICE): Ice Generation
+        # Tab 1 (TabIndex.HYDRATE): Hydrate Config
+        # Tab 2 (TabIndex.INTERFACE): Interface Construction
+        # Tab 3 (TabIndex.SOLUTE): Solute Insertion (Phase 33)
+        # Tab 4 (TabIndex.CUSTOM): Custom Molecule (Phase 34)
+        # Tab 5 (TabIndex.ION): Ion Insertion (moves from Tab 3 in Phase 35)
+        
+        # Cross-tab data flows (v4.0):
+        # Ice Generation → Interface Construction (ice candidates)
+        # Hydrate Config → Interface Construction (hydrate structure as source)
+        # Interface Construction → Ion Insertion (interface structure for ions)
+        #
+        # Future data flows (v4.5):
+        # Interface Construction → Solute Insertion (liquid region for solutes)
+        # Interface Construction → Custom Molecule (liquid region for custom)
+        # Custom Molecule → Ion Insertion (custom molecules + ions)
+        
+        # Note: Tab reordering (ARCH-05b) happens in Phase 35, not Phase 32.
+        # Phase 32 prepares infrastructure (TabIndex constants for current positions, refactoring).
+        # Ion tab stays at position 3 during Phase 32, moves to position 5
+        # when Solute/Custom tabs are added in Phases 33-35.
+        
         # Create tab widget as central container
         self.tab_widget = QTabWidget()
         
