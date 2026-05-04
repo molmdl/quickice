@@ -1,114 +1,115 @@
 # Technology Stack
 
-**Analysis Date:** 2026-05-02
+**Analysis Date:** 2026-05-05
 
 ## Languages
 
 **Primary:**
-- Python 3.14.3 - Core application language (CLI, GUI, structure generation)
+- Python 3.14.3 - Core application logic (entire codebase)
 
 **Secondary:**
-- Bash - Build scripts and environment setup
+- None detected
 
 ## Runtime
 
 **Environment:**
-- Conda (Miniconda/Anaconda) - Package and environment management
+- Conda (Miniconda/Anaconda)
 - Environment name: `quickice`
 
 **Package Manager:**
-- Conda (conda-forge channel) - Primary dependency management
-- Pip - Python packages not available in conda
-
-**Lockfile:**
-- `environment.yml` - Conda environment specification with pinned versions
-- `environment-build.yml` - Build environment for PyInstaller
+- Conda (primary) - `environment.yml`, `environment-build.yml`
+- Pip (secondary) - pip dependencies specified in conda environment files
+- Lockfile: Present (conda environment files with pinned versions)
 
 ## Frameworks
 
 **Core:**
-- GenIce2 2.2.13.1 - Ice crystal structure generation with hydrogen disorder
-- genice-core 1.4.3 - Core algorithms for GenIce
-
-**GUI:**
-- PySide6 6.10.2 - Qt6 bindings for Python (cross-platform GUI)
-- VTK 9.5.2 - 3D visualization toolkit for molecular rendering
+- PySide6 6.10.2 - Qt6-based GUI framework
+- VTK 9.5.2 - 3D molecular visualization
 
 **Testing:**
-- pytest ≥9.0.0 - Unit testing framework
+- pytest 9.0.0+ - Test framework and runner
 
 **Build/Dev:**
-- PyInstaller 6.19.0 - Standalone executable packaging for distribution
-- setuptools 80.10.2 - Python package building
+- PyInstaller 6.19.0 - Executable bundling for distribution
+- setuptools 80.10.2 - Package management
 
 ## Key Dependencies
 
+**Critical:**
+
 **Scientific Computing:**
-- NumPy 2.4.3 - Numerical operations, array handling
-- SciPy 1.17.1 - Spatial algorithms (cKDTree), scientific computing
-- NetworkX 3.6.1 - Graph algorithms for molecular topology
-- Shapely 2.1.2 - Computational geometry for overlap detection
+- numpy 2.4.3 - Array operations, numerical computing
+- scipy 1.17.1 - Spatial algorithms (cKDTree for neighbor search), scientific computing
+- networkx 3.6.1 - Graph algorithms for molecular networks
+
+**Ice/Hydrate Generation:**
+- genice2 2.2.13.1 - Ice structure generation engine
+- genice-core 1.4.3 - Core GenIce functionality
+- cycless 0.7 - Cyclic structure detection
+- pairlist 0.6.4 - Pair interaction handling
+
+**Thermodynamics & Physics:**
+- iapws 1.5.5 - IAPWS water/steam properties (IAPWS-95, IAPWS-97 formulations)
+- iapws._iapws._Ice - Ice-specific IAPWS calculations
+
+**Structure Analysis:**
+- spglib 2.7.0 - Space group analysis for crystal structures
+- shapely 2.1.2 - Geometric operations (polygon containment for phase diagrams)
 
 **Visualization:**
-- Matplotlib 3.10.8 - Phase diagram generation
+- matplotlib 3.10.8 - Phase diagram plotting, figure generation
+- vtkmodules - VTK Python bindings for 3D rendering
 
-**Water/Ice Physics:**
-- iapws 1.5.5 - IAPWS-95 water properties, IAPWS R10-06 ice density
-- spglib 2.7.0 - Crystal symmetry analysis
-
-**Molecular Structure:**
-- cycless 0.7 - Ring detection for structure analysis
-- pairlist 0.6.4 - Neighbor list generation
-- graphstat 0.3.3 - Graph statistics for molecular networks
-
-**File Formats:**
-- openpyscad 0.5.0 - OpenSCAD format output (future use)
-- yaplotlib 0.1.3 - Visualization format utilities
-
-**CLI:**
-- Click 8.3.1 - Command-line interface framework
-
-**Utilities:**
+**Utility:**
+- click 8.3.1 - CLI framework (currently using argparse instead)
+- openpyscad 0.5.0 - OpenSCAD format support
 - deprecated 1.3.1, deprecation 2.1.0 - Deprecation warnings
 - methodtools 0.4.7 - Method decorators
-- wirerope 1.0.0, wrapt 2.1.2, six 1.17.0 - Utility libraries
+- wirerope 1.0.0, wrapt 2.1.2 - Function wrapping utilities
+- six 1.17.0 - Python 2/3 compatibility (legacy)
+- yaplotlib 0.1.3 - Yet Another Plot Library
+- graphstat 0.3.3 - Graph statistics
+
+**Infrastructure:**
+- None (desktop application, no server infrastructure)
 
 ## Configuration
 
 **Environment:**
-- Conda environment via `environment.yml` (runtime)
-- Conda environment via `environment-build.yml` (build)
-- Environment activated via `source setup.sh`
+- Conda environment managed via `environment.yml`
+- Setup script: `setup.sh` (activates conda env, sets PYTHONPATH)
+- Environment variables:
+  - `PYTHONPATH` - Project root added for package imports
+  - `DISPLAY` - X11 display for GUI (Linux)
+  - `QUICKICE_FORCE_VTK` - Override VTK availability check
+  - `__GLX_VENDOR_LIBRARY_NAME` - Set to 'mesa' for software rendering
 
-**Key Configuration Files:**
-- `environment.yml` - Runtime dependencies
-- `environment-build.yml` - Build dependencies for PyInstaller
-- `quickice-gui.spec` - PyInstaller configuration for executable packaging
-- `setup.sh` - Shell script to activate environment and set PYTHONPATH
-
-**No external configuration files:**
-- No `.env` files detected
-- Settings are hardcoded in modules
+**Build:**
+- `environment-build.yml` - Build environment with PyInstaller
+- `quickice-gui.spec` - PyInstaller configuration
+- Bundles data files from `quickice/data/`
+- Collects all dependencies: iapws, genice2, matplotlib, scipy, numpy, shapely, networkx, spglib
 
 ## Platform Requirements
 
 **Development:**
-- Linux: GLIBC 2.28+ (Ubuntu 20.04+, Debian 10+, Rocky/RHEL 8+)
-- 64-bit architecture
-- OpenGL support for VTK 3D visualization
+- Python 3.14.3
 - Conda (Miniconda or Anaconda)
+- OpenGL support (for VTK 3D visualization)
+- X11 display (Linux GUI)
 
 **Production:**
-- Same as development for source distribution
-- Windows: Supported via PyInstaller executable
-- Linux: Supported via PyInstaller executable
-- macOS: Not explicitly supported (no build workflow)
+- **Linux:** GLIBC 2.28+ (Ubuntu 20.04+, Debian 10+, Rocky/RHEL 8+)
+- **Windows:** Windows executable via PyInstaller
+- OpenGL support required for GUI visualization
+- 64-bit architecture
 
-**Deployment Targets:**
-- Source distribution (cross-platform with conda)
-- Windows executable (via GitHub Actions)
-- Linux executable (via local build script)
+**Deployment:**
+- Built as standalone executable using PyInstaller
+- Distribution: `quickice-v4.0.0-windows-x86_64.zip` (Windows)
+- Linux: Source distribution with conda environment
 
 ---
 
-*Stack analysis: 2026-05-02*
+*Stack analysis: 2026-05-05*
