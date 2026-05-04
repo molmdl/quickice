@@ -18,8 +18,8 @@ MW          MW          0            0.0000  0.0     V      0.0          0.0
 
 [ system ]
 ; Name
-Ice/water interface (slab) exported by QuickIce
+Ice/water interface (pocket) exported by QuickIce
 
 [ molecules ]
 ; Compound    #mols
-SOL          12455
+SOL          10060

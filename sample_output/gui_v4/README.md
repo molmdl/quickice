@@ -13,7 +13,6 @@ CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and So
 
 # Directory structure
 ```
-├── README.md
 ├── ch4
 │   ├── ch4.itp
 │   ├── hydrate_sI_ch4_1x1x1.gro
@@ -21,8 +20,13 @@ CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and So
 │   ├── ion
 │   │   ├── ch4.itp
 │   │   ├── ion.itp
-│   │   ├── ions_54na_54cl.gro
-│   │   ├── ions_54na_54cl.top
+│   │   ├── ions_35na_35cl.gro
+│   │   ├── ions_35na_35cl.top
+│   │   └── tip4p-ice.itp
+│   ├── pocket
+│   │   ├── ch4.itp
+│   │   ├── interface_pocket.gro
+│   │   ├── interface_pocket.top
 │   │   └── tip4p-ice.itp
 │   ├── slab
 │   │   ├── ch4.itp
@@ -36,20 +40,30 @@ CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and So
 │   ├── ice_ih_273K_0.10MPa_c1.top
 │   ├── ion
 │   │   ├── ion.itp
-│   │   ├── ions_56na_56cl.gro
-│   │   ├── ions_56na_56cl.top
+│   │   ├── ions_37na_37cl.gro
+│   │   ├── ions_37na_37cl.top
+│   │   └── tip4p-ice.itp
+│   ├── pocket
+│   │   ├── interface_pocket.gro
+│   │   ├── interface_pocket.top
 │   │   └── tip4p-ice.itp
 │   └── slab
 │       ├── interface_slab.gro
 │       ├── interface_slab.top
 │       └── tip4p-ice.itp
+├── README.md
 └── thf
     ├── hydrate_sII_thf_1x1x1.gro
     ├── hydrate_sII_thf_1x1x1.top
     ├── ion
     │   ├── ion.itp
-    │   ├── ions_31na_31cl.gro
-    │   ├── ions_31na_31cl.top
+    │   ├── ions_25na_25cl.gro
+    │   ├── ions_25na_25cl.top
+    │   ├── thf.itp
+    │   └── tip4p-ice.itp
+    ├── pocket
+    │   ├── interface_pocket.gro
+    │   ├── interface_pocket.top
     │   ├── thf.itp
     │   └── tip4p-ice.itp
     ├── slab
@@ -60,5 +74,5 @@ CH4 and THF: GAFF2 with RESP2(0.5) partial charge, prepared with Multiwfn and So
     ├── thf.itp
     └── tip4p-ice.itp
 
-9 directories, 37 files
+12 directories, 48 files
 ```
