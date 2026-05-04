@@ -138,10 +138,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-05 | Phase 35 | Pending |
 
 **Coverage:**
-- v4.5 requirements: 40 total
-- Mapped to phases: 40
+- v4.5 requirements: 39 total
+- Mapped to phases: 39
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 after initial definition*
+*Last updated: 2026-05-05 after roadmap creation (Phases 32-35)*

@@ -2,17 +2,17 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — defining requirements
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 32 ready for planning
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-01)
+See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — defining requirements
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 32 ready for planning
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -26,17 +26,31 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v4.5 |
-| Phase | — |
+| Milestone | v4.5 Solute & Custom Molecule Insertion |
+| Phase | 32 - Architecture Preparation |
 | Plan | — |
-| Status | Defining requirements |
-| Last activity | 2026-05-05 — Milestone v4.5 started |
+| Status | Roadmap created, ready to plan Phase 32 |
+| Last activity | 2026-05-05 — Roadmap created (4 phases: 32-35) |
 
-**Progress:** ░░░░░░░░░░ 0% (v4.5 started)
+**Progress:** ░░░░░░░░░░ 0% (Phase 32 pending)
 
 ---
 
 ## Milestone History
+
+### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
+
+**Phases:** 32-35 (4 phases planned)
+**Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
+**Key features in progress:**
+- Tab index constants and MoleculetypeRegistry
+- ITP parser and molecule validator
+- Solute insertion tab (Tab 4) with THF/CH₄ concentration placement
+- Custom molecule upload tab (Tab 5) with .gro/.itp validation
+- Tab reordering (Ion moves to Tab 6)
+- Multi-atom molecule overlap detection
+
+**Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
 ### v4.0 Molecule Insertion (SHIPPED 2026-05-01)
 
@@ -105,7 +119,19 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 ## Accumulated Context
 
-### v4.0 Key Decisions
+### v4.5 Key Decisions (Planned)
+
+| Decision | Rationale | Status |
+|----------|-----------|--------|
+| TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ⏳ Planned |
+| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_HYD vs CH4_LIQ) | ⏳ Planned |
+| All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ⏳ Planned |
+| Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ⏳ Planned |
+| GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
+| User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
+| Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
+
+### v4.0 Key Decisions (Shipped)
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
@@ -149,8 +175,8 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Started:** v4.5 milestone planning (solute + custom molecule insertion)
-**Next:** Define requirements and create roadmap
+**Completed:** Roadmap created for v4.5 (Phases 32-35)
+**Next:** Execute `/gsd-plan-phase 32` to plan Architecture Preparation phase
 
 ---
-*State updated: 2026-05-05 — Milestone v4.5 started*
+*State updated: 2026-05-05 — Roadmap created for v4.5*
