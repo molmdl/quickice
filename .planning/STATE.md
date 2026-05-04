@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 32 - Architecture Preparation |
-| Plan | — |
-| Status | Roadmap created, ready to plan Phase 32 |
-| Last activity | 2026-05-05 — Roadmap created (4 phases: 32-35) |
+| Plan | 1 of 3 in current phase |
+| Status | In progress |
+| Last activity | 2026-05-04 — Completed 32-01-PLAN.md |
 
-**Progress:** ░░░░░░░░░░ 0% (Phase 32 pending)
+**Progress:** ██░░░░░░░░ 8% (Phase 32: 1/3 plans complete)
 
 ---
 
@@ -119,12 +119,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Accumulated Context
 
-### v4.5 Key Decisions (Planned)
+### v4.5 Key Decisions
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
-| TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ⏳ Planned |
-| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_HYD vs CH4_LIQ) | ⏳ Planned |
+| TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
+| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_HYD vs CH4_LIQ) | ✓ Shipped (32-01) |
+| ITP parser with regex parsing | Extracts molecule info from .itp files without dependencies | ✓ Shipped (32-01) |
 | All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ⏳ Planned |
 | Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ⏳ Planned |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
@@ -174,9 +175,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05
-**Completed:** Roadmap created for v4.5 (Phases 32-35)
-**Next:** Execute `/gsd-plan-phase 32` to plan Architecture Preparation phase
+**Last session:** 2026-05-04 22:22 UTC
+**Completed:** 32-01-PLAN.md (TabIndex enum, MoleculetypeRegistry, ITP parser)
+**Next:** Execute 32-02-PLAN.md (molecule validator and integration)
 
 ---
-*State updated: 2026-05-05 — Roadmap created for v4.5*
+*State updated: 2026-05-04 — Phase 32 in progress (1/3 plans complete)*
