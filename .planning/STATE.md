@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.0 Complete — ready for next milestone planning
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — defining requirements
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Ready for next milestone: v4.5 (custom molecules) or v5.0
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — defining requirements
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v4.0 (complete) |
+| Milestone | v4.5 |
 | Phase | — |
 | Plan | — |
-| Status | Ready for next milestone |
-| Last activity | 2026-05-04 — Quick task 016 REVERTED: Bundle dependency minimization broke executable |
+| Status | Defining requirements |
+| Last activity | 2026-05-05 — Milestone v4.5 started |
 
-**Progress:** ██████████ 100% (v4.0 complete)
+**Progress:** ░░░░░░░░░░ 0% (v4.5 started)
 
 ---
 
@@ -148,9 +148,9 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 ## Session Continuity
 
-**Last session:** 2026-05-04
-**Stopped at:** Reverted quick task 016 (Bundle dependency minimization broke executable)
-**Next:** Continue with v4.5/v5.0 planning or other quick tasks
+**Last session:** 2026-05-05
+**Started:** v4.5 milestone planning (solute + custom molecule insertion)
+**Next:** Define requirements and create roadmap
 
 ---
-*State updated: 2026-05-04 — Quick task 016 REVERTED*
+*State updated: 2026-05-05 — Milestone v4.5 started*

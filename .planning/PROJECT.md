@@ -1,5 +1,16 @@
 # QuickIce
 
+## Current Milestone: v4.5 Solute & Custom Molecule Insertion
+
+**Goal:** Add solute molecule insertion (THF/CH₄ concentration) and custom molecule upload to liquid phase with 6-tab workflow
+
+**Target features:**
+- Solute insertion tab (Tab 4) — THF/CH₄ concentration-based placement in liquid
+- Custom molecule tab (Tab 5) — Random or user-specified COM/rotation
+- Ion tab moves to Tab 6
+- CLI support for v4.5 features (v4.5.1 follow-up, linked to quicktasks 013-015)
+- Moleculetype naming convention for GROMACS export analysis
+
 ## What This Is
 
 A portable, cross-platform GUI application for generating plausible ice structures, ice-water interfaces, and hydrate systems. QuickIce provides a minimal GUI of basic GenIce2 functions with extended capabilities including hydrate generation with guest molecules (CH4, THF), NaCl ion insertion, and multi-molecule GROMACS export. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures with GROMACS-ready outputs.
@@ -90,7 +101,12 @@ Generate plausible ice structure candidates, interfaces, and hydrates quickly wi
 
 ### Active
 
-(None — ready for next milestone planning)
+**v4.5 Solute & Custom Molecule Insertion:**
+- [ ] Solute insertion tab (THF/CH₄ concentration in liquid phase)
+- [ ] Custom molecule tab (random + user-specified position/orientation)
+- [ ] Six-tab workflow (reorder Ion to Tab 6)
+- [ ] Moleculetype naming for GROMACS export (guest vs solute distinction)
+- [ ] Custom molecule validation (atomtypes, GROMACS compatibility)
 
 ### Out of Scope
 
@@ -186,4 +202,4 @@ Generate plausible ice structure candidates, interfaces, and hydrates quickly wi
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-05-01 after v4.0 milestone completion*
+*Last updated: 2026-05-05 after v4.5 milestone started*
