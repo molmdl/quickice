@@ -1,5 +1,30 @@
 # Project Milestones: QuickIce
 
+## v4.5 Solute & Custom Molecule Insertion (In Progress: 2026-05-05)
+
+**Goal:** Add solute insertion (THF/CH₄ concentration) and custom molecule upload with 6-tab workflow
+
+**Phases planned:** 32-35 (4 phases)
+
+**Target features:**
+- Tab 4: Solute insertion (THF/CH₄ concentration-based placement in liquid)
+- Tab 5: Custom molecule upload (.gro/.itp with random or custom placement)
+- Tab 6: Ion (moved from Tab 4)
+- Moleculetype naming convention (CH4_HYD vs CH4_LIQ)
+- Multi-atom overlap detection with rotation matrices
+- Cross-tab data flow and GROMACS export polish
+
+**Stats:**
+- 39 requirements across 6 categories
+- 4 phases, TBD plans
+- Research: v4.5-SUMMARY.md
+
+**What's next:** v4.5.1 (CLI support for v4.5 features) or v4.6 (multi-guest hydrate support)
+
+**Archive:** [.planning/ROADMAP.md](./ROADMAP.md) (active)
+
+---
+
 ## v4.0 Molecule Insertion (Shipped: 2026-05-01)
 
 **Delivered:** Hydrate generation (Tab 2), NaCl ion insertion (Tab 4), multi-molecule GROMACS export
@@ -23,7 +48,7 @@
 
 **Git range:** `feat(28-01)` → `docs(31.2-03)`
 
-**What's next:** v4.5 (custom molecule upload + display controls) or v5.0
+**What's next:** v4.5 Solute & Custom Molecule Insertion (in progress)
 
 **Archive:** [.planning/milestones/v4.0-ROADMAP.md](./milestones/v4.0-ROADMAP.md)
 
