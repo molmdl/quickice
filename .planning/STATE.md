@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 32 - Architecture Preparation |
-| Plan | 1 of 3 in current phase |
+| Plan | 2 of 3 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-04 — Completed 32-01-PLAN.md |
+| Last activity | 2026-05-04 — Completed 32-02-PLAN.md |
 
-**Progress:** ██░░░░░░░░ 8% (Phase 32: 1/3 plans complete)
+**Progress:** ████░░░░░░ 17% (Phase 32: 2/3 plans complete)
 
 ---
 
@@ -126,6 +126,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
 | MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_HYD vs CH4_LIQ) | ✓ Shipped (32-01) |
 | ITP parser with regex parsing | Extracts molecule info from .itp files without dependencies | ✓ Shipped (32-01) |
+| Molecule validator with specific errors | GRO/ITP consistency validation with clear user feedback | ✓ Shipped (32-02) |
+| TabIndex enum for all indices | All hardcoded tab indices replaced with named constants | ✓ Shipped (32-02) |
+| Optional registry parameter | Backward-compatible GROMACS export with future registry support | ✓ Shipped (32-02) |
 | All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ⏳ Planned |
 | Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ⏳ Planned |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
@@ -175,9 +178,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-04 22:22 UTC
-**Completed:** 32-01-PLAN.md (TabIndex enum, MoleculetypeRegistry, ITP parser)
-**Next:** Execute 32-02-PLAN.md (molecule validator and integration)
+**Last session:** 2026-05-04 22:27 UTC
+**Completed:** 32-02-PLAN.md (Molecule validator, TabIndex refactoring, GROMACS registry integration)
+**Next:** Execute 32-03-PLAN.md (final plan in Phase 32)
 
 ---
-*State updated: 2026-05-04 — Phase 32 in progress (1/3 plans complete)*
+*State updated: 2026-05-04 — Phase 32 in progress (2/3 plans complete)*
