@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35
-**Total Plans:** TBD
+**Total Plans:** 3 plans (Phase 32)
 
 ## Overview
 
@@ -31,6 +31,11 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - molecule_validator.py for GRO/ITP consistency checking
 - Tab reordering: Ion moves Tab 4 → Tab 6
 - Cross-tab data flow verification after reordering
+
+**Plans:**
+- [ ] 32-01-PLAN.md — Foundation: TabIndex enum, MoleculetypeRegistry, ITP parser
+- [ ] 32-02-PLAN.md — Validation & refactoring: Molecule validator, TabIndex usage, GROMACS registry
+- [ ] 32-03-PLAN.md — Verification: Cross-tab data flow, documentation, integration tests
 
 ---
 
@@ -149,7 +154,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 | Phase | Status | Plans Completed | Total Plans |
 |-------|--------|-----------------|-------------|
-| 32 - Architecture Preparation | ⏳ Pending | 0 | TBD |
+| 32 - Architecture Preparation | ⏳ Pending | 0 | 3 |
 | 33 - Solute Insertion | ⏳ Pending | 0 | TBD |
 | 34 - Custom Molecule Upload | ⏳ Pending | 0 | TBD |
 | 35 - Integration & Documentation | ⏳ Pending | 0 | TBD |
