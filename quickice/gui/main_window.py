@@ -36,6 +36,7 @@ from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure  # Used for export if needed
 from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
+from quickice.gui.constants import TabIndex
 
 
 class MainWindow(QMainWindow):
@@ -99,14 +100,14 @@ class MainWindow(QMainWindow):
     def _setup_ui(self):
         """Setup UI components with two-tab layout.
         
-        Tab 1: Ice Generation (existing functionality)
-        Tab 2: Interface Construction (new in v4.0)
+        Ice Generation tab (existing functionality)
+        Interface Construction tab (new in v4.0)
         """
         # Create tab widget as central container
         self.tab_widget = QTabWidget()
         
-        # === Tab 1: Ice Generation ===
-        # Wrap existing content in a QWidget for Tab 1
+        # === Ice Generation tab ===
+        # Wrap existing content in a QWidget for Ice Generation tab
         tab1_widget = QWidget()
         tab1_layout = QVBoxLayout(tab1_widget)
         tab1_layout.setContentsMargins(0, 0, 0, 0)
@@ -153,16 +154,16 @@ class MainWindow(QMainWindow):
         # Set initial sizes (diagram 550px, right panel 750px for dual viewer)
         splitter.setSizes([550, 750])
         
-        # Add splitter to Tab 1 layout
+        # Add splitter to Ice Generation tab layout
         tab1_layout.addWidget(splitter)
         
-        # === Tab 2: Interface Construction ===
+        # === Interface Construction tab ===
         self.interface_panel = InterfacePanel()
         
-        # === Tab 2: Hydrate Configuration (new in v4.0) ===
+        # === Hydrate Configuration tab (new in v4.0) ===
         self.hydrate_panel = HydratePanel()
         
-        # === Tab 3: Ion Insertion (new in v4.0) ===
+        # === Ion Insertion tab (new in v4.0) ===
         self.ion_panel = IonPanel()
         
         # Add tabs to tab widget (order: Ice → Hydrate → Interface → Ion)
@@ -171,8 +172,8 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         
-        # Set Tab 1 as default on startup
-        self.tab_widget.setCurrentIndex(0)
+        # Set Ice Generation tab as default on startup
+        self.tab_widget.setCurrentIndex(TabIndex.ICE)
         
         # Set tab widget as central widget
         self.setCentralWidget(self.tab_widget)
@@ -220,20 +221,20 @@ class MainWindow(QMainWindow):
         # Tab change handling - preserve state during tab switches
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         
-        # Tab 2 (Interface Construction) connections
+        # Interface Construction tab connections
         self.interface_panel.refresh_requested.connect(self._on_refresh_candidates)
         
-        # Tab 2 (Interface Construction) generation connections
+        # Interface Construction tab generation connections
         self.interface_panel.generate_requested.connect(self._on_interface_generate)
 
-        # Tab 3 (Interface) hydrate source - when user selects hydrate in Tab 3
+        # Interface Construction tab hydrate source - when user selects hydrate in Interface Construction tab
         self.interface_panel.generate_hydrate_requested.connect(self._on_interface_hydrate_generate)
         
-        # Tab 3 (Hydrate Configuration) connections (new in v4.0)
+        # Hydrate Configuration tab connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
         
-        # Tab 4 (Ion Insertion) connections (new in v4.0)
+        # Ion Insertion tab connections (new in v4.0)
         self.ion_panel.configuration_changed.connect(self._on_ion_config_changed)
         self.ion_panel.insert_requested.connect(self._on_insert_ions)
         
@@ -312,7 +313,7 @@ class MainWindow(QMainWindow):
         export_gromacs_action.setShortcut("Ctrl+G")
         export_gromacs_action.triggered.connect(self._on_export_gromacs)
         
-        # Separator and Export Interface for GROMACS (Tab 2)
+        # Separator and Export Interface for GROMACS (Interface Construction tab)
         file_menu.addSeparator()
         
         export_interface_gromacs_action = file_menu.addAction("Export Interface for GROMACS...")
@@ -415,7 +416,7 @@ class MainWindow(QMainWindow):
             # Update candidate selector in viewer panel
             self.viewer_panel.update_candidate_selector(result.ranked_candidates)
             
-            # Update Tab 2 dropdown with candidates
+            # Update Interface Construction tab dropdown with candidates
             self.interface_panel.update_candidates(result.ranked_candidates)
         
         # Load candidates into dual viewer (if VTK available)
@@ -461,7 +462,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def _on_refresh_candidates(self):
-        """Refresh candidates in Tab 2 from Tab 1's current candidates."""
+        """Refresh candidates in Interface Construction tab from Ice Generation tab's current candidates."""
         result = self._viewmodel.get_last_ranking_result()
         if result and hasattr(result, 'ranked_candidates'):
             self.interface_panel.update_candidates(result.ranked_candidates)
@@ -474,11 +475,11 @@ class MainWindow(QMainWindow):
             self.interface_panel.update_candidates([])
             self.interface_panel.append_log("No candidates available")
     
-    # === Interface Generation Handlers (Tab 2) ===
+    # === Interface Generation Handlers (Interface Construction tab) ===
     
     @Slot(int)
     def _on_interface_generate(self, candidate_index: int):
-        """Handle Generate Interface button click from Tab 2.
+        """Handle Generate Interface button click from Interface Construction tab.
         
         Args:
             candidate_index: Index of selected candidate in ranked candidates list
@@ -488,7 +489,7 @@ class MainWindow(QMainWindow):
         # Get the ranked candidates result
         ranking_result = self._viewmodel.get_last_ranking_result()
         if not ranking_result or not hasattr(ranking_result, 'ranked_candidates'):
-            self.interface_panel.append_log("No candidates available. Generate ice in Tab 1 first.")
+            self.interface_panel.append_log("No candidates available. Generate ice in Ice Generation tab first.")
             return
         
         if candidate_index < 0 or candidate_index >= len(ranking_result.ranked_candidates):
@@ -582,14 +583,14 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_interface_hydrate_generate(self):
-        """Handle generate when Source=hydrate in Tab 3.
+        """Handle generate when Source=hydrate in Interface Construction tab.
 
-        Uses the last generated hydrate from Tab 2 to create interface.
+        Uses the last generated hydrate from Hydrate Configuration tab to create interface.
         Treats hydrate as template/seed for ice-water interface (same logic as ice candidate).
         """
         from quickice.structure_generation.types import InterfaceConfig
         
-        # Check if we have a hydrate from Tab 2
+        # Check if we have a hydrate from Hydrate Configuration tab
         hydrate = self._current_hydrate_result
 
         if hydrate is None:
@@ -598,7 +599,7 @@ class MainWindow(QMainWindow):
                 "No Hydrate",
                 "No hydrate structure available.\n\n"
                 "Please:\n"
-                "1. Go to Hydrate Config tab (Tab 2)\n"
+                "1. Go to Hydrate Config tab\n"
                 "2. Generate a hydrate structure\n"
                 "3. Click 'Use in Interface →' or return here and generate"
             )
@@ -642,7 +643,7 @@ class MainWindow(QMainWindow):
     
     @Slot(bool)
     def _on_interface_ui_enabled_changed(self, enabled: bool):
-        """Handle Tab 2 UI enabled/disabled state change."""
+        """Handle Interface Construction tab UI enabled/disabled state change."""
         self.interface_panel.set_generating(not enabled)
     
     @Slot()
@@ -803,8 +804,8 @@ class MainWindow(QMainWindow):
         # Qt preserves all widget state automatically
         # No explicit state saving needed - widgets maintain their state
         
-        # Update density displays when switching to Tab 1 (Ice Generation)
-        if index == 0:
+        # Update density displays when switching to Ice Generation tab
+        if index == TabIndex.ICE:
             # Only update if we have valid current T/P values
             if self._current_T > 0 and self._current_P > 0:
                 self.info_panel.update_ice_density(self._current_T, self._current_P)
@@ -970,7 +971,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def _on_export_interface_gromacs(self):
-        """Handle Export Interface for GROMACS menu action (Tab 2)."""
+        """Handle Export Interface for GROMACS menu action (Interface Construction tab)."""
         if not self._current_interface_result:
             QMessageBox.warning(self, "No Interface", "Generate an interface structure first.")
             return
