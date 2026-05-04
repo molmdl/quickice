@@ -518,6 +518,35 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
         else:
             guest_nmolecules = 0
 
+        # === GUEST-WATER OVERLAP FIX ===
+        # Check for overlaps between water filler and guest molecules after guest tiling.
+        # This catches cases where water molecules near boundaries overlap with guests in ice regions.
+        # Issue: water filler near upper boundary (Z ~ 7.3 nm) overlaps with CH4 guests at top ice boundary (Z = 7.326 nm).
+        # Solution: Detect overlaps with ALL guest atoms (not just C) and remove overlapping water molecules.
+        if is_hydrate and len(trimmed_water_positions) > 0 and len(processed_guest_positions) > 0:
+            water_o_positions = trimmed_water_positions[::4]  # Water OW atoms (every 4th atom)
+            
+            guest_overlap_indices = detect_overlaps(
+                processed_guest_positions,  # All guest atoms
+                water_o_positions,           # Water OW atoms
+                box_dims,
+                config.overlap_threshold
+            )
+            
+            # Remove water molecules that overlap with guests
+            if guest_overlap_indices:
+                trimmed_water_positions, water_nmolecules = remove_overlapping_molecules(
+                    trimmed_water_positions,
+                    guest_overlap_indices,
+                    atoms_per_molecule=4
+                )
+                # Filter atom names to match positions
+                water_atom_names = filter_atom_names(
+                    water_atom_names,
+                    guest_overlap_indices,
+                    atoms_per_molecule=4
+                )
+
     # === HYDRATE FIX: Combine all positions including guests ===
     # Order: ice FIRST, then water, then guests LAST
     # This ensures all SOL molecules (ice + water) are contiguous in GRO file,
