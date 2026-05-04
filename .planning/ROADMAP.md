@@ -19,7 +19,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 **Requirements:** ARCH-01, ARCH-02, ARCH-03, ARCH-04, ARCH-05, ARCH-06, GROMACS-02
 
 **Success Criteria:**
-1. User sees Ion tab at position 6 (not position 4) with all cross-tab data flow working correctly
+1. Developer can reference tabs by TabIndex constants pre-defined for final positions (ION=5), preventing bugs when Ion moves from position 3 to 5 in future phases
 2. User receives specific error messages when uploading invalid .gro/.itp files (atom count mismatch, residue name inconsistency)
 3. Developer can reference tabs by named constants (TabIndex.ICE, TabIndex.HYDRATE, etc.) without hardcoded integers
 4. GROMACS export distinguishes hydrate guests (CH4_HYD, THF_HYD) from liquid solutes (CH4_LIQ, THF_LIQ) in topology files
