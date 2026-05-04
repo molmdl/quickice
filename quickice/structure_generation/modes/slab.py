@@ -265,22 +265,28 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
 
     # Tile ice for bottom layer: fill [adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]
     # For hydrate: tile only water-framework (guests extracted separately)
+    # FIX: Use filter_molecules=False to preserve ice molecules that span PBC boundaries
+    # This ensures continuous periodic images without gaps at Z=0 and Z=box_z
     bottom_ice_positions, bottom_ice_nmolecules = tile_structure(
         water_framework_positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
         atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
-        cell_matrix=cell_matrix  # Triclinic-aware tiling
+        cell_matrix=cell_matrix,  # Triclinic-aware tiling
+        filter_molecules=False  # Don't filter - keep molecules spanning PBC
     )
 
     # Tile ice for top layer: same target region, then shift Z
     # For hydrate: tile only water-framework (guests extracted separately)
+    # FIX: Use filter_molecules=False to preserve ice molecules that span PBC boundaries
+    # This ensures continuous periodic images without gaps at Z=0 and Z=box_z
     top_ice_positions, top_ice_nmolecules = tile_structure(
         water_framework_positions,
         ice_cell_dims,
         np.array([adjusted_box_x, adjusted_box_y, adjusted_ice_thickness]),
         atoms_per_molecule=atoms_per_mol,  # Detected: 3 for ice, 4 for TIP4P/hydrate
-        cell_matrix=cell_matrix  # Triclinic-aware tiling
+        cell_matrix=cell_matrix,  # Triclinic-aware tiling
+        filter_molecules=False  # Don't filter - keep molecules spanning PBC
     )
     # Shift top layer to Z = [adjusted_ice_thickness + water_thickness, adjusted_box_z]
     top_ice_positions = top_ice_positions.copy()

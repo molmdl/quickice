@@ -415,6 +415,39 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         
         guest_nmolecules = tiled_guest_nmolecules
 
+    # === GUEST-WATER OVERLAP FIX ===
+    # Check for overlaps between water filler and guest molecules after guest tiling.
+    # This catches cases where water molecules in the cavity overlap with guests in the ice region.
+    # Issue: Water molecules near cavity boundary could overlap with guests positioned just outside cavity.
+    # Solution: Detect overlaps with ALL guest atoms (not just first atom) and remove overlapping water molecules.
+    if is_hydrate and len(water_positions) > 0 and processed_guest_positions is not None and len(processed_guest_positions) > 0:
+        water_o_positions = water_positions[::4]  # Water OW atoms (every 4th atom)
+        
+        guest_overlap_indices = detect_overlaps(
+            processed_guest_positions,  # All guest atoms
+            water_o_positions,           # Water OW atoms
+            box_dims,
+            config.overlap_threshold
+        )
+        
+        # Remove water molecules that overlap with guests
+        if guest_overlap_indices:
+            print(f"[DEBUG] Guest-water overlap detection: {len(guest_overlap_indices)} water molecules overlap with guests")
+            water_positions, water_nmolecules = remove_overlapping_molecules(
+                water_positions,
+                guest_overlap_indices,
+                atoms_per_molecule=4
+            )
+            # Filter atom names to match positions
+            water_atom_names = filter_atom_names(
+                water_atom_names,
+                guest_overlap_indices,
+                atoms_per_molecule=4
+            )
+            print(f"[DEBUG] After removal: {water_nmolecules} water molecules remaining")
+    else:
+        print(f"[DEBUG] Guest-water overlap detection skipped: is_hydrate={is_hydrate}, water={len(water_positions)}, guests={len(processed_guest_positions) if processed_guest_positions is not None else 0}")
+
     # Detect overlaps between remaining ice and cavity water
     # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...] (3 or 4 per molecule)
     if len(ice_positions) > 0 and len(water_positions) > 0:
