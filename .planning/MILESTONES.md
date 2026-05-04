@@ -19,7 +19,7 @@
 - 4 phases, TBD plans
 - Research: v4.5-SUMMARY.md
 
-**What's next:** v4.5.1 (CLI support for v4.5 features, linked to quicktasks 013-015) → v4.6 (multi-guest hydrate support)
+**What's next:** v4.5.1 (CLI support for v4.5 features, linked to quicktasks 013-015) → v4.6 (multi-guest hydrate support) → v5 (remaining major genice2 feature support) -> v6 (complicated ice/hydrate building using e.g. [atomsk](https://github.com/pierrehirel/atomsk/) as submodule or methods adapted from atomsk)
 
 **Archive:** [.planning/ROADMAP.md](./ROADMAP.md) (active) | [.planning/v4.5_prompt.md](./v4.5_prompt.md) (initial prompt)
 
