@@ -2,8 +2,20 @@
 
 **Task:** 016-minimize-bundle-dependencies  
 **Type:** Quick Task (Bundle Optimization)  
-**Status:** ✅ Complete  
-**Date:** 2026-05-03  
+**Status:** ❌ **REVERTED** (2026-05-04)  
+**Date:** 2026-05-03 (originally completed) → 2026-05-04 (reverted)
+
+---
+
+## ⚠️ CRITICAL: THIS TASK WAS REVERTED
+
+**Reason:** The dependency exclusions broke the bundled executable at runtime.
+
+**See:** [016-REVERT-NOTICE.md](./016-REVERT-NOTICE.md) for details
+
+**Current Status:** `quickice-gui.spec` has been manually reverted to the pre-016 state.
+
+**Action:** Skip this optimization approach in future. Do not attempt to re-apply these exclusions.  
 
 ---
 
