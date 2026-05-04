@@ -12,6 +12,7 @@ import numpy as np
 
 from quickice.utils.molecule_utils import count_guest_atoms
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
+from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,9 @@ MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "co2":   {"res_name": "CO2", "itp_file": "co2.itp",    "mol_name": "CO2"},
     "h2":    {"res_name": "H2",  "itp_file": "h2.itp",     "mol_name": "H2"},
 }
+
+# Module-level registry for unique moleculetype naming
+_registry = MoleculetypeRegistry()
 
 
 def wrap_positions_into_box(positions: np.ndarray, cell: np.ndarray) -> np.ndarray:
@@ -1006,6 +1010,7 @@ def write_multi_molecule_top_file(
     filepath: str,
     system_name: str = "Multi-molecule system",
     itp_files: dict[str, str] | None = None,
+    registry: MoleculetypeRegistry | None = None,
 ) -> None:
     """Write GROMACS topology file with multiple moleculetypes.
     
@@ -1018,13 +1023,15 @@ def write_multi_molecule_top_file(
         system_name: Name for [ system ] section
         itp_files: Optional mapping of mol_type -> itp path to use instead of bundled
                    Example: {"ch4": "/path/to/custom_ch4.itp"}
-    
+        registry: Optional MoleculetypeRegistry for unique naming (default: use module-level)
+        
     Note:
         The main .top file uses #include to include separate .itp files.
         Bundled .itp files are in quickice/data/ directory.
         User-provided .itp files (ch4.itp, thf.itp) should have [atomtypes] section
         commented out, as types are defined in the main .top file.
     """
+    reg = registry or _registry
     # Count molecules by type
     counts: dict[str, int] = {}
     unique_types: list[str] = []
@@ -1038,12 +1045,32 @@ def write_multi_molecule_top_file(
     # Build [ molecules ] section entries in order of first appearance
     molecules_lines = []
     for mol_type in unique_types:
-        # Get residue name from itp file if available
-        if mol_type in ["ch4", "thf", "co2", "h2"]:
-            res_name = get_guest_residue_name(mol_type)
-        else:
-            gromacs_info = MOLECULE_TO_GROMACS.get(mol_type, {"mol_name": "UNK"})
-            res_name = gromacs_info.get("mol_name", "UNK")
+        # Try to get name from registry first (for context-specific naming)
+        # Fall back to standard naming if not in registry
+        res_name = None
+        
+        # Check if registry has this molecule type registered
+        # (future: will be populated when source context is available)
+        # For now, maintain backward compatibility
+        if registry:
+            # Check for hydrate guest registration
+            hydrate_key = f"hydrate_{mol_type}"
+            if hydrate_key in reg._registered:
+                res_name = reg.get_gromacs_name(hydrate_key)
+            # Check for liquid solute registration
+            else:
+                liquid_key = f"liquid_{mol_type}"
+                if liquid_key in reg._registered:
+                    res_name = reg.get_gromacs_name(liquid_key)
+        
+        # Fall back to standard naming
+        if res_name is None:
+            if mol_type in ["ch4", "thf", "co2", "h2"]:
+                res_name = get_guest_residue_name(mol_type)
+            else:
+                gromacs_info = MOLECULE_TO_GROMACS.get(mol_type, {"mol_name": "UNK"})
+                res_name = gromacs_info.get("mol_name", "UNK")
+        
         count = counts[mol_type]
         molecules_lines.append(f"{res_name:<15s} {count:10d}")
     

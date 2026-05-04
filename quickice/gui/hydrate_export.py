@@ -11,6 +11,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from quickice.structure_generation.types import HydrateStructure, HydrateConfig
+from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 
 def _get_guest_itp_path(guest_type: str) -> Path:
@@ -114,6 +115,14 @@ class HydrateGROMACSExporter:
             # Get guest itp path
             guest_itp_path = _get_guest_itp_path(config.guest_type)
             
+            # Create registry for unique moleculetype naming
+            registry = MoleculetypeRegistry()
+            
+            # Register guest molecule as hydrate guest
+            # This ensures CH4 gets registered as "CH4_HYD", THF as "THF_HYD"
+            guest_upper = config.guest_type.upper()
+            registry.register_hydrate_guest(guest_upper)
+            
             # Write .gro file
             write_multi_molecule_gro_file(
                 structure.positions,
@@ -134,6 +143,7 @@ class HydrateGROMACSExporter:
                 str(top_path),
                 f"Hydrate ({lattice} + {guest})",
                 itp_files=itp_files,
+                registry=registry,
             )
             
             # Copy TIP4P-ICE .itp file to export directory
