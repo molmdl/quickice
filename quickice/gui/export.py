@@ -127,12 +127,11 @@ class SoluteGROMACSExporter:
             water_itp_path = path.with_name("tip4p-ice.itp")
             shutil.copy(itp_source, water_itp_path)
             
-            # Copy solute .itp file
-            if solute_type == "CH4":
-                solute_itp_name = "ch4.itp"
-            else:
-                solute_itp_name = "thf.itp"
-            
+            # Copy solute .itp file (liquid solutes use _liquid.itp files)
+            # Solute tab only handles liquid solutes, always use _liquid.itp
+            solute_type_lower = solute_type.lower()
+            solute_itp_name = f"{solute_type_lower}_liquid.itp"
+
             from pathlib import Path as FilePath
             solute_itp_source = FilePath(__file__).parent.parent / "data" / solute_itp_name
             if solute_itp_source.exists():
