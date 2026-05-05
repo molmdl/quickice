@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
-from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter, IonGROMACSExporter, SoluteGROMACSExporter
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter, IonGROMACSExporter, SoluteGROMACSExporter, CustomMoleculeGROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
@@ -87,6 +87,9 @@ class MainWindow(QMainWindow):
         
         # Solute GROMACS exporter (new in Phase 33)
         self._solute_gromacs_exporter = SoluteGROMACSExporter(self)
+        
+        # Custom Molecule GROMACS exporter (new in Phase 34)
+        self._custom_molecule_gromacs_exporter = CustomMoleculeGROMACSExporter(self)
         
         # Store current ion structure for export (Issue 1)
         self._current_ion_result = None
@@ -396,6 +399,13 @@ class MainWindow(QMainWindow):
         export_solute_gromacs_action = file_menu.addAction("Export Solutes for GROMACS...")
         export_solute_gromacs_action.setShortcut("Ctrl+L")
         export_solute_gromacs_action.triggered.connect(self._on_export_solute_gromacs)
+        
+        # Separator and Export Custom Molecules for GROMACS (Custom Molecule tab - Phase 34)
+        file_menu.addSeparator()
+        
+        export_custom_molecule_gromacs_action = file_menu.addAction("Export Custom Molecules for GROMACS...")
+        export_custom_molecule_gromacs_action.setShortcut("Ctrl+M")
+        export_custom_molecule_gromacs_action.triggered.connect(self._on_export_custom_molecule_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -1284,6 +1294,34 @@ class MainWindow(QMainWindow):
                 f"Ice: {ice_count} molecules\n"
                 f"Water: {water_count} molecules\n"
                 f"{solute_structure.solute_type}: {solute_structure.n_molecules} molecules"
+            )
+    
+    def _on_export_custom_molecule_gromacs(self):
+        """Handle Export Custom Molecules for GROMACS menu action (Custom Molecule tab - Phase 34).
+        
+        Exports: custom molecules with bundled .itp file.
+        """
+        # Check if custom molecules have been inserted
+        if not hasattr(self, '_current_custom_molecule_result') or self._current_custom_molecule_result is None:
+            QMessageBox.warning(
+                self,
+                "No Custom Molecules",
+                "Insert custom molecules first in the Custom Molecule tab."
+            )
+            return
+        
+        custom_structure = self._current_custom_molecule_result
+        success = self._custom_molecule_gromacs_exporter.export_custom_molecule_gromacs(custom_structure)
+        
+        if success:
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Custom molecule structure exported successfully.\n\n"
+                f"Files: custom_{custom_structure.moleculetype_name}_{custom_structure.custom_molecule_count}molecules.gro/.top\n"
+                f"Molecule type: {custom_structure.moleculetype_name}\n"
+                f"Molecules: {custom_structure.custom_molecule_count}\n"
+                f"ITP bundled: {custom_structure.itp_path.name}"
             )
     
     @Slot()

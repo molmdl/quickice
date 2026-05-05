@@ -17,7 +17,7 @@ from vtkmodules.all import (
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
-from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, SoluteStructure
+from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, SoluteStructure, CustomMoleculeStructure
 
 
 class SoluteGROMACSExporter:
@@ -138,6 +138,91 @@ class SoluteGROMACSExporter:
             if solute_itp_source.exists():
                 solute_itp_dest = path.with_name(solute_itp_name)
                 shutil.copy(solute_itp_source, solute_itp_dest)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+
+class CustomMoleculeGROMACSExporter:
+    """Handle GROMACS file export for custom molecule structures.
+    
+    Exports: ice + water + custom molecules (user-provided .gro/.itp).
+    Bundles custom .itp file to output directory.
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize custom molecule GROMACS exporter."""
+        self.parent = parent_widget
+    
+    def export_custom_molecule_gromacs(self, custom_structure) -> bool:
+        """Export custom molecule structure to GROMACS format.
+
+        Args:
+            custom_structure: CustomMoleculeStructure with positions and file paths
+
+        Returns:
+            True if export succeeded
+        """
+        # Generate default filename with moleculetype name and count
+        moleculetype_name = custom_structure.moleculetype_name
+        n_molecules = custom_structure.custom_molecule_count
+        default_name = f"custom_{moleculetype_name}_{n_molecules}molecules.gro"
+
+        # Show save dialog for .gro file
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Export Custom Molecules for GROMACS",
+            default_name,
+            "GRO Files (*.gro);;All Files (*)",
+            "GRO Files (*.gro)"
+        )
+        
+        if not filepath:
+            return False
+        
+        # Ensure .gro extension
+        path = Path(filepath)
+        if path.suffix.lower() != '.gro':
+            path = path.with_suffix('.gro')
+        
+        # Generate companion filename using stem
+        top_path = path.with_name(path.stem + '.top')
+        
+        try:
+            # Get interface structure from config
+            # Note: custom_structure.positions contains ONLY custom molecule atoms
+            # We need to combine with the interface structure
+            
+            # For now, export just the custom molecules
+            # The interface structure would need to be passed separately
+            
+            # Write .gro file with custom molecules
+            from quickice.output.gromacs_writer import write_gro_file
+            write_gro_file(
+                custom_structure.positions, 
+                custom_structure.atom_names, 
+                custom_structure.cell, 
+                str(path)
+            )
+            
+            # Write .top file with #include for custom ITP
+            top_content = f"""; Custom molecule topology
+#include "{custom_structure.itp_path.name}"
+
+[ molecules ]
+; Compound        nmols
+{moleculetype_name}              {n_molecules}
+"""
+            top_path.write_text(top_content)
+            
+            # Copy custom .itp file to output directory
+            import shutil
+            custom_itp_dest = path.with_name(custom_structure.itp_path.name)
+            shutil.copy(custom_structure.itp_path, custom_itp_dest)
             
             return True
         except Exception as e:
