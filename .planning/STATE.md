@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 33 - Solute Insertion (Tab 4) |
-| Plan | 2 of 4 in current phase |
+| Plan | 3 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 33-01-PLAN.md (SoluteConfig, SoluteStructure, SoluteInserter with all-atom overlap checking) |
+| Last activity | 2026-05-05 — Completed 33-03-PLAN.md (SoluteViewerWidget, SolutePanel UI) |
 
-**Progress:** █████░░░░ 26% (Phase 33: 2/4 plans complete)
+**Progress:** █████░░░░ 27% (Phase 33: 3/4 plans complete)
 
 ---
 
@@ -136,6 +136,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Solute renderer follows hydrate pattern | Consistency with existing ball-and-stick rendering | ✓ Shipped (33-02) |
 | All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ✓ Shipped (33-01) |
 | Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ✓ Shipped (33-01) |
+| SoluteViewerWidget extends QWidget | GenericViewerWidget doesn't exist, follows IonViewerWidget pattern | ✓ Shipped (33-03) |
+| Real-time preview on valueChanged | User sees molecule count update while typing concentration | ✓ Shipped (33-03) |
+| Concentration range 0.0-2.0 M | Based on typical solute concentrations | ✓ Shipped (33-03) |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
 | Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
@@ -183,9 +186,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05
-**Completed:** Phase 33 Plan 01 - SoluteConfig, SoluteStructure, SoluteInserter with concentration calculation, rotation, and all-atom overlap checking
-**Next:** Execute 33-03-PLAN.md (Solute tab UI panel)
+**Last session:** 2026-05-05 05:48:55 UTC
+**Completed:** Phase 33 Plan 03 - SoluteViewerWidget and SolutePanel UI with real-time concentration preview
+**Next:** Execute 33-04-PLAN.md (MainWindow integration for Solute tab)
 
 ---
-*State updated: 2026-05-05 — Phase 33 Plan 01 complete (2/4 plans in Phase 33)*
+*State updated: 2026-05-05 — Phase 33 Plan 03 complete (3/4 plans in Phase 33)*
