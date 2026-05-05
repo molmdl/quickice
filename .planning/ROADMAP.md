@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35
-**Total Plans:** 3 plans (Phase 32 complete, Phases 33-35 TBD)
+**Total Plans:** 7 plans (Phase 32: 3, Phase 33: 4, Phases 34-35: TBD)
 
 ## Overview
 
@@ -60,6 +60,12 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - Bundled .itp files for THF and CH₄ (GAFF2 parameters from existing data/)
 - SoluteRenderer for distinct visualization (color/style from interface patterns)
 - Moleculetype naming: CH4_LIQ, THF_LIQ (managed by MoleculetypeRegistry)
+
+**Plans:**
+- [ ] 33-01-PLAN.md — Core insertion logic: SoluteConfig, SoluteStructure, SoluteInserter
+- [ ] 33-02-PLAN.md — Visualization: SoluteRenderer with ball-and-stick rendering
+- [ ] 33-03-PLAN.md — UI components: SolutePanel and SoluteViewerWidget
+- [ ] 33-04-PLAN.md — Integration & testing: MainWindow integration, TabIndex update, tests
 
 ---
 
@@ -155,7 +161,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 | Phase | Status | Plans Completed | Total Plans |
 |-------|--------|-----------------|-------------|
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
-| 33 - Solute Insertion | ⏳ Pending | 0 | TBD |
+| 33 - Solute Insertion | ⏳ Planned | 0 | 4 |
 | 34 - Custom Molecule Upload | ⏳ Pending | 0 | TBD |
 | 35 - Integration & Documentation | ⏳ Pending | 0 | TBD |
 
