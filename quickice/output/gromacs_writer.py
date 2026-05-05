@@ -1544,10 +1544,11 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 # Fallback to generic guest.itp
                 f.write('#include "guest.itp"\n')
 
-        # Include solute itp if solutes present
+        # Include solute itp if solutes present (liquid solutes use _liquid.itp)
         if has_solutes:
             solute_type_lower = ion_structure.solute_type.lower()
-            f.write(f'#include "{solute_type_lower}.itp"\n')
+            solute_itp_name = f"{solute_type_lower}_liquid.itp"
+            f.write(f'#include "{solute_itp_name}"\n')
 
         # Include ion itp (from ion export - combined NA+CL in single file)
         f.write('#include "ion.itp"\n\n')
