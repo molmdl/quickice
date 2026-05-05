@@ -134,7 +134,7 @@ class SoluteGROMACSExporter:
                 solute_itp_name = "thf.itp"
             
             from pathlib import Path as FilePath
-            solute_itp_source = FilePath(__file__).parent.parent / "topologies" / solute_itp_name
+            solute_itp_source = FilePath(__file__).parent.parent / "data" / solute_itp_name
             if solute_itp_source.exists():
                 solute_itp_dest = path.with_name(solute_itp_name)
                 shutil.copy(solute_itp_source, solute_itp_dest)
@@ -342,7 +342,7 @@ class IonGROMACSExporter:
             if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
                 solute_type_lower = ion_structure.solute_type.lower()
                 from pathlib import Path as FilePath
-                solute_itp_source = FilePath(__file__).parent.parent / "topologies" / f"{solute_type_lower}.itp"
+                solute_itp_source = FilePath(__file__).parent.parent / "data" / f"{solute_type_lower}.itp"
                 if solute_itp_source.exists():
                     solute_itp_dest = path.with_name(f"{solute_type_lower}.itp")
                     shutil.copy(solute_itp_source, solute_itp_dest)
