@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34 - Custom Molecule Upload (Tab 5) |
-| Plan | 2 of 5 in current phase |
+| Plan | 3 of 5 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 34-03-PLAN.md (CustomMoleculeRenderer with distinct color palette) |
+| Last activity | 2026-05-05 — Completed 34-02-PLAN.md (CustomMoleculeInserter with random and custom placement modes) |
 
-**Progress:** ███████░░░ 54% (Phase 34: 2/5 plans complete)
+**Progress:** ███████░░░ 54% (Phase 34: 3/5 plans complete)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-33 complete, Phase 34 in progress (20 requirements satisfied)
+**Progress:** Phase 32-33 complete, Phase 34 in progress (23 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -52,7 +52,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Ball-and-stick rendering with CPK colors
 - ✓ Custom molecule validation infrastructure (GRO residue extraction)
 - ✓ Custom molecule renderer with distinct colors (purple, cyan, yellow)
-- ⏳ Custom molecule insertion logic (CustomMoleculeInserter)
+- ✓ Custom molecule insertion logic (CustomMoleculeInserter with two placement modes)
 - ⏳ Custom molecule upload tab (Tab 5) UI components
 - ⏳ Tab reordering (Ion moves to Tab 6)
 - ⏳ Documentation and keyboard shortcuts
@@ -150,6 +150,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Custom molecule distinct colors | Purple, cyan, yellow to differentiate from predefined molecules | ✓ Shipped (34-03) |
 | Custom molecule renderer follows solute pattern | Consistency with ball-and-stick rendering, same bond threshold | ✓ Shipped (34-03) |
 | CustomMoleculeConfig two-mode pattern | Random/custom placement with validation | ✓ Shipped (34-01) |
+| Euler angles for custom rotation | ZXZ convention via scipy Rotation.from_euler | ✓ Shipped (34-02) |
+| Two placement modes | Random (with overlap checking) and custom (user responsibility) | ✓ Shipped (34-02) |
+| InsertionError for placement failures | Provides attempt count for user feedback | ✓ Shipped (34-02) |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
 | Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
 
@@ -197,8 +200,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 34 Plan 03 - Custom Molecule Renderer with distinct color palette (18 tests passing)
-**Next:** Execute 34-02-PLAN.md (CustomMoleculeInserter) or continue with 34-04-PLAN.md (UI components)
+**Completed:** Phase 34 Plans 01-03 - Custom molecule validation, insertion logic, and renderer (23 requirements satisfied)
+**Next:** Execute 34-04-PLAN.md (UI components: CustomMoleculePanel, CustomMoleculeWorker)
+
+---
+*State updated: 2026-05-05 — Phase 34: 3/5 plans complete*
 
 ---
 *State updated: 2026-05-05 — Phase 34 Plan 03 complete (2/5 plans, 21 requirements)*
