@@ -20,15 +20,15 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 
 ### Tab 4 — Solute Insertion
 
-- [ ] **SOLUTE-01**: User can input solute concentration in mol/L
-- [ ] **SOLUTE-02**: System auto-calculates molecule count from concentration and liquid volume
-- [ ] **SOLUTE-03**: User can select solute type (THF or CH₄) via dropdown
-- [ ] **SOLUTE-04**: System inserts solutes into liquid phase only (respects ice_atom_count boundary)
-- [ ] **SOLUTE-05**: Placement uses random position and rotation with all-atom overlap checking
-- [ ] **SOLUTE-06**: System uses bundled .itp files for THF and CH₄ (GAFF2 parameters)
-- [ ] **SOLUTE-07**: GROMACS export uses distinct moleculetype names (CH4_LIQ, THF_LIQ)
-- [ ] **SOLUTE-08**: 3D viewer displays solutes with distinct actor style (follows interface visualization patterns)
-- [ ] **SOLUTE-09**: Tab layout follows existing hydrate/interface/ion tab patterns
+- [x] **SOLUTE-01**: User can input solute concentration in mol/L
+- [x] **SOLUTE-02**: System auto-calculates molecule count from concentration and liquid volume
+- [x] **SOLUTE-03**: User can select solute type (THF or CH₄) via dropdown
+- [x] **SOLUTE-04**: System inserts solutes into liquid phase only (respects ice_atom_count boundary)
+- [x] **SOLUTE-05**: Placement uses random position and rotation with all-atom overlap checking
+- [x] **SOLUTE-06**: System uses bundled .itp files for THF and CH₄ (GAFF2 parameters)
+- [x] **SOLUTE-07**: GROMACS export uses distinct moleculetype names (CH4_LIQ, THF_LIQ)
+- [x] **SOLUTE-08**: 3D viewer displays solutes with distinct actor style (follows interface visualization patterns)
+- [x] **SOLUTE-09**: Tab layout follows existing hydrate/interface/ion tab patterns
 
 ### Tab 5 — Custom Molecule Upload
 
@@ -47,9 +47,9 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 
 ### Visualization
 
-- [ ] **VIS-01**: 3D viewer follows interface visualization style for molecule representation
+- [x] **VIS-01**: 3D viewer follows interface visualization style for molecule representation
 - [ ] **VIS-02**: Per-molecule-type display controls (visibility, style, color) available in viewer
-- [ ] **VIS-03**: Solute molecules rendered distinctly from water, ice, hydrate guests, and ions
+- [x] **VIS-03**: Solute molecules rendered distinctly from water, ice, hydrate guests, and ions
 
 ### GROMACS Export
 
@@ -106,15 +106,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ARCH-05b | Phase 35 | Pending |
 | ARCH-06 | Phase 32 | Complete |
 | ARCH-07 | Phase 35 | Pending |
-| SOLUTE-01 | Phase 33 | Pending |
-| SOLUTE-02 | Phase 33 | Pending |
-| SOLUTE-03 | Phase 33 | Pending |
-| SOLUTE-04 | Phase 33 | Pending |
-| SOLUTE-05 | Phase 33 | Pending |
-| SOLUTE-06 | Phase 33 | Pending |
-| SOLUTE-07 | Phase 33 | Pending |
-| SOLUTE-08 | Phase 33 | Pending |
-| SOLUTE-09 | Phase 33 | Pending |
+| SOLUTE-01 | Phase 33 | Complete |
+| SOLUTE-02 | Phase 33 | Complete |
+| SOLUTE-03 | Phase 33 | Complete |
+| SOLUTE-04 | Phase 33 | Complete |
+| SOLUTE-05 | Phase 33 | Complete |
+| SOLUTE-06 | Phase 33 | Complete |
+| SOLUTE-07 | Phase 33 | Complete |
+| SOLUTE-08 | Phase 33 | Complete |
+| SOLUTE-09 | Phase 33 | Complete |
 | CUSTOM-01 | Phase 34 | Pending |
 | CUSTOM-02 | Phase 34 | Pending |
 | CUSTOM-03 | Phase 34 | Pending |
@@ -127,9 +127,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CUSTOM-10 | Phase 34 | Pending |
 | CUSTOM-11 | Phase 34 | Pending |
 | CUSTOM-12 | Phase 34 | Pending |
-| VIS-01 | Phase 33 | Pending |
+| VIS-01 | Phase 33 | Complete |
 | VIS-02 | Phase 34 | Pending |
-| VIS-03 | Phase 33 | Pending |
+| VIS-03 | Phase 33 | Complete |
 | GROMACS-01 | Phase 35 | Pending |
 | GROMACS-02 | Phase 32 | Complete |
 | GROMACS-03 | Phase 35 | Pending |

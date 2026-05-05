@@ -62,10 +62,10 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - Moleculetype naming: CH4_LIQ, THF_LIQ (managed by MoleculetypeRegistry)
 
 **Plans:**
-- [ ] 33-01-PLAN.md — Core insertion logic: SoluteConfig, SoluteStructure, SoluteInserter
-- [ ] 33-02-PLAN.md — Visualization: SoluteRenderer with ball-and-stick rendering
-- [ ] 33-03-PLAN.md — UI components: SolutePanel and SoluteViewerWidget
-- [ ] 33-04-PLAN.md — Integration & testing: MainWindow integration, TabIndex update, tests
+- [x] 33-01-PLAN.md — Core insertion logic: SoluteConfig, SoluteStructure, SoluteInserter
+- [x] 33-02-PLAN.md — Visualization: SoluteRenderer with ball-and-stick rendering
+- [x] 33-03-PLAN.md — UI components: SolutePanel and SoluteViewerWidget
+- [x] 33-04-PLAN.md — Integration & testing: MainWindow integration, TabIndex update, tests
 
 ---
 
@@ -161,7 +161,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 | Phase | Status | Plans Completed | Total Plans |
 |-------|--------|-----------------|-------------|
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
-| 33 - Solute Insertion | ⏳ Planned | 0 | 4 |
+| 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ⏳ Pending | 0 | TBD |
 | 35 - Integration & Documentation | ⏳ Pending | 0 | TBD |
 

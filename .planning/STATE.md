@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 in progress
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 in progress
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 33 - Solute Insertion (Tab 4) |
 | Plan | 4 of 4 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-05-05 — Completed 33-04-PLAN.md (MainWindow integration, GROMACS export) |
+| Status | Phase 33 complete, ready to plan Phase 34 |
+| Last activity | 2026-05-05 — Phase 33 complete (SoluteConfig, SoluteInserter, SoluteRenderer, SolutePanel, MainWindow integration, 9 passing tests) |
 
-**Progress:** ██████░░░░ 31% (Phase 33: 4/4 plans complete)
+**Progress:** ██████░░░░ 50% (Phase 33: 4/4 plans complete)
 
 ---
 
@@ -42,15 +42,17 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32 complete (7 requirements satisfied), Phase 33 complete (9 requirements satisfied)
+**Progress:** Phase 32-33 complete (18 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
 - ✓ TabIndex refactoring complete
 - ✓ Solute insertion tab (Tab 4) with THF/CH₄ concentration placement
+- ✓ All-atom overlap checking for multi-atom molecules
+- ✓ Ball-and-stick rendering with CPK colors
 - ⏳ Custom molecule upload tab (Tab 5) with .gro/.itp validation
 - ⏳ Tab reordering (Ion moves to Tab 6)
-- ✓ Multi-atom molecule overlap detection
+- ⏳ Documentation and keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
@@ -139,7 +141,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | SoluteViewerWidget extends QWidget | GenericViewerWidget doesn't exist, follows IonViewerWidget pattern | ✓ Shipped (33-03) |
 | Real-time preview on valueChanged | User sees molecule count update while typing concentration | ✓ Shipped (33-03) |
 | Concentration range 0.0-2.0 M | Based on typical solute concentrations | ✓ Shipped (33-03) |
-| GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
+| GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ✓ Shipped (33-01) |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
 | Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
 
@@ -186,9 +188,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 06:XX:XX UTC
-**Completed:** Phase 33 Plan 04 - MainWindow integration with SolutePanel, GROMACS export, and integration tests
-**Next:** Ready for Phase 34 (Custom Molecule tab) or Phase 35 (Tab Reordering)
+**Last session:** 2026-05-05
+**Completed:** Phase 33 - Solute Insertion (SoluteConfig, SoluteInserter, SoluteRenderer, SolutePanel, MainWindow integration, 9 passing tests - 11 requirements satisfied)
+**Next:** Execute `/gsd-plan-phase 34` to plan Custom Molecule Upload phase
 
 ---
-*State updated: 2026-05-05 — Phase 33 Plan 04 complete (4/4 plans in Phase 33)*
+*State updated: 2026-05-05 — Phase 33 complete (4/4 plans, 11 requirements)*
