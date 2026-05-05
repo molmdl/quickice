@@ -1523,10 +1523,10 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
             f.write(f"; {solute_type_upper} solute atom types (GAFF2)\n")
             if ion_structure.solute_type.lower() == "ch4":
                 # CH4_LIQ uses same atom types as CH4 guest
-                f.write("; CH4_LIU atom types defined in ch4.itp\n")
+                f.write("; CH4_LIQ atom types defined in ch4_liquid.itp\n")
             elif ion_structure.solute_type.lower() == "thf":
                 # THF_LIQ uses same atom types as THF guest
-                f.write("; THF_LIQ atom types defined in thf.itp\n")
+                f.write("; THF_LIQ atom types defined in thf_liquid.itp\n")
         
         f.write("\n")
         
