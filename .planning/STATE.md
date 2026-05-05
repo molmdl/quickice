@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.1 - Ion Source Dropdown |
-| Plan | 2 of 3 in current phase |
-| Status | In progress |
-| Last activity | 2026-05-05 — Completed 34.1-02-PLAN.md (Source change handler, charge warning, empty state) |
+| Plan | 3 of 3 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-05-05 — Completed 34.1-03-PLAN.md (Integration tests for source dropdown) |
 
-**Progress:** █████████░ 95% (Phase 34.1: 2/3 plans complete)
+**Progress:** ██████████ 100% (Phase 34.1: 3/3 plans complete)
 
 ---
 
@@ -174,6 +174,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Source change handler with immediate UI effect | Real-time feedback, not deferred to Generate time | ✓ Shipped (34.1-02) |
 | Charge warning for Custom Molecule source | Non-neutral charge detection for custom molecules | ✓ Shipped (34.1-02) |
 | Ion configuration always neutral | Equal Na+/Cl- with Madrid2019 charges (±0.85) | ✓ Shipped (34.1-02) |
+| Manual QApplication setup for tests | Avoids pytest-qt dependency, matches project pattern | ✓ Shipped (34.1-03) |
+| Comprehensive test coverage (11 tests) | Exceeds minimum 8 tests for better coverage | ✓ Shipped (34.1-03) |
 | Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
@@ -226,9 +228,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 19:53
-**Completed:** 34.1-02-PLAN.md (Source change handler, charge warning, empty state)
-**Next:** Continue Phase 34.1 - 34.1-03-PLAN.md (Integration tests for source dropdown)
+**Last session:** 2026-05-05 19:47
+**Completed:** 34.1-03-PLAN.md (Integration tests for ion source dropdown)
+**Next:** Phase 34.1 complete - Ready for Phase 35 (Integration & Documentation)
 
 ---
-*State updated: 2026-05-05 — Phase 34.1: 2/3 plans complete*
+*State updated: 2026-05-05 — Phase 34.1: 3/3 plans complete*
