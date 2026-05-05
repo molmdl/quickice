@@ -111,6 +111,13 @@ class IonPanel(QWidget):
         insert_row.addStretch()
         left_layout.addLayout(insert_row)
 
+        # Charge warning label (initially hidden, shown when Custom Molecule source has non-neutral charge)
+        self.charge_warning_label = QLabel()
+        self.charge_warning_label.setStyleSheet("color: #d9534f; font-weight: bold; padding: 5px;")
+        self.charge_warning_label.setWordWrap(True)
+        self.charge_warning_label.setVisible(False)  # Initially hidden
+        left_layout.addWidget(self.charge_warning_label)
+
         left_layout.addStretch()
 
         # === RIGHT COLUMN: Viewer Section ===
