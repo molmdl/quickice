@@ -1,6 +1,7 @@
 """Data types for structure generation."""
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
@@ -413,6 +414,91 @@ class SoluteStructure:
     molecule_indices: list[tuple[int, int]]
     registry: Any  # MoleculetypeRegistry (avoid circular import)
     interface_structure: Any = None  # InterfaceStructure (avoid circular import)
+
+
+@dataclass
+class CustomMoleculeConfig:
+    """Configuration for custom molecule placement.
+    
+    Attributes:
+        placement_mode: "random" or "custom"
+        gro_path: Path to custom molecule .gro file
+        itp_path: Path to custom molecule .itp file
+        molecule_count: Number of molecules to place (for random mode)
+        positions: List of (x, y, z) center-of-mass positions in nm (for custom mode)
+        rotations: List of (alpha, beta, gamma) Euler angles in degrees (for custom mode)
+        min_separation: Minimum separation distance in nm (for random mode)
+        max_attempts: Maximum placement attempts per molecule (for random mode)
+    """
+    placement_mode: str
+    gro_path: Path
+    itp_path: Path
+    molecule_count: int | None = None
+    positions: list[tuple[float, float, float]] | None = None
+    rotations: list[tuple[float, float, float]] | None = None
+    min_separation: float = 0.3
+    max_attempts: int = 1000
+    
+    def __post_init__(self):
+        """Validate configuration parameters."""
+        if self.placement_mode not in ("random", "custom"):
+            raise ValueError(
+                f"placement_mode must be 'random' or 'custom', got {self.placement_mode}"
+            )
+        
+        if self.placement_mode == "random":
+            if self.molecule_count is None:
+                raise ValueError("molecule_count must be set for random mode")
+            if self.molecule_count < 1:
+                raise ValueError(f"molecule_count must be >= 1, got {self.molecule_count}")
+            if self.positions is not None or self.rotations is not None:
+                raise ValueError("positions/rotations should not be set for random mode")
+        else:  # custom mode
+            if self.positions is None or self.rotations is None:
+                raise ValueError("positions and rotations must be set for custom mode")
+            if len(self.positions) != len(self.rotations):
+                raise ValueError(
+                    f"positions and rotations must have same length, "
+                    f"got {len(self.positions)} vs {len(self.rotations)}"
+                )
+            if self.molecule_count is not None:
+                raise ValueError("molecule_count should not be set for custom mode")
+        
+        if not (0.1 <= self.min_separation <= 1.0):
+            raise ValueError(
+                f"min_separation={self.min_separation} nm outside reasonable range [0.1, 1.0] nm"
+            )
+        
+        if self.max_attempts < 1:
+            raise ValueError(f"max_attempts must be >= 1, got {self.max_attempts}")
+
+
+@dataclass
+class CustomMoleculeStructure:
+    """Result of custom molecule placement.
+    
+    Attributes:
+        positions: (N_atoms, 3) custom molecule atom positions in nm
+        atom_names: Custom molecule atom names
+        cell: (3, 3) box cell vectors in nm (from interface structure)
+        molecule_index: List of (start, end) tuples for each molecule in positions array
+        config: Original CustomMoleculeConfig
+        moleculetype_name: GROMACS moleculetype name (e.g., "CUSTOM_MOL_1")
+        gro_path: Original .gro file path
+        itp_path: Original .itp file path
+        residue_name: Final residue name (from ITP if override accepted, else from GRO)
+        custom_molecule_count: Number of molecules placed
+    """
+    positions: np.ndarray
+    atom_names: list[str]
+    cell: np.ndarray
+    molecule_index: list[tuple[int, int]]
+    config: CustomMoleculeConfig
+    moleculetype_name: str
+    gro_path: Path
+    itp_path: Path
+    residue_name: str
+    custom_molecule_count: int
 
 
 @dataclass
