@@ -361,6 +361,142 @@ class SoluteInserter:
                 return True
         return False
     
+    def _remove_overlapping_water(
+        self,
+        structure: InterfaceStructure,
+        solute_positions: np.ndarray,
+        min_separation: float,
+    ) -> InterfaceStructure:
+        """Remove water molecules that overlap with placed solutes.
+        
+        CRITICAL: This is the water replacement logic. For each water molecule,
+        check if any of its atoms are within min_separation of any solute atom.
+        If so, remove that entire water molecule.
+        
+        Args:
+            structure: Original InterfaceStructure with ice, water, and guests
+            solute_positions: (N_solute_atoms, 3) positions of placed solutes
+            min_separation: Minimum distance threshold for overlap (nm)
+            
+        Returns:
+            New InterfaceStructure with overlapping water molecules removed
+        """
+        from quickice.structure_generation.types import InterfaceStructure
+        
+        # If no solutes placed, return original structure
+        if len(solute_positions) == 0:
+            logger.info("No solutes placed, keeping all water molecules")
+            return structure
+        
+        # Build KDTree from solute atoms
+        solute_tree = cKDTree(solute_positions)
+        
+        # Get water molecule boundaries
+        ice_atom_count = structure.ice_atom_count
+        water_atom_count = structure.water_atom_count
+        
+        # Calculate atoms per water molecule
+        # This handles both TIP3P (3 atoms) and TIP4P (4 atoms) models
+        if structure.water_nmolecules > 0:
+            atoms_per_water = water_atom_count // structure.water_nmolecules
+        else:
+            # Fallback to TIP4P (most common in this codebase)
+            atoms_per_water = 4
+        
+        water_start = ice_atom_count
+        water_end = ice_atom_count + water_atom_count
+        n_water_molecules = structure.water_nmolecules
+        
+        # Track which water molecules to keep
+        water_molecules_to_keep = []
+        removed_count = 0
+        
+        # Check each water molecule
+        for mol_idx in range(n_water_molecules):
+            atom_start = water_start + mol_idx * atoms_per_water
+            atom_end = atom_start + atoms_per_water
+            
+            # Get positions for this water molecule
+            water_mol_positions = structure.positions[atom_start:atom_end]
+            
+            # Check if any atom in this water molecule overlaps with solutes
+            overlaps = False
+            for atom_pos in water_mol_positions:
+                min_dist = solute_tree.query(atom_pos, k=1)[0]
+                if min_dist < min_separation:
+                    overlaps = True
+                    break
+            
+            if not overlaps:
+                # Keep this water molecule
+                water_molecules_to_keep.append(mol_idx)
+            else:
+                removed_count += 1
+        
+        logger.info(
+            f"Water replacement: Removed {removed_count} water molecules "
+            f"({removed_count * atoms_per_water} atoms) that overlapped with solutes"
+        )
+        
+        # If no water molecules removed, return original
+        if removed_count == 0:
+            return structure
+        
+        # Build new structure with water molecules removed
+        # Keep ice atoms
+        ice_positions = structure.positions[:ice_atom_count]
+        ice_atom_names = structure.atom_names[:ice_atom_count]
+        
+        # Keep only non-overlapping water molecules
+        kept_water_positions = []
+        kept_water_atom_names = []
+        for mol_idx in water_molecules_to_keep:
+            atom_start = water_start + mol_idx * atoms_per_water
+            atom_end = atom_start + atoms_per_water
+            kept_water_positions.append(structure.positions[atom_start:atom_end])
+            kept_water_atom_names.extend(structure.atom_names[atom_start:atom_end])
+        
+        # Keep guest atoms
+        guest_start = ice_atom_count + water_atom_count
+        guest_positions = structure.positions[guest_start:]
+        guest_atom_names = structure.atom_names[guest_start:]
+        
+        # Combine: ice + kept_water + guests
+        if kept_water_positions:
+            water_positions_array = np.vstack(kept_water_positions)
+        else:
+            water_positions_array = np.zeros((0, 3))
+        
+        new_positions = np.vstack([
+            ice_positions,
+            water_positions_array,
+            guest_positions
+        ])
+        
+        new_atom_names = (
+            list(ice_atom_names) +
+            kept_water_atom_names +
+            list(guest_atom_names)
+        )
+        
+        # Create new InterfaceStructure
+        new_interface = InterfaceStructure(
+            positions=new_positions,
+            atom_names=new_atom_names,
+            cell=structure.cell,
+            ice_atom_count=structure.ice_atom_count,
+            water_atom_count=len(kept_water_atom_names),
+            ice_nmolecules=structure.ice_nmolecules,
+            water_nmolecules=len(water_molecules_to_keep),
+            mode=structure.mode,
+            report=structure.report,
+            guest_atom_count=structure.guest_atom_count,
+            molecule_index=structure.molecule_index,
+            guest_nmolecules=structure.guest_nmolecules,
+        )
+        
+        return new_interface
+    
     def insert_solutes(
         self,
         structure: InterfaceStructure,
@@ -531,13 +667,20 @@ class SoluteInserter:
         
         # Register with MoleculetypeRegistry
         self.registry.register_liquid_solute(config.solute_type)
-        
+
         # Create result
         if placed_positions:
             all_positions = np.vstack(placed_positions)
         else:
             all_positions = np.zeros((0, 3))
-        
+
+        # CRITICAL: Remove water molecules that overlap with placed solutes
+        modified_interface = self._remove_overlapping_water(
+            structure,
+            all_positions,
+            config.min_separation
+        )
+
         return SoluteStructure(
             positions=all_positions,
             atom_names=placed_atom_names,
@@ -546,7 +689,7 @@ class SoluteInserter:
             n_molecules=placed_count,
             molecule_indices=molecule_indices,
             registry=self.registry,
-            interface_structure=structure,
+            interface_structure=modified_interface,
         )
 
 

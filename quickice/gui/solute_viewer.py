@@ -42,6 +42,38 @@ from quickice.structure_generation.types import SoluteStructure
 # Import renderer functions for solutes
 from quickice.gui.solute_renderer import create_solute_actor
 
+# Import interface utilities (loaded lazily when VTK is available)
+_interface_utils_loaded = False
+_interface_to_vtk_molecules = None
+_create_bond_lines_actor = None
+_create_unit_cell_actor = None
+
+
+def _load_interface_utils():
+    """Lazily load interface VTK utilities."""
+    global _interface_utils_loaded, _interface_to_vtk_molecules, _create_bond_lines_actor, _create_unit_cell_actor
+    if not _interface_utils_loaded:
+        from quickice.structure_generation.types import InterfaceStructure
+        from quickice.gui.vtk_utils import (
+            interface_to_vtk_molecules,
+            create_bond_lines_actor,
+            create_unit_cell_actor,
+        )
+        _interface_to_vtk_molecules = interface_to_vtk_molecules
+        _create_bond_lines_actor = create_bond_lines_actor
+        _create_unit_cell_actor = create_unit_cell_actor
+        _interface_utils_loaded = True
+
+
+# Interface visualization constants (same as IonViewerWidget)
+ICE_COLOR = (0.0, 0.8, 0.8)         # Cyan
+WATER_COLOR = (0.39, 0.58, 0.93)    # Cornflower blue
+GUEST_COLOR = (0.8, 0.8, 0.8)        # Gray for guest molecules
+BOND_LINE_WIDTH = 1.5
+
+# Unit conversion constant
+ANGSTROM_TO_NM = 0.1
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,6 +110,8 @@ class SoluteViewerWidget(QWidget):
         self._vtk_available = _VTK_AVAILABLE
         self._current_solute_structure: SoluteStructure | None = None
         self._solute_actor: vtkActor | None = None
+        self._interface_actors: list[vtkActor] = []  # Store interface actors separately
+        self._guest_actor: vtkActor | None = None  # Guest molecule actor (for hydrate interface)
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -204,12 +238,122 @@ class SoluteViewerWidget(QWidget):
         
         return widget
 
+    def _extract_bonds(self, mol, cell: np.ndarray = None) -> list:
+        """Extract bond positions from a VTK molecule with PBC wrapping.
+
+        Applies minimum image convention to ensure bonds are drawn as the
+        shortest connection, wrapping across periodic boundaries when needed.
+
+        Args:
+            mol: vtkMolecule with bonds.
+            cell: (3, 3) cell matrix for PBC wrapping. If None, no wrapping.
+
+        Returns:
+            List of ((x1, y1, z1), (x2, y2, z2)) tuples for each bond,
+            with positions wrapped to show shortest distance.
+        """
+        from vtkmodules.all import vtkMolecule
+
+        bonds = []
+        n_bonds = mol.GetNumberOfBonds()
+
+        # Get cell dimensions for PBC (assuming orthorhombic)
+        if cell is not None:
+            cell_dims = np.diag(cell)
+        else:
+            cell_dims = None
+
+        for i in range(n_bonds):
+            bond = mol.GetBond(i)
+
+            # Get atom IDs for this bond
+            atom1_id = bond.GetBeginAtomId()
+            atom2_id = bond.GetEndAtomId()
+
+            # Get atom positions
+            atom1 = mol.GetAtom(atom1_id)
+            atom2 = mol.GetAtom(atom2_id)
+
+            pos1 = np.array(atom1.GetPosition())
+            pos2 = np.array(atom2.GetPosition())
+
+            # Apply minimum image convention if cell is provided
+            if cell_dims is not None:
+                # Wrap pos2 to be within half box distance of pos1
+                delta = pos2 - pos1
+                delta = delta - cell_dims * np.round(delta / cell_dims)
+                pos2 = pos1 + delta
+
+            # Convert to tuples
+            p1 = (float(pos1[0]), float(pos1[1]), float(pos1[2]))
+            p2 = (float(pos2[0]), float(pos2[1]), float(pos2[2]))
+
+            bonds.append((p1, p2))
+
+        return bonds
+
+    def _create_guest_ball_and_stick_actor(self, structure, guest_mol) -> vtkActor:
+        """Create a ball-and-stick actor for guest molecules.
+        
+        Uses vtkMoleculeMapper with ball-and-stick settings for CPK coloring
+        and proper bond rendering. Same as interface_viewer.py.
+        
+        Args:
+            structure: InterfaceStructure containing guest data
+            guest_mol: vtkMolecule with guest atoms
+        
+        Returns:
+            vtkActor configured for ball-and-stick visualization
+        """
+        from vtkmodules.all import vtkMoleculeMapper, vtkActor
+        
+        # Create mapper with ball-and-stick settings
+        mapper = vtkMoleculeMapper()
+        mapper.SetInputData(guest_mol)
+        mapper.UseBallAndStickSettings()
+        mapper.SetAtomicRadiusTypeToVDWRadius()
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+        mapper.SetAtomicRadiusScaleFactor(0.25 * ANGSTROM_TO_NM)  # 0.025 nm
+        mapper.SetBondRadius(0.075 * ANGSTROM_TO_NM)  # 0.0075 nm
+        mapper.SetBondColor(180, 180, 180)  # Gray bonds
+        
+        actor = vtkActor()
+        actor.SetMapper(mapper)
+        
+        return actor
+
+    def _clear_interface_actors(self) -> None:
+        """Remove interface actors from renderer."""
+        if self.renderer is None:
+            return
+            
+        for actor in self._interface_actors:
+            if actor is not None:
+                self.renderer.RemoveActor(actor)
+
+        # Clear actor list
+        self._interface_actors = []
+
+        # Also remove guest actor if it exists
+        if self._guest_actor is not None:
+            self.renderer.RemoveActor(self._guest_actor)
+            self._guest_actor = None
+
     def render_solute(self, solute_structure: SoluteStructure) -> None:
         """Render solute molecules in 3D viewer.
         
+        Renders the interface structure (ice + water) first, then adds solute
+        molecules on top. This ensures both are visible in the viewer.
+        
         Args:
-            solute_structure: SoluteStructure with positions, atom_names, cell
+            solute_structure: SoluteStructure with positions, atom_names, cell,
+                             and interface_structure
         """
+        # Load interface VTK utilities when first needed
+        if self._vtk_available:
+            _load_interface_utils()
+
         if not self._vtk_available:
             # VTK not available - just switch to viewer mode
             self._current_solute_structure = solute_structure
@@ -217,11 +361,48 @@ class SoluteViewerWidget(QWidget):
             logger.info("Solute structure stored (VTK unavailable)")
             return
 
-        # Clear existing solute actor
+        # Clear previous solute and interface actors
         self.clear_solute_actors()
+        self._clear_interface_actors()
 
         # Store the structure reference
         self._current_solute_structure = solute_structure
+
+        # Render interface structure (ice + water) if available
+        if solute_structure.interface_structure is not None:
+            interface = solute_structure.interface_structure
+            
+            # Convert to separate ice, water, and guest VTK molecules
+            ice_mol, water_mol, guest_mol = _interface_to_vtk_molecules(interface)
+            
+            # Extract bonds from each molecule with PBC wrapping
+            ice_bonds = self._extract_bonds(ice_mol, interface.cell)
+            water_bonds = self._extract_bonds(water_mol, interface.cell)
+            
+            # Create bond line actors
+            ice_actor = _create_bond_lines_actor(ice_bonds, ICE_COLOR, BOND_LINE_WIDTH)
+            water_actor = _create_bond_lines_actor(water_bonds, WATER_COLOR, BOND_LINE_WIDTH)
+            unit_cell_actor = _create_unit_cell_actor(interface.cell)
+            
+            # Create guest actor if guests exist
+            if guest_mol is not None and interface.guest_atom_count > 0:
+                guest_actor = self._create_guest_ball_and_stick_actor(interface, guest_mol)
+                self._guest_actor = guest_actor
+            else:
+                self._guest_actor = None
+            
+            # Store interface actors
+            self._interface_actors.extend([ice_actor, water_actor, unit_cell_actor])
+            
+            # Add actors to renderer
+            for actor in self._interface_actors:
+                self.renderer.AddActor(actor)
+            
+            # Add guest actor if it exists
+            if self._guest_actor is not None:
+                self.renderer.AddActor(self._guest_actor)
+            
+            logger.info(f"Rendered interface: {interface.ice_nmolecules} ice + {interface.water_nmolecules} water molecules")
 
         # Create solute actor using the renderer
         actor = create_solute_actor(
@@ -297,9 +478,10 @@ class SoluteViewerWidget(QWidget):
     def clear(self) -> None:
         """Clear the current structure from the viewer.
 
-        Removes all actors and shows placeholder.
+        Removes all actors (solute and interface) and shows placeholder.
         """
         self.clear_solute_actors()
+        self._clear_interface_actors()
         self._current_solute_structure = None
 
         if self._vtk_available and self.render_window is not None:

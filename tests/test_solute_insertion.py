@@ -137,7 +137,7 @@ class TestSoluteInsertion:
     def test_insert_ch4_solutes(self, interface_structure):
         """Test CH4 solute insertion into interface structure."""
         config = SoluteConfig(
-            concentration_molar=0.01,  # Low concentration for reliable placement
+            concentration_molar=0.5,  # Higher concentration to ensure molecules are placed
             solute_type="CH4",
             max_attempts=1000,
             seed=42,  # Reproducible
@@ -163,7 +163,7 @@ class TestSoluteInsertion:
     def test_insert_thf_solutes(self, interface_structure):
         """Test THF solute insertion."""
         config = SoluteConfig(
-            concentration_molar=0.005,  # Low concentration
+            concentration_molar=0.5,  # Higher concentration to ensure molecules are placed
             solute_type="THF",
             seed=42,
         )

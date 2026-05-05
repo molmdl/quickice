@@ -53,6 +53,7 @@ class SolutePanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
+        self._interface_available = False  # Track if interface structure is available
         self._setup_ui()
         self._setup_connections()
     
@@ -276,6 +277,32 @@ class SolutePanel(QWidget):
             Liquid volume in cubic nanometers
         """
         return self._liquid_volume_nm3
+    
+    def set_interface_available(self, available: bool):
+        """Set whether interface structure is available.
+        
+        Called by MainWindow when interface is generated.
+        Enables/disables insert button accordingly.
+        
+        Args:
+            available: True if interface structure exists, False otherwise
+        """
+        self._interface_available = available
+        self._update_insert_button_state()
+    
+    def _update_insert_button_state(self):
+        """Update Insert button enabled state and tooltip based on interface availability."""
+        if not self._interface_available:
+            # No interface structure available
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip("Generate Interface structure first (Tab 3)")
+        else:
+            # Interface available
+            self.insert_button.setEnabled(True)
+            self.insert_button.setToolTip(
+                "Insert solute molecules into the liquid water region.\n"
+                "Calculated from concentration and liquid volume."
+            )
     
     def log_message(self, message: str):
         """Append a message to the log display with timestamp.

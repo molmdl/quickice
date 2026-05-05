@@ -626,9 +626,11 @@ class MainWindow(QMainWindow):
         # Volume = water_nmolecules * 0.0299 nm³ per molecule (TIP4P water volume)
         liquid_vol = result.water_nmolecules * 0.0299
         self.ion_panel.set_liquid_volume(liquid_vol)
+        self.ion_panel.set_interface_available(True)
         
         # Update solute panel with liquid volume for solute count calculation
         self.solute_panel.set_liquid_volume(liquid_vol)
+        self.solute_panel.set_interface_available(True)
 
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
