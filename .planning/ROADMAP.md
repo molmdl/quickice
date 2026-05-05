@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35
-**Total Plans:** 7 plans (Phase 32: 3, Phase 33: 4, Phases 34-35: TBD)
+**Total Plans:** 12 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: TBD)
 
 ## Overview
 
@@ -91,6 +91,13 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - Custom molecule rendering with distinct actor style
 - Moleculetype naming: CUSTOM_MOL_1, CUSTOM_MOL_2, etc.
 - Error messages for specific validation failures
+
+**Plans:**
+- [ ] 34-01-PLAN.md — Validation infrastructure: GRO residue extraction, molecule validator enhancement, type definitions
+- [ ] 34-02-PLAN.md — Core insertion logic: CustomMoleculeInserter with random and custom placement modes
+- [ ] 34-03-PLAN.md — Visualization: CustomMoleculeRenderer with distinct color palette
+- [ ] 34-04-PLAN.md — UI components: CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget
+- [ ] 34-05-PLAN.md — Integration & testing: MainWindow integration, GROMACS export, tests
 
 ---
 
