@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1 inserted)
-**Total Plans:** 21 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 35: 6)
+**Phases:** 32-35 (with 34.1, 34.2 inserted)
+**Total Plans:** 23 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 35: 6)
 
 ## Overview
 
@@ -120,6 +120,26 @@ Plans:
 
 ---
 
+### Phase 34.2: Fix Liquid Solute ITP Export (INSERTED)
+
+**Goal:** User can export liquid solutes with correct ITP files and residue names matching GROMACS requirements
+**Depends on:** Phase 34.1
+**Plans:** 2 plans
+
+Plans:
+- [ ] 34.2-01-PLAN.md — Create liquid ITP files: ch4_liquid.itp and thf_liquid.itp
+- [ ] 34.2-02-PLAN.md — Update export integration: SoluteGROMACSExporter, IonGROMACSExporter, gromacs_writer
+
+**Details:**
+- Create separate ITP files for liquid solutes: ch4_liquid.itp, thf_liquid.itp
+- Residue names: CH4_LIQ, THF_LIQ (matching MoleculetypeRegistry naming)
+- Update export logic to copy correct ITP files based on molecule source
+- Update GROMACS writer to use correct residue names for liquid solutes
+- Ensure GRO and ITP residue names match
+- Verify hydrate guests (CH4, THF) and liquid solutes (CH4_LIQ, THF_LIQ) can coexist
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -155,7 +175,7 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 5 (Phases 32-35, with 34.1 inserted)
+**Phase Count:** 6 (Phases 32-35, with 34.1 and 34.2 inserted)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -198,10 +218,11 @@ Plans:
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
+| 34.2 - Fix Liquid Solute ITP Export | ⏳ Planned | 0 | 2 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-05 - Phase 34.1 inserted (urgent)*
+*Last updated: 2026-05-05 - Phase 34.2 inserted (urgent)*
 *For current state, see .planning/STATE.md*
