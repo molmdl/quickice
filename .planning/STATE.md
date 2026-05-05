@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 complete
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 in progress
 
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 35 - Integration & Documentation |
-| Plan | 1 of 6 in current phase |
+| Phase | 34.1 - Ion Source Dropdown |
+| Plan | 1 of 3 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 35-01-PLAN.md (Unified export shortcut, molecule ordering tests) |
+| Last activity | 2026-05-05 — Completed 34.1-01-PLAN.md (Source dropdown UI, charge warning label) |
 
 **Progress:** █████████░ 95% (Phase 35: 1/6 plans complete)
 
@@ -130,6 +130,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 34.1 inserted after Phase 34: Ion Source Dropdown with charge warning (URGENT)
+
 ### v4.5 Key Decisions
 
 | Decision | Rationale | Status |
@@ -163,6 +167,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Residue name mismatch dialog | ITP name override option for user choice | ✓ Shipped (34-04) |
 | Placement mode dropdown | Dynamic controls for Random vs Custom mode | ✓ Shipped (34-04) |
 | Unified Ctrl+S export | Qt standard "Save" action for active tab export | ✓ Shipped (35-01) |
+| Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
+| Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
+| Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
+| Ion source dropdown follows Interface pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.1-01) |
 | Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
@@ -215,9 +223,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 18:09
-**Completed:** 35-01-PLAN.md (Unified export shortcut, molecule ordering tests)
-**Next:** Continue Phase 35 - 35-02-PLAN.md pending user decision on missing function issue
+**Last session:** 2026-05-05 19:34
+**Completed:** 34.1-01-PLAN.md (Source dropdown UI, charge warning label)
+**Next:** Continue Phase 34.1 - 34.1-02-PLAN.md (Handler logic for source change)
 
 ---
-*State updated: 2026-05-05 — Phase 35: 1/6 plans complete*
+*State updated: 2026-05-05 — Phase 34.1: 1/3 plans complete*
