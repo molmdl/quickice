@@ -46,6 +46,7 @@ class IonPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
+        self._current_source = "Interface"  # Track current source selection (default: Interface)
         self._setup_ui()
         self._setup_connections()
     
