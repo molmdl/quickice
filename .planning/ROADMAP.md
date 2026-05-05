@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35
-**Total Plans:** 18 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: 6)
+**Phases:** 32-35 (with 34.1 inserted)
+**Total Plans:** 18+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: TBD, Phase 35: 6)
 
 ## Overview
 
@@ -101,6 +101,25 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 ---
 
+### Phase 34.1: Ion Source Dropdown (INSERTED)
+
+**Goal:** User can select ion insertion source (Interface/Custom/Solute) and receives warning when charge is not neutralized
+**Depends on:** Phase 34
+**Plans:** 3 plans
+
+Plans:
+- [ ] 34.1-01-PLAN.md — UI foundation: Source dropdown, charge warning label, help icon
+- [ ] 34.1-02-PLAN.md — Handler logic: Source change handler, charge calculation, empty state
+- [ ] 34.1-03-PLAN.md — Integration tests: Source dropdown rendering, switching, warnings, empty states
+
+**Details:**
+- Ion tab source dropdown: Interface, Custom Molecule, or Solute
+- Charge warning: Display warning message when custom molecules have non-neutral charge
+- Charge neutralization: NOT implemented in this phase (user warned only)
+- Follow Interface tab pattern for source selection UI and behavior
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -136,7 +155,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 ## Milestone Summary
 
-**Phase Count:** 4 (Phases 32-35)
+**Phase Count:** 5 (Phases 32-35, with 34.1 inserted)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -178,10 +197,11 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
-| 35 - Integration & Documentation | ⏳ Pending | 0 | 6 |
+| 34.1 - Ion Source Dropdown | ⏳ Pending | 0 | 3 |
+| 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-05 - Phase 34 complete*
+*Last updated: 2026-05-05 - Phase 34.1 inserted (urgent)*
 *For current state, see .planning/STATE.md*
