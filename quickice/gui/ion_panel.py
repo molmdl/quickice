@@ -47,6 +47,7 @@ class IonPanel(QWidget):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
         self._current_source = "Interface"  # Track current source selection (default: Interface)
+        self._interface_available = False  # Track if Interface source has structure available
         self._setup_ui()
         self._setup_connections()
     
@@ -220,11 +221,115 @@ class IonPanel(QWidget):
     def _setup_connections(self):
         """Setup signal connections."""
         self.concentration_input.valueChanged.connect(self._on_concentration_changed)
+        self.source_combo.currentIndexChanged.connect(self._on_source_changed)
     
     def _on_concentration_changed(self, value: float):
         """Handle concentration value change."""
         self._update_ion_count()
         self.configuration_changed.emit()
+    
+    def _on_source_changed(self, index: int):
+        """Handle source selection change.
+        
+        Follows InterfacePanel._on_source_changed pattern (lines 532-564 of interface_panel.py):
+        - Map index to source name
+        - Update internal state
+        - Enable/disable controls based on source
+        - Clear 3D viewer
+        - Log source change
+        - Update Insert button state
+        - Update charge warning visibility
+        - Emit configuration_changed signal
+        
+        Args:
+            index: 0 = Interface, 1 = Custom Molecule, 2 = Solute
+        """
+        # Map index to source name
+        source_names = ["Interface", "Custom Molecule", "Solute"]
+        source_name = source_names[index] if 0 <= index < len(source_names) else "Interface"
+        
+        # Update internal state
+        self._current_source = source_name
+        
+        # Enable/disable controls based on source
+        # Concentration is always enabled for all sources
+        # Insert button state handled by _update_insert_button_state()
+        
+        # Clear 3D viewer
+        if hasattr(self.ion_viewer, 'clear'):
+            self.ion_viewer.clear()
+        
+        # Log source change
+        self.append_log(f"Source switched to {source_name}")
+        
+        # Update Insert button state based on source availability
+        self._update_insert_button_state()
+        
+        # Update charge warning visibility
+        self._update_charge_warning()
+        
+        # Emit configuration_changed signal
+        self.configuration_changed.emit()
+    
+    def _check_source_availability(self) -> bool:
+        """Check if current source has data available.
+        
+        For now, returns True for all sources.
+        MainWindow will provide actual availability checks in future integration.
+        
+        Returns:
+            True if source has data available, False otherwise
+        """
+        # Placeholder implementation - will be enhanced by MainWindow
+        # For Interface source: check if interface structure exists
+        # For Custom Molecule: check if custom molecule is loaded
+        # For Solute: check if solute structure exists
+        return True
+    
+    def _update_insert_button_state(self):
+        """Update Insert button enabled state and tooltip based on source availability.
+        
+        Follows Interface tab pattern: when source has no data, disable button with
+        explanatory tooltip.
+        """
+        # Check if current source is available
+        is_available = self._check_source_availability()
+        
+        if self._current_source == "Interface" and not self._interface_available:
+            # Interface source but no structure generated
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip("Generate Interface structure first (Tab 3)")
+        elif not is_available:
+            # Source unavailable (future: Custom Molecule or Solute not loaded)
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip(f"{self._current_source} source not available")
+        else:
+            # Source available
+            self.insert_button.setEnabled(True)
+            self.insert_button.setToolTip(
+                "Insert Na+ and Cl- ions into the liquid water region.\n"
+                "Calculated from concentration and liquid volume."
+            )
+    
+    def set_interface_available(self, available: bool):
+        """Set whether Interface source has structure available.
+        
+        Called by MainWindow when interface is generated.
+        
+        Args:
+            available: True if interface structure exists, False otherwise
+        """
+        self._interface_available = available
+        self._update_insert_button_state()
+    
+    def _update_charge_warning(self):
+        """Update charge warning label visibility.
+        
+        Placeholder for Task 2 implementation.
+        Shows warning when Custom Molecule source has non-neutral charge.
+        """
+        # Placeholder - will be implemented in Task 2
+        pass
     
     def _update_ion_count(self):
         """Update ion count display based on current concentration and volume.
