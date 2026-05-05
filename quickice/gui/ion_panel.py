@@ -50,6 +50,8 @@ class IonPanel(QWidget):
         self._interface_available = False  # Track if Interface source has structure available
         self._setup_ui()
         self._setup_connections()
+        # Set initial button state based on default source (Interface) and availability
+        self._update_insert_button_state()
     
     def _setup_ui(self):
         """Setup UI components with horizontal layout (like HydratePanel).
