@@ -32,23 +32,23 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 
 ### Tab 5 — Custom Molecule Upload
 
-- [ ] **CUSTOM-01**: User can upload .gro file via file dialog
-- [ ] **CUSTOM-02**: User can upload .itp file via file dialog
-- [ ] **CUSTOM-03**: System validates GRO atom count matches ITP atom count
-- [ ] **CUSTOM-04**: System validates residue name consistency between GRO and ITP
-- [ ] **CUSTOM-05**: System extracts atomtypes from ITP for GROMACS export compatibility
-- [ ] **CUSTOM-06**: System provides specific error messages for invalid files (atom count mismatch, missing sections, etc.)
-- [ ] **CUSTOM-07**: Random placement mode: random position in liquid, random rotation, all-atom overlap checking
-- [ ] **CUSTOM-08**: Custom placement mode: user-specified COM (x, y, z) and rotation matrix
-- [ ] **CUSTOM-09**: GROMACS export bundles custom .itp file to output directory
-- [ ] **CUSTOM-10**: GROMACS export uses unique moleculetype name (CUSTOM_MOL_1, etc.)
-- [ ] **CUSTOM-11**: 3D viewer displays custom molecules with distinct actor style
-- [ ] **CUSTOM-12**: Tab layout follows existing hydrate/interface/ion tab patterns
+- [x] **CUSTOM-01**: User can upload .gro file via file dialog
+- [x] **CUSTOM-02**: User can upload .itp file via file dialog
+- [x] **CUSTOM-03**: System validates GRO atom count matches ITP atom count
+- [x] **CUSTOM-04**: System validates residue name consistency between GRO and ITP
+- [x] **CUSTOM-05**: System extracts atomtypes from ITP for GROMACS export compatibility
+- [x] **CUSTOM-06**: System provides specific error messages for invalid files (atom count mismatch, missing sections, etc.)
+- [x] **CUSTOM-07**: Random placement mode: random position in liquid, random rotation, all-atom overlap checking
+- [x] **CUSTOM-08**: Custom placement mode: user-specified COM (x, y, z) and rotation matrix
+- [x] **CUSTOM-09**: GROMACS export bundles custom .itp file to output directory
+- [x] **CUSTOM-10**: GROMACS export uses unique moleculetype name (CUSTOM_MOL_1, etc.)
+- [x] **CUSTOM-11**: 3D viewer displays custom molecules with distinct actor style
+- [x] **CUSTOM-12**: Tab layout follows existing hydrate/interface/ion tab patterns
 
 ### Visualization
 
 - [x] **VIS-01**: 3D viewer follows interface visualization style for molecule representation
-- [ ] **VIS-02**: Per-molecule-type display controls (visibility, style, color) available in viewer
+- [x] **VIS-02**: Per-molecule-type display controls (visibility, style, color) available in viewer
 - [x] **VIS-03**: Solute molecules rendered distinctly from water, ice, hydrate guests, and ions
 
 ### GROMACS Export
@@ -115,20 +115,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SOLUTE-07 | Phase 33 | Complete |
 | SOLUTE-08 | Phase 33 | Complete |
 | SOLUTE-09 | Phase 33 | Complete |
-| CUSTOM-01 | Phase 34 | Pending |
-| CUSTOM-02 | Phase 34 | Pending |
-| CUSTOM-03 | Phase 34 | Pending |
-| CUSTOM-04 | Phase 34 | Pending |
-| CUSTOM-05 | Phase 34 | Pending |
-| CUSTOM-06 | Phase 34 | Pending |
-| CUSTOM-07 | Phase 34 | Pending |
-| CUSTOM-08 | Phase 34 | Pending |
-| CUSTOM-09 | Phase 34 | Pending |
-| CUSTOM-10 | Phase 34 | Pending |
-| CUSTOM-11 | Phase 34 | Pending |
-| CUSTOM-12 | Phase 34 | Pending |
+| CUSTOM-01 | Phase 34 | Complete |
+| CUSTOM-02 | Phase 34 | Complete |
+| CUSTOM-03 | Phase 34 | Complete |
+| CUSTOM-04 | Phase 34 | Complete |
+| CUSTOM-05 | Phase 34 | Complete |
+| CUSTOM-06 | Phase 34 | Complete |
+| CUSTOM-07 | Phase 34 | Complete |
+| CUSTOM-08 | Phase 34 | Complete |
+| CUSTOM-09 | Phase 34 | Complete |
+| CUSTOM-10 | Phase 34 | Complete |
+| CUSTOM-11 | Phase 34 | Complete |
+| CUSTOM-12 | Phase 34 | Complete |
 | VIS-01 | Phase 33 | Complete |
-| VIS-02 | Phase 34 | Pending |
+| VIS-02 | Phase 34 | Complete |
 | VIS-03 | Phase 33 | Complete |
 | GROMACS-01 | Phase 35 | Pending |
 | GROMACS-02 | Phase 32 | Complete |
@@ -146,4 +146,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 after roadmap creation (Phases 32-35)*
+*Last updated: 2026-05-05 — Phase 34 complete (CUSTOM-01 to CUSTOM-12, VIS-02)*
