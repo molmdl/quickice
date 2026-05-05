@@ -199,8 +199,8 @@ class SoluteInserter:
         Returns:
             Tuple of (positions, atom_names, atom_types)
             - positions: (N_atoms, 3) template positions centered at origin
-            - atom_names: List of atom names
-            - atom_types: List of atom types from ITP file
+            - atom_names: List of atom names (for visualization and atomic number lookup)
+            - atom_types: List of atom types from ITP file (for forcefield)
             
         Raises:
             FileNotFoundError: If ITP file not found
@@ -233,9 +233,9 @@ class SoluteInserter:
             # Fallback to zeros (should not reach here due to validation above)
             positions = np.zeros((itp_info.atom_count, 3))
         
-        # Atom names from ITP
-        # Use atom types as names (consistent with ITP parsing)
-        atom_names = itp_info.atom_types
+        # Use atom names (not types) for visualization
+        # Atom names are the actual element identifiers (C, H, O, etc.)
+        atom_names = itp_info.atom_names
         atom_types = itp_info.atom_types
         
         logger.info(
