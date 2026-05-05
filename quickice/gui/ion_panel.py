@@ -65,6 +65,28 @@ class IonPanel(QWidget):
         left_layout = QVBoxLayout()
         left_layout.setSpacing(10)
         
+        # Source selector row (at top, before other controls - follows Interface tab pattern)
+        source_row = QHBoxLayout()
+        source_label = QLabel("Source:")
+        self.source_combo = QComboBox()
+        self.source_combo.addItems(["Interface", "Custom Molecule", "Solute"])
+        self.source_combo.setToolTip(
+            "Select source for ion insertion:\n"
+            "• Interface — Use interface structure from Tab 3\n"
+            "• Custom Molecule — Use custom molecule structure from Tab 5\n"
+            "• Solute — Use solute structure from Tab 4"
+        )
+        source_row.addWidget(source_label)
+        source_row.addWidget(HelpIcon(
+            "Source type for ion insertion. Interface uses existing ice-water structures. "
+            "Custom Molecule and Solute use structures from their respective tabs."
+        ))
+        source_row.addWidget(self.source_combo)
+        source_row.addStretch()
+        left_layout.addLayout(source_row)
+        
+        left_layout.addSpacing(15)
+        
         # Concentration input group
         conc_group = self._create_concentration_group()
         left_layout.addWidget(conc_group)
