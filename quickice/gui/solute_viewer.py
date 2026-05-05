@@ -408,7 +408,8 @@ class SoluteViewerWidget(QWidget):
         actor = create_solute_actor(
             solute_structure.positions,
             solute_structure.atom_names,
-            solute_structure.cell
+            solute_structure.cell,
+            molecule_indices=solute_structure.molecule_indices
         )
         
         if actor:

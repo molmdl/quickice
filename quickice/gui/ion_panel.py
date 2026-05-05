@@ -438,6 +438,14 @@ class IonPanel(QWidget):
         """
         return self._liquid_volume_nm3
     
+    def get_current_source(self) -> str:
+        """Get the currently selected source for ion insertion.
+        
+        Returns:
+            Source name: "Interface", "Custom Molecule", or "Solute"
+        """
+        return self._current_source
+    
     def get_inserter(self) -> IonInserter:
         """Get IonInserter instance with current configuration.
         

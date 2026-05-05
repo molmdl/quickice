@@ -819,15 +819,57 @@ class MainWindow(QMainWindow):
         # Get configuration from ion_panel
         config = self.ion_panel.get_configuration()
         
-        # Get current interface structure (from Interface Construction tab)
-        interface = self._current_interface_result
+        # Get the selected source from ion panel
+        current_source = self.ion_panel.get_current_source()
         
-        if interface is None:
+        # Get the appropriate interface structure based on source
+        interface = None
+        source_description = ""
+        
+        if current_source == "Interface":
+            # Use original interface structure
+            interface = self._current_interface_result
+            source_description = "interface structure"
+            
+            if interface is None:
+                QMessageBox.warning(
+                    self, "No Interface",
+                    "Please generate an interface structure first in the Interface Construction tab."
+                )
+                return
+                
+        elif current_source == "Solute":
+            # Use interface structure modified by solute insertion
+            if not hasattr(self, '_current_solute_result') or self._current_solute_result is None:
+                QMessageBox.warning(
+                    self, "No Solute Structure",
+                    "Please insert solutes first in the Solute tab before using 'Solute' as source."
+                )
+                return
+            
+            interface = self._current_solute_result.interface_structure
+            source_description = "solute-modified interface structure"
+            
+            if interface is None:
+                QMessageBox.warning(
+                    self, "Invalid Solute Structure",
+                    "Solute structure does not have an associated interface structure."
+                )
+                return
+                
+        elif current_source == "Custom Molecule":
+            # Custom molecules don't modify the interface, so can't be used as source
             QMessageBox.warning(
-                self, "No Interface",
-                "Please generate an interface structure first in the Interface Construction tab."
+                self, "Custom Molecule Not Supported",
+                "Custom molecule source is not supported for ion insertion.\n\n"
+                "Custom molecules are placed at user-specified positions without removing water,\n"
+                "so ions cannot be safely inserted.\n\n"
+                "Please use 'Interface' or 'Solute' as the source."
             )
             return
+        
+        # Log which source is being used
+        self.ion_panel.append_log(f"Using {source_description} for ion insertion...")
         
         # Get liquid volume from interface panel (may be 0 if not set)
         liquid_volume = self.ion_panel.get_liquid_volume()
@@ -897,16 +939,25 @@ class MainWindow(QMainWindow):
             # Store result
             self._current_solute_result = solute_structure
             
+            # Calculate water molecules replaced
+            original_water_count = self._current_interface_result.water_nmolecules
+            modified_water_count = solute_structure.interface_structure.water_nmolecules
+            water_replaced = original_water_count - modified_water_count
+            
             # Render in viewer
             self.solute_panel.solute_viewer.render_solute(solute_structure)
             
             # Hide placeholder
             self.solute_panel.hide_placeholder()
             
-            # Log success
+            # Log success with water replacement count
             self.solute_panel.log_message(
                 f"Success: Inserted {solute_structure.n_molecules} {config.solute_type} molecules"
             )
+            if water_replaced > 0:
+                self.solute_panel.log_message(
+                    f"Water replacement: Removed {water_replaced} water molecules to make room"
+                )
             
         except Exception as e:
             self.solute_panel.log_message(f"Error: {e}")

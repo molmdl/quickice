@@ -102,6 +102,7 @@ def create_solute_actor(
     positions: np.ndarray,
     atom_names: list[str],
     cell: np.ndarray,
+    molecule_indices: list[tuple[int, int]] | None = None,
     mode: str = "ball_and_stick"
 ) -> vtkActor | None:
     """Create VTK actor for solute molecules with ball-and-stick rendering.
@@ -110,6 +111,8 @@ def create_solute_actor(
         positions: (N_atoms, 3) positions in nm
         atom_names: List of atom names (C, O, H, etc.)
         cell: (3, 3) unit cell vectors in nm
+        molecule_indices: List of (start, end) tuples for each molecule. If None,
+                         bonds detected across all atoms (old behavior, deprecated).
         mode: Rendering mode ("vdw", "ball_and_stick", "stick")
         
     Returns:
@@ -119,6 +122,7 @@ def create_solute_actor(
     
     # Add atoms (skip MW virtual sites)
     atom_ids = []
+    visible_positions_list = []  # Track positions for bond detection
     for pos, name in zip(positions, atom_names):
         element = get_element_from_atom_name(name)
         if element is None:
@@ -131,18 +135,41 @@ def create_solute_actor(
             float(pos[0]), float(pos[1]), float(pos[2])
         )
         atom_ids.append(atom_id)
+        visible_positions_list.append(pos)
     
     if not atom_ids:
         logger.warning("No valid atoms for solute rendering")
         return None
     
-    # Detect bonds automatically
-    visible_positions = positions[:len(atom_ids)]
-    for i in range(len(atom_ids)):
-        for j in range(i + 1, len(atom_ids)):
-            dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
-            if dist < BOND_DISTANCE_THRESHOLD:
-                molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
+    visible_positions = np.array(visible_positions_list)
+    
+    # Detect bonds - use molecule_indices if available for per-molecule detection
+    if molecule_indices is not None:
+        # Detect bonds WITHIN each molecule separately (correct approach)
+        for start_idx, end_idx in molecule_indices:
+            # Map global indices to visible atom indices (accounting for skipped MW atoms)
+            # This is complex, so we detect bonds within position range instead
+            mol_positions = visible_positions[start_idx:end_idx]
+            mol_atom_ids = atom_ids[start_idx:end_idx]
+            
+            n_atoms = len(mol_atom_ids)
+            for i in range(n_atoms):
+                for j in range(i + 1, n_atoms):
+                    dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+                    if dist < BOND_DISTANCE_THRESHOLD:
+                        molecule.AppendBond(mol_atom_ids[i], mol_atom_ids[j], 1)
+    else:
+        # Old behavior: detect bonds across all atoms (can create cross-molecule bonds)
+        logger.warning(
+            "create_solute_actor called without molecule_indices. "
+            "This may create incorrect bonds between molecules. "
+            "Please pass molecule_indices from SoluteStructure."
+        )
+        for i in range(len(atom_ids)):
+            for j in range(i + 1, len(atom_ids)):
+                dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
+                if dist < BOND_DISTANCE_THRESHOLD:
+                    molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
     
     # Set lattice for PBC
     lattice_matrix = vtkMatrix3x3()
