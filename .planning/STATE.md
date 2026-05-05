@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34 - Custom Molecule Upload (Tab 5) |
-| Plan | 5 of 5 in current phase |
-| Status | Phase complete |
-| Last activity | 2026-05-05 — Completed 34-05-PLAN.md (MainWindow integration, GROMACS export, tests) |
+| Phase | 35 - Integration & Documentation |
+| Plan | 1 of 6 in current phase |
+| Status | In progress |
+| Last activity | 2026-05-05 — Completed 35-01-PLAN.md (Unified export shortcut, molecule ordering tests) |
 
-**Progress:** ██████████ 100% (Phase 34: 5/5 plans complete)
+**Progress:** █████████░ 95% (Phase 35: 1/6 plans complete)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34 complete, Phase 35 pending (36 requirements satisfied)
+**Progress:** Phase 32-34 complete, Phase 35 in progress (36 requirements satisfied, 3 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -57,7 +57,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Tab reordering complete (Ion moves to Tab 6)
 - ✓ GROMACS export with custom .itp bundling
 - ✓ Integration tests for custom molecule workflow
-- ⏳ Documentation and keyboard shortcuts
+- ✓ Unified export keyboard shortcut (Ctrl+S)
+- ✓ Molecule ordering verification tests
+- ⏳ Documentation and remaining keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
@@ -160,6 +162,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Separate file upload buttons | User can upload .gro and .itp files separately | ✓ Shipped (34-04) |
 | Residue name mismatch dialog | ITP name override option for user choice | ✓ Shipped (34-04) |
 | Placement mode dropdown | Dynamic controls for Random vs Custom mode | ✓ Shipped (34-04) |
+| Unified Ctrl+S export | Qt standard "Save" action for active tab export | ✓ Shipped (35-01) |
+| Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
+| Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
+| Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -176,7 +182,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Blockers
 
-(None)
+**User-identified issues (from 35-01 checkpoint):**
+- Missing function found during verification
+- Documentation may need redo
+- User suggests considering adding a phase before continuing with docs
+
+**Recommendation:** Investigate missing function issue before proceeding with documentation-heavy phases (35-02 to 35-06)
 
 ### Quick Tasks Completed
 
@@ -204,9 +215,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05
-**Completed:** Phase 34 - Custom Molecule Upload (all 5 plans complete, 36 requirements satisfied)
-**Next:** Execute Phase 35 - Integration & Documentation
+**Last session:** 2026-05-05 18:09
+**Completed:** 35-01-PLAN.md (Unified export shortcut, molecule ordering tests)
+**Next:** Continue Phase 35 - 35-02-PLAN.md pending user decision on missing function issue
 
 ---
-*State updated: 2026-05-05 — Phase 34: 5/5 plans complete*
+*State updated: 2026-05-05 — Phase 35: 1/6 plans complete*
