@@ -398,17 +398,21 @@ class SoluteStructure:
     Attributes:
         positions: (N_atoms, 3) solute atom positions in nm
         atom_names: Solute atom names
+        cell: (3, 3) box cell vectors in nm (from interface structure)
         solute_type: Solute type ("CH4" or "THF")
         n_molecules: Number of molecules placed
         molecule_indices: List of (start, end) tuples for each molecule in positions array
         registry: MoleculetypeRegistry with CH4_LIQ/THF_LIQ registered
+        interface_structure: Original InterfaceStructure (ice + water) that solutes were inserted into
     """
     positions: np.ndarray
     atom_names: list[str]
+    cell: np.ndarray
     solute_type: str
     n_molecules: int
     molecule_indices: list[tuple[int, int]]
     registry: Any  # MoleculetypeRegistry (avoid circular import)
+    interface_structure: Any = None  # InterfaceStructure (avoid circular import)
 
 
 @dataclass

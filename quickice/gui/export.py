@@ -17,7 +17,134 @@ from vtkmodules.all import (
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
-from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure
+from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, SoluteStructure
+
+
+class SoluteGROMACSExporter:
+    """Handle GROMACS file export for solute structures.
+    
+    Exports: ice + water + solutes (CH4 or THF).
+    """
+    
+    def __init__(self, parent_widget):
+        """Initialize solute GROMACS exporter."""
+        self.parent = parent_widget
+    
+    def export_solute_gromacs(self, solute_structure: SoluteStructure) -> bool:
+        """Export solute structure to GROMACS format.
+
+        Args:
+            solute_structure: SoluteStructure with solute positions and interface
+
+        Returns:
+            True if export succeeded
+        """
+        # Generate default filename with solute type and count
+        solute_type = solute_structure.solute_type.lower()
+        n_molecules = solute_structure.n_molecules
+        default_name = f"solute_{solute_type}_{n_molecules}molecules.gro"
+
+        # Show save dialog for .gro file
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self.parent,
+            "Export Solutes for GROMACS",
+            default_name,
+            "GRO Files (*.gro);;All Files (*)",
+            "GRO Files (*.gro)"
+        )
+        
+        if not filepath:
+            return False
+        
+        # Ensure .gro extension
+        path = Path(filepath)
+        if path.suffix.lower() != '.gro':
+            path = path.with_suffix('.gro')
+        
+        # Generate companion filename using stem
+        top_path = path.with_name(path.stem + '.top')
+        
+        try:
+            # Combine interface structure with solutes for export
+            interface = solute_structure.interface_structure
+            
+            # Build combined structure: ice + water + solutes
+            all_positions = np.vstack([
+                interface.positions,
+                solute_structure.positions
+            ])
+            all_atom_names = interface.atom_names + solute_structure.atom_names
+            
+            # Write .gro file
+            from quickice.output.gromacs_writer import write_gro_file
+            write_gro_file(all_positions, all_atom_names, solute_structure.cell, str(path))
+            
+            # Write .top file with moleculetype names from registry
+            from quickice.output.gromacs_writer import write_top_file
+            # Build molecule index for combined structure
+            molecule_index = []
+            
+            # Add ice molecules
+            ice_nmolecules = interface.ice_nmolecules
+            ice_atoms_per_molecule = interface.ice_atom_count // ice_nmolecules if ice_nmolecules > 0 else 0
+            idx = 0
+            for i in range(ice_nmolecules):
+                molecule_index.append({
+                    'mol_type': 'ICE_IH',
+                    'start_idx': idx,
+                    'count': ice_atoms_per_molecule
+                })
+                idx += ice_atoms_per_molecule
+            
+            # Add water molecules
+            water_nmolecules = interface.water_nmolecules
+            water_atoms_per_molecule = interface.water_atom_count // water_nmolecules if water_nmolecules > 0 else 0
+            for i in range(water_nmolecules):
+                molecule_index.append({
+                    'mol_type': 'WATER_LIQ',
+                    'start_idx': idx,
+                    'count': water_atoms_per_molecule
+                })
+                idx += water_atoms_per_molecule
+            
+            # Add solute molecules
+            solute_type = solute_structure.solute_type
+            moleculetype_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_type}")
+            for start, end in solute_structure.molecule_indices:
+                molecule_index.append({
+                    'mol_type': moleculetype_name,
+                    'start_idx': interface.ice_atom_count + interface.water_atom_count + start,
+                    'count': end - start
+                })
+            
+            write_top_file(all_positions, all_atom_names, solute_structure.cell, str(top_path), 
+                          molecule_index, registry=solute_structure.registry)
+            
+            # Copy water topology file (tip4p-ice.itp) for water molecules
+            import shutil
+            from quickice.output.gromacs_writer import get_tip4p_itp_path
+            itp_source = get_tip4p_itp_path()
+            water_itp_path = path.with_name("tip4p-ice.itp")
+            shutil.copy(itp_source, water_itp_path)
+            
+            # Copy solute .itp file
+            if solute_type == "CH4":
+                solute_itp_name = "ch4.itp"
+            else:
+                solute_itp_name = "thf.itp"
+            
+            from pathlib import Path as FilePath
+            solute_itp_source = FilePath(__file__).parent.parent / "topologies" / solute_itp_name
+            if solute_itp_source.exists():
+                solute_itp_dest = path.with_name(solute_itp_name)
+                shutil.copy(solute_itp_source, solute_itp_dest)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
 
 class IonGROMACSExporter:

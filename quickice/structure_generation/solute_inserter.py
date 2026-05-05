@@ -431,10 +431,12 @@ class SoluteInserter:
         return SoluteStructure(
             positions=all_positions,
             atom_names=placed_atom_names,
+            cell=structure.cell,
             solute_type=config.solute_type,
             n_molecules=placed_count,
             molecule_indices=molecule_indices,
             registry=self.registry,
+            interface_structure=structure,
         )
 
 

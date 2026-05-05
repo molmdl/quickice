@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 from quickice.gui.view import InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 from quickice.gui.viewmodel import MainViewModel
 from quickice.gui.phase_diagram_widget import PhaseDiagramPanel
-from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter, IonGROMACSExporter
+from quickice.gui.export import PDBExporter, DiagramExporter, ViewportExporter, GROMACSExporter, InterfaceGROMACSExporter, IonGROMACSExporter, SoluteGROMACSExporter
 from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
@@ -83,6 +83,9 @@ class MainWindow(QMainWindow):
         
         # Hydrate GROMACS exporter
         self._hydrate_gromacs_exporter = HydrateGROMACSExporter(self)
+        
+        # Solute GROMACS exporter (new in Phase 33)
+        self._solute_gromacs_exporter = SoluteGROMACSExporter(self)
         
         # Store current ion structure for export (Issue 1)
         self._current_ion_result = None
@@ -374,6 +377,13 @@ class MainWindow(QMainWindow):
         export_ion_gromacs_action = file_menu.addAction("Export Ions for GROMACS...")
         export_ion_gromacs_action.setShortcut("Ctrl+J")
         export_ion_gromacs_action.triggered.connect(self._on_export_ion_gromacs)
+        
+        # Separator and Export Solutes for GROMACS (Solute tab - Phase 33)
+        file_menu.addSeparator()
+        
+        export_solute_gromacs_action = file_menu.addAction("Export Solutes for GROMACS...")
+        export_solute_gromacs_action.setShortcut("Ctrl+L")
+        export_solute_gromacs_action.triggered.connect(self._on_export_solute_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -1149,6 +1159,40 @@ class MainWindow(QMainWindow):
                 f"Water: {water_count} molecules\n"
                 f"Na+: {ion_structure.na_count} ions\n"
                 f"Cl-: {ion_structure.cl_count} ions"
+            )
+    
+    @Slot()
+    def _on_export_solute_gromacs(self):
+        """Handle Export Solutes for GROMACS menu action (Solute tab - Phase 33).
+        
+        Exports: ice + water + solutes (CH4 or THF).
+        """
+        # Check if solutes have been inserted
+        if not hasattr(self, '_current_solute_result') or self._current_solute_result is None:
+            QMessageBox.warning(
+                self,
+                "No Solutes",
+                "Insert solutes first in the Solute Insertion tab."
+            )
+            return
+        
+        solute_structure = self._current_solute_result
+        success = self._solute_gromacs_exporter.export_solute_gromacs(solute_structure)
+        
+        if success:
+            # Count water molecules from interface
+            interface = solute_structure.interface_structure
+            water_count = interface.water_nmolecules if interface else 0
+            ice_count = interface.ice_nmolecules if interface else 0
+            
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Solute structure exported successfully.\n\n"
+                f"Files: solute_{solute_structure.solute_type.lower()}_{solute_structure.n_molecules}molecules.gro/.top\n"
+                f"Ice: {ice_count} molecules\n"
+                f"Water: {water_count} molecules\n"
+                f"{solute_structure.solute_type}: {solute_structure.n_molecules} molecules"
             )
     
     @Slot()
