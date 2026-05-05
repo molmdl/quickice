@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 33 - Solute Insertion (Tab 4) |
-| Plan | 3 of 4 in current phase |
-| Status | In progress |
-| Last activity | 2026-05-05 — Completed 33-03-PLAN.md (SoluteViewerWidget, SolutePanel UI) |
+| Plan | 4 of 4 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-05-05 — Completed 33-04-PLAN.md (MainWindow integration, GROMACS export) |
 
-**Progress:** █████░░░░ 27% (Phase 33: 3/4 plans complete)
+**Progress:** ██████░░░░ 31% (Phase 33: 4/4 plans complete)
 
 ---
 
@@ -42,15 +42,15 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32 complete (7 requirements satisfied)
+**Progress:** Phase 32 complete (7 requirements satisfied), Phase 33 complete (9 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
 - ✓ TabIndex refactoring complete
-- ⏳ Solute insertion tab (Tab 4) with THF/CH₄ concentration placement
+- ✓ Solute insertion tab (Tab 4) with THF/CH₄ concentration placement
 - ⏳ Custom molecule upload tab (Tab 5) with .gro/.itp validation
 - ⏳ Tab reordering (Ion moves to Tab 6)
-- ⏳ Multi-atom molecule overlap detection
+- ✓ Multi-atom molecule overlap detection
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
@@ -186,9 +186,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 05:48:55 UTC
-**Completed:** Phase 33 Plan 03 - SoluteViewerWidget and SolutePanel UI with real-time concentration preview
-**Next:** Execute 33-04-PLAN.md (MainWindow integration for Solute tab)
+**Last session:** 2026-05-05 06:XX:XX UTC
+**Completed:** Phase 33 Plan 04 - MainWindow integration with SolutePanel, GROMACS export, and integration tests
+**Next:** Ready for Phase 34 (Custom Molecule tab) or Phase 35 (Tab Reordering)
 
 ---
-*State updated: 2026-05-05 — Phase 33 Plan 03 complete (3/4 plans in Phase 33)*
+*State updated: 2026-05-05 — Phase 33 Plan 04 complete (4/4 plans in Phase 33)*
