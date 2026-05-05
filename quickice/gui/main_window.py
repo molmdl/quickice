@@ -38,6 +38,7 @@ from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
 from quickice.gui.solute_panel import SolutePanel
+from quickice.gui.custom_molecule_panel import CustomMoleculePanel
 
 
 class MainWindow(QMainWindow):
@@ -95,6 +96,9 @@ class MainWindow(QMainWindow):
         
         # Store current solute structure for export
         self._current_solute_result = None
+        
+        # Store current custom molecule result for export (Phase 34)
+        self._current_custom_molecule_result = None
         
         # Setup UI
         self._setup_ui()
@@ -202,14 +206,18 @@ class MainWindow(QMainWindow):
         # === Solute Insertion tab (new in v4.5 Phase 33) ===
         self.solute_panel = SolutePanel()
         
+        # === Custom Molecule tab (new in v4.5 Phase 34) ===
+        self.custom_molecule_panel = CustomMoleculePanel()
+        
         # === Ion Insertion tab (new in v4.0) ===
         self.ion_panel = IonPanel()
         
-        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Solute → Ion)
+        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Solute → Custom → Ion)
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.solute_panel, "Solute Insertion")
+        self.tab_widget.addTab(self.custom_molecule_panel, "Custom Molecule")
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         
         # Set Ice Generation tab as default on startup
@@ -281,6 +289,10 @@ class MainWindow(QMainWindow):
         # Solute Insertion tab connections (new in v4.5 Phase 33)
         self.solute_panel.insert_requested.connect(self._on_insert_solutes)
         self.solute_panel.configuration_changed.connect(self._on_solute_config_changed)
+        
+        # Custom Molecule tab connections (new in v4.5 Phase 34)
+        self.custom_molecule_panel.generate_requested.connect(self._on_custom_generate_clicked)
+        self.custom_molecule_panel.files_uploaded.connect(self._on_custom_files_uploaded)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -887,6 +899,85 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.solute_panel.log_message(f"Error: {e}")
             logger.error(f"Solute insertion failed: {e}", exc_info=True)
+    
+    @Slot()
+    def _on_custom_generate_clicked(self):
+        """Handle custom molecule generate button click."""
+        from quickice.gui.custom_molecule_worker import CustomMoleculeWorker
+        from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeConfig
+        
+        # Validate that interface result exists (need ice+water structure)
+        if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
+            self.custom_molecule_panel.log_message("Error: No interface structure available. Generate interface first.")
+            return
+        
+        # Get configuration from panel
+        config = self.custom_molecule_panel.get_configuration()
+        
+        if config is None:
+            self.custom_molecule_panel.log_message("Error: Invalid configuration")
+            return
+        
+        # Log start
+        self.custom_molecule_panel.log_message("Starting custom molecule insertion...")
+        
+        try:
+            # Create worker
+            worker = CustomMoleculeWorker(
+                config,
+                self._current_interface_result,
+                self.custom_molecule_panel.get_gro_path(),
+                self.custom_molecule_panel.get_itp_path()
+            )
+            
+            # Create thread
+            thread = worker.moveToThread()
+            
+            # Connect signals
+            worker.finished.connect(self._on_custom_finished)
+            worker.error.connect(lambda msg: self.custom_molecule_panel.log_message(f"Error: {msg}"))
+            worker.progress.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
+            
+            # Store thread reference
+            self._custom_worker_thread = thread
+            
+            # Start
+            thread.start()
+            
+        except Exception as e:
+            self.custom_molecule_panel.log_message(f"Error: {e}")
+            logger.error(f"Custom molecule insertion failed: {e}", exc_info=True)
+    
+    @Slot(object)
+    def _on_custom_finished(self, result):
+        """Handle custom molecule insertion completion."""
+        # Store result
+        self._current_custom_molecule_result = result
+        
+        # Update viewer
+        self.custom_molecule_panel.custom_viewer.update_structure(result)
+        
+        # Hide placeholder
+        self.custom_molecule_panel.hide_placeholder()
+        
+        # Log success
+        self.custom_molecule_panel.log_message(
+            f"Custom molecule insertion complete: {result.n_molecules} molecules placed"
+        )
+        
+        # Clean up thread
+        if hasattr(self, '_custom_worker_thread'):
+            self._custom_worker_thread.quit()
+            self._custom_worker_thread.wait()
+            del self._custom_worker_thread
+    
+    @Slot(bool)
+    def _on_custom_files_uploaded(self, valid: bool):
+        """Handle custom molecule file upload validation."""
+        # Enable/disable generate button based on validation
+        if hasattr(self, 'custom_molecule_panel'):
+            # The panel handles its own button state
+            pass
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
