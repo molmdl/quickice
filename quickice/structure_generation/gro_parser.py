@@ -95,3 +95,51 @@ def parse_gro_file(filepath: Path | str) -> tuple[np.ndarray, list[str], np.ndar
         gro_string = f.read()
 
     return parse_gro_string(gro_string)
+
+
+def extract_residue_name_from_gro(gro_path: Path | str) -> str | None:
+    """Extract residue name from first atom line in GRO file.
+
+    GRO format uses fixed-width columns:
+        - Columns 1-5: Residue number (integer)
+        - Columns 6-10: Residue name (5 characters)
+        - Columns 11-15: Atom name (5 characters)
+
+    Note: Column numbers are 1-indexed in GRO specification.
+    In Python string indexing (0-indexed), columns 6-10 map to indices [5:10].
+
+    Args:
+        gro_path: Path to .gro file
+
+    Returns:
+        Residue name (e.g., "MOL", "CH4", "THF") or None if file invalid
+
+    Example:
+        >>> extract_residue_name_from_gro("methane.gro")
+        'CH4'
+        >>> extract_residue_name_from_gro("invalid.gro")
+        None
+    """
+    gro_path = Path(gro_path)
+    if not gro_path.exists():
+        return None
+
+    try:
+        with open(gro_path, "r") as f:
+            lines = f.readlines()
+
+        # GRO format: line 0 = title, line 1 = atom count, line 2+ = atom records
+        if len(lines) < 3:
+            return None
+
+        # First atom line is at index 2
+        first_atom_line = lines[2]
+
+        # Extract residue name from columns 6-10 (0-indexed: 5-9)
+        # This is a 5-character field that may be left-padded with spaces
+        residue_name = first_atom_line[5:10].strip()
+
+        return residue_name if residue_name else None
+
+    except Exception:
+        return None
