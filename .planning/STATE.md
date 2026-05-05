@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.2 - Fix Liquid Solute ITP Export |
-| Plan | 1 of 1 in current phase |
+| Plan | 2 of 2 in current phase |
 | Status | Phase complete |
-| Last activity | 2026-05-05 — Completed 34.2-01-PLAN.md |
+| Last activity | 2026-05-05 — Completed 34.2-02-PLAN.md |
 
-**Progress:** █████████░ 90% (Phase 34.2: 1/1 plans complete, Phase 35 pending)
+**Progress:** █████████░ 90% (Phase 34.2: 2/2 plans complete, Phase 35 pending)
 
 ---
 
@@ -182,6 +182,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
 | Separate liquid solute ITP files | CH4_LIQ and THF_LIQ distinct from hydrate guests | ✓ Shipped (34.2-01) |
+| Liquid solute ITP export logic | Exporters use {type}_liquid.itp for solutes | ✓ Shipped (34.2-02) |
 | Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
 
 ### v4.0 Key Decisions (Shipped)
@@ -232,8 +233,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 15:29
-**Completed:** 34.2-01-PLAN.md (Liquid solute ITP files created)
+**Last session:** 2026-05-05 15:32
+**Completed:** 34.2-02-PLAN.md (GROMACS export logic updated for liquid solutes)
 **Next:** Phase 34.2 complete, proceed to Phase 35 documentation and keyboard shortcuts
 
 ---
