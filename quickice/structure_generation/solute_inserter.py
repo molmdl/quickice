@@ -19,6 +19,7 @@ from quickice.structure_generation.types import (
     SoluteConfig,
     SoluteStructure,
     InterfaceStructure,
+    MoleculeIndex,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
@@ -456,6 +457,46 @@ class SoluteInserter:
             list(guest_atom_names)
         )
         
+        # Update molecule_index to reflect new positions array
+        # CRITICAL: Old molecule_index has indices pointing to old positions array
+        # Need to rebuild molecule_index with correct start_idx values
+        new_molecule_index = []
+        current_idx = 0
+        
+        # Check if structure has molecule_index to rebuild
+        # If not, leave molecule_index empty (ion_inserter will build it if needed)
+        if hasattr(structure, 'molecule_index') and structure.molecule_index:
+            # Add ice molecules (indices don't change, they're at the start)
+            for mol in structure.molecule_index:
+                if mol.mol_type == "ice":
+                    new_molecule_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=mol.count,
+                        mol_type=mol.mol_type,
+                    ))
+                    current_idx += mol.count
+            
+            # Add kept water molecules with updated indices
+            atoms_per_water = water_atom_count // n_water_molecules if n_water_molecules > 0 else 4
+            for mol_idx in water_molecules_to_keep:
+                new_molecule_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=atoms_per_water,
+                    mol_type="water",
+                ))
+                current_idx += atoms_per_water
+            
+            # Add guest molecules with shifted indices
+            # current_idx already accounts for removed water atoms
+            for mol in structure.molecule_index:
+                if mol.mol_type == "guest":
+                    new_molecule_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=mol.count,
+                        mol_type=mol.mol_type,
+                    ))
+                    current_idx += mol.count
+        
         # Create new InterfaceStructure
         new_interface = InterfaceStructure(
             positions=new_positions,
@@ -468,7 +509,7 @@ class SoluteInserter:
             mode=structure.mode,
             report=structure.report,
             guest_atom_count=structure.guest_atom_count,
-            molecule_index=structure.molecule_index,
+            molecule_index=new_molecule_index,
             guest_nmolecules=structure.guest_nmolecules,
         )
         
