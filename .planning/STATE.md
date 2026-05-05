@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 33 - Solute Insertion (Tab 4) |
 | Plan | 2 of 4 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 33-02-PLAN.md (Solute ball-and-stick renderer) |
+| Last activity | 2026-05-05 — Completed 33-01-PLAN.md (SoluteConfig, SoluteStructure, SoluteInserter with all-atom overlap checking) |
 
-**Progress:** █████░░░░░ 26% (Phase 33: 1/4 plans complete)
+**Progress:** █████░░░░ 26% (Phase 33: 2/4 plans complete)
 
 ---
 
@@ -134,8 +134,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Tab structure documentation | Current and planned tab order documented in code | ✓ Shipped (32-03) |
 | Cross-tab data flow verification | Verified Ice→Interface, Hydrate→Interface, Interface→Ion | ✓ Shipped (32-03) |
 | Solute renderer follows hydrate pattern | Consistency with existing ball-and-stick rendering | ✓ Shipped (33-02) |
-| All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ⏳ Planned |
-| Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ⏳ Planned |
+| All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ✓ Shipped (33-01) |
+| Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ✓ Shipped (33-01) |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
 | Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
@@ -184,8 +184,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 33 Plan 02 - Solute ball-and-stick renderer (create_solute_actor function with CPK colors and automatic bond detection)
-**Next:** Execute next plan in Phase 33 or continue with remaining plans
+**Completed:** Phase 33 Plan 01 - SoluteConfig, SoluteStructure, SoluteInserter with concentration calculation, rotation, and all-atom overlap checking
+**Next:** Execute 33-03-PLAN.md (Solute tab UI panel)
 
 ---
-*State updated: 2026-05-05 — Phase 33 Plan 02 complete (1/4 plans in Phase 33)*
+*State updated: 2026-05-05 — Phase 33 Plan 01 complete (2/4 plans in Phase 33)*
