@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 complete
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.2 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 complete
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.2 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.1 - Ion Source Dropdown |
-| Plan | 3 of 3 in current phase |
+| Phase | 34.2 - Fix Liquid Solute ITP Export |
+| Plan | 1 of 1 in current phase |
 | Status | Phase complete |
-| Last activity | 2026-05-05 — Completed 34.1-03-PLAN.md (Integration tests for source dropdown) |
+| Last activity | 2026-05-05 — Completed 34.2-01-PLAN.md |
 
-**Progress:** ██████████ 100% (Phase 34.1: 3/3 plans complete)
+**Progress:** █████████░ 90% (Phase 34.2: 1/1 plans complete, Phase 35 pending)
 
 ---
 
@@ -40,9 +40,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
 
-**Phases:** 32-35 (4 phases planned)
+**Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34 complete, Phase 35 in progress (36 requirements satisfied, 3 pending)
+**Progress:** Phase 32-34.2 complete, Phase 35 in progress (36 requirements satisfied, 3 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -134,6 +134,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ### Roadmap Evolution
 
 - Phase 34.1 inserted after Phase 34: Ion Source Dropdown with charge warning (URGENT)
+- Phase 34.2 inserted after Phase 34.1: Fix liquid solute ITP export with proper residue names (URGENT)
 
 ### v4.5 Key Decisions
 
@@ -180,6 +181,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
+| Separate liquid solute ITP files | CH4_LIQ and THF_LIQ distinct from hydrate guests | ✓ Shipped (34.2-01) |
+| Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -229,9 +232,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 19:47
-**Completed:** 34.1-03-PLAN.md (Integration tests for ion source dropdown)
-**Next:** Phase 34.1 complete - Ready for Phase 35 (Integration & Documentation)
+**Last session:** 2026-05-05 15:29
+**Completed:** 34.2-01-PLAN.md (Liquid solute ITP files created)
+**Next:** Phase 34.2 complete, proceed to Phase 35 documentation and keyboard shortcuts
 
 ---
-*State updated: 2026-05-05 — Phase 34.1: 3/3 plans complete*
+*State updated: 2026-05-05 — Phase 34.2 complete*
