@@ -363,6 +363,55 @@ class IonStructure:
 
 
 @dataclass
+class SoluteConfig:
+    """Configuration for solute insertion.
+    
+    Attributes:
+        concentration_molar: Solute concentration in mol/L (M)
+        solute_type: Solute type ("CH4" or "THF")
+        max_attempts: Maximum placement attempts per molecule
+        min_separation: Minimum separation distance in nm
+        seed: Random seed for reproducibility (optional)
+    """
+    concentration_molar: float = 0.1
+    solute_type: str = "CH4"
+    max_attempts: int = 1000
+    min_separation: float = 0.3
+    seed: int | None = None
+    
+    def __post_init__(self):
+        """Validate configuration parameters."""
+        if self.concentration_molar < 0:
+            raise ValueError(f"concentration_molar must be >= 0, got {self.concentration_molar}")
+        if self.solute_type not in ("CH4", "THF"):
+            raise ValueError(f"solute_type must be 'CH4' or 'THF', got {self.solute_type}")
+        if self.max_attempts < 1:
+            raise ValueError(f"max_attempts must be >= 1, got {self.max_attempts}")
+        if self.min_separation <= 0:
+            raise ValueError(f"min_separation must be > 0, got {self.min_separation}")
+
+
+@dataclass
+class SoluteStructure:
+    """Result of solute insertion.
+    
+    Attributes:
+        positions: (N_atoms, 3) solute atom positions in nm
+        atom_names: Solute atom names
+        solute_type: Solute type ("CH4" or "THF")
+        n_molecules: Number of molecules placed
+        molecule_indices: List of (start, end) tuples for each molecule in positions array
+        registry: MoleculetypeRegistry with CH4_LIQ/THF_LIQ registered
+    """
+    positions: np.ndarray
+    atom_names: list[str]
+    solute_type: str
+    n_molecules: int
+    molecule_indices: list[tuple[int, int]]
+    registry: Any  # MoleculetypeRegistry (avoid circular import)
+
+
+@dataclass
 class HydrateLatticeInfo:
     """Display information for a hydrate lattice type.
     
