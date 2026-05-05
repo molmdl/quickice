@@ -193,6 +193,14 @@ class IonInserter:
             mol_index = self._build_molecule_index_from_structure(structure)
             if mol_index is None:
                 # No water molecules found - return zero ions
+                # Preserve solute information from input structure
+                solute_type = getattr(structure, 'solute_type', "")
+                solute_positions = getattr(structure, 'solute_positions', None)
+                solute_atom_names = getattr(structure, 'solute_atom_names', None)
+                solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
+                solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
+                solute_registry = getattr(structure, 'solute_registry', None)
+                
                 return IonStructure(
                     positions=structure.positions,
                     atom_names=structure.atom_names,
@@ -201,11 +209,25 @@ class IonInserter:
                     na_count=0,
                     cl_count=0,
                     report=f"Ion insertion: no water molecules found in structure\n",
+                    solute_type=solute_type,
+                    solute_positions=solute_positions,
+                    solute_atom_names=solute_atom_names,
+                    solute_n_molecules=solute_n_molecules,
+                    solute_molecule_indices=solute_molecule_indices,
+                    solute_registry=solute_registry,
                 )
             structure.molecule_index = mol_index
 
         if ion_pairs <= 0:
             # Return a properly typed IonStructure with zero ions
+            # Preserve solute information from input structure
+            solute_type = getattr(structure, 'solute_type', "")
+            solute_positions = getattr(structure, 'solute_positions', None)
+            solute_atom_names = getattr(structure, 'solute_atom_names', None)
+            solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
+            solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
+            solute_registry = getattr(structure, 'solute_registry', None)
+            
             return IonStructure(
                 positions=structure.positions,
                 atom_names=structure.atom_names,
@@ -214,6 +236,12 @@ class IonInserter:
                 na_count=0,
                 cl_count=0,
                 report=f"Ion insertion: requested 0 ion pairs (concentration too low or volume too small)\n",
+                solute_type=solute_type,
+                solute_positions=solute_positions,
+                solute_atom_names=solute_atom_names,
+                solute_n_molecules=solute_n_molecules,
+                solute_molecule_indices=solute_molecule_indices,
+                solute_registry=solute_registry,
             )
 
         # Extract water molecules from molecule_index
@@ -226,6 +254,15 @@ class IonInserter:
                 # Return a properly typed IonStructure with zero ions
                 guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
                 guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+                
+                # Preserve solute information from input structure
+                solute_type = getattr(structure, 'solute_type', "")
+                solute_positions = getattr(structure, 'solute_positions', None)
+                solute_atom_names = getattr(structure, 'solute_atom_names', None)
+                solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
+                solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
+                solute_registry = getattr(structure, 'solute_registry', None)
+                
                 return IonStructure(
                     positions=structure.positions,
                     atom_names=structure.atom_names,
@@ -236,6 +273,12 @@ class IonInserter:
                     report=f"Ion insertion: not enough water molecules for ion placement\n",
                     guest_nmolecules=guest_nmolecules,
                     guest_atom_count=guest_atom_count,
+                    solute_type=solute_type,
+                    solute_positions=solute_positions,
+                    solute_atom_names=solute_atom_names,
+                    solute_n_molecules=solute_n_molecules,
+                    solute_molecule_indices=solute_molecule_indices,
+                    solute_registry=solute_registry,
                 )
         
         # Randomly select water molecules to replace
@@ -424,6 +467,15 @@ class IonInserter:
         guest_nmolecules = getattr(structure, 'guest_nmolecules',0)
         guest_atom_count = getattr(structure, 'guest_atom_count',0)
         
+        # Preserve solute information from input structure (if present)
+        # This handles the case when ions are inserted into a SoluteStructure
+        solute_type = getattr(structure, 'solute_type', "")
+        solute_positions = getattr(structure, 'solute_positions', None)
+        solute_atom_names = getattr(structure, 'solute_atom_names', None)
+        solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
+        solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
+        solute_registry = getattr(structure, 'solute_registry', None)
+        
         return IonStructure(
             positions=combined,
             atom_names=new_atom_names,
@@ -434,6 +486,12 @@ class IonInserter:
             report=report,
             guest_nmolecules=guest_nmolecules,
             guest_atom_count=guest_atom_count,
+            solute_type=solute_type,
+            solute_positions=solute_positions,
+            solute_atom_names=solute_atom_names,
+            solute_n_molecules=solute_n_molecules,
+            solute_molecule_indices=solute_molecule_indices,
+            solute_registry=solute_registry,
         )
 
 

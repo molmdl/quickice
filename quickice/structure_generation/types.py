@@ -351,6 +351,12 @@ class IonStructure:
         report: Generation report string
         guest_nmolecules: Number of guest molecules (from input interface)
         guest_atom_count: Number of guest atoms (from input interface)
+        solute_type: Solute type ("CH4" or "THF") if solutes were present in source
+        solute_positions: (N_solute_atoms, 3) solute atom positions in nm
+        solute_atom_names: Solute atom names
+        solute_n_molecules: Number of solute molecules
+        solute_molecule_indices: List of (start, end) tuples for each solute molecule
+        solute_registry: MoleculetypeRegistry with solute moleculetype registered
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -361,6 +367,13 @@ class IonStructure:
     report: str
     guest_nmolecules: int = 0
     guest_atom_count: int = 0
+    # Solute attributes (populated when source was SoluteStructure)
+    solute_type: str = ""
+    solute_positions: np.ndarray | None = None
+    solute_atom_names: list[str] | None = None
+    solute_n_molecules: int = 0
+    solute_molecule_indices: list[tuple[int, int]] | None = None
+    solute_registry: Any = None  # MoleculetypeRegistry (avoid circular import)
 
 
 @dataclass

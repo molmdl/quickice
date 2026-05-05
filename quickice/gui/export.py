@@ -236,7 +236,7 @@ class IonGROMACSExporter:
     """Handle GROMACS file export for ion structures.
     
     Per Issue 1: Exports ion structure from Ion tab to GROMACS format.
-    Exports: ice + water + ions (Na+, Cl-).
+    Exports: ice + water + ions (Na+, Cl-) + solutes (if present).
     """
     
     def __init__(self, parent_widget):
@@ -247,7 +247,7 @@ class IonGROMACSExporter:
         """Export ion structure to GROMACS format.
 
         Args:
-            ion_structure: IonStructure with water + ion positions
+            ion_structure: IonStructure with water + ion positions (+ solutes if present)
 
         Returns:
             True if export succeeded
@@ -255,7 +255,12 @@ class IonGROMACSExporter:
         # Generate default filename with ion counts
         na_count = ion_structure.na_count
         cl_count = ion_structure.cl_count
-        default_name = f"ions_{na_count}na_{cl_count}cl.gro"
+        
+        # Include solute info in filename if present
+        if ion_structure.solute_n_molecules > 0:
+            default_name = f"ions_{na_count}na_{cl_count}cl_with_{ion_structure.solute_n_molecules}{ion_structure.solute_type.lower()}.gro"
+        else:
+            default_name = f"ions_{na_count}na_{cl_count}cl.gro"
 
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -332,6 +337,15 @@ class IonGROMACSExporter:
                         # Guest .itp file not found - will cause GROMACS to fail
                         # but don't block export, user can add manually
                         pass
+            
+            # Copy solute .itp file if solutes are present
+            if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
+                solute_type_lower = ion_structure.solute_type.lower()
+                from pathlib import Path as FilePath
+                solute_itp_source = FilePath(__file__).parent.parent / "topologies" / f"{solute_type_lower}.itp"
+                if solute_itp_source.exists():
+                    solute_itp_dest = path.with_name(f"{solute_type_lower}.itp")
+                    shutil.copy(solute_itp_source, solute_itp_dest)
             
             return True
         except Exception as e:

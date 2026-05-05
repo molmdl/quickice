@@ -848,7 +848,8 @@ class MainWindow(QMainWindow):
                 )
                 return
             
-            interface = self._current_solute_result.interface_structure
+            solute_structure = self._current_solute_result
+            interface = solute_structure.interface_structure
             source_description = "solute-modified interface structure"
             
             if interface is None:
@@ -857,6 +858,15 @@ class MainWindow(QMainWindow):
                     "Solute structure does not have an associated interface structure."
                 )
                 return
+            
+            # Add solute information to interface structure so ion_inserter can preserve it
+            # This allows the IonStructure to carry solute information for export
+            interface.solute_type = solute_structure.solute_type
+            interface.solute_positions = solute_structure.positions
+            interface.solute_atom_names = solute_structure.atom_names
+            interface.solute_n_molecules = solute_structure.n_molecules
+            interface.solute_molecule_indices = solute_structure.molecule_indices
+            interface.solute_registry = solute_structure.registry
                 
         elif current_source == "Custom Molecule":
             # Custom molecules don't modify the interface, so can't be used as source
