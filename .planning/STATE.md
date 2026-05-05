@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.1 - Ion Source Dropdown |
-| Plan | 1 of 3 in current phase |
+| Plan | 2 of 3 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 34.1-01-PLAN.md (Source dropdown UI, charge warning label) |
+| Last activity | 2026-05-05 — Completed 34.1-02-PLAN.md (Source change handler, charge warning, empty state) |
 
-**Progress:** █████████░ 95% (Phase 35: 1/6 plans complete)
+**Progress:** █████████░ 95% (Phase 34.1: 2/3 plans complete)
 
 ---
 
@@ -171,6 +171,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
 | Ion source dropdown follows Interface pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.1-01) |
+| Source change handler with immediate UI effect | Real-time feedback, not deferred to Generate time | ✓ Shipped (34.1-02) |
+| Charge warning for Custom Molecule source | Non-neutral charge detection for custom molecules | ✓ Shipped (34.1-02) |
+| Ion configuration always neutral | Equal Na+/Cl- with Madrid2019 charges (±0.85) | ✓ Shipped (34.1-02) |
 | Hydrate shortcut Ctrl+H | More intuitive than Ctrl+E (H for hydrate) | ✓ Shipped (35-01) |
 | Export As... submenu | Tab-specific exports for discoverability | ✓ Shipped (35-01) |
 | Molecule ordering tests | Verification via .gro file parsing | ✓ Shipped (35-01) |
@@ -223,9 +226,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-05 19:34
-**Completed:** 34.1-01-PLAN.md (Source dropdown UI, charge warning label)
-**Next:** Continue Phase 34.1 - 34.1-02-PLAN.md (Handler logic for source change)
+**Last session:** 2026-05-05 19:53
+**Completed:** 34.1-02-PLAN.md (Source change handler, charge warning, empty state)
+**Next:** Continue Phase 34.1 - 34.1-03-PLAN.md (Integration tests for source dropdown)
 
 ---
-*State updated: 2026-05-05 — Phase 34.1: 1/3 plans complete*
+*State updated: 2026-05-05 — Phase 34.1: 2/3 plans complete*
