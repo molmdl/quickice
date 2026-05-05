@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 32 complete
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 in progress
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 32 complete
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 33 in progress
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 32 - Architecture Preparation |
-| Plan | 3 of 3 in current phase |
-| Status | Phase 32 complete, ready to plan Phase 33 |
-| Last activity | 2026-05-05 — Phase 32 complete (TabIndex enum, MoleculetypeRegistry, ITP parser, molecule validator) |
+| Phase | 33 - Solute Insertion (Tab 4) |
+| Plan | 2 of 4 in current phase |
+| Status | In progress |
+| Last activity | 2026-05-05 — Completed 33-02-PLAN.md (Solute ball-and-stick renderer) |
 
-**Progress:** █████░░░░░ 25% (Phase 32: 3/3 plans complete)
+**Progress:** █████░░░░░ 26% (Phase 33: 1/4 plans complete)
 
 ---
 
@@ -133,6 +133,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Optional registry parameter | Backward-compatible GROMACS export with future registry support | ✓ Shipped (32-02) |
 | Tab structure documentation | Current and planned tab order documented in code | ✓ Shipped (32-03) |
 | Cross-tab data flow verification | Verified Ice→Interface, Hydrate→Interface, Interface→Ion | ✓ Shipped (32-03) |
+| Solute renderer follows hydrate pattern | Consistency with existing ball-and-stick rendering | ✓ Shipped (33-02) |
 | All-atom overlap checking | Multi-atom molecules need full overlap check (not center-of-mass) | ⏳ Planned |
 | Rotation matrices for molecule orientation | Multi-atom molecules have orientation | ⏳ Planned |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ⏳ Planned |
@@ -183,8 +184,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 32 - Architecture Preparation (TabIndex enum, MoleculetypeRegistry, ITP parser, molecule validator, TabIndex refactoring, integration tests - 7 requirements satisfied)
-**Next:** Execute `/gsd-plan-phase 33` to plan Solute Insertion phase
+**Completed:** Phase 33 Plan 02 - Solute ball-and-stick renderer (create_solute_actor function with CPK colors and automatic bond detection)
+**Next:** Execute next plan in Phase 33 or continue with remaining plans
 
 ---
-*State updated: 2026-05-05 — Phase 32 complete (3/3 plans, 7 requirements)*
+*State updated: 2026-05-05 — Phase 33 Plan 02 complete (1/4 plans in Phase 33)*
