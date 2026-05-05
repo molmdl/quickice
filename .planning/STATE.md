@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 in progress
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 in progress
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34 - Custom Molecule Upload (Tab 5) |
-| Plan | 4 of 5 in current phase |
-| Status | In progress |
-| Last activity | 2026-05-05 — Completed 34-04-PLAN.md (UI components: CustomMoleculePanel, CustomMoleculeWorker) |
+| Plan | 5 of 5 in current phase |
+| Status | Phase complete |
+| Last activity | 2026-05-05 — Completed 34-05-PLAN.md (MainWindow integration, GROMACS export, tests) |
 
-**Progress:** ████████░░ 80% (Phase 34: 4/5 plans complete)
+**Progress:** ██████████ 100% (Phase 34: 5/5 plans complete)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-33 complete, Phase 34 in progress (27 requirements satisfied)
+**Progress:** Phase 32-34 complete, Phase 35 pending (36 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -54,7 +54,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Custom molecule renderer with distinct colors (purple, cyan, yellow)
 - ✓ Custom molecule insertion logic (CustomMoleculeInserter with two placement modes)
 - ✓ Custom molecule upload tab (Tab 5) UI components (CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget)
-- ⏳ Tab reordering (Ion moves to Tab 6)
+- ✓ Tab reordering complete (Ion moves to Tab 6)
+- ✓ GROMACS export with custom .itp bundling
+- ✓ Integration tests for custom molecule workflow
 - ⏳ Documentation and keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -203,8 +205,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 34 Plans 01-04 - Custom molecule validation, insertion logic, renderer, and UI components (27 requirements satisfied)
-**Next:** Execute 34-05-PLAN.md (Integration & testing: MainWindow integration, GROMACS export, tests)
+**Completed:** Phase 34 - Custom Molecule Upload (all 5 plans complete, 36 requirements satisfied)
+**Next:** Execute Phase 35 - Integration & Documentation
 
 ---
-*State updated: 2026-05-05 — Phase 34: 4/5 plans complete*
+*State updated: 2026-05-05 — Phase 34: 5/5 plans complete*
