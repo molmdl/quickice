@@ -337,13 +337,15 @@ class IonGROMACSExporter:
                         # but don't block export, user can add manually
                         pass
             
-            # Copy solute .itp file if solutes are present
+            # Copy solute .itp file if solutes are present (liquid solutes use _liquid.itp)
             if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
                 solute_type_lower = ion_structure.solute_type.lower()
+                solute_itp_name = f"{solute_type_lower}_liquid.itp"
+
                 from pathlib import Path as FilePath
-                solute_itp_source = FilePath(__file__).parent.parent / "data" / f"{solute_type_lower}.itp"
+                solute_itp_source = FilePath(__file__).parent.parent / "data" / solute_itp_name
                 if solute_itp_source.exists():
-                    solute_itp_dest = path.with_name(f"{solute_type_lower}.itp")
+                    solute_itp_dest = path.with_name(solute_itp_name)
                     shutil.copy(solute_itp_source, solute_itp_dest)
             
             return True
