@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 in progress
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34 complete
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.1 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -59,6 +59,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Integration tests for custom molecule workflow
 - ✓ Unified export keyboard shortcut (Ctrl+S)
 - ✓ Molecule ordering verification tests
+- ✓ Ion source dropdown with charge warning
 - ⏳ Documentation and remaining keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)

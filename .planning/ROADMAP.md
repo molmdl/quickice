@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1 inserted)
-**Total Plans:** 18+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: TBD, Phase 35: 6)
+**Total Plans:** 21 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 35: 6)
 
 ## Overview
 
@@ -108,9 +108,9 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 **Plans:** 3 plans
 
 Plans:
-- [ ] 34.1-01-PLAN.md — UI foundation: Source dropdown, charge warning label, help icon
-- [ ] 34.1-02-PLAN.md — Handler logic: Source change handler, charge calculation, empty state
-- [ ] 34.1-03-PLAN.md — Integration tests: Source dropdown rendering, switching, warnings, empty states
+- [x] 34.1-01-PLAN.md — UI foundation: Source dropdown, charge warning label, help icon
+- [x] 34.1-02-PLAN.md — Handler logic: Source change handler, charge calculation, empty state
+- [x] 34.1-03-PLAN.md — Integration tests: Source dropdown rendering, switching, warnings, empty states
 
 **Details:**
 - Ion tab source dropdown: Interface, Custom Molecule, or Solute
@@ -197,7 +197,7 @@ Plans:
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
-| 34.1 - Ion Source Dropdown | ⏳ Pending | 0 | 3 |
+| 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
