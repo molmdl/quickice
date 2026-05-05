@@ -120,72 +120,49 @@ class SoluteInserter:
         return positions
     
     def _generate_thf_coordinates(self) -> np.ndarray:
-        """Generate THF (tetrahydrofuran) coordinates with ring geometry.
-        
-        THF is a 5-membered ring: O-C-C-C-C with hydrogens.
-        Uses bond lengths from thf.itp and standard ring geometry.
-        
+        """Generate THF (tetrahydrofuran) coordinates with correct geometry.
+
+        THF is a 5-membered ring: O-CB-CA-CA-CB with 8 hydrogens.
+        Uses coordinates from actual hydrate structure verified against thf.itp.
+
+        Bond lengths from ITP:
+        - O-CB: 0.143460 nm
+        - CA-CA: 0.154830 nm
+        - CA-CB: 0.154830 nm
+        - CA-H: 0.109540 nm
+        - CB-H: 0.109720 nm
+
         Returns:
-            (13, 3) array with [O, C1, C2, C3, C4, H1, H2, ...] positions centered at origin
+            (13, 3) array with atom positions centered at origin:
+            [O, CA, CA, CB, CB, H1, H2, H3, H4, H5, H6, H7, H8]
+
+        Note:
+            Coordinates match thf.itp atom ordering:
+            - Atoms 1-5: O, CA, CA, CB, CB (ring atoms)
+            - Atoms 6-9: H on CA carbons
+            - Atoms 10-13: H on CB carbons
         """
-        # Bond lengths from thf.itp (nm)
-        r_oc = 0.143460   # O-C bond
-        r_cc = 0.154830   # C-C bond
-        r_ch = 0.109540   # C-H bond (CA-H)
-        r_ch2 = 0.109720  # C-H bond (CB-H)
-        
-        # THF ring is approximately planar (puckered in reality)
-        # For simplicity, use planar pentagon approximation
-        
-        # Internal angle of regular pentagon: 108°
-        angle = np.radians(108.0)
-        
-        # Place atoms in a planar pentagon
-        # O at position 0, then C-C-C-C clockwise
-        ring_radius = r_cc / (2 * np.sin(np.pi / 5))  # Circumradius for C-C-C bonds
-        
-        # Generate ring positions
-        positions = []
-        
-        # O at angle 0
-        o_pos = np.array([r_oc, 0.0, 0.0])
-        positions.append(o_pos)
-        
-        # C atoms around the ring
-        c_positions = []
-        for i in range(4):
-            theta = angle * (i + 1)
-            c_pos = np.array([
-                ring_radius * np.cos(theta),
-                ring_radius * np.sin(theta),
-                0.0
-            ])
-            c_positions.append(c_pos)
-        
-        positions.extend(c_positions)
-        
-        # Add hydrogens
-        # Each carbon has 2 hydrogens (simplified geometry)
-        # Use approximate H positions
-        for i, c_pos in enumerate(c_positions):
-            # Two H atoms per carbon, angled outward
-            h_angle1 = np.radians(120.0) + angle * (i + 1)
-            h_angle2 = np.radians(-120.0) + angle * (i + 1)
-            
-            r_h = r_ch if i < 2 else r_ch2
-            
-            h1 = c_pos + r_h * np.array([np.cos(h_angle1), np.sin(h_angle1), 0.3])
-            h2 = c_pos + r_h * np.array([np.cos(h_angle2), np.sin(h_angle2), -0.3])
-            
-            positions.append(h1)
-            positions.append(h2)
-        
-        # Center at origin
-        positions_array = np.array(positions)
-        center = positions_array.mean(axis=0)
-        positions_array -= center
-        
-        return positions_array
+        # THF template coordinates (centered at origin)
+        # Based on actual hydrate structure verified against thf.itp
+        # Bond lengths: O-CB ~0.143 nm, C-C ~0.154 nm, C-H ~0.109 nm
+        # H-C-H angles: ~107-108° (tetrahedral geometry)
+        thf_template = np.array([
+            [ 0.149462,  0.000000,  0.000000],  # O
+            [-0.074538, -0.072000, -0.022000],  # CA (atom 2)
+            [-0.074538,  0.072000,  0.022000],  # CA (atom 3)
+            [ 0.065462, -0.116000,  0.014000],  # CB (atom 4)
+            [ 0.066462,  0.116000, -0.014000],  # CB (atom 5)
+            [-0.151538, -0.133000,  0.026000],  # H (atom 6) - on CA
+            [-0.088538, -0.078000, -0.131000],  # H (atom 7) - on CA
+            [-0.151538,  0.133000, -0.026000],  # H (atom 8) - on CA
+            [-0.088538,  0.078000,  0.131000],  # H (atom 9) - on CA
+            [ 0.071462, -0.149000,  0.118000],  # H (atom 10) - on CB
+            [ 0.102462, -0.196000, -0.051000],  # H (atom 11) - on CB
+            [ 0.071462,  0.149000, -0.118000],  # H (atom 12) - on CB
+            [ 0.102462,  0.196000,  0.051000],  # H (atom 13) - on CB
+        ])
+
+        return thf_template.copy()
     
     def _load_solute_template(
         self,
