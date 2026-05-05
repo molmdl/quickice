@@ -93,9 +93,9 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - Error messages for specific validation failures
 
 **Plans:**
-- [ ] 34-01-PLAN.md — Validation infrastructure: GRO residue extraction, molecule validator enhancement, type definitions
+- [x] 34-01-PLAN.md — Validation infrastructure: GRO residue extraction, molecule validator enhancement, type definitions
 - [ ] 34-02-PLAN.md — Core insertion logic: CustomMoleculeInserter with random and custom placement modes
-- [ ] 34-03-PLAN.md — Visualization: CustomMoleculeRenderer with distinct color palette
+- [x] 34-03-PLAN.md — Visualization: CustomMoleculeRenderer with distinct color palette
 - [ ] 34-04-PLAN.md — UI components: CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget
 - [ ] 34-05-PLAN.md — Integration & testing: MainWindow integration, GROMACS export, tests
 
@@ -169,7 +169,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 |-------|--------|-----------------|-------------|
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
-| 34 - Custom Molecule Upload | ⏳ Pending | 0 | TBD |
+| 34 - Custom Molecule Upload | ⏳ In Progress | 2 | 5 |
 | 35 - Integration & Documentation | ⏳ Pending | 0 | TBD |
 
 ---
