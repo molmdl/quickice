@@ -114,6 +114,7 @@ class IonViewerWidget(QWidget):
         self._interface_actors: list = []
         self._ion_actors: list = []
         self._guest_actor = None  # For guest molecules (vtkActor when VTK available)
+        self._solute_actors: list = []  # For solute molecules when source is "Solute"
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -483,6 +484,15 @@ class IonViewerWidget(QWidget):
             self.renderer.RemoveActor(self._guest_actor)
             self._guest_actor = None
 
+    def _clear_solute_actors(self) -> None:
+        """Remove solute actors from renderer."""
+        for actor in self._solute_actors:
+            if actor is not None:
+                self.renderer.RemoveActor(actor)
+
+        # Clear actor list
+        self._solute_actors = []
+
     def _clear_ion_actors(self) -> None:
         """Remove ion actors from renderer."""
         # Remove actors from renderer
@@ -499,6 +509,7 @@ class IonViewerWidget(QWidget):
     def _clear_actors(self) -> None:
         """Remove all actors from renderer and reset state."""
         self._clear_interface_actors()
+        self._clear_solute_actors()
         self._clear_ion_actors()
 
         # Clear current interface structure
@@ -527,6 +538,7 @@ class IonViewerWidget(QWidget):
     def clear_interface_only(self) -> None:
         """Clear only the interface structure, keep ion actors."""
         self._clear_interface_actors()
+        self._clear_solute_actors()  # Solutes are part of interface when source is "Solute"
 
         if self._vtk_available and self.render_window is not None:
             self.render_window.Render()

@@ -34,6 +34,7 @@ from quickice.gui.hydrate_renderer import render_hydrate_structure
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure  # Used for export if needed
+from quickice.gui.solute_renderer import create_solute_actor
 from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
@@ -902,6 +903,23 @@ class MainWindow(QMainWindow):
         self.ion_panel.ion_viewer.set_interface_structure(interface)
         self.ion_panel.ion_viewer.set_ion_structure(ion_structure)
 
+        # If source was Solute, also render the solute molecules
+        if current_source == "Solute" and hasattr(self, '_current_solute_result'):
+            # Clear any existing solute actors before adding new ones
+            if hasattr(self.ion_panel.ion_viewer, '_clear_solute_actors'):
+                self.ion_panel.ion_viewer._clear_solute_actors()
+            
+            solute_structure = self._current_solute_result
+            solute_actor = create_solute_actor(
+                solute_structure.positions,
+                solute_structure.atom_names,
+                solute_structure.cell,
+                molecule_indices=solute_structure.molecule_indices
+            )
+            if solute_actor and self.ion_panel.ion_viewer.renderer is not None:
+                self.ion_panel.ion_viewer.renderer.AddActor(solute_actor)
+                self.ion_panel.ion_viewer._solute_actors.append(solute_actor)
+
         # Mark that ions have been inserted (for any future reference)
         self.ion_panel.hide_placeholder()
 
@@ -939,6 +957,11 @@ class MainWindow(QMainWindow):
             # Store result
             self._current_solute_result = solute_structure
             
+            # Clear old solute actors from ion viewer to prevent overlap
+            # (they will be re-added if user inserts ions with source="Solute")
+            if hasattr(self.ion_panel.ion_viewer, '_clear_solute_actors'):
+                self.ion_panel.ion_viewer._clear_solute_actors()
+            
             # Calculate water molecules replaced
             original_water_count = self._current_interface_result.water_nmolecules
             modified_water_count = solute_structure.interface_structure.water_nmolecules
@@ -956,7 +979,7 @@ class MainWindow(QMainWindow):
             )
             if water_replaced > 0:
                 self.solute_panel.log_message(
-                    f"Water replacement: Removed {water_replaced} water molecules to make room"
+                    f"Replaced {water_replaced} overlapping liquid water molecules"
                 )
             
         except Exception as e:

@@ -119,15 +119,19 @@ def create_solute_actor(
         vtkActor with solute molecules rendered, or None if no valid atoms
     """
     molecule = vtkMolecule()
-    
+
     # Add atoms (skip MW virtual sites)
+    # Track which original indices map to visible atoms
     atom_ids = []
     visible_positions_list = []  # Track positions for bond detection
-    for pos, name in zip(positions, atom_names):
+    original_to_visible_idx = {}  # Map original index -> visible index
+    visible_idx = 0
+
+    for orig_idx, (pos, name) in enumerate(zip(positions, atom_names)):
         element = get_element_from_atom_name(name)
         if element is None:
-            continue
-        
+            continue  # Skip MW virtual sites
+
         # Get atomic number (simplified mapping)
         atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
         atom_id = molecule.AppendAtom(
@@ -136,28 +140,36 @@ def create_solute_actor(
         )
         atom_ids.append(atom_id)
         visible_positions_list.append(pos)
-    
+        original_to_visible_idx[orig_idx] = visible_idx
+        visible_idx += 1
+
     if not atom_ids:
         logger.warning("No valid atoms for solute rendering")
         return None
-    
+
     visible_positions = np.array(visible_positions_list)
-    
+
     # Detect bonds - use molecule_indices if available for per-molecule detection
     if molecule_indices is not None:
         # Detect bonds WITHIN each molecule separately (correct approach)
+        # CRITICAL: molecule_indices refer to ORIGINAL positions (including MW atoms)
+        # Must map to visible indices (excluding MW atoms)
         for start_idx, end_idx in molecule_indices:
-            # Map global indices to visible atom indices (accounting for skipped MW atoms)
-            # This is complex, so we detect bonds within position range instead
-            mol_positions = visible_positions[start_idx:end_idx]
-            mol_atom_ids = atom_ids[start_idx:end_idx]
-            
-            n_atoms = len(mol_atom_ids)
+            # Get visible atom indices for this molecule
+            mol_visible_indices = []
+            for orig_idx in range(start_idx, end_idx):
+                if orig_idx in original_to_visible_idx:
+                    mol_visible_indices.append(original_to_visible_idx[orig_idx])
+
+            # Detect bonds within this molecule using visible indices
+            n_atoms = len(mol_visible_indices)
             for i in range(n_atoms):
                 for j in range(i + 1, n_atoms):
-                    dist = np.linalg.norm(mol_positions[i] - mol_positions[j])
+                    vis_i = mol_visible_indices[i]
+                    vis_j = mol_visible_indices[j]
+                    dist = np.linalg.norm(visible_positions[vis_i] - visible_positions[vis_j])
                     if dist < BOND_DISTANCE_THRESHOLD:
-                        molecule.AppendBond(mol_atom_ids[i], mol_atom_ids[j], 1)
+                        molecule.AppendBond(atom_ids[vis_i], atom_ids[vis_j], 1)
     else:
         # Old behavior: detect bonds across all atoms (can create cross-molecule bonds)
         logger.warning(
