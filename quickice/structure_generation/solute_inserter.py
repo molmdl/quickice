@@ -87,6 +87,106 @@ class SoluteInserter:
         
         return int(round(n_molecules))
     
+    def _generate_ch4_coordinates(self) -> np.ndarray:
+        """Generate CH4 (methane) coordinates with tetrahedral geometry.
+        
+        Uses C-H bond length from ITP file (0.109620 nm) and tetrahedral
+        H-C-H angle of 109.47 degrees.
+        
+        Returns:
+            (5, 3) array with [C, H1, H2, H3, H4] positions centered at origin
+        """
+        # Bond length from ch4.itp
+        r_ch = 0.109620  # nm
+        
+        # Tetrahedral geometry: C at center, 4 H atoms at corners of tetrahedron
+        # Tetrahedral angle = arccos(-1/3) ≈ 109.47°
+        
+        # Place C at origin
+        c_pos = np.array([0.0, 0.0, 0.0])
+        
+        # Place H atoms at tetrahedral positions
+        # Using standard tetrahedral coordinates
+        h1 = np.array([r_ch, r_ch, r_ch]) / np.sqrt(3) * np.sqrt(3)
+        h2 = np.array([r_ch, -r_ch, -r_ch]) / np.sqrt(3) * np.sqrt(3)
+        h3 = np.array([-r_ch, r_ch, -r_ch]) / np.sqrt(3) * np.sqrt(3)
+        h4 = np.array([-r_ch, -r_ch, r_ch]) / np.sqrt(3) * np.sqrt(3)
+        
+        # Scale to correct bond length
+        for h in [h1, h2, h3, h4]:
+            h[:] = h / np.linalg.norm(h) * r_ch
+        
+        positions = np.array([c_pos, h1, h2, h3, h4])
+        return positions
+    
+    def _generate_thf_coordinates(self) -> np.ndarray:
+        """Generate THF (tetrahydrofuran) coordinates with ring geometry.
+        
+        THF is a 5-membered ring: O-C-C-C-C with hydrogens.
+        Uses bond lengths from thf.itp and standard ring geometry.
+        
+        Returns:
+            (13, 3) array with [O, C1, C2, C3, C4, H1, H2, ...] positions centered at origin
+        """
+        # Bond lengths from thf.itp (nm)
+        r_oc = 0.143460   # O-C bond
+        r_cc = 0.154830   # C-C bond
+        r_ch = 0.109540   # C-H bond (CA-H)
+        r_ch2 = 0.109720  # C-H bond (CB-H)
+        
+        # THF ring is approximately planar (puckered in reality)
+        # For simplicity, use planar pentagon approximation
+        
+        # Internal angle of regular pentagon: 108°
+        angle = np.radians(108.0)
+        
+        # Place atoms in a planar pentagon
+        # O at position 0, then C-C-C-C clockwise
+        ring_radius = r_cc / (2 * np.sin(np.pi / 5))  # Circumradius for C-C-C bonds
+        
+        # Generate ring positions
+        positions = []
+        
+        # O at angle 0
+        o_pos = np.array([r_oc, 0.0, 0.0])
+        positions.append(o_pos)
+        
+        # C atoms around the ring
+        c_positions = []
+        for i in range(4):
+            theta = angle * (i + 1)
+            c_pos = np.array([
+                ring_radius * np.cos(theta),
+                ring_radius * np.sin(theta),
+                0.0
+            ])
+            c_positions.append(c_pos)
+        
+        positions.extend(c_positions)
+        
+        # Add hydrogens
+        # Each carbon has 2 hydrogens (simplified geometry)
+        # Use approximate H positions
+        for i, c_pos in enumerate(c_positions):
+            # Two H atoms per carbon, angled outward
+            h_angle1 = np.radians(120.0) + angle * (i + 1)
+            h_angle2 = np.radians(-120.0) + angle * (i + 1)
+            
+            r_h = r_ch if i < 2 else r_ch2
+            
+            h1 = c_pos + r_h * np.array([np.cos(h_angle1), np.sin(h_angle1), 0.3])
+            h2 = c_pos + r_h * np.array([np.cos(h_angle2), np.sin(h_angle2), -0.3])
+            
+            positions.append(h1)
+            positions.append(h2)
+        
+        # Center at origin
+        positions_array = np.array(positions)
+        center = positions_array.mean(axis=0)
+        positions_array -= center
+        
+        return positions_array
+    
     def _load_solute_template(
         self,
         solute_type: str,
@@ -124,16 +224,24 @@ class SoluteInserter:
             f"{itp_info.atom_count} atoms"
         )
         
-        # Create template positions centered at origin
-        # For now, use zero positions (will be rotated and translated during insertion)
-        # The actual coordinates come from the structure being inserted into
-        n_atoms = itp_info.atom_count
-        positions = np.zeros((n_atoms, 3))
+        # Generate molecular coordinates based on type
+        if solute_type == "CH4":
+            positions = self._generate_ch4_coordinates()
+        elif solute_type == "THF":
+            positions = self._generate_thf_coordinates()
+        else:
+            # Fallback to zeros (should not reach here due to validation above)
+            positions = np.zeros((itp_info.atom_count, 3))
         
-        # Atom names from ITP (we'll use generic names since ITP doesn't have positions)
-        # Use atom types as names for now
+        # Atom names from ITP
+        # Use atom types as names (consistent with ITP parsing)
         atom_names = itp_info.atom_types
         atom_types = itp_info.atom_types
+        
+        logger.info(
+            f"Generated {solute_type} template coordinates: "
+            f"{positions.shape[0]} atoms, center at origin"
+        )
         
         return positions, atom_names, atom_types
     
@@ -285,11 +393,9 @@ class SoluteInserter:
         water_atom_count = getattr(structure, 'water_atom_count', 0)
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
-        # Calculate liquid volume (use box volume for now)
-        # TODO: More accurate liquid volume calculation
-        cell = structure.cell
-        total_volume = np.abs(np.linalg.det(cell))
-        liquid_volume_nm3 = total_volume
+        # Calculate liquid volume from water molecule count
+        # TIP4P water volume per molecule: 0.0299 nm³
+        liquid_volume_nm3 = structure.water_nmolecules * 0.0299
         
         # Calculate molecule count
         n_molecules = self.calculate_molecule_count(
@@ -305,10 +411,12 @@ class SoluteInserter:
             return SoluteStructure(
                 positions=np.zeros((0, 3)),
                 atom_names=[],
+                cell=structure.cell,
                 solute_type=config.solute_type,
                 n_molecules=0,
                 molecule_indices=[],
                 registry=self.registry,
+                interface_structure=structure,
             )
         
         # Load solute template
@@ -333,10 +441,12 @@ class SoluteInserter:
             return SoluteStructure(
                 positions=np.zeros((0, 3)),
                 atom_names=[],
+                cell=structure.cell,
                 solute_type=config.solute_type,
                 n_molecules=0,
                 molecule_indices=[],
                 registry=self.registry,
+                interface_structure=structure,
             )
         
         # Get liquid region positions for sampling
