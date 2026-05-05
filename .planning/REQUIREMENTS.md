@@ -9,13 +9,13 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 
 ### Architecture & Infrastructure
 
-- [ ] **ARCH-01**: Tab index constants defined as named enum (prevent hardcoded reference bugs)
-- [ ] **ARCH-02**: MoleculetypeRegistry tracks molecule types and generates unique GROMACS names
-- [ ] **ARCH-03**: ITP parser module extracts molecule name, atom types, atom count from .itp files
-- [ ] **ARCH-04**: Molecule validator module checks GRO/ITP consistency (atom count, residue name)
-- [ ] **ARCH-05a**: TabIndex enum defines constants for current tab positions (Phase 32, Ion at position 3)
+- [x] **ARCH-01**: Tab index constants defined as named enum (prevent hardcoded reference bugs)
+- [x] **ARCH-02**: MoleculetypeRegistry tracks molecule types and generates unique GROMACS names
+- [x] **ARCH-03**: ITP parser module extracts molecule name, atom types, atom count from .itp files
+- [x] **ARCH-04**: Molecule validator module checks GRO/ITP consistency (atom count, residue name)
+- [x] **ARCH-05a**: TabIndex enum defines constants for current tab positions (Phase 32, Ion at position 3)
 - [ ] **ARCH-05b**: Tab reordering when new tabs added (Ion moves from position 3 to position 5 in Phase 35)
-- [ ] **ARCH-06**: Data transfer mechanism between tabs (exact flow to be determined during implementation)
+- [x] **ARCH-06**: Data transfer mechanism between tabs (exact flow to be determined during implementation)
 - [ ] **ARCH-07**: Keyboard shortcut Ctrl+S (or Ctrl+E) for GROMACS export from active tab
 
 ### Tab 4 — Solute Insertion
@@ -54,7 +54,7 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 ### GROMACS Export
 
 - [ ] **GROMACS-01**: Export order enforced: SOL (ice + water) → hydrate guests → liquid solutes → custom molecules → ions
-- [ ] **GROMACS-02**: Moleculetype naming distinguishes hydrate guests (CH4_HYD) from liquid solutes (CH4_LIQ)
+- [x] **GROMACS-02**: Moleculetype naming distinguishes hydrate guests (CH4_HYD) from liquid solutes (CH4_LIQ)
 - [ ] **GROMACS-03**: All .itp files bundled correctly (tip4p-ice.itp, ch4.itp, thf.itp, ion.itp, custom .itp)
 
 ### Documentation
@@ -98,13 +98,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 32 | Pending |
-| ARCH-02 | Phase 32 | Pending |
-| ARCH-03 | Phase 32 | Pending |
-| ARCH-04 | Phase 32 | Pending |
-| ARCH-05a | Phase 32 | Pending |
+| ARCH-01 | Phase 32 | Complete |
+| ARCH-02 | Phase 32 | Complete |
+| ARCH-03 | Phase 32 | Complete |
+| ARCH-04 | Phase 32 | Complete |
+| ARCH-05a | Phase 32 | Complete |
 | ARCH-05b | Phase 35 | Pending |
-| ARCH-06 | Phase 32 | Pending |
+| ARCH-06 | Phase 32 | Complete |
 | ARCH-07 | Phase 35 | Pending |
 | SOLUTE-01 | Phase 33 | Pending |
 | SOLUTE-02 | Phase 33 | Pending |
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-02 | Phase 34 | Pending |
 | VIS-03 | Phase 33 | Pending |
 | GROMACS-01 | Phase 35 | Pending |
-| GROMACS-02 | Phase 32 | Pending |
+| GROMACS-02 | Phase 32 | Complete |
 | GROMACS-03 | Phase 35 | Pending |
 | DOCS-01 | Phase 35 | Pending |
 | DOCS-02 | Phase 35 | Pending |
