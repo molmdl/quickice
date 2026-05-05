@@ -1,5 +1,5 @@
 {
-  "mode": "interactiv3",
+  "mode": "interactive",
   "depth": "comprehensive",
   "parallelization": false,
   "commit_docs": true,
