@@ -37,6 +37,7 @@ from quickice.gui.ion_renderer import render_ion_structure  # Used for export if
 from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
+from quickice.gui.solute_panel import SolutePanel
 
 
 class MainWindow(QMainWindow):
@@ -88,6 +89,9 @@ class MainWindow(QMainWindow):
         
         # Store current ion actors for visibility toggling
         self._ion_actors: list = []
+        
+        # Store current solute structure for export
+        self._current_solute_result = None
         
         # Setup UI
         self._setup_ui()
@@ -192,13 +196,17 @@ class MainWindow(QMainWindow):
         # === Hydrate Configuration tab (new in v4.0) ===
         self.hydrate_panel = HydratePanel()
         
+        # === Solute Insertion tab (new in v4.5 Phase 33) ===
+        self.solute_panel = SolutePanel()
+        
         # === Ion Insertion tab (new in v4.0) ===
         self.ion_panel = IonPanel()
         
-        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Ion)
+        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Solute → Ion)
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
+        self.tab_widget.addTab(self.solute_panel, "Solute Insertion")
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         
         # Set Ice Generation tab as default on startup
@@ -266,6 +274,10 @@ class MainWindow(QMainWindow):
         # Ion Insertion tab connections (new in v4.0)
         self.ion_panel.configuration_changed.connect(self._on_ion_config_changed)
         self.ion_panel.insert_requested.connect(self._on_insert_ions)
+        
+        # Solute Insertion tab connections (new in v4.5 Phase 33)
+        self.solute_panel.insert_requested.connect(self._on_insert_solutes)
+        self.solute_panel.configuration_changed.connect(self._on_solute_config_changed)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -582,6 +594,9 @@ class MainWindow(QMainWindow):
         # Volume = water_nmolecules * 0.0299 nm³ per molecule (TIP4P water volume)
         liquid_vol = result.water_nmolecules * 0.0299
         self.ion_panel.set_liquid_volume(liquid_vol)
+        
+        # Update solute panel with liquid volume for solute count calculation
+        self.solute_panel.set_liquid_volume(liquid_vol)
 
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
@@ -818,6 +833,50 @@ class MainWindow(QMainWindow):
         self.ion_panel.append_log(
             f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
         )
+    
+    def _on_solute_config_changed(self):
+        """Handle solute configuration change."""
+        # Could update preview or validation here
+        pass
+    
+    @Slot()
+    def _on_insert_solutes(self):
+        """Handle solute insertion request."""
+        from quickice.structure_generation.solute_inserter import SoluteInserter
+        
+        # Check if interface structure exists
+        if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
+            self.solute_panel.log_message("Error: No interface structure available. Generate interface first.")
+            return
+        
+        # Get configuration from panel
+        config = self.solute_panel.get_configuration()
+        
+        # Log start
+        self.solute_panel.log_message(f"Inserting {config.solute_type} solutes at {config.concentration_molar} M...")
+        
+        try:
+            # Create inserter and insert solutes
+            inserter = SoluteInserter(config)
+            solute_structure = inserter.insert_solutes(self._current_interface_result, config)
+            
+            # Store result
+            self._current_solute_result = solute_structure
+            
+            # Render in viewer
+            self.solute_panel.solute_viewer.render_solute(solute_structure)
+            
+            # Hide placeholder
+            self.solute_panel.hide_placeholder()
+            
+            # Log success
+            self.solute_panel.log_message(
+                f"Success: Inserted {solute_structure.n_molecules} {config.solute_type} molecules"
+            )
+            
+        except Exception as e:
+            self.solute_panel.log_message(f"Error: {e}")
+            logger.error(f"Solute insertion failed: {e}", exc_info=True)
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
