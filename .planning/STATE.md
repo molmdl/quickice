@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34 - Custom Molecule Upload (Tab 5) |
-| Plan | 3 of 5 in current phase |
+| Plan | 4 of 5 in current phase |
 | Status | In progress |
-| Last activity | 2026-05-05 — Completed 34-02-PLAN.md (CustomMoleculeInserter with random and custom placement modes) |
+| Last activity | 2026-05-05 — Completed 34-04-PLAN.md (UI components: CustomMoleculePanel, CustomMoleculeWorker) |
 
-**Progress:** ███████░░░ 54% (Phase 34: 3/5 plans complete)
+**Progress:** ████████░░ 80% (Phase 34: 4/5 plans complete)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-33 complete, Phase 34 in progress (23 requirements satisfied)
+**Progress:** Phase 32-33 complete, Phase 34 in progress (27 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -53,7 +53,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Custom molecule validation infrastructure (GRO residue extraction)
 - ✓ Custom molecule renderer with distinct colors (purple, cyan, yellow)
 - ✓ Custom molecule insertion logic (CustomMoleculeInserter with two placement modes)
-- ⏳ Custom molecule upload tab (Tab 5) UI components
+- ✓ Custom molecule upload tab (Tab 5) UI components (CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget)
 - ⏳ Tab reordering (Ion moves to Tab 6)
 - ⏳ Documentation and keyboard shortcuts
 
@@ -154,7 +154,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Two placement modes | Random (with overlap checking) and custom (user responsibility) | ✓ Shipped (34-02) |
 | InsertionError for placement failures | Provides attempt count for user feedback | ✓ Shipped (34-02) |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
-| Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
+| Euler angles for UI input | More intuitive than rotation matrices | ✓ Shipped (34-04) |
+| Separate file upload buttons | User can upload .gro and .itp files separately | ✓ Shipped (34-04) |
+| Residue name mismatch dialog | ITP name override option for user choice | ✓ Shipped (34-04) |
+| Placement mode dropdown | Dynamic controls for Random vs Custom mode | ✓ Shipped (34-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -200,11 +203,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 34 Plans 01-03 - Custom molecule validation, insertion logic, and renderer (23 requirements satisfied)
-**Next:** Execute 34-04-PLAN.md (UI components: CustomMoleculePanel, CustomMoleculeWorker)
+**Completed:** Phase 34 Plans 01-04 - Custom molecule validation, insertion logic, renderer, and UI components (27 requirements satisfied)
+**Next:** Execute 34-05-PLAN.md (Integration & testing: MainWindow integration, GROMACS export, tests)
 
 ---
-*State updated: 2026-05-05 — Phase 34: 3/5 plans complete*
-
----
-*State updated: 2026-05-05 — Phase 34 Plan 03 complete (2/5 plans, 21 requirements)*
+*State updated: 2026-05-05 — Phase 34: 4/5 plans complete*
