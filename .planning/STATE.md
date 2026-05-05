@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 33 - Solute Insertion (Tab 4) |
-| Plan | 4 of 4 in current phase |
-| Status | Phase 33 complete, ready to plan Phase 34 |
-| Last activity | 2026-05-05 — Phase 33 complete (SoluteConfig, SoluteInserter, SoluteRenderer, SolutePanel, MainWindow integration, 9 passing tests) |
+| Phase | 34 - Custom Molecule Upload (Tab 5) |
+| Plan | 1 of 5 in current phase |
+| Status | In progress |
+| Last activity | 2026-05-05 — Completed 34-01-PLAN.md (GRO residue extraction, molecule validator, CustomMoleculeConfig types) |
 
-**Progress:** ██████░░░░ 50% (Phase 33: 4/4 plans complete)
+**Progress:** ███████░░░ 54% (Phase 34: 1/5 plans complete)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (4 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-33 complete (18 requirements satisfied)
+**Progress:** Phase 32-34 plan 1 in progress (20 requirements satisfied)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -50,7 +50,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Solute insertion tab (Tab 4) with THF/CH₄ concentration placement
 - ✓ All-atom overlap checking for multi-atom molecules
 - ✓ Ball-and-stick rendering with CPK colors
-- ⏳ Custom molecule upload tab (Tab 5) with .gro/.itp validation
+- ⏳ Custom molecule upload tab (Tab 5) - validation infrastructure complete
 - ⏳ Tab reordering (Ion moves to Tab 6)
 - ⏳ Documentation and keyboard shortcuts
 
@@ -142,6 +142,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Real-time preview on valueChanged | User sees molecule count update while typing concentration | ✓ Shipped (33-03) |
 | Concentration range 0.0-2.0 M | Based on typical solute concentrations | ✓ Shipped (33-03) |
 | GAFF2 parameters for THF/CH₄ solutes | Consistent with hydrate guest parameters | ✓ Shipped (33-01) |
+| GRO residue name extraction | Fixed-width column parsing (cols 6-10) | ✓ Shipped (34-01) |
+| Residue name mismatch as non-blocking | Triggers UI dialog for user choice | ✓ Shipped (34-01) |
+| CustomMoleculeConfig two-mode pattern | Random/custom placement with validation | ✓ Shipped (34-01) |
 | User-provided [ atomtypes ] required | Avoids force field database complexity | ⏳ Planned |
 | Euler angles for UI input | More intuitive than rotation matrices | ⏳ Planned |
 
@@ -189,8 +192,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-05
-**Completed:** Phase 33 - Solute Insertion (SoluteConfig, SoluteInserter, SoluteRenderer, SolutePanel, MainWindow integration, 9 passing tests - 11 requirements satisfied)
-**Next:** Execute `/gsd-plan-phase 34` to plan Custom Molecule Upload phase
+**Completed:** Phase 34 Plan 01 - Custom Molecule Validation Infrastructure (GRO residue extraction, molecule validator enhancement, CustomMoleculeConfig types)
+**Next:** Execute 34-02-PLAN.md (CustomMoleculeInserter with random and custom placement modes)
 
 ---
-*State updated: 2026-05-05 — Phase 33 complete (4/4 plans, 11 requirements)*
+*State updated: 2026-05-05 — Phase 34 Plan 01 complete (1/5 plans, 20 requirements)*
