@@ -341,9 +341,16 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("File")
         
-        # Save PDB from Left Viewer action
+        # Unified Export action (Ctrl+S - Qt standard "Save" action)
+        # Export from currently active tab for GROMACS
+        export_current_action = file_menu.addAction("Export Current Tab for GROMACS...")
+        export_current_action.setShortcut("Ctrl+S")
+        export_current_action.setToolTip("Export current tab for GROMACS (Ctrl+S)")
+        export_current_action.triggered.connect(self._on_export_current_tab)
+        
+        # Save PDB from Left Viewer action (moved to Ctrl+Alt+P)
         save_pdb_left_action = file_menu.addAction("Save PDB (Left Viewer)...")
-        save_pdb_left_action.setShortcut("Ctrl+S")
+        save_pdb_left_action.setShortcut("Ctrl+Alt+P")
         save_pdb_left_action.triggered.connect(self._on_save_pdb_left)
         
         # Save PDB from Right Viewer action
@@ -364,48 +371,41 @@ class MainWindow(QMainWindow):
         save_viewport_action.setShortcut("Ctrl+Alt+S")
         save_viewport_action.triggered.connect(self._on_save_viewport)
         
-        # Separator before Export for GROMACS
+        # Separator before Export As submenu
         file_menu.addSeparator()
         
-        # Export for GROMACS action
-        export_gromacs_action = file_menu.addAction("Export for GROMACS...")
-        export_gromacs_action.setShortcut("Ctrl+G")
-        export_gromacs_action.triggered.connect(self._on_export_gromacs)
+        # Export As submenu for tab-specific exports
+        export_as_menu = file_menu.addMenu("Export As...")
         
-        # Separator and Export Interface for GROMACS (Interface Construction tab)
-        file_menu.addSeparator()
+        # Export Ice for GROMACS
+        export_ice_action = export_as_menu.addAction("Export Ice...")
+        export_ice_action.setShortcut("Ctrl+G")
+        export_ice_action.triggered.connect(self._on_export_gromacs)
         
-        export_interface_gromacs_action = file_menu.addAction("Export Interface for GROMACS...")
-        export_interface_gromacs_action.setShortcut("Ctrl+I")
-        export_interface_gromacs_action.triggered.connect(self._on_export_interface_gromacs)
+        # Export Hydrate for GROMACS (Ctrl+H - changed from Ctrl+E)
+        export_hydrate_action = export_as_menu.addAction("Export Hydrate...")
+        export_hydrate_action.setShortcut("Ctrl+H")
+        export_hydrate_action.triggered.connect(self._on_export_hydrate_gromacs)
         
-        # Separator and Export Hydrate for GROMACS (Hydrate tab)
-        file_menu.addSeparator()
+        # Export Interface for GROMACS
+        export_interface_action = export_as_menu.addAction("Export Interface...")
+        export_interface_action.setShortcut("Ctrl+I")
+        export_interface_action.triggered.connect(self._on_export_interface_gromacs)
         
-        export_hydrate_gromacs_action = file_menu.addAction("Export Hydrate for GROMACS...")
-        export_hydrate_gromacs_action.setShortcut("Ctrl+E")
-        export_hydrate_gromacs_action.triggered.connect(self._on_export_hydrate_gromacs)
+        # Export Solute for GROMACS
+        export_solute_action = export_as_menu.addAction("Export Solute...")
+        export_solute_action.setShortcut("Ctrl+L")
+        export_solute_action.triggered.connect(self._on_export_solute_gromacs)
         
-        # Separator and Export Ions for GROMACS (Ion tab - Issue 1)
-        file_menu.addSeparator()
+        # Export Custom Molecule for GROMACS
+        export_custom_action = export_as_menu.addAction("Export Custom Molecule...")
+        export_custom_action.setShortcut("Ctrl+M")
+        export_custom_action.triggered.connect(self._on_export_custom_molecule_gromacs)
         
-        export_ion_gromacs_action = file_menu.addAction("Export Ions for GROMACS...")
-        export_ion_gromacs_action.setShortcut("Ctrl+J")
-        export_ion_gromacs_action.triggered.connect(self._on_export_ion_gromacs)
-        
-        # Separator and Export Solutes for GROMACS (Solute tab - Phase 33)
-        file_menu.addSeparator()
-        
-        export_solute_gromacs_action = file_menu.addAction("Export Solutes for GROMACS...")
-        export_solute_gromacs_action.setShortcut("Ctrl+L")
-        export_solute_gromacs_action.triggered.connect(self._on_export_solute_gromacs)
-        
-        # Separator and Export Custom Molecules for GROMACS (Custom Molecule tab - Phase 34)
-        file_menu.addSeparator()
-        
-        export_custom_molecule_gromacs_action = file_menu.addAction("Export Custom Molecules for GROMACS...")
-        export_custom_molecule_gromacs_action.setShortcut("Ctrl+M")
-        export_custom_molecule_gromacs_action.triggered.connect(self._on_export_custom_molecule_gromacs)
+        # Export Ion for GROMACS
+        export_ion_action = export_as_menu.addAction("Export Ion...")
+        export_ion_action.setShortcut("Ctrl+J")
+        export_ion_action.triggered.connect(self._on_export_ion_gromacs)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -1126,6 +1126,43 @@ class MainWindow(QMainWindow):
         if left_success:
             vtk_widget_right = self.viewer_panel.dual_viewer.viewer2.vtk_widget
             self._viewport_exporter.capture_viewport(vtk_widget_right, "right")
+    
+    @Slot()
+    def _on_export_current_tab(self):
+        """Handle unified Ctrl+S export action.
+        
+        Exports from currently active tab for GROMACS.
+        Per plan 35-01: Unified export shortcut for all tabs.
+        
+        Tab routing:
+            - TabIndex.ICE → Ice GROMACS export
+            - TabIndex.HYDRATE → Hydrate GROMACS export
+            - TabIndex.INTERFACE → Interface GROMACS export
+            - TabIndex.SOLUTE → Solute GROMACS export
+            - TabIndex.CUSTOM → Custom Molecule GROMACS export
+            - TabIndex.ION → Ion GROMACS export
+        """
+        current_idx = self.tab_widget.currentIndex()
+        
+        if current_idx == TabIndex.ICE:
+            self._on_export_gromacs()
+        elif current_idx == TabIndex.HYDRATE:
+            self._on_export_hydrate_gromacs()
+        elif current_idx == TabIndex.INTERFACE:
+            self._on_export_interface_gromacs()
+        elif current_idx == TabIndex.SOLUTE:
+            self._on_export_solute_gromacs()
+        elif current_idx == TabIndex.CUSTOM:
+            self._on_export_custom_molecule_gromacs()
+        elif current_idx == TabIndex.ION:
+            self._on_export_ion_gromacs()
+        else:
+            logger.warning(f"Unknown tab index: {current_idx}")
+            QMessageBox.warning(
+                self,
+                "Unknown Tab",
+                f"Cannot export from tab index {current_idx}."
+            )
     
     @Slot()
     def _on_export_gromacs(self):
