@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35
-**Total Plans:** 12 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: TBD)
+**Total Plans:** 14 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: 2)
 
 ## Overview
 
@@ -110,19 +110,23 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 **Success Criteria:**
 1. User can navigate all 6 tabs (Ice, Hydrate, Interface, Solute, Custom, Ion) without data flow errors
 2. User can export GROMACS files with correct molecule ordering: SOL → hydrate guests → liquid solutes → custom molecules → ions
-3. User can press Ctrl+S (or Ctrl+E) to export from currently active tab
+3. User can press Ctrl+S to export from currently active tab
 4. User can read documentation with v4.5 features, usage examples, and workflow guides
 5. User can follow in-app tooltips and help text for solute and custom molecule workflows
 
 **Details:**
-- Cross-tab data flow testing
-- GROMACS export order enforcement
-- Keyboard shortcut implementation (Ctrl+S or Ctrl+E)
-- README.md update for v4.5
-- In-app tooltips for Tab 4 and Tab 5 controls
-- In-app help text update
-- Screenshot placeholders for critical UI states
+- Unified keyboard shortcut implementation (Ctrl+S for export)
+- GROMACS export order verification with tests
+- README.md update for v4.5 (GUI-focused)
+- In-app tooltips for Tab 4 (Solute) and Tab 5 (Custom) controls
+- Help dialog update with correct tab numbering
+- GUI guide extension with Tab 4/5 workflows
 - User guide for creating valid .gro/.itp files
+- Screenshot refresh (user checkpoint)
+
+**Plans:**
+- [ ] 35-01-PLAN.md — Unified export & GROMACS verification: Keyboard shortcuts, molecule ordering tests
+- [ ] 35-02-PLAN.md — Documentation & tooltips: README, help dialog, tooltips, GUI guide, .gro/.itp guide
 
 ---
 
@@ -170,7 +174,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
-| 35 - Integration & Documentation | ⏳ Pending | 0 | TBD |
+| 35 - Integration & Documentation | ⏳ Pending | 0 | 2 |
 
 ---
 
