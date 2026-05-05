@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35
-**Total Plans:** 14 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: 2)
+**Total Plans:** 18 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 35: 6)
 
 ## Overview
 
@@ -126,7 +126,11 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 
 **Plans:**
 - [ ] 35-01-PLAN.md — Unified export & GROMACS verification: Keyboard shortcuts, molecule ordering tests
-- [ ] 35-02-PLAN.md — Documentation & tooltips: README, help dialog, tooltips, GUI guide, .gro/.itp guide
+- [ ] 35-02-PLAN.md — Tooltips for Tab 3/4: SolutePanel and CustomMoleculePanel tooltips
+- [ ] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
+- [ ] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
+- [ ] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
+- [ ] 35-06-PLAN.md — Screenshots: Rename existing files, capture new screenshots
 
 ---
 
@@ -174,7 +178,7 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 | 32 - Architecture Preparation | ✓ Complete | 3 | 3 |
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
-| 35 - Integration & Documentation | ⏳ Pending | 0 | 2 |
+| 35 - Integration & Documentation | ⏳ Pending | 0 | 6 |
 
 ---
 
