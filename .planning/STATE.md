@@ -218,6 +218,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | 007 | Code quality improvements (logging, deduplication, validation) | 2026-05-02 | 886ce83 | [007-code-quality-improvements-logging-dedu](./quick/007-code-quality-improvements-logging-dedu/) |
 | 006 | Add GAFF2 preparation method citation to main documentation | 2026-04-30 | f319157 | [006-add-gaff2-preparation-method-citation-to](./quick/006-add-gaff2-preparation-method-citation-to/) |
 
+### Pending Todos
+
+- [2026-05-07] prepare custom molecule gro top to test custom mol fx (testing) — `.planning/todos/pending/2026-05-07-prepare-custom-molecule-gro-top-to-test-custom-mol-fx.md`
+
 ---
 
 ## Archive Reference
