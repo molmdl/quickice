@@ -127,8 +127,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 34.2-01-PLAN.md — Create liquid ITP files: ch4_liquid.itp and thf_liquid.itp
-- [ ] 34.2-02-PLAN.md — Update export integration: SoluteGROMACSExporter, IonGROMACSExporter, gromacs_writer
+- [x] 34.2-01-PLAN.md — Create liquid ITP files: ch4_liquid.itp and thf_liquid.itp
+- [x] 34.2-02-PLAN.md — Update export integration: SoluteGROMACSExporter, IonGROMACSExporter, gromacs_writer
 
 **Details:**
 - Create separate ITP files for liquid solutes: ch4_liquid.itp, thf_liquid.itp
@@ -218,11 +218,11 @@ Plans:
 | 33 - Solute Insertion | ✓ Complete | 4 | 4 |
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
-| 34.2 - Fix Liquid Solute ITP Export | ⏳ Planned | 0 | 2 |
+| 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-05 - Phase 34.2 inserted (urgent)*
+*Last updated: 2026-05-06 - Phase 34.2 complete*
 *For current state, see .planning/STATE.md*

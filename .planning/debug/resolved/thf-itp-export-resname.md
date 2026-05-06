@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "THF .itp file missing from export, and need to verify residue name compatibility"
 created: 2026-05-05T00:00:00Z
-updated: 2026-05-05T00:15:00Z
+updated: 2026-05-05T00:20:00Z
 ---
 
 ## Current Focus
