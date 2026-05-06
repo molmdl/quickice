@@ -221,6 +221,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ### Pending Todos
 
 - [2026-05-07] prepare custom molecule gro top to test custom mol fx (testing) — `.planning/todos/pending/2026-05-07-prepare-custom-molecule-gro-top-to-test-custom-mol-fx.md`
+- [2026-05-07] Group UAT items by workflow for batch testing (testing) — `.planning/todos/pending/2026-05-07-group-uat-items-by-workflow-for-batch-testing.md`
 
 ---
 
