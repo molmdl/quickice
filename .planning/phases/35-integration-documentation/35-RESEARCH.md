@@ -1,21 +1,24 @@
-# Phase 35: Integration & Documentation - Research
+# Phase 35: Integration & Documentation - Research (Re-research)
 
-**Researched:** 2026-05-05
+**Researched:** 2026-05-07
 **Domain:** GUI application integration testing, documentation, keyboard shortcuts, error messaging
 **Confidence:** HIGH
+**Previous research:** 2026-05-05 (updated after phases 32-34.4)
 
 ## Summary
 
-This research covers best practices for completing a 6-tab GUI workflow with comprehensive documentation. The phase focuses on cross-tab data flow verification, GROMACS export molecule ordering, keyboard shortcut design, documentation updates, and user guidance enhancements.
+This re-research updates integration and documentation requirements after completing phases 32-34.4. The phase now focuses on verifying the completed 6-tab workflow, updating outdated documentation (README, GUI guide, help dialog), fixing keyboard shortcut inconsistencies, and ensuring comprehensive user guidance for v4.5 features.
 
 **Key findings:**
-- Qt standard shortcuts favor **unified shortcuts** (Ctrl+S for save) over tab-specific shortcuts
-- Tooltips should be **brief, helpful, and non-essential** (per NN/g guidelines)
-- Documentation should follow the **Divio system**: tutorials, how-to guides, reference, explanation
-- Integration testing requires **explicit data flow verification** between tabs
-- GROMACS export ordering requires **centralized molecule collection** logic
+- Unified Ctrl+S export is **implemented** (Phase 35-01 complete)
+- Tab order is **finalized**: Ice(0)→Hydrate(1)→Interface(2)→Custom(3)→Solute(4)→Ion(5)
+- Help dialog has **outdated shortcuts** (Ctrl+E for hydrate, should be Ctrl+H)
+- GUI guide lacks **Tab 3 (Custom) and Tab 4 (Solute) sections**
+- README is **CLI-heavy** (474 lines, needs GUI focus per v4–v4.5 development)
+- Screenshots **missing** for Custom (Tab 3), Solute (Tab 4), and updated Ion (Tab 5)
+- Cross-tab data flow **needs integration tests** for new workflow chains
 
-**Primary recommendation:** Adopt unified keyboard shortcuts (Ctrl+S for export) with context-aware tab detection, use detailed tooltips for technical parameters, and structure documentation as tutorial-first with reference sections for Tab 4/5.
+**Primary recommendation:** Fix help dialog shortcuts, add Tab 3/4 sections to GUI guide, simplify README to GUI focus, add tooltips for Custom/Solute controls, create user guide for .gro/.itp creation, and verify integration tests for Custom→Solute→Ion workflow chain.
 
 ## Standard Stack
 
@@ -24,7 +27,7 @@ The established libraries/patterns for this domain:
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| PySide6 | 6.x | Qt Python bindings | Official Qt for Python, cross-platform GUI |
+| PySide6 | 6.10.2 | Qt Python bindings | Official Qt for Python, cross-platform GUI |
 | Qt Standard Shortcuts | 6.x | Platform-specific shortcuts | Ensures platform-native behavior |
 | QMessageBox | Qt | Modal dialogs | Standard error/warning/information display |
 | QKeySequence | Qt | Keyboard shortcuts | Handles platform differences automatically |
@@ -36,196 +39,213 @@ The established libraries/patterns for this domain:
 | QScrollArea | Qt | Help dialog content | Long-form documentation |
 | pytest | 7.x | Integration testing | Verify cross-tab data flows |
 
-### Current State
+### Current State (Updated 2026-05-07)
 | Component | Current Approach | Status |
 |-----------|-----------------|--------|
-| Keyboard shortcuts | Tab-specific (Ctrl+G/I/E/J/L/M) | **Needs redesign** |
-| Tooltips | Multi-line with examples | **Good pattern** |
-| Error messages | QMessageBox-based, user-friendly | **Good pattern** |
-| Help dialog | Modal with scroll, sections | **Good structure** |
-| README.md | CLI-heavy, 474 lines | **Needs GUI focus** |
-| GUI guide | Tab 1-4 documented | **Needs Tab 4-5 sections** |
+| Tab order | Ice(0)→Hydrate(1)→Interface(2)→Custom(3)→Solute(4)→Ion(5) | ✓ **Finalized** (Phase 34.3) |
+| Keyboard shortcuts | Unified Ctrl+S + tab-specific (Ctrl+G/H/I/L/M/J) | ✓ **Implemented** (Phase 35-01) |
+| Hydrate shortcut | Ctrl+H (was Ctrl+E) | ✓ **Fixed** (Phase 35-01) |
+| Help dialog shortcuts | Shows Ctrl+E for hydrate | ❌ **Outdated** (needs Ctrl+H) |
+| Tooltips | Multi-line with examples, dynamic state-based | ✓ **Good pattern** |
+| Error messages | QMessageBox-based, user-friendly | ✓ **Good pattern** |
+| README.md | CLI-heavy, 474 lines | ❌ **Needs GUI focus** |
+| GUI guide | Tab 1-4 documented (Ice, Hydrate, Interface, Ion) | ❌ **Missing Tab 3/4** |
+| Integration tests | test_gromacs_molecule_ordering.py exists | ⚠️ **Needs Custom→Solute tests** |
+| Screenshots | Tab 1/2/3/6 (old Ion) exist | ❌ **Missing Tab 3/4/5** |
 
 ## Architecture Patterns
 
-### Recommended Pattern: Unified Export Shortcuts
+### Pattern 1: Current Keyboard Shortcut State
 
-**What:** Single keyboard shortcut (Ctrl+S/Ctrl+E) that exports from currently active tab
-**When to use:** Multi-tab applications with export functionality per tab
-**Rationale:**
-- Qt documentation shows Ctrl+S is standard for "Save" across platforms
-- Reduces cognitive load (one shortcut to remember)
-- Platform-native behavior (Windows/Linux/macOS all use Ctrl+S for save)
-- Current tab-specific shortcuts (G/I/E/J/L/M) conflict with discoverability
+**What:** Unified export shortcut + tab-specific shortcuts in submenu
+**Status:** ✓ Implemented in Phase 35-01
 
-**Implementation:**
+**Current shortcuts (main_window.py lines 342-403):**
 ```python
-# Source: Qt standard shortcuts pattern
-def _create_menu_bar(self):
-    # Unified export shortcut
-    export_action = file_menu.addAction("Export for GROMACS...")
-    export_action.setShortcut("Ctrl+S")  # Standard save shortcut
-    export_action.triggered.connect(self._on_export_current_tab)
-    
-def _on_export_current_tab(self):
-    """Export from currently active tab."""
-    current_tab = self.tab_widget.currentIndex()
-    
-    if current_tab == TabIndex.ICE:
-        self._on_export_gromacs()
-    elif current_tab == TabIndex.HYDRATE:
-        self._on_export_hydrate_gromacs()
-    elif current_tab == TabIndex.INTERFACE:
-        self._on_export_interface_gromacs()
-    elif current_tab == TabIndex.SOLUTE:
-        self._on_export_solute_gromacs()
-    elif current_tab == TabIndex.CUSTOM:
-        self._on_export_custom_molecule_gromacs()
-    elif current_tab == TabIndex.ION:
-        self._on_export_ion_gromacs()
+# Unified export (Ctrl+S)
+export_current_action.setShortcut("Ctrl+S")  # Exports from current tab
+export_current_action.triggered.connect(self._on_export_current_tab)
+
+# Tab-specific exports in "Export As..." submenu:
+# Ctrl+G - Export Ice (GROMACS)
+# Ctrl+H - Export Hydrate (GROMACS) ← Changed from Ctrl+E
+# Ctrl+I - Export Interface (GROMACS)
+# Ctrl+L - Export Solute (GROMACS)
+# Ctrl+M - Export Custom Molecule (GROMACS)
+# Ctrl+J - Export Ion (GROMACS)
+
+# PDB/visualization exports:
+# Ctrl+Alt+P - Save PDB (left viewer)
+# Ctrl+Shift+S - Save PDB (right viewer)
+# Ctrl+D - Save diagram
+# Ctrl+Alt+S - Save viewport
 ```
 
-**Alternative: Tab-specific shortcuts with unified naming**
-- Keep Ctrl+G/I/E/J/L/M but rename menu items consistently
-- Tradeoff: More shortcuts to remember, but clearer tab association
-- Use this if user studies show preference for explicit tab-specific shortcuts
+**Help dialog inconsistency (help_dialog.py lines 68-75):**
+```python
+# OUTDATED: Still shows Ctrl+E for hydrate
+"Ctrl+E — Export hydrate for GROMACS\n"  # ← Should be Ctrl+H
+```
 
-### Pattern 2: Tooltip Depth Strategy
+**Action required:** Update help_dialog.py to match current shortcuts
+
+### Pattern 2: Current Tab Structure
+
+**What:** Finalized tab order after Phase 34.3 swap
+**Status:** ✓ Documented in constants.py
+
+**Tab positions (TabIndex enum):**
+```python
+# Source: quickice/gui/constants.py lines 9-28
+class TabIndex(IntEnum):
+    ICE = 0          # Ice Generation tab
+    HYDRATE = 1      # Hydrate Config tab
+    INTERFACE = 2    # Interface Construction tab
+    CUSTOM = 3       # Custom Molecule tab (Phase 34)
+    SOLUTE = 4       # Solute Insertion tab (Phase 33)
+    ION = 5          # Ion Insertion tab
+```
+
+**GUI guide inconsistency (docs/gui-guide.md lines 26-30):**
+```markdown
+The main window is divided into four tabs:
+- Tab 1 (Ice Generation)
+- Tab 2 (Hydrate Config)
+- Tab 3 (Interface Construction)  ← Now Tab 3 is Custom Molecule
+- Tab 4 (Ion Insertion)           ← Now Tab 4 is Solute, Ion is Tab 5
+```
+
+**Action required:** Update GUI guide to reflect 6-tab structure with correct numbering
+
+### Pattern 3: Tooltip Depth Strategy
 
 **What:** Adaptive tooltip depth based on parameter complexity
 **When to use:** Applications with both simple and complex parameters
 
-**Guidelines from NN/g:**
-1. **Don't use tooltips for vital information** (must be visible on screen)
-2. **Provide brief, helpful content** (avoid redundancy)
-3. **Support mouse AND keyboard hover** (accessibility)
-4. **Use tooltip arrows** when multiple elements nearby
-5. **Be consistent** throughout the application
-
-**Current tooltip pattern (good example):**
+**Current tooltip pattern (good examples from solute_panel.py):**
 ```python
-# Source: interface_panel.py line 97
-self.ice_thickness_input.setToolTip(
-    "Thickness of each ice layer in nm (0.5–50).\n"
-    "\n"
-    "IMPORTANT: For slab mode, box_z must equal:\n"
-    "  2 × ice_thickness + water_thickness\n"
-    "\n"
-    "Example: ice=3.0 nm, water=4.0 nm → box_z=10.0 nm"
-)
+# Source: solute_panel.py lines 171-176
+conc_layout.addWidget(HelpIcon(
+    "Solute concentration in mol/L (M).\n"
+    "Typical values:\n"
+    "• CH4 in hydrates: ~0.05-0.10 M\n"
+    "• THF in hydrates: ~0.05-0.20 M"
+))
+
+# Source: custom_molecule_panel.py lines 101-104
+generate_row.addWidget(HelpIcon(
+    "Generate custom molecule structure with configured placement.\n"
+    "Requires valid .gro and .itp files."
+))
 ```
 
-**Recommendation for Tab 4/5:**
-- **Solute concentration:** Show formula + example result (e.g., "0.6 M in 10 nm³ = 360 ion pairs")
-- **Custom molecule .gro/.itp:** Show brief guidance + reference to docs (e.g., "Upload .gro (coordinates) and .itp (topology) files. See Help > Custom Molecules for format requirements.")
+**Recommendation for Tab 3 (Custom Molecule):**
+- **File upload:** Show brief guidance + reference to docs (e.g., "Upload .gro (coordinates) and .itp (topology) files. See Help > Custom Molecules for format requirements.")
+- **Placement mode:** Explain Random vs Custom mode tradeoffs
+- **Rotation angles:** Show Euler angle convention (ZXZ)
 
-### Pattern 3: Documentation Structure (Divio System)
+**Recommendation for Tab 4 (Solute):**
+- **Concentration:** Current tooltip is good (formula + typical values)
+- **Source dropdown:** Explain Interface vs Custom Molecule source
+- **Molecule count preview:** Already good (shows real-time calculation)
+
+**Decision needed:** User approval on tooltip detail level after planning
+
+### Pattern 4: Documentation Structure (Divio System)
 
 **What:** Four documentation types with distinct purposes
 **When to use:** Any software documentation project
 
-**The four types:**
-1. **Tutorials** — Learning-oriented, step-by-step guides
-2. **How-to guides** — Problem-oriented, practical steps
-3. **Technical reference** — Information-oriented, API documentation
-4. **Explanation** — Understanding-oriented, background concepts
+**Application to QuickIce v4.5:**
 
-**Application to QuickIce:**
+| Type | Current | Required for v4.5 |
+|------|---------|------------------|
+| Tutorials | Missing | Add "Getting Started" section with 6-tab workflow |
+| How-to guides | GUI guide has workflows | Extend with Custom Molecule and Solute scenarios |
+| Reference | CLI reference, ranking | Add GROMACS export reference, .gro/.itp format guide |
+| Explanation | README overview | Keep, move CLI-heavy content to separate doc |
 
-| Type | Current | Recommended for v4.5 |
-|------|---------|---------------------|
-| Tutorials | Missing | Add "Getting Started" section with 5-minute workflow |
-| How-to guides | GUI guide has workflow | Extend with Tab 4/5 specific scenarios |
-| Reference | CLI reference, ranking | Add GROMACS export reference, molecule ordering docs |
-| Explanation | README overview, principles | Keep, move CLI-heavy content to separate doc |
-
-**README simplification:**
+**README simplification strategy:**
 - Move CLI-heavy sections to `docs/cli-reference.md` (already exists)
-- Keep README focused on: Overview, Installation, Quick Start (GUI), Screenshots
+- Keep README focused on: Overview, Installation, Quick Start (GUI), Features, Screenshots
 - Target length: ~300 lines (down from 474)
+- Add v4.5 features to Overview: Custom Molecules, Solute Insertion
 
-### Pattern 4: GROMACS Export Molecule Ordering
+**GUI guide extension:**
+- Add Tab 3 (Custom Molecule Upload) section
+- Add Tab 4 (Solute Insertion) section
+- Update Tab 5 (Ion Insertion) with source dropdown explanation
+- Update keyboard shortcuts table (Ctrl+H for hydrate)
 
-**What:** Enforce molecule ordering: SOL → hydrate guests → liquid solutes → custom molecules → ions
-**When to use:** GROMACS topology file generation with multiple molecule types
+**Help dialog enhancement:**
+- Fix keyboard shortcuts (Ctrl+E → Ctrl+H)
+- Add Custom Molecule workflow section
+- Add Solute Insertion workflow section
+- Update tab numbering in workflow steps
 
-**Implementation approach:**
-```python
-# Central molecule collection and ordering
-class GROMACSExporter:
-    def _collect_molecules_ordered(self, structure) -> list:
-        """Collect molecules in GROMACS-standard order.
-        
-        Order: SOL → guests → solutes → custom → ions
-        """
-        molecules = []
-        
-        # 1. Water molecules (SOL)
-        water_mols = [m for m in structure.molecules if m.type == "water"]
-        molecules.extend(water_mols)
-        
-        # 2. Hydrate guests (CH4, THF, etc.)
-        guest_mols = [m for m in structure.molecules if m.type == "guest"]
-        molecules.extend(guest_mols)
-        
-        # 3. Liquid solutes
-        solute_mols = [m for m in structure.molecules if m.type == "solute"]
-        molecules.extend(solute_mols)
-        
-        # 4. Custom molecules
-        custom_mols = [m for m in structure.molecules if m.type == "custom"]
-        molecules.extend(custom_mols)
-        
-        # 5. Ions (Na+, Cl-)
-        ions = [m for m in structure.molecules if m.type in ("Na+", "Cl-")]
-        molecules.extend(ions)
-        
-        return molecules
-```
-
-**Verification:**
-- Add integration test that counts molecules per type in exported .gro file
-- Assert ordering matches specification
-- Test with multi-type system (ice + water + solutes + ions)
+**Decision needed:** User approval on README outline and GUI guide structure after planning
 
 ### Pattern 5: Cross-Tab Data Flow Testing
 
 **What:** Integration tests verifying data flows between tabs
 **When to use:** Multi-tab applications with dependent workflows
 
-**Test scenarios:**
+**Existing tests:**
+- `test_gromacs_molecule_ordering.py` — Verifies molecule ordering in exports (✓ Phase 35-01)
+- `test_integration_v35.py` — CLI interface generation tests (v3.5 features)
+- `test_custom_molecule.py` — Custom molecule rendering tests
+- `test_solute_insertion.py` — Solute insertion tests
+
+**Required new tests:**
+1. **Custom → Solute workflow chain:**
+   - Generate custom molecules in Tab 3
+   - Switch to Tab 4, select "Custom Molecule" source
+   - Verify custom molecule structure available in solute panel
+   
+2. **Solute → Ion workflow chain:**
+   - Insert solutes in Tab 4
+   - Switch to Tab 5, select appropriate source
+   - Verify solute molecules in structure for ion insertion
+
+3. **Full workflow chain:**
+   - Ice → Interface → Custom → Solute → Ion
+   - Verify each step passes correct data to next tab
+
+**Test pattern:**
 ```python
-def test_ice_to_interface_flow():
-    """Verify ice candidates flow from Tab 1 to Tab 3."""
-    # Tab 1: Generate ice
-    # Tab 3: Verify candidates available in dropdown
-    assert len(interface_panel.candidate_dropdown.items()) > 0
-
-def test_interface_to_solute_flow():
-    """Verify interface structure passes to Tab 4."""
-    # Tab 3: Generate interface
-    # Tab 4: Verify liquid volume available
-    assert solute_panel.get_liquid_volume() > 0
-
-def test_interface_to_custom_flow():
-    """Verify interface structure passes to Tab 5."""
-    # Tab 3: Generate interface
-    # Tab 5: Verify interface structure available
-    assert custom_panel.has_interface_structure()
-
-def test_custom_to_ion_flow():
-    """Verify custom molecule result passes to Tab 6."""
-    # Tab 5: Insert custom molecules
-    # Tab 6: Verify custom molecules in structure
-    assert ion_panel.has_custom_molecules()
+def test_custom_to_solute_workflow():
+    """Verify Custom Molecule structure flows to Solute tab."""
+    # Tab 3: Generate custom molecules
+    main_window._on_generate_custom_molecules()
+    
+    # Tab 4: Select Custom Molecule source
+    main_window.solute_panel.source_combo.setCurrentText("Custom Molecule")
+    
+    # Verify custom molecule structure available
+    assert main_window.solute_panel._custom_molecule_available
+    assert main_window.solute_panel.get_liquid_volume() > 0
 ```
+
+### Pattern 6: GROMACS Export Molecule Ordering
+
+**What:** Enforce molecule ordering: SOL → hydrate guests → liquid solutes → custom molecules → ions
+**Status:** ✓ Implemented and tested (Phase 35-01)
+
+**Verification tests exist:**
+- `test_solute_molecule_ordering()` — SOL → CH4_LIQ ordering
+- `test_custom_molecule_ordering()` — SOL → custom molecules ordering
+- `test_combined_ordering()` — SOL → CH4 → custom molecules ordering
+- `test_itp_bundling()` — Verifies .itp files bundled correctly
+
+**No action required:** Molecule ordering tests are complete
 
 ### Anti-Patterns to Avoid
 
-- **Shortcut conflict:** Don't assign Ctrl+E to export if it's already used for another action (current conflict: Ctrl+E = hydrate export)
-- **Tooltip overuse:** Don't hide essential instructions in tooltips (per NN/g: vital info must be visible)
-- **Inconsistent shortcuts:** Don't mix tab-specific and unified shortcuts without clear pattern
-- **Documentation duplication:** Don't repeat content in README and GUI guide (use references instead)
+- **Inconsistent documentation:** Help dialog shows Ctrl+E but code uses Ctrl+H
+- **Outdated screenshots:** Screenshots must match current UI (Tab 3/4/5 missing)
+- **Missing tab documentation:** GUI guide lacks Custom/Solute tabs
+- **CLI-heavy README:** v4–v4.5 development focused on GUI, but README still CLI-heavy
+- **Incomplete integration tests:** Custom→Solute workflow chain not tested
 
 ## Don't Hand-Roll
 
@@ -236,302 +256,347 @@ Problems that look simple but have existing solutions:
 | Keyboard shortcuts | Custom key handler | QKeySequence + QAction | Platform-native, handles modifiers automatically |
 | Error dialogs | Custom popup widget | QMessageBox | Standard, accessible, user-friendly |
 | Help dialog | Custom scroll widget | QDialog + QScrollArea | Standard pattern, maintains focus |
-| Molecule ordering | Manual list sorting | Typed molecule collections | Type-safe, enforced ordering |
 | Documentation structure | Ad-hoc sections | Divio system (4 types) | Proven structure, comprehensive coverage |
+| Integration tests | Manual verification | pytest + QApplication | Automated, repeatable, catches regressions |
 
 **Key insight:** Qt provides comprehensive patterns for GUI applications. Follow Qt conventions for shortcuts, dialogs, and tooltips to ensure platform-native behavior and accessibility.
 
 ## Common Pitfalls
 
-### Pitfall 1: Keyboard Shortcut Conflicts
+### Pitfall 1: Documentation Drift After Tab Reorder
 
-**What goes wrong:** Assigning shortcuts that conflict with platform standards or other actions
-**Why it happens:** Developers choose shortcuts based on their keyboard layout, not cross-platform standards
+**What goes wrong:** Documentation references old tab numbers after tab order change
+**Why it happens:** Tab order changed in Phase 34.3, but documentation not updated
+**Current examples:**
+- GUI guide shows Tab 3 = Interface (now Tab 3 = Custom)
+- GUI guide shows Tab 4 = Ion (now Tab 4 = Solute, Ion = Tab 5)
+- Help dialog workflow steps reference old tab numbers
+
 **How to avoid:**
-1. Use Qt's `QKeySequence.StandardKey` enum for standard actions
-2. Check for conflicts with existing shortcuts in the application
-3. Test on multiple platforms (Windows, macOS, Linux)
+1. Update all documentation immediately after tab reorder
+2. Add documentation update checklist to tab reorder tasks
+3. Use TabIndex enum names in documentation, not hardcoded numbers
 
-**Current conflicts in QuickIce:**
-- Ctrl+S = Save PDB (left viewer) — conflicts with standard "Save" action
-- Ctrl+E = Export hydrate — conflicts with standard "Export" if unified approach adopted
+**Warning signs:** Users confused about tab positions, workflow steps reference wrong tabs
 
-**Warning signs:** Users report shortcuts don't work as expected on their platform
+### Pitfall 2: Keyboard Shortcut Documentation Out of Sync
 
-### Pitfall 2: Inconsistent Tooltip Depth
+**What goes wrong:** Help dialog shows old shortcuts after code changes
+**Why it happens:** Code updated (Ctrl+E → Ctrl+H) but help text not updated
+**Current example:**
+- main_window.py: `export_hydrate_action.setShortcut("Ctrl+H")`
+- help_dialog.py: `"Ctrl+E — Export hydrate for GROMACS\n"`
 
-**What goes wrong:** Some tooltips are minimal, others are verbose, creating unpredictable user experience
-**Why it happens:** Different developers add tooltips without consistent guidelines
 **How to avoid:**
-1. Define tooltip depth strategy: minimal (labels), moderate (constraints), detailed (complex parameters)
-2. Use consistent template: description + constraints + example
-3. Review all tooltips for consistency
+1. Include help dialog update in keyboard shortcut change tasks
+2. Add verification step: run app, check Help menu, compare to code
+3. Use single source of truth for shortcut strings (constants or config)
 
-**Warning signs:** Users don't know whether to expect helpful tooltips or not
+**Warning signs:** Users report shortcuts in help don't work
 
-### Pitfall 3: Documentation Drift
+### Pitfall 3: Missing Screenshots for New Tabs
 
-**What goes wrong:** Documentation becomes outdated as features are added
-**Why it happens:** No documentation update checklist in development workflow
+**What goes wrong:** Documentation lacks screenshots for new features
+**Why it happens:** Screenshots taken early, new tabs added later
+**Current gaps:**
+- No screenshot for Tab 3 (Custom Molecule Upload)
+- No screenshot for Tab 4 (Solute Insertion)
+- Tab 5 (Ion) screenshot is old (shows old position as Tab 4)
+
 **How to avoid:**
-1. Include documentation task in every feature phase
-2. Review README after each release for accuracy
-3. Use screenshots as documentation checkpoints (screenshots must be current)
+1. Create screenshot checklist for each new tab
+2. Include screenshot task in each phase
+3. Use human checkpoint: provide list of required screenshots, user takes them
 
-**Warning signs:** Users report documentation doesn't match application behavior
+**Warning signs:** Documentation text references missing screenshots
 
-### Pitfall 4: Missing Cross-Tab Data Flow Verification
+### Pitfall 4: CLI-Heavy README in GUI-Focused Release
 
-**What goes wrong:** Data doesn't flow correctly between tabs, but issue discovered late
-**Why it happens:** Tabs developed independently, integration testing skipped
+**What goes wrong:** README emphasizes CLI but development focused on GUI
+**Why it happens:** README written for v1 CLI, not updated for v4–v4.5 GUI focus
+**Current state:**
+- README has extensive CLI sections (Quick Start, CLI Options, More Examples)
+- GUI mentioned only briefly in "GUI Usage" section
+- v4.5 features (Custom Molecules, Solute Insertion) not in README
+
 **How to avoid:**
-1. Write integration tests for each data flow path
+1. Reorganize README to match development focus (v4–v4.5 = GUI)
+2. Move CLI sections to dedicated CLI reference document
+3. Add v4.5 features to Overview and Quick Start
+
+**Warning signs:** Users skip README because it doesn't match GUI experience
+
+### Pitfall 5: Missing Integration Tests for Workflow Chains
+
+**What goes wrong:** Workflow chains work manually but break after refactoring
+**Why it happens:** Only unit tests exist, no cross-tab integration tests
+**Current gap:**
+- Custom → Solute workflow chain untested
+- Solute → Ion workflow chain untested
+- Full 6-tab workflow chain untested
+
+**How to avoid:**
+1. Write integration tests for each workflow chain
 2. Test tab switching with intermediate states
 3. Verify data persistence across tab switches
 
-**Warning signs:** Null pointer exceptions when switching tabs, empty dropdowns
-
-### Pitfall 5: GROMACS Molecule Ordering Errors
-
-**What goes wrong:** Molecules appear in wrong order in .gro file, breaking GROMACS simulations
-**Why it happens:** No explicit ordering logic, molecules collected in arbitrary order
-**How to avoid:**
-1. Implement centralized molecule ordering function
-2. Add tests that verify ordering in exported files
-3. Document ordering requirements in GROMACS export reference
-
-**Warning signs:** GROMACS reports topology errors, simulation crashes
+**Warning signs:** Bugs discovered late in release cycle, during user testing
 
 ## Code Examples
 
-### Unified Export Shortcut Implementation
+### Help Dialog Shortcut Fix
 
 ```python
-# Source: Qt standard shortcuts pattern + current main_window.py structure
-from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtCore import Qt
+# Source: help_dialog.py lines 68-75 (NEEDS UPDATE)
+# BEFORE:
+shortcuts_text = QLabel(
+    "Enter — Generate structures\n"
+    "Escape — Cancel generation\n"
+    "Ctrl+S — Save PDB (left viewer)\n"  # ← OUTDATED
+    "Ctrl+Shift+S — Save PDB (right viewer)\n"
+    "Ctrl+D — Save phase diagram\n"
+    "Ctrl+G — Export for GROMACS\n"       # ← INCOMPLETE
+    "Ctrl+I — Export interface for GROMACS\n"
+    "Ctrl+E — Export hydrate for GROMACS\n"  # ← WRONG: should be Ctrl+H
+    "Ctrl+J — Export ions for GROMACS\n"
+    "Ctrl+Alt+S — Save viewport screenshot"
+)
 
-def _create_menu_bar(self):
-    """Create menu bar with unified export shortcuts."""
-    menubar = self.menuBar()
-    file_menu = menubar.addMenu("File")
-    
-    # Standard save action (unified export)
-    export_action = QAction("Export for GROMACS...", self)
-    export_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_S))  # Ctrl+S
-    export_action.setStatusTip("Export current tab structure for GROMACS")
-    export_action.triggered.connect(self._on_export_current_tab)
-    file_menu.addAction(export_action)
-    
-    # Add "Export As..." submenu for tab-specific exports (optional)
-    export_submenu = file_menu.addMenu("Export As...")
-    
-    export_submenu.addAction("Export Ice...", Qt.CTRL | Qt.Key_G, 
-                             self._on_export_gromacs)
-    export_submenu.addAction("Export Hydrate...", Qt.CTRL | Qt.Key_H,  # Changed from E
-                             self._on_export_hydrate_gromacs)
-    # ... other tabs
+# AFTER (CORRECT):
+shortcuts_text = QLabel(
+    "Enter — Generate structures\n"
+    "Escape — Cancel generation\n"
+    "Ctrl+S — Export current tab for GROMACS (unified)\n"  # ← UPDATED
+    "Ctrl+Alt+P — Save PDB (left viewer)\n"  # ← UPDATED
+    "Ctrl+Shift+S — Save PDB (right viewer)\n"
+    "Ctrl+D — Save phase diagram\n"
+    "Ctrl+Alt+S — Save viewport screenshot\n"
+    "\n"
+    "Tab-specific exports (Export As... menu):\n"
+    "Ctrl+G — Export Ice for GROMACS\n"
+    "Ctrl+H — Export Hydrate for GROMACS\n"  # ← FIXED
+    "Ctrl+I — Export Interface for GROMACS\n"
+    "Ctrl+L — Export Solute for GROMACS\n"  # ← NEW
+    "Ctrl+M — Export Custom Molecule for GROMACS\n"  # ← NEW
+    "Ctrl+J — Export Ions for GROMACS"
+)
 ```
 
-### Detailed Tooltip for Solute Concentration
-
-```python
-# Source: NN/g tooltip guidelines + current tooltip patterns
-def _create_concentration_input(self):
-    """Create solute concentration input with detailed tooltip."""
-    layout = QHBoxLayout()
-    
-    self.concentration_input = QDoubleSpinBox()
-    self.concentration_input.setSuffix(" M")
-    self.concentration_input.setRange(0.0, 5.0)
-    self.concentration_input.setDecimals(2)
-    self.concentration_input.setSingleStep(0.1)
-    self.concentration_input.setValue(0.6)  # Default: seawater
-    
-    # Detailed tooltip with formula + example
-    self.concentration_input.setToolTip(
-        "Solute concentration in mol/L (M).\n"
-        "\n"
-        "Formula: N_molecules = concentration × volume × 10⁻²⁴ × N_A\n"
-        "where N_A = Avogadro's number (6.022×10²³)\n"
-        "\n"
-        "Example: 0.6 M in 10 nm³ → ~36 molecules\n"
-        "Typical values: seawater ~0.6 M, drinking water <0.05 M"
-    )
-    
-    layout.addWidget(QLabel("Concentration:"))
-    layout.addWidget(HelpIcon(
-        "Target concentration for solute insertion. "
-        "The actual molecule count depends on available liquid volume. "
-        "Seawater has ~0.6 M salt concentration."
-    ))
-    layout.addWidget(self.concentration_input)
-    
-    return layout
-```
-
-### GROMACS Export Ordering Test
-
-```python
-# Source: Testing pattern for molecule ordering verification
-import pytest
-
-def test_gromacs_export_molecule_ordering():
-    """Test that GROMACS export produces correct molecule ordering."""
-    from quickice.structure_generation import create_test_structure
-    
-    # Create structure with all molecule types
-    structure = create_test_structure(
-        n_water=1000,
-        n_guests=10,
-        n_solutes=50,
-        n_custom=20,
-        n_ions=30
-    )
-    
-    # Export to GROMACS
-    exporter = GROMACSExporter()
-    gro_lines = exporter._export_gro_lines(structure)
-    
-    # Verify ordering
-    molecule_types = []
-    for line in gro_lines:
-        if "SOL" in line:
-            molecule_types.append("water")
-        elif "CH4" in line or "THF" in line:
-            molecule_types.append("guest")
-        elif "SOLUTE" in line:
-            molecule_types.append("solute")
-        elif "CUSTOM" in line:
-            molecule_types.append("custom")
-        elif "NA" in line or "CL" in line:
-            molecule_types.append("ion")
-    
-    # Assert ordering: water → guest → solute → custom → ion
-    assert all(t == "water" for t in molecule_types[:1000])
-    assert all(t == "guest" for t in molecule_types[1000:1010])
-    assert all(t == "solute" for t in molecule_types[1010:1060])
-    assert all(t == "custom" for t in molecule_types[1060:1080])
-    assert all(t == "ion" for t in molecule_types[1080:])
-```
-
-### Documentation Structure Example
+### GUI Guide Tab Structure Update
 
 ```markdown
-# README.md (simplified structure)
+# Source: docs/gui-guide.md lines 26-30 (NEEDS UPDATE)
+
+## BEFORE (OUTDATED):
+The main window is divided into four tabs:
+- **Tab 1 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
+- **Tab 2 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
+- **Tab 3 (Interface Construction)**: Build ice-water interfaces for MD simulations
+- **Tab 4 (Ion Insertion)**: Insert NaCl ions into liquid water regions
+
+## AFTER (CORRECT):
+The main window is divided into six tabs:
+- **Tab 1 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
+- **Tab 2 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
+- **Tab 3 (Interface Construction)**: Build ice-water interfaces for MD simulations
+- **Tab 4 (Custom Molecule Upload)**: Upload and place custom molecules in interface structures
+- **Tab 5 (Solute Insertion)**: Insert solutes (CH₄, THF) into liquid water regions
+- **Tab 6 (Ion Insertion)**: Insert NaCl ions into liquid water regions
+
+Note: Tab order changed in v4.5 to enable Custom → Solute → Ion workflow chain.
+```
+
+### Integration Test for Custom → Solute Workflow
+
+```python
+# Source: New test pattern for workflow chains
+import pytest
+from PySide6.QtWidgets import QApplication
+from quickice.gui.main_window import MainWindow
+
+def test_custom_to_solute_workflow(qtbot):
+    """Verify Custom Molecule structure flows to Solute tab.
+    
+    Workflow chain: Tab 3 (Custom) → Tab 4 (Solute)
+    """
+    # Setup
+    app = QApplication.instance() or QApplication([])
+    main_window = MainWindow()
+    
+    # Generate custom molecules in Tab 3
+    main_window.tab_widget.setCurrentIndex(3)  # Custom tab
+    # ... upload valid .gro and .itp files
+    # ... generate custom molecules
+    qtbot.wait(1000)  # Wait for generation
+    
+    # Verify custom molecule structure available
+    assert main_window._current_custom_molecule_result is not None
+    
+    # Switch to Tab 4 (Solute)
+    main_window.tab_widget.setCurrentIndex(4)  # Solute tab
+    
+    # Select Custom Molecule source
+    main_window.solute_panel.source_combo.setCurrentText("Custom Molecule")
+    
+    # Verify custom molecule availability in solute panel
+    assert main_window.solute_panel._custom_molecule_available
+    assert main_window.solute_panel.get_liquid_volume() > 0
+    
+    # Verify Insert button is enabled
+    assert main_window.solute_panel.insert_button.isEnabled()
+```
+
+### README Simplification Outline
+
+```markdown
+# README.md (simplified structure for v4.5)
 
 ## Overview
-[Keep current overview, add GUI focus]
+[Keep current overview, add v4.5 features]
+- Custom Molecule Upload (Tab 3)
+- Solute Insertion (Tab 4)
+- Enhanced Ion Insertion (Tab 5)
 
 ## Installation
 [Keep current installation]
 
 ## Quick Start
-[Replace CLI example with GUI workflow]
+[Replace CLI-heavy examples with GUI workflow]
+
+### GUI Quick Start
 1. Launch GUI: `python -m quickice.gui`
 2. Enter temperature and pressure
 3. Click Generate
 4. Export for GROMACS (Ctrl+S)
+
+### Basic Workflow
+[Ice → Hydrate → Interface → Custom → Solute → Ion chain]
 
 ## Features
 [Brief list with screenshots]
 - Ice Generation (Tab 1)
 - Hydrate Config (Tab 2)
 - Interface Construction (Tab 3)
-- Solute Insertion (Tab 4)
-- Custom Molecules (Tab 5)
+- Custom Molecule Upload (Tab 4) ← NEW
+- Solute Insertion (Tab 5) ← NEW
 - Ion Insertion (Tab 6)
 
 ## Documentation
 - **[GUI Guide](docs/gui-guide.md)** — Complete GUI documentation
 - **[CLI Reference](docs/cli-reference.md)** — Command-line usage
-- **[GROMACS Export](docs/gromacs-export.md)** — Export format and ordering
+- **[GROMACS Export](docs/gromacs-export.md)** — Export format and molecule ordering
 
 ## Screenshots
-[Current screenshots, updated for Tab 4/5]
+[Current screenshots + Tab 3/4/5 screenshots]
 ```
 
 ## State of the Art
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Tab-specific shortcuts | Unified shortcuts with context detection | Phase 35 (planned) | Reduces cognitive load, platform-native |
-| CLI-focused README | GUI-focused README | Phase 35 | Matches v4–v4.5 development focus |
-| Ad-hoc tooltips | Consistent tooltip strategy | Phase 35 | Predictable user experience |
-| Manual testing | Integration tests for data flows | Phase 35 | Earlier bug detection |
-| Implicit molecule ordering | Explicit ordering function | Phase 35 | Reliable GROMACS export |
+| Tab-specific shortcuts (Ctrl+G/I/E/J/L/M) | Unified Ctrl+S + submenu | Phase 35-01 | Reduces cognitive load, platform-native |
+| Tab order: Ice→Hydrate→Interface→Ion→Custom→Solute | Tab order: Ice→Hydrate→Interface→Custom→Solute→Ion | Phase 34.3 | Enables Custom→Solute→Ion workflow |
+| Hydrate export Ctrl+E | Hydrate export Ctrl+H | Phase 35-01 | More intuitive (H for hydrate) |
+| CLI-focused README | GUI-focused README | Phase 35 (planned) | Matches v4–v4.5 development focus |
+| Manual testing | Integration tests for workflow chains | Phase 35 (planned) | Earlier bug detection |
 
 **Deprecated/outdated:**
-- Tab-specific export shortcuts (Ctrl+G/I/E/J/L/M): Replace with unified Ctrl+S or context-aware shortcuts
-- CLI-heavy README sections: Move to docs/cli-reference.md
-- Screenshot naming with tabX prefix: Remove prefix, use descriptive names
+- Help dialog showing Ctrl+E for hydrate (must update to Ctrl+H)
+- GUI guide showing 4-tab structure (must update to 6 tabs)
+- GUI guide showing Tab 4 = Ion (must update to Tab 4 = Solute, Ion = Tab 5)
+- README Quick Start using CLI examples (must update to GUI workflow)
 
 ## Open Questions
 
-### 1. Unified vs Tab-Specific Export Shortcut
+### 1. README Reorganization Scope
 
 **What we know:**
-- Qt standard shortcuts favor Ctrl+S for "Save" across platforms
-- Current approach uses tab-specific shortcuts (G/I/E/J/L/M)
-- Ctrl+S currently assigned to "Save PDB" action
+- README is 474 lines, CLI-heavy
+- v4–v4.5 development focused on GUI
+- User feedback: "Simplify to match latest development"
 
 **What's unclear:**
-- Whether users prefer unified shortcut (one to remember) or tab-specific (explicit association)
-- How to handle "Save PDB" if Ctrl+S becomes "Export GROMACS"
-- Whether to keep tab-specific shortcuts in "Export As..." submenu
+- Exact sections to keep/move/condense
+- Whether to keep CLI examples at all or move entirely to CLI reference
+- How much v4.5 feature detail to add
 
 **Recommendation:**
-- Adopt unified Ctrl+S for GROMACS export (matches "Save" mental model)
-- Reassign Ctrl+S from "Save PDB" to "Export GROMACS"
-- Move "Save PDB" to Ctrl+Shift+S (already exists for right viewer)
-- Add "Export As..." submenu for users who want tab-specific shortcuts
+- Move "CLI Options" and "More Examples" to CLI reference
+- Keep "Quick Start" but replace CLI with GUI workflow
+- Add v4.5 features to Overview (Custom Molecules, Solute Insertion)
+- Target ~300 lines
 - User approval required after planning
 
-### 2. Hydrate Export Shortcut Conflict
+### 2. GUI Guide Tab 3/4 Section Structure
 
 **What we know:**
-- Ctrl+E currently assigned to "Export Hydrate"
-- If unified export adopted, Ctrl+E becomes available
-- Standard "Export" action in some applications uses Ctrl+E
+- GUI guide currently has Tab 1-4 (Ice, Hydrate, Interface, Ion)
+- Missing Tab 3 (Custom) and Tab 4 (Solute)
+- Tab 5 (Ion) needs source dropdown explanation
 
 **What's unclear:**
-- Whether to repurpose Ctrl+E for other functionality
-- Whether hydrate users have muscle memory for Ctrl+E
+- Level of detail for Custom Molecule section (.gro/.itp format guidance?)
+- Level of detail for Solute section (concentration formula details?)
+- Whether to add separate user guide for .gro/.itp creation
 
 **Recommendation:**
-- If unified export adopted, reassign hydrate to Ctrl+H (H for hydrate)
-- Add to "Export As..." submenu for discoverability
+- Custom Molecule section: Workflow steps + parameter explanations + link to .gro/.itp guide
+- Solute section: Workflow steps + concentration calculation explanation
+- Create separate "docs/custom-molecule-guide.md" for .gro/.itp format requirements
 - User approval required after planning
 
-### 3. Solute/Custom Tooltip Detail Level
+### 3. User Guide for .gro/.itp Creation
 
 **What we know:**
-- Current tooltips for interface panel are detailed (formula + example)
-- Custom molecules require .gro/.itp file knowledge (technical users)
+- Custom molecules require valid .gro and .itp files
+- GROMACS users know the format, but need QuickIce-specific guidance
+- MoleculetypeRegistry requires consistent residue naming
 
 **What's unclear:**
-- Whether to include .gro/.itp format guidance in tooltip or link to docs
+- Whether to include in GUI guide, separate doc, or in-app help
+- How much GROMACS format detail to include
+- Whether to link to GROMACS documentation
+
+**Recommendation:**
+- Create `docs/custom-molecule-guide.md` with:
+  - Required .gro format (residue name in columns 6-10)
+  - Required .itp format ([ moleculetype ] section)
+  - Naming conventions (residue name consistency)
+  - Example files for common molecules
+  - Links to GROMACS documentation
+- Link from GUI guide and tooltips
+- User approval required after planning
+
+### 4. Tooltip Detail Level
+
+**What we know:**
+- Current tooltips are detailed (multi-line with examples)
+- Custom molecule users are technical (know GROMACS)
+- Solute users may be less technical (concentration-based)
+
+**What's unclear:**
 - Balance between tooltip detail and documentation reference
+- Whether to include .gro/.itp format hints in tooltips
 
 **Recommendation:**
-- **Solute concentration:** Show formula + example (detailed, scientific users)
-- **Custom molecule:** Brief guidance + doc reference (technical users need full docs)
+- **Custom molecule tooltips:** Brief + doc reference (technical users need full docs)
+- **Solute tooltips:** Detailed with formula (scientific users need calculation clarity)
 - User approval required after planning
 
-### 4. Error Recovery Approach
+### 5. Screenshot Naming Convention
 
 **What we know:**
-- Current error messages describe the problem (user-friendly)
-- Some errors have obvious solutions (e.g., "Generate interface first")
-- GROMACS terminology is acceptable (users know the domain)
+- Current screenshots use `tabX-` prefix (e.g., `tab2-hydrate-panel.png`)
+- Tab reordering makes this confusing
+- User requested: "Remove tabX prefix from figure filenames"
 
 **What's unclear:**
-- Whether to add suggested fixes to all error messages
-- Whether suggested fixes should be actionable buttons or text
+- New naming convention (descriptive vs. tab-agnostic)
+- Whether to rename existing screenshots
 
 **Recommendation:**
-- Add suggested fixes to common errors (e.g., "Generate interface in Tab 3 first")
-- Use text suggestions in QMessageBox (not buttons, keeps dialog simple)
+- Use descriptive names: `quickice-v4-gui.png`, `hydrate-panel.png`, `custom-molecule-panel.png`
+- Rename existing screenshots during this phase for consistency
 - User approval required after planning
 
 ## Sources
@@ -540,12 +605,15 @@ def test_gromacs_export_molecule_ordering():
 - Qt 6 QKeySequence Documentation — https://doc.qt.io/qt-6/qkeysequence.html (standard shortcuts, platform conventions)
 - NN/g Tooltip Guidelines — https://www.nngroup.com/articles/tooltip-guidelines/ (UX best practices)
 - Divio Documentation System — https://documentation.divio.com/ (documentation structure)
-- QuickIce codebase — Current implementation patterns (main_window.py, interface_panel.py, help_dialog.py)
+- QuickIce codebase — Current implementation patterns (main_window.py, help_dialog.py, solute_panel.py, custom_molecule_panel.py)
+- QuickIce constants.py — TabIndex enum with finalized tab order
 
 ### Secondary (MEDIUM confidence)
 - Qt QMessageBox Documentation — https://doc.qt.io/qt-6/qmessagebox.html (modal dialog patterns)
 - QuickIce README.md — Current documentation structure (474 lines, CLI-heavy)
-- QuickIce GUI guide — docs/gui-guide.md (current GUI documentation)
+- QuickIce GUI guide — docs/gui-guide.md (current GUI documentation, missing Tab 3/4)
+- Phase 35-01 SUMMARY.md — Unified export implementation details
+- Phase 34.3 SUMMARY.md — Tab order swap rationale
 
 ### Tertiary (LOW confidence)
 - None — All findings verified with primary sources or existing codebase
@@ -554,12 +622,13 @@ def test_gromacs_export_molecule_ordering():
 
 **Confidence breakdown:**
 - Standard stack: HIGH — Qt patterns well-documented, current codebase examined
-- Architecture patterns: HIGH — Qt standard shortcuts, NN/g tooltip guidelines, Divio documentation system
-- Pitfalls: HIGH — Based on Qt documentation and current codebase analysis
-- Keyboard shortcuts: MEDIUM — Need user testing for unified vs tab-specific preference
-- Documentation structure: HIGH — Divio system widely adopted
-- GROMACS ordering: HIGH — Requirements clear, implementation straightforward
+- Architecture patterns: HIGH — Current state verified in code (main_window.py, help_dialog.py, constants.py)
+- Pitfalls: HIGH — Based on current codebase analysis and documentation gaps
+- Keyboard shortcuts: HIGH — Implemented in Phase 35-01, verified in code
+- Documentation structure: HIGH — Divio system widely adopted, gaps identified
+- Integration tests: MEDIUM — Pattern established, new tests need implementation
 - Tooltip depth: MEDIUM — Need user feedback on detail level preferences
 
-**Research date:** 2026-05-05
-**Valid until:** 30 days (stable Qt patterns, but keyboard shortcut preferences may evolve with user feedback)
+**Research date:** 2026-05-07
+**Valid until:** 30 days (stable Qt patterns, but keyboard shortcut documentation may need updates if shortcuts change)
+**Previous research:** 2026-05-05 (updated after phases 32-34.4)
