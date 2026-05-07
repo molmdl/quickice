@@ -54,6 +54,8 @@ class SolutePanel(QWidget):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
         self._interface_available = False  # Track if interface structure is available
+        self._custom_molecule_available = False  # Track custom molecule availability
+        self._current_source = "Interface"  # Track current source selection (default: Interface)
         self._setup_ui()
         self._setup_connections()
     
@@ -72,6 +74,27 @@ class SolutePanel(QWidget):
         # === LEFT COLUMN: Configuration Controls ===
         left_layout = QVBoxLayout()
         left_layout.setSpacing(10)
+        
+        # Source selector row (at top, before other controls - follows Ion tab pattern)
+        source_row = QHBoxLayout()
+        source_label = QLabel("Source:")
+        self.source_combo = QComboBox()
+        self.source_combo.addItems(["Interface", "Custom Molecule"])  # Only 2 sources for Solute
+        self.source_combo.setToolTip(
+            "Select source for solute insertion:\n"
+            "• Interface — Use interface structure from Tab 2\n"
+            "• Custom Molecule — Use custom molecule structure from Tab 3"
+        )
+        source_row.addWidget(source_label)
+        source_row.addWidget(HelpIcon(
+            "Source type for solute insertion. Interface uses existing ice-water structures. "
+            "Custom Molecule uses structure from Tab 3 with user-provided molecules."
+        ))
+        source_row.addWidget(self.source_combo)
+        source_row.addStretch()
+        left_layout.addLayout(source_row)
+        
+        left_layout.addSpacing(15)  # Match Ion panel spacing
         
         # Concentration input group
         conc_group = self._create_concentration_group()
