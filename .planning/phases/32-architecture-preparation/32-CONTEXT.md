@@ -22,6 +22,8 @@ Infrastructure foundation for multi-tab molecule insertion — tab reordering (I
 - Custom insertion replaces overlapping liquid water, can feed to Ion or Internal CH4/THF
 - Internal CH4/THF can take from Interface or Custom, feeds to Ion
 
+**Note (Phase 34.3):** Tab order was swapped to Custom (Tab 3) → Solute (Tab 4) to enable the Custom → Solute workflow. Original planning had Solute at Tab 4, Custom at Tab 5. After Phase 34.3: Custom is Tab 3, Solute is Tab 4. This aligns with the dependency where "Internal CH4/THF can take from Interface or Custom" — Solute (Tab 4) should accept Interface or Custom Molecule (Tab 3) as source.
+
 **Dependency Handling:**
 - Soft block with error message (current behavior) - user can click action button but sees error explaining they need to generate source first
 - Example: "No Interface - Please generate an interface structure first in the Interface Construction tab."
