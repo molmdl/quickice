@@ -58,6 +58,7 @@ class SolutePanel(QWidget):
         self._current_source = "Interface"  # Track current source selection (default: Interface)
         self._setup_ui()
         self._setup_connections()
+        self._update_insert_button_state()  # Set initial button state
     
     def _setup_ui(self):
         """Setup UI components with horizontal layout (like IonPanel).
@@ -252,8 +253,34 @@ class SolutePanel(QWidget):
         self.concentration_spin.valueChanged.connect(lambda: self.configuration_changed.emit())
         self.solute_type_combo.currentIndexChanged.connect(lambda: self.configuration_changed.emit())
 
+        # Source change handler
+        self.source_combo.currentIndexChanged.connect(self._on_source_changed)
+
         # Insert button connects to insert_requested signal
         self.insert_button.clicked.connect(lambda: self.insert_requested.emit())
+    
+    def _on_source_changed(self, index: int):
+        """Handle source selection change.
+
+        Follows IonPanel pattern (ion_panel.py:233-274).
+        """
+        source_names = ["Interface", "Custom Molecule"]
+        source_name = source_names[index] if 0 <= index < len(source_names) else "Interface"
+
+        self._current_source = source_name
+
+        # Clear 3D viewer
+        if hasattr(self.solute_viewer, 'clear'):
+            self.solute_viewer.clear()
+
+        # Log source change
+        self.log_message(f"Source switched to {source_name}")
+
+        # Update Insert button state
+        self._update_insert_button_state()
+
+        # Emit configuration_changed signal
+        self.configuration_changed.emit()
     
     def _update_preview(self):
         """Update molecule count preview in real-time."""
@@ -313,14 +340,37 @@ class SolutePanel(QWidget):
         self._interface_available = available
         self._update_insert_button_state()
     
+    def set_custom_molecule_available(self, available: bool):
+        """Set whether Custom Molecule source has data available.
+
+        Called by MainWindow when custom molecules are generated.
+
+        Args:
+            available: True if custom molecule structure exists, False otherwise
+        """
+        self._custom_molecule_available = available
+        self._update_insert_button_state()
+    
+    def get_current_source(self) -> str:
+        """Get currently selected source.
+
+        Returns:
+            Current source name ("Interface" or "Custom Molecule")
+        """
+        return self._current_source
+    
     def _update_insert_button_state(self):
-        """Update Insert button enabled state and tooltip based on interface availability."""
-        if not self._interface_available:
-            # No interface structure available
+        """Update Insert button enabled state and tooltip based on source availability."""
+        if self._current_source == "Interface" and not self._interface_available:
+            # Interface source but no structure generated
             self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip("Generate Interface structure first (Tab 3)")
+            self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
+        elif self._current_source == "Custom Molecule" and not self._custom_molecule_available:
+            # Custom Molecule source but no molecules generated
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip("Generate Custom Molecules first (Tab 3)")
         else:
-            # Interface available
+            # Source available
             self.insert_button.setEnabled(True)
             self.insert_button.setToolTip(
                 "Insert solute molecules into the liquid water region.\n"
