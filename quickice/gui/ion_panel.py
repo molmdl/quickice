@@ -76,8 +76,8 @@ class IonPanel(QWidget):
         self.source_combo.addItems(["Interface", "Custom Molecule", "Solute"])
         self.source_combo.setToolTip(
             "Select source for ion insertion:\n"
-            "• Interface — Use interface structure from Tab 3\n"
-            "• Custom Molecule — Use custom molecule structure from Tab 5\n"
+            "• Interface — Use interface structure from Tab 2\n"
+            "• Custom Molecule — Use custom molecule structure from Tab 3\n"
             "• Solute — Use solute structure from Tab 4"
         )
         source_row.addWidget(source_label)
@@ -300,7 +300,7 @@ class IonPanel(QWidget):
         if self._current_source == "Interface" and not self._interface_available:
             # Interface source but no structure generated
             self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip("Generate Interface structure first (Tab 3)")
+            self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
         elif not is_available:
             # Source unavailable (future: Custom Molecule or Solute not loaded)
             self.insert_button.setEnabled(False)
