@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 35-integration-documentation |
-| Plan | 3 of 6 complete |
+| Plan | 4 of 6 complete |
 | Status | In progress |
-| Last activity | 2026-05-07 — Completed 35-03-PLAN.md (Help Dialog Update) |
+| Last activity | 2026-05-07 — Completed 35-04-PLAN.md (README Update) |
 
-**Progress:** █████████░ 92% (Phase 32-34.4, 35-01 to 35-03 complete, Phase 35 in progress)
+**Progress:** █████████░ 98.8% (167/169 plans complete, Phase 35 in progress)
 
 ---
 
@@ -198,6 +198,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Tooltip depth varies by audience | Detailed formula for scientific users (solute), brief guidance + doc reference for technical users (custom molecule) | ✓ Shipped (35-02) |
 | HelpIcon widgets for consistency | GRO/ITP upload buttons have help icons for guidance | ✓ Shipped (35-02) |
 | Help dialog reflects accurate v4.5 structure | Tab 0-5 numbering, complete workflows, updated shortcuts | ✓ Shipped (35-03) |
+| README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -218,9 +219,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-01 (unified export) complete
 - ✓ 35-02 (tooltips) complete  
 - ✓ 35-03 (help dialog) complete with correct tab numbering (Tab 0-5)
-- ⏳ 35-04 to 35-06 pending (screenshots, workflow docs, release notes)
+- ✓ 35-04 (README) complete with v4.5 GUI focus
+- ⏳ 35-05 to 35-06 pending (workflow docs, release notes)
 
-**Blocker resolved:** Help dialog now reflects correct v4.5 tab structure
+**Blocker resolved:** README now reflects v4.5 GUI capabilities with correct tab numbering
 
 **Remaining Phase 35 work:**
 - Screenshots for visual documentation
@@ -259,9 +261,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-07 13:22 UTC
-**Completed:** 35-03-PLAN.md (Help Dialog Update)
-**Next:** Continue Phase 35 documentation (35-04 onwards)
+**Last session:** 2026-05-07 13:29 UTC
+**Completed:** 35-04-PLAN.md (README Update)
+**Next:** Continue Phase 35 documentation (35-05 onwards)
 
 ---
-*State updated: 2026-05-07 — Plan 35-03 complete*
+*State updated: 2026-05-07 — Plan 35-04 complete*
