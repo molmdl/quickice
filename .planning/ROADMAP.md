@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3 inserted)
-**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 35: 6)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4 inserted)
+**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 0, Phase 35: 6)
 
 ## Overview
 
@@ -159,6 +159,26 @@ Plans:
 
 ---
 
+### Phase 34.4: Solute Source Dropdown (INSERTED)
+
+**Goal:** User can select solute insertion source (Interface or Custom Molecule) enabling the Custom → Solute workflow planned in architecture phase
+**Depends on:** Phase 34.3
+**Plans:** 2 plans
+
+Plans:
+- [ ] 34.4-01-PLAN.md — UI foundation: Source dropdown, CustomMoleculePanel getters, availability tracking
+- [ ] 34.4-02-PLAN.md — MainWindow integration: Source handling, availability notifications
+
+**Details:**
+- Solute tab source dropdown: Interface (default) or Custom Molecule
+- Follows Ion tab source dropdown pattern from Phase 34.1
+- Implements planned architecture from 32-CONTEXT.md: "Internal CH4/THF can take from Interface or Custom"
+- Enables workflow: Interface → Custom Molecule (Tab 3) → Solute (Tab 4) → Ion (Tab 5)
+- Update MainWindow _on_insert_solutes handler to check source selection
+- Integration tests for source switching
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -194,7 +214,9 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 7 (Phases 32-35, with 34.1, 34.2, and 34.3 inserted)
+**Phase Count:** 8 (Phases 32-35, with 34.1, 34.2, 34.3, and 34.4 inserted)
+
+**Total Plans:** 26 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 35: 6)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -239,10 +261,11 @@ Plans:
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
+| 34.4 - Solute Source Dropdown | ⏳ Planned | 0 | 2 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-07 - Phase 34.3 complete*
+*Last updated: 2026-05-07 - Phase 34.4 inserted*
 *For current state, see .planning/STATE.md*
