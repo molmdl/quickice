@@ -161,6 +161,15 @@ class SolutePanel(QWidget):
         self.concentration_spin.setDecimals(3)
         self.concentration_spin.setValue(0.1)
         self.concentration_spin.setSingleStep(0.01)
+        self.concentration_spin.setToolTip(
+            "Solute concentration in mol/L (M).\n"
+            "\n"
+            "Formula: N = concentration × volume × 10⁻²⁴ × N_A\n"
+            "where N_A = Avogadro's number (6.022×10²³)\n"
+            "\n"
+            "Example: 0.6 M in 10 nm³ → ~36 molecules\n"
+            "Typical values: seawater ~0.6 M, drinking water <0.05 M"
+        )
         conc_layout.addWidget(self.concentration_spin)
 
         # Unit label (mol/L only for Phase 33)
@@ -193,6 +202,14 @@ class SolutePanel(QWidget):
         
         self.solute_type_combo = QComboBox()
         self.solute_type_combo.addItems(["CH₄", "THF"])
+        self.solute_type_combo.setToolTip(
+            "Select solute type to insert into liquid water.\n"
+            "\n"
+            "THF (tetrahydrofuran): 4-membered ring, commonly used in hydrate studies\n"
+            "CH₄ (methane): Small nonpolar molecule, natural hydrate former\n"
+            "\n"
+            "Both use GAFF2 force field parameters for GROMACS compatibility."
+        )
         
         layout.addWidget(self.solute_type_combo)
         layout.addWidget(HelpIcon(
