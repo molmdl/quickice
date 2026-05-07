@@ -135,6 +135,16 @@ class CustomMoleculePanel(QWidget):
         gro_row = QHBoxLayout()
         self.gro_button = QPushButton("Upload .gro File")
         self.gro_button.setMaximumWidth(150)
+        self.gro_button.setToolTip(
+            "Upload GROMACS coordinate file (.gro) for custom molecule.\n"
+            "\n"
+            "Requirements:\n"
+            "• Coordinates in nm (GROMACS units)\n"
+            "• Residue name in columns 6-10\n"
+            "• Atom names in columns 11-15\n"
+            "\n"
+            "See Help > Custom Molecules for format details."
+        )
         gro_row.addWidget(self.gro_button)
         
         self.gro_status = QLabel("No file selected")
@@ -147,6 +157,16 @@ class CustomMoleculePanel(QWidget):
         itp_row = QHBoxLayout()
         self.itp_button = QPushButton("Upload .itp File")
         self.itp_button.setMaximumWidth(150)
+        self.itp_button.setToolTip(
+            "Upload GROMACS topology file (.itp) for custom molecule.\n"
+            "\n"
+            "Required sections:\n"
+            "• [ atomtypes ] — atom type definitions\n"
+            "• [ moleculetype ] — molecule definition\n"
+            "• [ atoms ] — atom list\n"
+            "\n"
+            "See Help > Custom Molecules for format details."
+        )
         itp_row.addWidget(self.itp_button)
         
         self.itp_status = QLabel("No file selected")
@@ -196,6 +216,19 @@ class CustomMoleculePanel(QWidget):
         mode_row = QHBoxLayout()
         self.placement_mode_combo = QComboBox()
         self.placement_mode_combo.addItems(["Random", "Custom"])
+        self.placement_mode_combo.setToolTip(
+            "Placement mode for custom molecules.\n"
+            "\n"
+            "Random: Automatic placement with overlap checking\n"
+            "  - Molecules placed randomly in liquid region\n"
+            "  - All-atom overlap checking prevents clashes\n"
+            "  - Specify number of molecules to insert\n"
+            "\n"
+            "Custom: User-specified positions and rotations\n"
+            "  - Manually define center-of-mass position (nm)\n"
+            "  - Manually define rotation angles (degrees)\n"
+            "  - No overlap checking (user responsibility)"
+        )
         mode_row.addWidget(self.placement_mode_combo)
         mode_row.addWidget(HelpIcon(
             "Select placement mode:\n"
