@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.2 complete, Phase 34.3 inserted, Phase 35 paused for re-planning (36 requirements satisfied, 3 pending)
+**Progress:** Phase 32-34.3 complete, Phase 35 paused for re-planning (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -53,7 +53,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Custom molecule validation infrastructure (GRO residue extraction)
 - ✓ Custom molecule renderer with distinct colors (purple, cyan, yellow)
 - ✓ Custom molecule insertion logic (CustomMoleculeInserter with two placement modes)
-- ✓ Custom molecule upload tab (Tab 5) UI components (CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget)
+- ✓ Custom molecule upload tab (Tab 3) UI components (CustomMoleculePanel, CustomMoleculeWorker, CustomMoleculeViewerWidget)
 - ✓ Tab reordering complete (Ion moves to Tab 6)
 - ✓ GROMACS export with custom .itp bundling
 - ✓ Integration tests for custom molecule workflow
@@ -62,6 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Ion source dropdown with charge warning
 - ✓ Liquid solute ITP files with CH4_LIQ/THF_LIQ names
 - ✓ Export pipeline uses correct ITP files for liquid solutes
+- ✓ Tab order swapped (Custom→Tab 3, Solute→Tab 4) enabling Custom→Solute workflow
 - ⏳ Documentation and remaining keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)

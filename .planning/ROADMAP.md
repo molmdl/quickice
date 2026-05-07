@@ -147,7 +147,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 34.3-01-PLAN.md — Swap Custom and Solute tab positions (TabIndex enum + addTab order)
+- [x] 34.3-01-PLAN.md — Swap Custom and Solute tab positions (TabIndex enum + addTab order)
 
 **Details:**
 - Swap TabIndex values: CUSTOM=4 → 3, SOLUTE=3 → 4
@@ -183,7 +183,7 @@ Plans:
 - Screenshot refresh (user checkpoint)
 
 **Plans:**
-- [ ] 35-01-PLAN.md — Unified export & GROMACS verification: Keyboard shortcuts, molecule ordering tests
+- [x] 35-01-PLAN.md — Unified export & GROMACS verification: Keyboard shortcuts, molecule ordering tests
 - [ ] 35-02-PLAN.md — Tooltips for Tab 3/4: SolutePanel and CustomMoleculePanel tooltips
 - [ ] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [ ] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
@@ -238,11 +238,11 @@ Plans:
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
-| 34.3 - Tab Order Swap | ⏳ Pending | 0 | 1 |
+| 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-07 - Phase 34.3 inserted*
+*Last updated: 2026-05-07 - Phase 34.3 complete*
 *For current state, see .planning/STATE.md*
