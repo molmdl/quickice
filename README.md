@@ -1,14 +1,20 @@
 # QuickIce
 
+While this is mainly a vibe coding project coded by free or open-source LLMs under human supervision, if you found QuickIce GUI useful in your research please cite: 
+
+QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (accessed on [DD MM YYYY])
+
+You are also welcomed to notify me on how you use the tool.
+
 > **Experimental** 
 >
-> - This is a "pure vibe coding project" created as a coding exercise. No physics simulations are performed. Results are plausible candidates, not validated structures.
+> - This is a "pure vibe coding project" created as a coding exercise. 
 >
 > - While I (the human) attempted to review every single reference manually, please report to me for any incorrect citations that I didn't catch or critical flaws in the implemented methods.
 
 A portable condition-based ice structure candidate generator from thermodynamic conditions with a simple Ice-water interface builder. QuickIce also generates clathrate hydrate structures and inserts ions into interface systems (GUI-only). 
 
-QuickIce is also a minimal GUI of basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with extended capabilities.
+QuickIce GUI is also a GUI of partial [GenIce2](https://github.com/genice-dev/GenIce2) functions with more focus on preparing gromacs-ready input.
 
 ## Overview
 
