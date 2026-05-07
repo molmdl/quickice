@@ -520,6 +520,22 @@ class CustomMoleculePanel(QWidget):
                 rotations=rotations
             )
     
+    def get_gro_path(self) -> Path | None:
+        """Get current GRO file path.
+
+        Returns:
+            Path to .gro file or None if not uploaded
+        """
+        return self.gro_path
+    
+    def get_itp_path(self) -> Path | None:
+        """Get current ITP file path.
+
+        Returns:
+            Path to .itp file or None if not uploaded
+        """
+        return self.itp_path
+    
     def log_message(self, message: str):
         """Append a message to the log display with timestamp.
         
