@@ -941,42 +941,76 @@ class MainWindow(QMainWindow):
     def _on_insert_solutes(self):
         """Handle solute insertion request."""
         from quickice.structure_generation.solute_inserter import SoluteInserter
-        
-        # Check if interface structure exists
-        if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
-            self.solute_panel.log_message("Error: No interface structure available. Generate interface first.")
+
+        # Get current source from panel
+        current_source = self.solute_panel.get_current_source()
+
+        # Get appropriate structure based on source
+        if current_source == "Interface":
+            # Use original interface structure
+            if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
+                self.solute_panel.log_message("Error: No interface structure available. Generate interface first.")
+                return
+            interface = self._current_interface_result
+            custom_molecule_data = None  # No custom molecules
+
+        elif current_source == "Custom Molecule":
+            # Use interface structure (custom molecules are added to it, stored separately)
+            if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
+                self.solute_panel.log_message("Error: No interface structure available. Generate interface first.")
+                return
+
+            if not hasattr(self, '_current_custom_molecule_result') or self._current_custom_molecule_result is None:
+                self.solute_panel.log_message("Error: No custom molecule structure available. Generate custom molecules first.")
+                return
+
+            # Use interface structure (custom molecules were added to it)
+            # CustomMoleculeStructure doesn't store interface_structure, so use _current_interface_result
+            interface = self._current_interface_result
+
+            # Prepare custom molecule data for GROMACS export (Phase 35)
+            # Note: Not passed to SoluteInserter yet - will be used in Phase 35
+            custom_structure = self._current_custom_molecule_result
+            custom_molecule_data = {
+                'gro_path': self.custom_molecule_panel.get_gro_path(),
+                'itp_path': self.custom_molecule_panel.get_itp_path(),
+                'residue_name': custom_structure.residue_name,
+                'moleculetype_name': custom_structure.moleculetype_name
+            }
+
+        else:
+            self.solute_panel.log_message(f"Error: Unknown source '{current_source}'")
             return
-        
+
         # Get configuration from panel
         config = self.solute_panel.get_configuration()
-        
-        # Log start
-        self.solute_panel.log_message(f"Inserting {config.solute_type} solutes at {config.concentration_molar} M...")
-        
+
+        # Log start with source info
+        self.solute_panel.log_message(f"Inserting {config.solute_type} solutes at {config.concentration_molar} M (source: {current_source})...")
+
         try:
             # Create inserter and insert solutes
             inserter = SoluteInserter(config)
-            solute_structure = inserter.insert_solutes(self._current_interface_result, config)
-            
+            solute_structure = inserter.insert_solutes(interface, config)
+
             # Store result
             self._current_solute_result = solute_structure
-            
+
             # Clear old solute actors from ion viewer to prevent overlap
-            # (they will be re-added if user inserts ions with source="Solute")
             if hasattr(self.ion_panel.ion_viewer, '_clear_solute_actors'):
                 self.ion_panel.ion_viewer._clear_solute_actors()
-            
+
             # Calculate water molecules replaced
-            original_water_count = self._current_interface_result.water_nmolecules
+            original_water_count = interface.water_nmolecules
             modified_water_count = solute_structure.interface_structure.water_nmolecules
             water_replaced = original_water_count - modified_water_count
-            
+
             # Render in viewer
             self.solute_panel.solute_viewer.render_solute(solute_structure)
-            
+
             # Hide placeholder
             self.solute_panel.hide_placeholder()
-            
+
             # Log success with water replacement count
             self.solute_panel.log_message(
                 f"Success: Inserted {solute_structure.n_molecules} {config.solute_type} molecules"
@@ -985,7 +1019,7 @@ class MainWindow(QMainWindow):
                 self.solute_panel.log_message(
                     f"Replaced {water_replaced} overlapping liquid water molecules"
                 )
-            
+
         except Exception as e:
             self.solute_panel.log_message(f"Error: {e}")
             logger.error(f"Solute insertion failed: {e}", exc_info=True)
@@ -1043,18 +1077,21 @@ class MainWindow(QMainWindow):
         """Handle custom molecule insertion completion."""
         # Store result
         self._current_custom_molecule_result = result
-        
+
+        # Update solute panel availability (for source dropdown)
+        self.solute_panel.set_custom_molecule_available(True)
+
         # Update viewer
         self.custom_molecule_panel.custom_viewer.update_structure(result)
-        
+
         # Hide placeholder
         self.custom_molecule_panel.hide_placeholder()
-        
+
         # Log success
         self.custom_molecule_panel.log_message(
             f"Custom molecule insertion complete: {result.n_molecules} molecules placed"
         )
-        
+
         # Clean up thread
         if hasattr(self, '_custom_worker_thread'):
             self._custom_worker_thread.quit()
