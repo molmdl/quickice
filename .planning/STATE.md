@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.4 - Solute Source Dropdown |
-| Plan | Not planned yet |
-| Status | Phase inserted |
-| Last activity | 2026-05-07 — Inserted Phase 34.4 (solute source dropdown to complete Custom→Solute workflow) |
+| Plan | 1 of 2 complete |
+| Status | In progress |
+| Last activity | 2026-05-07 — Completed 34.4-01-PLAN.md (source dropdown UI) |
 
-**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 34.4 inserted, Phase 35 paused for re-planning)
+**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 34.4-01 complete, Phase 34.4-02 pending, Phase 35 paused)
 
 ---
 
@@ -190,6 +190,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Liquid solute ITP export logic | Exporters use {type}_liquid.itp for solutes | ✓ Shipped (34.2-02) |
 | Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
 | Tab order swap (Custom before Solute) | Enables Custom → Solute → Ion workflow chain | ✓ Shipped (34.3-01) |
+| Solute source dropdown follows Ion pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.4-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -250,9 +251,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-07
-**Completed:** Phase 34.3 complete, Phase 34.4 inserted (Solute Source Dropdown)
-**Next:** Plan Phase 34.4 (solute source dropdown implementation)
+**Last session:** 2026-05-07 12:17 UTC
+**Completed:** 34.4-01-PLAN.md (source dropdown UI)
+**Next:** Execute 34.4-02-PLAN.md (MainWindow integration)
 
 ---
-*State updated: 2026-05-07 — Phase 34.4 inserted*
+*State updated: 2026-05-07 — Phase 34.4-01 complete*
