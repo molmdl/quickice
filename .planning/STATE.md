@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.3 inserted (tab order swap)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 inserted (solute source dropdown)
 
 ---
 
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.3 - Tab Order Swap |
-| Plan | 1 of 1 complete |
-| Status | Phase complete |
-| Last activity | 2026-05-07 — Completed 34.3-01-PLAN.md (tab swap for Custom→Solute workflow) |
+| Phase | 34.4 - Solute Source Dropdown |
+| Plan | Not planned yet |
+| Status | Phase inserted |
+| Last activity | 2026-05-07 — Inserted Phase 34.4 (solute source dropdown to complete Custom→Solute workflow) |
 
-**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 35 paused for re-planning)
+**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 34.4 inserted, Phase 35 paused for re-planning)
 
 ---
 
@@ -139,6 +139,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.1 inserted after Phase 34: Ion Source Dropdown with charge warning (URGENT)
 - Phase 34.2 inserted after Phase 34.1: Fix liquid solute ITP export with proper residue names (URGENT)
 - Phase 34.3 inserted after Phase 34.2: Tab order swap (Custom→Tab 4, Solute→Tab 5) to enable Custom→Solute workflow (URGENT)
+- Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT)
 
 ### v4.5 Key Decisions
 
@@ -250,8 +251,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-07
-**Completed:** Phase 34.3 complete (Tab order swap - Custom Tab 3, Solute Tab 4)
-**Next:** Re-plan Phase 35 documentation with correct tab numbering
+**Completed:** Phase 34.3 complete, Phase 34.4 inserted (Solute Source Dropdown)
+**Next:** Plan Phase 34.4 (solute source dropdown implementation)
 
 ---
-*State updated: 2026-05-07 — Phase 34.3 complete*
+*State updated: 2026-05-07 — Phase 34.4 inserted*
