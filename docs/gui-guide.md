@@ -1,6 +1,6 @@
 # QuickIce GUI Guide
 
-This guide covers the QuickIce v4.0 graphical user interface.
+This guide covers the QuickIce v4.5 graphical user interface.
 
 ## Overview
 
@@ -9,7 +9,9 @@ The QuickIce GUI provides an intuitive visual interface for:
 - Real-time 3D molecular structure visualization
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, PNG, SVG)
-- Interface Construction for ice-water systems (Tab 3)
+- Interface Construction for ice-water systems (Tab 2)
+- Custom molecule upload and insertion (Tab 3)
+- Solute molecule insertion (Tab 4)
 
 ## Getting Started
 
@@ -23,17 +25,19 @@ For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 ### Main Window Layout
 
-The main window is divided into four tabs:
-- **Tab 1 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
-- **Tab 2 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
-- **Tab 3 (Interface Construction)**: Build ice-water interfaces for MD simulations
-- **Tab 4 (Ion Insertion)**: Insert NaCl ions into liquid water regions
+The main window is divided into six tabs:
+- **Tab 0 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
+- **Tab 1 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
+- **Tab 2 (Interface Construction)**: Build ice-water interfaces for MD simulations
+- **Tab 3 (Custom Molecule)**: Upload and insert custom molecules via .gro/.itp files
+- **Tab 4 (Solute Insertion)**: Insert THF or CH₄ solutes into liquid water
+- **Tab 5 (Ion Insertion)**: Insert NaCl ions into liquid water regions
 
 ### Basic Workflow
 
 ![QuickIce GUI](images/quickice-v4-gui.png)
-*QuickIce GUI v4.0 — Ice Generation, Hydrate, Interface, and Ion tabs*
-**Note:** v4.0 adds Hydrate Config (Tab 2) and Ion Insertion (Tab 4). Screenshot update pending.
+*QuickIce GUI v4.5 — Six-tab workflow: Ice Generation, Hydrate, Interface, Custom Molecule, Solute, and Ion tabs*
+**Note:** v4.5 adds Custom Molecule (Tab 3) and Solute Insertion (Tab 4), moving Ion to Tab 5. Screenshot update pending.
 
 1. Enter temperature (K), pressure (MPa), and molecule count
 2. Click on the phase diagram OR type values directly
@@ -199,18 +203,26 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 |----------|--------|
 | Enter | Generate structures |
 | Escape | Cancel generation |
-| Ctrl+S | Save PDB (left viewer) |
-| Ctrl+Shift+S | Save PDB (right viewer) |
+| Ctrl+S | Save/Export from active tab (unified) |
+| Ctrl+Shift+S | Save PDB (right viewer, Tab 0 only) |
 | Ctrl+D | Save phase diagram |
 | Ctrl+Alt+S | Save viewport screenshot |
-| Ctrl+G | Export for GROMACS (Tab 1) |
-| Ctrl+E | Export hydrate for GROMACS (Tab 2) |
-| Ctrl+J | Export ions for GROMACS (Tab 4) |
-| Ctrl+I | Export interface for GROMACS (Tab 3) |
+| Ctrl+G | Export ice for GROMACS (Tab 0) |
+| Ctrl+H | Export hydrate for GROMACS (Tab 1) |
+| Ctrl+I | Export interface for GROMACS (Tab 2) |
+| Ctrl+J | Export ions for GROMACS (Tab 5) |
 
-## Hydrate Config (Tab 2)
+**Note:** Ctrl+S provides unified export from the currently active tab:
+- Tab 0: Export ice structure for GROMACS
+- Tab 1: Export hydrate for GROMACS
+- Tab 2: Export interface for GROMACS
+- Tab 3: Export custom molecules for GROMACS
+- Tab 4: Export solutes for GROMACS
+- Tab 5: Export ions for GROMACS |
 
-The second tab generates clathrate hydrate structures with guest molecules using GenIce2.
+## Hydrate Config (Tab 1)
+
+The first tab generates clathrate hydrate structures with guest molecules using GenIce2.
 
 ### Overview
 
@@ -223,7 +235,7 @@ Hydrate Config allows you to:
 
 ### Hydrate Panel Interface
 
-![Hydrate Panel](images/tab2-hydrate-panel.png)
+![Hydrate Panel](images/tab1-hydrate-panel.png)
 
 *Screenshot of Hydrate Config tab showing configuration controls and 3D viewer*
 
@@ -277,7 +289,7 @@ The hydrate viewer displays:
 
 ### Export for GROMACS
 
-**File → Export Hydrate for GROMACS (Ctrl+E)**
+**File → Export Hydrate for GROMACS (Ctrl+H)**
 
 Exported files:
 - `hydrate_{lattice}.gro` — Coordinates
@@ -288,18 +300,18 @@ The water framework uses TIP4P-ICE for ice compatibility.
 
 ---
 
-## Interface Construction (Tab 3)
+## Interface Construction (Tab 2)
 
 
 The second tab builds ice-water interface structures from candidates 
-generated in Tab 1. This is useful for molecular dynamics simulations 
+generated in Tab 0. This is useful for molecular dynamics simulations 
 of ice-water interfaces, confined water, or ice nucleation studies.
 
 ### Prerequisites
 
-Generate ice candidates in Tab 1 (Ice Generation) before using Tab 3. 
-The candidate dropdown in Tab 3 is populated from Tab 1's results.
-Click "Refresh candidates" to sync after generating new candidates in Tab 1.
+Generate ice candidates in Tab 0 (Ice Generation) before using Tab 2. 
+The candidate dropdown in Tab 2 is populated from Tab 0's results.
+Click "Refresh candidates" to sync after generating new candidates in Tab 0.
 
 ### Phase Compatibility
 
@@ -356,11 +368,11 @@ QuickIce supports three interface geometries.
 
 ### Visualization
 
-Tab 3 uses phase-distinct coloring to distinguish ice and water:
+Tab 2 uses phase-distinct coloring to distinguish ice and water:
 
 - **Ice phase**: Cyan atoms with line-based bonds
 - **Water phase**: Cornflower blue atoms with line-based bonds
-- H-bonds are hidden by default in Tab 3
+- H-bonds are hidden by default in Tab 2
 - Camera defaults to Z-axis side view for slab interfaces
 
 ### Transformation Indicator
@@ -386,21 +398,267 @@ Exported files use a single combined SOL molecule type:
 Ice molecules are normalized from 3-atom (O, H, H) to 4-atom (O, H1, H2, MW) 
 TIP4P-ICE format at export time. Water molecules pass through unchanged (already 4-atom TIP4P-ICE).
 
-## Ion Insertion (Tab 4)
+## Custom Molecule Upload (Tab 3)
 
-The fourth tab inserts NaCl ions into liquid water regions of interface structures.
+The third tab allows uploading and inserting custom molecules via .gro/.itp file pairs.
+
+### Overview
+
+Custom Molecule Upload enables you to:
+- Upload user-provided .gro (coordinate) and .itp (topology) files
+- Validate GRO/ITP consistency before insertion
+- Choose random placement or custom position/orientation
+- Insert molecules into liquid water regions with all-atom overlap checking
+- Export to GROMACS with bundled custom .itp files
 
 ### Prerequisites
 
-Generate an interface structure in Tab 3 first. Ion insertion requires:
+Generate an interface structure in Tab 2 first. Custom molecule insertion requires:
+- An existing interface structure (ice + liquid water)
+- Valid .gro file with atomic coordinates
+- Valid .itp file with force field parameters (must include [ atomtypes ] section)
+
+### Custom Molecule Panel Interface
+
+![Custom Molecule Panel](images/tab3-custom-molecule-panel.png)
+
+*Screenshto of Custom Molecule Upload tab showing file upload controls and 3D viewer*
+
+**Note:** Screenshot update pending for v4.5.
+
+### GRO File Requirements
+
+The .gro file must follow GROMACS format:
+
+```
+Custom Molecule
+    8
+    1CUSTOM  CA    1   1.234   2.345   3.456
+    1CUSTOM  CB    2   1.456   2.567   3.678
+...
+   5.000   5.000   5.000
+```
+
+**Key requirements:**
+- Title line (any text)
+- Atom count line (must match .itp file)
+- Coordinate lines with fixed-width columns:
+  - Residue name (columns 6-10)
+  - Atom name (columns 11-15)
+  - Coordinates in nm (columns 21-45)
+- Box dimensions (last line)
+
+See the [GRO/ITP Creation Guide](gro-itp-guide.md) for detailed format specifications.
+
+### ITP File Requirements
+
+The .itp file must include:
+
+```
+[ atomtypes ]
+; name  at.num  mass  charge  ptype  sigma  epsilon
+  CA      6    12.01   0.00    A    0.355  0.29288
+  
+[ moleculetype ]
+; name  nrexcl
+CUSTOM     3
+
+[ atoms ]
+; nr  type  resnr  residue  atom  cgnr  charge  mass
+   1   CA     1    CUSTOM    CA    1    0.00  12.01
+```
+
+**Required sections:**
+- `[ atomtypes ]` — Force field atom types (user must provide)
+- `[ moleculetype ]` — Molecule definition
+- `[ atoms ]` — Atom list with types and charges
+
+**Optional sections:**
+- `[ bonds ]`, `[ angles ]`, `[ dihedrals ]` — Molecular topology
+
+### File Validation
+
+The system validates:
+1. **Atom count match** — GRO and ITP must have same atom count
+2. **Residue name consistency** — GRO residue name vs. ITP moleculetype
+3. **Required sections** — ITP must have [ atomtypes ], [ moleculetype ], [ atoms ]
+
+If validation fails, a dialog shows specific error details.
+
+### Placement Modes
+
+#### Random Placement (Default)
+
+Molecules are placed randomly in liquid regions:
+- All-atom overlap checking prevents clashes
+- Random rotation for each molecule
+- Multiple attempts until valid position found
+- Status shows attempt count
+
+#### Custom Placement
+
+Specify exact position and orientation:
+- **Center of mass (X, Y, Z)** — Position in nm
+- **Rotation angles (α, β, γ)** — Euler angles in degrees (ZXZ convention)
+- No overlap checking (user responsibility)
+- Precise control for specific configurations
+
+### Workflow
+
+1. Generate interface in Tab 2 first
+2. Switch to Custom Molecule Upload tab (Tab 3)
+3. Upload .gro file using "Upload GRO" button
+4. Upload .itp file using "Upload ITP" button
+5. Review validation status (green checkmark = valid)
+6. Choose placement mode (Random or Custom)
+7. If Custom: Enter position and rotation angles
+8. Click "Insert Molecule"
+9. View molecule in 3D viewer (distinct colors: purple, cyan, yellow)
+10. Export for GROMACS (Ctrl+S)
+
+### 3D Viewer
+
+The custom molecule viewer displays:
+- **Custom molecules:** Ball-and-stick with distinct colors (purple, cyan, yellow)
+- Multiple custom molecules shown in different colors
+- Existing ice/water structure in background
+
+### GROMACS Export
+
+**File → Export Custom Molecules for GROMACS (Ctrl+S)**
+
+Exported files:
+- `interface_with_custom.gro` — Coordinates with custom molecules
+- `interface_with_custom.top` — Topology with custom moleculetype
+- `custom_molecule.itp` — Your provided .itp file (bundled to output)
+
+Custom molecules appear after SOL in the [ molecules ] section with names like `CUSTOM_MOL_1`.
+
+---
+
+## Solute Insertion (Tab 4)
+
+The fourth tab inserts THF or CH₄ solute molecules into liquid water at specified concentrations.
+
+### Overview
+
+Solute Insertion enables you to:
+- Select THF or CH₄ as solute type
+- Set concentration in mol/L (M)
+- Calculate molecule count from concentration
+- Insert solutes into liquid phase only
+- Export to GROMACS with bundled force field parameters
+
+### Prerequisites
+
+Generate an interface structure in Tab 2 first. Solute insertion requires:
+- An existing interface structure (ice + liquid water)
+- Liquid volume > 0 for solute placement
+
+### Solute Panel Interface
+
+![Solute Panel](images/tab4-solute-panel.png)
+
+*Screenshot of Solute Insertion tab showing configuration controls and 3D viewer*
+
+**Note:** Screenshot update pending for v4.5.
+
+### Solute Types
+
+| Solute | Formula | Force Field | Description |
+|--------|---------|-------------|-------------|
+| THF | Tetrahydrofuran | GAFF2 | 5-membered ring, common solute |
+| CH₄ | Methane | GAFF2 | Small hydrophobic molecule |
+
+Both solutes use GAFF2 parameters with RESP2(0.5) partial charges.
+
+### Concentration Input
+
+- **Solute concentration:** Target concentration in mol/L (M)
+- Range: 0.0 - 2.0 M
+- Typical values:
+  - Dilute solution: 0.1 - 0.5 M
+  - Concentrated solution: 1.0 - 2.0 M
+
+### Molecule Count Calculation
+
+The system automatically calculates solute count:
+
+```
+N_solute = concentration (mol/L) × volume (nm³) × 10⁻²⁴ × N_A
+```
+
+**Example:**
+- Concentration: 0.5 M
+- Liquid volume: 10 nm³
+- Calculation: 0.5 × 10 × 10⁻²⁴ × 6.022×10²³ = 3.01 molecules
+- Result: 3 solute molecules
+
+The calculation:
+1. Converts volume from nm³ to L (× 10⁻²⁴)
+2. Multiplies by concentration to get moles
+3. Multiplies by Avogadro's number to get molecule count
+4. Rounds down to integer
+
+### Workflow
+
+1. Generate interface in Tab 2 first
+2. Switch to Solute Insertion tab (Tab 4)
+3. Select solute type (THF or CH₄)
+4. Set concentration
+5. Preview molecule count (updates in real-time)
+6. Click "Insert Solutes"
+7. View solutes in 3D viewer (ball-and-stick rendering)
+8. Export for GROMACS (Ctrl+S)
+
+### 3D Viewer
+
+The solute viewer displays:
+- **THF/CH₄ molecules:** Ball-and-stick with CPK coloring (C=cyan, H=white, O=red)
+- All-atom overlap checking prevents clashes
+- Existing ice/water structure in background
+
+### Placement Algorithm
+
+Solute molecules are placed:
+1. Randomly in liquid regions (not ice)
+2. With random rotation
+3. Using all-atom overlap checking (not center-of-mass)
+4. Multiple attempts until valid positions found
+5. Respecting minimum separation distance
+
+### GROMACS Export
+
+**File → Export Solutes for GROMACS (Ctrl+S)**
+
+Exported files:
+- `interface_with_solutes.gro` — Coordinates with solutes
+- `interface_with_solutes.top` — Topology with solute moleculetype
+- `ch4_liquid.itp` or `thf_liquid.itp` — Solute force field parameters
+
+Solute molecules appear after SOL in the [ molecules ] section with names `CH4_LIQ` or `THF_LIQ`.
+
+**Note:** Solute ITP files use `_LIQ` suffix to distinguish from hydrate guests (`CH4_HYD`, `THF_HYD`), allowing both to coexist in simulations.
+
+---
+
+## Ion Insertion (Tab 5)
+
+The fifth tab inserts NaCl ions into liquid water regions of interface structures.
+
+### Prerequisites
+
+Generate an interface structure in Tab 2 first. Ion insertion requires:
 - An existing interface structure (ice + liquid water)
 - Liquid volume > 0 for ion placement
 
 ### Ion Panel Interface
 
-![Ion Panel](images/tab4-ion-panel.png)
+![Ion Panel](images/tab5-ion-panel.png)
 
 *Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
+
+**Note:** Screenshot update pending for v4.5.
 
 ### Concentration Input
 
@@ -429,8 +687,8 @@ Where N_A is Avogadro's number. The display shows "Up to N" because actual count
 
 ### Workflow
 
-1. Generate interface in Tab 3 first
-2. Switch to Ion Insertion tab (Tab 4)
+1. Generate interface in Tab 2 first
+2. Switch to Ion Insertion tab (Tab 5)
 3. Set NaCl concentration
 4. Click "Insert Ions"
 5. View ions in 3D viewer (Na⁺ = gold, Cl⁻ = green)
