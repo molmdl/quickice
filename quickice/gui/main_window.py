@@ -118,19 +118,13 @@ class MainWindow(QMainWindow):
         Ice Generation tab (existing functionality)
         Interface Construction tab (new in v4.0)
         """
-        # Current tab structure (v4.0):
+        # Current tab structure (v4.5 Phase 34.3):
         # Tab 0 (TabIndex.ICE): Ice Generation
         # Tab 1 (TabIndex.HYDRATE): Hydrate Config
         # Tab 2 (TabIndex.INTERFACE): Interface Construction
-        # Tab 3 (TabIndex.ION): Ion Insertion
-        #
-        # Planned tab order (v4.5, Phases 33-35):
-        # Tab 0 (TabIndex.ICE): Ice Generation
-        # Tab 1 (TabIndex.HYDRATE): Hydrate Config
-        # Tab 2 (TabIndex.INTERFACE): Interface Construction
-        # Tab 3 (TabIndex.SOLUTE): Solute Insertion (Phase 33)
-        # Tab 4 (TabIndex.CUSTOM): Custom Molecule (Phase 34)
-        # Tab 5 (TabIndex.ION): Ion Insertion (moves from Tab 3 in Phase 35)
+        # Tab 3 (TabIndex.CUSTOM): Custom Molecule (Phase 34)
+        # Tab 4 (TabIndex.SOLUTE): Solute Insertion (Phase 33)
+        # Tab 5 (TabIndex.ION): Ion Insertion (Phase 34)
         
         # Cross-tab data flows (v4.0):
         # Ice Generation → Interface Construction (ice candidates)
@@ -216,12 +210,12 @@ class MainWindow(QMainWindow):
         # === Ion Insertion tab (new in v4.0) ===
         self.ion_panel = IonPanel()
         
-        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Solute → Custom → Ion)
+        # Add tabs to tab widget (order: Ice → Hydrate → Interface → Custom → Solute → Ion)
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
         self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
-        self.tab_widget.addTab(self.solute_panel, "Solute Insertion")
-        self.tab_widget.addTab(self.custom_molecule_panel, "Custom Molecule")
+        self.tab_widget.addTab(self.custom_molecule_panel, "Custom Molecule")  # Tab 3 (SWAPPED)
+        self.tab_widget.addTab(self.solute_panel, "Solute Insertion")  # Tab 4 (SWAPPED)
         self.tab_widget.addTab(self.ion_panel, "Ion Insertion")
         
         # Set Ice Generation tab as default on startup
