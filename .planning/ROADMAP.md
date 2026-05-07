@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2 inserted)
-**Total Plans:** 23 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 35: 6)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3 inserted)
+**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 35: 6)
 
 ## Overview
 
@@ -140,6 +140,25 @@ Plans:
 
 ---
 
+### Phase 34.3: Tab Order Swap (INSERTED)
+
+**Goal:** User can upload custom molecules first (Tab 4), then use them as source for solute insertion (Tab 5), enabling Custom → Solute workflow
+**Depends on:** Phase 34.2
+**Plans:** 1 plan
+
+Plans:
+- [ ] 34.3-01-PLAN.md — Swap Custom and Solute tab positions (TabIndex enum + addTab order)
+
+**Details:**
+- Swap TabIndex values: CUSTOM=4 → 3, SOLUTE=3 → 4
+- Update addTab() order in MainWindow to match new enum values
+- Update all comments to reflect new tab order
+- Enables workflow: Custom Molecule upload → Solute insertion at concentration → Ion insertion
+- No other files need changes (all code uses TabIndex constants)
+- Phase 35 documentation plans need re-planning after this change (tab numbers will change)
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -175,7 +194,7 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 6 (Phases 32-35, with 34.1 and 34.2 inserted)
+**Phase Count:** 7 (Phases 32-35, with 34.1, 34.2, and 34.3 inserted)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -219,10 +238,11 @@ Plans:
 | 34 - Custom Molecule Upload | ✓ Complete | 5 | 5 |
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
+| 34.3 - Tab Order Swap | ⏳ Pending | 0 | 1 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-06 - Phase 34.2 complete*
+*Last updated: 2026-05-07 - Phase 34.3 inserted*
 *For current state, see .planning/STATE.md*
