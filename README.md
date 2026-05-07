@@ -34,6 +34,16 @@ All exports are GROMACS-ready with TIP4P-ICE water model and bundled force field
 - Unified keyboard shortcut for export (Ctrl+S)
 - Multi-molecule GROMACS topologies
 
+## Binary Distribution (No Installation Required)
+
+Pre-built executables are available for Linux and Windows. No Python or conda setup needed.
+
+**Quick Start:**
+- **Linux**: Download, extract, run `./quickice-gui`
+- **Windows**: Download, extract, double-click `quickice-gui.exe`
+
+**Details**: See [README_bin.md](README_bin.md) for download links and usage instructions.
+
 ## Installation
 
 ### System Requirements
