@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-03 complete (help dialog update)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-05 complete (GUI guide & user guides)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-03 complete (help dialog update)
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-05 complete (GUI guide & user guides)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 35-integration-documentation |
-| Plan | 4 of 6 complete |
+| Plan | 5 of 6 complete |
 | Status | In progress |
-| Last activity | 2026-05-07 — Completed 35-04-PLAN.md (README Update) |
+| Last activity | 2026-05-07 — Completed 35-05-PLAN.md (GUI Guide & User Guides) |
 
-**Progress:** █████████░ 98.8% (167/169 plans complete, Phase 35 in progress)
+**Progress:** ██████████ 99.4% (168/169 plans complete, Phase 35-06 pending)
 
 ---
 
@@ -198,6 +198,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Tooltip depth varies by audience | Detailed formula for scientific users (solute), brief guidance + doc reference for technical users (custom molecule) | ✓ Shipped (35-02) |
 | HelpIcon widgets for consistency | GRO/ITP upload buttons have help icons for guidance | ✓ Shipped (35-02) |
 | Help dialog reflects accurate v4.5 structure | Tab 0-5 numbering, complete workflows, updated shortcuts | ✓ Shipped (35-03) |
+| GUI guide workflow documentation | Step-by-step instructions with prerequisites and outcomes | ✓ Shipped (35-05) |
+| GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
 
 ### v4.0 Key Decisions (Shipped)
@@ -219,15 +221,14 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-01 (unified export) complete
 - ✓ 35-02 (tooltips) complete  
 - ✓ 35-03 (help dialog) complete with correct tab numbering (Tab 0-5)
-- ✓ 35-04 (README) complete with v4.5 GUI focus
-- ⏳ 35-05 to 35-06 pending (workflow docs, release notes)
-
-**Blocker resolved:** README now reflects v4.5 GUI capabilities with correct tab numbering
+- ✓ 35-04 (README update) complete
+- ✓ 35-05 (GUI guide & user guides) complete
+- ⏳ 35-06 pending (screenshots, workflow docs, release notes)
 
 **Remaining Phase 35 work:**
-- Screenshots for visual documentation
-- Workflow documentation updates
-- Release notes preparation
+- Screenshots for visual documentation (35-06)
+- Workflow documentation updates (35-06)
+- Release notes preparation (35-06)
 
 ### Quick Tasks Completed
 
@@ -262,8 +263,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-07 13:29 UTC
-**Completed:** 35-04-PLAN.md (README Update)
-**Next:** Continue Phase 35 documentation (35-05 onwards)
+**Completed:** 35-05-PLAN.md (GUI Guide & User Guides)
+**Next:** 35-06-PLAN.md (Screenshots & Workflow Documentation)
 
 ---
-*State updated: 2026-05-07 — Plan 35-04 complete*
+*State updated: 2026-05-07 — Plan 35-05 complete*
