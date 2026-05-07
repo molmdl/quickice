@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 complete (solute source dropdown)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-03 complete (help dialog update)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 complete (solute source dropdown)
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-03 complete (help dialog update)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.4 - Solute Source Dropdown |
-| Plan | 2 of 2 complete |
-| Status | Phase complete |
-| Last activity | 2026-05-07 — Completed 34.4-02-PLAN.md (MainWindow integration) |
+| Phase | 35-integration-documentation |
+| Plan | 3 of 6 complete |
+| Status | In progress |
+| Last activity | 2026-05-07 — Completed 35-03-PLAN.md (Help Dialog Update) |
 
-**Progress:** █████████░ 91% (Phase 32-34.4 complete, Phase 35 pending)
+**Progress:** █████████░ 92% (Phase 32-34.4, 35-01 to 35-03 complete, Phase 35 in progress)
 
 ---
 
@@ -64,6 +64,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Export pipeline uses correct ITP files for liquid solutes
 - ✓ Tab order swapped (Custom→Tab 3, Solute→Tab 4) enabling Custom→Solute workflow
 - ✓ Solute source dropdown with Interface/Custom Molecule selection
+- ✓ Help dialog updated with Tab 0-5 numbering and workflows
 - ⏳ Documentation and remaining keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -194,6 +195,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Solute source dropdown | Enables source selection for solute insertion | ✓ Shipped (34.4-01) |
 | Solute source dropdown follows Ion pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.4-01) |
 | Custom Molecule source uses _current_interface_result | CustomMoleculeStructure doesn't store interface_structure field | ✓ Shipped (34.4-02) |
+| Tooltip depth varies by audience | Detailed formula for scientific users (solute), brief guidance + doc reference for technical users (custom molecule) | ✓ Shipped (35-02) |
+| HelpIcon widgets for consistency | GRO/ITP upload buttons have help icons for guidance | ✓ Shipped (35-02) |
+| Help dialog reflects accurate v4.5 structure | Tab 0-5 numbering, complete workflows, updated shortcuts | ✓ Shipped (35-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -210,17 +214,18 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Blockers
 
-**Phase 35 documentation plans need re-planning:**
-- Phase 35-02 to 35-06 reference incorrect tab numbers (Solute=Tab 4, Custom=Tab 5)
-- After Phase 34.3 completes (tab swap), all documentation plans need to be re-created
-- 35-01 (unified export) is complete but references old tab order
+**Phase 35 documentation plans status:**
+- ✓ 35-01 (unified export) complete
+- ✓ 35-02 (tooltips) complete  
+- ✓ 35-03 (help dialog) complete with correct tab numbering (Tab 0-5)
+- ⏳ 35-04 to 35-06 pending (screenshots, workflow docs, release notes)
 
-**User-identified issues (from 35-01 checkpoint):**
-- Missing function found during verification
-- Documentation may need redo
-- User suggests considering adding a phase before continuing with docs
+**Blocker resolved:** Help dialog now reflects correct v4.5 tab structure
 
-**Recommendation:** Complete Phase 34.3 first, then re-plan Phase 35 documentation (35-02 to 35-06) with correct tab numbering
+**Remaining Phase 35 work:**
+- Screenshots for visual documentation
+- Workflow documentation updates
+- Release notes preparation
 
 ### Quick Tasks Completed
 
@@ -254,9 +259,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-07 12:34 UTC
-**Completed:** 34.4-02-PLAN.md (MainWindow integration)
-**Next:** Phase 34.4 complete - Phase 35 ready to continue
+**Last session:** 2026-05-07 13:22 UTC
+**Completed:** 35-03-PLAN.md (Help Dialog Update)
+**Next:** Continue Phase 35 documentation (35-04 onwards)
 
 ---
-*State updated: 2026-05-07 — Phase 34.4 complete*
+*State updated: 2026-05-07 — Plan 35-03 complete*
