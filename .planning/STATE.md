@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.2 complete
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.3 inserted (tab order swap)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.2 complete
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.3 inserted (tab order swap)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 35 - Integration & Documentation |
-| Plan | 1 of 6 in current phase |
-| Status | In progress |
-| Last activity | 2026-05-06 — Phase 34.2 complete (liquid solute ITP export fixed) |
+| Phase | 34.3 - Tab Order Swap |
+| Plan | 1 of 1 complete |
+| Status | Phase complete |
+| Last activity | 2026-05-07 — Completed 34.3-01-PLAN.md (tab swap for Custom→Solute workflow) |
 
-**Progress:** █████████░ 92% (Phase 35: 1/6 plans, Phase 34.2 complete)
+**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 35 paused for re-planning)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.2 complete, Phase 35 in progress (36 requirements satisfied, 3 pending)
+**Progress:** Phase 32-34.2 complete, Phase 34.3 inserted, Phase 35 paused for re-planning (36 requirements satisfied, 3 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -137,6 +137,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 - Phase 34.1 inserted after Phase 34: Ion Source Dropdown with charge warning (URGENT)
 - Phase 34.2 inserted after Phase 34.1: Fix liquid solute ITP export with proper residue names (URGENT)
+- Phase 34.3 inserted after Phase 34.2: Tab order swap (Custom→Tab 4, Solute→Tab 5) to enable Custom→Solute workflow (URGENT)
 
 ### v4.5 Key Decisions
 
@@ -186,6 +187,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Separate liquid solute ITP files | CH4_LIQ and THF_LIQ distinct from hydrate guests | ✓ Shipped (34.2-01) |
 | Liquid solute ITP export logic | Exporters use {type}_liquid.itp for solutes | ✓ Shipped (34.2-02) |
 | Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
+| Tab order swap (Custom before Solute) | Enables Custom → Solute → Ion workflow chain | ✓ Shipped (34.3-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -202,12 +204,17 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Blockers
 
+**Phase 35 documentation plans need re-planning:**
+- Phase 35-02 to 35-06 reference incorrect tab numbers (Solute=Tab 4, Custom=Tab 5)
+- After Phase 34.3 completes (tab swap), all documentation plans need to be re-created
+- 35-01 (unified export) is complete but references old tab order
+
 **User-identified issues (from 35-01 checkpoint):**
 - Missing function found during verification
 - Documentation may need redo
 - User suggests considering adding a phase before continuing with docs
 
-**Recommendation:** Investigate missing function issue before proceeding with documentation-heavy phases (35-02 to 35-06)
+**Recommendation:** Complete Phase 34.3 first, then re-plan Phase 35 documentation (35-02 to 35-06) with correct tab numbering
 
 ### Quick Tasks Completed
 
@@ -241,9 +248,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-06 08:35
-**Completed:** Phase 34.2 complete (Fix liquid solute ITP export)
-**Next:** Continue Phase 35 - Integration & Documentation
+**Last session:** 2026-05-07
+**Completed:** Phase 34.3 complete (Tab order swap - Custom Tab 3, Solute Tab 4)
+**Next:** Re-plan Phase 35 documentation with correct tab numbering
 
 ---
-*State updated: 2026-05-06 — Phase 34.2 complete*
+*State updated: 2026-05-07 — Phase 34.3 complete*
