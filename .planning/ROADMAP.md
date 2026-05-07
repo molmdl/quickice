@@ -166,8 +166,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 34.4-01-PLAN.md — UI foundation: Source dropdown, CustomMoleculePanel getters, availability tracking
-- [ ] 34.4-02-PLAN.md — MainWindow integration: Source handling, availability notifications
+- [x] 34.4-01-PLAN.md — UI foundation: Source dropdown, CustomMoleculePanel getters, availability tracking
+- [x] 34.4-02-PLAN.md — MainWindow integration: Source handling, availability notifications
 
 **Details:**
 - Solute tab source dropdown: Interface (default) or Custom Molecule
@@ -261,7 +261,7 @@ Plans:
 | 34.1 - Ion Source Dropdown | ✓ Complete | 3 | 3 |
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
-| 34.4 - Solute Source Dropdown | ⏳ Planned | 0 | 2 |
+| 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---

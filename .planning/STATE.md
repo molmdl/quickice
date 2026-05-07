@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.4 - Solute Source Dropdown |
-| Plan | 1 of 2 complete |
-| Status | In progress |
-| Last activity | 2026-05-07 — Completed 34.4-01-PLAN.md (source dropdown UI) |
+| Plan | 2 of 2 complete |
+| Status | Phase complete |
+| Last activity | 2026-05-07 — Completed 34.4-02-PLAN.md (MainWindow integration) |
 
-**Progress:** █████████░ 90% (Phase 32-34.3 complete, Phase 34.4-01 complete, Phase 34.4-02 pending, Phase 35 paused)
+**Progress:** █████████░ 91% (Phase 32-34.4 complete, Phase 35 pending)
 
 ---
 
@@ -191,6 +191,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
 | Tab order swap (Custom before Solute) | Enables Custom → Solute → Ion workflow chain | ✓ Shipped (34.3-01) |
 | Solute source dropdown follows Ion pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.4-01) |
+| Custom Molecule source uses _current_interface_result | CustomMoleculeStructure doesn't store interface_structure field | ✓ Shipped (34.4-02) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -251,9 +252,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-07 12:17 UTC
-**Completed:** 34.4-01-PLAN.md (source dropdown UI)
-**Next:** Execute 34.4-02-PLAN.md (MainWindow integration)
+**Last session:** 2026-05-07 12:34 UTC
+**Completed:** 34.4-02-PLAN.md (MainWindow integration)
+**Next:** Phase 34.4 complete - Phase 35 ready to continue
 
 ---
-*State updated: 2026-05-07 — Phase 34.4-01 complete*
+*State updated: 2026-05-07 — Phase 34.4 complete*
