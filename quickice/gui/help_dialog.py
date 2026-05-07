@@ -65,12 +65,14 @@ class QuickReferenceDialog(QDialog):
         shortcuts_text = QLabel(
             "Enter — Generate structures\n"
             "Escape — Cancel generation\n"
-            "Ctrl+S — Save PDB (left viewer)\n"
+            "Ctrl+S — Export current tab for GROMACS\n"
             "Ctrl+Shift+S — Save PDB (right viewer)\n"
             "Ctrl+D — Save phase diagram\n"
             "Ctrl+G — Export for GROMACS\n"
             "Ctrl+I — Export interface for GROMACS\n"
-            "Ctrl+E — Export hydrate for GROMACS\n"
+            "Ctrl+H — Export hydrate for GROMACS\n"
+            "Ctrl+L — Export solutes for GROMACS\n"
+            "Ctrl+M — Export custom molecules for GROMACS\n"
             "Ctrl+J — Export ions for GROMACS\n"
             "Ctrl+Alt+S — Save viewport screenshot"
         )
@@ -82,31 +84,45 @@ class QuickReferenceDialog(QDialog):
         # Workflow section
         layout.addWidget(self._create_section_label("Workflow"))
         workflow_text = QLabel(
-            "Tab 1 — Ice Generation:\n"
+            "Tab 0 — Ice Generation:\n"
             "1. Enter temperature, pressure, and molecule count\n"
             "2. Click on phase diagram OR type values directly\n"
             "3. Press Enter or click Generate button\n"
             "4. View ranked candidates in dual 3D viewer\n"
             "5. Use File menu to export PDB, GROMACS files, diagram, or screenshots\n"
             "\n"
+            "Tab 1 — Hydrate Config:\n"
+            "6. Switch to Hydrate Config tab\n"
+            "7. Select lattice type (sI, sII, sH) and guest type (empty, CH₄, etc.)\n"
+            "8. Set unit cell repetitions and generate hydrate structure\n"
+            "9. Export hydrate for GROMACS (Ctrl+H)\n"
+            "\n"
             "Tab 2 — Interface Construction:\n"
-            "6. Switch to Interface Construction tab\n"
-            "7. Select mode: Slab (layered), Pocket (water cavity), or Piece (ice in water)\n"
-            "8. Set box dimensions and mode-specific parameters\n"
-            "9. Select a candidate and click Generate Interface\n"
-            "10. View result (ice=cyan, water=cornflower blue)\n"
-            "11. Export interface for GROMACS (Ctrl+I)\n"
+            "10. Switch to Interface Construction tab\n"
+            "11. Select mode: Slab (layered), Pocket (water cavity), or Piece (ice in water)\n"
+            "12. Set box dimensions and mode-specific parameters\n"
+            "13. Select a candidate and click Generate Interface\n"
+            "14. View result (ice=cyan, water=cornflower blue)\n"
+            "15. Export interface for GROMACS (Ctrl+I)\n"
             "\n"
-            "Tab 3 — Hydrate Config:\n"
-            "12. Switch to Hydrate Config tab\n"
-            "13. Select lattice type (sI, sII, sH) and guest type (empty, CH₄, etc.)\n"
-            "14. Set unit cell repetitions and generate hydrate structure\n"
-            "15. Export hydrate for GROMACS (Ctrl+E)\n"
+            "Tab 3 — Custom Molecule:\n"
+            "16. Switch to Custom Molecule tab (requires interface from Tab 2)\n"
+            "17. Upload .gro and .itp files for your custom molecule\n"
+            "18. Choose placement mode (Random or Custom)\n"
+            "19. Set position/rotation (Custom mode) or molecule count (Random mode)\n"
+            "20. Click Generate to insert custom molecules\n"
+            "21. Export custom molecules for GROMACS (Ctrl+M)\n"
             "\n"
-            "Tab 4 — Ion Insertion:\n"
-            "16. Switch to Ion Insertion tab (requires interface from Tab 2)\n"
-            "17. Set ion concentration and insert ions into interface\n"
-            "18. Export ions for GROMACS (Ctrl+J)"
+            "Tab 4 — Solute Insertion:\n"
+            "22. Switch to Solute Insertion tab (requires interface from Tab 2)\n"
+            "23. Set concentration (mol/L) and select solute type (THF or CH₄)\n"
+            "24. Click Insert Solutes to place molecules in liquid region\n"
+            "25. Export solutes for GROMACS (Ctrl+L)\n"
+            "\n"
+            "Tab 5 — Ion Insertion:\n"
+            "26. Switch to Ion Insertion tab (requires interface from Tab 2)\n"
+            "27. Set ion concentration and insert ions into interface\n"
+            "28. Export ions for GROMACS (Ctrl+J)"
         )
         workflow_text.setWordWrap(True)
         layout.addWidget(workflow_text)
@@ -171,6 +187,18 @@ class QuickReferenceDialog(QDialog):
         )
         best_practices_text.setWordWrap(True)
         layout.addWidget(best_practices_text)
+        
+        # Custom Molecule Preparation section (NEW)
+        layout.addWidget(self._create_section_label("Custom Molecule Preparation"))
+        custom_mol_text = QLabel(
+            "GRO file: Coordinates in nm, residue name in columns 6-10\n"
+            "ITP file: Must include [ atomtypes ], [ moleculetype ], [ atoms ] sections\n"
+            "Force field: User-provided [ atomtypes ] required\n"
+            "Validation: Atom count and residue name checked on upload\n"
+            "See Help > Custom Molecules in menu for detailed format guide"
+        )
+        custom_mol_text.setWordWrap(True)
+        layout.addWidget(custom_mol_text)
         
         # External references
         layout.addWidget(self._create_section_label("More Information"))
