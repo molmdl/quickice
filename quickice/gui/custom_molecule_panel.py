@@ -146,6 +146,10 @@ class CustomMoleculePanel(QWidget):
             "See Help > Custom Molecules for format details."
         )
         gro_row.addWidget(self.gro_button)
+        gro_row.addWidget(HelpIcon(
+            "Upload GROMACS coordinate file (.gro).\n"
+            "Coordinates in nm, residue name in columns 6-10."
+        ))
         
         self.gro_status = QLabel("No file selected")
         self.gro_status.setStyleSheet("color: gray;")
@@ -168,6 +172,10 @@ class CustomMoleculePanel(QWidget):
             "See Help > Custom Molecules for format details."
         )
         itp_row.addWidget(self.itp_button)
+        itp_row.addWidget(HelpIcon(
+            "Upload GROMACS topology file (.itp).\n"
+            "Must include [ atomtypes ], [ moleculetype ], [ atoms ] sections."
+        ))
         
         self.itp_status = QLabel("No file selected")
         self.itp_status.setStyleSheet("color: gray;")
