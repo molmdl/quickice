@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 inserted (solute source dropdown)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 complete (solute source dropdown)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.3 inserted (tab order swap)
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.4 complete (solute source dropdown)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.3 complete, Phase 35 paused for re-planning (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.4 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -63,6 +63,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Liquid solute ITP files with CH4_LIQ/THF_LIQ names
 - ✓ Export pipeline uses correct ITP files for liquid solutes
 - ✓ Tab order swapped (Custom→Tab 3, Solute→Tab 4) enabling Custom→Solute workflow
+- ✓ Solute source dropdown with Interface/Custom Molecule selection
 - ⏳ Documentation and remaining keyboard shortcuts
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -139,7 +140,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.1 inserted after Phase 34: Ion Source Dropdown with charge warning (URGENT)
 - Phase 34.2 inserted after Phase 34.1: Fix liquid solute ITP export with proper residue names (URGENT)
 - Phase 34.3 inserted after Phase 34.2: Tab order swap (Custom→Tab 4, Solute→Tab 5) to enable Custom→Solute workflow (URGENT)
-- Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT)
+- Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT) — ✓ Complete
 
 ### v4.5 Key Decisions
 
@@ -190,6 +191,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Liquid solute ITP export logic | Exporters use {type}_liquid.itp for solutes | ✓ Shipped (34.2-02) |
 | Copy-existing-ITP pattern | Preserve force field parameters exactly | ✓ Shipped (34.2-01) |
 | Tab order swap (Custom before Solute) | Enables Custom → Solute → Ion workflow chain | ✓ Shipped (34.3-01) |
+| Solute source dropdown | Enables source selection for solute insertion | ✓ Shipped (34.4-01) |
 | Solute source dropdown follows Ion pattern | Consistency in source selection UI across tabs | ✓ Shipped (34.4-01) |
 | Custom Molecule source uses _current_interface_result | CustomMoleculeStructure doesn't store interface_structure field | ✓ Shipped (34.4-02) |
 
