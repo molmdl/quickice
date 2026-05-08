@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
-**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 0, Phase 35: 6)
+**Total Plans:** 35 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 6)
 
 ## Overview
 
@@ -203,37 +203,52 @@ Plans:
 
 ---
 
-### Phase 34.6: Revise Custom Panel for Valid Input Handling (INSERTED)
+### Phase 34.6: Revise Custom Panel for Valid Input Handling (INSERTED - MAJOR SCOPE CHANGE)
 
-**Goal:** Custom molecule panel correctly handles real user input with proper validation, warning suppression, and documentation
+**Goal:** Custom Molecule tab exports GROMACS-ready complete systems (ice + water + custom) that can be used as source for Solute tab
 **Depends on:** Phase 34.5
-**Plans:** 3 plans
+**Plans:** 8 plans in 4 waves
 
 Plans:
 - [ ] 34.6-01-PLAN.md — Fix validation warnings and button state persistence
 - [ ] 34.6-02-PLAN.md — Add liquid region bounds display and volume preview
-- [ ] 34.6-03-PLAN.md — Integration tests with etoh molecule files
+- [ ] 34.6-03-PLAN.md — Integration tests for bug fixes (Wave 2)
+- [ ] 34.6-04-PLAN.md — Modify CustomMoleculeStructure to include complete system
+- [ ] 34.6-05-PLAN.md — Update CustomMoleculeInserter to return complete system
+- [ ] 34.6-06-PLAN.md — Update CustomMoleculeGROMACSExporter for complete system export
+- [ ] 34.6-07-PLAN.md — Enable Custom Molecule as source for Solute tab
+- [ ] 34.6-08-PLAN.md — Comprehensive integration tests for complete workflow
 
 **Details:**
-- Example inputs: quickice/data/custom/etoh.itp and etoh.gro (ethanol molecule, 9 atoms, GAFF2 parameters)
-- Bug fixes:
-  - Preview button graying out after validation passes (should remain active)
-  - False positive warning: GRO resname "MOL" matches ITP moleculetype "etoh" (correct behavior, warning unnecessary)
-  - Missing documentation: liquid xyz range for manual placement
-  - Missing feature: volume preview for random concentration insertion
-- Architectural review scope:
-  - Input format handling (GRO/ITP parsing robustness)
-  - Topology handling (moleculetype vs resname conventions)
-  - Output GRO/TPR ordering (atom sequence, molecule sections)
-  - Atomtype extraction and commenting for output files
-  - Export workflow integration (custom mol as source for other tabs)
-- Testing requirements:
-  - Integration tests using etoh.itp/etoh.gro as valid input examples
-  - Test GRO/ITP parsing with real-world molecule format
-  - Test validation flow with resname/moleculetype scenarios
-  - Test export output with custom molecule insertion
-- Documentation requirements:
-  - Update user guide with etoh.itp/etoh.gro as valid input examples
+- **MAJOR SCOPE CHANGE**: Each tab should export GROMACS-ready files prepared within the tab
+- Custom Molecule tab exports complete system (ice + water + custom molecules)
+- Custom Molecule result can be source for Solute tab (chain: Interface → Custom → Solute → Ion)
+- Follows IonStructure/IonGROMACSExporter pattern for consistency
+
+**Critical gap identified:**
+- Current: CustomMoleculeStructure contains ONLY custom molecule atoms (incomplete)
+- Required: CustomMoleculeStructure contains ALL atoms (ice + water + custom) like IonStructure
+
+**Example inputs:** quickice/data/custom/etoh.itp and etoh.gro (ethanol molecule, 9 atoms, GAFF2 parameters)
+
+**Bug fixes (Plans 01-02):**
+- Preview button graying out after validation passes (should remain active)
+- False positive warning: GRO resname "MOL" matches ITP moleculetype "etoh" (correct behavior, warning unnecessary)
+- Missing documentation: liquid xyz range for manual placement
+- Missing feature: volume preview for random concentration insertion
+
+**Complete system export (Plans 04-07):**
+- CustomMoleculeStructure includes ice_atom_count, water_atom_count, custom_molecule_atom_count
+- CustomMoleculeInserter combines interface + custom molecules
+- CustomMoleculeGROMACSExporter writes complete GRO/TOP files
+- SolutePanel can receive CustomMoleculeStructure as source
+
+**Testing requirements (Plans 03, 08):**
+- Integration tests using etoh.itp/etoh.gro as valid input examples
+- Test complete system generation (ice + water + custom)
+- Test GROMACS export produces valid simulation files
+- Test Custom → Solute workflow chain
+- Test molecule_index tracking across all molecule types
   - Document moleculetype vs resname convention (GRO uses "MOL", ITP defines moleculetype name)
   - Add liquid xyz range guidance for manual placement mode
   - Example workflow: upload etoh files → validate → place in liquid → export
@@ -277,7 +292,7 @@ Plans:
 
 **Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
 
-**Total Plans:** 30 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 3, Phase 35: 6)
+**Total Plans:** 35 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 6)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
