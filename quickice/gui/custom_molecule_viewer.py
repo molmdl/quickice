@@ -237,12 +237,12 @@ class CustomMoleculeViewerWidget(QWidget):
             structure.cell,
             structure.moleculetype_name
         )
-        
+
         if actor:
             self._custom_actor = actor
             self.renderer.AddActor(actor)
             self._reset_camera()
-            logger.info(f"Rendered {structure.n_molecules} custom molecules")
+            logger.info(f"Rendered {structure.custom_molecule_count} custom molecules")
         else:
             logger.warning("No custom molecule actor created")
 

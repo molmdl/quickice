@@ -1081,22 +1081,36 @@ class MainWindow(QMainWindow):
     
     @Slot(object)
     def _on_custom_finished(self, result):
-        """Handle custom molecule insertion completion."""
+        """Handle successful custom molecule insertion.
+        
+        Args:
+            result: CustomMoleculeStructure with complete system data
+        """
         # Store result
         self._current_custom_molecule_result = result
 
-        # Update solute panel availability (for source dropdown)
-        self.solute_panel.set_custom_molecule_available(True)
-
-        # Update viewer
+        # Update 3D viewer with complete system
         self.custom_molecule_panel.custom_viewer.update_structure(result)
 
         # Hide placeholder
         self.custom_molecule_panel.hide_placeholder()
 
-        # Log success
+        # Enable export action
+        self.export_custom_action.setEnabled(True)
+
+        # Pass result to SolutePanel (Tab 4) for source selection
+        self.solute_panel.set_custom_molecule_structure(result)
+
+        # Pass result to IonPanel (Tab 5) for source selection
+        # This enables both workflow paths:
+        # - Interface → Custom → Solute → Ion (with solutes)
+        # - Interface → Custom → Ion (direct, skip solutes)
+        self.ion_panel.set_custom_molecule_structure(result)
+
+        # Log success with complete system info
         self.custom_molecule_panel.log_message(
-            f"Custom molecule insertion complete: {result.n_molecules} molecules placed"
+            f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
+            f"{len(result.positions)} total atoms (ice+water+custom)"
         )
 
         # Clean up thread
