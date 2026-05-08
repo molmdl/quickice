@@ -401,6 +401,19 @@ class CustomMoleculePanel(QWidget):
         rot_layout.addStretch()
         layout.addLayout(rot_layout)
         
+        # Liquid region bounds display
+        bounds_row = QHBoxLayout()
+        bounds_row.addWidget(QLabel("Liquid Region:"))
+        self.liquid_bounds_label = QLabel("No interface structure")
+        self.liquid_bounds_label.setStyleSheet("color: gray;")
+        bounds_row.addWidget(self.liquid_bounds_label)
+        bounds_row.addWidget(HelpIcon(
+            "Valid XYZ range for molecule placement.\n"
+            "Constrained to liquid water region in interface structure."
+        ))
+        bounds_row.addStretch()
+        layout.addLayout(bounds_row)
+        
         # Add Position button
         add_row = QHBoxLayout()
         self.add_position_button = QPushButton("Add Position")
@@ -683,6 +696,9 @@ class CustomMoleculePanel(QWidget):
                 if reply == QMessageBox.Yes:
                     self.preview_requested.emit(position, rotation)
                     self.clear_preview_button.setEnabled(True)
+                
+                # Ensure validate button remains enabled for re-validation
+                self.validate_button.setEnabled(True)
             else:
                 error_msg = result.error_message or "Validation failed"
                 self.placement_validation_label.setText(f"✗ {error_msg}")
@@ -703,6 +719,38 @@ class CustomMoleculePanel(QWidget):
         self.clear_preview_button.setEnabled(False)
         self.log_message("Preview cleared")
     
+    def _update_liquid_bounds(self):
+        """Update liquid region bounds display.
+        
+        Calculates and displays the XYZ bounds of the liquid water region
+        from the current interface structure.
+        """
+        if self._interface_structure is None:
+            self.liquid_bounds_label.setText("No interface structure")
+            self.liquid_bounds_label.setStyleSheet("color: gray;")
+            return
+        
+        # Get liquid region info (same logic as CustomMoleculeInserter)
+        ice_count = getattr(self._interface_structure, 'ice_atom_count', 0)
+        water_count = getattr(self._interface_structure, 'water_atom_count', 0)
+        
+        if water_count == 0:
+            self.liquid_bounds_label.setText("No liquid region")
+            self.liquid_bounds_label.setStyleSheet("color: orange;")
+            return
+        
+        # Calculate bounds from liquid positions
+        liquid_pos = self._interface_structure.positions[ice_count:ice_count + water_count]
+        min_coords = liquid_pos.min(axis=0)
+        max_coords = liquid_pos.max(axis=0)
+        
+        bounds_text = f"X=({min_coords[0]:.2f}, {max_coords[0]:.2f}), " \
+                      f"Y=({min_coords[1]:.2f}, {max_coords[1]:.2f}), " \
+                      f"Z=({min_coords[2]:.2f}, {max_coords[2]:.2f})"
+        
+        self.liquid_bounds_label.setText(bounds_text)
+        self.liquid_bounds_label.setStyleSheet("color: #666;")
+    
     def set_interface_structure(self, structure):
         """Set the current interface structure for validation.
         
@@ -712,7 +760,15 @@ class CustomMoleculePanel(QWidget):
             structure: InterfaceStructure to validate against
         """
         self._interface_structure = structure
+        
+        # Update liquid region bounds display
+        self._update_liquid_bounds()
+        
         self.log_message("Interface structure loaded for validation")
+        if structure is not None:
+            ice_count = getattr(structure, 'ice_atom_count', 0)
+            water_count = getattr(structure, 'water_atom_count', 0)
+            self.log_message(f"Liquid region: {water_count} water atoms")
     
     def get_configuration(self) -> CustomMoleculeConfig:
         """Get current CustomMoleculeConfig from panel values.
