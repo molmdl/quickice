@@ -6,13 +6,16 @@ from generated ice structure candidates using the TIP4P-ICE water model.
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
 from quickice.utils.molecule_utils import count_guest_atoms
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
+
+if TYPE_CHECKING:
+    from quickice.structure_generation.types import CustomMoleculeStructure
 
 logger = logging.getLogger(__name__)
 
@@ -1589,3 +1592,196 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
 
         if cl_count > 0:
             f.write(f"CL               {cl_count}\n")
+
+
+def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", filepath: str) -> None:
+    """Write custom molecule structure to GROMACS .gro format.
+    
+    Exports COMPLETE system: ice + water + custom molecules.
+    Follows write_ion_gro_file() pattern for consistency.
+    
+    Args:
+        custom_structure: CustomMoleculeStructure with complete system data
+        filepath: Output file path for .gro file
+    
+    Note:
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000.
+    """
+    # Build ordered list of molecules: SOL (ice+water), then custom molecules
+    ordered_mols = []
+    
+    # Pass 1: SOL molecules (ice + water)
+    for mol in custom_structure.molecule_index:
+        if mol.mol_type in ("ice", "water"):
+            ordered_mols.append(("sol", mol))
+    
+    # Pass 2: Guest molecules (if present)
+    if custom_structure.guest_atom_count > 0:
+        for mol in custom_structure.molecule_index:
+            if mol.mol_type == "guest":
+                ordered_mols.append(("guest", mol))
+    
+    # Pass 3: Custom molecules
+    for mol in custom_structure.molecule_index:
+        if mol.mol_type == "custom":
+            ordered_mols.append(("custom", mol))
+    
+    # Count total atoms for header
+    total_atoms = 0
+    for mol_type, mol in ordered_mols:
+        if mol_type == "sol":
+            if mol.mol_type == "ice":
+                total_atoms += 4  # Ice: OW, HW1, HW2, MW
+            else:
+                total_atoms += mol.count  # Water: 4 atoms
+        else:
+            total_atoms += mol.count
+    
+    # Warn if GRO atom limit exceeded
+    if total_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {total_atoms} atoms)")
+    
+    # Wrap positions into box
+    wrapped_positions = wrap_molecules_into_box(
+        custom_structure.positions,
+        custom_structure.molecule_index,
+        custom_structure.cell
+    )
+    
+    atom_num = 0
+    res_num = 0
+    lines = []
+    
+    # Title line
+    custom_count = custom_structure.custom_molecule_count
+    lines.append(f"Custom molecule system: {custom_count} {custom_structure.moleculetype_name} molecules\n")
+    
+    # Atom count line
+    lines.append(f"{total_atoms}\n")
+    
+    # Write atoms
+    for mol_type, mol in ordered_mols:
+        if mol_type == "sol":
+            # SOL (ice or water)
+            res_num += 1
+            res_num_wrapped = res_num % 100000
+            
+            mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+            mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
+            
+            for i in range(mol.count):
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                atom_name = mol_atom_names[i]
+                pos = mol_positions[i]
+                lines.append(
+                    f"{res_num_wrapped:5d}SOL  {atom_name:>5s}{atom_num_wrapped:5d}"
+                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n"
+                )
+        
+        elif mol_type == "guest":
+            # Guest molecule (from interface)
+            res_num += 1
+            res_num_wrapped = res_num % 100000
+            
+            mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+            mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
+            
+            # Use generic GUE residue name (guest type detection would require additional logic)
+            guest_res_name = "GUE"
+            
+            for i in range(mol.count):
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                atom_name = mol_atom_names[i]
+                pos = mol_positions[i]
+                lines.append(
+                    f"{res_num_wrapped:5d}{guest_res_name:<5s}{atom_name:>5s}{atom_num_wrapped:5d}"
+                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n"
+                )
+        
+        elif mol_type == "custom":
+            # Custom molecule
+            res_num += 1
+            res_num_wrapped = res_num % 100000
+            
+            mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+            mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
+            
+            # Use moleculetype_name as residue name
+            res_name = custom_structure.moleculetype_name
+            
+            for i in range(mol.count):
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                atom_name = mol_atom_names[i]
+                pos = mol_positions[i]
+                lines.append(
+                    f"{res_num_wrapped:5d}{res_name:<5s}{atom_name:>5s}{atom_num_wrapped:5d}"
+                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n"
+                )
+    
+    # Box vectors
+    box_line = f"{custom_structure.cell[0, 0]:10.5f}{custom_structure.cell[1, 1]:10.5f}{custom_structure.cell[2, 2]:10.5f}\n"
+    lines.append(box_line)
+    
+    with open(filepath, 'w') as f:
+        f.writelines(lines)
+    
+    logger.info(f"Wrote GRO file for custom molecule system: {filepath}")
+
+
+def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", filepath: str) -> None:
+    """Write GROMACS topology file for custom molecule structure.
+    
+    Uses SOL molecule type for water and ice, includes custom molecule.
+    Writes [molecules] section in order: SOL (ice+water), guest (if present), custom.
+    
+    Args:
+        custom_structure: CustomMoleculeStructure with complete system data
+        filepath: Output file path for .top file
+    """
+    # Count molecules by type
+    sol_count = sum(1 for m in custom_structure.molecule_index if m.mol_type in ("water", "ice"))
+    guest_count = sum(1 for m in custom_structure.molecule_index if m.mol_type == "guest")
+    custom_count = custom_structure.custom_molecule_count
+    
+    with open(filepath, 'w') as f:
+        # Header
+        f.write("; Generated by QuickIce\n")
+        f.write(f"; Custom molecule system: {sol_count} SOL + {guest_count} guests + {custom_count} {custom_structure.moleculetype_name}\n\n")
+        
+        # Include water topology
+        f.write('; Include TIP4P-ICE water topology\n')
+        f.write('#include "tip4pice.itp"\n\n')
+        
+        # Include guest topology if present
+        if guest_count > 0:
+            f.write('; Include guest topology\n')
+            f.write('#include "guest.itp"\n\n')
+        
+        # Include custom molecule ITP
+        f.write('; Include custom molecule topology\n')
+        f.write(f'#include "{custom_structure.itp_path.name}"\n\n')
+        
+        # [ system ] section
+        f.write("[ system ]\n")
+        system_name = f"Ice/water + {custom_count} {custom_structure.moleculetype_name}"
+        if guest_count > 0:
+            system_name = f"Ice/water + {guest_count} guests + {custom_count} {custom_structure.moleculetype_name}"
+        f.write(f"{system_name}\n\n")
+        
+        # [ molecules ] section - ORDER: SOL, guest, custom
+        f.write("[ molecules ]\n")
+        f.write("; Compound        #mols\n")
+        
+        if sol_count > 0:
+            f.write(f"SOL              {sol_count}\n")
+        
+        if guest_count > 0:
+            f.write(f"GUE              {guest_count}\n")
+        
+        f.write(f"{custom_structure.moleculetype_name:<17s}{custom_count}\n")
+
+    logger.info(f"Wrote topology file: {filepath}")
