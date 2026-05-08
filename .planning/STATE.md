@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 1 of 8 complete |
+| Plan | 2 of 8 complete |
 | Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-01-PLAN.md (Fix validation warnings) |
+| Last activity | 2026-05-08 — Completed 34.6-04-PLAN.md (CustomMoleculeStructure update) |
 
-**Progress:** ██████████ 99.4% (172/172 plans complete, Phase 34.6-02 pending)
+**Progress:** ██████████ 99.4% (172/172 plans complete, Phase 34.6 pending)
 
 ---
 
@@ -216,6 +216,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | PlacementValidationResult dataclass | Structured validation feedback with bounds, overlap, distance info | ✓ Shipped (34.5-01) |
 | Use parse_gro_file() directly | Non-existent CustomMoleculeLoader in plan; use established pattern instead | ✓ Shipped (34.5-03) |
 | Validate button only in Custom mode | Validation meaningful only for user-specified position/rotation | ✓ Shipped (34.5-03) |
+| CustomMoleculeStructure complete system | Follows IonStructure pattern with ice/water/custom atom counts | ✓ Shipped (34.6-04) |
+| Store interface_structure reference | Enables Custom → Solute workflow chaining | ✓ Shipped (34.6-04) |
+| MoleculeIndex for all molecule types | Consistent tracking across ice, water, custom molecules | ✓ Shipped (34.6-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -294,9 +297,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:27 UTC
-**Completed:** 34.6-01-PLAN.md (Fix validation warnings and button state)
-**Next:** 34.6-02-PLAN.md (Add liquid region bounds display and volume preview)
+**Last session:** 2026-05-08 15:24 UTC
+**Completed:** 34.6-04-PLAN.md (CustomMoleculeStructure complete system update)
+**Next:** Continue Phase 34.6 (Plans 02-03 skipped, next is 05-08)
 
 ---
-*State updated: 2026-05-08 — Phase 34.6 in progress*
+*State updated: 2026-05-08 — Phase 34.6 in progress (2/8 plans complete)*
