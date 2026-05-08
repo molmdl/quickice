@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 5 of 8 complete |
-| Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-07-PLAN.md (Custom Molecule source for Solute and Ion tabs) |
+| Plan | 8 of 8 complete |
+| Status | Phase complete |
+| Last activity | 2026-05-08 — Completed 34.6-08-PLAN.md (Comprehensive integration tests) |
 
-**Progress:** ██████████ 100% (174/172 plans complete, Phase 34.6 continuing)
+**Progress:** ██████████ 100% (175/172 plans complete, Phase 34.6 complete!)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.6 in progress, Phase 35 pending (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.6 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -72,7 +72,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Liquid region bounds display for Custom mode (Phase 34.6-02)
 - ✓ Volume preview and molecule count estimate for Random mode (Phase 34.6-02)
 - ✓ Integration tests for Phase 34.6 bug fixes (Phase 34.6-03)
-- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-04 to 34.6-08)
+- ✓ Complete system export for Custom Molecule tab (Phase 34.6-04 to 34.6-08)
+- ✓ Comprehensive integration tests with 10 tests covering complete system (Phase 34.6-08)
 - ⏳ Screenshots and release notes (Phase 35-06)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -228,6 +229,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Dual workflow path support | Interface→Custom→Solute→Ion AND Interface→Custom→Ion | ✓ Shipped (34.6-07) |
 | Custom molecule complete system export | CustomMoleculeGROMACSExporter exports ice + water + custom | ✓ Shipped (34.6-06) |
 | Writer functions follow ion pattern | Consistency with IonGROMACSExporter for complete system export | ✓ Shipped (34.6-06) |
+| Real molecule files for testing | etoh.gro/etoh.itp provide realistic integration test cases | ✓ Shipped (34.6-08) |
+| Both workflow paths tested | Custom → Solute → Ion AND Custom → Ion direct | ✓ Shipped (34.6-08) |
+| MoleculeIndex per molecule tracking | One entry per molecule with start_idx and atom count | ✓ Shipped (34.6-08) |
+| Qt offscreen for headless testing | QT_QPA_PLATFORM=offscreen for CI environments | ✓ Shipped (34.6-08) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -247,12 +252,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 **Phase 34.6 status:**
 - ✓ 34.6-01 (validation warnings and button state) complete
 - ✓ 34.6-02 (liquid bounds and volume preview) complete
-- ⏳ 34.6-03 (integration tests) pending
+- ✓ 34.6-03 (integration tests) complete
 - ✓ 34.6-04 (CustomMoleculeStructure complete system) complete
 - ✓ 34.6-05 (CustomMoleculeInserter complete system) complete
 - ✓ 34.6-06 (custom molecule complete system export) complete
 - ✓ 34.6-07 (Custom Molecule source for Solute and Ion) complete
-- ⏳ 34.6-08 pending
+- ✓ 34.6-08 (comprehensive integration tests) complete
+- **Phase 34.6 COMPLETE!**
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -267,12 +273,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 34.5-02 (preview rendering) complete
 - ✓ 34.5-03 (validation UI) complete
 
-**Remaining Phase 34.6 work:**
-- Liquid region bounds display (34.6-02)
-- Volume preview for random placement (34.6-02)
-- Integration tests for bug fixes (34.6-03)
-- Complete system export infrastructure (34.6-04 to 34.6-07)
-- Comprehensive workflow tests (34.6-08)
+**Phase 34.6 status:**
+- ✓ Complete! All 8 plans executed successfully
 
 **Remaining Phase 35 work:**
 - Screenshots for visual documentation (35-06)
@@ -311,9 +313,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:40 UTC
-**Completed:** 34.6-07-PLAN.md (Custom Molecule source for Solute and Ion tabs)
-**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05, 06, 07 complete; next is 03, 08)
+**Last session:** 2026-05-08 15:52 UTC
+**Completed:** 34.6-08-PLAN.md (Comprehensive integration tests)
+**Next:** Phase 34.6 complete! Ready for Phase 35-06 (screenshots, workflow docs, release notes)
 
 ---
-*State updated: 2026-05-08 — Phase 34.6 5/8 plans complete*
+*State updated: 2026-05-08 — Phase 34.6 8/8 plans complete*
