@@ -11,6 +11,7 @@ This module provides the MainWindow class that assembles all GUI components:
 """
 
 import logging
+import numpy as np
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton, 
@@ -291,6 +292,8 @@ class MainWindow(QMainWindow):
         # Custom Molecule tab connections (new in v4.5 Phase 34)
         self.custom_molecule_panel.generate_requested.connect(self._on_custom_generate_clicked)
         self.custom_molecule_panel.files_uploaded.connect(self._on_custom_files_uploaded)
+        self.custom_molecule_panel.preview_requested.connect(self._on_custom_molecule_preview_requested)
+        self.custom_molecule_panel.preview_cleared.connect(self._on_custom_molecule_preview_cleared)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -626,6 +629,10 @@ class MainWindow(QMainWindow):
         # Update solute panel with liquid volume for solute count calculation
         self.solute_panel.set_liquid_volume(liquid_vol)
         self.solute_panel.set_interface_available(True)
+        
+        # Update custom molecule panel with interface structure for validation
+        if hasattr(self, 'custom_molecule_panel'):
+            self.custom_molecule_panel.set_interface_structure(result)
 
         # Display structure in 3D viewer (if VTK available)
         if self.interface_panel.is_vtk_available():
@@ -1105,6 +1112,88 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'custom_molecule_panel'):
             # The panel handles its own button state
             pass
+    
+    @Slot(tuple, tuple)
+    def _on_custom_molecule_preview_requested(
+        self, position: tuple[float, float, float], rotation: tuple[float, float, float]
+    ) -> None:
+        """Handle preview request from CustomMoleculePanel.
+        
+        Transforms position/rotation into molecule positions and renders
+        preview in 3D viewer.
+        
+        Args:
+            position: (x, y, z) center-of-mass position in nm
+            rotation: (alpha, beta, gamma) Euler angles in degrees
+        """
+        if not hasattr(self, 'custom_molecule_panel'):
+            return
+        
+        panel = self.custom_molecule_panel
+        
+        # Check files are loaded
+        if not panel.gro_path or not panel.itp_path:
+            logger.warning("Cannot preview: no custom molecule files loaded")
+            return
+        
+        # Get current interface structure (the one we validated against)
+        if panel._interface_structure is None:
+            logger.warning("Cannot preview: no interface structure loaded")
+            return
+        
+        structure = panel._interface_structure
+        
+        try:
+            # Load custom molecule template using parse_gro_file
+            from quickice.structure_generation.gro_parser import parse_gro_file
+            
+            template_positions, atom_names, cell = parse_gro_file(panel.gro_path)
+            
+            # Rotate template
+            center = template_positions.mean(axis=0)
+            centered = template_positions - center
+            
+            # Euler angles to rotation matrix (match CustomMoleculeInserter logic)
+            alpha, beta, gamma = rotation
+            alpha_rad = np.radians(alpha)
+            beta_rad = np.radians(beta)
+            gamma_rad = np.radians(gamma)
+            
+            ca, sa = np.cos(alpha_rad), np.sin(alpha_rad)
+            cb, sb = np.cos(beta_rad), np.sin(beta_rad)
+            cg, sg = np.cos(gamma_rad), np.sin(gamma_rad)
+            
+            rot_matrix = np.array([
+                [cg*cb, cg*sb*sa - sg*ca, cg*sb*ca + sg*sa],
+                [sg*cb, sg*sb*sa + cg*ca, sg*sb*ca - cg*sa],
+                [-sb, cb*sa, cb*ca]
+            ])
+            
+            rotated = centered @ rot_matrix.T
+            placed_positions = rotated + np.array(position)
+            
+            # Show preview in viewer
+            if hasattr(self, 'custom_molecule_viewer'):
+                self.custom_molecule_viewer.show_preview(
+                    placed_positions, atom_names, cell
+                )
+                self.log_message(
+                    f"Preview: {len(placed_positions)} atoms at "
+                    f"({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})"
+                )
+            else:
+                logger.warning("Custom molecule viewer not available")
+                
+        except Exception as e:
+            logger.error(f"Failed to create preview: {e}")
+            self.log_message(f"Preview error: {e}")
+    
+    @Slot()
+    def _on_custom_molecule_preview_cleared(self) -> None:
+        """Handle preview clear request from CustomMoleculePanel."""
+        if hasattr(self, 'custom_molecule_viewer'):
+            self.custom_molecule_viewer.clear_preview()
+            self.log_message("Preview cleared")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):

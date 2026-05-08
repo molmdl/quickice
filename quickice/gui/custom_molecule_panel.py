@@ -48,6 +48,10 @@ class CustomMoleculePanel(QWidget):
     files_uploaded = Signal(bool)
     generate_requested = Signal()
     
+    # NEW: Signals for preview request and clearing
+    preview_requested = Signal(tuple, tuple)  # (position, rotation)
+    preview_cleared = Signal()  # Clear preview
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -60,6 +64,7 @@ class CustomMoleculePanel(QWidget):
         # Placement configuration
         self.placement_mode = "Random"  # or "Custom"
         self.positions_added: list[tuple[tuple[float, float, float], tuple[float, float, float]]] = []
+        self._interface_structure = None  # Interface structure for validation
         
         # UI setup
         self._setup_ui()
@@ -255,6 +260,47 @@ class CustomMoleculePanel(QWidget):
         self.custom_controls.setVisible(False)
         layout.addWidget(self.custom_controls)
         
+        # Validation section for Custom mode
+        validation_group = QGroupBox("Placement Validation")
+        validation_layout = QVBoxLayout()
+        
+        self.placement_validation_label = QLabel("Click 'Validate & Preview' to check placement")
+        self.placement_validation_label.setWordWrap(True)
+        self.placement_validation_label.setStyleSheet("color: gray;")
+        validation_layout.addWidget(self.placement_validation_label)
+        
+        # Validate & Preview button
+        validate_row = QHBoxLayout()
+        self.validate_button = QPushButton("Validate & Preview")
+        self.validate_button.setEnabled(False)  # Enabled only when files uploaded and custom mode
+        self.validate_button.setToolTip(
+            "Validate proposed placement before insertion.\n"
+            "Checks:\n"
+            "• Position is within liquid region\n"
+            "• No overlap with existing atoms\n"
+            "\n"
+            "After validation, you can preview in 3D viewer."
+        )
+        validate_row.addWidget(self.validate_button)
+        validate_row.addWidget(HelpIcon(
+            "Validate placement bounds and overlap.\n"
+            "Shows result in status log.\n"
+            "Optionally shows 3D preview."
+        ))
+        validation_layout.addLayout(validate_row)
+        
+        # Clear preview button
+        clear_row = QHBoxLayout()
+        self.clear_preview_button = QPushButton("Clear Preview")
+        self.clear_preview_button.setEnabled(False)
+        self.clear_preview_button.setToolTip("Remove preview molecule from 3D viewer")
+        clear_row.addWidget(self.clear_preview_button)
+        clear_row.addStretch()
+        validation_layout.addLayout(clear_row)
+        
+        validation_group.setLayout(validation_layout)
+        layout.addWidget(validation_group)
+        
         group.setLayout(layout)
         return group
     
@@ -375,6 +421,10 @@ class CustomMoleculePanel(QWidget):
         # Add position button
         self.add_position_button.clicked.connect(self._add_position)
         
+        # Validation and preview
+        self.validate_button.clicked.connect(self._on_validate_clicked)
+        self.clear_preview_button.clicked.connect(self._on_clear_preview_clicked)
+        
         # Generate button
         self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
     
@@ -447,6 +497,11 @@ class CustomMoleculePanel(QWidget):
                     self.validation_label.setText("✓ Files validated successfully")
                     self.validation_label.setStyleSheet("color: green;")
                     self.generate_button.setEnabled(True)
+                    # Enable validate button for Custom mode
+                    self.validate_button.setEnabled(
+                        self.validation_result is not None 
+                        and self.placement_mode == "Custom"
+                    )
                     self.files_uploaded.emit(True)
                     self.log_message("Files validated successfully")
                     
@@ -456,6 +511,7 @@ class CustomMoleculePanel(QWidget):
                 )
                 self.validation_label.setStyleSheet("color: red;")
                 self.generate_button.setEnabled(False)
+                self.validate_button.setEnabled(False)
                 self.files_uploaded.emit(False)
                 self.log_message("Validation failed: " + "; ".join(self.validation_result.errors))
                 
@@ -463,6 +519,7 @@ class CustomMoleculePanel(QWidget):
             self.validation_label.setText(f"✗ Validation error: {e}")
             self.validation_label.setStyleSheet("color: red;")
             self.generate_button.setEnabled(False)
+            self.validate_button.setEnabled(False)
             self.files_uploaded.emit(False)
             self.log_message(f"Validation error: {e}")
     
@@ -507,6 +564,12 @@ class CustomMoleculePanel(QWidget):
         self.random_controls.setVisible(mode == "Random")
         self.custom_controls.setVisible(mode == "Custom")
         
+        # Enable/disable validate button based on mode
+        self.validate_button.setEnabled(
+            self.validation_result is not None 
+            and mode == "Custom"
+        )
+        
         self.log_message(f"Switched to {mode} placement mode")
     
     def _add_position(self):
@@ -535,6 +598,116 @@ class CustomMoleculePanel(QWidget):
             
         except ValueError as e:
             QMessageBox.warning(self, "Invalid Input", f"Invalid position value: {e}")
+    
+    def _on_validate_clicked(self):
+        """Handle Validate & Preview button click.
+        
+        Validates current position/rotation settings and shows result.
+        Offers to show 3D preview if validation succeeds.
+        """
+        # Check files uploaded
+        if not self.gro_path or not self.itp_path:
+            QMessageBox.warning(
+                self, "Validation Error",
+                "Please upload .gro and .itp files first"
+            )
+            return
+        
+        # Get current position and rotation
+        try:
+            position = (
+                float(self.pos_x_edit.text()),
+                float(self.pos_y_edit.text()),
+                float(self.pos_z_edit.text())
+            )
+            rotation = (
+                self.rot_alpha_spin.value(),
+                self.rot_beta_spin.value(),
+                self.rot_gamma_spin.value()
+            )
+        except ValueError as e:
+            QMessageBox.warning(
+                self, "Invalid Input",
+                f"Invalid position value: {e}"
+            )
+            return
+        
+        # Get current interface structure (stored by MainWindow)
+        if self._interface_structure is None:
+            QMessageBox.warning(
+                self, "No Structure",
+                "Please generate an interface structure first"
+            )
+            return
+        
+        # Create validation inserter
+        from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
+        from quickice.structure_generation.types import CustomMoleculeConfig
+        
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=self.gro_path,
+            itp_path=self.itp_path,
+            positions=[position],
+            rotations=[rotation],
+            min_separation=0.25  # Default
+        )
+        
+        try:
+            inserter = CustomMoleculeInserter(config)
+            result = inserter.validate_single_placement(
+                self._interface_structure, position, rotation
+            )
+            
+            # Show result in validation label
+            if result.is_valid:
+                self.placement_validation_label.setText(
+                    f"✓ Placement valid\n"
+                    f"  Position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}) nm\n"
+                    f"  Min distance to nearest atom: {result.min_distance:.3f} nm"
+                )
+                self.placement_validation_label.setStyleSheet("color: green; font-weight: bold;")
+                self.log_message(f"Placement validated: min distance {result.min_distance:.3f} nm")
+                
+                # Offer to show preview
+                reply = QMessageBox.question(
+                    self, "Show Preview",
+                    "Placement is valid. Show preview in 3D viewer?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    self.preview_requested.emit(position, rotation)
+                    self.clear_preview_button.setEnabled(True)
+            else:
+                error_msg = result.error_message or "Validation failed"
+                self.placement_validation_label.setText(f"✗ {error_msg}")
+                self.placement_validation_label.setStyleSheet("color: red; font-weight: bold;")
+                self.log_message(f"Validation failed: {error_msg}")
+                
+        except Exception as e:
+            logger.error(f"Validation error: {e}")
+            QMessageBox.critical(
+                self, "Validation Error",
+                f"Failed to validate placement: {e}"
+            )
+    
+    def _on_clear_preview_clicked(self):
+        """Handle Clear Preview button click."""
+        # Emit signal to indicate clear
+        self.preview_cleared.emit()
+        self.clear_preview_button.setEnabled(False)
+        self.log_message("Preview cleared")
+    
+    def set_interface_structure(self, structure):
+        """Set the current interface structure for validation.
+        
+        Called by MainWindow when interface is generated.
+        
+        Args:
+            structure: InterfaceStructure to validate against
+        """
+        self._interface_structure = structure
+        self.log_message("Interface structure loaded for validation")
     
     def get_configuration(self) -> CustomMoleculeConfig:
         """Get current CustomMoleculeConfig from panel values.
