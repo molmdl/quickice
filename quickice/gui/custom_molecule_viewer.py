@@ -214,6 +214,9 @@ class CustomMoleculeViewerWidget(QWidget):
         Args:
             structure: CustomMoleculeStructure with positions, atom_names, cell
         """
+        # Clear any existing preview
+        self.clear_preview()
+        
         if not self._vtk_available:
             # VTK not available - just switch to viewer mode
             self._current_structure = structure
@@ -402,3 +405,19 @@ class CustomMoleculeViewerWidget(QWidget):
             
         except Exception as e:
             logger.error(f"Failed to create preview actor: {e}")
+
+    def clear_preview(self) -> None:
+        """Clear preview molecule from viewer.
+        
+        Removes the preview actor from the renderer if it exists.
+        Safe to call even if no preview is shown.
+        """
+        if self._preview_actor is not None and self.renderer is not None:
+            self.renderer.RemoveActor(self._preview_actor)
+            self._preview_actor = None
+            
+            # Render to update view
+            if self.render_window:
+                self.render_window.Render()
+            
+            logger.info("Preview actor cleared")
