@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 34.6-revise-custom-panel-valid-input |
 | Plan | 5 of 8 complete |
 | Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-06-PLAN.md (Custom molecule complete system export) |
+| Last activity | 2026-05-08 — Completed 34.6-07-PLAN.md (Custom Molecule source for Solute and Ion tabs) |
 
-**Progress:** ██████████ 100% (173/172 plans complete, Phase 34.6 continuing)
+**Progress:** ██████████ 100% (174/172 plans complete, Phase 34.6 continuing)
 
 ---
 
@@ -224,6 +224,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | MoleculeIndex for all molecule types | Consistent tracking across ice, water, custom molecules | ✓ Shipped (34.6-04) |
 | Complete system assembly pattern | CustomMoleculeInserter combines interface + custom atoms | ✓ Shipped (34.6-05) |
 | Molecule tracking via MoleculeIndex | Handles variable atoms per molecule (ice:4, water:4, custom:var) | ✓ Shipped (34.6-05) |
+| Custom Molecule source for both tabs | Pass CustomMoleculeStructure to both SolutePanel and IonPanel | ✓ Shipped (34.6-07) |
+| Dual workflow path support | Interface→Custom→Solute→Ion AND Interface→Custom→Ion | ✓ Shipped (34.6-07) |
 | Custom molecule complete system export | CustomMoleculeGROMACSExporter exports ice + water + custom | ✓ Shipped (34.6-06) |
 | Writer functions follow ion pattern | Consistency with IonGROMACSExporter for complete system export | ✓ Shipped (34.6-06) |
 
@@ -249,7 +251,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 34.6-04 (CustomMoleculeStructure complete system) complete
 - ✓ 34.6-05 (CustomMoleculeInserter complete system) complete
 - ✓ 34.6-06 (custom molecule complete system export) complete
-- ⏳ 34.6-07 to 34.6-08 pending
+- ✓ 34.6-07 (Custom Molecule source for Solute and Ion) complete
+- ⏳ 34.6-08 pending
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -308,9 +311,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:36 UTC
-**Completed:** 34.6-06-PLAN.md (Custom molecule complete system export)
-**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05, 06 complete; next is 03, 07-08)
+**Last session:** 2026-05-08 15:40 UTC
+**Completed:** 34.6-07-PLAN.md (Custom Molecule source for Solute and Ion tabs)
+**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05, 06, 07 complete; next is 03, 08)
 
 ---
 *State updated: 2026-05-08 — Phase 34.6 5/8 plans complete*
