@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4 inserted)
-**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 0, Phase 35: 6)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5 inserted)
+**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 0, Phase 35: 6)
 
 ## Overview
 
@@ -179,6 +179,25 @@ Plans:
 
 ---
 
+### Phase 34.5: Placement Validation & Preview (INSERTED)
+
+**Goal:** User can preview custom molecule placement and receives validation for placement bounds and overlap detection
+**Depends on:** Phase 34.4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 34.5 to break down)
+
+**Details:**
+- Preview overlay showing Interface + Custom molecule before insertion
+- Liquid region bounds detection for custom placement mode
+- Ice/hydrate overlap validation for custom placement
+- Solute-custom overlap avoidance when solute source = Custom Molecule
+- Replacement count reporting after insertion
+- Improves UX and correctness for custom molecule workflow
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -214,9 +233,9 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 8 (Phases 32-35, with 34.1, 34.2, 34.3, and 34.4 inserted)
+**Phase Count:** 9 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, and 34.5 inserted)
 
-**Total Plans:** 26 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 35: 6)
+**Total Plans:** 26 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 0, Phase 35: 6)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -262,10 +281,11 @@ Plans:
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
+| 34.5 - Placement Validation & Preview | ⏳ Pending | 0 | 0 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-07 - Phase 34.4 inserted*
+*Last updated: 2026-05-08 - Phase 34.5 inserted*
 *For current state, see .planning/STATE.md*
