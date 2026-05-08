@@ -53,31 +53,35 @@ subsystem: [documentation]
 
 ## Deferred Work
 
-**Screenshot management checkpoint deferred** per user request ("back to ss later"):
+**Screenshot management checkpoint deferred** per user request — will be completed in next session.
 
-**Pending screenshot tasks:**
-1. Rename existing screenshots to remove `tabX` prefix:
-   - `tab2-hydrate-panel.png` → `hydrate-panel.png`
-   - `tab2-slab-interface.png` → `slab-interface.png`
-   - `tab2-pocket-interface.png` → `pocket-interface.png`
-   - `tab2-piece-interface.png` → `piece-interface.png`
-   - `tab4-ion-panel.png` → `ion-panel.png`
+**DECISION (commit f345ca9 + user confirmation): Option 1 — Rename existing + recapture all screenshots**
 
-2. Capture new screenshots:
-   - `custom-molecule-panel.png` — Tab 3 with Validate & Preview button
-   - `solute-panel.png` — Tab 4 with Source dropdown
-   - `validation-preview.png` — Semi-transparent preview rendering
-   - `solute-source-dropdown.png` — Source dropdown expanded
-   - (Optional) `custom-molecule-complete-system.png` — Complete system viewer
+**Next session must complete:**
 
-3. Update image references in `gui-guide.md`:
-   - Replace `images/tabX-*` with `images/*` (no prefix)
-   - Add new image references for Phase 34.5/34.6 features
-   - Remove "Screenshot update pending" notes (lines 40, 427, 564, 661)
+### Step 1: Rename existing screenshot files
+```bash
+cd docs/images
+mv tab2-hydrate-panel.png hydrate-panel.png
+mv tab4-ion-panel.png ion-panel.png
+mv tab2-piece-interface.png piece-interface.png
+mv tab2-slab-interface.png slab-interface.png
+mv tab2-pocket-interface.png pocket-interface.png
+```
 
-4. Verify `quickice-v4-gui.png` shows all 6 tabs
+### Step 2: Capture new screenshots (requires GUI)
+1. **quickice-v4-gui.png** — Verify shows all 6 tabs (may already be complete from May 8)
+2. **custom-molecule-panel.png** — Tab 3 with Validate & Preview button
+3. **solute-panel.png** — Tab 4 with Source dropdown
+4. **validation-preview.png** — Semi-transparent preview (Phase 34.5)
+5. **solute-source-dropdown.png** — Source dropdown expanded (Phase 34.6)
+6. (Optional) **custom-molecule-complete-system.png** — Complete system viewer
 
-**Note:** User indicated screenshots will be handled in a follow-up session.
+### Step 3: Verify documentation references
+- ✓ Already updated in commit f345ca9 (all `tabX-*` references removed)
+- ✓ Phase 34.5/34.6 feature sections added in commit 951db8a
+
+**Status:** Documentation complete, screenshots pending recapture
 
 ## Verification
 

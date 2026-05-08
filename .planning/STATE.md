@@ -278,11 +278,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Complete! All 8 plans executed successfully
 
 **Remaining Phase 35 work:**
-- Screenshots for visual documentation (35-06 deferred)
-  - Rename existing screenshots (remove tabX prefix)
-  - Capture new screenshots for Tabs 3, 4 and Phase 34.5/34.6 features
-  - Update image references in gui-guide.md
-  - Remove "Screenshot update pending" notes
+- Screenshots recapture (35-06 checkpoint pending)
+  - **Decision:** Option 1 (Rename existing + recapture new) — confirmed from commit f345ca9
+  - Rename 5 existing files (remove tabX prefix)
+  - Capture 6 new screenshots (Tabs 3-4, Phase 34.5/34.6 features)
+  - See 35-06-SUMMARY.md for detailed steps
 - Release notes preparation (pending)
 
 ### Quick Tasks Completed
@@ -317,9 +317,29 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-09 16:30 UTC
+**Last session:** 2026-05-09 17:00 UTC
 **Completed:** 35-06-PLAN.md (Phase 34.5/34.6 feature documentation added to GUI guide)
-**Next:** Screenshot capture session (deferred), then UAT and milestone completion
+**Status:** Checkpoint pending — screenshots need recapture
+
+**Next session:**
+1. Rename existing screenshot files (remove tabX prefix):
+   - `tab2-hydrate-panel.png` → `hydrate-panel.png`
+   - `tab4-ion-panel.png` → `ion-panel.png`
+   - `tab2-piece-interface.png` → `piece-interface.png`
+   - `tab2-slab-interface.png` → `slab-interface.png`
+   - `tab2-pocket-interface.png` → `pocket-interface.png`
+
+2. Launch GUI and recapture screenshots:
+   - Verify quickice-v4-gui.png shows 6 tabs
+   - custom-molecule-panel.png (Tab 3)
+   - solute-panel.png (Tab 4)
+   - validation-preview.png (Phase 34.5)
+   - solute-source-dropdown.png (Phase 34.6)
+
+3. Complete 35-06-SUMMARY.md and mark plan complete
+4. Run `/gsd-execute-phase 35` to resume
+
+**Decision from f345ca9:** Rename + recapture (Option 1)
 
 ---
-*State updated: 2026-05-09 — Phase 35 documentation complete, screenshots deferred*
+*State updated: 2026-05-09 — Phase 35-06 checkpoint pending (screenshots)*
