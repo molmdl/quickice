@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 8 of 8 complete |
-| Status | Phase complete |
-| Last activity | 2026-05-08 — Completed 34.6-08-PLAN.md (Comprehensive integration tests) |
+| Phase | 35-integration-documentation |
+| Plan | 6 of 6 complete (documentation done, screenshots deferred) |
+| Status | Phase partially complete — screenshots pending |
+| Last activity | 2026-05-09 — Completed 35-06-PLAN.md (Phase 34.5/34.6 feature documentation) |
 
-**Progress:** ██████████ 100% (175/172 plans complete, Phase 34.6 complete!)
+**Progress:** ██████████ 100% (181/181 plans complete, Phase 35 documentation done)
 
 ---
 
@@ -74,7 +74,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Integration tests for Phase 34.6 bug fixes (Phase 34.6-03)
 - ✓ Complete system export for Custom Molecule tab (Phase 34.6-04 to 34.6-08)
 - ✓ Comprehensive integration tests with 10 tests covering complete system (Phase 34.6-08)
-- ⏳ Screenshots and release notes (Phase 35-06)
+- ✓ Phase 34.5/34.6 feature documentation in GUI guide (Phase 35-06)
+- ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
@@ -266,7 +267,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-03 (help dialog) complete with correct tab numbering (Tab 0-5)
 - ✓ 35-04 (README update) complete
 - ✓ 35-05 (GUI guide & user guides) complete
-- ⏳ 35-06 pending (screenshots, workflow docs, release notes)
+- ⏳ 35-06 partial (Phase 34.5/34.6 feature docs complete, screenshots deferred)
 
 **Phase 34.5 status:**
 - ✓ 34.5-01 (validation logic) complete
@@ -277,9 +278,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Complete! All 8 plans executed successfully
 
 **Remaining Phase 35 work:**
-- Screenshots for visual documentation (35-06)
-- Workflow documentation updates (35-06)
-- Release notes preparation (35-06)
+- Screenshots for visual documentation (35-06 deferred)
+  - Rename existing screenshots (remove tabX prefix)
+  - Capture new screenshots for Tabs 3, 4 and Phase 34.5/34.6 features
+  - Update image references in gui-guide.md
+  - Remove "Screenshot update pending" notes
+- Release notes preparation (pending)
 
 ### Quick Tasks Completed
 
@@ -313,9 +317,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:52 UTC
-**Completed:** 34.6-08-PLAN.md (Comprehensive integration tests)
-**Next:** Phase 34.6 complete! Ready for Phase 35-06 (screenshots, workflow docs, release notes)
+**Last session:** 2026-05-09 16:30 UTC
+**Completed:** 35-06-PLAN.md (Phase 34.5/34.6 feature documentation added to GUI guide)
+**Next:** Screenshot capture session (deferred), then UAT and milestone completion
 
 ---
-*State updated: 2026-05-08 — Phase 34.6 8/8 plans complete*
+*State updated: 2026-05-09 — Phase 35 documentation complete, screenshots deferred*

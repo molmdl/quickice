@@ -280,11 +280,11 @@ Plans:
 
 **Plans:**
 - [x] 35-01-PLAN.md — Unified export & GROMACS verification: Keyboard shortcuts, molecule ordering tests
-- [ ] 35-02-PLAN.md — Tooltips for Tab 3/4: SolutePanel and CustomMoleculePanel tooltips
-- [ ] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
-- [ ] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
-- [ ] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [ ] 35-06-PLAN.md — Screenshots: Rename existing files, capture new screenshots
+- [x] 35-02-PLAN.md — Tooltips for Tab 3/4: SolutePanel and CustomMoleculePanel tooltips
+- [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
+- [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
+- [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
+- [x] 35-06-PLAN.md — Screenshots & workflow docs: Phase 34.5/34.6 feature docs complete (screenshots deferred)
 
 ---
 
@@ -340,10 +340,10 @@ Plans:
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
-| 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
+| 35 - Integration & Documentation | ⏳ Partial | 6 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-09 - Phase 34.6 complete*
+*Last updated: 2026-05-09 - Phase 35 documentation complete (screenshots deferred)*
 *For current state, see .planning/STATE.md*
