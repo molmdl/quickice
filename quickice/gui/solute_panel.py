@@ -16,6 +16,7 @@ Signals:
 
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -28,6 +29,9 @@ from quickice.structure_generation.types import SoluteConfig
 from quickice.structure_generation.solute_inserter import SoluteInserter
 from quickice.gui.solute_viewer import SoluteViewerWidget
 from quickice.gui.view import HelpIcon
+
+if TYPE_CHECKING:
+    from quickice.structure_generation.types import CustomMoleculeStructure, InterfaceStructure
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +57,12 @@ class SolutePanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
+        self._interface_structure: "InterfaceStructure" | None = None  # Store interface structure
+        self._custom_molecule_structure: "CustomMoleculeStructure" | None = None  # Store custom molecule structure
         self._interface_available = False  # Track if interface structure is available
         self._custom_molecule_available = False  # Track custom molecule availability
         self._current_source = "Interface"  # Track current source selection (default: Interface)
+        self._solute_type: str | None = None  # Track selected solute type
         self._setup_ui()
         self._setup_connections()
         self._update_insert_button_state()  # Set initial button state
@@ -368,6 +375,38 @@ class SolutePanel(QWidget):
         self._custom_molecule_available = available
         self._update_insert_button_state()
     
+    def set_custom_molecule_structure(self, structure: "CustomMoleculeStructure"):
+        """Set Custom Molecule structure for use as source.
+        
+        Args:
+            structure: CustomMoleculeStructure from Tab 3 (Custom Molecule tab)
+        """
+        self._custom_molecule_structure = structure
+        
+        # Update availability
+        self._custom_molecule_available = structure is not None
+        
+        # If currently on Custom Molecule source, update button states
+        if self._current_source == "Custom Molecule":
+            self._update_insert_button_state()
+        
+        logger.info(f"Custom Molecule structure set: {structure.custom_molecule_count} molecules")
+    
+    def set_interface_structure(self, structure: "InterfaceStructure"):
+        """Set Interface structure for use as source.
+        
+        Args:
+            structure: InterfaceStructure from Tab 2 (Interface tab)
+        """
+        self._interface_structure = structure
+        self._interface_available = structure is not None
+        
+        # If currently on Interface source, update button states
+        if self._current_source == "Interface":
+            self._update_insert_button_state()
+        
+        logger.info(f"Interface structure set: {structure.ice_nmolecules} ice + {structure.water_nmolecules} water molecules")
+    
     def get_current_source(self) -> str:
         """Get currently selected source.
 
@@ -376,23 +415,52 @@ class SolutePanel(QWidget):
         """
         return self._current_source
     
+    def get_current_source_structure(self) -> "InterfaceStructure | CustomMoleculeStructure | None":
+        """Get the current source structure based on selection.
+        
+        Returns:
+            InterfaceStructure or CustomMoleculeStructure based on current source selection
+        """
+        if self._current_source == "Interface":
+            return self._interface_structure
+        elif self._current_source == "Custom Molecule":
+            return self._custom_molecule_structure
+        else:
+            return None
+    
     def _update_insert_button_state(self):
         """Update Insert button enabled state and tooltip based on source availability."""
-        if self._current_source == "Interface" and not self._interface_available:
-            # Interface source but no structure generated
-            self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
-        elif self._current_source == "Custom Molecule" and not self._custom_molecule_available:
-            # Custom Molecule source but no molecules generated
-            self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip("Generate Custom Molecules first (Tab 3)")
+        # Get current solute type
+        solute_type_text = self.solute_type_combo.currentText()
+        self._solute_type = "CH4" if solute_type_text == "CH₄" else "THF" if solute_type_text else None
+        
+        if self._current_source == "Interface":
+            can_insert = self._interface_available and self._solute_type is not None
+            if not self._interface_available:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
+            elif not self._solute_type:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Select solute type")
+            else:
+                self.insert_button.setEnabled(True)
+                self.insert_button.setToolTip(f"Insert {self._solute_type.upper()} solutes into interface structure")
+        
+        elif self._current_source == "Custom Molecule":
+            can_insert = self._custom_molecule_available and self._solute_type is not None
+            if not self._custom_molecule_available:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Generate Custom Molecules first (Tab 3)")
+            elif not self._solute_type:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Select solute type")
+            else:
+                self.insert_button.setEnabled(True)
+                self.insert_button.setToolTip(f"Insert {self._solute_type.upper()} solutes into custom molecule system")
+        
         else:
-            # Source available
-            self.insert_button.setEnabled(True)
-            self.insert_button.setToolTip(
-                "Insert solute molecules into the liquid water region.\n"
-                "Calculated from concentration and liquid volume."
-            )
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip("Select a source structure")
     
     def log_message(self, message: str):
         """Append a message to the log display with timestamp.
