@@ -186,9 +186,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 34.5-01-PLAN.md — Validation logic: PlacementValidationResult dataclass, validate_single_placement method
-- [ ] 34.5-02-PLAN.md — Preview rendering: show_preview and clear_preview methods in CustomMoleculeViewerWidget
-- [ ] 34.5-03-PLAN.md — Validation UI: Validate & Preview button, result display, preview triggering in CustomMoleculePanel
+- [x] 34.5-01-PLAN.md — Validation logic: PlacementValidationResult dataclass, validate_single_placement method
+- [x] 34.5-02-PLAN.md — Preview rendering: show_preview and clear_preview methods in CustomMoleculeViewerWidget
+- [x] 34.5-03-PLAN.md — Validation UI: Validate & Preview button, result display, preview triggering in CustomMoleculePanel
 
 **Details:**
 - Single-molecule placement validation (bounds + overlap) without state mutation
@@ -286,11 +286,11 @@ Plans:
 | 34.2 - Fix Liquid Solute ITP Export | ✓ Complete | 2 | 2 |
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
-| 34.5 - Placement Validation & Preview | ⏳ Pending | 0 | 0 |
+| 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-08 - Phase 34.5 inserted*
+*Last updated: 2026-05-08 - Phase 34.5 complete*
 *For current state, see .planning/STATE.md*
