@@ -284,7 +284,7 @@ Plans:
 - [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
 - [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [x] 35-06-PLAN.md — Screenshots & workflow docs: Phase 34.5/34.6 feature docs complete (screenshots deferred)
+- [ ] 35-06-PLAN.md — Screenshots & workflow docs: Phase 34.5/34.6 feature docs complete, screenshots pending checkpoint
 
 ---
 
@@ -340,7 +340,7 @@ Plans:
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
-| 35 - Integration & Documentation | ⏳ Partial | 6 | 6 |
+| 35 - Integration & Documentation | ⏳ In Progress | 5 | 6 |
 
 ---
 

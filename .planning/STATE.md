@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 35-integration-documentation |
-| Plan | 6 of 6 complete (documentation done, screenshots deferred) |
-| Status | Phase partially complete — screenshots pending |
-| Last activity | 2026-05-09 — Completed 35-06-PLAN.md (Phase 34.5/34.6 feature documentation) |
+| Plan | 6 of 6 incomplete (documentation done, screenshots pending) |
+| Status | Phase incomplete — screenshots checkpoint pending |
+| Last activity | 2026-05-09 — Added Phase 34.5/34.6 feature docs, screenshots deferred |
 
-**Progress:** ██████████ 100% (181/181 plans complete, Phase 35 documentation done)
+**Progress:** █████████░ 99% (181/181 plans, Phase 35 screenshots pending)
 
 ---
 
