@@ -145,7 +145,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.2 inserted after Phase 34.1: Fix liquid solute ITP export with proper residue names (URGENT)
 - Phase 34.3 inserted after Phase 34.2: Tab order swap (Custom→Tab 4, Solute→Tab 5) to enable Custom→Solute workflow (URGENT)
 - Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT) — ✓ Complete
-- Phase 34.5 inserted after Phase 34.4: Placement validation & preview enhancement (URGENT)
+- Phase 34.5 inserted after Phase 34.4: Placement validation & preview enhancement (URGENT) — ✓ Complete
 
 ### v4.5 Key Decisions
 
@@ -205,6 +205,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | GUI guide workflow documentation | Step-by-step instructions with prerequisites and outcomes | ✓ Shipped (35-05) |
 | GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
+| Placement validation logic | Read-only bounds and overlap checking for custom molecules | ✓ Shipped (34.5-01) |
+| Semi-transparent preview rendering | Opacity 0.6 for visual distinction before insertion | ✓ Shipped (34.5-02) |
+| Validation UI integration | Validate & Preview button with signal-slot wiring | ✓ Shipped (34.5-03) |
 | Single-molecule validation approach | Validate ONE molecule at a time (O(M) cost) not full system (O(N×M) cost) | ✓ Shipped (34.5-01) |
 | Read-only validation method | validate_single_placement() does not modify MoleculetypeRegistry | ✓ Shipped (34.5-01) |
 | PlacementValidationResult dataclass | Structured validation feedback with bounds, overlap, distance info | ✓ Shipped (34.5-01) |
@@ -238,6 +241,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-04 (README update) complete
 - ✓ 35-05 (GUI guide & user guides) complete
 - ⏳ 35-06 pending (screenshots, workflow docs, release notes)
+
+**Phase 34.5 status:**
+- ✓ 34.5-01 (validation logic) complete
+- ✓ 34.5-02 (preview rendering) complete
+- ✓ 34.5-03 (validation UI) complete
 
 **Remaining Phase 35 work:**
 - Screenshots for visual documentation (35-06)
