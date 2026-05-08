@@ -582,6 +582,10 @@ class CustomMoleculePanel(QWidget):
         self.random_controls.setVisible(mode == "Random")
         self.custom_controls.setVisible(mode == "Custom")
         
+        # Update displays based on active mode
+        if mode == "Custom":
+            self._update_liquid_bounds()
+        
         # Enable/disable validate button based on mode
         self.validate_button.setEnabled(
             self.validation_result is not None 
