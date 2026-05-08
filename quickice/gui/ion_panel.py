@@ -13,6 +13,9 @@ Signals:
     insert_requested: Emitted when Insert Ions button clicked
 """
 
+import logging
+from typing import TYPE_CHECKING
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QGroupBox,
@@ -24,6 +27,11 @@ from quickice.structure_generation.types import IonConfig
 from quickice.structure_generation.ion_inserter import IonInserter
 from quickice.gui.ion_viewer import IonViewerWidget
 from quickice.gui.view import HelpIcon
+
+if TYPE_CHECKING:
+    from quickice.structure_generation.types import CustomMoleculeStructure, InterfaceStructure, SoluteStructure
+
+logger = logging.getLogger(__name__)
 
 
 class IonPanel(QWidget):
@@ -47,7 +55,17 @@ class IonPanel(QWidget):
         super().__init__(parent)
         self._liquid_volume_nm3 = 0.0  # Set by caller (MainWindow)
         self._current_source = "Interface"  # Track current source selection (default: Interface)
+        
+        # Source availability tracking
         self._interface_available = False  # Track if Interface source has structure available
+        self._custom_molecule_available = False  # Track if Custom Molecule source has structure available
+        self._solute_available = False  # Track if Solute source has structure available
+        
+        # Source structure storage
+        self._interface_structure: "InterfaceStructure" | None = None
+        self._custom_molecule_structure: "CustomMoleculeStructure" | None = None
+        self._solute_structure: "SoluteStructure" | None = None
+        
         self._setup_ui()
         self._setup_connections()
         # Set initial button state based on default source (Interface) and availability
@@ -294,24 +312,33 @@ class IonPanel(QWidget):
         Follows Interface tab pattern: when source has no data, disable button with
         explanatory tooltip.
         """
-        # Check if current source is available
-        is_available = self._check_source_availability()
+        if self._current_source == "Interface":
+            if not self._interface_available:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
+            else:
+                self.insert_button.setEnabled(True)
+                self.insert_button.setToolTip("Insert Na+ and Cl- ions into the liquid water region.")
         
-        if self._current_source == "Interface" and not self._interface_available:
-            # Interface source but no structure generated
-            self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip("Generate Interface structure first (Tab 2)")
-        elif not is_available:
-            # Source unavailable (future: Custom Molecule or Solute not loaded)
-            self.insert_button.setEnabled(False)
-            self.insert_button.setToolTip(f"{self._current_source} source not available")
+        elif self._current_source == "Custom Molecule":
+            if not self._custom_molecule_available:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Generate Custom Molecules first (Tab 3)")
+            else:
+                self.insert_button.setEnabled(True)
+                self.insert_button.setToolTip("Insert ions into Custom Molecule system (direct path).")
+        
+        elif self._current_source == "Solute":
+            if not self._solute_available:
+                self.insert_button.setEnabled(False)
+                self.insert_button.setToolTip("Insert Solutes first (Tab 4)")
+            else:
+                self.insert_button.setEnabled(True)
+                self.insert_button.setToolTip("Insert ions into Solute structure.")
+        
         else:
-            # Source available
-            self.insert_button.setEnabled(True)
-            self.insert_button.setToolTip(
-                "Insert Na+ and Cl- ions into the liquid water region.\n"
-                "Calculated from concentration and liquid volume."
-            )
+            self.insert_button.setEnabled(False)
+            self.insert_button.setToolTip("Select a source structure")
     
     def set_interface_available(self, available: bool):
         """Set whether Interface source has structure available.
@@ -323,6 +350,66 @@ class IonPanel(QWidget):
         """
         self._interface_available = available
         self._update_insert_button_state()
+    
+    def set_custom_molecule_structure(self, structure: "CustomMoleculeStructure"):
+        """Set Custom Molecule structure for use as source.
+        
+        Args:
+            structure: CustomMoleculeStructure from Tab 3 (Custom Molecule tab)
+        """
+        self._custom_molecule_structure = structure
+        self._custom_molecule_available = structure is not None
+        
+        # Update button state if currently on Custom Molecule source
+        if self._current_source == "Custom Molecule":
+            self._update_insert_button_state()
+        
+        logger.info(f"Custom Molecule structure set: {structure.custom_molecule_count} molecules")
+    
+    def set_interface_structure(self, structure: "InterfaceStructure"):
+        """Set Interface structure for use as source.
+        
+        Args:
+            structure: InterfaceStructure from Tab 2 (Interface tab)
+        """
+        self._interface_structure = structure
+        self._interface_available = structure is not None
+        
+        # Update button state if currently on Interface source
+        if self._current_source == "Interface":
+            self._update_insert_button_state()
+        
+        logger.info(f"Interface structure set: {structure.ice_nmolecules} ice + {structure.water_nmolecules} water molecules")
+    
+    def set_solute_structure(self, structure: "SoluteStructure"):
+        """Set Solute structure for use as source.
+        
+        Args:
+            structure: SoluteStructure from Tab 4 (Solute tab)
+        """
+        self._solute_structure = structure
+        self._solute_available = structure is not None
+        
+        # Update button state if currently on Solute source
+        if self._current_source == "Solute":
+            self._update_insert_button_state()
+        
+        logger.info(f"Solute structure set: {structure.n_molecules} {structure.solute_type} molecules")
+    
+    def get_current_source_structure(self) -> "InterfaceStructure | CustomMoleculeStructure | SoluteStructure | None":
+        """Get the current source structure based on selection.
+        
+        Returns:
+            InterfaceStructure, CustomMoleculeStructure, or SoluteStructure based on current source selection
+        """
+        if self._current_source == "Interface":
+            return self._interface_structure
+        elif self._current_source == "Custom Molecule":
+            return self._custom_molecule_structure
+        elif self._current_source == "Solute":
+            return self._solute_structure
+        else:
+            return None
     
     def _update_charge_warning(self):
         """Update charge warning label visibility.
