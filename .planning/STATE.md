@@ -296,7 +296,6 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Pending Todos
 
-- [2026-05-07] prepare custom molecule gro top to test custom mol fx (testing) — `.planning/todos/pending/2026-05-07-prepare-custom-molecule-gro-top-to-test-custom-mol-fx.md`
 - [2026-05-07] Group UAT items by workflow for batch testing (testing) — `.planning/todos/pending/2026-05-07-group-uat-items-by-workflow-for-batch-testing.md`
 - [2026-05-07] Capture screenshots per Phase 35 suggestions (docs) — `.planning/todos/pending/2026-05-07-capture-screenshots-per-phase-35-suggestions.md`
 
