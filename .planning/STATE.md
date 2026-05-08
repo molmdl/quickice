@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 2 of 8 complete |
+| Plan | 3 of 8 complete |
 | Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-04-PLAN.md (CustomMoleculeStructure update) |
+| Last activity | 2026-05-08 — Completed 34.6-02-PLAN.md (Liquid bounds & volume preview) |
 
 **Progress:** ██████████ 99.4% (172/172 plans complete, Phase 34.6 pending)
 
@@ -69,7 +69,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Semi-transparent preview rendering for proposed positions
 - ✓ Validation UI with "Validate & Preview" button
 - ✓ Generic residue name suppression for real molecule files (Phase 34.6-01)
-- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-02 to 34.6-08)
+- ✓ Liquid region bounds display for Custom mode (Phase 34.6-02)
+- ✓ Volume preview and molecule count estimate for Random mode (Phase 34.6-02)
+- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-03 to 34.6-08)
 - ⏳ Screenshots and release notes (Phase 35-06)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -297,9 +299,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:24 UTC
-**Completed:** 34.6-04-PLAN.md (CustomMoleculeStructure complete system update)
-**Next:** Continue Phase 34.6 (Plans 02-03 skipped, next is 05-08)
+**Last session:** 2026-05-08 15:27 UTC
+**Completed:** 34.6-02-PLAN.md (Liquid bounds & volume preview)
+**Next:** Continue Phase 34.6 (Plans 01, 02, 04 complete; next is 03, 05-08)
+
+---
+*State updated: 2026-05-08 — Phase 34.6 3/8 plans complete*
 
 ---
 *State updated: 2026-05-08 — Phase 34.6 in progress (2/8 plans complete)*
