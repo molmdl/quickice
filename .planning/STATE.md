@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-05 complete (GUI guide & user guides)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.5 complete (Validation & Preview)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 35-05 complete (GUI guide & user guides)
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.5 complete (Validation & Preview)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.5-placement-validation-preview-enhancement |
-| Plan | 2 of 3 complete |
-| Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.5-02-PLAN.md (Preview Rendering) |
+| Plan | 3 of 3 complete |
+| Status | Phase complete |
+| Last activity | 2026-05-08 — Completed 34.5-03-PLAN.md (Validation UI) |
 
-**Progress:** ██████████ 98.8% (170/172 plans complete, Phase 34.5 Plan 03 pending)
+**Progress:** ██████████ 99.4% (171/172 plans complete, Phase 35-06 pending)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.4 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.5 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -65,7 +65,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Tab order swapped (Custom→Tab 3, Solute→Tab 4) enabling Custom→Solute workflow
 - ✓ Solute source dropdown with Interface/Custom Molecule selection
 - ✓ Help dialog updated with Tab 0-5 numbering and workflows
-- ⏳ Documentation and remaining keyboard shortcuts
+- ✓ Placement validation with single-molecule preview (Phase 34.5)
+- ✓ Semi-transparent preview rendering for proposed positions
+- ✓ Validation UI with "Validate & Preview" button
+- ⏳ Screenshots and release notes (Phase 35-06)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
@@ -205,6 +208,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Single-molecule validation approach | Validate ONE molecule at a time (O(M) cost) not full system (O(N×M) cost) | ✓ Shipped (34.5-01) |
 | Read-only validation method | validate_single_placement() does not modify MoleculetypeRegistry | ✓ Shipped (34.5-01) |
 | PlacementValidationResult dataclass | Structured validation feedback with bounds, overlap, distance info | ✓ Shipped (34.5-01) |
+| Use parse_gro_file() directly | Non-existent CustomMoleculeLoader in plan; use established pattern instead | ✓ Shipped (34.5-03) |
+| Validate button only in Custom mode | Validation meaningful only for user-specified position/rotation | ✓ Shipped (34.5-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -223,8 +228,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phase 34.5 validation & preview plans status:**
 - ✓ 34.5-01 (validation logic) complete
-- ⏳ 34.5-02 pending (preview rendering)
-- ⏳ 34.5-03 pending (validation UI)
+- ✓ 34.5-02 (preview rendering) complete
+- ✓ 34.5-03 (validation UI) complete
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -271,9 +276,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 12:43 UTC
-**Completed:** 34.5-02-PLAN.md (Preview Rendering)
-**Next:** 34.5-03-PLAN.md (Validation UI)
+**Last session:** 2026-05-08 12:49 UTC
+**Completed:** 34.5-03-PLAN.md (Validation UI)
+**Next:** 35-06-PLAN.md (Screenshots)
 
 ---
-*State updated: 2026-05-08 — Plan 34.5-02 complete*
+*State updated: 2026-05-08 — Phase 34.5 complete*
