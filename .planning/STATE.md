@@ -298,6 +298,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 - [2026-05-07] Group UAT items by workflow for batch testing (testing) — `.planning/todos/pending/2026-05-07-group-uat-items-by-workflow-for-batch-testing.md`
 - [2026-05-07] Capture screenshots per Phase 35 suggestions (docs) — `.planning/todos/pending/2026-05-07-capture-screenshots-per-phase-35-suggestions.md`
+- [2026-05-09] Unify GUI/CLI entry point into single executable (tooling) — `.planning/todos/pending/2026-05-09-unify-gui-cli-entry-point.md`
+- [2026-05-09] Provide CLI-only executable for automation (tooling) — `.planning/todos/pending/2026-05-09-cli-only-executable-for-automation.md`
+- [2026-05-09] Support flexible interface construction modes (feature) — `.planning/todos/pending/2026-05-09-flexible-interface-construction.md`
+- [2026-05-09] Explore complex hydrate formation using atomsk (research) — `.planning/todos/pending/2026-05-09-complex-hydrate-formation-atomsk.md`
 
 ---
 
