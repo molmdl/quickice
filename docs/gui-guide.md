@@ -254,7 +254,7 @@ Hydrate Config allows you to:
 | CH₄ | Methane | GAFF2 | sI small cages, sII small cages |
 | THF | Tetrahydrofuran | GAFF2 | sII large cages |
 
-**GAFF2 Preparation:** Guest molecule parameters use GAFF2 with RESP2(0.5) partial charges, prepared using Multiwfn and Sobtop. See [main README](../README.md#guest-molecules-gaff2) for full citations.
+**GAFF2 Preparation:** Guest molecule parameters use GAFF2 with RESP2(0.5) partial charges, prepared using Multiwfn and Sobtop. Partial charge prepared using the RESP2.sh script from Multiwfn. QM calcution were done using Gaussian 16 Rev. C01. See [main README](../README.md#guest-molecules-gaff2) for full citations.
 
 ### Cage Occupancy
 
