@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5 inserted)
-**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 35: 6)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
+**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 0, Phase 35: 6)
 
 ## Overview
 
@@ -203,6 +203,43 @@ Plans:
 
 ---
 
+### Phase 34.6: Revise Custom Panel for Valid Input Handling (INSERTED)
+
+**Goal:** Custom molecule panel correctly handles real user input with proper validation, warning suppression, and documentation
+**Depends on:** Phase 34.5
+**Plans:** 3 plans
+
+Plans:
+- [ ] 34.6-01-PLAN.md — Fix validation warnings and button state persistence
+- [ ] 34.6-02-PLAN.md — Add liquid region bounds display and volume preview
+- [ ] 34.6-03-PLAN.md — Integration tests with etoh molecule files
+
+**Details:**
+- Example inputs: quickice/data/custom/etoh.itp and etoh.gro (ethanol molecule, 9 atoms, GAFF2 parameters)
+- Bug fixes:
+  - Preview button graying out after validation passes (should remain active)
+  - False positive warning: GRO resname "MOL" matches ITP moleculetype "etoh" (correct behavior, warning unnecessary)
+  - Missing documentation: liquid xyz range for manual placement
+  - Missing feature: volume preview for random concentration insertion
+- Architectural review scope:
+  - Input format handling (GRO/ITP parsing robustness)
+  - Topology handling (moleculetype vs resname conventions)
+  - Output GRO/TPR ordering (atom sequence, molecule sections)
+  - Atomtype extraction and commenting for output files
+  - Export workflow integration (custom mol as source for other tabs)
+- Testing requirements:
+  - Integration tests using etoh.itp/etoh.gro as valid input examples
+  - Test GRO/ITP parsing with real-world molecule format
+  - Test validation flow with resname/moleculetype scenarios
+  - Test export output with custom molecule insertion
+- Documentation requirements:
+  - Update user guide with etoh.itp/etoh.gro as valid input examples
+  - Document moleculetype vs resname convention (GRO uses "MOL", ITP defines moleculetype name)
+  - Add liquid xyz range guidance for manual placement mode
+  - Example workflow: upload etoh files → validate → place in liquid → export
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -238,9 +275,9 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 9 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, and 34.5 inserted)
+**Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
 
-**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 35: 6)
+**Total Plans:** 30 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 3, Phase 35: 6)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -287,10 +324,11 @@ Plans:
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
+| 34.6 - Revise Custom Panel for Valid Input | ⏳ Pending | 0 | 3 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-08 - Phase 34.5 complete*
+*Last updated: 2026-05-08 - Phase 34.6 inserted for custom panel revision*
 *For current state, see .planning/STATE.md*
