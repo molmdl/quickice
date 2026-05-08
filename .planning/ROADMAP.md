@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5 inserted)
-**Total Plans:** 24 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 0, Phase 35: 6)
+**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 35: 6)
 
 ## Overview
 
@@ -183,18 +183,23 @@ Plans:
 
 **Goal:** User can preview custom molecule placement and receives validation for placement bounds and overlap detection
 **Depends on:** Phase 34.4
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 34.5 to break down)
+- [ ] 34.5-01-PLAN.md — Validation logic: PlacementValidationResult dataclass, validate_single_placement method
+- [ ] 34.5-02-PLAN.md — Preview rendering: show_preview and clear_preview methods in CustomMoleculeViewerWidget
+- [ ] 34.5-03-PLAN.md — Validation UI: Validate & Preview button, result display, preview triggering in CustomMoleculePanel
 
 **Details:**
-- Preview overlay showing Interface + Custom molecule before insertion
-- Liquid region bounds detection for custom placement mode
-- Ice/hydrate overlap validation for custom placement
-- Solute-custom overlap avoidance when solute source = Custom Molecule
-- Replacement count reporting after insertion
-- Improves UX and correctness for custom molecule workflow
+- Single-molecule placement validation (bounds + overlap) without state mutation
+- Semi-transparent preview rendering (opacity 0.6) for proposed positions
+- On-demand validation via "Validate & Preview" button
+- Structured feedback via PlacementValidationResult dataclass
+- Clear validation result display in status log
+- Preview shown in context of existing structure (ice, water, guests)
+- Enables user to verify placement before committing to insertion
+- Computationally feasible (O(M) for single molecule, not O(N×M) for full system)
+- Addresses OUT OF SCOPE constraint by validating ONE molecule at a time
 
 ---
 
@@ -235,7 +240,7 @@ Plans:
 
 **Phase Count:** 9 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, and 34.5 inserted)
 
-**Total Plans:** 26 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 0, Phase 35: 6)
+**Total Plans:** 27 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 35: 6)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
