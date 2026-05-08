@@ -16,6 +16,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QLineEdit,
@@ -312,11 +314,12 @@ class CustomMoleculePanel(QWidget):
     def _create_random_controls(self) -> QWidget:
         """Create controls for Random placement mode."""
         widget = QWidget()
-        layout = QFormLayout(widget)
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Molecule count input
         count_row = QHBoxLayout()
+        count_row.addWidget(QLabel("Molecule Count:"))
         self.molecule_count_spin = QDoubleSpinBox()
         self.molecule_count_spin.setRange(1, 1000)
         self.molecule_count_spin.setValue(10)
@@ -328,8 +331,34 @@ class CustomMoleculePanel(QWidget):
             "Each molecule will have random position and orientation."
         ))
         count_row.addStretch()
+        layout.addLayout(count_row)
         
-        layout.addRow("Molecule Count:", count_row)
+        # Volume display
+        volume_row = QHBoxLayout()
+        volume_row.addWidget(QLabel("Liquid Volume:"))
+        self.liquid_volume_label = QLabel("-- nm³")
+        self.liquid_volume_label.setStyleSheet("color: gray;")
+        volume_row.addWidget(self.liquid_volume_label)
+        volume_row.addWidget(HelpIcon(
+            "Volume of liquid water region.\n"
+            "Used to estimate feasible molecule counts."
+        ))
+        volume_row.addStretch()
+        layout.addLayout(volume_row)
+        
+        # Estimated molecule count range
+        estimate_row = QHBoxLayout()
+        estimate_row.addWidget(QLabel("Recommended:"))
+        self.molecule_estimate_label = QLabel("-- molecules")
+        self.molecule_estimate_label.setStyleSheet("color: gray; font-style: italic;")
+        estimate_row.addWidget(self.molecule_estimate_label)
+        estimate_row.addWidget(HelpIcon(
+            "Approximate maximum molecules based on liquid volume and minimum separation.\n"
+            "Actual capacity depends on molecule shape and packing efficiency."
+        ))
+        estimate_row.addStretch()
+        layout.addLayout(estimate_row)
+        
         return widget
     
     def _create_custom_controls(self) -> QWidget:
@@ -585,6 +614,8 @@ class CustomMoleculePanel(QWidget):
         # Update displays based on active mode
         if mode == "Custom":
             self._update_liquid_bounds()
+        else:  # Random mode
+            self._update_volume_preview()
         
         # Enable/disable validate button based on mode
         self.validate_button.setEnabled(
@@ -755,6 +786,44 @@ class CustomMoleculePanel(QWidget):
         self.liquid_bounds_label.setText(bounds_text)
         self.liquid_bounds_label.setStyleSheet("color: #666;")
     
+    def _update_volume_preview(self):
+        """Update volume and molecule count preview for Random mode.
+        
+        Calculates liquid volume and estimates maximum molecules based on
+        packing fraction and minimum separation.
+        """
+        if self._interface_structure is None:
+            self.liquid_volume_label.setText("-- nm³")
+            self.molecule_estimate_label.setText("-- molecules")
+            return
+        
+        # Get liquid region info
+        ice_count = getattr(self._interface_structure, 'ice_atom_count', 0)
+        water_count = getattr(self._interface_structure, 'water_atom_count', 0)
+        
+        if water_count == 0:
+            self.liquid_volume_label.setText("0 nm³")
+            self.molecule_estimate_label.setText("0 molecules")
+            return
+        
+        # Calculate liquid volume
+        liquid_pos = self._interface_structure.positions[ice_count:ice_count + water_count]
+        min_coords = liquid_pos.min(axis=0)
+        max_coords = liquid_pos.max(axis=0)
+        
+        volume = np.prod(max_coords - min_coords)
+        self.liquid_volume_label.setText(f"{volume:.2f} nm³")
+        
+        # Estimate max molecules (rough approximation)
+        # Assumes min_separation is center-to-center distance
+        min_separation = 0.25  # Default value from CustomMoleculeConfig
+        molecule_radius = min_separation / 2
+        molecule_volume = (4/3) * np.pi * molecule_radius**3
+        packing_fraction = 0.64  # Random close packing
+        
+        max_molecules = int(volume * packing_fraction / molecule_volume)
+        self.molecule_estimate_label.setText(f"~{max_molecules} molecules (max)")
+    
     def set_interface_structure(self, structure):
         """Set the current interface structure for validation.
         
@@ -765,8 +834,9 @@ class CustomMoleculePanel(QWidget):
         """
         self._interface_structure = structure
         
-        # Update liquid region bounds display
+        # Update all dependent displays
         self._update_liquid_bounds()
+        self._update_volume_preview()
         
         self.log_message("Interface structure loaded for validation")
         if structure is not None:
