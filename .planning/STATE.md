@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.5-placement-validation-preview-enhancement |
-| Plan | 3 of 3 complete |
-| Status | Phase complete |
-| Last activity | 2026-05-08 — Completed 34.5-03-PLAN.md (Validation UI) |
+| Phase | 34.6-revise-custom-panel-valid-input |
+| Plan | 1 of 8 complete |
+| Status | In progress |
+| Last activity | 2026-05-08 — Completed 34.6-01-PLAN.md (Fix validation warnings) |
 
-**Progress:** ██████████ 99.4% (171/172 plans complete, Phase 35-06 pending)
+**Progress:** ██████████ 99.4% (172/172 plans complete, Phase 34.6-02 pending)
 
 ---
 
@@ -42,7 +42,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (6 phases planned)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.5 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.6 in progress, Phase 35 pending (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -68,6 +68,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Placement validation with single-molecule preview (Phase 34.5)
 - ✓ Semi-transparent preview rendering for proposed positions
 - ✓ Validation UI with "Validate & Preview" button
+- ✓ Generic residue name suppression for real molecule files (Phase 34.6-01)
+- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-02 to 34.6-08)
 - ⏳ Screenshots and release notes (Phase 35-06)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -230,10 +232,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Blockers
 
-**Phase 34.5 validation & preview plans status:**
-- ✓ 34.5-01 (validation logic) complete
-- ✓ 34.5-02 (preview rendering) complete
-- ✓ 34.5-03 (validation UI) complete
+**Phase 34.6 status:**
+- ✓ 34.6-01 (validation warnings and button state) complete
+- ⏳ 34.6-02 (liquid bounds and volume preview) pending
+- ⏳ 34.6-03 to 34.6-08 pending
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -247,6 +249,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 34.5-01 (validation logic) complete
 - ✓ 34.5-02 (preview rendering) complete
 - ✓ 34.5-03 (validation UI) complete
+
+**Remaining Phase 34.6 work:**
+- Liquid region bounds display (34.6-02)
+- Volume preview for random placement (34.6-02)
+- Integration tests for bug fixes (34.6-03)
+- Complete system export infrastructure (34.6-04 to 34.6-07)
+- Comprehensive workflow tests (34.6-08)
 
 **Remaining Phase 35 work:**
 - Screenshots for visual documentation (35-06)
@@ -285,9 +294,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 12:49 UTC
-**Completed:** 34.5-03-PLAN.md (Validation UI)
-**Next:** 35-06-PLAN.md (Screenshots)
+**Last session:** 2026-05-08 15:27 UTC
+**Completed:** 34.6-01-PLAN.md (Fix validation warnings and button state)
+**Next:** 34.6-02-PLAN.md (Add liquid region bounds display and volume preview)
 
 ---
-*State updated: 2026-05-08 — Phase 34.5 complete*
+*State updated: 2026-05-08 — Phase 34.6 in progress*
