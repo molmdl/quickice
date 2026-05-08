@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 3 of 8 complete |
+| Plan | 4 of 8 complete |
 | Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-02-PLAN.md (Liquid bounds & volume preview) |
+| Last activity | 2026-05-08 — Completed 34.6-05-PLAN.md (CustomMoleculeInserter complete system) |
 
-**Progress:** ██████████ 99.4% (172/172 plans complete, Phase 34.6 pending)
+**Progress:** ██████████ 99.4% (173/172 plans complete, Phase 34.6-03 pending)
 
 ---
 
@@ -221,6 +221,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | CustomMoleculeStructure complete system | Follows IonStructure pattern with ice/water/custom atom counts | ✓ Shipped (34.6-04) |
 | Store interface_structure reference | Enables Custom → Solute workflow chaining | ✓ Shipped (34.6-04) |
 | MoleculeIndex for all molecule types | Consistent tracking across ice, water, custom molecules | ✓ Shipped (34.6-04) |
+| Complete system assembly pattern | CustomMoleculeInserter combines interface + custom atoms | ✓ Shipped (34.6-05) |
+| Molecule tracking via MoleculeIndex | Handles variable atoms per molecule (ice:4, water:4, custom:var) | ✓ Shipped (34.6-05) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -239,8 +241,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phase 34.6 status:**
 - ✓ 34.6-01 (validation warnings and button state) complete
-- ⏳ 34.6-02 (liquid bounds and volume preview) pending
-- ⏳ 34.6-03 to 34.6-08 pending
+- ✓ 34.6-02 (liquid bounds and volume preview) complete
+- ⏳ 34.6-03 (integration tests) pending
+- ✓ 34.6-04 (CustomMoleculeStructure complete system) complete
+- ✓ 34.6-05 (CustomMoleculeInserter complete system) complete
+- ⏳ 34.6-06 to 34.6-08 pending
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -299,12 +304,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:27 UTC
-**Completed:** 34.6-02-PLAN.md (Liquid bounds & volume preview)
-**Next:** Continue Phase 34.6 (Plans 01, 02, 04 complete; next is 03, 05-08)
+**Last session:** 2026-05-08 15:31 UTC
+**Completed:** 34.6-05-PLAN.md (CustomMoleculeInserter complete system)
+**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05 complete; next is 03, 06-08)
 
 ---
-*State updated: 2026-05-08 — Phase 34.6 3/8 plans complete*
+*State updated: 2026-05-08 — Phase 34.6 4/8 plans complete*
 
 ---
 *State updated: 2026-05-08 — Phase 34.6 in progress (2/8 plans complete)*
