@@ -210,14 +210,14 @@ Plans:
 **Plans:** 8 plans in 4 waves
 
 Plans:
-- [ ] 34.6-01-PLAN.md — Fix validation warnings and button state persistence
-- [ ] 34.6-02-PLAN.md — Add liquid region bounds display and volume preview
-- [ ] 34.6-03-PLAN.md — Integration tests for bug fixes (Wave 2)
-- [ ] 34.6-04-PLAN.md — Modify CustomMoleculeStructure to include complete system
-- [ ] 34.6-05-PLAN.md — Update CustomMoleculeInserter to return complete system
-- [ ] 34.6-06-PLAN.md — Update CustomMoleculeGROMACSExporter for complete system export
-- [ ] 34.6-07-PLAN.md — Enable Custom Molecule as source for Solute tab
-- [ ] 34.6-08-PLAN.md — Comprehensive integration tests for complete workflow
+- [x] 34.6-01-PLAN.md — Fix validation warnings and button state persistence
+- [x] 34.6-02-PLAN.md — Add liquid region bounds display and volume preview
+- [x] 34.6-03-PLAN.md — Integration tests for bug fixes (Wave 2)
+- [x] 34.6-04-PLAN.md — Modify CustomMoleculeStructure to include complete system
+- [x] 34.6-05-PLAN.md — Update CustomMoleculeInserter to return complete system
+- [x] 34.6-06-PLAN.md — Update CustomMoleculeGROMACSExporter for complete system export
+- [x] 34.6-07-PLAN.md — Enable Custom Molecule as source for Solute tab
+- [x] 34.6-08-PLAN.md — Comprehensive integration tests for complete workflow
 
 **Details:**
 - **MAJOR SCOPE CHANGE**: Each tab should export GROMACS-ready files prepared within the tab
@@ -339,11 +339,11 @@ Plans:
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
-| 34.6 - Revise Custom Panel for Valid Input | ⏳ Pending | 0 | 3 |
+| 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 35 - Integration & Documentation | ⏳ Pending | 1 | 6 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-08 - Phase 34.6 inserted for custom panel revision*
+*Last updated: 2026-05-09 - Phase 34.6 complete*
 *For current state, see .planning/STATE.md*
