@@ -503,6 +503,36 @@ Specify exact position and orientation:
 - No overlap checking (user responsibility)
 - Precise control for specific configurations
 
+### Validation & Preview (Phase 34.5)
+
+Before bulk insertion, use the **"Validate & Preview"** button (available in Custom mode) to:
+
+- Validate a single molecule against the interface structure
+- See a semi-transparent preview of the proposed position
+- View liquid region bounds (Custom mode)
+- Check placement validity before committing
+
+The validation performs bounds checking and overlap detection without modifying the structure. The preview shows the molecule in context with existing ice/water using semi-transparent rendering (opacity 0.6).
+
+**Note:** Validation is only meaningful for Custom mode with user-specified positions. Random mode performs automatic overlap checking during insertion.
+
+### Multi-Tab Workflow Chains
+
+The Custom Molecule tab supports two workflow paths:
+
+1. **Custom → Solute → Ion** (full workflow)
+   - Insert custom molecules in Tab 3
+   - Add solutes in Tab 4 (select "Custom Molecule" as source)
+   - Add ions in Tab 5
+   - Export complete system from any tab
+
+2. **Custom → Ion** (direct workflow)
+   - Insert custom molecules in Tab 3
+   - Skip Tab 4, add ions directly in Tab 5
+   - Export complete system
+
+**Complete System Export:** Tab 3 exports ice + water + custom molecules (not just custom molecules). This enables the Custom Molecule result to serve as input for subsequent tabs.
+
 ### Workflow
 
 1. Generate interface in Tab 2 first
@@ -512,9 +542,10 @@ Specify exact position and orientation:
 5. Review validation status (green checkmark = valid)
 6. Choose placement mode (Random or Custom)
 7. If Custom: Enter position and rotation angles
-8. Click "Insert Molecule"
-9. View molecule in 3D viewer (distinct colors: purple, cyan, yellow)
-10. Export for GROMACS (Ctrl+S)
+8. (Optional) Click "Validate & Preview" to check placement
+9. Click "Insert Molecule"
+10. View molecule in 3D viewer (distinct colors: purple, cyan, yellow)
+11. Export for GROMACS (Ctrl+S)
 
 ### 3D Viewer
 
@@ -600,16 +631,27 @@ The calculation:
 3. Multiplies by Avogadro's number to get molecule count
 4. Rounds down to integer
 
+### Source Selection (Phase 34.6)
+
+The **Source dropdown** determines the base structure for solute insertion:
+
+- **Interface:** Use the interface from Tab 2 (ice + liquid water)
+- **Custom Molecule:** Use the complete system from Tab 3 (ice + water + custom molecules)
+
+This enables the **Custom → Solute → Ion** workflow chain. When you select "Custom Molecule" as source, the system uses the complete structure (ice + water + custom molecules) as the base for solute insertion.
+
 ### Workflow
 
 1. Generate interface in Tab 2 first
-2. Switch to Solute Insertion tab (Tab 4)
-3. Select solute type (THF or CH₄)
-4. Set concentration
-5. Preview molecule count (updates in real-time)
-6. Click "Insert Solutes"
-7. View solutes in 3D viewer (ball-and-stick rendering)
-8. Export for GROMACS (Ctrl+S)
+2. (Optional) Add custom molecules in Tab 3 for Custom → Solute workflow
+3. Switch to Solute Insertion tab (Tab 4)
+4. Select source: Interface or Custom Molecule
+5. Select solute type (THF or CH₄)
+6. Set concentration
+7. Preview molecule count (updates in real-time)
+8. Click "Insert Solutes"
+9. View solutes in 3D viewer (ball-and-stick rendering)
+10. Export for GROMACS (Ctrl+S)
 
 ### 3D Viewer
 
@@ -651,6 +693,18 @@ The fifth tab inserts NaCl ions into liquid water regions of interface structure
 Generate an interface structure in Tab 2 first. Ion insertion requires:
 - An existing interface structure (ice + liquid water)
 - Liquid volume > 0 for ion placement
+
+### Source Selection (Phase 34.1)
+
+The **Source dropdown** determines the base structure for ion insertion:
+
+- **Interface:** Use the interface from Tab 2 (ice + liquid water)
+- **Custom Molecule:** Use the complete system from Tab 3 (ice + water + custom molecules)
+- **Solute:** Use the complete system from Tab 4 (ice + water + solutes)
+
+This enables the full **Custom → Solute → Ion** workflow chain. When you select "Custom Molecule" or "Solute" as source, the system uses the complete structure from that tab as the base for ion insertion.
+
+**Charge Warning:** If the source structure contains custom molecules with non-neutral charge, a warning is displayed. The ion insertion system always generates equal Na⁺/Cl⁻ counts (charge neutral), but the overall system may remain non-neutral if custom molecules have non-zero total charge.
 
 ### Ion Panel Interface
 
