@@ -81,6 +81,7 @@ class CustomMoleculeViewerWidget(QWidget):
         self._vtk_available = _VTK_AVAILABLE
         self._current_structure: CustomMoleculeStructure | None = None
         self._custom_actor: vtkActor | None = None
+        self._preview_actor: vtkActor | None = None
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -344,3 +345,60 @@ class CustomMoleculeViewerWidget(QWidget):
         
         if self._vtk_available and self.render_window is not None:
             self.render_window.Render()
+
+    def show_preview(
+        self,
+        positions: np.ndarray,
+        atom_names: list[str],
+        cell: np.ndarray
+    ) -> None:
+        """Show preview molecule with semi-transparent styling.
+        
+        Renders the molecule at the proposed position with opacity 0.6
+        to distinguish from actual insertion. Shows in context of existing
+        structure (ice, water, guests).
+        
+        Args:
+            positions: (N_atoms, 3) positions for preview molecule in nm
+            atom_names: List of atom names (e.g., ["C", "H", "H", ...])
+            cell: (3, 3) unit cell vectors in nm
+            
+        Note:
+            - Removes any existing preview actor before creating new one
+            - Switches to 3D viewer if on placeholder
+            - Does NOT modify _current_structure (preview is temporary)
+        """
+        if not self._vtk_available or self.renderer is None:
+            logger.warning("VTK not available, cannot show preview")
+            return
+        
+        # Clear existing preview actor
+        self.clear_preview()
+        
+        # Create preview actor using existing renderer
+        try:
+            from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
+            
+            actor = create_custom_molecule_actor(
+                positions, atom_names, cell, moleculetype_name="PREVIEW"
+            )
+            
+            # Make preview semi-transparent
+            actor.GetProperty().SetOpacity(0.6)
+            
+            # Add to renderer
+            self.renderer.AddActor(actor)
+            self._preview_actor = actor
+            
+            # Render
+            if self.render_window:
+                self.render_window.Render()
+            
+            # Switch to 3D viewer if not already showing
+            if self._stack.currentIndex() == 0:
+                self._stack.setCurrentIndex(1)
+            
+            logger.info(f"Preview actor added with {len(positions)} atoms")
+            
+        except Exception as e:
+            logger.error(f"Failed to create preview actor: {e}")
