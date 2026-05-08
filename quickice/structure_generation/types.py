@@ -515,6 +515,26 @@ class CustomMoleculeStructure:
 
 
 @dataclass
+class PlacementValidationResult:
+    """Result of single-molecule placement validation.
+    
+    Attributes:
+        is_valid: True if placement is valid (within bounds + no overlap)
+        within_bounds: True if position is in liquid region
+        has_overlap: True if molecule overlaps with existing atoms
+        min_distance: Minimum distance to nearest existing atom (nm)
+        nearest_atom_type: Element of nearest atom (for user feedback), or None
+        error_message: Human-readable error or None if valid
+    """
+    is_valid: bool
+    within_bounds: bool
+    has_overlap: bool
+    min_distance: float
+    nearest_atom_type: str | None
+    error_message: str | None
+
+
+@dataclass
 class HydrateLatticeInfo:
     """Display information for a hydrate lattice type.
     
