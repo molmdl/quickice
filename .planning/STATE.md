@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 35-integration-documentation |
-| Plan | 5 of 6 complete |
+| Phase | 34.5-placement-validation-preview-enhancement |
+| Plan | 1 of 3 complete |
 | Status | In progress |
-| Last activity | 2026-05-07 — Completed 35-05-PLAN.md (GUI Guide & User Guides) |
+| Last activity | 2026-05-08 — Completed 34.5-01-PLAN.md (Placement Validation Logic) |
 
-**Progress:** ██████████ 99.4% (168/169 plans complete, Phase 35-06 pending)
+**Progress:** ██████████ 99.4% (169/170 plans complete, Phase 34.5 Plans 02-03 pending)
 
 ---
 
@@ -202,6 +202,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | GUI guide workflow documentation | Step-by-step instructions with prerequisites and outcomes | ✓ Shipped (35-05) |
 | GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
+| Single-molecule validation approach | Validate ONE molecule at a time (O(M) cost) not full system (O(N×M) cost) | ✓ Shipped (34.5-01) |
+| Read-only validation method | validate_single_placement() does not modify MoleculetypeRegistry | ✓ Shipped (34.5-01) |
+| PlacementValidationResult dataclass | Structured validation feedback with bounds, overlap, distance info | ✓ Shipped (34.5-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -217,6 +220,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Tab order: Ice→Hydrate→Interface→Ion | User-approved deviation | ✓ Shipped |
 
 ### Blockers
+
+**Phase 34.5 validation & preview plans status:**
+- ✓ 34.5-01 (validation logic) complete
+- ⏳ 34.5-02 pending (preview rendering)
+- ⏳ 34.5-03 pending (validation UI)
 
 **Phase 35 documentation plans status:**
 - ✓ 35-01 (unified export) complete
@@ -263,9 +271,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-07 13:29 UTC
-**Completed:** 35-05-PLAN.md (GUI Guide & User Guides)
-**Next:** 35-06-PLAN.md (Screenshots & Workflow Documentation)
+**Last session:** 2026-05-08 12:43 UTC
+**Completed:** 34.5-01-PLAN.md (Placement Validation Logic)
+**Next:** 34.5-02-PLAN.md (Preview Rendering)
 
 ---
-*State updated: 2026-05-07 — Plan 35-05 complete*
+*State updated: 2026-05-08 — Plan 34.5-01 complete*
