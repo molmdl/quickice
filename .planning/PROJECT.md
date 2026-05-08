@@ -13,11 +13,13 @@
 
 ## What This Is
 
-A portable, cross-platform GUI application for generating plausible ice structures, ice-water interfaces, and hydrate systems. QuickIce provides a minimal GUI of basic GenIce2 functions with extended capabilities including hydrate generation with guest molecules (CH4, THF), NaCl ion insertion, and multi-molecule GROMACS export. Users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures with GROMACS-ready outputs.
+A portable, cross-platform GUI application for generating plausible ice structures, ice-water interfaces, and hydrate systems. QuickIce provides a minimal GUI of basic GenIce2 functions with extended capabilities including hydrate generation with guest molecules (CH4, THF), NaCl ion insertion, and multi-molecule GROMACS export. Using the simple but powerful genice2 to provide ice and hydrate model support, we focus more on preparing ready-to-use gromacs input for molecular modelling studiws.
+
+Orignial aim of QuickIce is to allow users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures with GROMACS-ready outputs.
 
 ## Core Value
 
-Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface.
+Generate ready-to-use inirial models and topologiea for GROMACS for the simulation of ice and hydrates, originally designed as an educational tool for generating plausible ice structure candidates from the phase diagram.
 
 ## Requirements
 
