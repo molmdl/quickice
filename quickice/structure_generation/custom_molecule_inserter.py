@@ -397,28 +397,75 @@ class CustomMoleculeInserter:
                     attempts=self.config.max_attempts
                 )
         
+        # Get interface structure info
+        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+        
+        # Build complete molecule_index
+        from quickice.structure_generation.types import MoleculeIndex
+        complete_molecule_index = []
+        
+        # Ice molecules (3 input atoms -> 4 output atoms per molecule)
+        if ice_atom_count > 0:
+            ice_mol_count = ice_atom_count // 3  # 3 atoms per ice molecule input
+            current_idx = 0
+            for _ in range(ice_mol_count):
+                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
+                current_idx += 4
+        
+        # Water molecules (4 atoms per molecule)
+        if water_atom_count > 0:
+            water_mol_count = water_atom_count // 4
+            current_idx = ice_atom_count
+            for _ in range(water_mol_count):
+                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "water"))
+                current_idx += 4
+        
+        # Guest molecules (if present)
+        if guest_atom_count > 0:
+            # Add guest molecule indices from structure
+            if hasattr(structure, 'molecule_index'):
+                for mol_idx in structure.molecule_index:
+                    if mol_idx.mol_type == "guest":
+                        complete_molecule_index.append(mol_idx)
+        
+        # Custom molecules
+        current_idx = ice_atom_count + water_atom_count + guest_atom_count
+        for start, end in molecule_index:
+            complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
+            current_idx += (end - start)
+        
+        # Combine positions and atom names
+        complete_positions = np.vstack([
+            structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],  # Interface atoms
+            np.vstack(placed_positions)  # Custom molecule atoms
+        ])
+        
+        complete_atom_names = list(structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
+        
         # Register with MoleculetypeRegistry
         moleculetype_name = self.registry.register_custom_molecule()
         
-        # Combine all placed molecules
-        all_positions = np.vstack(placed_positions)
-        
         logger.info(
-            f"Random placement complete: {n_molecules} molecules, "
-            f"{len(placed_atom_names)} total atoms, moleculetype={moleculetype_name}"
+            f"Random placement complete: {n_molecules} custom molecules, "
+            f"{len(complete_atom_names)} total atoms (ice+water+custom), moleculetype={moleculetype_name}"
         )
         
         return CustomMoleculeStructure(
-            positions=all_positions,
-            atom_names=placed_atom_names,
+            positions=complete_positions,
+            atom_names=complete_atom_names,
             cell=structure.cell,
-            molecule_index=molecule_index,
+            molecule_index=complete_molecule_index,
+            ice_atom_count=ice_atom_count,
+            water_atom_count=water_atom_count,
+            custom_molecule_atom_count=len(placed_atom_names),
+            guest_atom_count=guest_atom_count,
             config=self.config,
             moleculetype_name=moleculetype_name,
             gro_path=self.config.gro_path,
             itp_path=self.config.itp_path,
-            residue_name=moleculetype_name,  # Use moleculetype as residue name
-            custom_molecule_count=n_molecules
+            residue_name=moleculetype_name,
+            custom_molecule_count=n_molecules,
+            interface_structure=structure
         )
     
     def place_custom(
@@ -473,28 +520,76 @@ class CustomMoleculeInserter:
             
             current_idx += len(self.template_atom_names)
         
+        # Get interface structure info
+        ice_atom_count = getattr(structure, 'ice_atom_count', 0)
+        water_atom_count = getattr(structure, 'water_atom_count', 0)
+        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+        
+        # Build complete molecule_index
+        from quickice.structure_generation.types import MoleculeIndex
+        complete_molecule_index = []
+        
+        # Ice molecules
+        if ice_atom_count > 0:
+            ice_mol_count = ice_atom_count // 3
+            current_idx = 0
+            for _ in range(ice_mol_count):
+                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
+                current_idx += 4
+        
+        # Water molecules
+        if water_atom_count > 0:
+            water_mol_count = water_atom_count // 4
+            current_idx = ice_atom_count
+            for _ in range(water_mol_count):
+                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "water"))
+                current_idx += 4
+        
+        # Guest molecules
+        if guest_atom_count > 0:
+            if hasattr(structure, 'molecule_index'):
+                for mol_idx in structure.molecule_index:
+                    if mol_idx.mol_type == "guest":
+                        complete_molecule_index.append(mol_idx)
+        
+        # Custom molecules
+        current_idx = ice_atom_count + water_atom_count + guest_atom_count
+        for start, end in molecule_index:
+            complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
+            current_idx += (end - start)
+        
+        # Combine positions and atom names
+        complete_positions = np.vstack([
+            structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],
+            np.vstack(placed_positions)
+        ])
+        
+        complete_atom_names = list(structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
+        
         # Register with MoleculetypeRegistry
         moleculetype_name = self.registry.register_custom_molecule()
-        
-        # Combine all placed molecules
-        all_positions = np.vstack(placed_positions)
         
         n_molecules = len(positions)
         
         logger.info(
-            f"Custom placement complete: {n_molecules} molecules, "
-            f"{len(placed_atom_names)} total atoms, moleculetype={moleculetype_name}"
+            f"Custom placement complete: {n_molecules} custom molecules, "
+            f"{len(complete_atom_names)} total atoms (ice+water+custom), moleculetype={moleculetype_name}"
         )
         
         return CustomMoleculeStructure(
-            positions=all_positions,
-            atom_names=placed_atom_names,
+            positions=complete_positions,
+            atom_names=complete_atom_names,
             cell=structure.cell,
-            molecule_index=molecule_index,
+            molecule_index=complete_molecule_index,
+            ice_atom_count=ice_atom_count,
+            water_atom_count=water_atom_count,
+            custom_molecule_atom_count=len(placed_atom_names),
+            guest_atom_count=guest_atom_count,
             config=self.config,
             moleculetype_name=moleculetype_name,
             gro_path=self.config.gro_path,
             itp_path=self.config.itp_path,
-            residue_name=moleculetype_name,  # Use moleculetype as residue name
-            custom_molecule_count=n_molecules
+            residue_name=moleculetype_name,
+            custom_molecule_count=n_molecules,
+            interface_structure=structure
         )
