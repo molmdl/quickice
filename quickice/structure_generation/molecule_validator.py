@@ -13,6 +13,10 @@ from quickice.structure_generation.itp_parser import ITPMoleculeInfo
 
 logger = logging.getLogger(__name__)
 
+# Generic residue names commonly used in computational chemistry
+# These are placeholders that should not trigger mismatch warnings
+GENERIC_RESIDUE_NAMES = {"MOL", "UNK", "LIG", "XXX", "RES"}
+
 
 @dataclass
 class ValidationResult:
@@ -150,7 +154,14 @@ def validate_custom_molecule(
     residue_name_mismatch = False
     
     if gro_residue_name and itp_residue_name:
-        if gro_residue_name != itp_residue_name:
+        if gro_residue_name in GENERIC_RESIDUE_NAMES:
+            # Generic residue name - skip mismatch warning (expected behavior)
+            logger.info(
+                f"GRO uses generic residue name '{gro_residue_name}', "
+                f"ITP uses '{itp_residue_name}' - this is expected"
+            )
+        elif gro_residue_name != itp_residue_name:
+            # Real mismatch - show warning
             residue_name_mismatch = True
             warnings.append(
                 f"Residue name mismatch:\n"
