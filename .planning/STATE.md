@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 34.6-revise-custom-panel-valid-input |
 | Plan | 4 of 8 complete |
 | Status | In progress |
-| Last activity | 2026-05-08 — Completed 34.6-05-PLAN.md (CustomMoleculeInserter complete system) |
+| Last activity | 2026-05-08 — Completed 34.6-03-PLAN.md (Integration tests for bug fixes) |
 
-**Progress:** ██████████ 99.4% (173/172 plans complete, Phase 34.6-03 pending)
+**Progress:** ██████████ 100% (173/172 plans complete, Phase 34.6 continuing)
 
 ---
 
@@ -71,7 +71,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Generic residue name suppression for real molecule files (Phase 34.6-01)
 - ✓ Liquid region bounds display for Custom mode (Phase 34.6-02)
 - ✓ Volume preview and molecule count estimate for Random mode (Phase 34.6-02)
-- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-03 to 34.6-08)
+- ✓ Integration tests for Phase 34.6 bug fixes (Phase 34.6-03)
+- ⏳ Complete system export for Custom Molecule tab (Phase 34.6-04 to 34.6-08)
 - ⏳ Screenshots and release notes (Phase 35-06)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -304,12 +305,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-08 15:31 UTC
-**Completed:** 34.6-05-PLAN.md (CustomMoleculeInserter complete system)
-**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05 complete; next is 03, 06-08)
+**Last session:** 2026-05-08 23:32 UTC
+**Completed:** 34.6-03-PLAN.md (Integration tests for bug fixes)
+**Next:** Continue Phase 34.6 (Plans 01, 02, 04, 05 complete; next is 06-08)
 
 ---
 *State updated: 2026-05-08 — Phase 34.6 4/8 plans complete*
-
----
-*State updated: 2026-05-08 — Phase 34.6 in progress (2/8 plans complete)*
