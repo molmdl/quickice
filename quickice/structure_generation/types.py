@@ -488,30 +488,43 @@ class CustomMoleculeConfig:
 
 @dataclass
 class CustomMoleculeStructure:
-    """Result of custom molecule placement.
+    """Result of custom molecule insertion into interface structure.
+    
+    Contains COMPLETE system: ice + water + custom molecules.
+    Follows IonStructure pattern for consistency with downstream workflows.
     
     Attributes:
-        positions: (N_atoms, 3) custom molecule atom positions in nm
-        atom_names: Custom molecule atom names
-        cell: (3, 3) box cell vectors in nm (from interface structure)
-        molecule_index: List of (start, end) tuples for each molecule in positions array
+        positions: (N_atoms, 3) ALL atom positions in nm (ice + water + custom)
+        atom_names: ALL atom names (ice + water + custom atoms)
+        cell: (3, 3) box cell vectors in nm
+        molecule_index: List of MoleculeIndex for ALL molecules (ice, water, custom)
+        ice_atom_count: Number of ice atoms from source interface
+        water_atom_count: Number of water atoms from source interface
+        custom_molecule_atom_count: Number of custom molecule atoms
+        guest_atom_count: Number of guest atoms (0 for pure interface)
         config: Original CustomMoleculeConfig
         moleculetype_name: GROMACS moleculetype name (e.g., "CUSTOM_MOL_1")
         gro_path: Original .gro file path
         itp_path: Original .itp file path
         residue_name: Final residue name (from ITP if override accepted, else from GRO)
         custom_molecule_count: Number of molecules placed
+        interface_structure: Original InterfaceStructure (ice + water) for downstream use
     """
     positions: np.ndarray
     atom_names: list[str]
     cell: np.ndarray
-    molecule_index: list[tuple[int, int]]
-    config: CustomMoleculeConfig
-    moleculetype_name: str
-    gro_path: Path
-    itp_path: Path
-    residue_name: str
-    custom_molecule_count: int
+    molecule_index: list[MoleculeIndex]  # Changed from list[tuple[int, int]]
+    ice_atom_count: int
+    water_atom_count: int
+    custom_molecule_atom_count: int
+    guest_atom_count: int = 0
+    config: CustomMoleculeConfig | None = None
+    moleculetype_name: str = ""
+    gro_path: Path | None = None
+    itp_path: Path | None = None
+    residue_name: str = ""
+    custom_molecule_count: int = 0
+    interface_structure: Any = None  # InterfaceStructure (avoid circular import)
 
 
 @dataclass
