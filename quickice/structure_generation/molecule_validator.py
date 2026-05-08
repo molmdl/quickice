@@ -25,6 +25,7 @@ class ValidationResult:
         residue_name_mismatch: True if GRO and ITP residue names differ (non-blocking)
         gro_residue_name: Residue name from GRO file (if extractable)
         itp_residue_name: Residue name from ITP file (moleculetype name)
+        gro_atom_count: Number of atoms in GRO file
     """
     is_valid: bool
     errors: List[str]
@@ -32,6 +33,7 @@ class ValidationResult:
     residue_name_mismatch: bool = False
     gro_residue_name: str | None = None
     itp_residue_name: str | None = None
+    gro_atom_count: int | None = None
 
 
 def validate_gro_itp_consistency(
@@ -176,5 +178,6 @@ def validate_custom_molecule(
         warnings=warnings,
         residue_name_mismatch=residue_name_mismatch,
         gro_residue_name=gro_residue_name,
-        itp_residue_name=itp_residue_name
+        itp_residue_name=itp_residue_name,
+        gro_atom_count=gro_atom_count
     )

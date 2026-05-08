@@ -1173,8 +1173,8 @@ class MainWindow(QMainWindow):
             placed_positions = rotated + np.array(position)
             
             # Show preview in viewer
-            if hasattr(self, 'custom_molecule_viewer'):
-                self.custom_molecule_viewer.show_preview(
+            if hasattr(self.custom_molecule_panel, 'custom_viewer'):
+                self.custom_molecule_panel.custom_viewer.show_preview(
                     placed_positions, atom_names, cell
                 )
                 self.log_message(
@@ -1191,8 +1191,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_custom_molecule_preview_cleared(self) -> None:
         """Handle preview clear request from CustomMoleculePanel."""
-        if hasattr(self, 'custom_molecule_viewer'):
-            self.custom_molecule_viewer.clear_preview()
+        if hasattr(self.custom_molecule_panel, 'custom_viewer'):
+            self.custom_molecule_panel.custom_viewer.clear_preview()
             self.log_message("Preview cleared")
     
     @Slot(int)

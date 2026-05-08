@@ -26,6 +26,7 @@ from PySide6.QtCore import Signal, Qt
 
 from quickice.structure_generation.types import CustomMoleculeConfig
 from quickice.gui.view import HelpIcon
+from quickice.gui.custom_molecule_viewer import CustomMoleculeViewerWidget
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ class CustomMoleculePanel(QWidget):
         
         left_layout.addStretch()
         
-        # === RIGHT COLUMN: Log Panel ===
+        # === RIGHT COLUMN: Log Panel + 3D Viewer ===
         right_layout = QVBoxLayout()
         right_layout.setSpacing(10)
         
@@ -126,6 +127,10 @@ class CustomMoleculePanel(QWidget):
         log_layout.addWidget(self._log_text)
         log_group.setLayout(log_layout)
         right_layout.addWidget(log_group)
+        
+        # 3D viewer widget (stretch=1 to fill remaining space)
+        self.custom_viewer = CustomMoleculeViewerWidget()
+        right_layout.addWidget(self.custom_viewer, stretch=1)
         
         # Add columns to top-level layout (left gets 2/5, right gets 3/5)
         main_layout.addLayout(left_layout, stretch=2)
@@ -788,3 +793,10 @@ class CustomMoleculePanel(QWidget):
         
         self.clear_log()
         self.log_message("Panel reset")
+    
+    def hide_placeholder(self) -> None:
+        """Hide the placeholder, show the 3D viewer.
+        
+        Delegates to the internal CustomMoleculeViewerWidget.
+        """
+        self.custom_viewer.hide_placeholder()
