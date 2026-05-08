@@ -19,6 +19,7 @@ from quickice.structure_generation.types import (
     CustomMoleculeConfig,
     CustomMoleculeStructure,
     InterfaceStructure,
+    PlacementValidationResult,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.gro_parser import parse_gro_file
@@ -84,6 +85,104 @@ class CustomMoleculeInserter:
         logger.info(
             f"Loaded custom molecule template from {config.gro_path.name}: "
             f"{len(self.template_atom_names)} atoms"
+        )
+    
+    def validate_single_placement(
+        self,
+        structure: InterfaceStructure,
+        position: tuple[float, float, float],
+        rotation: tuple[float, float, float],
+    ) -> PlacementValidationResult:
+        """Validate placement for single molecule without full insertion.
+        
+        This is a READ-ONLY operation - does not modify MoleculetypeRegistry
+        or insert any molecules. Used for validation before commit.
+        
+        Args:
+            structure: InterfaceStructure to validate against
+            position: (x, y, z) center-of-mass position in nm
+            rotation: (alpha, beta, gamma) Euler angles in degrees
+            
+        Returns:
+            PlacementValidationResult with validation outcome
+        """
+        # 1. Check bounds
+        ice_atom_count = getattr(structure, 'ice_atom_count', 0)
+        water_atom_count = getattr(structure, 'water_atom_count', 0)
+        
+        if water_atom_count == 0:
+            return PlacementValidationResult(
+                is_valid=False,
+                within_bounds=False,
+                has_overlap=False,
+                min_distance=float('inf'),
+                nearest_atom_type=None,
+                error_message="No liquid region in structure"
+            )
+        
+        liquid_positions = structure.positions[ice_atom_count:ice_atom_count + water_atom_count]
+        min_coords = liquid_positions.min(axis=0)
+        max_coords = liquid_positions.max(axis=0)
+        
+        within_bounds = all(
+            min_coords[i] <= position[i] <= max_coords[i]
+            for i in range(3)
+        )
+        
+        if not within_bounds:
+            return PlacementValidationResult(
+                is_valid=False,
+                within_bounds=False,
+                has_overlap=False,
+                min_distance=float('inf'),
+                nearest_atom_type=None,
+                error_message="Position outside liquid region"
+            )
+        
+        # 2. Build KDTree from existing atoms (reuse existing method)
+        existing_tree = self._build_existing_atoms_tree(structure)
+        
+        # 3. Rotate and place template molecule
+        center = self.template_positions.mean(axis=0)
+        centered_template = self.template_positions - center
+        rot_matrix = self._euler_to_rotation_matrix(*rotation)
+        rotated = centered_template @ rot_matrix.T
+        placed_mol = rotated + np.array(position)
+        
+        # 4. Check overlap (reuse existing method)
+        has_overlap = False
+        min_distance = float('inf')
+        nearest_atom_type = None
+        nearest_atom_idx = None
+        
+        if existing_tree is not None:
+            for atom_pos in placed_mol:
+                dist, idx = existing_tree.query(atom_pos, k=1)
+                if dist < min_distance:
+                    min_distance = dist
+                    nearest_atom_idx = idx
+                if dist < self.config.min_separation:
+                    has_overlap = True
+        
+            # Get nearest atom type for user feedback
+            if nearest_atom_idx is not None and hasattr(structure, 'atom_types'):
+                nearest_atom_type = structure.atom_types[ice_atom_count + nearest_atom_idx]
+        
+        # 5. Return result
+        is_valid = within_bounds and not has_overlap
+        
+        error_message = None
+        if not is_valid:
+            if has_overlap:
+                error_message = f"Overlap detected (min distance: {min_distance:.3f} nm)"
+        
+        return PlacementValidationResult(
+            is_valid=is_valid,
+            within_bounds=within_bounds,
+            has_overlap=has_overlap,
+            min_distance=min_distance,
+            nearest_atom_type=nearest_atom_type,
+            error_message=error_message
         )
     
     def _euler_to_rotation_matrix(
