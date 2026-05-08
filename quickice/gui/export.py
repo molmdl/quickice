@@ -6,6 +6,7 @@ This module provides exporter classes for saving user work to standard file form
 - ViewportExporter: Capture 3D molecular viewport to image files
 """
 
+import logging
 from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.figure import Figure
@@ -18,6 +19,8 @@ from vtkmodules.all import (
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, SoluteStructure, CustomMoleculeStructure
+
+logger = logging.getLogger(__name__)
 
 
 class SoluteGROMACSExporter:
@@ -159,22 +162,25 @@ class CustomMoleculeGROMACSExporter:
     
     def export_custom_molecule_gromacs(self, custom_structure) -> bool:
         """Export custom molecule structure to GROMACS format.
-
+        
+        Exports COMPLETE system: ice + water + custom molecules.
+        Files: .gro, .top, and custom .itp bundled.
+        
         Args:
-            custom_structure: CustomMoleculeStructure with positions and file paths
-
+            custom_structure: CustomMoleculeStructure with complete system data
+        
         Returns:
             True if export succeeded
         """
-        # Generate default filename with moleculetype name and count
+        # Generate default filename
         moleculetype_name = custom_structure.moleculetype_name
         n_molecules = custom_structure.custom_molecule_count
-        default_name = f"custom_{moleculetype_name}_{n_molecules}molecules.gro"
-
+        default_name = f"custom_system_{moleculetype_name}_{n_molecules}molecules.gro"
+        
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self.parent,
-            "Export Custom Molecules for GROMACS",
+            "Export Custom Molecule System for GROMACS",
             default_name,
             "GRO Files (*.gro);;All Files (*)",
             "GRO Files (*.gro)"
@@ -188,43 +194,29 @@ class CustomMoleculeGROMACSExporter:
         if path.suffix.lower() != '.gro':
             path = path.with_suffix('.gro')
         
-        # Generate companion filename using stem
+        # Generate companion filename
         top_path = path.with_name(path.stem + '.top')
         
         try:
-            # Get interface structure from config
-            # Note: custom_structure.positions contains ONLY custom molecule atoms
-            # We need to combine with the interface structure
-            
-            # For now, export just the custom molecules
-            # The interface structure would need to be passed separately
-            
-            # Write .gro file with custom molecules
-            from quickice.output.gromacs_writer import write_gro_file
-            write_gro_file(
-                custom_structure.positions, 
-                custom_structure.atom_names, 
-                custom_structure.cell, 
-                str(path)
+            # Write .gro file with complete system
+            from quickice.output.gromacs_writer import (
+                write_custom_molecule_gro_file,
+                write_custom_molecule_top_file
             )
             
-            # Write .top file with #include for custom ITP
-            top_content = f"""; Custom molecule topology
-#include "{custom_structure.itp_path.name}"
-
-[ molecules ]
-; Compound        nmols
-{moleculetype_name}              {n_molecules}
-"""
-            top_path.write_text(top_content)
+            write_custom_molecule_gro_file(custom_structure, str(path))
+            write_custom_molecule_top_file(custom_structure, str(top_path))
             
             # Copy custom .itp file to output directory
             import shutil
             custom_itp_dest = path.with_name(custom_structure.itp_path.name)
             shutil.copy(custom_structure.itp_path, custom_itp_dest)
             
+            logger.info(f"Exported custom molecule system: {path}")
             return True
+            
         except Exception as e:
+            logger.error(f"Export failed: {e}")
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
             import traceback
             traceback.print_exc()
