@@ -375,15 +375,21 @@ class SoluteInserter:
         
         # Calculate atoms per water molecule
         # This handles both TIP3P (3 atoms) and TIP4P (4 atoms) models
-        if structure.water_nmolecules > 0:
-            atoms_per_water = water_atom_count // structure.water_nmolecules
+        water_nmolecules = getattr(structure, 'water_nmolecules', None)
+        if water_nmolecules is None:
+            # Calculate from water_atom_count (assume TIP4P: 4 atoms per molecule)
+            water_nmolecules = water_atom_count // 4 if water_atom_count > 0 else 0
+        
+        if water_nmolecules > 0:
+            atoms_per_water = water_atom_count // water_nmolecules
         else:
             # Fallback to TIP4P (most common in this codebase)
             atoms_per_water = 4
         
         water_start = ice_atom_count
         water_end = ice_atom_count + water_atom_count
-        n_water_molecules = structure.water_nmolecules
+        # Use water_nmolecules calculated earlier (handles both InterfaceStructure and CustomMoleculeStructure)
+        n_water_molecules = water_nmolecules
         
         # Track which water molecules to keep
         water_molecules_to_keep = []
@@ -416,8 +422,26 @@ class SoluteInserter:
             f"({removed_count * atoms_per_water} atoms) that overlapped with solutes"
         )
         
-        # If no water molecules removed, return original
+        # If no water molecules removed, return original with custom molecule attributes set
         if removed_count == 0:
+            # For CustomMoleculeStructure, set custom molecule positions/atom_names attributes
+            # so downstream code can access them
+            if hasattr(structure, 'custom_molecule_atom_count') and structure.custom_molecule_atom_count > 0:
+                guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+                custom_start = ice_atom_count + water_atom_count + guest_atom_count
+                
+                # Set attributes on the structure (if not already set)
+                if not hasattr(structure, 'custom_molecule_positions'):
+                    structure.custom_molecule_positions = structure.positions[custom_start:]
+                if not hasattr(structure, 'custom_molecule_atom_names'):
+                    structure.custom_molecule_atom_names = list(structure.atom_names[custom_start:])
+                if hasattr(structure, 'moleculetype_name') and not hasattr(structure, 'custom_molecule_moleculetype'):
+                    structure.custom_molecule_moleculetype = structure.moleculetype_name
+                if hasattr(structure, 'gro_path') and not hasattr(structure, 'custom_gro_path'):
+                    structure.custom_gro_path = structure.gro_path
+                if hasattr(structure, 'itp_path') and not hasattr(structure, 'custom_itp_path'):
+                    structure.custom_itp_path = structure.itp_path
+            
             return structure
         
         # Build new structure with water molecules removed
@@ -436,26 +460,53 @@ class SoluteInserter:
         
         # Keep guest atoms
         guest_start = ice_atom_count + water_atom_count
-        guest_positions = structure.positions[guest_start:]
-        guest_atom_names = structure.atom_names[guest_start:]
         
-        # Combine: ice + kept_water + guests
+        # Check if structure has custom molecules (CustomMoleculeStructure case)
+        # For CustomMoleculeStructure, guest_atom_count is 0, but custom molecules exist
+        # They are appended after guests, so we need to separate them
+        has_custom_molecules = hasattr(structure, 'custom_molecule_atom_count') and structure.custom_molecule_atom_count > 0
+        
+        if has_custom_molecules:
+            # Separate guests and custom molecules
+            # Structure is: ice + water + guests + custom molecules
+            guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+            guest_end = guest_start + guest_atom_count
+            
+            guest_positions = structure.positions[guest_start:guest_end]
+            guest_atom_names = structure.atom_names[guest_start:guest_end]
+            
+            # Custom molecules come after guests
+            custom_start = guest_end
+            custom_positions = structure.positions[custom_start:]
+            custom_atom_names = structure.atom_names[custom_start:]
+        else:
+            # No custom molecules, everything after water is guests
+            guest_positions = structure.positions[guest_start:]
+            guest_atom_names = structure.atom_names[guest_start:]
+            custom_positions = None
+            custom_atom_names = None
+        
+        # Combine: ice + kept_water + guests + custom_molecules (if present)
         if kept_water_positions:
             water_positions_array = np.vstack(kept_water_positions)
         else:
             water_positions_array = np.zeros((0, 3))
         
-        new_positions = np.vstack([
-            ice_positions,
-            water_positions_array,
-            guest_positions
-        ])
+        # Build positions array
+        position_arrays = [ice_positions, water_positions_array, guest_positions]
+        if has_custom_molecules and custom_positions is not None:
+            position_arrays.append(custom_positions)
         
+        new_positions = np.vstack(position_arrays)
+        
+        # Build atom names list
         new_atom_names = (
             list(ice_atom_names) +
             kept_water_atom_names +
             list(guest_atom_names)
         )
+        if has_custom_molecules and custom_atom_names is not None:
+            new_atom_names.extend(custom_atom_names)
         
         # Update molecule_index to reflect new positions array
         # CRITICAL: Old molecule_index has indices pointing to old positions array
@@ -496,22 +547,63 @@ class SoluteInserter:
                         mol_type=mol.mol_type,
                     ))
                     current_idx += mol.count
+            
+            # Add custom molecules with shifted indices
+            # This preserves custom molecule information through the workflow
+            if has_custom_molecules:
+                for mol in structure.molecule_index:
+                    if mol.mol_type == "custom":
+                        new_molecule_index.append(MoleculeIndex(
+                            start_idx=current_idx,
+                            count=mol.count,
+                            mol_type=mol.mol_type,
+                        ))
+                        current_idx += mol.count
         
         # Create new InterfaceStructure
+        # For CustomMoleculeStructure, get mode and report from interface_structure
+        mode = getattr(structure, 'mode', None)
+        report = getattr(structure, 'report', None)
+        if mode is None and hasattr(structure, 'interface_structure'):
+            mode = getattr(structure.interface_structure, 'mode', 'slab')
+        if report is None and hasattr(structure, 'interface_structure'):
+            report = getattr(structure.interface_structure, 'report', '')
+        
         new_interface = InterfaceStructure(
             positions=new_positions,
             atom_names=new_atom_names,
             cell=structure.cell,
             ice_atom_count=structure.ice_atom_count,
             water_atom_count=len(kept_water_atom_names),
-            ice_nmolecules=structure.ice_nmolecules,
+            ice_nmolecules=getattr(structure, 'ice_nmolecules', 0),
             water_nmolecules=len(water_molecules_to_keep),
-            mode=structure.mode,
-            report=structure.report,
+            mode=mode or 'slab',
+            report=report or '',
             guest_atom_count=structure.guest_atom_count,
             molecule_index=new_molecule_index,
-            guest_nmolecules=structure.guest_nmolecules,
+            guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
         )
+        
+        # Preserve custom molecule attributes if present in input structure
+        # This handles the workflow: Interface → Custom → Solute → Ion
+        # When solutes are inserted from a CustomMoleculeStructure, we need to
+        # preserve the custom molecule information for downstream processing
+        if has_custom_molecules:
+            # Preserve custom molecule count and metadata
+            if hasattr(structure, 'custom_molecule_count'):
+                new_interface.custom_molecule_count = structure.custom_molecule_count
+            if hasattr(structure, 'moleculetype_name'):
+                new_interface.custom_molecule_moleculetype = structure.moleculetype_name
+            if hasattr(structure, 'gro_path'):
+                new_interface.custom_gro_path = structure.gro_path
+            if hasattr(structure, 'itp_path'):
+                new_interface.custom_itp_path = structure.itp_path
+            
+            # Set custom molecule atom count and positions from the actual data
+            # (not from potentially stale attributes)
+            new_interface.custom_molecule_atom_count = len(custom_atom_names) if custom_atom_names else 0
+            new_interface.custom_molecule_positions = custom_positions
+            new_interface.custom_molecule_atom_names = list(custom_atom_names) if custom_atom_names else []
         
         return new_interface
     
@@ -549,7 +641,13 @@ class SoluteInserter:
         
         # Calculate liquid volume from water molecule count
         # TIP4P water volume per molecule: 0.0299 nm³
-        liquid_volume_nm3 = structure.water_nmolecules * 0.0299
+        # Handle both InterfaceStructure (has water_nmolecules) and CustomMoleculeStructure (doesn't)
+        water_nmolecules = getattr(structure, 'water_nmolecules', None)
+        if water_nmolecules is None:
+            # Calculate from water_atom_count (assume TIP4P: 4 atoms per molecule)
+            water_nmolecules = water_atom_count // 4 if water_atom_count > 0 else 0
+        
+        liquid_volume_nm3 = water_nmolecules * 0.0299
         
         # Calculate molecule count
         n_molecules = self.calculate_molecule_count(
