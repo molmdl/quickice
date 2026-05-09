@@ -948,6 +948,12 @@ class MainWindow(QMainWindow):
             if solute_actor and self.ion_panel.ion_viewer.renderer is not None:
                 self.ion_panel.ion_viewer.renderer.AddActor(solute_actor)
                 self.ion_panel.ion_viewer._solute_actors.append(solute_actor)
+            
+            # If the solute was derived from custom molecules, also render custom molecules
+            if hasattr(self, '_current_custom_molecule_result') and self._current_custom_molecule_result is not None:
+                custom_structure = self._current_custom_molecule_result
+                if hasattr(self.ion_panel.ion_viewer, 'render_custom_molecules'):
+                    self.ion_panel.ion_viewer.render_custom_molecules(custom_structure)
 
         # If source was Custom Molecule, also render the custom molecules
         if current_source == "Custom Molecule" and hasattr(self, '_current_custom_molecule_result'):
