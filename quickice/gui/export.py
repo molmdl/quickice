@@ -208,9 +208,14 @@ class CustomMoleculeGROMACSExporter:
             write_custom_molecule_top_file(custom_structure, str(top_path))
             
             # Copy custom .itp file to output directory
-            import shutil
+            # Read, modify, and write ITP file with atomtypes commented out
+            from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+            itp_content = custom_structure.itp_path.read_text()
+            modified_content = comment_out_atomtypes_in_itp(itp_content)
             custom_itp_dest = path.with_name(custom_structure.itp_path.name)
-            shutil.copy(custom_structure.itp_path, custom_itp_dest)
+            custom_itp_dest.write_text(modified_content)
+            
+            logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
             logger.info(f"Exported custom molecule system: {path}")
             return True
@@ -338,14 +343,28 @@ class IonGROMACSExporter:
                 solute_itp_source = FilePath(__file__).parent.parent / "data" / solute_itp_name
                 if solute_itp_source.exists():
                     solute_itp_dest = path.with_name(solute_itp_name)
-                    shutil.copy(solute_itp_source, solute_itp_dest)
+                    
+                    # Read, modify, and write ITP file with atomtypes commented out
+                    from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                    itp_content = solute_itp_source.read_text()
+                    modified_content = comment_out_atomtypes_in_itp(itp_content)
+                    solute_itp_dest.write_text(modified_content)
+                    
+                    logger.info(f"Solute ITP copied with atomtypes commented: {solute_itp_dest}")
             
             # Copy custom molecule .itp file if custom molecules are present
             if ion_structure.custom_molecule_count > 0 and ion_structure.custom_molecule_positions is not None:
                 if ion_structure.custom_itp_path and Path(ion_structure.custom_itp_path).exists():
                     custom_itp_source = Path(ion_structure.custom_itp_path)
                     custom_itp_dest = path.with_name(custom_itp_source.name)
-                    shutil.copy(custom_itp_source, custom_itp_dest)
+                    
+                    # Read, modify, and write ITP file with atomtypes commented out
+                    from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                    itp_content = custom_itp_source.read_text()
+                    modified_content = comment_out_atomtypes_in_itp(itp_content)
+                    custom_itp_dest.write_text(modified_content)
+                    
+                    logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
             return True
         except Exception as e:

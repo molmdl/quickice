@@ -256,6 +256,104 @@ def parse_itp_residue_name(itp_path: str | Path) -> Optional[str]:
     return None
 
 
+def parse_itp_atomtypes(itp_path: str | Path) -> list[tuple[str, ...]]:
+    """Parse atomtypes from a GROMACS .itp file.
+    
+    Extracts all atomtype definitions from [ atomtypes ] section.
+    Each atomtype is returned as a tuple of the line parts.
+    
+    Supports two common formats:
+    - Format 1 (7 cols): name, at.num, mass, charge, ptype, sigma, epsilon
+    - Format 2 (8 cols): name, bond_type, at.num, mass, charge, ptype, sigma, epsilon
+    
+    Args:
+        itp_path: Path to the .itp file
+        
+    Returns:
+        List of atomtype tuples, each containing the parsed fields.
+        For 7-col format, adds empty bond_type as second element.
+    """
+    atomtypes = []
+    try:
+        with open(itp_path, 'r') as f:
+            in_atomtypes_section = False
+            for line in f:
+                stripped = line.strip()
+                
+                # Check for section headers
+                if stripped.startswith('['):
+                    if 'atomtypes' in stripped.lower():
+                        in_atomtypes_section = True
+                    else:
+                        in_atomtypes_section = False
+                    continue
+                
+                # Skip comments and empty lines
+                if not stripped or stripped.startswith(';') or stripped.startswith('#'):
+                    continue
+                
+                # Parse atomtype line
+                if in_atomtypes_section:
+                    parts = stripped.split()
+                    if len(parts) >= 7:  # Minimum 7 columns for atomtype
+                        # Normalize to 8-column format
+                        if len(parts) == 7:
+                            # Insert empty bond_type after name
+                            parts.insert(1, parts[0])  # Use name as bond_type
+                        atomtypes.append(tuple(parts))
+    except (IOError, OSError) as e:
+        logger.warning(f"Could not read ITP file for atomtypes: {e}")
+    
+    return atomtypes
+
+
+def comment_out_atomtypes_in_itp(itp_content: str) -> str:
+    """Comment out [ atomtypes ] section in ITP file content.
+    
+    Adds comment header and semicolons to all lines in atomtypes section.
+    This is needed because atomtypes should be defined in the main .top file,
+    not in individual molecule .itp files (to avoid duplication errors).
+    
+    Args:
+        itp_content: Original ITP file content as string
+        
+    Returns:
+        Modified ITP content with atomtypes section commented out
+    """
+    lines = itp_content.split('\n')
+    result_lines = []
+    in_atomtypes_section = False
+    atomtypes_found = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        # Check for section headers
+        if stripped.startswith('['):
+            if 'atomtypes' in stripped.lower():
+                in_atomtypes_section = True
+                atomtypes_found = True
+                # Add comment header before the section
+                result_lines.append("; Modified for QuickIce: [atomtypes] commented - types defined in main .top file")
+                result_lines.append("; " + line)  # Comment out the [ atomtypes ] header
+                continue
+            else:
+                in_atomtypes_section = False
+        
+        # Comment out lines in atomtypes section
+        if in_atomtypes_section:
+            if stripped and not stripped.startswith(';') and not stripped.startswith('#'):
+                # This is a data line, comment it out
+                result_lines.append('; ' + line)
+            else:
+                # Keep existing comments/blank lines as-is
+                result_lines.append(line)
+        else:
+            result_lines.append(line)
+    
+    return '\n'.join(result_lines)
+
+
 def get_guest_residue_name(guest_type: str) -> str:
     """Get the residue name for a guest molecule type from its itp file.
     
@@ -1401,6 +1499,8 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 
                 # Get residue name (use moleculetype name)
                 res_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CST"
+                # Truncate to 5 chars for GRO format (GROMACS limit)
+                res_name = res_name[:5]
                 
                 # Get atom names and positions for this molecule
                 start = mol.start_idx
@@ -1418,8 +1518,8 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}{res_name:<4s}  "
-                                f"{atom_name:>4s}{atom_num_wrapped:5d}"
+                    lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
             elif mol_type == "solute":
@@ -1442,6 +1542,9 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 else:
                     # Fallback
                     solute_res_name = f"{solute_type_upper}_LIQ"
+                
+                # Truncate to 5 chars for GRO format (GROMACS limit)
+                solute_res_name = solute_res_name[:5]
                 
                 for i in range(count):
                     atom_num += 1
@@ -1580,17 +1683,48 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
         
         # Solute atom types (if present)
-        # Note: Solute .itp files include their own atomtypes, but we need to declare them here
-        # to avoid GROMACS errors. The actual parameters are in the solute .itp file.
+        # Parse atomtypes from solute ITP and add to main .top file
         if has_solutes:
+            solute_type_lower = ion_structure.solute_type.lower()
+            solute_itp_name = f"{solute_type_lower}_liquid.itp"
             solute_type_upper = ion_structure.solute_type.upper()
-            f.write(f"; {solute_type_upper} solute atom types (GAFF2)\n")
-            if ion_structure.solute_type.lower() == "ch4":
-                # CH4_LIQ uses same atom types as CH4 guest
-                f.write("; CH4_LIQ atom types defined in ch4_liquid.itp\n")
-            elif ion_structure.solute_type.lower() == "thf":
-                # THF_LIQ uses same atom types as THF guest
-                f.write("; THF_LIQ atom types defined in thf_liquid.itp\n")
+            f.write(f"; {solute_type_upper} solute atom types\n")
+            
+            # Try to load atomtypes from solute ITP file
+            from pathlib import Path as FilePath
+            import quickice
+            package_dir = FilePath(quickice.__file__).parent
+            solute_itp_path = package_dir / "data" / solute_itp_name
+            
+            if not solute_itp_path.exists():
+                solute_itp_path = FilePath(__file__).parent.parent / "data" / solute_itp_name
+            
+            if solute_itp_path.exists():
+                solute_atomtypes = parse_itp_atomtypes(solute_itp_path)
+                if solute_atomtypes:
+                    for atomtype in solute_atomtypes:
+                        # Write atomtype line
+                        if len(atomtype) >= 8:
+                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
+                else:
+                    f.write(f"; {solute_type_upper} atom types defined in {solute_itp_name}\n")
+            else:
+                f.write(f"; {solute_type_upper} atom types defined in {solute_itp_name}\n")
+        
+        # Custom molecule atom types (if present)
+        # Parse atomtypes from custom ITP and add to main .top file
+        if has_custom and ion_structure.custom_itp_path:
+            from pathlib import Path as FilePath
+            custom_itp_path = FilePath(ion_structure.custom_itp_path)
+            if custom_itp_path.exists():
+                custom_atomtypes = parse_itp_atomtypes(custom_itp_path)
+                if custom_atomtypes:
+                    custom_mol_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CUSTOM"
+                    f.write(f"; {custom_mol_name} custom molecule atom types\n")
+                    for atomtype in custom_atomtypes:
+                        # Write atomtype line: name bond_type atomic_number mass charge ptype sigma epsilon
+                        if len(atomtype) >= 8:
+                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
         
         f.write("\n")
         
@@ -1784,8 +1918,8 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
             mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
             mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
             
-            # Use moleculetype_name as residue name
-            res_name = custom_structure.moleculetype_name
+            # Use moleculetype_name as residue name (truncate to 5 chars for GRO format)
+            res_name = custom_structure.moleculetype_name[:5]
             
             for i in range(mol.count):
                 atom_num += 1
@@ -1827,17 +1961,40 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         f.write("; Generated by QuickIce\n")
         f.write(f"; Custom molecule system: {sol_count} SOL + {guest_count} guests + {custom_count} {custom_structure.moleculetype_name}\n\n")
         
-        # Include water topology
-        f.write('; Include TIP4P-ICE water topology\n')
-        f.write('#include "tip4pice.itp"\n\n')
+        # [ defaults ] - force field defaults
+        f.write("[ defaults ]\n")
+        f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
+        f.write("1               2               yes             0.0     0.0\n\n")
+        
+        # [ atomtypes ] - MUST be before #include directives
+        f.write("[ atomtypes ]\n")
+        f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
+        
+        # TIP4P-ICE water atom types
+        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
+        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
+        
+        # Custom molecule atom types - parse from ITP file
+        if custom_structure.itp_path and custom_structure.itp_path.exists():
+            custom_atomtypes = parse_itp_atomtypes(custom_structure.itp_path)
+            if custom_atomtypes:
+                f.write(f"; {custom_structure.moleculetype_name} custom molecule atom types\n")
+                for atomtype in custom_atomtypes:
+                    if len(atomtype) >= 8:
+                        f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
+        
+        f.write("\n")
+        
+        # Include molecule definitions (AFTER atomtypes)
+        f.write("; Molecule definitions\n")
+        f.write('#include "tip4p-ice.itp"\n')
         
         # Include guest topology if present
         if guest_count > 0:
-            f.write('; Include guest topology\n')
-            f.write('#include "guest.itp"\n\n')
+            f.write('#include "guest.itp"\n')
         
         # Include custom molecule ITP
-        f.write('; Include custom molecule topology\n')
         f.write(f'#include "{custom_structure.itp_path.name}"\n\n')
         
         # [ system ] section
