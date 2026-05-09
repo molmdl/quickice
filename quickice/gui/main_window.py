@@ -396,9 +396,9 @@ class MainWindow(QMainWindow):
         export_solute_action.triggered.connect(self._on_export_solute_gromacs)
         
         # Export Custom Molecule for GROMACS
-        export_custom_action = export_as_menu.addAction("Export Custom Molecule...")
-        export_custom_action.setShortcut("Ctrl+M")
-        export_custom_action.triggered.connect(self._on_export_custom_molecule_gromacs)
+        self.export_custom_action = export_as_menu.addAction("Export Custom Molecule...")
+        self.export_custom_action.setShortcut("Ctrl+M")
+        self.export_custom_action.triggered.connect(self._on_export_custom_molecule_gromacs)
         
         # Export Ion for GROMACS
         export_ion_action = export_as_menu.addAction("Export Ion...")
@@ -1053,8 +1053,8 @@ class MainWindow(QMainWindow):
         self.custom_molecule_panel.log_message("Starting custom molecule insertion...")
         
         try:
-            # Create worker
-            worker = CustomMoleculeWorker(
+            # Create worker and store as instance variable to prevent garbage collection
+            self._custom_worker = CustomMoleculeWorker(
                 config,
                 self._current_interface_result,
                 self.custom_molecule_panel.get_gro_path(),
@@ -1062,21 +1062,18 @@ class MainWindow(QMainWindow):
             )
 
             # Create thread and move worker to it
-            thread = QThread()
-            worker.moveToThread(thread)
+            self._custom_worker_thread = QThread()
+            self._custom_worker.moveToThread(self._custom_worker_thread)
 
             # Connect signals
-            thread.started.connect(worker.run)
-            worker.finished.connect(thread.quit)
-            worker.finished.connect(self._on_custom_finished)
-            worker.error.connect(lambda msg: self.custom_molecule_panel.log_message(f"Error: {msg}"))
-            worker.progress.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
-
-            # Store thread reference
-            self._custom_worker_thread = thread
+            self._custom_worker_thread.started.connect(self._custom_worker.run)
+            self._custom_worker.finished.connect(self._custom_worker_thread.quit)
+            self._custom_worker.finished.connect(self._on_custom_finished)
+            self._custom_worker.error.connect(lambda msg: self.custom_molecule_panel.log_message(f"Error: {msg}"))
+            self._custom_worker.progress.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
 
             # Start
-            thread.start()
+            self._custom_worker_thread.start()
             
         except Exception as e:
             self.custom_molecule_panel.log_message(f"Error: {e}")
@@ -1116,11 +1113,14 @@ class MainWindow(QMainWindow):
             f"{len(result.positions)} total atoms (ice+water+custom)"
         )
 
-        # Clean up thread
+        # Clean up worker and thread
         if hasattr(self, '_custom_worker_thread'):
             self._custom_worker_thread.quit()
             self._custom_worker_thread.wait()
             del self._custom_worker_thread
+        
+        if hasattr(self, '_custom_worker'):
+            del self._custom_worker
     
     @Slot(bool)
     def _on_custom_files_uploaded(self, valid: bool):

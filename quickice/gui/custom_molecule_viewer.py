@@ -393,6 +393,9 @@ class CustomMoleculeViewerWidget(QWidget):
             self.renderer.AddActor(actor)
             self._preview_actor = actor
             
+            # Reset camera to view the preview molecule
+            self._reset_camera()
+            
             # Render
             if self.render_window:
                 self.render_window.Render()
