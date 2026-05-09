@@ -1,12 +1,11 @@
 # QuickIce
 
-A portable GUI application for generating ice structures, ice-water interfaces, hydrate systems, and multi-molecule GROMACS-ready inputs.
-
-QuickIce GUI is also a GUI of partial [GenIce2](https://github.com/genice-dev/GenIce2) functions with more focus on gromacs input preparation.
+A portable GUI application for generating ice structures, ice-water interfaces, hydrate systems, export to full GROMACS-ready format, providing an interface for basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with more focus on gromacs input preparation.
 
 While this is mainly a vibe coding project coded by free or open-source LLMs under human supervision, if you found QuickIce GUI useful in your research please cite:
-
+```
 QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (accessed on [DD MM YYYY])
+```
 
 > **Experimental**
 >
