@@ -423,7 +423,11 @@ class CustomMoleculeInserter:
         if new_water_nmolecules > 0:
             current_idx = ice_atom_count
             for _ in range(new_water_nmolecules):
-                new_molecule_index.append(MoleculeIndex(current_idx, current_idx + atoms_per_water, "water"))
+                new_molecule_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=atoms_per_water,
+                    mol_type="water"
+                ))
                 current_idx += atoms_per_water
         
         # Guest molecules (shift indices for new water count)
@@ -433,9 +437,9 @@ class CustomMoleculeInserter:
             for mol_idx in structure.molecule_index:
                 if mol_idx.mol_type == "guest":
                     new_molecule_index.append(MoleculeIndex(
-                        mol_idx.start_idx - shift,
-                        mol_idx.end_idx - shift,
-                        "guest"
+                        start_idx=mol_idx.start_idx - shift,
+                        count=mol_idx.count,
+                        mol_type="guest"
                     ))
         
         # Create new InterfaceStructure
@@ -610,7 +614,11 @@ class CustomMoleculeInserter:
             water_mol_count = water_atom_count // 4
             current_idx = ice_atom_count
             for _ in range(water_mol_count):
-                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "water"))
+                complete_molecule_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=4,
+                    mol_type="water"
+                ))
                 current_idx += 4
         
         # Guest molecules (if present)
@@ -624,7 +632,11 @@ class CustomMoleculeInserter:
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
         for start, end in molecule_index:
-            complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
+            complete_molecule_index.append(MoleculeIndex(
+                start_idx=current_idx,
+                count=end - start,
+                mol_type="custom"
+            ))
             current_idx += (end - start)
         
         # Combine positions and atom names from modified structure
@@ -772,7 +784,11 @@ class CustomMoleculeInserter:
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
         for start, end in molecule_index:
-            complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
+            complete_molecule_index.append(MoleculeIndex(
+                start_idx=current_idx,
+                count=end - start,
+                mol_type="custom"
+            ))
             current_idx += (end - start)
         
         # Combine positions and atom names from modified structure
