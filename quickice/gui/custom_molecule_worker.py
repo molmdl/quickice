@@ -117,7 +117,7 @@ class CustomMoleculeWorker(QObject):
             self.status.emit("Complete")
             self.progress.emit(100)
             
-            logger.info(f"Custom molecule insertion complete: {result.n_molecules} molecules")
+            logger.info(f"Custom molecule insertion complete: {result.custom_molecule_count} molecules")
             self.finished.emit(result)
             
         except InsertionError as e:
