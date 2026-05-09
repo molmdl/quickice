@@ -525,22 +525,12 @@ class SoluteViewerWidget(QWidget):
         custom_positions = custom_structure.positions[start_idx:end_idx]
         custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
 
-        # Build molecule indices for custom molecules
-        # Calculate atoms per molecule from total custom atoms and molecule count
-        n_atoms_per_mol = custom_atom_count // custom_structure.custom_molecule_count
-        
-        molecule_indices = []
-        for i in range(custom_structure.custom_molecule_count):
-            start = i * n_atoms_per_mol
-            end = start + n_atoms_per_mol
-            molecule_indices.append((start, end))
-
         # Create actor for custom molecules
         actor = create_custom_molecule_actor(
             custom_positions,
             custom_atom_names,
             custom_structure.cell,
-            molecule_indices=molecule_indices
+            custom_structure.moleculetype_name
         )
 
         if actor:
