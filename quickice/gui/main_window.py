@@ -1048,7 +1048,12 @@ class MainWindow(QMainWindow):
             self.ion_panel.set_solute_structure(solute_structure)
 
             # Calculate water molecules replaced
-            original_water_count = interface.water_nmolecules
+            # Handle both InterfaceStructure and CustomMoleculeStructure
+            if hasattr(interface, 'water_nmolecules'):
+                original_water_count = interface.water_nmolecules
+            else:
+                # CustomMoleculeStructure - get from its interface_structure
+                original_water_count = interface.interface_structure.water_nmolecules
             modified_water_count = solute_structure.interface_structure.water_nmolecules
             water_replaced = original_water_count - modified_water_count
 
