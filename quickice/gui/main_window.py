@@ -1074,7 +1074,9 @@ class MainWindow(QMainWindow):
             self._custom_worker.finished.connect(self._custom_worker_thread.quit)
             self._custom_worker.finished.connect(self._on_custom_finished)
             self._custom_worker.error.connect(lambda msg: self.custom_molecule_panel.log_message(f"Error: {msg}"))
-            self._custom_worker.progress.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
+            self._custom_worker.status.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
+            # Note: progress signal emits int (percentage), convert to string for display
+            self._custom_worker.progress.connect(lambda pct: self.custom_molecule_panel.log_message(f"Progress: {pct}%"))
 
             # Start
             self._custom_worker_thread.start()
@@ -1090,41 +1092,49 @@ class MainWindow(QMainWindow):
         Args:
             result: CustomMoleculeStructure with complete system data
         """
-        # Store result
-        self._current_custom_molecule_result = result
+        try:
+            # Store result
+            self._current_custom_molecule_result = result
 
-        # Update 3D viewer with complete system
-        self.custom_molecule_panel.custom_viewer.update_structure(result)
+            # Update 3D viewer with complete system
+            self.custom_molecule_panel.custom_viewer.update_structure(result)
 
-        # Hide placeholder
-        self.custom_molecule_panel.hide_placeholder()
+            # Hide placeholder
+            self.custom_molecule_panel.hide_placeholder()
 
-        # Enable export action
-        self.export_custom_action.setEnabled(True)
+            # Enable export action
+            self.export_custom_action.setEnabled(True)
 
-        # Pass result to SolutePanel (Tab 4) for source selection
-        self.solute_panel.set_custom_molecule_structure(result)
+            # Pass result to SolutePanel (Tab 4) for source selection
+            self.solute_panel.set_custom_molecule_structure(result)
 
-        # Pass result to IonPanel (Tab 5) for source selection
-        # This enables both workflow paths:
-        # - Interface → Custom → Solute → Ion (with solutes)
-        # - Interface → Custom → Ion (direct, skip solutes)
-        self.ion_panel.set_custom_molecule_structure(result)
+            # Pass result to IonPanel (Tab 5) for source selection
+            # This enables both workflow paths:
+            # - Interface → Custom → Solute → Ion (with solutes)
+            # - Interface → Custom → Ion (direct, skip solutes)
+            self.ion_panel.set_custom_molecule_structure(result)
 
-        # Log success with complete system info
-        self.custom_molecule_panel.log_message(
-            f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
-            f"{len(result.positions)} total atoms (ice+water+custom)"
-        )
+            # Log success with complete system info
+            self.custom_molecule_panel.log_message(
+                f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
+                f"{len(result.positions)} total atoms (ice+water+custom)"
+            )
 
-        # Clean up worker and thread
-        if hasattr(self, '_custom_worker_thread'):
-            self._custom_worker_thread.quit()
-            self._custom_worker_thread.wait()
-            del self._custom_worker_thread
-        
-        if hasattr(self, '_custom_worker'):
-            del self._custom_worker
+        except Exception as e:
+            # Log the error with full traceback
+            logger.error(f"Failed to display custom molecule structure: {e}", exc_info=True)
+            self.custom_molecule_panel.log_message(f"Error displaying structure: {e}")
+            return
+
+        finally:
+            # Clean up worker and thread (always runs, even on exception)
+            if hasattr(self, '_custom_worker_thread'):
+                self._custom_worker_thread.quit()
+                self._custom_worker_thread.wait()
+                del self._custom_worker_thread
+            
+            if hasattr(self, '_custom_worker'):
+                del self._custom_worker
     
     @Slot(bool)
     def _on_custom_files_uploaded(self, valid: bool):
