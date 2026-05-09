@@ -1195,6 +1195,10 @@ class MainWindow(QMainWindow):
             
             # Show preview in viewer
             if hasattr(self.custom_molecule_panel, 'custom_viewer'):
+                # Load interface structure first (to show context)
+                self.custom_molecule_panel.custom_viewer.load_interface_structure(structure)
+                
+                # Then show preview molecule overlaid
                 self.custom_molecule_panel.custom_viewer.show_preview(
                     placed_positions, atom_names, cell
                 )
