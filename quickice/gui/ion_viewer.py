@@ -551,13 +551,14 @@ class IonViewerWidget(QWidget):
         # Custom molecules are stored separately in CustomMoleculeStructure
         ice_atom_count = custom_structure.ice_atom_count
         water_atom_count = custom_structure.water_atom_count
+        guest_atom_count = getattr(custom_structure, 'guest_atom_count', 0)  # May not exist in older structures
         custom_atom_count = custom_structure.custom_molecule_atom_count
 
         if custom_atom_count == 0:
             return
 
-        # Get custom molecule positions (after ice and water atoms)
-        start_idx = ice_atom_count + water_atom_count
+        # Get custom molecule positions (after ice, water, and guest atoms)
+        start_idx = ice_atom_count + water_atom_count + guest_atom_count
         end_idx = start_idx + custom_atom_count
         custom_positions = custom_structure.positions[start_idx:end_idx]
         custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
