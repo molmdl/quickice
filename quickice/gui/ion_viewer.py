@@ -115,6 +115,7 @@ class IonViewerWidget(QWidget):
         self._ion_actors: list = []
         self._guest_actor = None  # For guest molecules (vtkActor when VTK available)
         self._solute_actors: list = []  # For solute molecules when source is "Solute"
+        self._custom_molecule_actors: list = []  # For custom molecules when source is "Custom Molecule"
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -493,6 +494,18 @@ class IonViewerWidget(QWidget):
         # Clear actor list
         self._solute_actors = []
 
+    def _clear_custom_molecule_actors(self) -> None:
+        """Remove custom molecule actors from renderer."""
+        if self.renderer is None:
+            return
+
+        for actor in self._custom_molecule_actors:
+            if actor is not None:
+                self.renderer.RemoveActor(actor)
+
+        # Clear actor list
+        self._custom_molecule_actors = []
+
     def _clear_ion_actors(self) -> None:
         """Remove ion actors from renderer."""
         # Remove actors from renderer
@@ -510,10 +523,60 @@ class IonViewerWidget(QWidget):
         """Remove all actors from renderer and reset state."""
         self._clear_interface_actors()
         self._clear_solute_actors()
+        self._clear_custom_molecule_actors()
         self._clear_ion_actors()
 
         # Clear current interface structure
         self._current_interface = None
+
+    def render_custom_molecules(self, custom_structure) -> None:
+        """Render custom molecules in the ion viewer.
+        
+        Used when the source for ion insertion was "Custom Molecule".
+        Renders custom molecules separately from the interface structure.
+        
+        Args:
+            custom_structure: CustomMoleculeStructure with custom molecule data
+        """
+        if not self._vtk_available or self.renderer is None:
+            return
+
+        # Clear any existing custom molecule actors
+        self._clear_custom_molecule_actors()
+
+        # Import the renderer function
+        from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
+
+        # Extract custom molecule positions and atom names
+        # Custom molecules are stored separately in CustomMoleculeStructure
+        ice_atom_count = custom_structure.ice_atom_count
+        water_atom_count = custom_structure.water_atom_count
+        custom_atom_count = custom_structure.custom_molecule_atom_count
+
+        if custom_atom_count == 0:
+            return
+
+        # Get custom molecule positions (after ice and water atoms)
+        start_idx = ice_atom_count + water_atom_count
+        end_idx = start_idx + custom_atom_count
+        custom_positions = custom_structure.positions[start_idx:end_idx]
+        custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
+
+        # Create actor for custom molecules
+        actor = create_custom_molecule_actor(
+            custom_positions,
+            custom_atom_names,
+            custom_structure.cell,
+            custom_structure.moleculetype_name
+        )
+
+        if actor:
+            self._custom_molecule_actors.append(actor)
+            self.renderer.AddActor(actor)
+            
+            # Render the scene
+            if self.render_window:
+                self.render_window.Render()
 
     def clear(self) -> None:
         """Clear the current structure from the viewer.
@@ -539,6 +602,7 @@ class IonViewerWidget(QWidget):
         """Clear only the interface structure, keep ion actors."""
         self._clear_interface_actors()
         self._clear_solute_actors()  # Solutes are part of interface when source is "Solute"
+        self._clear_custom_molecule_actors()  # Custom molecules are part of interface when source is "Custom Molecule"
 
         if self._vtk_available and self.render_window is not None:
             self.render_window.Render()

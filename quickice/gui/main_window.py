@@ -949,6 +949,12 @@ class MainWindow(QMainWindow):
                 self.ion_panel.ion_viewer.renderer.AddActor(solute_actor)
                 self.ion_panel.ion_viewer._solute_actors.append(solute_actor)
 
+        # If source was Custom Molecule, also render the custom molecules
+        if current_source == "Custom Molecule" and hasattr(self, '_current_custom_molecule_result'):
+            custom_structure = self._current_custom_molecule_result
+            if hasattr(self.ion_panel.ion_viewer, 'render_custom_molecules'):
+                self.ion_panel.ion_viewer.render_custom_molecules(custom_structure)
+
         # Mark that ions have been inserted (for any future reference)
         self.ion_panel.hide_placeholder()
 
@@ -1066,6 +1072,31 @@ class MainWindow(QMainWindow):
         """Handle custom molecule generate button click."""
         from quickice.gui.custom_molecule_worker import CustomMoleculeWorker
         from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeConfig
+        from PySide6.QtWidgets import QMessageBox
+        
+        # Check for previous insertion - ask user what to do
+        if self.custom_molecule_panel._has_previous_insertion:
+            reply = QMessageBox.question(
+                self,
+                "Previous Custom Molecules Found",
+                "You have previously inserted custom molecules.\n\n"
+                "Do you want to start fresh (clear previous molecules) or cancel?\n\n"
+                "• 'Yes' = Start fresh (previous molecules will be cleared)\n"
+                "• 'No' = Cancel (keep previous molecules)",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if reply == QMessageBox.No:
+                # User chose to cancel
+                self.custom_molecule_panel.log_message("Generation cancelled - keeping previous custom molecules")
+                return
+            
+            # User chose to start fresh - clear previous results
+            self._on_clear_custom_molecule_results()
+            self.custom_molecule_panel._has_previous_insertion = False
+            self.custom_molecule_panel.positions_added.clear()
+            self.custom_molecule_panel.position_count_label.setText("Positions added: 0")
+            self.custom_molecule_panel.log_message("Cleared previous custom molecules - starting fresh")
         
         # Validate that interface result exists (need ice+water structure)
         if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
@@ -1081,6 +1112,9 @@ class MainWindow(QMainWindow):
         
         # Log start
         self.custom_molecule_panel.log_message("Starting custom molecule insertion...")
+        
+        # Disable generate button during processing (prevent multiple clicks)
+        self.custom_molecule_panel.generate_button.setEnabled(False)
         
         try:
             # Create worker and store as instance variable to prevent garbage collection
@@ -1108,6 +1142,8 @@ class MainWindow(QMainWindow):
             self._custom_worker_thread.start()
             
         except Exception as e:
+            # Re-enable button on error
+            self.custom_molecule_panel.generate_button.setEnabled(True)
             self.custom_molecule_panel.log_message(f"Error: {e}")
             logger.error(f"Custom molecule insertion failed: {e}", exc_info=True)
     
@@ -1144,24 +1180,43 @@ class MainWindow(QMainWindow):
             self.ion_panel.set_custom_molecule_structure(result)
 
             # Calculate water molecules replaced
+            logger.info(f"[Water Count Debug] Starting water replacement calculation...")
+            logger.info(f"[Water Count Debug] hasattr(_current_interface_result): {hasattr(self, '_current_interface_result')}")
+            if hasattr(self, '_current_interface_result'):
+                logger.info(f"[Water Count Debug] _current_interface_result is None: {self._current_interface_result is None}")
+            
             if hasattr(self, '_current_interface_result') and self._current_interface_result is not None:
                 original_water_count = self._current_interface_result.water_nmolecules
-                modified_water_count = result.interface_structure.water_nmolecules
+                logger.info(f"[Water Count Debug] original_water_count: {original_water_count}")
+                logger.info(f"[Water Count Debug] hasattr(result, 'interface_structure'): {hasattr(result, 'interface_structure')}")
+                if hasattr(result, 'interface_structure') and result.interface_structure is not None:
+                    modified_water_count = result.interface_structure.water_nmolecules
+                    logger.info(f"[Water Count Debug] modified_water_count: {modified_water_count}")
+                else:
+                    logger.warning(f"[Water Count Debug] result.interface_structure is missing or None!")
+                    modified_water_count = original_water_count  # Fallback to avoid negative count
                 water_replaced = original_water_count - modified_water_count
+                logger.info(f"[Water Count Debug] water_replaced calculation: {original_water_count} - {modified_water_count} = {water_replaced}")
             else:
                 water_replaced = 0
+                logger.warning(f"[Water Count Debug] _current_interface_result not available, setting water_replaced=0")
 
             # Log success with complete system info
+            logger.info(f"[Water Count Debug] Logging success message...")
             self.custom_molecule_panel.log_message(
                 f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
                 f"{len(result.positions)} total atoms (ice+water+custom)"
             )
 
             # Log water replacement count if any water was replaced
+            logger.info(f"[Water Count Debug] Checking if water_replaced > 0: {water_replaced > 0}")
             if water_replaced > 0:
+                logger.info(f"[Water Count Debug] Logging water replacement message: {water_replaced} waters")
                 self.custom_molecule_panel.log_message(
                     f"Replaced {water_replaced} overlapping liquid water molecules"
                 )
+            else:
+                logger.info(f"[Water Count Debug] No water replacement message (water_replaced={water_replaced})")
 
         except Exception as e:
             # Log the error with full traceback
@@ -1170,6 +1225,10 @@ class MainWindow(QMainWindow):
             return
 
         finally:
+            # Re-enable generate button (always runs, even on exception)
+            if hasattr(self, 'custom_molecule_panel'):
+                self.custom_molecule_panel.generate_button.setEnabled(True)
+            
             # Clean up worker and thread (always runs, even on exception)
             if hasattr(self, '_custom_worker_thread'):
                 self._custom_worker_thread.quit()
