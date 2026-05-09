@@ -1178,7 +1178,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
     """
-    # Build an ordered list of molecules: SOL (ice+water) first, then guest, then solutes, then NA, then CL
+    # Build an ordered list of molecules: SOL (ice+water) first, then guest, then custom molecules, then solutes, then NA, then CL
     ordered_mols = []
     # Pass 1: SOL molecules (ice + water)
     for mol in ion_structure.molecule_index:
@@ -1188,7 +1188,25 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     for mol in ion_structure.molecule_index:
         if mol.mol_type == "guest":
             ordered_mols.append(("guest", mol))
-    # Pass 3: solute molecules (if present)
+    # Pass 3: custom molecules (if present)
+    # Note: custom molecules are stored separately, not in molecule_index
+    has_custom = ion_structure.custom_molecule_count > 0 and ion_structure.custom_molecule_positions is not None
+    if has_custom:
+        # Custom molecules are already positioned correctly in the structure
+        # We need to determine how many atoms per custom molecule
+        atoms_per_custom = 0
+        if ion_structure.custom_molecule_atom_count > 0 and ion_structure.custom_molecule_count > 0:
+            atoms_per_custom = ion_structure.custom_molecule_atom_count // ion_structure.custom_molecule_count
+        
+        # Create pseudo-entries for each custom molecule
+        for i in range(ion_structure.custom_molecule_count):
+            start = i * atoms_per_custom
+            ordered_mols.append(("custom", type('obj', (object,), {
+                'start_idx': start,
+                'count': atoms_per_custom,
+                'mol_type': 'custom'
+            })()))
+    # Pass 4: solute molecules (if present)
     # Note: solutes are stored separately, not in molecule_index
     has_solutes = ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None
     if has_solutes:
@@ -1199,11 +1217,11 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 'count': end - start,
                 'mol_type': 'solute'
             })()))
-    # Pass 4: NA ions
+    # Pass 5: NA ions
     for mol in ion_structure.molecule_index:
         if mol.mol_type == "na":
             ordered_mols.append(("na", mol))
-    # Pass 5: CL ions
+    # Pass 6: CL ions
     for mol in ion_structure.molecule_index:
         if mol.mol_type == "cl":
             ordered_mols.append(("cl", mol))
@@ -1219,6 +1237,9 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 # Water: 4 atoms
                 total_atoms += mol.count
         elif mol_type == "guest":
+            total_atoms += mol.count
+        elif mol_type == "custom":
+            # Custom molecule atoms (use custom_molecule_positions)
             total_atoms += mol.count
         elif mol_type == "solute":
             # Solute atoms (use solute_positions)
@@ -1244,10 +1265,13 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
         # Title line
         na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
         cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
+        title_parts = [f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-)"]
+        if has_custom:
+            title_parts.append(f"{ion_structure.custom_molecule_count} custom molecules")
         if has_solutes:
-            f.write(f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-) + {ion_structure.solute_n_molecules} {ion_structure.solute_type.upper()} solutes exported by QuickIce\n")
-        else:
-            f.write(f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-) exported by QuickIce\n")
+            title_parts.append(f"{ion_structure.solute_n_molecules} {ion_structure.solute_type.upper()} solutes")
+        title_parts.append("exported by QuickIce")
+        f.write(" + ".join(title_parts) + "\n")
 
         # Number of atoms
         f.write(f"{total_atoms:5d}\n")
@@ -1370,6 +1394,34 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                                 f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
+            elif mol_type == "custom":
+                # Custom molecule - write all atoms from custom_molecule_positions
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                
+                # Get residue name (use moleculetype name)
+                res_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CST"
+                
+                # Get atom names and positions for this molecule
+                start = mol.start_idx
+                if ion_structure.custom_molecule_atom_names:
+                    mol_atom_names = ion_structure.custom_molecule_atom_names[start:start + mol.count]
+                else:
+                    mol_atom_names = [f"C{i}" for i in range(mol.count)]  # Fallback
+                
+                if ion_structure.custom_molecule_positions is not None:
+                    mol_positions = ion_structure.custom_molecule_positions[start:start + mol.count]
+                else:
+                    mol_positions = np.zeros((mol.count, 3))  # Fallback
+                
+                # Write all atoms
+                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}{res_name:<4s}  "
+                                f"{atom_name:>4s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+            
             elif mol_type == "solute":
                 # Solute molecule (CH4_LIQ or THF_LIQ) - write all atoms
                 # Solute positions are stored separately in ion_structure.solute_positions
@@ -1438,7 +1490,8 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     Uses SOL molecule type for water and ice, NA for sodium, CL for chloride.
     Includes guest molecules if present, with dynamic residue name from itp.
     Includes solute molecules if present, with registry-based moleculetype name.
-    Writes [molecules] section in order: SOL (ice+water), guest, solute, NA, CL.
+    Includes custom molecules if present, with custom moleculetype from user file.
+    Writes [molecules] section in order: SOL (ice+water), guest, custom, solute, NA, CL.
 
     Args:
         ion_structure: IonStructure object with molecule_index
@@ -1450,6 +1503,10 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     guest_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "guest")
     na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
     cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
+    
+    # Check for custom molecules
+    has_custom = ion_structure.custom_molecule_count > 0 and ion_structure.custom_molecule_positions is not None
+    custom_count = ion_structure.custom_molecule_count if has_custom else 0
     
     # Check for solutes
     has_solutes = ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None
@@ -1476,10 +1533,14 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         f.write("; TIP4P-ICE water model with NaCl ions")
         if guest_count > 0:
             f.write(" and guest molecules")
+        if has_custom:
+            f.write(f" and {custom_count} custom molecules")
         if has_solutes:
             f.write(f" and {solute_count} {ion_structure.solute_type.upper()} solutes")
         f.write("\n")
         f.write(f"; Structure: {sol_count} SOL (ice+water) + {guest_count} guests")
+        if has_custom:
+            f.write(f" + {custom_count} custom molecules")
         if has_solutes:
             f.write(f" + {solute_count} {ion_structure.solute_type.upper()} solutes")
         f.write(f" + {na_count} Na+ + {cl_count} Cl-\n\n")
@@ -1547,6 +1608,13 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 # Fallback to generic guest.itp
                 f.write('#include "guest.itp"\n')
 
+        # Include custom molecule itp if custom molecules present
+        if has_custom and ion_structure.custom_itp_path:
+            # Copy just the filename from the path
+            from pathlib import Path as FilePath
+            custom_itp_name = FilePath(ion_structure.custom_itp_path).name
+            f.write(f'#include "{custom_itp_name}"\n')
+
         # Include solute itp if solutes present (liquid solutes use _liquid.itp)
         if has_solutes:
             solute_type_lower = ion_structure.solute_type.lower()
@@ -1559,24 +1627,31 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         # [ system ] section
         f.write("[ system ]\n")
         system_name = f"Ice/water + {guest_count} guests"
+        if has_custom:
+            system_name += f" + {custom_count} custom molecules"
         if has_solutes:
             system_name += f" + {solute_count} {ion_structure.solute_type.upper()} solutes"
         system_name += f" + {na_count} Na+ + {cl_count} Cl- ions"
         f.write(f"{system_name}\n\n")
 
-        # [ molecules ] section - written in ORDER: SOL, guest, solute, NA, CL
+        # [ molecules ] section - written in ORDER: SOL, guest, custom, solute, NA, CL
         # This matches write_ion_gro_file() output order
         # GROMACS uses [molecules] to know how to group consecutive atoms into molecules
         f.write("[ molecules ]\n")
         f.write("; Compound        #mols\n")
 
         # Write grouped counts (not stuttering)
-        # Order: SOL (ice+water combined), guest, solute, NA, CL
+        # Order: SOL (ice+water combined), guest, custom, solute, NA, CL
         if sol_count > 0:
             f.write(f"SOL              {sol_count}\n")
 
         if guest_count > 0:
             f.write(f"{guest_res_name:<17s}{guest_count}\n")
+
+        if has_custom:
+            # Get custom molecule type name
+            custom_mol_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CUSTOM"
+            f.write(f"{custom_mol_name:<17s}{custom_count}\n")
 
         if has_solutes:
             # Get moleculetype name from registry

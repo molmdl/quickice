@@ -842,11 +842,11 @@ class MainWindow(QMainWindow):
                 return
                 
         elif current_source == "Solute":
-            # Use interface structure modified by solute insertion
+            # Solutes are now inserted into the interface, can be used as source for ion insertion
             if not hasattr(self, '_current_solute_result') or self._current_solute_result is None:
                 QMessageBox.warning(
                     self, "No Solute Structure",
-                    "Please insert solutes first in the Solute tab before using 'Solute' as source."
+                    "Please generate solutes first in the Solute tab."
                 )
                 return
             
@@ -869,6 +869,18 @@ class MainWindow(QMainWindow):
             interface.solute_n_molecules = solute_structure.n_molecules
             interface.solute_molecule_indices = solute_structure.molecule_indices
             interface.solute_registry = solute_structure.registry
+            
+            # Preserve custom molecule information if the solute was derived from custom molecules
+            # This handles the workflow: Interface → Custom → Solute → Ion
+            if hasattr(self, '_current_custom_molecule_result') and self._current_custom_molecule_result is not None:
+                custom_structure = self._current_custom_molecule_result
+                interface.custom_molecule_count = custom_structure.custom_molecule_count
+                interface.custom_molecule_atom_count = custom_structure.custom_molecule_atom_count
+                interface.custom_molecule_positions = custom_structure.positions[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
+                interface.custom_molecule_atom_names = custom_structure.atom_names[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
+                interface.custom_molecule_moleculetype = custom_structure.moleculetype_name
+                interface.custom_gro_path = custom_structure.gro_path
+                interface.custom_itp_path = custom_structure.itp_path
                 
         elif current_source == "Custom Molecule":
             # Custom molecules now replace water, so can be used as source for ion insertion

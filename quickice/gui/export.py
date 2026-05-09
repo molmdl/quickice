@@ -340,6 +340,13 @@ class IonGROMACSExporter:
                     solute_itp_dest = path.with_name(solute_itp_name)
                     shutil.copy(solute_itp_source, solute_itp_dest)
             
+            # Copy custom molecule .itp file if custom molecules are present
+            if ion_structure.custom_molecule_count > 0 and ion_structure.custom_molecule_positions is not None:
+                if ion_structure.custom_itp_path and Path(ion_structure.custom_itp_path).exists():
+                    custom_itp_source = Path(ion_structure.custom_itp_path)
+                    custom_itp_dest = path.with_name(custom_itp_source.name)
+                    shutil.copy(custom_itp_source, custom_itp_dest)
+            
             return True
         except Exception as e:
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")

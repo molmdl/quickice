@@ -340,7 +340,7 @@ class IonConfig:
 @dataclass
 class IonStructure:
     """Result of ion insertion.
-    
+
     Attributes:
         positions: (N_atoms, 3) atom positions in nm (water + ions)
         atom_names: Atom names for all atoms
@@ -357,6 +357,13 @@ class IonStructure:
         solute_n_molecules: Number of solute molecules
         solute_molecule_indices: List of (start, end) tuples for each solute molecule
         solute_registry: MoleculetypeRegistry with solute moleculetype registered
+        custom_molecule_count: Number of custom molecules (from input interface)
+        custom_molecule_atom_count: Number of custom molecule atoms
+        custom_molecule_positions: (N_custom_atoms, 3) custom molecule atom positions in nm
+        custom_molecule_atom_names: Custom molecule atom names
+        custom_molecule_moleculetype: GROMACS moleculetype name for custom molecules
+        custom_gro_path: Path to custom molecule .gro file
+        custom_itp_path: Path to custom molecule .itp file
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -374,6 +381,14 @@ class IonStructure:
     solute_n_molecules: int = 0
     solute_molecule_indices: list[tuple[int, int]] | None = None
     solute_registry: Any = None  # MoleculetypeRegistry (avoid circular import)
+    # Custom molecule attributes (populated when source had custom molecules)
+    custom_molecule_count: int = 0
+    custom_molecule_atom_count: int = 0
+    custom_molecule_positions: np.ndarray | None = None
+    custom_molecule_atom_names: list[str] | None = None
+    custom_molecule_moleculetype: str = ""
+    custom_gro_path: Any = None  # Path (avoid circular import)
+    custom_itp_path: Any = None  # Path (avoid circular import)
 
 
 @dataclass

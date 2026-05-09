@@ -464,8 +464,8 @@ class IonInserter:
             combined = np.zeros((0, 3))
         
         # Preserve guest molecule information from input structure
-        guest_nmolecules = getattr(structure, 'guest_nmolecules',0)
-        guest_atom_count = getattr(structure, 'guest_atom_count',0)
+        guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+        guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
         # Preserve solute information from input structure (if present)
         # This handles the case when ions are inserted into a SoluteStructure
@@ -475,6 +475,16 @@ class IonInserter:
         solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
         solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
         solute_registry = getattr(structure, 'solute_registry', None)
+        
+        # Preserve custom molecule information from input structure (if present)
+        # This handles the workflow: Interface → Custom → Solute → Ion
+        custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+        custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+        custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+        custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+        custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+        custom_gro_path = getattr(structure, 'custom_gro_path', None)
+        custom_itp_path = getattr(structure, 'custom_itp_path', None)
         
         return IonStructure(
             positions=combined,
@@ -492,6 +502,13 @@ class IonInserter:
             solute_n_molecules=solute_n_molecules,
             solute_molecule_indices=solute_molecule_indices,
             solute_registry=solute_registry,
+            custom_molecule_count=custom_molecule_count,
+            custom_molecule_atom_count=custom_molecule_atom_count,
+            custom_molecule_positions=custom_molecule_positions,
+            custom_molecule_atom_names=custom_molecule_atom_names,
+            custom_molecule_moleculetype=custom_molecule_moleculetype,
+            custom_gro_path=custom_gro_path,
+            custom_itp_path=custom_itp_path,
         )
 
 
