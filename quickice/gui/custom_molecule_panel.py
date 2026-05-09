@@ -853,6 +853,8 @@ class CustomMoleculePanel(QWidget):
         if self.placement_mode == "Random":
             return CustomMoleculeConfig(
                 placement_mode="random",
+                gro_path=self.gro_path,
+                itp_path=self.itp_path,
                 molecule_count=int(self.molecule_count_spin.value())
             )
         else:  # Custom
@@ -865,6 +867,8 @@ class CustomMoleculePanel(QWidget):
             
             return CustomMoleculeConfig(
                 placement_mode="custom",
+                gro_path=self.gro_path,
+                itp_path=self.itp_path,
                 positions=positions,
                 rotations=rotations
             )

@@ -212,13 +212,15 @@ class CustomMoleculeInserter:
     ) -> cKDTree | None:
         """Build cKDTree from existing atoms for overlap checking.
         
-        Reuses exact pattern from SoluteInserter._build_existing_atoms_tree().
+        For custom molecule insertion, only checks ice and guest atoms.
+        Liquid water atoms are EXCLUDED because they will be replaced
+        during insertion (similar to solute insertion behavior).
         
         Args:
             structure: InterfaceStructure with positions and atom_names
             
         Returns:
-            cKDTree of atom positions, or None if no atoms
+            cKDTree of atom positions (ice + guests only), or None if no atoms
             
         Note:
             Excludes MW atoms (virtual sites) to avoid false positives.
@@ -239,14 +241,8 @@ class CustomMoleculeInserter:
                 if atom_name != "MW":  # Exclude virtual sites
                     existing_positions.append(structure.positions[i])
         
-        # Add water atoms
-        if water_atom_count > 0:
-            water_start = ice_atom_count
-            water_end = ice_atom_count + water_atom_count
-            for i in range(water_start, water_end):
-                atom_name = structure.atom_names[i] if i < len(structure.atom_names) else ""
-                if atom_name != "MW":  # Exclude virtual sites
-                    existing_positions.append(structure.positions[i])
+        # DO NOT add water atoms - they will be replaced during insertion
+        # This is the key difference from SoluteInserter behavior
         
         # Add guest atoms
         if guest_atom_count > 0:

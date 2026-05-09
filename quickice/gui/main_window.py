@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QTabWidget
 )
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Slot, QThread
 
 logger = logging.getLogger(__name__)
 
@@ -1060,18 +1060,21 @@ class MainWindow(QMainWindow):
                 self.custom_molecule_panel.get_gro_path(),
                 self.custom_molecule_panel.get_itp_path()
             )
-            
-            # Create thread
-            thread = worker.moveToThread()
-            
+
+            # Create thread and move worker to it
+            thread = QThread()
+            worker.moveToThread(thread)
+
             # Connect signals
+            thread.started.connect(worker.run)
+            worker.finished.connect(thread.quit)
             worker.finished.connect(self._on_custom_finished)
             worker.error.connect(lambda msg: self.custom_molecule_panel.log_message(f"Error: {msg}"))
             worker.progress.connect(lambda msg: self.custom_molecule_panel.log_message(msg))
-            
+
             # Store thread reference
             self._custom_worker_thread = thread
-            
+
             # Start
             thread.start()
             
@@ -1191,7 +1194,7 @@ class MainWindow(QMainWindow):
                 self.custom_molecule_panel.custom_viewer.show_preview(
                     placed_positions, atom_names, cell
                 )
-                self.log_message(
+                self.custom_molecule_panel.log_message(
                     f"Preview: {len(placed_positions)} atoms at "
                     f"({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})"
                 )
@@ -1200,14 +1203,14 @@ class MainWindow(QMainWindow):
                 
         except Exception as e:
             logger.error(f"Failed to create preview: {e}")
-            self.log_message(f"Preview error: {e}")
+            self.custom_molecule_panel.log_message(f"Preview error: {e}")
     
     @Slot()
     def _on_custom_molecule_preview_cleared(self) -> None:
         """Handle preview clear request from CustomMoleculePanel."""
         if hasattr(self.custom_molecule_panel, 'custom_viewer'):
             self.custom_molecule_panel.custom_viewer.clear_preview()
-            self.log_message("Preview cleared")
+            self.custom_molecule_panel.log_message("Preview cleared")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
