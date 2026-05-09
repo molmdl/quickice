@@ -1007,6 +1007,10 @@ class MainWindow(QMainWindow):
             if hasattr(self.ion_panel.ion_viewer, '_clear_solute_actors'):
                 self.ion_panel.ion_viewer._clear_solute_actors()
 
+            # Pass result to IonPanel (Tab 5) for source selection
+            # This enables the workflow: Interface → Solute → Ion
+            self.ion_panel.set_solute_structure(solute_structure)
+
             # Calculate water molecules replaced
             original_water_count = interface.water_nmolecules
             modified_water_count = solute_structure.interface_structure.water_nmolecules
