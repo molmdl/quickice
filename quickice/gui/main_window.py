@@ -294,6 +294,7 @@ class MainWindow(QMainWindow):
         self.custom_molecule_panel.files_uploaded.connect(self._on_custom_files_uploaded)
         self.custom_molecule_panel.preview_requested.connect(self._on_custom_molecule_preview_requested)
         self.custom_molecule_panel.preview_cleared.connect(self._on_custom_molecule_preview_cleared)
+        self.custom_molecule_panel.clear_previous_results.connect(self._on_clear_custom_molecule_results)
         
         # ViewModel interface generation signals
         self._viewmodel.interface_generation_started.connect(self._on_interface_generation_started)
@@ -870,15 +871,32 @@ class MainWindow(QMainWindow):
             interface.solute_registry = solute_structure.registry
                 
         elif current_source == "Custom Molecule":
-            # Custom molecules don't modify the interface, so can't be used as source
-            QMessageBox.warning(
-                self, "Custom Molecule Not Supported",
-                "Custom molecule source is not supported for ion insertion.\n\n"
-                "Custom molecules are placed at user-specified positions without removing water,\n"
-                "so ions cannot be safely inserted.\n\n"
-                "Please use 'Interface' or 'Solute' as the source."
-            )
-            return
+            # Custom molecules now replace water, so can be used as source for ion insertion
+            if not hasattr(self, '_current_custom_molecule_result') or self._current_custom_molecule_result is None:
+                QMessageBox.warning(
+                    self, "No Custom Molecule Structure",
+                    "Please generate custom molecules first in the Custom Molecule tab."
+                )
+                return
+            
+            custom_structure = self._current_custom_molecule_result
+            interface = custom_structure.interface_structure
+            source_description = "custom molecule-modified interface structure"
+            
+            if interface is None:
+                QMessageBox.warning(
+                    self, "Invalid Custom Molecule Structure",
+                    "Custom molecule structure does not have an associated interface structure."
+                )
+                return
+            
+            # Add custom molecule information to interface structure so ion_inserter can preserve it
+            interface.custom_molecule_positions = custom_structure.positions[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
+            interface.custom_molecule_atom_names = custom_structure.atom_names[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
+            interface.custom_molecule_count = custom_structure.custom_molecule_count
+            interface.custom_molecule_moleculetype = custom_structure.moleculetype_name
+            interface.custom_gro_path = custom_structure.gro_path
+            interface.custom_itp_path = custom_structure.itp_path
         
         # Log which source is being used
         self.ion_panel.append_log(f"Using {source_description} for ion insertion...")
@@ -962,22 +980,24 @@ class MainWindow(QMainWindow):
             custom_molecule_data = None  # No custom molecules
 
         elif current_source == "Custom Molecule":
-            # Use interface structure (custom molecules are added to it, stored separately)
-            if not hasattr(self, '_current_interface_result') or self._current_interface_result is None:
-                self.solute_panel.log_message("Error: No interface structure available. Generate interface first.")
-                return
-
+            # Check that custom molecule structure exists
             if not hasattr(self, '_current_custom_molecule_result') or self._current_custom_molecule_result is None:
                 self.solute_panel.log_message("Error: No custom molecule structure available. Generate custom molecules first.")
                 return
 
-            # Use interface structure (custom molecules were added to it)
-            # CustomMoleculeStructure doesn't store interface_structure, so use _current_interface_result
-            interface = self._current_interface_result
+            custom_structure = self._current_custom_molecule_result
+
+            # Use the interface structure from the custom molecule result
+            # This includes water molecules that were replaced during custom molecule insertion
+            # CustomMoleculeStructure stores the modified interface_structure (types.py:527)
+            interface = custom_structure.interface_structure
+
+            if interface is None:
+                self.solute_panel.log_message("Error: Custom molecule structure has no interface structure.")
+                return
 
             # Prepare custom molecule data for GROMACS export (Phase 35)
             # Note: Not passed to SoluteInserter yet - will be used in Phase 35
-            custom_structure = self._current_custom_molecule_result
             custom_molecule_data = {
                 'gro_path': self.custom_molecule_panel.get_gro_path(),
                 'itp_path': self.custom_molecule_panel.get_itp_path(),
@@ -1018,6 +1038,12 @@ class MainWindow(QMainWindow):
 
             # Render in viewer
             self.solute_panel.solute_viewer.render_solute(solute_structure)
+
+            # If source was Custom Molecule, also render the custom molecules
+            if current_source == "Custom Molecule" and hasattr(self, '_current_custom_molecule_result'):
+                custom_structure = self._current_custom_molecule_result
+                if hasattr(self.solute_panel.solute_viewer, 'render_custom_molecules'):
+                    self.solute_panel.solute_viewer.render_custom_molecules(custom_structure)
 
             # Hide placeholder
             self.solute_panel.hide_placeholder()
@@ -1104,6 +1130,9 @@ class MainWindow(QMainWindow):
 
             # Enable export action
             self.export_custom_action.setEnabled(True)
+            
+            # Mark insertion as complete (for mode switching behavior)
+            self.custom_molecule_panel.mark_insertion_complete()
 
             # Pass result to SolutePanel (Tab 4) for source selection
             self.solute_panel.set_custom_molecule_structure(result)
@@ -1229,6 +1258,48 @@ class MainWindow(QMainWindow):
         if hasattr(self.custom_molecule_panel, 'custom_viewer'):
             self.custom_molecule_panel.custom_viewer.clear_preview()
             self.custom_molecule_panel.log_message("Preview cleared")
+    
+    @Slot()
+    def _on_clear_custom_molecule_results(self) -> None:
+        """Handle clear previous custom molecule results request.
+        
+        Called when user chooses to start fresh when switching placement modes.
+        Clears the stored custom molecule result and resets the viewer.
+        """
+        try:
+            # Clear stored result
+            if hasattr(self, '_current_custom_molecule_result'):
+                self._current_custom_molecule_result = None
+            
+            # Clear viewer and reload interface structure
+            if hasattr(self.custom_molecule_panel, 'custom_viewer'):
+                self.custom_molecule_panel.custom_viewer.clear()
+                
+                # Reload interface structure (ice + water) if available
+                if hasattr(self, '_current_interface_result') and self._current_interface_result is not None:
+                    self.custom_molecule_panel.custom_viewer.load_interface_structure(
+                        self._current_interface_result
+                    )
+            
+            # Disable export action
+            if hasattr(self, 'export_custom_action'):
+                self.export_custom_action.setEnabled(False)
+            
+            # Clear results from downstream panels
+            if hasattr(self, 'solute_panel'):
+                # Clear custom molecule structure from solute panel
+                if hasattr(self.solute_panel, '_custom_molecule_structure'):
+                    self.solute_panel._custom_molecule_structure = None
+            
+            if hasattr(self, 'ion_panel'):
+                # Clear custom molecule structure from ion panel
+                if hasattr(self.ion_panel, '_custom_molecule_structure'):
+                    self.ion_panel._custom_molecule_structure = None
+            
+            logger.info("Cleared previous custom molecule results")
+            
+        except Exception as e:
+            logger.error(f"Error clearing custom molecule results: {e}")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):

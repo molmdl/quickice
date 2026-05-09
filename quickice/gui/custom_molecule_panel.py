@@ -54,6 +54,7 @@ class CustomMoleculePanel(QWidget):
     # NEW: Signals for preview request and clearing
     preview_requested = Signal(tuple, tuple)  # (position, rotation)
     preview_cleared = Signal()  # Clear preview
+    clear_previous_results = Signal()  # Clear previous custom molecule insertion results
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -68,6 +69,9 @@ class CustomMoleculePanel(QWidget):
         self.placement_mode = "Random"  # or "Custom"
         self.positions_added: list[tuple[tuple[float, float, float], tuple[float, float, float]]] = []
         self._interface_structure = None  # Interface structure for validation
+        
+        # Track if previous insertion was done (for mode switching)
+        self._has_previous_insertion = False
         
         # UI setup
         self._setup_ui()
@@ -605,6 +609,34 @@ class CustomMoleculePanel(QWidget):
         Args:
             mode: "Random" or "Custom"
         """
+        # Check if there are previous custom molecule insertions
+        if self._has_previous_insertion:
+            # Ask user what to do
+            reply = QMessageBox.question(
+                self,
+                "Previous Custom Molecules Found",
+                "You have previously inserted custom molecules.\n\n"
+                "Do you want to start fresh (clear previous molecules) or add to existing?\n\n"
+                "• 'Yes' = Start fresh (previous molecules will be cleared)\n"
+                "• 'No' = Add to existing (previous molecules will remain)",
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
+            )
+            
+            if reply == QMessageBox.Cancel:
+                # Revert to previous mode
+                self.placement_mode_combo.blockSignals(True)
+                self.placement_mode_combo.setCurrentText("Random" if mode == "Custom" else "Custom")
+                self.placement_mode_combo.blockSignals(False)
+                return
+            
+            if reply == QMessageBox.Yes:
+                # Clear previous results
+                self.clear_previous_results.emit()
+                self._has_previous_insertion = False
+                self.positions_added.clear()
+                self.position_count_label.setText("Positions added: 0")
+                self.log_message("Cleared previous custom molecules - starting fresh")
+        
         self.placement_mode = mode
         
         # Show/hide controls
@@ -909,6 +941,7 @@ class CustomMoleculePanel(QWidget):
         self.itp_info = None
         self.validation_result = None
         self.positions_added.clear()
+        self._has_previous_insertion = False
         
         self.gro_status.setText("No file selected")
         self.gro_status.setStyleSheet("color: gray;")
@@ -927,6 +960,14 @@ class CustomMoleculePanel(QWidget):
         
         self.clear_log()
         self.log_message("Panel reset")
+    
+    def mark_insertion_complete(self):
+        """Mark that a custom molecule insertion has been completed.
+        
+        Called by MainWindow after successful insertion to track state
+        for mode switching behavior.
+        """
+        self._has_previous_insertion = True
     
     def hide_placeholder(self) -> None:
         """Hide the placeholder, show the 3D viewer.
