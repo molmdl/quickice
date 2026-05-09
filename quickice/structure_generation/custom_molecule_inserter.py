@@ -406,11 +406,18 @@ class CustomMoleculeInserter:
         
         # Ice molecules
         if ice_atom_count > 0:
-            ice_mol_count = ice_atom_count // 3
-            current_idx = 0
-            for _ in range(ice_mol_count):
-                new_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
-                current_idx += 4
+            # Use ice_nmolecules to get correct count (handles both 3-atom and 4-atom ice)
+            ice_nmolecules = getattr(structure, 'ice_nmolecules', ice_atom_count // 4)
+            if ice_nmolecules > 0:
+                ice_atoms_per_mol = ice_atom_count // ice_nmolecules
+                current_idx = 0
+                for _ in range(ice_nmolecules):
+                    new_molecule_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=ice_atoms_per_mol,
+                        mol_type="ice"
+                    ))
+                    current_idx += ice_atoms_per_mol
         
         # Kept water molecules
         if new_water_nmolecules > 0:
@@ -583,13 +590,20 @@ class CustomMoleculeInserter:
         from quickice.structure_generation.types import MoleculeIndex
         complete_molecule_index = []
         
-        # Ice molecules (3 input atoms -> 4 output atoms per molecule)
+        # Ice molecules
         if ice_atom_count > 0:
-            ice_mol_count = ice_atom_count // 3  # 3 atoms per ice molecule input
-            current_idx = 0
-            for _ in range(ice_mol_count):
-                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
-                current_idx += 4
+            # Use ice_nmolecules to get correct count (handles both 3-atom and 4-atom ice)
+            ice_nmolecules = modified_structure.ice_nmolecules
+            if ice_nmolecules > 0:
+                ice_atoms_per_mol = ice_atom_count // ice_nmolecules
+                current_idx = 0
+                for _ in range(ice_nmolecules):
+                    complete_molecule_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=ice_atoms_per_mol,
+                        mol_type="ice"
+                    ))
+                    current_idx += ice_atoms_per_mol
         
         # Water molecules (4 atoms per molecule)
         if water_atom_count > 0:
@@ -727,11 +741,18 @@ class CustomMoleculeInserter:
         
         # Ice molecules
         if ice_atom_count > 0:
-            ice_mol_count = ice_atom_count // 3
-            current_idx = 0
-            for _ in range(ice_mol_count):
-                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
-                current_idx += 4
+            # Use ice_nmolecules to get correct count (handles both 3-atom and 4-atom ice)
+            ice_nmolecules = modified_structure.ice_nmolecules
+            if ice_nmolecules > 0:
+                ice_atoms_per_mol = ice_atom_count // ice_nmolecules
+                current_idx = 0
+                for _ in range(ice_nmolecules):
+                    complete_molecule_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=ice_atoms_per_mol,
+                        mol_type="ice"
+                    ))
+                    current_idx += ice_atoms_per_mol
         
         # Water molecules
         if water_atom_count > 0:
