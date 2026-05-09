@@ -1143,11 +1143,25 @@ class MainWindow(QMainWindow):
             # - Interface → Custom → Ion (direct, skip solutes)
             self.ion_panel.set_custom_molecule_structure(result)
 
+            # Calculate water molecules replaced
+            if hasattr(self, '_current_interface_result') and self._current_interface_result is not None:
+                original_water_count = self._current_interface_result.water_nmolecules
+                modified_water_count = result.interface_structure.water_nmolecules
+                water_replaced = original_water_count - modified_water_count
+            else:
+                water_replaced = 0
+
             # Log success with complete system info
             self.custom_molecule_panel.log_message(
                 f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
                 f"{len(result.positions)} total atoms (ice+water+custom)"
             )
+
+            # Log water replacement count if any water was replaced
+            if water_replaced > 0:
+                self.custom_molecule_panel.log_message(
+                    f"Replaced {water_replaced} overlapping liquid water molecules"
+                )
 
         except Exception as e:
             # Log the error with full traceback
