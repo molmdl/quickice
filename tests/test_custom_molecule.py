@@ -264,17 +264,17 @@ class TestCustomMoleculeInserter:
             assert result.custom_molecule_count == 2, f"Should place 2 molecules, got {result.custom_molecule_count}"
             
             # Check first molecule near (3, 3, 3)
-            # Note: positions are absolute coordinates for each atom
-            # First 3 atoms belong to first molecule
-            mol1_atoms = result.positions[:3]
+            # Custom molecules are appended after interface atoms (ice + water)
+            # Interface has ice_atom_count + water_atom_count atoms
+            custom_start_idx = result.ice_atom_count + result.water_atom_count + result.guest_atom_count
+            mol1_atoms = result.positions[custom_start_idx:custom_start_idx + 3]
             mol1_center = mol1_atoms.mean(axis=0)
             expected_center1 = np.array([3.0, 3.0, 3.0])
             assert np.allclose(mol1_center, expected_center1, atol=0.2), \
                 f"Molecule 1 center {mol1_center} should be near {expected_center1}"
             
             # Check second molecule near (4, 4, 3.5)
-            # Next 3 atoms belong to second molecule
-            mol2_atoms = result.positions[3:6]
+            mol2_atoms = result.positions[custom_start_idx + 3:custom_start_idx + 6]
             mol2_center = mol2_atoms.mean(axis=0)
             expected_center2 = np.array([4.0, 4.0, 3.5])
             assert np.allclose(mol2_center, expected_center2, atol=0.2), \

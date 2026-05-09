@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "After previous fix (commit ff9eebb), custom molecule random mode still crashes/freezes when clicking generate button, with no error message displayed"
 created: 2026-05-09T00:00:00Z
-updated: 2026-05-09T00:25:00Z
+updated: 2026-05-09T00:30:00Z
 ---
 
 ## Current Focus

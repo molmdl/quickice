@@ -112,6 +112,7 @@ class SoluteViewerWidget(QWidget):
         self._solute_actor: vtkActor | None = None
         self._interface_actors: list[vtkActor] = []  # Store interface actors separately
         self._guest_actor: vtkActor | None = None  # Guest molecule actor (for hydrate interface)
+        self._custom_molecule_actors: list[vtkActor] = []  # Custom molecule actors (for custom molecule source)
 
         # VTK components (initialized only if VTK available)
         self.vtk_widget = None
@@ -340,6 +341,19 @@ class SoluteViewerWidget(QWidget):
             self.renderer.RemoveActor(self._guest_actor)
             self._guest_actor = None
 
+    def _clear_custom_molecule_actors(self) -> None:
+        """Remove custom molecule actors from renderer."""
+        if self.renderer is None:
+            return
+
+        for actor in self._custom_molecule_actors:
+            if actor is not None:
+                self.renderer.RemoveActor(actor)
+
+        # Clear actor list
+        self._custom_molecule_actors = []
+        logger.info("Cleared custom molecule actors")
+
     def render_solute(self, solute_structure: SoluteStructure) -> None:
         """Render solute molecules in 3D viewer.
         
@@ -476,13 +490,78 @@ class SoluteViewerWidget(QWidget):
             self._solute_actor = None
             logger.info("Cleared solute actors")
 
+    def render_custom_molecules(self, custom_structure) -> None:
+        """Render custom molecules in the solute viewer.
+        
+        Used when the source for solute insertion was "Custom Molecule".
+        Renders custom molecules separately from the interface structure.
+        
+        Args:
+            custom_structure: CustomMoleculeStructure with custom molecule data
+        """
+        if not self._vtk_available or self.renderer is None:
+            logger.info("Custom molecules not rendered (VTK unavailable)")
+            return
+
+        # Clear any existing custom molecule actors
+        self._clear_custom_molecule_actors()
+
+        # Import the renderer function
+        from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
+
+        # Extract custom molecule positions and atom names
+        # Custom molecules are stored separately in CustomMoleculeStructure
+        ice_atom_count = custom_structure.ice_atom_count
+        water_atom_count = custom_structure.water_atom_count
+        custom_atom_count = custom_structure.custom_molecule_atom_count
+
+        if custom_atom_count == 0:
+            logger.info("No custom molecules to render")
+            return
+
+        # Get custom molecule positions (after ice and water atoms)
+        start_idx = ice_atom_count + water_atom_count
+        end_idx = start_idx + custom_atom_count
+        custom_positions = custom_structure.positions[start_idx:end_idx]
+        custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
+
+        # Build molecule indices for custom molecules
+        # Calculate atoms per molecule from total custom atoms and molecule count
+        n_atoms_per_mol = custom_atom_count // custom_structure.custom_molecule_count
+        
+        molecule_indices = []
+        for i in range(custom_structure.custom_molecule_count):
+            start = i * n_atoms_per_mol
+            end = start + n_atoms_per_mol
+            molecule_indices.append((start, end))
+
+        # Create actor for custom molecules
+        actor = create_custom_molecule_actor(
+            custom_positions,
+            custom_atom_names,
+            custom_structure.cell,
+            molecule_indices=molecule_indices
+        )
+
+        if actor:
+            self._custom_molecule_actors.append(actor)
+            self.renderer.AddActor(actor)
+            logger.info(f"Rendered {custom_structure.custom_molecule_count} custom molecules in solute viewer")
+            
+            # Render the scene
+            if self.render_window:
+                self.render_window.Render()
+        else:
+            logger.warning("No custom molecule actor created for solute viewer")
+
     def clear(self) -> None:
         """Clear the current structure from the viewer.
 
-        Removes all actors (solute and interface) and shows placeholder.
+        Removes all actors (solute, interface, and custom molecules) and shows placeholder.
         """
         self.clear_solute_actors()
         self._clear_interface_actors()
+        self._clear_custom_molecule_actors()
         self._current_solute_structure = None
 
         if self._vtk_available and self.render_window is not None:

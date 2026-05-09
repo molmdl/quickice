@@ -213,8 +213,9 @@ class CustomMoleculeInserter:
         """Build cKDTree from existing atoms for overlap checking.
         
         For custom molecule insertion, only checks ice and guest atoms.
-        Liquid water atoms are EXCLUDED because they will be replaced
-        during insertion (similar to solute insertion behavior).
+        Liquid water atoms are EXCLUDED from overlap checking because
+        they will be removed during insertion if they overlap with
+        custom molecules (via _remove_overlapping_water()).
         
         Args:
             structure: InterfaceStructure with positions and atom_names
@@ -241,8 +242,8 @@ class CustomMoleculeInserter:
                 if atom_name != "MW":  # Exclude virtual sites
                     existing_positions.append(structure.positions[i])
         
-        # DO NOT add water atoms - they will be replaced during insertion
-        # This is the key difference from SoluteInserter behavior
+        # DO NOT add water atoms - they will be removed if they overlap
+        # with custom molecules during insertion
         
         # Add guest atoms
         if guest_atom_count > 0:
@@ -280,6 +281,171 @@ class CustomMoleculeInserter:
             if min_dist < min_separation:
                 return True
         return False
+    
+    def _remove_overlapping_water(
+        self,
+        structure: InterfaceStructure,
+        custom_molecule_positions: np.ndarray,
+        min_separation: float,
+    ) -> InterfaceStructure:
+        """Remove water molecules that overlap with placed custom molecules.
+        
+        CRITICAL: This is the water replacement logic. For each water molecule,
+        check if any of its atoms are within min_separation of any custom molecule atom.
+        If so, remove that entire water molecule.
+        
+        Args:
+            structure: Original InterfaceStructure with ice, water, and guests
+            custom_molecule_positions: (N_custom_atoms, 3) positions of placed custom molecules
+            min_separation: Minimum distance threshold for overlap (nm)
+            
+        Returns:
+            New InterfaceStructure with overlapping water molecules removed
+        """
+        from quickice.structure_generation.types import InterfaceStructure
+        
+        # If no custom molecules placed, return original structure
+        if len(custom_molecule_positions) == 0:
+            logger.info("No custom molecules placed, keeping all water molecules")
+            return structure
+        
+        # Build KDTree from custom molecule atoms
+        custom_tree = cKDTree(custom_molecule_positions)
+        
+        # Get water molecule boundaries
+        ice_atom_count = structure.ice_atom_count
+        water_atom_count = structure.water_atom_count
+        
+        # Calculate atoms per water molecule
+        # This handles both TIP3P (3 atoms) and TIP4P (4 atoms) models
+        if structure.water_nmolecules > 0:
+            atoms_per_water = water_atom_count // structure.water_nmolecules
+        else:
+            # Fallback to TIP4P (most common in this codebase)
+            atoms_per_water = 4
+        
+        water_start = ice_atom_count
+        water_end = ice_atom_count + water_atom_count
+        n_water_molecules = structure.water_nmolecules
+        
+        # Track which water molecules to keep
+        water_molecules_to_keep = []
+        removed_count = 0
+        
+        # Check each water molecule
+        for mol_idx in range(n_water_molecules):
+            atom_start = water_start + mol_idx * atoms_per_water
+            atom_end = atom_start + atoms_per_water
+            
+            # Get positions for this water molecule
+            water_mol_positions = structure.positions[atom_start:atom_end]
+            
+            # Check if any atom in this water molecule overlaps with custom molecules
+            overlaps = False
+            for atom_pos in water_mol_positions:
+                min_dist = custom_tree.query(atom_pos, k=1)[0]
+                if min_dist < min_separation:
+                    overlaps = True
+                    break
+            
+            if not overlaps:
+                # Keep this water molecule
+                water_molecules_to_keep.append(mol_idx)
+            else:
+                removed_count += 1
+        
+        logger.info(
+            f"Water replacement: Removed {removed_count} water molecules "
+            f"({removed_count * atoms_per_water} atoms) that overlapped with custom molecules"
+        )
+        
+        # If no water molecules removed, return original
+        if removed_count == 0:
+            return structure
+        
+        # Build new structure with water molecules removed
+        # Keep ice atoms
+        ice_positions = structure.positions[:ice_atom_count]
+        ice_atom_names = structure.atom_names[:ice_atom_count]
+        
+        # Keep only non-overlapping water molecules
+        kept_water_positions = []
+        kept_water_atom_names = []
+        for mol_idx in water_molecules_to_keep:
+            atom_start = water_start + mol_idx * atoms_per_water
+            atom_end = atom_start + atoms_per_water
+            kept_water_positions.append(structure.positions[atom_start:atom_end])
+            kept_water_atom_names.extend(structure.atom_names[atom_start:atom_end])
+        
+        # Keep guest atoms
+        guest_start = ice_atom_count + water_atom_count
+        guest_positions = structure.positions[guest_start:]
+        guest_atom_names = structure.atom_names[guest_start:]
+        
+        # Combine: ice + kept_water + guests
+        if kept_water_positions:
+            water_positions_array = np.vstack(kept_water_positions)
+        else:
+            water_positions_array = np.zeros((0, 3))
+        
+        new_positions = np.vstack([
+            ice_positions,
+            water_positions_array,
+            guest_positions
+        ])
+        
+        new_atom_names = list(ice_atom_names) + kept_water_atom_names + list(guest_atom_names)
+        
+        # Update counts
+        new_water_atom_count = len(kept_water_atom_names)
+        new_water_nmolecules = len(water_molecules_to_keep)
+        
+        # Rebuild molecule_index for the new structure
+        from quickice.structure_generation.types import MoleculeIndex
+        new_molecule_index = []
+        
+        # Ice molecules
+        if ice_atom_count > 0:
+            ice_mol_count = ice_atom_count // 3
+            current_idx = 0
+            for _ in range(ice_mol_count):
+                new_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "ice"))
+                current_idx += 4
+        
+        # Kept water molecules
+        if new_water_nmolecules > 0:
+            current_idx = ice_atom_count
+            for _ in range(new_water_nmolecules):
+                new_molecule_index.append(MoleculeIndex(current_idx, current_idx + atoms_per_water, "water"))
+                current_idx += atoms_per_water
+        
+        # Guest molecules (shift indices for new water count)
+        guest_atom_count = len(guest_atom_names)
+        if guest_atom_count > 0 and hasattr(structure, 'molecule_index'):
+            shift = water_atom_count - new_water_atom_count
+            for mol_idx in structure.molecule_index:
+                if mol_idx.mol_type == "guest":
+                    new_molecule_index.append(MoleculeIndex(
+                        mol_idx.start_idx - shift,
+                        mol_idx.end_idx - shift,
+                        "guest"
+                    ))
+        
+        # Create new InterfaceStructure
+        return InterfaceStructure(
+            positions=new_positions,
+            atom_names=new_atom_names,
+            cell=structure.cell,
+            ice_atom_count=ice_atom_count,
+            water_atom_count=new_water_atom_count,
+            guest_atom_count=guest_atom_count,
+            ice_nmolecules=structure.ice_nmolecules,
+            water_nmolecules=new_water_nmolecules,
+            molecule_index=new_molecule_index if new_molecule_index else None,
+            mode=getattr(structure, 'mode', 'slab'),
+            report=getattr(structure, 'report', ''),
+            guest_nmolecules=getattr(structure, 'guest_nmolecules', 0)
+        )
     
     def place_random(
         self,
@@ -396,6 +562,23 @@ class CustomMoleculeInserter:
         # Get interface structure info
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
+        # CRITICAL: Remove water molecules that overlap with placed custom molecules
+        if placed_positions:
+            all_custom_positions = np.vstack(placed_positions)
+        else:
+            all_custom_positions = np.zeros((0, 3))
+        
+        modified_structure = self._remove_overlapping_water(
+            structure,
+            all_custom_positions,
+            self.config.min_separation
+        )
+        
+        # Get updated counts after water removal
+        ice_atom_count = modified_structure.ice_atom_count
+        water_atom_count = modified_structure.water_atom_count
+        guest_atom_count = modified_structure.guest_atom_count
+        
         # Build complete molecule_index
         from quickice.structure_generation.types import MoleculeIndex
         complete_molecule_index = []
@@ -430,13 +613,13 @@ class CustomMoleculeInserter:
             complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
             current_idx += (end - start)
         
-        # Combine positions and atom names
+        # Combine positions and atom names from modified structure
         complete_positions = np.vstack([
-            structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],  # Interface atoms
-            np.vstack(placed_positions)  # Custom molecule atoms
+            modified_structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],
+            np.vstack(placed_positions)
         ])
         
-        complete_atom_names = list(structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
+        complete_atom_names = list(modified_structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
         
         # Register with MoleculetypeRegistry
         moleculetype_name = self.registry.register_custom_molecule()
@@ -449,7 +632,7 @@ class CustomMoleculeInserter:
         return CustomMoleculeStructure(
             positions=complete_positions,
             atom_names=complete_atom_names,
-            cell=structure.cell,
+            cell=modified_structure.cell,
             molecule_index=complete_molecule_index,
             ice_atom_count=ice_atom_count,
             water_atom_count=water_atom_count,
@@ -461,7 +644,7 @@ class CustomMoleculeInserter:
             itp_path=self.config.itp_path,
             residue_name=moleculetype_name,
             custom_molecule_count=n_molecules,
-            interface_structure=structure
+            interface_structure=modified_structure
         )
     
     def place_custom(
@@ -521,6 +704,23 @@ class CustomMoleculeInserter:
         water_atom_count = getattr(structure, 'water_atom_count', 0)
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
+        # CRITICAL: Remove water molecules that overlap with placed custom molecules
+        if placed_positions:
+            all_custom_positions = np.vstack(placed_positions)
+        else:
+            all_custom_positions = np.zeros((0, 3))
+        
+        modified_structure = self._remove_overlapping_water(
+            structure,
+            all_custom_positions,
+            self.config.min_separation
+        )
+        
+        # Get updated counts after water removal
+        ice_atom_count = modified_structure.ice_atom_count
+        water_atom_count = modified_structure.water_atom_count
+        guest_atom_count = modified_structure.guest_atom_count
+        
         # Build complete molecule_index
         from quickice.structure_generation.types import MoleculeIndex
         complete_molecule_index = []
@@ -543,8 +743,8 @@ class CustomMoleculeInserter:
         
         # Guest molecules
         if guest_atom_count > 0:
-            if hasattr(structure, 'molecule_index'):
-                for mol_idx in structure.molecule_index:
+            if hasattr(modified_structure, 'molecule_index'):
+                for mol_idx in modified_structure.molecule_index:
                     if mol_idx.mol_type == "guest":
                         complete_molecule_index.append(mol_idx)
         
@@ -554,13 +754,13 @@ class CustomMoleculeInserter:
             complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + (end - start), "custom"))
             current_idx += (end - start)
         
-        # Combine positions and atom names
+        # Combine positions and atom names from modified structure
         complete_positions = np.vstack([
-            structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],
+            modified_structure.positions[:ice_atom_count + water_atom_count + guest_atom_count],
             np.vstack(placed_positions)
         ])
         
-        complete_atom_names = list(structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
+        complete_atom_names = list(modified_structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
         
         # Register with MoleculetypeRegistry
         moleculetype_name = self.registry.register_custom_molecule()
@@ -575,7 +775,7 @@ class CustomMoleculeInserter:
         return CustomMoleculeStructure(
             positions=complete_positions,
             atom_names=complete_atom_names,
-            cell=structure.cell,
+            cell=modified_structure.cell,
             molecule_index=complete_molecule_index,
             ice_atom_count=ice_atom_count,
             water_atom_count=water_atom_count,
@@ -587,5 +787,5 @@ class CustomMoleculeInserter:
             itp_path=self.config.itp_path,
             residue_name=moleculetype_name,
             custom_molecule_count=n_molecules,
-            interface_structure=structure
+            interface_structure=modified_structure
         )
