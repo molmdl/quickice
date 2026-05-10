@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 35-integration-documentation |
 | Plan | 6 of 6 incomplete (documentation done, screenshots pending) |
 | Status | Phase incomplete — screenshots checkpoint pending |
-| Last activity | 2026-05-09 — Added Phase 34.5/34.6 feature docs, screenshots deferred |
+| Last activity | 2026-05-10 — Quick Task 017: Add concentration input to Custom Molecule |
 
 **Progress:** █████████░ 99% (181/181 plans, Phase 35 screenshots pending)
 
@@ -346,4 +346,4 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 **Decision from f345ca9:** Rename + recapture (Option 1)
 
 ---
-*State updated: 2026-05-09 — Phase 35-06 checkpoint pending (screenshots)*
+*State updated: 2026-05-10 — Quick Task 017 complete*
