@@ -158,7 +158,7 @@ class TestSoluteInsertion:
         
         # Check registry registered solute
         registry_name = solute_structure.registry.get_gromacs_name("liquid_CH4")
-        assert registry_name == "CH4_LIQ"
+        assert registry_name == "CH4_L"
     
     def test_insert_thf_solutes(self, interface_structure):
         """Test THF solute insertion."""
@@ -176,7 +176,7 @@ class TestSoluteInsertion:
         
         # Check registry
         registry_name = solute_structure.registry.get_gromacs_name("liquid_THF")
-        assert registry_name == "THF_LIQ"
+        assert registry_name == "THF_L"
     
     def test_partial_success_handling(self, interface_structure):
         """Test partial success when concentration too high."""

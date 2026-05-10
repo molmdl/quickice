@@ -431,7 +431,7 @@ class SoluteStructure:
         solute_type: Solute type ("CH4" or "THF")
         n_molecules: Number of molecules placed
         molecule_indices: List of (start, end) tuples for each molecule in positions array
-        registry: MoleculetypeRegistry with CH4_LIQ/THF_LIQ registered
+        registry: MoleculetypeRegistry with CH4_L/THF_L registered
         interface_structure: Original InterfaceStructure (ice + water) that solutes were inserted into
     """
     positions: np.ndarray

@@ -14,7 +14,9 @@ class MoleculetypeRegistry:
     """Registry for unique GROMACS moleculetype naming.
     
     Ensures CH4 from hydrate cages (CH4_HYD) is distinct from
-    CH4 dissolved in liquid (CH4_LIQ) in GROMACS topology files.
+    CH4 dissolved in liquid (CH4_L) in GROMACS topology files.
+    
+    Note: Liquid solutes use _L suffix (5 chars max) for GRO format compatibility.
     
     Attributes:
         RESERVED_NAMES: Set of names that cannot be used as custom molecule names
@@ -24,14 +26,14 @@ class MoleculetypeRegistry:
         >>> registry.register_hydrate_guest('CH4')
         'CH4_HYD'
         >>> registry.register_liquid_solute('CH4')
-        'CH4_LIQ'
+        'CH4_L'
         >>> registry.get_gromacs_name('hydrate_CH4')
         'CH4_HYD'
     """
     
     RESERVED_NAMES: Set[str] = {
         "SOL", "NA", "CL", "CH4", "THF", "CO2", "H2",
-        "CH4_HYD", "CH4_LIQ", "THF_HYD", "THF_LIQ"
+        "CH4_HYD", "CH4_L", "THF_HYD", "THF_L"
     }
     
     def __init__(self) -> None:
@@ -66,19 +68,19 @@ class MoleculetypeRegistry:
         return registered_name
     
     def register_liquid_solute(self, molecule: str) -> str:
-        """Register liquid solute molecule with _LIQ suffix.
+        """Register liquid solute molecule with _L suffix (5 chars max for GRO format).
         
         Args:
             molecule: Molecule name (e.g., 'CH4', 'THF')
             
         Returns:
-            Registered name with _LIQ suffix (e.g., 'CH4_LIQ')
+            Registered name with _L suffix (e.g., 'CH4_L', 'THF_L')
             
         Example:
             >>> registry.register_liquid_solute('CH4')
-            'CH4_LIQ'
+            'CH4_L'
         """
-        registered_name = f"{molecule}_LIQ"
+        registered_name = f"{molecule}_L"
         source_key = f"liquid_{molecule}"
         
         # Check if already registered
