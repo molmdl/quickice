@@ -497,7 +497,9 @@ class SoluteViewerWidget(QWidget):
         Renders custom molecules separately from the interface structure.
         
         Args:
-            custom_structure: CustomMoleculeStructure with custom molecule data
+            custom_structure: CustomMoleculeStructure or InterfaceStructure with custom molecule data.
+                             Can be either the original CustomMoleculeStructure or the modified
+                             InterfaceStructure from solute insertion (with custom molecule attributes).
         """
         if not self._vtk_available or self.renderer is None:
             logger.info("Custom molecules not rendered (VTK unavailable)")
@@ -510,27 +512,50 @@ class SoluteViewerWidget(QWidget):
         from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
 
         # Extract custom molecule positions and atom names
-        # Custom molecules are stored separately in CustomMoleculeStructure
-        ice_atom_count = custom_structure.ice_atom_count
-        water_atom_count = custom_structure.water_atom_count
-        custom_atom_count = custom_structure.custom_molecule_atom_count
-
+        # Handle both CustomMoleculeStructure and modified InterfaceStructure
+        
+        # Check if structure has separate custom molecule attributes (from SoluteInserter)
+        has_separate_attrs = (
+            hasattr(custom_structure, 'custom_molecule_positions') and
+            hasattr(custom_structure, 'custom_molecule_atom_names') and
+            custom_structure.custom_molecule_positions is not None
+        )
+        
+        custom_atom_count = getattr(custom_structure, 'custom_molecule_atom_count', 0)
+        
         if custom_atom_count == 0:
             logger.info("No custom molecules to render")
             return
-
-        # Get custom molecule positions (after ice and water atoms)
-        start_idx = ice_atom_count + water_atom_count
-        end_idx = start_idx + custom_atom_count
-        custom_positions = custom_structure.positions[start_idx:end_idx]
-        custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
+        
+        if has_separate_attrs:
+            # Use separate attributes (from modified InterfaceStructure after solute insertion)
+            custom_positions = custom_structure.custom_molecule_positions
+            custom_atom_names = custom_structure.custom_molecule_atom_names
+            # Get moleculetype from either attribute
+            moleculetype = getattr(custom_structure, 'custom_molecule_moleculetype', 
+                                   getattr(custom_structure, 'moleculetype_name', 'CUSTOM_MOL'))
+            logger.info("Using separate custom molecule attributes from modified interface structure")
+        else:
+            # Extract from positions array (original CustomMoleculeStructure)
+            ice_atom_count = custom_structure.ice_atom_count
+            water_atom_count = custom_structure.water_atom_count
+            guest_atom_count = getattr(custom_structure, 'guest_atom_count', 0)
+            
+            # Get custom molecule positions (after ice, water, and guest atoms)
+            # For CustomMoleculeStructure: guests may be 0, so this works for both cases
+            start_idx = ice_atom_count + water_atom_count + guest_atom_count
+            end_idx = start_idx + custom_atom_count
+            custom_positions = custom_structure.positions[start_idx:end_idx]
+            custom_atom_names = custom_structure.atom_names[start_idx:end_idx]
+            moleculetype = getattr(custom_structure, 'moleculetype_name', 'CUSTOM_MOL')
+            logger.info("Extracting custom molecules from positions array")
 
         # Create actor for custom molecules
         actor = create_custom_molecule_actor(
             custom_positions,
             custom_atom_names,
             custom_structure.cell,
-            custom_structure.moleculetype_name
+            moleculetype
         )
 
         if actor:

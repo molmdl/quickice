@@ -1061,10 +1061,15 @@ class MainWindow(QMainWindow):
             self.solute_panel.solute_viewer.render_solute(solute_structure)
 
             # If source was Custom Molecule, also render the custom molecules
+            # Use the modified interface structure from solute_structure which has
+            # the correct custom molecule positions after water removal
             if current_source == "Custom Molecule" and hasattr(self, '_current_custom_molecule_result'):
-                custom_structure = self._current_custom_molecule_result
+                # Pass the modified interface structure, not the original CustomMoleculeStructure
+                # The modified structure has custom molecule positions updated after solute insertion
                 if hasattr(self.solute_panel.solute_viewer, 'render_custom_molecules'):
-                    self.solute_panel.solute_viewer.render_custom_molecules(custom_structure)
+                    self.solute_panel.solute_viewer.render_custom_molecules(
+                        solute_structure.interface_structure
+                    )
 
             # Hide placeholder
             self.solute_panel.hide_placeholder()
@@ -1188,11 +1193,24 @@ class MainWindow(QMainWindow):
             # Pass result to SolutePanel (Tab 4) for source selection
             self.solute_panel.set_custom_molecule_structure(result)
 
+            # Update solute panel with liquid volume for solute count calculation
+            # Calculate from water_atom_count (TIP4P has 4 atoms per molecule)
+            # Volume = water_nmolecules * 0.0299 nm³ per molecule
+            if hasattr(result, 'water_atom_count') and result.water_atom_count > 0:
+                water_nmolecules = result.water_atom_count // 4
+                liquid_vol = water_nmolecules * 0.0299
+                self.solute_panel.set_liquid_volume(liquid_vol)
+                logger.info(f"Updated solute panel liquid volume: {liquid_vol:.2f} nm³ from {water_nmolecules} water molecules")
+
             # Pass result to IonPanel (Tab 5) for source selection
             # This enables both workflow paths:
             # - Interface → Custom → Solute → Ion (with solutes)
             # - Interface → Custom → Ion (direct, skip solutes)
             self.ion_panel.set_custom_molecule_structure(result)
+
+            # Update ion panel with liquid volume for ion count calculation
+            if hasattr(result, 'water_atom_count') and result.water_atom_count > 0:
+                self.ion_panel.set_liquid_volume(liquid_vol)
 
             # Calculate water molecules replaced
             logger.info(f"[Water Count Debug] Starting water replacement calculation...")
