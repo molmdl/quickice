@@ -293,7 +293,6 @@ class MainWindow(QMainWindow):
         self.custom_molecule_panel.generate_requested.connect(self._on_custom_generate_clicked)
         self.custom_molecule_panel.files_uploaded.connect(self._on_custom_files_uploaded)
         self.custom_molecule_panel.preview_requested.connect(self._on_custom_molecule_preview_requested)
-        self.custom_molecule_panel.preview_all_requested.connect(self._on_custom_molecule_preview_all_requested)
         self.custom_molecule_panel.preview_cleared.connect(self._on_custom_molecule_preview_cleared)
         self.custom_molecule_panel.clear_previous_results.connect(self._on_clear_custom_molecule_results)
         
@@ -1358,87 +1357,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to create preview: {e}")
             self.custom_molecule_panel.log_message(f"Preview error: {e}")
-    
-    @Slot(list)
-    def _on_custom_molecule_preview_all_requested(
-        self, positions_list: list[tuple[tuple[float, float, float], tuple[float, float, float]]]
-    ) -> None:
-        """Handle preview all request from CustomMoleculePanel.
-        
-        Transforms all positions/rotations into molecule positions and renders
-        all molecules in 3D viewer simultaneously.
-        
-        Args:
-            positions_list: List of (position, rotation) tuples
-        """
-        if not hasattr(self, 'custom_molecule_panel'):
-            return
-        
-        panel = self.custom_molecule_panel
-        
-        # Check files are loaded
-        if not panel.gro_path or not panel.itp_path:
-            logger.warning("Cannot preview: no custom molecule files loaded")
-            return
-        
-        # Get current interface structure
-        if panel._interface_structure is None:
-            logger.warning("Cannot preview: no interface structure loaded")
-            return
-        
-        structure = panel._interface_structure
-        
-        try:
-            # Load custom molecule template using parse_gro_file
-            from quickice.structure_generation.gro_parser import parse_gro_file
-            
-            template_positions, atom_names, cell = parse_gro_file(panel.gro_path)
-            center = template_positions.mean(axis=0)
-            centered = template_positions - center
-            
-            # Process all positions
-            molecule_positions_list = []
-            
-            for position, rotation in positions_list:
-                # Euler angles to rotation matrix
-                alpha, beta, gamma = rotation
-                alpha_rad = np.radians(alpha)
-                beta_rad = np.radians(beta)
-                gamma_rad = np.radians(gamma)
-                
-                ca, sa = np.cos(alpha_rad), np.sin(alpha_rad)
-                cb, sb = np.cos(beta_rad), np.sin(beta_rad)
-                cg, sg = np.cos(gamma_rad), np.sin(gamma_rad)
-                
-                rot_matrix = np.array([
-                    [cg*cb, cg*sb*sa - sg*ca, cg*sb*ca + sg*sa],
-                    [sg*cb, sg*sb*sa + cg*ca, sg*sb*ca - cg*sa],
-                    [-sb, cb*sa, cb*ca]
-                ])
-                
-                rotated = centered @ rot_matrix.T
-                placed_positions = rotated + np.array(position)
-                
-                molecule_positions_list.append((placed_positions, atom_names, cell))
-            
-            # Show all previews in viewer
-            if hasattr(self.custom_molecule_panel, 'custom_viewer'):
-                # Load interface structure first (to show context)
-                self.custom_molecule_panel.custom_viewer.load_interface_structure(structure)
-                
-                # Then show all preview molecules overlaid
-                self.custom_molecule_panel.custom_viewer.show_multiple_previews(
-                    molecule_positions_list
-                )
-                self.custom_molecule_panel.log_message(
-                    f"Preview: {len(molecule_positions_list)} molecules shown"
-                )
-            else:
-                logger.warning("Custom molecule viewer not available")
-                
-        except Exception as e:
-            logger.error(f"Failed to create preview all: {e}")
-            self.custom_molecule_panel.log_message(f"Preview all error: {e}")
     
     @Slot()
     def _on_custom_molecule_preview_cleared(self) -> None:
