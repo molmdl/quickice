@@ -433,6 +433,13 @@ class SoluteStructure:
         molecule_indices: List of (start, end) tuples for each molecule in positions array
         registry: MoleculetypeRegistry with CH4_L/THF_L registered
         interface_structure: Original InterfaceStructure (ice + water) that solutes were inserted into
+        custom_molecule_count: Number of custom molecules (from input interface)
+        custom_molecule_atom_count: Number of custom molecule atoms
+        custom_molecule_positions: (N_custom_atoms, 3) custom molecule atom positions in nm
+        custom_molecule_atom_names: Custom molecule atom names
+        custom_molecule_moleculetype: GROMACS moleculetype name for custom molecules
+        custom_gro_path: Path to custom molecule .gro file
+        custom_itp_path: Path to custom molecule .itp file
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -442,6 +449,14 @@ class SoluteStructure:
     molecule_indices: list[tuple[int, int]]
     registry: Any  # MoleculetypeRegistry (avoid circular import)
     interface_structure: Any = None  # InterfaceStructure (avoid circular import)
+    # Custom molecule attributes (populated when source had custom molecules)
+    custom_molecule_count: int = 0
+    custom_molecule_atom_count: int = 0
+    custom_molecule_positions: np.ndarray | None = None
+    custom_molecule_atom_names: list[str] | None = None
+    custom_molecule_moleculetype: str = ""
+    custom_gro_path: Any = None  # Path (avoid circular import)
+    custom_itp_path: Any = None  # Path (avoid circular import)
 
 
 @dataclass

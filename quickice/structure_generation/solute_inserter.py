@@ -660,6 +660,16 @@ class SoluteInserter:
                 f"Concentration too low: {config.concentration_molar} M in "
                 f"{liquid_volume_nm3:.1f} nm³ results in 0 molecules"
             )
+            # Extract custom molecule attributes from input structure
+            # This preserves custom molecule info for downstream processing
+            custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+            custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+            custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+            custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+            custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+            custom_gro_path = getattr(structure, 'custom_gro_path', None)
+            custom_itp_path = getattr(structure, 'custom_itp_path', None)
+            
             return SoluteStructure(
                 positions=np.zeros((0, 3)),
                 atom_names=[],
@@ -669,6 +679,13 @@ class SoluteInserter:
                 molecule_indices=[],
                 registry=self.registry,
                 interface_structure=structure,
+                custom_molecule_count=custom_molecule_count,
+                custom_molecule_atom_count=custom_molecule_atom_count,
+                custom_molecule_positions=custom_molecule_positions,
+                custom_molecule_atom_names=custom_molecule_atom_names,
+                custom_molecule_moleculetype=custom_molecule_moleculetype,
+                custom_gro_path=custom_gro_path,
+                custom_itp_path=custom_itp_path,
             )
         
         # Load solute template
@@ -690,6 +707,16 @@ class SoluteInserter:
         
         if liquid_start >= liquid_end or water_atom_count == 0:
             logger.warning("No liquid water region available for solute insertion")
+            # Extract custom molecule attributes from input structure
+            # This preserves custom molecule info for downstream processing
+            custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+            custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+            custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+            custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+            custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+            custom_gro_path = getattr(structure, 'custom_gro_path', None)
+            custom_itp_path = getattr(structure, 'custom_itp_path', None)
+            
             return SoluteStructure(
                 positions=np.zeros((0, 3)),
                 atom_names=[],
@@ -699,6 +726,13 @@ class SoluteInserter:
                 molecule_indices=[],
                 registry=self.registry,
                 interface_structure=structure,
+                custom_molecule_count=custom_molecule_count,
+                custom_molecule_atom_count=custom_molecule_atom_count,
+                custom_molecule_positions=custom_molecule_positions,
+                custom_molecule_atom_names=custom_molecule_atom_names,
+                custom_molecule_moleculetype=custom_molecule_moleculetype,
+                custom_gro_path=custom_gro_path,
+                custom_itp_path=custom_itp_path,
             )
         
         # Get liquid region positions for sampling
@@ -797,6 +831,16 @@ class SoluteInserter:
             config.min_separation
         )
 
+        # Extract custom molecule attributes from modified_interface
+        # This propagates custom molecule info through the workflow: Interface → Custom → Solute → Ion
+        custom_molecule_count = getattr(modified_interface, 'custom_molecule_count', 0)
+        custom_molecule_atom_count = getattr(modified_interface, 'custom_molecule_atom_count', 0)
+        custom_molecule_positions = getattr(modified_interface, 'custom_molecule_positions', None)
+        custom_molecule_atom_names = getattr(modified_interface, 'custom_molecule_atom_names', None)
+        custom_molecule_moleculetype = getattr(modified_interface, 'custom_molecule_moleculetype', "")
+        custom_gro_path = getattr(modified_interface, 'custom_gro_path', None)
+        custom_itp_path = getattr(modified_interface, 'custom_itp_path', None)
+
         return SoluteStructure(
             positions=all_positions,
             atom_names=placed_atom_names,
@@ -806,6 +850,13 @@ class SoluteInserter:
             molecule_indices=molecule_indices,
             registry=self.registry,
             interface_structure=modified_interface,
+            custom_molecule_count=custom_molecule_count,
+            custom_molecule_atom_count=custom_molecule_atom_count,
+            custom_molecule_positions=custom_molecule_positions,
+            custom_molecule_atom_names=custom_molecule_atom_names,
+            custom_molecule_moleculetype=custom_molecule_moleculetype,
+            custom_gro_path=custom_gro_path,
+            custom_itp_path=custom_itp_path,
         )
 
 
