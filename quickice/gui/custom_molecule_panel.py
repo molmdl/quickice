@@ -528,10 +528,15 @@ class CustomMoleculePanel(QWidget):
         bounds_row.addStretch()
         layout.addLayout(bounds_row)
         
-        # Add Position button
+        # Add Position and Delete buttons
         add_row = QHBoxLayout()
         self.add_position_button = QPushButton("Add Position")
         add_row.addWidget(self.add_position_button)
+        
+        self.delete_position_button = QPushButton("Delete Selected")
+        self.delete_position_button.setToolTip("Remove selected position from list")
+        self.delete_position_button.setEnabled(False)  # Disabled until row selected
+        add_row.addWidget(self.delete_position_button)
         
         self.position_count_label = QLabel("Positions added: 0")
         self.position_count_label.setStyleSheet("color: #666;")
@@ -582,6 +587,10 @@ class CustomMoleculePanel(QWidget):
         
         # Add position button
         self.add_position_button.clicked.connect(self._add_position)
+        
+        # Position table selection and delete
+        self.position_table.itemSelectionChanged.connect(self._on_position_selection_changed)
+        self.delete_position_button.clicked.connect(self._delete_selected_position)
         
         # Validation and preview
         self.validate_button.clicked.connect(self._on_validate_clicked)
@@ -786,6 +795,25 @@ class CustomMoleculePanel(QWidget):
             gamma = self.rot_gamma_spin.value()
             rotation = (alpha, beta, gamma)
             
+            # Check for overlap with existing positions
+            has_overlap, overlap_row = self._check_overlap_with_existing_positions(position)
+            
+            if has_overlap:
+                # Show warning dialog
+                reply = QMessageBox.warning(
+                    self,
+                    "Overlap Detected",
+                    f"This position overlaps with position {overlap_row + 1}.\n\n"
+                    f"Add anyway? (Molecules may overlap)",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No  # Default to No
+                )
+                
+                # If user clicks No, return early
+                if reply == QMessageBox.No:
+                    self.log_message(f"Position not added (overlap with position {overlap_row + 1})")
+                    return
+            
             # Add to list
             self.positions_added.append((position, rotation))
             
@@ -800,6 +828,79 @@ class CustomMoleculePanel(QWidget):
             
         except ValueError as e:
             QMessageBox.warning(self, "Invalid Input", f"Invalid position value: {e}")
+    
+    def _on_position_selection_changed(self):
+        """Handle position table selection changes.
+        
+        Enables/disables delete button based on whether a row is selected.
+        """
+        # Check if any rows are selected
+        selected_rows = self.position_table.selectedItems()
+        has_selection = len(selected_rows) > 0
+        self.delete_position_button.setEnabled(has_selection)
+    
+    def _delete_selected_position(self):
+        """Delete the selected position from the list.
+        
+        Removes the selected row from both the positions_added list
+        and the table display.
+        """
+        # Get selected rows
+        selected_rows = self.position_table.selectedItems()
+        if not selected_rows:
+            return
+        
+        # Get the row index (selectedItems returns cells, so get row from first cell)
+        row = selected_rows[0].row()
+        
+        # Remove from positions_added list
+        if 0 <= row < len(self.positions_added):
+            deleted_position, deleted_rotation = self.positions_added[row]
+            del self.positions_added[row]
+            
+            # Update table display
+            self._update_position_table()
+            
+            # Update count label
+            self.position_count_label.setText(f"Positions added: {len(self.positions_added)}")
+            
+            # Log the deletion
+            self.log_message(
+                f"Deleted position {row + 1}: ({deleted_position[0]:.2f}, {deleted_position[1]:.2f}, {deleted_position[2]:.2f})"
+            )
+            
+            # Disable delete button after deletion
+            self.delete_position_button.setEnabled(False)
+    
+    def _check_overlap_with_existing_positions(
+        self, position: tuple[float, float, float], min_separation: float = 0.25
+    ) -> tuple[bool, int | None]:
+        """Check if a position overlaps with existing positions.
+        
+        Uses center-to-center distance calculation to detect overlap.
+        
+        Args:
+            position: Position tuple (x, y, z) in nm
+            min_separation: Minimum separation distance in nm (default 0.25 nm)
+        
+        Returns:
+            Tuple of (has_overlap, overlapping_row_index)
+            - has_overlap: True if overlap detected
+            - overlapping_row_index: Row index of overlapping position, or None
+        """
+        for i, (existing_pos, _) in enumerate(self.positions_added):
+            # Calculate center-to-center distance
+            distance = np.sqrt(
+                (position[0] - existing_pos[0])**2 +
+                (position[1] - existing_pos[1])**2 +
+                (position[2] - existing_pos[2])**2
+            )
+            
+            # Check if within minimum separation
+            if distance < min_separation:
+                return (True, i)
+        
+        return (False, None)
     
     def _update_position_table(self):
         """Update the position table with current positions_added list."""
