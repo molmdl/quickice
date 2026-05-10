@@ -323,6 +323,30 @@ class CustomMoleculePanel(QWidget):
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
+        # Input mode selector
+        mode_row = QHBoxLayout()
+        mode_row.addWidget(QLabel("Input Mode:"))
+        self.input_mode_combo = QComboBox()
+        self.input_mode_combo.addItems(["By Count", "By Concentration"])
+        self.input_mode_combo.setToolTip(
+            "Select input mode for molecule count:\n"
+            "• By Count — Specify molecule count directly\n"
+            "• By Concentration — Specify concentration (mol/L)"
+        )
+        mode_row.addWidget(self.input_mode_combo)
+        mode_row.addWidget(HelpIcon(
+            "Input mode for custom molecule count:\n"
+            "• By Count — Direct molecule count\n"
+            "• By Concentration — Specify concentration in mol/L"
+        ))
+        mode_row.addStretch()
+        layout.addLayout(mode_row)
+        
+        # Count mode widget (shown by default)
+        self.count_mode_widget = QWidget()
+        count_layout = QVBoxLayout(self.count_mode_widget)
+        count_layout.setContentsMargins(0, 0, 0, 0)
+        
         # Molecule count input
         count_row = QHBoxLayout()
         count_row.addWidget(QLabel("Molecule Count:"))
@@ -337,7 +361,61 @@ class CustomMoleculePanel(QWidget):
             "Each molecule will have random position and orientation."
         ))
         count_row.addStretch()
-        layout.addLayout(count_row)
+        count_layout.addLayout(count_row)
+        
+        # Calculated concentration label
+        conc_label_row = QHBoxLayout()
+        conc_label_row.addWidget(QLabel("Calculated:"))
+        self.calculated_concentration_label = QLabel("-- mol/L")
+        self.calculated_concentration_label.setStyleSheet("color: gray; font-style: italic;")
+        conc_label_row.addWidget(self.calculated_concentration_label)
+        conc_label_row.addStretch()
+        count_layout.addLayout(conc_label_row)
+        
+        layout.addWidget(self.count_mode_widget)
+        
+        # Concentration mode widget (hidden initially)
+        self.concentration_mode_widget = QWidget()
+        conc_layout = QVBoxLayout(self.concentration_mode_widget)
+        conc_layout.setContentsMargins(0, 0, 0, 0)
+        self.concentration_mode_widget.setVisible(False)
+        
+        # Concentration input
+        conc_input_row = QHBoxLayout()
+        conc_input_row.addWidget(QLabel("Concentration:"))
+        self.concentration_spin = QDoubleSpinBox()
+        self.concentration_spin.setRange(0.0, 2.0)
+        self.concentration_spin.setDecimals(3)
+        self.concentration_spin.setValue(0.1)
+        self.concentration_spin.setSingleStep(0.01)
+        self.concentration_spin.setToolTip(
+            "Custom molecule concentration in mol/L (M).\n"
+            "\n"
+            "Formula: N = C_M × V × 10⁻²⁴ × N_A\n"
+            "where N_A = Avogadro's number (6.022×10²³)"
+        )
+        conc_input_row.addWidget(self.concentration_spin)
+        
+        unit_label = QLabel("mol/L")
+        conc_input_row.addWidget(unit_label)
+        
+        conc_input_row.addWidget(HelpIcon(
+            "Custom molecule concentration in mol/L.\n"
+            "Typical values depend on your system."
+        ))
+        conc_input_row.addStretch()
+        conc_layout.addLayout(conc_input_row)
+        
+        # Calculated count label
+        count_label_row = QHBoxLayout()
+        count_label_row.addWidget(QLabel("Calculated:"))
+        self.calculated_count_label = QLabel("-- molecules")
+        self.calculated_count_label.setStyleSheet("color: gray; font-style: italic;")
+        count_label_row.addWidget(self.calculated_count_label)
+        count_label_row.addStretch()
+        conc_layout.addLayout(count_label_row)
+        
+        layout.addWidget(self.concentration_mode_widget)
         
         # Volume display
         volume_row = QHBoxLayout()
@@ -495,6 +573,11 @@ class CustomMoleculePanel(QWidget):
         
         # Placement mode switching
         self.placement_mode_combo.currentTextChanged.connect(self._on_placement_mode_changed)
+        
+        # Input mode switching (concentration/count toggle)
+        self.input_mode_combo.currentIndexChanged.connect(self._on_input_mode_changed)
+        self.molecule_count_spin.valueChanged.connect(self._update_concentration_from_count)
+        self.concentration_spin.valueChanged.connect(self._update_count_from_concentration)
         
         # Add position button
         self.add_position_button.clicked.connect(self._add_position)
