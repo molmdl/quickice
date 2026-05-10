@@ -1196,11 +1196,17 @@ class MainWindow(QMainWindow):
             # Update solute panel with liquid volume for solute count calculation
             # Calculate from water_atom_count (TIP4P has 4 atoms per molecule)
             # Volume = water_nmolecules * 0.0299 nm³ per molecule
+            logger.info(f"[Liquid Volume Debug] hasattr(result, 'water_atom_count'): {hasattr(result, 'water_atom_count')}")
+            if hasattr(result, 'water_atom_count'):
+                logger.info(f"[Liquid Volume Debug] result.water_atom_count: {result.water_atom_count}")
+            
             if hasattr(result, 'water_atom_count') and result.water_atom_count > 0:
                 water_nmolecules = result.water_atom_count // 4
                 liquid_vol = water_nmolecules * 0.0299
                 self.solute_panel.set_liquid_volume(liquid_vol)
                 logger.info(f"Updated solute panel liquid volume: {liquid_vol:.2f} nm³ from {water_nmolecules} water molecules")
+            else:
+                logger.warning(f"[Liquid Volume Debug] FAILED to set liquid volume! hasattr={hasattr(result, 'water_atom_count')}, value={getattr(result, 'water_atom_count', 'N/A')}")
 
             # Pass result to IonPanel (Tab 5) for source selection
             # This enables both workflow paths:

@@ -292,6 +292,9 @@ class SolutePanel(QWidget):
         source_name = source_names[index] if 0 <= index < len(source_names) else "Interface"
 
         self._current_source = source_name
+        
+        logger.info(f"[SolutePanel._on_source_changed] Source changed to: {source_name}")
+        logger.info(f"[SolutePanel._on_source_changed] Current _liquid_volume_nm3: {self._liquid_volume_nm3:.2f}")
 
         # Clear 3D viewer
         if hasattr(self.solute_viewer, 'clear'):
@@ -302,21 +305,29 @@ class SolutePanel(QWidget):
 
         # Update Insert button state
         self._update_insert_button_state()
+        
+        # Update preview to reflect current state
+        logger.info(f"[SolutePanel._on_source_changed] Calling _update_preview()")
+        self._update_preview()
 
         # Emit configuration_changed signal
         self.configuration_changed.emit()
     
     def _update_preview(self):
         """Update molecule count preview in real-time."""
+        logger.info(f"[SolutePanel._update_preview] Called, _liquid_volume_nm3={self._liquid_volume_nm3:.2f}")
         if self._liquid_volume_nm3 <= 0:
+            logger.warning(f"[SolutePanel._update_preview] No liquid volume! Setting 'No liquid volume' text")
             self.preview_label.setText("No liquid volume")
             return
 
         concentration = self.concentration_spin.value()
+        logger.info(f"[SolutePanel._update_preview] Concentration: {concentration} M")
 
         inserter = SoluteInserter()
         molecule_count = inserter.calculate_molecule_count(concentration, self._liquid_volume_nm3)
-
+        
+        logger.info(f"[SolutePanel._update_preview] Calculated molecule count: {molecule_count}")
         self.preview_label.setText(f"{molecule_count} molecules")
     
     def set_liquid_volume(self, volume_nm3: float):
@@ -325,8 +336,10 @@ class SolutePanel(QWidget):
         Args:
             volume_nm3: Liquid region volume in cubic nanometers
         """
+        logger.info(f"[SolutePanel.set_liquid_volume] Called with volume: {volume_nm3:.2f} nm³")
         self._liquid_volume_nm3 = volume_nm3
         self.liquid_volume_label.setText(f"{volume_nm3:.2f} nm³")
+        logger.info(f"[SolutePanel.set_liquid_volume] _liquid_volume_nm3 set to: {self._liquid_volume_nm3:.2f}")
         self._update_preview()
     
     def get_configuration(self) -> SoluteConfig:
