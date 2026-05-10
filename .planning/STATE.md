@@ -289,6 +289,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 017 | Add concentration input to Custom Molecule random mode | 2026-05-10 | 4a4bb6b | [017-custom-mol-concentration-input](./quick/017-custom-mol-concentration-input/) |
 | 016 | ❌ REVERTED: Minimize bundle dependencies (broke executable) | 2026-05-04 | N/A (reverted) | [016-minimize-bundle-dependencies](./quick/016-minimize-bundle-dependencies/) |
 | 008 | Optimize PyInstaller bundle size | 2026-05-03 | deae8b8 | [008-optimize-pyinstaller-bundle-size](./quick/008-optimize-pyinstaller-bundle-size/) |
 | 007 | Code quality improvements (logging, deduplication, validation) | 2026-05-02 | 886ce83 | [007-code-quality-improvements-logging-dedu](./quick/007-code-quality-improvements-logging-dedu/) |
@@ -320,9 +321,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-09 17:00 UTC
-**Completed:** 35-06-PLAN.md (Phase 34.5/34.6 feature documentation added to GUI guide)
-**Status:** Checkpoint pending — screenshots need recapture
+**Last session:** 2026-05-10 07:00 UTC
+**Completed:** Quick Task 017 (Custom Molecule Concentration Input)
+**Status:** Quick task complete
 
 **Next session:**
 1. Rename existing screenshot files (remove tabX prefix):
