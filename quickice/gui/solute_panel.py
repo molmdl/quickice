@@ -1,9 +1,8 @@
 """Solute insertion panel for QuickIce GUI v4.5.
 
 This module provides the SolutePanel class for solute insertion configuration:
-- Concentration input (mol/L)
+- Concentration input (mol/L) with real-time molecule count preview
 - Solute type selection (THF or CH4)
-- Molecule count preview
 - Liquid volume display
 - Insert Solutes button
 - Log panel for status messages
@@ -40,9 +39,8 @@ class SolutePanel(QWidget):
     """Panel for solute insertion configuration.
     
     Provides UI for:
-    - Setting concentration in mol/L
+    - Setting concentration in mol/L (with real-time molecule count preview)
     - Selecting solute type (THF or CH4)
-    - Displaying calculated molecule count
     - Displaying liquid volume
     - Inserting solutes into structure
     
@@ -111,10 +109,6 @@ class SolutePanel(QWidget):
         # Solute type selection group
         solute_type_group = self._create_solute_type_group()
         left_layout.addWidget(solute_type_group)
-
-        # Molecule count display group
-        count_group = self._create_molecule_count_group()
-        left_layout.addWidget(count_group)
 
         # Volume display group
         volume_group = self._create_volume_group()
@@ -226,25 +220,6 @@ class SolutePanel(QWidget):
         ))
         layout.addStretch()
         
-        group.setLayout(layout)
-        return group
-
-    def _create_molecule_count_group(self) -> QGroupBox:
-        """Create molecule count display group."""
-        group = QGroupBox("Molecule Count")
-        layout = QFormLayout()
-
-        count_row = QHBoxLayout()
-        self.molecule_count_display = QLabel("0 molecules")
-        self.molecule_count_display.setStyleSheet("color: #666;")
-        count_row.addWidget(self.molecule_count_display)
-        count_row.addWidget(HelpIcon(
-            "Calculated number of solute molecules based on concentration and liquid volume.\n"
-            "N = C_M × V × N_A (Avogadro's number)"
-        ))
-        count_row.addStretch()
-
-        layout.addRow("Count:", count_row)
         group.setLayout(layout)
         return group
 
