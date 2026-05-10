@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 
 from quickice.structure_generation.types import CustomMoleculeConfig
+from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
 from quickice.gui.view import HelpIcon
 from quickice.gui.custom_molecule_viewer import CustomMoleculeViewerWidget
 
@@ -1054,6 +1055,78 @@ class CustomMoleculePanel(QWidget):
         
         max_molecules = int(volume * packing_fraction / molecule_volume)
         self.molecule_estimate_label.setText(f"~{max_molecules} molecules (max)")
+        
+        # Update concentration/count preview based on input mode
+        if self.input_mode_combo.currentText() == "By Count":
+            self._update_concentration_from_count()
+        else:
+            self._update_count_from_concentration()
+    
+    def _on_input_mode_changed(self, index: int):
+        """Handle input mode switching.
+        
+        Args:
+            index: Combo box index (0 = By Count, 1 = By Concentration)
+        """
+        # Show appropriate widget
+        if index == 0:  # By Count
+            self.count_mode_widget.setVisible(True)
+            self.concentration_mode_widget.setVisible(False)
+        else:  # By Concentration
+            self.count_mode_widget.setVisible(False)
+            self.concentration_mode_widget.setVisible(True)
+        
+        # Refresh calculated values
+        self._update_volume_preview()
+    
+    def _update_concentration_from_count(self):
+        """Update concentration label when molecule count changes."""
+        if self._interface_structure is None:
+            self.calculated_concentration_label.setText("-- mol/L")
+            return
+        
+        # Get liquid volume
+        water_count = getattr(self._interface_structure, 'water_atom_count', 0)
+        if water_count == 0:
+            self.calculated_concentration_label.setText("-- mol/L")
+            return
+        
+        water_nmolecules = water_count // 4
+        liquid_volume_nm3 = water_nmolecules * 0.0299
+        
+        # Calculate concentration from count
+        molecule_count = int(self.molecule_count_spin.value())
+        concentration = CustomMoleculeInserter.calculate_concentration(
+            molecule_count, liquid_volume_nm3
+        )
+        
+        self.calculated_concentration_label.setText(f"{concentration:.4f} mol/L")
+    
+    def _update_count_from_concentration(self):
+        """Update molecule count label when concentration changes."""
+        if self._interface_structure is None:
+            self.calculated_count_label.setText("-- molecules")
+            return
+        
+        # Get liquid volume
+        water_count = getattr(self._interface_structure, 'water_atom_count', 0)
+        if water_count == 0:
+            self.calculated_count_label.setText("-- molecules")
+            return
+        
+        water_nmolecules = water_count // 4
+        liquid_volume_nm3 = water_nmolecules * 0.0299
+        
+        # Calculate count from concentration
+        concentration = self.concentration_spin.value()
+        count = CustomMoleculeInserter.calculate_molecule_count(
+            concentration, liquid_volume_nm3
+        )
+        
+        self.calculated_count_label.setText(f"{count} molecules")
+        
+        # Also update molecule_estimate_label for consistency
+        self.molecule_estimate_label.setText(f"{count} molecules")
     
     def set_interface_structure(self, structure):
         """Set the current interface structure for validation.
@@ -1082,11 +1155,30 @@ class CustomMoleculePanel(QWidget):
             CustomMoleculeConfig with current placement settings
         """
         if self.placement_mode == "Random":
+            # Check input mode
+            mode_text = self.input_mode_combo.currentText()
+            
+            if mode_text == "By Count":
+                # Use molecule count directly
+                molecule_count = int(self.molecule_count_spin.value())
+            else:  # By Concentration
+                # Calculate molecule count from concentration
+                concentration = self.concentration_spin.value()
+                
+                # Get liquid volume
+                water_count = getattr(self._interface_structure, 'water_atom_count', 0) if self._interface_structure else 0
+                water_nmolecules = water_count // 4
+                liquid_volume_nm3 = water_nmolecules * 0.0299
+                
+                molecule_count = CustomMoleculeInserter.calculate_molecule_count(
+                    concentration, liquid_volume_nm3
+                )
+            
             return CustomMoleculeConfig(
                 placement_mode="random",
                 gro_path=self.gro_path,
                 itp_path=self.itp_path,
-                molecule_count=int(self.molecule_count_spin.value())
+                molecule_count=molecule_count
             )
         else:  # Custom
             # If no positions added, use current inputs
