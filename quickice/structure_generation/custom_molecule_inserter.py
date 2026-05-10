@@ -23,6 +23,7 @@ from quickice.structure_generation.types import (
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.gro_parser import parse_gro_file
+from quickice.structure_generation.solute_inserter import AVOGADRO
 
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,63 @@ class CustomMoleculeInserter:
             f"Loaded custom molecule template from {config.gro_path.name}: "
             f"{len(self.template_atom_names)} atoms"
         )
+    
+    @staticmethod
+    def calculate_molecule_count(
+        concentration_molar: float,
+        liquid_volume_nm3: float,
+    ) -> int:
+        """Calculate number of molecules from concentration and volume.
+        
+        Uses: N = C_M × V_L × NA
+        
+        Where:
+            - C_M = concentration in mol/L (molarity)
+            - V_L = liquid volume in nm³ converted to L (× 1e-24)
+            - NA = Avogadro's number
+        
+        Args:
+            concentration_molar: Concentration in mol/L (M)
+            liquid_volume_nm3: Liquid region volume in nm³
+            
+        Returns:
+            Number of molecules to insert
+        """
+        # Convert nm³ to L: 1 nm³ = 1e-24 L
+        volume_liters = liquid_volume_nm3 * 1e-24
+        
+        # Calculate molecules from molarity
+        n_molecules = concentration_molar * volume_liters * AVOGADRO
+        
+        return int(round(n_molecules))
+    
+    @staticmethod
+    def calculate_concentration(
+        molecule_count: int,
+        liquid_volume_nm3: float,
+    ) -> float:
+        """Calculate concentration from molecule count and volume.
+        
+        REVERSE calculation: C_M = N / (V_L × NA)
+        
+        Args:
+            molecule_count: Number of molecules
+            liquid_volume_nm3: Liquid region volume in nm³
+            
+        Returns:
+            Concentration in mol/L
+        """
+        # Handle edge cases
+        if liquid_volume_nm3 <= 0 or molecule_count <= 0:
+            return 0.0
+        
+        # Convert nm³ to L: 1 nm³ = 1e-24 L
+        volume_liters = liquid_volume_nm3 * 1e-24
+        
+        # Calculate concentration from molecule count
+        concentration = molecule_count / (volume_liters * AVOGADRO)
+        
+        return concentration
     
     def validate_single_placement(
         self,
