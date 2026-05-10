@@ -685,3 +685,79 @@ class CustomMoleculeViewerWidget(QWidget):
                 self.render_window.Render()
             
             logger.info("Preview actor cleared")
+    
+    def show_multiple_previews(
+        self,
+        molecule_positions_list: list[tuple[np.ndarray, list[str], np.ndarray]]
+    ) -> None:
+        """Show multiple preview molecules with semi-transparent styling.
+        
+        Renders multiple molecules at the proposed positions with opacity 0.6
+        to distinguish from actual insertion. Shows in context of existing
+        structure (ice, water, guests).
+        
+        Args:
+            molecule_positions_list: List of (positions, atom_names, cell) tuples,
+                                    where each positions is (N_atoms, 3) array in nm
+            
+        Note:
+            - Removes any existing preview actor before creating new ones
+            - Creates one actor per molecule (combined for efficiency)
+            - Switches to 3D viewer if on placeholder
+            - Does NOT modify _current_structure (preview is temporary)
+        """
+        if not self._vtk_available or self.renderer is None:
+            logger.warning("VTK not available, cannot show preview")
+            return
+        
+        # Clear existing preview actor
+        self.clear_preview()
+        
+        # Combine all molecule positions into single arrays
+        all_positions = []
+        all_atom_names = []
+        
+        for positions, atom_names, cell in molecule_positions_list:
+            all_positions.append(positions)
+            all_atom_names.extend(atom_names)
+        
+        if not all_positions:
+            logger.warning("No positions to preview")
+            return
+        
+        # Combine positions
+        combined_positions = np.vstack(all_positions)
+        
+        # Use the cell from the first molecule (should be same for all)
+        _, _, cell = molecule_positions_list[0]
+        
+        # Create single preview actor for all molecules
+        try:
+            from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
+            
+            actor = create_custom_molecule_actor(
+                combined_positions, all_atom_names, cell, moleculetype_name="PREVIEW"
+            )
+            
+            # Make preview semi-transparent
+            actor.GetProperty().SetOpacity(0.6)
+            
+            # Add to renderer
+            self.renderer.AddActor(actor)
+            self._preview_actor = actor
+            
+            # Reset camera to view all preview molecules
+            self._reset_camera()
+            
+            # Render
+            if self.render_window:
+                self.render_window.Render()
+            
+            # Switch to 3D viewer if not already showing
+            if self._stack.currentIndex() == 0:
+                self._stack.setCurrentIndex(1)
+            
+            logger.info(f"Preview actor added with {len(combined_positions)} atoms from {len(molecule_positions_list)} molecules")
+            
+        except Exception as e:
+            logger.error(f"Failed to create preview actor: {e}")

@@ -22,7 +22,8 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QLineEdit,
     QGroupBox, QFormLayout, QPushButton,
-    QTextEdit, QFileDialog, QMessageBox
+    QTextEdit, QFileDialog, QMessageBox, QTableWidget,
+    QTableWidgetItem, QHeaderView
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -53,6 +54,7 @@ class CustomMoleculePanel(QWidget):
     
     # NEW: Signals for preview request and clearing
     preview_requested = Signal(tuple, tuple)  # (position, rotation)
+    preview_all_requested = Signal(list)  # List of (position, rotation) tuples
     preview_cleared = Signal()  # Clear preview
     clear_previous_results = Signal()  # Clear previous custom molecule insertion results
     
@@ -458,6 +460,31 @@ class CustomMoleculePanel(QWidget):
         add_row.addStretch()
         layout.addLayout(add_row)
         
+        # Position list table
+        self.position_table = QTableWidget()
+        self.position_table.setColumnCount(7)
+        self.position_table.setHorizontalHeaderLabels([
+            "X (nm)", "Y (nm)", "Z (nm)", "α (°)", "β (°)", "γ (°)", "Preview"
+        ])
+        self.position_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.position_table.setMaximumHeight(150)
+        self.position_table.setAlternatingRowColors(True)
+        self.position_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.position_table.cellClicked.connect(self._on_position_table_clicked)
+        layout.addWidget(self.position_table)
+        
+        # Preview All button
+        preview_all_row = QHBoxLayout()
+        self.preview_all_button = QPushButton("Preview All Positions")
+        self.preview_all_button.setToolTip(
+            "Show all added molecule positions in 3D viewer.\n"
+            "Useful to verify the complete configuration before generating."
+        )
+        self.preview_all_button.setEnabled(False)  # Enabled when positions are added
+        preview_all_row.addWidget(self.preview_all_button)
+        preview_all_row.addStretch()
+        layout.addLayout(preview_all_row)
+        
         return widget
     
     def _setup_connections(self):
@@ -475,6 +502,9 @@ class CustomMoleculePanel(QWidget):
         # Validation and preview
         self.validate_button.clicked.connect(self._on_validate_clicked)
         self.clear_preview_button.clicked.connect(self._on_clear_preview_clicked)
+        
+        # Preview all button
+        self.preview_all_button.clicked.connect(self._on_preview_all_clicked)
         
         # Generate button
         self.generate_button.clicked.connect(lambda: self.generate_requested.emit())
@@ -678,11 +708,97 @@ class CustomMoleculePanel(QWidget):
             # Update count
             self.position_count_label.setText(f"Positions added: {len(self.positions_added)}")
             
+            # Update table
+            self._update_position_table()
+            
             self.log_message(f"Added position {len(self.positions_added)}: ({x:.2f}, {y:.2f}, {z:.2f}), "
                             f"rotation ({alpha:.1f}°, {beta:.1f}°, {gamma:.1f}°)")
             
         except ValueError as e:
             QMessageBox.warning(self, "Invalid Input", f"Invalid position value: {e}")
+    
+    def _update_position_table(self):
+        """Update the position table with current positions_added list."""
+        self.position_table.setRowCount(len(self.positions_added))
+        
+        for i, (pos, rot) in enumerate(self.positions_added):
+            # Position columns
+            self.position_table.setItem(i, 0, QTableWidgetItem(f"{pos[0]:.2f}"))
+            self.position_table.setItem(i, 1, QTableWidgetItem(f"{pos[1]:.2f}"))
+            self.position_table.setItem(i, 2, QTableWidgetItem(f"{pos[2]:.2f}"))
+            
+            # Rotation columns
+            self.position_table.setItem(i, 3, QTableWidgetItem(f"{rot[0]:.1f}"))
+            self.position_table.setItem(i, 4, QTableWidgetItem(f"{rot[1]:.1f}"))
+            self.position_table.setItem(i, 5, QTableWidgetItem(f"{rot[2]:.1f}"))
+            
+            # Preview button column
+            preview_item = QTableWidgetItem("Click to preview")
+            preview_item.setForeground(Qt.blue)
+            self.position_table.setItem(i, 6, preview_item)
+        
+        # Enable/disable Preview All button based on whether positions exist
+        self.preview_all_button.setEnabled(len(self.positions_added) > 0)
+    
+    def _on_position_table_clicked(self, row: int, column: int):
+        """Handle click on position table row.
+        
+        Args:
+            row: Row index that was clicked
+            column: Column index that was clicked
+        """
+        if row < 0 or row >= len(self.positions_added):
+            return
+        
+        position, rotation = self.positions_added[row]
+        
+        # If preview column clicked, show preview for this position
+        if column == 6:  # Preview column
+            self.log_message(f"Previewing position {row + 1}")
+            self.preview_requested.emit(position, rotation)
+            self.clear_preview_button.setEnabled(True)
+        else:
+            # Load position/rotation into input fields for editing
+            self.pos_x_edit.setText(f"{position[0]:.2f}")
+            self.pos_y_edit.setText(f"{position[1]:.2f}")
+            self.pos_z_edit.setText(f"{position[2]:.2f}")
+            self.rot_alpha_spin.setValue(rotation[0])
+            self.rot_beta_spin.setValue(rotation[1])
+            self.rot_gamma_spin.setValue(rotation[2])
+            self.log_message(f"Loaded position {row + 1} into input fields")
+    
+    def _on_preview_all_clicked(self):
+        """Handle Preview All button click.
+        
+        Shows all positions in the 3D viewer for verification before generation.
+        """
+        if not self.positions_added:
+            QMessageBox.information(
+                self, "No Positions",
+                "Add at least one position before previewing all."
+            )
+            return
+        
+        # Check files are loaded
+        if not self.gro_path or not self.itp_path:
+            QMessageBox.warning(
+                self, "No Files",
+                "Please upload .gro and .itp files first."
+            )
+            return
+        
+        # Check interface structure exists
+        if self._interface_structure is None:
+            QMessageBox.warning(
+                self, "No Structure",
+                "Please generate an interface structure first."
+            )
+            return
+        
+        # Emit signal with all positions
+        self.preview_all_requested.emit(self.positions_added)
+        self.clear_preview_button.setEnabled(True)
+        self.log_message(f"Previewing all {len(self.positions_added)} positions")
     
     def _on_validate_clicked(self):
         """Handle Validate & Preview button click.
@@ -749,7 +865,7 @@ class CustomMoleculePanel(QWidget):
                 self.placement_validation_label.setText(
                     f"✓ Placement valid\n"
                     f"  Position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}) nm\n"
-                    f"  Min distance to nearest atom: {result.min_distance:.3f} nm"
+                    f"  Min distance to nearest atom in ice/hydrate layer: {result.min_distance:.3f} nm"
                 )
                 self.placement_validation_label.setStyleSheet("color: green; font-weight: bold;")
                 self.log_message(f"Placement validated: min distance {result.min_distance:.3f} nm")
@@ -956,6 +1072,8 @@ class CustomMoleculePanel(QWidget):
         self.generate_button.setEnabled(False)
         
         self.position_count_label.setText("Positions added: 0")
+        self.position_table.setRowCount(0)
+        self.preview_all_button.setEnabled(False)
         self.placement_mode_combo.setCurrentText("Random")
         
         self.clear_log()

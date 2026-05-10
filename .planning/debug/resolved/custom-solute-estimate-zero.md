@@ -1,8 +1,8 @@
 ---
-status: fixing
+status: resolved
 trigger: "In the 'custom -> solute' workflow, the 'estimated no. of solute' display always shows zero, even though the actual generation works correctly and inserts the correct number of molecules."
 created: 2026-05-10T00:00:00Z
-updated: 2026-05-10T00:01:00Z
+updated: 2026-05-10T00:10:00Z
 ---
 
 ## Current Focus
