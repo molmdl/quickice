@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 35-integration-documentation |
 | Plan | 6 of 6 incomplete (documentation done, screenshots pending) |
 | Status | Phase incomplete — screenshots checkpoint pending |
-| Last activity | 2026-05-10 — Quick Task 018: Custom molecule delete and overlap detection |
+| Last activity | 2026-05-10 — Quick Task 019: Remove old custom molecule preview system |
 
 **Progress:** █████████░ 99% (181/181 plans, Phase 35 screenshots pending)
 
@@ -289,6 +289,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 019 | Remove old custom molecule preview system | 2026-05-10 | b7c1452 | [019-remove-old-custom-preview](./quick/019-remove-old-custom-preview/) |
 | 018 | Custom molecule delete and overlap detection | 2026-05-10 | a9f9bb5 | [018-custom-mol-delete-and-overlap](./quick/018-custom-mol-delete-and-overlap/) |
 | 017 | Add concentration input to Custom Molecule random mode | 2026-05-10 | 4a4bb6b | [017-custom-mol-concentration-input](./quick/017-custom-mol-concentration-input/) |
 | 016 | ❌ REVERTED: Minimize bundle dependencies (broke executable) | 2026-05-04 | N/A (reverted) | [016-minimize-bundle-dependencies](./quick/016-minimize-bundle-dependencies/) |
@@ -322,8 +323,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-10 07:37 UTC
-**Completed:** Quick Task 018 (Custom Molecule Delete and Overlap Detection)
+**Last session:** 2026-05-10 07:54 UTC
+**Completed:** Quick Task 019 (Remove Old Custom Molecule Preview System)
 **Status:** Quick task complete
 
 **Next session:**
@@ -347,4 +348,4 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 **Decision from f345ca9:** Rename + recapture (Option 1)
 
 ---
-*State updated: 2026-05-10 — Quick Task 018 complete*
+*State updated: 2026-05-10 — Quick Task 019 complete*
