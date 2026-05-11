@@ -495,13 +495,40 @@ Molecules are placed randomly in liquid regions:
 - Multiple attempts until valid position found
 - Status shows attempt count
 
+**Input Mode:**
+
+Choose how to specify the number of molecules:
+- **By Count** — Enter the exact number of molecules to insert
+- **By Concentration** — Enter concentration in mol/L; molecule count is calculated automatically
+
+The system calculates molecule count from concentration using:
+```
+N = C_M × V_L × N_A
+```
+where C_M is concentration (mol/L), V_L is liquid volume (L), and N_A is Avogadro's number.
+
+A real-time preview shows the estimated molecule count or concentration as you type.
+
 #### Custom Placement
 
 Specify exact position and orientation:
 - **Center of mass (X, Y, Z)** — Position in nm
 - **Rotation angles (α, β, γ)** — Euler angles in degrees (ZXZ convention)
-- No overlap checking (user responsibility)
 - Precise control for specific configurations
+
+**Position Management:**
+- Click **Add Position** to save the current position to the list
+- Select a row in the position table and click **Delete Selected** to remove it
+- The position table shows: X, Y, Z, α, β, γ for each saved position
+
+**Overlap Detection:**
+
+When adding a position, the system checks for center-to-center overlap with existing positions (default threshold: 0.25 nm). If overlap is detected:
+- A warning dialog appears: "This position overlaps with position X"
+- Click **Yes** to add the position anyway (molecules may overlap)
+- Click **No** to cancel and adjust the position
+
+**Note:** Overlap checking in Custom mode is position-based (center-to-center distance), not all-atom overlap checking. For precise collision avoidance, use the "Validate & Preview" button before insertion.
 
 ### Validation & Preview (Phase 34.5)
 
