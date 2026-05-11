@@ -3,7 +3,7 @@ status: testing
 phase: 32-architecture-preparation
 source: 32-01-SUMMARY.md, 32-02-SUMMARY.md, 32-03-SUMMARY.md
 started: 2026-05-05T00:00:00Z
-updated: 2026-05-05T00:00:00Z
+updated: 2026-05-11T00:00:00Z
 ---
 
 ## Current Test
@@ -38,14 +38,14 @@ result: pending
 
 ### 6. Integration Tests Pass
 expected: Run integration tests with: pytest tests/test_integration_v35.py -v. All 11 integration tests should pass without errors.
-result: pending
+result: ✅ passed (2026-05-11, 43.15s, 11/11 tests)
 
 ## Summary
 
 total: 6
-passed: 0
+passed: 1
 issues: 0
-pending: 6
+pending: 5
 skipped: 0
 
 ## Gaps
