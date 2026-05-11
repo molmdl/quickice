@@ -1,249 +1,299 @@
 # Phase 35: Integration & Documentation - Research
 
 **Researched:** 2026-05-11
-**Domain:** Documentation completeness and gap analysis for v4.5 milestone
-**Confidence:** HIGH (based on direct file analysis of existing plans, summaries, and requirements)
+**Domain:** Documentation gap analysis for v4.5 milestone (post Quick Tasks 017-019)
+**Confidence:** HIGH (based on git commit analysis, code review, and documentation comparison)
 
 ## Summary
 
-Phase 35 has 6 existing plans covering integration and documentation needs. Five plans are complete (35-01 through 35-05), and one plan is partial (35-06 with deferred screenshots checkpoint). Research analyzed DOCS requirements coverage, documentation gaps, and pending todos to determine if additional plans are needed.
+Phase 35 documentation was last updated on May 9, but Quick Tasks 017, 018, and 019 were completed on May 10, introducing new features that are not documented. This research analyzed all commits since May 9 to determine which changes require documentation updates versus which are internal bug fixes.
 
 **Key findings:**
-- All 5 DOCS requirements are substantially satisfied through existing plans
-- DOCS-04 (screenshots) is the only incomplete requirement - deferred as human checkpoint
-- No new documentation plans are required; completing 35-06 checkpoint is sufficient
-- Pending todos (CLI executable, flexible interface) belong to v4.5.1 or future milestones
-- Release notes are the only missing documentation component
+- **3 user-facing features missing documentation** (Quick Tasks 017, 018, 019)
+- **14 bug fixes do NOT need documentation** (internal implementation details)
+- **Documentation gap is LIMITED to Custom Molecule section** in gui-guide.md and help_dialog.py
+- **No new plans needed** — documentation updates can be done as checkpoint extension
 
-**Primary recommendation:** Complete the 35-06 screenshot checkpoint; no new documentation plans needed.
+**Primary recommendation:** Add Quick Task 017/018 features to gui-guide.md and help_dialog.py. No new documentation plans required.
 
-## Requirements Coverage Analysis
+---
 
-### DOCS Requirements Status
+## Commit Analysis: May 9-11
 
-| Requirement | Description | Plan | Status | Evidence |
-|-------------|-------------|------|--------|----------|
-| DOCS-01 | README.md with v4.5 features | 35-04 | ✓ Complete | README updated to 333 lines with correct tab numbering |
-| DOCS-02 | Tooltips for Tab 4/5 controls | 35-02 | ✓ Complete | Tooltips added to SolutePanel (2) and CustomMoleculePanel (3) |
-| DOCS-03 | Help text for solute/custom workflows | 35-03 | ✓ Complete | Help dialog updated with Tab 0-5 workflows, correct numbering |
-| DOCS-04 | Screenshot placeholders | 35-06 | ⏳ Partial | Documentation updated, screenshots deferred |
-| DOCS-05 | User guide for .gro/.itp creation | 35-05 | ✓ Complete | 910-line gro-itp-guide.md created with examples |
+### Quick Tasks (Features Requiring Documentation)
 
-### GROMACS Requirements Status (Phase 35 scope)
+| Commit | Task | Type | Doc Needed | Reasoning |
+|--------|------|------|------------|-----------|
+| `6901079` | Quick Task 017-01: Add concentration calculation methods | FEATURE | YES | New user-facing calculation feature |
+| `67c7820` | Quick Task 017-02: Add concentration input UI components | FEATURE | YES | New UI elements for concentration input |
+| `960f193` | Quick Task 017-03: Wire up preview updates and generate logic | FEATURE | YES | Completes concentration/count toggle feature |
+| `a9f9bb5` | Quick Task 018: Add delete and overlap detection | FEATURE | YES | New UI buttons and warning dialogs |
+| `b7c1452` | Quick Task 019: Remove old custom molecule preview | FEATURE | NO | Removed feature never documented |
 
-| Requirement | Description | Plan | Status | Evidence |
-|-------------|-------------|------|--------|----------|
-| GROMACS-01 | Molecule ordering enforced | 35-01 | ✓ Complete | test_gromacs_molecule_ordering.py with 4 tests |
-| GROMACS-03 | All .itp files bundled | 35-01 | ✓ Complete | test_itp_bundling verifies correct output |
-| ARCH-05b | Tab reordering (Ion→Tab 5) | 34.3 | ✓ Complete | TabIndex enum updated, addTab order changed |
-| ARCH-07 | Unified Ctrl+S export | 35-01 | ✓ Complete | Unified export implemented with Export As... submenu |
+**Total features needing documentation: 2** (Quick Task 017 and 018)
 
-### Requirements Marked "Pending" in REQUIREMENTS.md
+### Bug Fixes (No Documentation Needed)
 
-The REQUIREMENTS.md file shows 9 requirements as "Pending" for Phase 35:
-- ARCH-05b, ARCH-07, GROMACS-01, GROMACS-03, DOCS-01 through DOCS-05
+| Commit | Fix | Type | Doc Needed | Reasoning |
+|--------|-----|------|------------|-----------|
+| `0f22d39` | Custom molecule preview and visibility issues | BUGFIX | NO | Fixes existing documented behavior |
+| `f23fd3d` | Set liquid volume for Custom Molecule source | BUGFIX | NO | Fixes preview estimation |
+| `1ec7da8` | Use consistent 5-char residue names | BUGFIX | NO | Internal consistency fix |
+| `53a182c` | GROMACS export - comment ITP atomtypes | BUGFIX | NO | Fixes export correctness |
+| `b3b9139` | Handle CustomMoleculeStructure in water count | BUGFIX | NO | Internal calculation fix |
+| `8cb5d03` | Preserve custom molecules through workflow | BUGFIX | NO | Fixes data propagation |
+| `325cdcb` | Correct custom molecule index calculation | BUGFIX | NO | Internal calculation fix |
+| `2f33d8a` | Export custom molecules in ion workflow | BUGFIX | NO | Fixes existing workflow |
+| `489a3d0` | Propagate custom molecule info through solute | BUGFIX | NO | Fixes data propagation |
+| `2562cc5` | Update solute preview when switching sources | BUGFIX | NO | UI responsiveness fix |
+| `c88e202` | Remove redundant Molecule Count group | BUGFIX | NO | Removes redundant UI element |
+| `e3df9d4` | Lean debug test | INTERNAL | NO | Test file only |
 
-**Actual status:** All 9 requirements are COMPLETE based on plan execution. REQUIREMENTS.md traceability table was not updated after execution.
+**Total bug fixes: 11** — All fix existing documented behavior, no new concepts to explain.
 
-**Recommendation:** Update REQUIREMENTS.md traceability table to reflect actual completion status.
+---
 
-## Documentation Gaps Identified
+## Documentation Gaps Detail
 
-### 1. Screenshots (DOCS-04 Partial)
+### 1. Quick Task 017: Concentration Input for Random Mode
 
-**What's missing:**
-- 5 existing screenshots need renaming (remove tabX prefix)
-- 5 new screenshots need capture:
-  - `custom-molecule-panel.png` — Tab 3 with Validate & Preview button
-  - `solute-panel.png` — Tab 4 with Source dropdown
-  - `validation-preview.png` — Semi-transparent preview (Phase 34.5)
-  - `solute-source-dropdown.png` — Source dropdown expanded (Phase 34.6)
-  - Optional: `custom-molecule-complete-system.png`
-- Verify `quickice-v4-gui.png` shows all 6 tabs
+**What was added:**
+- Input mode selector dropdown: "By Count" / "By Concentration"
+- When "By Count" selected: Shows molecule count spinner + calculated concentration label
+- When "By Concentration" selected: Shows concentration spinner (0.0-2.0 mol/L) + calculated count label
+- Real-time bidirectional conversion between count and concentration
 
-**Current state:**
-- Documentation references updated (commit f345ca9)
-- Phase 34.5/34.6 feature sections added (commit 951db8a)
-- "Screenshot update pending for v4.5" notes still in gui-guide.md
+**Missing from gui-guide.md:**
+- Lines 489-497 (Random Placement section) only mention "molecule count"
+- No mention of concentration input mode option
+- Should add: "You can also specify concentration (mol/L) instead of count"
 
-**Resolution:** Complete 35-06 checkpoint (human action required for screenshot capture)
+**Missing from help_dialog.py:**
+- Line 113: `"Set position/rotation (Custom mode) or molecule count (Random mode)"`
+- Should update to: `"Set position/rotation (Custom mode) or count/concentration (Random mode)"`
 
-### 2. Release Notes / CHANGELOG
+**Specific doc changes needed:**
 
-**What's missing:** No CHANGELOG.md or release notes for v4.5 milestone
+```markdown
+# gui-guide.md - Random Placement section (around line 489)
 
-**Current state:**
-- Version history scattered across STATE.md, ROADMAP.md
-- No consolidated release notes document
+#### Random Placement (Default)
 
-**Recommendation:** Create CHANGELOG.md with v4.5 release notes (optional, not in DOCS requirements)
+Molecules are placed randomly in liquid regions:
+- All-atom overlap checking prevents clashes
+- Random rotation for each molecule
+- Multiple attempts until valid position found
+- Status shows attempt count
 
-### 3. REQUIREMENTS.md Traceability
+**Input Mode:**
+- **By Count** — Specify exact number of molecules to insert
+- **By Concentration** — Specify concentration in mol/L; molecule count calculated automatically
 
-**What's missing:** Traceability table not updated after execution
+The system calculates molecule count from concentration using:
+```
+N = C_M × V_L × N_A
+```
+where C_M is concentration (mol/L), V_L is liquid volume (L), and N_A is Avogadro's number.
+```
 
-**Current state:**
-- Shows DOCS-01 to DOCS-05 as "Pending"
-- Shows GROMACS-01, GROMACS-03 as "Pending"
-- Shows ARCH-05b, ARCH-07 as "Pending"
+### 2. Quick Task 018: Delete Selected and Overlap Detection
 
-**Recommendation:** Update traceability to mark all as "Complete"
+**What was added:**
+- "Delete Selected" button in Custom mode position management
+- Button is disabled until a row is selected in the position table
+- Clicking button removes the selected position
+- Overlap detection when adding positions in Custom mode
+- Center-to-center distance check (default 0.25 nm separation)
+- Warning dialog: "This position overlaps with position X. Add anyway? (Molecules may overlap)"
+- User can choose Yes (add overlapping position) or No (cancel)
 
-## Existing Plans Coverage
+**Missing from gui-guide.md:**
+- Custom Placement section (lines 499-505) does not mention:
+  - Delete Selected button
+  - Position table selection
+  - Overlap detection warning
 
-### 35-01: Unified Export & GROMACS Verification
-- ✓ Implemented unified Ctrl+S shortcut
-- ✓ Changed hydrate shortcut to Ctrl+H
-- ✓ Created molecule ordering tests (4 tests)
-- ✓ Added Export As... submenu
+**Missing from help_dialog.py:**
+- No mention of Delete Selected button
+- No mention of overlap detection
 
-### 35-02: Tooltips for Tab 3/4
-- ✓ Added 3 tooltips to CustomMoleculePanel
-- ✓ Added 2 tooltips to SolutePanel
-- ✓ HelpIcon widgets for GRO/ITP upload
+**Specific doc changes needed:**
 
-### 35-03: Help Dialog Update
-- ✓ Updated tab numbering (Tab 0-5)
-- ✓ Added Tab 3 (Custom Molecule) workflow
-- ✓ Added Tab 4 (Solute Insertion) workflow
-- ✓ Updated keyboard shortcuts section
-- ✓ Added custom molecule preparation section
+```markdown
+# gui-guide.md - Custom Placement section (around line 499)
 
-### 35-04: README Update
-- ✓ Simplified to 333 lines (down from 474)
-- ✓ Added v4.5 features (Solute, Custom Molecule)
-- ✓ Corrected tab numbering throughout
-- ✓ Added unified Ctrl+S export documentation
+#### Custom Placement
 
-### 35-05: GUI Guide & User Guides
-- ✓ Extended GUI guide from 522 to 780 lines
-- ✓ Added Tab 3 (Custom Molecule) section
-- ✓ Added Tab 4 (Solute Insertion) section
-- ✓ Created 910-line gro-itp-guide.md
+Specify exact position and orientation:
+- **Center of mass (X, Y, Z)** — Position in nm
+- **Rotation angles (α, β, γ)** — Euler angles in degrees (ZXZ convention)
+- No overlap checking (user responsibility)
+- Precise control for specific configurations
 
-### 35-06: Screenshots & Workflow Docs
-- ✓ Phase 34.5 features documented (Validation & Preview)
-- ✓ Phase 34.6 features documented (Source dropdown, workflow chains)
-- ✓ Multi-tab workflow chains documented
-- ⏳ Screenshots deferred (human checkpoint)
+**Position Management:**
+- Click "Add Position" to save the current position to the list
+- Select a row in the position table and click "Delete Selected" to remove it
+- **Overlap Detection:** When adding a position, the system checks for center-to-center overlap with existing positions (default 0.25 nm threshold). A warning dialog appears if overlap is detected, allowing you to add the position anyway or cancel.
+```
 
-## Pending Todos Analysis
+### 3. Quick Task 019: Remove Old Custom Molecule Preview
 
-From STATE.md, the following pending todos exist:
+**What was changed:**
+- Removed "Preview All Positions" button (was never documented)
+- Changed position table from 7 columns to 6 columns (removed "Preview" column)
+- Signal conflict resolved: preview_all_requested removed
 
-| Todo | Category | Recommendation |
-|------|----------|----------------|
-| Capture screenshots per Phase 35 suggestions | docs | **Phase 35 scope** — Complete 35-06 checkpoint |
-| Unify GUI/CLI entry point | tooling | **v4.5.1 scope** — CLI extensions milestone |
-| CLI-only executable for automation | tooling | **v4.5.1 scope** — CLI extensions milestone |
-| Support flexible interface construction modes | feature | **Future milestone** — New feature request |
-| Explore complex hydrate formation using atomsk | research | **Future milestone** — Research item |
-| Group UAT items by workflow | testing | **Phase 35 scope** — Pre-release verification |
+**Documentation impact:** NONE
+- The removed feature was never documented in gui-guide.md or help_dialog.py
+- No documentation changes needed
 
-### Todo Prioritization
+---
 
-**Phase 35 completion (blockers):**
-1. Screenshots checkpoint — Required for DOCS-04 completion
-2. UAT workflow grouping — Required for release verification
+## Documentation Timeline Analysis
 
-**v4.5.1 scope (deferred):**
-1. Unify GUI/CLI entry point — Linked to CLI-01 through CLI-05 requirements
-2. CLI-only executable — Automation support
+| File | Last Updated | Quick Task 017 | Quick Task 018 | Quick Task 019 |
+|------|--------------|----------------|----------------|----------------|
+| docs/gui-guide.md | May 9 00:21 | **MISSING** | **MISSING** | N/A (removal) |
+| README.md | May 9 15:50 | OK (high-level) | OK (high-level) | N/A |
+| help_dialog.py | May 7 21:22 | **MISSING** | **MISSING** | N/A (removal) |
 
-**Future milestones:**
-1. Flexible interface construction — New feature, significant scope
-2. Atomsk hydrate research — Exploratory, no immediate deliverable
+**Conclusion:** Documentation was updated May 9, before Quick Tasks 017-019 on May 10. Two features need documentation.
 
-## Architecture Documentation
+---
 
-### Current State
+## Categorization Summary
 
-Documentation exists in multiple locations:
-- `docs/gui-guide.md` — 834 lines, GUI-focused user documentation
-- `docs/cli-reference.md` — CLI documentation (v4.0 features)
-- `docs/gro-itp-guide.md` — 910 lines, custom molecule preparation
-- `docs/ranking.md` — Candidate ranking algorithm
-- `docs/principles.md` — Design principles
-- `docs/flowchart.md` — Workflow diagrams
-- `.planning/codebase/ARCHITECTURE.md` — Technical architecture
+| Category | Count | Doc Needed | Examples |
+|----------|-------|------------|----------|
+| FEATURE | 3 | 2 YES, 1 NO | Concentration input, Delete/Overlap, Remove preview |
+| BUGFIX | 11 | 0 | Liquid volume, residue names, data propagation |
+| INTERNAL | 1 | 0 | Test files |
 
-### Gaps
-
-1. **CLI reference outdated** — Does not cover v4.5 Tab 3/4/5 features
-   - Not a Phase 35 requirement (CLI deferred to v4.5.1)
-   
-2. **Developer documentation** — No CONTRIBUTING.md or developer setup guide
-   - Not required for v4.5 milestone
-   - Could be added in future
-
-3. **API documentation** — No docstring coverage requirements
-   - Existing code has docstrings
-   - Not a Phase 35 requirement
+---
 
 ## Recommendations
 
 ### Do NOT Create New Plans
 
-All DOCS requirements are covered by existing plans. The only incomplete item is the 35-06 screenshot checkpoint, which is a human action already deferred appropriately.
+The documentation gaps are minimal (2 features in 1 section) and can be addressed by:
+1. Extending the 35-06 checkpoint to include Quick Task documentation
+2. Or creating a minor 35-07 plan specifically for Quick Task documentation
 
-### Actions to Complete Phase 35
+### Documentation Updates Required
 
-1. **Complete 35-06 screenshot checkpoint:**
-   - Rename existing files (remove tabX prefix)
-   - Capture new screenshots for Tabs 3-4
-   - Capture Phase 34.5/34.6 feature screenshots
-   - Remove "Screenshot update pending" notes
+**gui-guide.md:**
+1. Update "Random Placement" section (line ~489) to mention concentration input mode
+2. Update "Custom Placement" section (line ~499) to mention Delete Selected button and overlap detection
 
-2. **Update REQUIREMENTS.md traceability:**
-   - Mark DOCS-01 to DOCS-05 as "Complete"
-   - Mark GROMACS-01, GROMACS-03 as "Complete"
-   - Mark ARCH-05b, ARCH-07 as "Complete"
+**help_dialog.py:**
+1. Update line 113 to mention concentration option: `"Set position/rotation (Custom mode) or count/concentration (Random mode)"`
+2. Add brief note about position management (optional)
 
-3. **Optional: Create CHANGELOG.md:**
-   - v4.5 release notes with feature summary
-   - Breaking changes (tab reordering)
-   - New features (solute, custom molecule)
+### Estimated Effort
 
-### v4.5.1 Planning (Not Phase 35)
+| Task | Lines to Change | Complexity |
+|------|-----------------|------------|
+| gui-guide.md Random Placement | +10 lines | LOW |
+| gui-guide.md Custom Placement | +5 lines | LOW |
+| help_dialog.py workflow text | +2 lines | LOW |
 
-The following items should be planned for v4.5.1 CLI Extensions milestone:
-- CLI-01 to CLI-05 requirements
-- GUI/CLI entry point unification
-- CLI-only executable
+**Total: ~20 lines of documentation updates**
+
+---
+
+## Open Questions
+
+### Q1: Should README.md mention concentration for custom molecules?
+
+**Current state:** README.md Tab 3 description says "Two placement modes: Random (automatic placement) or Custom (user-specified position and rotation)"
+
+**Recommendation:** OPTIONAL — Could add "(with count or concentration input)" to Random mode description, but gui-guide.md already covers this in detail. The README is intentionally high-level.
+
+### Q2: Should overlap detection distance be documented?
+
+**Current state:** Code uses 0.25 nm default threshold
+
+**Recommendation:** YES — Add note that default overlap threshold is 0.25 nm (2.5 Å). Users should know this is center-to-center distance, not atomic overlap.
+
+---
 
 ## Confidence Assessment
 
 | Area | Level | Reason |
 |------|-------|--------|
-| DOCS requirements coverage | HIGH | Direct verification of plan summaries and file contents |
-| Documentation gaps | HIGH | Analyzed existing docs, found only screenshots missing |
-| Pending todo classification | HIGH | STATE.md explicitly shows scope and categories |
-| Recommendation confidence | HIGH | All evidence supports completing existing checkpoint |
+| Feature identification | HIGH | Direct git commit analysis with exact timestamps |
+| Bug fix categorization | HIGH | All fixes verified as internal implementation |
+| Documentation gaps | HIGH | Direct comparison of code vs docs |
+| Recommendation confidence | HIGH | Gap is limited and clearly defined |
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `.planning/ROADMAP.md` — Phase 35 requirements and plans list
-- `.planning/REQUIREMENTS.md` — DOCS-01 to DOCS-05 definitions
-- `.planning/phases/35-integration-documentation/*-SUMMARY.md` — Plan completion evidence
-- `.planning/STATE.md` — Current status and pending todos
-- `README.md` — Verified v4.5 content (333 lines)
-- `docs/gui-guide.md` — Verified Tab 3/4 sections present
-- `docs/gro-itp-guide.md` — Verified 910-line guide exists
+- Git log analysis: `git log --oneline --since="2026-05-09" --all`
+- Code review: `quickice/gui/custom_molecule_panel.py` (lines 329-418, 535, 782-862)
+- Documentation timestamps: `git log -1 --format="%ci" -- docs/gui-guide.md README.md quickice/gui/help_dialog.py`
 
 ### Secondary (MEDIUM confidence)
-- `docs/images/` directory listing — Screenshot inventory
+- Quick Task summaries: `.planning/quick/017-*/017-SUMMARY.md`, `.planning/quick/018-*/018-SUMMARY.md`, `.planning/quick/019-*/019-SUMMARY.md`
+- Phase 35 context: `.planning/phases/35-integration-documentation/35-CONTEXT.md`
+
+---
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: N/A (research task, not library selection)
-- Architecture: HIGH — verified via file analysis
-- Pitfalls: HIGH — identified documentation gaps accurately
+- Commit categorization: HIGH — verified by commit message and code diff
+- Documentation gaps: HIGH — verified by line-by-line comparison
+- Recommendations: HIGH — based on clear evidence
 
 **Research date:** 2026-05-11
 **Valid until:** End of v4.5 milestone (next 30 days)
 
 ---
 
-*Research complete. No new documentation plans required. Complete 35-06 screenshot checkpoint.*
+## Appendix: Complete Commit List
+
+### Quick Task 017 Commits (May 10)
+```
+6901079 feat(017-01): add concentration calculation methods
+67c7820 feat(017-02): add concentration input UI components
+960f193 feat(017-03): wire up preview updates and generate logic
+7f8f0f1 test(017): add unit tests for concentration calculations
+4a4bb6b docs(017): complete custom molecule concentration input plan
+55f1412 docs(state): update state after Quick Task 017 completion
+84fed99 docs(state): update last activity for Quick Task 017
+```
+
+### Quick Task 018 Commits (May 10)
+```
+a9f9bb5 feat(quick-018): add delete and overlap detection for custom positions
+bdc94d9 docs(quick-018): complete custom molecule delete and overlap detection
+```
+
+### Quick Task 019 Commits (May 10)
+```
+b7c1452 refactor(019): remove old custom molecule preview system
+fd8db82 docs(019): complete remove old custom molecule preview plan
+6b907fd docs(quick-019): complete quick task documentation
+```
+
+### Bug Fix Commits (May 9-10)
+```
+0f22d39 fix: Custom molecule preview and visibility issues
+f23fd3d fix: Set liquid volume for Custom Molecule source in Solute tab
+1ec7da8 fix: Use consistent 5-char residue names (CH4_L, THF_L) for liquid solutes
+53a182c fix: GROMACS export - comment ITP atomtypes, include in .top, truncate resnames
+b3b9139 fix: Handle CustomMoleculeStructure in water count calculation for solute insertion
+8cb5d03 fix: Preserve custom molecules through Interface → Custom → Solute → Ion workflow
+325cdcb fix: Correct custom molecule index calculation in ion viewer
+2f33d8a fix: Export custom molecules in ion workflow
+489a3d0 fix: propagate custom molecule info through solute workflow
+2562cc5 fix: update solute preview when switching sources
+c88e202 fix: Remove redundant Molecule Count group from SolutePanel
+```
+
+---
+
+*Research complete. Two features need documentation updates. No new plans required.*
