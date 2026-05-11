@@ -110,7 +110,7 @@ class QuickReferenceDialog(QDialog):
             "16. Switch to Custom Molecule tab (requires interface from Tab 2)\n"
             "17. Upload .gro and .itp files for your custom molecule\n"
             "18. Choose placement mode (Random or Custom)\n"
-            "19. Set position/rotation (Custom mode) or molecule count (Random mode)\n"
+            "19. Set position/rotation (Custom mode) or count/concentration (Random mode)\n"
             "20. Click Generate to insert custom molecules\n"
             "21. Export custom molecules for GROMACS (Ctrl+M)\n"
             "\n"
