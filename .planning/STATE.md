@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 35-integration-documentation |
-| Plan | 6 of 6 incomplete (documentation done, screenshots pending) |
-| Status | Phase incomplete — screenshots checkpoint pending |
-| Last activity | 2026-05-10 — Quick Task 019: Remove old custom molecule preview system |
+| Plan | 7 of 7 complete |
+| Status | Phase complete — screenshots deferred (35-06 checkpoint) |
+| Last activity | 2026-05-11 — Completed 35-07-PLAN.md (Quick Task 017/018 documentation) |
 
-**Progress:** █████████░ 99% (181/181 plans, Phase 35 screenshots pending)
+**Progress:** ██████████ 100% (182/182 plans)
 
 ---
 
@@ -75,6 +75,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Complete system export for Custom Molecule tab (Phase 34.6-04 to 34.6-08)
 - ✓ Comprehensive integration tests with 10 tests covering complete system (Phase 34.6-08)
 - ✓ Phase 34.5/34.6 feature documentation in GUI guide (Phase 35-06)
+- ✓ Quick Task 017/018 documentation (concentration input, delete/overlap) (Phase 35-07)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -323,29 +324,29 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-10 07:54 UTC
-**Completed:** Quick Task 019 (Remove Old Custom Molecule Preview System)
-**Status:** Quick task complete
+**Last session:** 2026-05-11 12:02 UTC
+**Completed:** 35-07-PLAN.md (Quick Task 017/018 documentation)
+**Status:** Phase 35 complete (7/7 plans), screenshots deferred
+
+**Phase 35 Status:**
+- ✓ 35-01 (unified export shortcuts) complete
+- ✓ 35-02 (tooltips) complete
+- ✓ 35-03 (help dialog) complete
+- ✓ 35-04 (README update) complete
+- ✓ 35-05 (GUI guide & user guides) complete
+- ✓ 35-06 (Phase 34.5/34.6 feature docs) complete, screenshots deferred
+- ✓ 35-07 (Quick Task 017/018 documentation) complete
+
+**Pending from 35-06:**
+Screenshot recapture (deferred checkpoint):
+1. Rename existing screenshot files (remove tabX prefix)
+2. Launch GUI and recapture new screenshots
+3. Update image references in gui-guide.md
 
 **Next session:**
-1. Rename existing screenshot files (remove tabX prefix):
-   - `tab2-hydrate-panel.png` → `hydrate-panel.png`
-   - `tab4-ion-panel.png` → `ion-panel.png`
-   - `tab2-piece-interface.png` → `piece-interface.png`
-   - `tab2-slab-interface.png` → `slab-interface.png`
-   - `tab2-pocket-interface.png` → `pocket-interface.png`
-
-2. Launch GUI and recapture screenshots:
-   - Verify quickice-v4-gui.png shows 6 tabs
-   - custom-molecule-panel.png (Tab 3)
-   - solute-panel.png (Tab 4)
-   - validation-preview.png (Phase 34.5)
-   - solute-source-dropdown.png (Phase 34.6)
-
-3. Complete 35-06-SUMMARY.md and mark plan complete
-4. Run `/gsd-execute-phase 35` to resume
-
-**Decision from f345ca9:** Rename + recapture (Option 1)
+- Complete screenshot management (35-06 deferred)
+- Run `/gsd-verify-work 35` for UAT
+- Proceed to milestone completion
 
 ---
-*State updated: 2026-05-10 — Quick Task 019 complete*
+*State updated: 2026-05-11 — Plan 35-07 complete*
