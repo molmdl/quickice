@@ -284,7 +284,8 @@ Plans:
 - [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
 - [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [ ] 35-06-PLAN.md — Screenshots & workflow docs: Phase 34.5/34.6 feature docs complete, screenshots pending checkpoint
+- [ ] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (Option 1 decision from f345ca9)
+- [ ] 35-07-PLAN.md — Quick Task docs: Document Quick Task 017/018 features (concentration input, delete/overlap)
 
 ---
 
@@ -292,7 +293,7 @@ Plans:
 
 **Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
 
-**Total Plans:** 35 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 6)
+**Total Plans:** 36 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -340,10 +341,10 @@ Plans:
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
-| 35 - Integration & Documentation | ⏳ In Progress | 5 | 6 |
+| 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-09 - Phase 35 documentation complete (screenshots deferred)*
+*Last updated: 2026-05-11 - Added 35-07 for Quick Task documentation*
 *For current state, see .planning/STATE.md*
