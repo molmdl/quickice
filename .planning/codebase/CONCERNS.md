@@ -1,215 +1,189 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-05-05
+**Analysis Date:** 2026-05-12
 
 ## Tech Debt
 
-**Deprecated Water Density Inference:**
-- Issue: `quickice/structure_generation/water_filler.py` contains deprecated heuristic inference for water molecule count (lines 295, 363)
-- Files: `quickice/structure_generation/water_filler.py`
-- Impact: May produce incorrect results for interface generation; maintenance burden
-- Fix approach: Remove deprecated path, require explicit molecule count parameter
+### Large File Complexity
 
-**Hardcoded Fallback Values:**
-- Issue: `quickice/output/gromacs_writer.py` uses hardcoded residue names when ITP files cannot be read (lines 279-285)
+**main_window.py:**
+- Issue: 2023 lines with 57 functions - monolithic GUI controller
+- Files: `quickice/gui/main_window.py`
+- Impact: Difficult to maintain, test, and understand. High cognitive load for modifications.
+- Fix approach: Extract into separate concerns (HydrateController, IonController, SoluteController, CustomMoleculeController) following MVC pattern
+
+**gromacs_writer.py:**
+- Issue: 2019 lines with 21 functions - massive export module
 - Files: `quickice/output/gromacs_writer.py`
-- Impact: Falls back to hardcoded values if bundled force field files missing; potential mismatch with actual ITP files
-- Fix approach: Make ITP file bundling more robust in PyInstaller; add validation that fallback values match ITP files
+- Impact: Changes to one export format risk breaking others. Hard to test individual exporters.
+- Fix approach: Split into separate modules per export type (IceGROMACSWriter, IonGROMACSWriter, HydrateGROMACSWriter, etc.)
 
-**Low Logging Coverage:**
-- Issue: Only 8 of 68 Python files use logging module; many use broad exception handling without logging
-- Files: Throughout `quickice/` package
-- Impact: Difficult to debug production issues; silent failures
-- Fix approach: Add logging to all exception handlers and critical paths
+**custom_molecule_panel.py:**
+- Issue: 1307 lines with 35 functions - complex panel logic
+- Files: `quickice/gui/custom_molecule_panel.py`
+- Impact: UI logic mixed with business logic, hard to test
+- Fix approach: Extract CustomMoleculeConfigBuilder, CustomMoleculeValidator into separate classes
 
-**Print Statements in CLI:**
-- Issue: `quickice/main.py` uses print() instead of logging for output (lines 53-97)
-- Files: `quickice/main.py`
-- Impact: Cannot redirect output to file; inconsistent with logging pattern
-- Fix approach: Replace print() with logger.info() for structured output
+### Deprecated Code
+
+**water_filler.py heuristic inference:**
+- Issue: `atoms_per_molecule=None` triggers deprecated heuristic inference with DeprecationWarning
+- Files: `quickice/structure_generation/water_filler.py:363-381`
+- Impact: Warning spam in logs, potential future breakage
+- Fix approach: Make `atoms_per_molecule` a required parameter, update all callers
 
 ## Known Bugs
 
-**None explicitly documented.** The codebase has no TODO/FIXME/BUG comments in production code. However, several areas have implicit fragility that could lead to bugs (see Fragile Areas section).
+**No critical bugs currently tracked** - Codebase appears stable with comprehensive test suite (411 test functions, 836 assertions).
 
 ## Security Considerations
 
-**No Critical Security Issues Found:**
-- No exec/eval/subprocess calls with user input
-- No hardcoded secrets or credentials
-- No wildcard imports
-- Environment variables used appropriately (DISPLAY, QUICKICE_FORCE_VTK)
-
-**Dependency Security:**
-- Risk: Complex dependency chain (GenIce2, VTK, PySide6, matplotlib, scipy, networkx, spglib)
-- Current mitigation: All dependencies are scientific computing packages from trusted sources
-- Recommendations: Keep dependencies updated; pin versions in production
-
 **File Path Handling:**
-- Risk: File operations in `quickice/output/gromacs_writer.py` and export functions
-- Files: `quickice/output/gromacs_writer.py`, `quickice/gui/export.py`
-- Current mitigation: Uses Path objects and proper error handling
-- Recommendations: None needed - implementation is safe
+- Risk: User-provided file paths in GUI file dialogs and CLI arguments not sanitized
+- Files: `quickice/gui/custom_molecule_panel.py`, `quickice/cli/parser.py`
+- Current mitigation: File dialogs limit to specific extensions (.gro, .itp)
+- Recommendations: Add path traversal validation, limit to allowed directories
+
+**Input Validation:**
+- Risk: Large molecule counts and box dimensions could cause memory exhaustion
+- Files: `quickice/validation/validators.py`
+- Current mitigation: Upper bounds enforced (nmolecules max 100000)
+- Recommendations: Consider adding total atom count limits for memory safety
 
 ## Performance Bottlenecks
 
-**Thread Safety Warning:**
-- Problem: `quickice/structure_generation/generator.py` explicitly warns it is NOT thread-safe (lines 96-99)
-- Files: `quickice/structure_generation/generator.py`
-- Cause: GenIce uses global np.random state; concurrent calls would corrupt random state
-- Improvement path: Document single-threaded requirement clearly in API; consider using numpy Generator API with explicit state objects
+**Array Copy Operations:**
+- Problem: 20+ `.copy()` operations on potentially large position arrays
+- Files: `quickice/output/gromacs_writer.py:53,85,92`, `quickice/structure_generation/water_filler.py:113,589`
+- Cause: Defensive copying for safety, but creates memory overhead for large structures
+- Improvement path: Use in-place operations where safe, implement copy-on-write patterns
 
-**Large File Complexity:**
-- Problem: Several files exceed 1000 lines, making maintenance difficult
-- Files: 
-  - `quickice/output/gromacs_writer.py` (1475 lines)
-  - `quickice/gui/main_window.py` (1300 lines)
-  - `quickice/output/phase_diagram.py` (1132 lines)
-- Cause: Feature accumulation without refactoring
-- Improvement path: Extract helper modules; split responsibilities
+**Numpy Concatenation:**
+- Problem: 25 `np.concatenate`, `np.vstack`, `np.hstack` calls
+- Files: Throughout `quickice/structure_generation/`
+- Cause: Building arrays incrementally instead of pre-allocating
+- Improvement path: Pre-allocate arrays with known sizes, use index assignment
 
-**Memory Buildup for I/O:**
-- Problem: GROMACS writer builds entire output in memory before writing (lines 532, 1208)
-- Files: `quickice/output/gromacs_writer.py`
-- Cause: Intentional for I/O performance (commented)
-- Impact: Works well for current use cases (typical ice structures)
-- Improvement path: Add streaming option for very large structures (>100k molecules)
-
-**Packaging Bloat:**
-- Problem: PyInstaller dist folder is 1.2GB
-- Files: `dist/` directory
-- Cause: Bundling entire scientific Python stack (VTK, matplotlib, scipy, numpy, GenIce2)
-- Impact: Large download size for end users
-- Improvement path: Consider dependency pruning; investigate minimal required packages
+**VTK Rendering:**
+- Problem: No explicit VTK resource cleanup
+- Files: `quickice/gui/vtk_utils.py`, `quickice/gui/custom_molecule_renderer.py`
+- Cause: VTK objects (vtkMolecule, vtkActor) created but never explicitly deleted
+- Improvement path: Implement cleanup methods in viewer classes that call `Delete()` on VTK objects
 
 ## Fragile Areas
 
-**GUI State Management:**
-- Files: `quickice/gui/main_window.py`, `quickice/gui/viewmodel.py`
-- Why fragile: Multiple state variables tracked (`_current_result`, `_current_interface_result`, `_current_hydrate_result`, `_current_ion_result`, `_current_T`, `_current_P`); easy to desynchronize
-- Safe modification: Always update all related state variables atomically; add validation methods
-- Test coverage: Partial - integration tests exist but GUI state synchronization not fully tested
+**Thread Safety in Structure Generation:**
+- Files: `quickice/structure_generation/generator.py:96-99`
+- Why fragile: GenIce uses global `np.random` state, not thread-safe. Explicit warning in code comments.
+- Safe modification: Keep sequential execution. If parallelization needed, use `numpy.random.Generator` with explicit seeds.
+- Test coverage: Adequate for sequential use, no concurrent tests
 
-**Ion Insertion Molecule Indexing:**
-- Files: `quickice/structure_generation/ion_inserter.py` (lines 60-100)
-- Why fragile: Complex logic to build molecule_index from structure metadata; depends on ice/water/guest atom ordering remaining consistent across codebase
-- Safe modification: Changes to structure atom ordering require updating ion_inserter; add contract tests
-- Test coverage: Tests exist but need more edge cases
+**Broad Exception Handlers:**
+- Files: 40+ locations with `except Exception as e:` throughout codebase
+- Why fragile: Catches and potentially masks unexpected errors
+- Safe modification: Replace with specific exception types (StructureGenerationError, InterfaceGenerationError, etc.)
+- Test coverage: Exception paths tested in integration tests
 
-**Broad Exception Handling:**
-- Files: 18 locations with `except Exception` (e.g., `quickice/structure_generation/generator.py:150`, `quickice/gui/viewmodel.py`, `quickice/gui/export.py`)
-- Why fragile: Catches all exceptions, potentially hiding root causes; makes debugging difficult
-- Safe modification: Catch specific exception types; always log the exception
-- Test coverage: Exception paths not well tested
-
-**Empty Return Values:**
-- Files: 15 locations with `return None` or `return []` without clear contracts
-  - `quickice/structure_generation/ion_inserter.py:80, 90` - Returns None if structure lacks expected attributes
-  - `quickice/output/gromacs_writer.py:249, 691, 744, 761, 767, 797` - Returns None for invalid molecules or missing data
-  - `quickice/gui/phase_diagram_widget.py:252, 284` - Returns None for invalid queries
-- Why fragile: Callers must handle None cases; no explicit contracts
-- Safe modification: Document when None is returned; consider using Optional[T] type hints
-- Test coverage: Some None cases tested but not comprehensive
-
-**Pass Statements:**
-- Files: 8 locations with empty `pass` statements (e.g., `quickice/phase_mapping/lookup.py:294, 418`, `quickice/output/phase_diagram.py:231`)
-- Why fragile: May indicate incomplete error handling or placeholder code
-- Safe modification: Review each pass statement; replace with explicit handling or logging
-- Test coverage: Not tested
+**Loose Type Annotations:**
+- Files: `quickice/structure_generation/types.py:383-391,450-451,457-459`
+- Why fragile: Uses `Any` type to avoid circular imports, reducing type safety
+- Safe modification: Use `TYPE_CHECKING` blocks with forward references, or Protocol classes
+- Test coverage: Types validated through usage tests, not type-level tests
 
 ## Scaling Limits
 
-**Molecule Count:**
-- Current capacity: 4 to 100,000 molecules (validated in `quickice/validation/validators.py:93`)
-- Limit: Upper bound set by GenIce generation time and memory
-- Scaling path: For >100k molecules, consider batch generation or pre-built templates
+**Memory for Large Systems:**
+- Current capacity: Tested up to ~100,000 water molecules
+- Limit: Memory grows linearly with molecule count; position arrays for 100K TIP4P waters = 400K atoms × 3 coords × 8 bytes ≈ 10MB just for positions
+- Scaling path: Implement streaming export for large systems, avoid loading full structure in memory
 
-**Temperature Range:**
-- Current capacity: 0 to 500K (validated in `quickice/validation/validators.py:29`)
-- Limit: Limited by IAPWS formulation range and GenIce lattice support
-- Scaling path: Extend IAPWS formulations for extreme temperatures if needed
-
-**Pressure Range:**
-- Current capacity: 0 to 10,000 MPa (validated in `quickice/validation/validators.py:56`)
-- Limit: Limited by IAPWS R14-08 melting curve range (up to 208 MPa for Ice Ih)
-- Scaling path: Add high-pressure ice phases (Ice VII, VIII, X) beyond IAPWS range
-
-**GUI Rendering:**
-- Current capacity: Handles typical ice structures (<100k atoms)
-- Limit: VTK rendering performance degrades for very large structures
-- Scaling path: Add level-of-detail rendering; decimate large structures for visualization
+**GUI Responsiveness:**
+- Current capacity: Works well for typical research systems (1000-10000 molecules)
+- Limit: Large systems (>50000 molecules) cause UI lag during rendering
+- Scaling path: Implement level-of-detail rendering, decimate for display while keeping full structure for export
 
 ## Dependencies at Risk
 
-**Python 3.14.3:**
-- Risk: Very new Python version (May 2026); potential compatibility issues with scientific packages
-- Impact: Packages may not be fully tested on Python 3.14
-- Migration plan: Test all dependencies on Python 3.14; consider Python 3.12 LTS as fallback
-
 **GenIce2:**
-- Risk: Critical dependency for ice structure generation; complex codebase
-- Impact: Any GenIce2 bugs or API changes affect QuickIce
-- Migration plan: Pin GenIce2 version; report upstream issues; no direct alternative
+- Risk: External dependency for hydrate generation, maintained by third party
+- Impact: Hydrate generation would fail if GenIce2 becomes unavailable or has breaking changes
+- Migration plan: Abstract GenIce2 behind interface, could potentially use alternative lattice generators
 
-**VTK 9.5.2:**
-- Risk: Large dependency (contributes to 1.2GB dist); complex installation on some systems
-- Impact: VTK installation issues block GUI usage
-- Migration plan: Consider alternatives (PyOpenGL, vispy) for 3D visualization; but VTK is most mature
+**VTK:**
+- Risk: Large dependency (~500MB), version-specific API changes
+- Impact: Visualization would break, but core functionality unaffected
+- Migration plan: Could use lighter alternatives (py3Dmol, nglview) for web-based deployment
 
-**PySide6 6.10.2:**
-- Risk: Qt dependency requires GLIBC 2.28+ on Linux; excludes older distributions
-- Impact: Ubuntu 18.04, CentOS 7 users cannot run GUI
-- Migration plan: Document system requirements clearly; no migration needed (intentional choice)
+**PySide6:**
+- Risk: Qt binding compatibility with Python 3.14
+- Impact: GUI would fail if incompatibility arises
+- Migration plan: Currently compatible, monitor PySide6 release notes
 
 ## Missing Critical Features
 
-**CLI Support for Hydrate/Ion Features:**
-- Problem: Hydrate generation and ion insertion are GUI-only features (documented in README line 41)
-- Blocks: Command-line workflows for hydrate/ion structures; automation/scripting use cases
-- Workaround: Use GUI to generate, then script file handling
-
-**Multiprocessing Support:**
-- Problem: Single-threaded architecture (explicit thread safety warning in `quickice/structure_generation/generator.py:96-99`)
-- Blocks: Parallel generation of multiple candidates for large parameter sweeps
-- Workaround: Run multiple QuickIce instances with different seeds
-
-**Streaming Export for Large Structures:**
-- Problem: All export functions build entire output in memory
-- Blocks: Generation of very large structures (>100k molecules) on memory-limited systems
-- Workaround: Generate smaller structures; increase system memory
+**No critical features missing** - Application is feature-complete for ice structure generation workflow.
 
 ## Test Coverage Gaps
 
-**GUI State Synchronization:**
-- What's not tested: Cross-component state updates in MainWindow (e.g., what happens when user switches tabs while generation is running)
-- Files: `quickice/gui/main_window.py`
-- Risk: State desynchronization could cause export to use stale data
-- Priority: Medium
+**Untested GUI Modules:**
+- What's not tested: 30+ GUI modules lack dedicated test files
+- Files: `quickice/gui/custom_molecule_panel.py`, `quickice/gui/ion_panel.py`, `quickice/gui/interface_panel.py`, `quickice/gui/hydrate_panel.py`, `quickice/gui/solute_panel.py`
+- Risk: UI logic bugs may go undetected
+- Priority: Medium - GUI tested via integration tests and manual UAT
 
-**Exception Path Handling:**
-- What's not tested: Many exception handlers (18 locations with `except Exception`) are not exercised in tests
-- Files: Throughout `quickice/` package
-- Risk: Exception handlers may have bugs or fail to clean up properly
-- Priority: Medium
+**Untested Core Modules:**
+- What's not tested: Several core modules lack dedicated test files
+- Files: 
+  - `quickice/structure_generation/cell_utils.py`
+  - `quickice/structure_generation/custom_molecule_inserter.py`
+  - `quickice/structure_generation/generator.py`
+  - `quickice/structure_generation/gromacs_ion_export.py`
+  - `quickice/structure_generation/interface_builder.py`
+  - `quickice/structure_generation/overlap_resolver.py`
+  - `quickice/structure_generation/solute_inserter.py`
+  - `quickice/structure_generation/water_filler.py`
+  - `quickice/structure_generation/moleculetype_registry.py`
+  - `quickice/phase_mapping/lookup.py`
+  - `quickice/output/gromacs_writer.py`
+- Risk: Core functionality changes may introduce regressions
+- Priority: High - These modules are tested indirectly through integration tests, but direct unit tests would improve coverage
 
-**Edge Cases in Phase Mapping:**
-- What's not tested: Boundary conditions at triple points; extreme temperature/pressure combinations
-- Files: `quickice/phase_mapping/lookup.py`
-- Risk: Phase identification may fail or give wrong results near phase boundaries
-- Priority: Low (IAPWS formulations are well-tested)
+**No E2E Tests:**
+- What's not tested: Full CLI workflow from command line to output files
+- Files: CLI tested via `test_cli_integration.py` but not full end-to-end
+- Risk: CLI argument parsing errors may go undetected
+- Priority: Low - Integration tests cover most CLI paths
 
-**Ion Insertion Edge Cases:**
-- What's not tested: Ion insertion with unusual water/ice ratios; very high concentrations
-- Files: `quickice/structure_generation/ion_inserter.py`
-- Risk: Edge cases may cause assertion failures or incorrect ion placement
-- Priority: Medium
+## Code Quality Issues
 
-**Memory/Performance Tests:**
-- What's not tested: Memory usage with large structures; generation time scaling
-- Files: All structure generation and export modules
-- Risk: Memory leaks or performance regressions may go undetected
-- Priority: Low (current performance is acceptable)
+**Magic Numbers:**
+- Issue: Hardcoded values in multiple locations
+- Files: 
+  - `quickice/gui/hydrate_renderer.py:11` - hardcoded radii
+  - `quickice/output/gromacs_writer.py:361,736,1471` - hardcoded fallback values
+- Impact: Changes require finding all instances
+- Fix approach: Extract to constants module with documentation
+
+**Function Count per File:**
+- Issue: Several files exceed 20 functions, indicating potential SRP violations
+- Files: `quickice/gui/view.py` (48 functions), `quickice/gui/custom_molecule_panel.py` (35 functions)
+- Impact: Reduced cohesion, harder testing
+- Fix approach: Split into focused modules
+
+## Concurrency Concerns
+
+**QThread Worker Pattern:**
+- Files: `quickice/gui/workers.py`, `quickice/gui/custom_molecule_worker.py`, `quickice/gui/hydrate_worker.py`
+- Issue: Workers use `except Exception` broadly, potential for silent failures in background threads
+- Impact: Errors may not surface to user
+- Fix approach: Ensure all worker errors emit error signal with stack trace
+
+**Random State Management:**
+- Files: `quickice/structure_generation/generator.py:96-99`
+- Issue: GenIce uses global numpy random state, not thread-safe
+- Impact: Concurrent generation would produce correlated or corrupt structures
+- Fix approach: Document single-threaded requirement, or implement mutex around generation
 
 ---
 
-*Concerns audit: 2026-05-05*
+*Concerns audit: 2026-05-12*
