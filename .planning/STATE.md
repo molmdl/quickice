@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 024 | Clarify ice phases documentation (detection vs generation) | 2026-05-16 | 89c7efd | [024-clarify-ice-phases-documentation](./quick/024-clarify-ice-phases-documentation/) |
 | 023 | UPX compression feasibility check (investigation) | 2026-05-16 | 2c51ae3 | [023-check-upx-compression-feasibility](./quick/023-check-upx-compression-feasibility/) |
 | 022 | Optimize H-bond detection with KDTree | 2026-05-16 | d4a333e | [022-optimize-hbond-detection-kdtree](./quick/022-optimize-hbond-detection-kdtree/) |
 | 021 | Remove unused build_molecule_index function | 2026-05-16 | 187368f | [021-remove-unused-build-molecule-index](./quick/021-remove-unused-build-molecule-index/) |
@@ -329,8 +330,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-16
-**Completed:** Quick Tasks 020-023 (version bump, dead code removal, O(n²) optimization, UPX check)
-**Status:** Code quality improvements complete, UPX pending user decision
+**Completed:** Quick Tasks 020-024 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs)
+**Status:** Code quality improvements complete, UPX pending user decision, documentation clarified
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -354,4 +355,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Tasks 020-023 complete*
+*State updated: 2026-05-16 — Quick Tasks 020-024 complete*
