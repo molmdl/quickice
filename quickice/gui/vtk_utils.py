@@ -379,7 +379,6 @@ def detect_hydrogen_bonds_optimized(
         for idx in indices:
             # Map back to original H atom
             h_original_idx = idx % n_h
-            supercell_offset = idx // n_h
             
             h_atom_idx, h_pos, parent_o_idx = h_positions[h_original_idx]
             
@@ -387,14 +386,12 @@ def detect_hydrogen_bonds_optimized(
             if parent_o_idx == o_atom_idx:
                 continue
             
-            # Get minimum image position of H relative to this O
-            # For visualization, we need the O position in the image
-            # closest to the H
-            h_supercell_pos = supercell_h[idx]
-            o_min_image = _pbc_min_image_position(h_supercell_pos, o_pos, cell)
+            # Get minimum image position of O relative to this H
+            # For visualization, H stays in central cell, O is moved to minimum image
+            o_min_image = _pbc_min_image_position(h_pos, o_pos, cell)
             
             hbonds.append((
-                tuple(float(h_supercell_pos[i]) for i in range(3)),
+                tuple(float(h_pos[i]) for i in range(3)),
                 tuple(float(o_min_image[i]) for i in range(3))
             ))
     
