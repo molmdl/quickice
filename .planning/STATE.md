@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 020 | Version bump to 4.5.0 | 2026-05-16 | bb9d9ed | [020-version-bump-4.5](./quick/020-version-bump-4.5/) |
 | 019 | Remove old custom molecule preview system | 2026-05-10 | b7c1452 | [019-remove-old-custom-preview](./quick/019-remove-old-custom-preview/) |
 | 018 | Custom molecule delete and overlap detection | 2026-05-10 | a9f9bb5 | [018-custom-mol-delete-and-overlap](./quick/018-custom-mol-delete-and-overlap/) |
 | 017 | Add concentration input to Custom Molecule random mode | 2026-05-10 | 4a4bb6b | [017-custom-mol-concentration-input](./quick/017-custom-mol-concentration-input/) |
@@ -323,8 +324,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-11 12:02 UTC
-**Completed:** 35-07-PLAN.md (Quick Task 017/018 documentation)
+**Last session:** 2026-05-16 07:52 UTC
+**Completed:** Quick Task 020 (Version bump to 4.5.0)
 **Status:** Phase 35 complete (7/7 plans), screenshots deferred
 
 **Phase 35 Status:**
@@ -348,4 +349,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-11 — Plan 35-07 complete*
+*State updated: 2026-05-16 — Quick Task 020 complete*
