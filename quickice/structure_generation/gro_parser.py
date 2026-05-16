@@ -3,9 +3,12 @@
 Shared parsing logic for GROMACS .gro files used by structure generation
 and water template loading.
 """
+import logging
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def parse_gro_string(gro_string: str) -> tuple[np.ndarray, list[str], np.ndarray]:
@@ -141,5 +144,6 @@ def extract_residue_name_from_gro(gro_path: Path | str) -> str | None:
 
         return residue_name if residue_name else None
 
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Could not extract residue name from {gro_path}: {e}")
         return None

@@ -79,7 +79,7 @@ class PhaseDetector:
                     st = IAPWS97(T=T, x=0)  # Saturated liquid
                     vapor_vertices.append((T, st.P))
                 except Exception as e:
-                    logger.debug(f"Could not get saturation pressure at T={T}: {e}")
+                    logger.warning(f"Could not get saturation pressure at T={T}: {e}")
             
             # From the end of saturation curve (500K, P_sat), go down to bottom
             vapor_vertices.append((500.0, P_min))
@@ -481,7 +481,7 @@ class PhaseDiagramCanvas(FigureCanvasQTAgg):
                     # IAPWS returns MPa
                     lv_P.append(st.P)
                 except Exception as e:
-                    logger.debug(f"Could not get liquid-vapor boundary at T={T}: {e}")
+                    logger.warning(f"Could not get liquid-vapor boundary at T={T}: {e}")
             
             if len(lv_P) > 0:
                 lv_T = lv_T[:len(lv_P)]
