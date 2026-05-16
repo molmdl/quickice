@@ -2,7 +2,6 @@
 
 This module provides consolidated utility functions for:
 - Counting atoms in guest molecules (supports Me, CH4, THF, CO2, H2)
-- Building molecule indices from structure data
 
 These functions were consolidated from duplicate implementations across:
 - quickice/structure_generation/modes/pocket.py
@@ -107,74 +106,3 @@ def count_guest_atoms(atom_names: list[str], start: int) -> int:
     # Default: treat as 1 atom guest
     return 1
 
-
-def build_molecule_index(atom_names: list[str], residue_names: list[str] | None = None) -> list:
-    """Build molecule index from atom and residue names.
-    
-    Groups atoms into molecules based on residue boundaries and atom patterns.
-    This is a general-purpose function that can be used for:
-    - Hydrate structures with guests (CH4, THF)
-    - Interface structures (ice + water)
-    - Ion structures (ice + water + ions)
-    
-    Args:
-        atom_names: List of atom names
-        residue_names: List of residue names (optional, used for guest identification)
-    
-    Returns:
-        List of MoleculeIndex objects with start_idx, count, and mol_type
-    """
-    from quickice.structure_generation.types import MoleculeIndex
-    
-    if not atom_names:
-        return []
-    
-    molecule_index = []
-    i = 0
-    
-    # Default empty residue_names if not provided
-    if residue_names is None:
-        residue_names = [""] * len(atom_names)
-    
-    while i < len(atom_names):
-        atom = atom_names[i]
-        residue = residue_names[i] if i < len(residue_names) else ""
-        
-        # Check for guest molecules (CH4, THF) by residue name
-        if residue in ["CH4", "THF", "CO2", "H2"]:
-            # Count atoms in this guest molecule
-            guest_count = count_guest_atoms(atom_names, i)
-            molecule_index.append(MoleculeIndex(i, guest_count, residue.lower()))
-            i += guest_count
-            continue
-        
-        # Check for water (TIP4P format: OW, HW1, HW2, MW)
-        if atom in ["OW", "O"] and i + 3 < len(atom_names):
-            # Check if this is TIP4P (OW, HW1, HW2, MW) or 3-site (O, H, H)
-            if atom_names[i+1] in ["HW1", "H"] and atom_names[i+2] in ["HW2", "H"]:
-                if i + 3 < len(atom_names) and atom_names[i+3] == "MW":
-                    # TIP4P water (4 atoms)
-                    molecule_index.append(MoleculeIndex(i, 4, "water"))
-                    i += 4
-                else:
-                    # 3-site water (3 atoms)
-                    molecule_index.append(MoleculeIndex(i, 3, "water"))
-                    i += 3
-                continue
-        
-        # Check for ions
-        if atom in ["NA", "NA+"]:
-            molecule_index.append(MoleculeIndex(i, 1, "na"))
-            i += 1
-            continue
-        
-        if atom in ["CL", "CL-"]:
-            molecule_index.append(MoleculeIndex(i, 1, "cl"))
-            i += 1
-            continue
-        
-        # Default: treat as single atom
-        molecule_index.append(MoleculeIndex(i, 1, "unknown"))
-        i += 1
-    
-    return molecule_index
