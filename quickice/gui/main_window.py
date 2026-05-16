@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
         """
         # Current tab structure (v4.5 Phase 34.3):
         # Tab 0 (TabIndex.ICE): Ice Generation
-        # Tab 1 (TabIndex.HYDRATE): Hydrate Config
+        # Tab 1 (TabIndex.HYDRATE): Hydrate Generation
         # Tab 2 (TabIndex.INTERFACE): Interface Construction
         # Tab 3 (TabIndex.CUSTOM): Custom Molecule (Phase 34)
         # Tab 4 (TabIndex.SOLUTE): Solute Insertion (Phase 33)
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         
         # Cross-tab data flows (v4.0):
         # Ice Generation → Interface Construction (ice candidates)
-        # Hydrate Config → Interface Construction (hydrate structure as source)
+        # Hydrate Generation → Interface Construction (hydrate structure as source)
         # Interface Construction → Ion Insertion (interface structure for ions)
         #
         # Future data flows (v4.5):
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow):
         # === Interface Construction tab ===
         self.interface_panel = InterfacePanel()
         
-        # === Hydrate Configuration tab (new in v4.0) ===
+        # === Hydrate Generation tab (new in v4.0) ===
         self.hydrate_panel = HydratePanel()
         
         # === Solute Insertion tab (new in v4.5 Phase 33) ===
@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):
         
         # Add tabs to tab widget (order: Ice → Hydrate → Interface → Custom → Solute → Ion)
         self.tab_widget.addTab(tab1_widget, "Ice Generation")
-        self.tab_widget.addTab(self.hydrate_panel, "Hydrate Config")
+        self.tab_widget.addTab(self.hydrate_panel, "Hydrate Generation")
         self.tab_widget.addTab(self.interface_panel, "Interface Construction")
         self.tab_widget.addTab(self.custom_molecule_panel, "Custom Molecule")  # Tab 3 (SWAPPED)
         self.tab_widget.addTab(self.solute_panel, "Solute Insertion")  # Tab 4 (SWAPPED)
@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         # Interface Construction tab hydrate source - when user selects hydrate in Interface Construction tab
         self.interface_panel.generate_hydrate_requested.connect(self._on_interface_hydrate_generate)
         
-        # Hydrate Configuration tab connections (new in v4.0)
+        # Hydrate Generation tab connections (new in v4.0)
         self.hydrate_panel.configuration_changed.connect(self._on_hydrate_config_changed)
         self.hydrate_panel.generate_requested.connect(self._on_hydrate_generate_clicked)
         
@@ -666,12 +666,12 @@ class MainWindow(QMainWindow):
     def _on_interface_hydrate_generate(self):
         """Handle generate when Source=hydrate in Interface Construction tab.
 
-        Uses the last generated hydrate from Hydrate Configuration tab to create interface.
+        Uses the last generated hydrate from Hydrate Generation tab to create interface.
         Treats hydrate as template/seed for ice-water interface (same logic as ice candidate).
         """
         from quickice.structure_generation.types import InterfaceConfig
         
-        # Check if we have a hydrate from Hydrate Configuration tab
+        # Check if we have a hydrate from Hydrate Generation tab
         hydrate = self._current_hydrate_result
 
         if hydrate is None:
@@ -680,7 +680,7 @@ class MainWindow(QMainWindow):
                 "No Hydrate",
                 "No hydrate structure available.\n\n"
                 "Please:\n"
-                "1. Go to Hydrate Config tab\n"
+                "1. Go to Hydrate Generation tab\n"
                 "2. Generate a hydrate structure\n"
                 "3. Click 'Use in Interface →' or return here and generate"
             )
@@ -1667,7 +1667,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "No Hydrate",
-                "Generate a hydrate structure first in the Hydrate Config tab."
+                "Generate a hydrate structure first in the Hydrate Generation tab."
             )
             return
         
@@ -1676,7 +1676,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "No Configuration",
-                "Configure a hydrate structure first in the Hydrate Config tab."
+                "Configure a hydrate structure first in the Hydrate Generation tab."
             )
             return
         

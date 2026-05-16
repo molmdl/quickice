@@ -11,7 +11,7 @@ class TabIndex(IntEnum):
     
     Current tab order (v4.5 Phase 34.3):
         - Tab 0: Ice Configuration
-        - Tab 1: Hydrate Configuration
+        - Tab 1: Hydrate Generation
         - Tab 2: Interface Construction
         - Tab 3: Custom Molecule (Phase 34)
         - Tab 4: Solute Insertion (Phase 33)
@@ -21,7 +21,7 @@ class TabIndex(IntEnum):
     Custom Molecule now appears before Solute Insertion.
     """
     ICE = 0          # Ice Generation tab
-    HYDRATE = 1      # Hydrate Config tab
+    HYDRATE = 1      # Hydrate Generation tab
     INTERFACE = 2    # Interface Construction tab
     CUSTOM = 3       # Custom Molecule tab (Phase 34)
     SOLUTE = 4       # Solute Insertion tab (Phase 33)

@@ -27,7 +27,7 @@ For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
 The main window is divided into six tabs:
 - **Tab 0 (Ice Generation)**: Interactive phase diagram, input controls, and 3D viewer
-- **Tab 1 (Hydrate Config)**: Generate clathrate hydrate structures with guest molecules
+- **Tab 1 (Hydrate Generation)**: Generate clathrate hydrate structures with guest molecules
 - **Tab 2 (Interface Construction)**: Build ice-water interfaces for MD simulations
 - **Tab 3 (Custom Molecule)**: Upload and insert custom molecules via .gro/.itp files
 - **Tab 4 (Solute Insertion)**: Insert THF or CH₄ solutes into liquid water
@@ -220,13 +220,13 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 - Tab 4: Export solutes for GROMACS
 - Tab 5: Export ions for GROMACS |
 
-## Hydrate Config (Tab 1)
+## Hydrate Generation (Tab 1)
 
 The first tab generates clathrate hydrate structures with guest molecules using GenIce2.
 
 ### Overview
 
-Hydrate Config allows you to:
+Hydrate Generation allows you to:
 - Select hydrate lattice type (sI, sII, sH)
 - Choose guest molecules (CH₄, THF)
 - Configure cage occupancy
@@ -237,7 +237,7 @@ Hydrate Config allows you to:
 
 ![Hydrate Panel](images/hydrate-panel.png)
 
-*Screenshot of Hydrate Config tab showing configuration controls and 3D viewer*
+*Screenshot of Hydrate Generation tab showing configuration controls and 3D viewer*
 
 ### Lattice Types
 
