@@ -172,7 +172,7 @@ Examples:
         "--version",
         "-V",
         action="version",
-        version="%(prog)s 4.0.0"
+        version="%(prog)s 4.5.0"
     )
     
     return parser
