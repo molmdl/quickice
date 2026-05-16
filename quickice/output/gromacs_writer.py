@@ -1523,7 +1523,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
             elif mol_type == "solute":
-                # Solute molecule (CH4_LIQ or THF_LIQ) - write all atoms
+                # Solute molecule (CH4_L or THF_L) - write all atoms
                 # Solute positions are stored separately in ion_structure.solute_positions
                 res_num += 1
                 res_num_wrapped = res_num % 100000
@@ -1541,7 +1541,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                     solute_res_name = ion_structure.solute_registry.get_gromacs_name(f"liquid_{ion_structure.solute_type}")
                 else:
                     # Fallback
-                    solute_res_name = f"{solute_type_upper}_LIQ"
+                    solute_res_name = f"{solute_type_upper}_L"
                 
                 # Truncate to 5 chars for GRO format (GROMACS limit)
                 solute_res_name = solute_res_name[:5]
@@ -1793,7 +1793,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 solute_mol_name = ion_structure.solute_registry.get_gromacs_name(f"liquid_{ion_structure.solute_type}")
             else:
                 # Fallback
-                solute_mol_name = f"{ion_structure.solute_type.upper()}_LIQ"
+                solute_mol_name = f"{ion_structure.solute_type.upper()}_L"
             f.write(f"{solute_mol_name:<17s}{solute_count}\n")
 
         if na_count > 0:

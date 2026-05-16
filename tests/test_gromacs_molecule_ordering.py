@@ -65,7 +65,7 @@ def parse_gro_residue_names(gro_path: str) -> list[str]:
 def test_solute_molecule_ordering():
     """Test that solute GROMACS export produces correct molecule ordering.
     
-    Expected order: SOL (ice + water) → CH4_LIQ (solute)
+    Expected order: SOL (ice + water) → CH4_L (solute)
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "test_solute.gro"
