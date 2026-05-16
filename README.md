@@ -223,9 +223,13 @@ CH₄ and THF use GAFF2 force field with RESP2(0.5) partial charges:
 - Prepared with Sobtop 2026.1.16 and Multiwfn 3.8(dev) using the RESP2.sh script from Multiwfn. QM calcution were done using Gaussian 16 Rev. C01.
 - See [docs/gro-itp-guide.md](docs/gro-itp-guide.md) for custom molecule preparation
 
-## Supported Ice Phases
+## Ice Phase Support
 
-QuickIce supports 12 ice polymorphs with GenIce2 lattice implementations:
+QuickIce distinguishes between phase detection and structure generation capabilities:
+
+### Phase Detection (12 phases)
+
+The interactive phase diagram can identify 12 ice polymorphs based on temperature and pressure conditions:
 
 | Phase | Crystal System | Pressure Range | Temperature Range |
 |-------|----------------|----------------|-------------------|
@@ -244,7 +248,24 @@ QuickIce supports 12 ice polymorphs with GenIce2 lattice implementations:
 
 **Note:** Phase boundaries depend on both T and P simultaneously. Ranges above are approximate.
 
-**Interface construction:** All phases except Ice II work with Tab 2 interface generation. Ice II (rhombohedral) cannot form orthogonal supercells.
+### Structure Generation (8 phases)
+
+GenIce2 lattice implementations are available for 8 ice polymorphs:
+
+| Phase | GenIce Lattice | Notes |
+|-------|----------------|-------|
+| Ice Ih | ice1h | Most common form |
+| Ice Ic | ice1c | Cubic ice |
+| Ice II | ice2 | Rhombohedral (no interface support) |
+| Ice III | ice3 | Tetragonal |
+| Ice V | ice5 | Monoclinic |
+| Ice VI | ice6 | Double network |
+| Ice VII | ice7 | Double network |
+| Ice VIII | ice8 | Ordered Ice VII |
+
+**Detection-only phases:** Ice IX, XI, XV, and X appear in the phase diagram for informational purposes but cannot generate molecular structures. This is a GenIce2 library limitation.
+
+**Interface construction:** All generatable phases except Ice II work with Tab 2 interface generation. Ice II (rhombohedral) cannot form orthogonal supercells.
 
 ## Documentation
 
