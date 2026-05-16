@@ -161,7 +161,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
-| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_HYD vs CH4_LIQ) | ✓ Shipped (32-01) |
+| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_H vs CH4_L) | ✓ Shipped (32-01) |
 | ITP parser with regex parsing | Extracts molecule info from .itp files without dependencies | ✓ Shipped (32-01) |
 | Molecule validator with specific errors | GRO/ITP consistency validation with clear user feedback | ✓ Shipped (32-02) |
 | TabIndex enum for all indices | All hardcoded tab indices replaced with named constants | ✓ Shipped (32-02) |
@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 028 | Fix hydrate guest naming _HYD→_H with hydrate-specific ITP files | 2026-05-16 | 52c73e5 | [028-hydrate-naming-fix](./quick/028-hydrate-naming-fix/) |
 | 027 | Fix exception handling across 5 files (logging, UI feedback, tracebacks) | 2026-05-16 | 719de7f | [027-fix-exception-handling](./quick/027-fix-exception-handling/) |
 | 026 | Add Madrid2019 ion parameter citation to documentation | 2026-05-16 | cfc5286 | [026-add-madrid2019-citation](./quick/026-add-madrid2019-citation/) |
 | 025 | Fix HydrateStructureGenerator docstring (guest molecule accuracy) | 2026-05-16 | 6defeed | [025-fix-hydrate-guest-docstring](./quick/025-fix-hydrate-guest-docstring/) |
@@ -333,8 +334,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-16
-**Completed:** Quick Tasks 020-027 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs, docstring fix, Madrid2019 citation, exception handling fixes)
-**Status:** Exception handling improved across 5 files with logging, UI feedback, and tracebacks
+**Completed:** Quick Task 028 (hydrate guest naming _HYD→_H with hydrate-specific ITP files)
+**Status:** Hydrate export produces self-consistent GROMACS topology (CH4_H/THF_H moleculetype matches ITP)
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -358,4 +359,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Task 027 complete (Exception handling fixes)*
+*State updated: 2026-05-16 — Quick Task 028 complete (Hydrate guest naming fix: _HYD→_H)*
