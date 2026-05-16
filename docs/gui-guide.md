@@ -787,7 +787,7 @@ The ion viewer displays:
 The system enforces charge neutrality:
 - Equal Na⁺ and Cl⁻ counts
 - Ions replace water molecules in liquid region (not ice)
-- Madrid2019 force field parameters used (Na⁺ charge = +0.85, Cl⁻ charge = -0.85)
+- Madrid2019 force field parameters used (Na⁺ charge = +0.85, Cl⁻ charge = -0.85) — Zeron, Abascal, & Vega, J. Chem. Phys. 151, 134504 (2019), DOI: https://doi.org/10.1063/1.5121392
 
 ### Export for GROMACS
 
