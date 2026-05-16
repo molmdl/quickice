@@ -27,8 +27,8 @@ MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "water": {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
     "na":    {"res_name": "NA",  "itp_file": "na.itp",     "mol_name": "NA"},
     "cl":    {"res_name": "CL",  "itp_file": "cl.itp",     "mol_name": "CL"},
-    "ch4":   {"res_name": "CH4", "itp_file": "ch4.itp",    "mol_name": "CH4"},
-    "thf":   {"res_name": "THF", "itp_file": "thf.itp",    "mol_name": "THF"},
+    "ch4":   {"res_name": "CH4", "itp_file": "ch4_hydrate.itp", "mol_name": "CH4"},
+    "thf":   {"res_name": "THF", "itp_file": "thf_hydrate.itp", "mol_name": "THF"},
     "co2":   {"res_name": "CO2", "itp_file": "co2.itp",    "mol_name": "CO2"},
     "h2":    {"res_name": "H2",  "itp_file": "h2.itp",     "mol_name": "H2"},
 }
@@ -390,6 +390,39 @@ def get_guest_residue_name(guest_type: str) -> str:
     return FALLBACK_RESIDUE_NAMES.get(guest_type, "UNK")
 
 
+def get_hydrate_guest_residue_name(guest_type: str) -> str:
+    """Get the residue name for a hydrate guest molecule from its hydrate-specific itp file.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf", etc.)
+    
+    Returns:
+        Residue name from the hydrate ITP file (e.g., "CH4_H", "THF_H")
+    """
+    try:
+        import quickice
+        package_dir = Path(quickice.__file__).parent
+        itp_path = package_dir / "data" / f"{guest_type}_hydrate.itp"
+        
+        if not itp_path.exists():
+            itp_path = Path(__file__).parent.parent / "data" / f"{guest_type}_hydrate.itp"
+        
+        if itp_path.exists():
+            res_name = parse_itp_residue_name(itp_path)
+            if res_name:
+                return res_name
+    except Exception as e:
+        logger.warning(f"Could not read hydrate guest residue name from ITP file: {e}")
+    
+    FALLBACK_HYDRATE_NAMES = {
+        "ch4": "CH4_H",
+        "thf": "THF_H",
+        "co2": "CO2_H",
+        "h2": "H2_H",
+    }
+    return FALLBACK_HYDRATE_NAMES.get(guest_type, "UNK_H")
+
+
 def write_gro_file(candidate: Candidate, filepath: str) -> None:
     """Write candidate to GROMACS .gro format.
     
@@ -733,9 +766,9 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             else:
                 guest_type = None
             
-            # Get residue name from itp file (not hardcoded)
+            # Get residue name from hydrate itp file (interface guests are hydrate cage guests)
             if guest_type:
-                guest_res_name = get_guest_residue_name(guest_type)
+                guest_res_name = get_hydrate_guest_residue_name(guest_type)
             else:
                 guest_res_name = "UNK"
             
@@ -981,7 +1014,8 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         
         if iface.guest_nmolecules > 0 and guest_type:
             # Include the correct .itp file based on detected guest type
-            f.write(f'#include "{guest_type}.itp"\n')
+            # Interface guests come from hydrate cages, use hydrate-specific ITP
+            f.write(f'#include "{guest_type}_hydrate.itp"\n')
         
         f.write("\n")
         
@@ -1005,7 +1039,7 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         if iface.guest_nmolecules > 0:
             # Use already-detected guest_type from above
             if guest_type:
-                guest_res_name = get_guest_residue_name(guest_type)
+                guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
 
 
@@ -1468,9 +1502,9 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 # Detect guest type from atom names
                 guest_type = detect_guest_type_from_atoms(mol_atom_names)
 
-                # Get residue name from itp file (not hardcoded)
+                # Get residue name from hydrate itp file (ion guests are hydrate cage guests)
                 if guest_type:
-                    guest_res_name = get_guest_residue_name(guest_type)
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 else:
                     guest_res_name = "GUE"  # Fallback
 
@@ -1627,7 +1661,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 mol_atom_names = ion_structure.atom_names[start:start + mol.count]
                 guest_type = detect_guest_type_from_atoms(mol_atom_names)
                 if guest_type:
-                    guest_res_name = get_guest_residue_name(guest_type)
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 break
 
     with open(filepath, 'w') as f:
@@ -1736,8 +1770,9 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         # Include guest itp if guests present
         if guest_count > 0:
             if guest_type:
-                # Include the specific .itp file based on guest type
-                f.write(f'#include "{guest_type}.itp"\n')
+                # Include the hydrate-specific .itp file based on guest type
+                # Ion tab guests come from hydrate cages, use hydrate ITP
+                f.write(f'#include "{guest_type}_hydrate.itp"\n')
             else:
                 # Fallback to generic guest.itp
                 f.write('#include "guest.itp"\n')

@@ -41,6 +41,33 @@ def _get_guest_itp_path(guest_type: str) -> Path:
     raise FileNotFoundError(f"No .itp file found for guest type: {guest_type}")
 
 
+def _get_hydrate_guest_itp_path(guest_type: str) -> Path:
+    """Get the path to a hydrate-specific guest .itp file.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf")
+    
+    Returns:
+        Path to the hydrate guest .itp file (e.g., ch4_hydrate.itp)
+    
+    Raises:
+        FileNotFoundError: If no hydrate .itp file exists for the guest type
+    """
+    import quickice
+    package_dir = Path(quickice.__file__).parent
+    itp_path = package_dir / "data" / f"{guest_type}_hydrate.itp"
+    
+    if itp_path.exists():
+        return itp_path
+    
+    # Fallback to project root (for development)
+    fallback = Path(__file__).parent.parent / "data" / f"{guest_type}_hydrate.itp"
+    if fallback.exists():
+        return fallback
+    
+    raise FileNotFoundError(f"No hydrate .itp file found for guest type: {guest_type}")
+
+
 class HydrateGROMACSExporter:
     """Handle GROMACS file export for hydrate structures (.gro, .top, guest .itp).
     
@@ -112,14 +139,14 @@ class HydrateGROMACSExporter:
             # Get TIP4P-ICE itp path for water
             tip4p_itp_path = get_tip4p_itp_path()
             
-            # Get guest itp path
-            guest_itp_path = _get_guest_itp_path(config.guest_type)
+            # Get guest itp path (hydrate-specific)
+            guest_itp_path = _get_hydrate_guest_itp_path(config.guest_type)
             
             # Create registry for unique moleculetype naming
             registry = MoleculetypeRegistry()
             
             # Register guest molecule as hydrate guest
-            # This ensures CH4 gets registered as "CH4_HYD", THF as "THF_HYD"
+            # This ensures CH4 gets registered as "CH4_H", THF as "THF_H"
             guest_upper = config.guest_type.upper()
             registry.register_hydrate_guest(guest_upper)
             

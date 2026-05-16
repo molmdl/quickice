@@ -326,8 +326,8 @@ class IonGROMACSExporter:
                 
                 if guest_type:
                     try:
-                        guest_itp_source = _get_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}.itp")
+                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
                         shutil.copy(guest_itp_source, guest_itp_dest)
                     except FileNotFoundError:
                         # Guest .itp file not found - will cause GROMACS to fail
@@ -756,6 +756,33 @@ def _get_guest_itp_path(guest_type: str) -> Path:
     raise FileNotFoundError(f"No .itp file found for guest type: {guest_type}")
 
 
+def _get_hydrate_guest_itp_path(guest_type: str) -> Path:
+    """Get the path to a hydrate-specific guest .itp file.
+    
+    Args:
+        guest_type: Guest molecule type ("ch4", "thf")
+    
+    Returns:
+        Path to the hydrate guest .itp file (e.g., ch4_hydrate.itp)
+    
+    Raises:
+        FileNotFoundError: If no hydrate .itp file exists for the guest type
+    """
+    import quickice
+    package_dir = Path(quickice.__file__).parent
+    itp_path = package_dir / "data" / f"{guest_type}_hydrate.itp"
+    
+    if itp_path.exists():
+        return itp_path
+    
+    # Fallback to project root (for development)
+    fallback = Path(__file__).parent.parent / "data" / f"{guest_type}_hydrate.itp"
+    if fallback.exists():
+        return fallback
+    
+    raise FileNotFoundError(f"No hydrate .itp file found for guest type: {guest_type}")
+
+
 class InterfaceGROMACSExporter:
     """Handle GROMACS file export for interface structures (.gro, .top, .itp).
     
@@ -843,8 +870,8 @@ class InterfaceGROMACSExporter:
                 
                 if guest_type:
                     try:
-                        guest_itp_source = _get_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}.itp")
+                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
                         shutil.copy(guest_itp_source, guest_itp_dest)
                     except FileNotFoundError:
                         # Guest .itp file not found - will cause GROMACS to fail
