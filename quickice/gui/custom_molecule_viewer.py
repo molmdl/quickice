@@ -669,6 +669,9 @@ class CustomMoleculeViewerWidget(QWidget):
             
         except Exception as e:
             logger.error(f"Failed to create preview actor: {e}")
+            # Provide user feedback if parent has log_message method
+            if hasattr(self, 'parent') and hasattr(self.parent, 'log_message'):
+                self.parent.log_message(f"Warning: Could not create preview: {e}")
 
     def clear_preview(self) -> None:
         """Clear preview molecule from viewer.
@@ -761,3 +764,6 @@ class CustomMoleculeViewerWidget(QWidget):
             
         except Exception as e:
             logger.error(f"Failed to create preview actor: {e}")
+            # Provide user feedback if parent has log_message method
+            if hasattr(self, 'parent') and hasattr(self.parent, 'log_message'):
+                self.parent.log_message(f"Warning: Could not create preview: {e}")

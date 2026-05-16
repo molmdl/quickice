@@ -1412,6 +1412,8 @@ class MainWindow(QMainWindow):
             
         except Exception as e:
             logger.error(f"Error clearing custom molecule results: {e}")
+            if hasattr(self, 'custom_molecule_panel') and self.custom_molecule_panel:
+                self.custom_molecule_panel.log_message(f"Warning: Could not clear previous results: {e}")
     
     @Slot(int)
     def _on_tab_changed(self, index: int):
