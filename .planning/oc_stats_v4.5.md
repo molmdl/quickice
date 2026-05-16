@@ -1,23 +1,23 @@
 Actual cost is lower with as we use the synthetic coding plan instead of API pricing
-Large dataset detected (1233 sessions). This may take a while...
+Large dataset detected (1254 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          1,233 │
-│Messages                                         36,048 │
-│Days                                                 48 │
+│Sessions                                          1,254 │
+│Messages                                         36,363 │
+│Days                                                 52 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                      $909.93 │
-│Avg Cost/Day                                     $18.96 │
-│Avg Tokens/Session                                 1.5M │
-│Median Tokens/Session                            917.7K │
-│Input                                            297.6M │
-│Output                                            13.3M │
-│Cache Read                                      1469.5M │
+│Total Cost                                      $920.90 │
+│Avg Cost/Day                                     $17.71 │
+│Avg Tokens/Session                                 1.4M │
+│Median Tokens/Session                            905.4K │
+│Input                                            298.3M │
+│Output                                            13.4M │
+│Cache Read                                      1479.4M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -33,12 +33,12 @@ Large dataset detected (1233 sessions). This may take a while...
 │  Cost                                        $315.4364 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5                             │
-│  Messages                                        9,701 │
-│  Input Tokens                                    28.0M │
-│  Output Tokens                                    4.3M │
-│  Cache Read                                     512.5M │
+│  Messages                                        9,986 │
+│  Input Tokens                                    28.7M │
+│  Output Tokens                                    4.4M │
+│  Cache Read                                     522.4M │
 │  Cache Write                                         0 │
-│  Cost                                        $553.2629 │
+│  Cost                                        $564.2313 │
 ├────────────────────────────────────────────────────────┤
 │ opencode/big-pickle                                    │
 │  Messages                                        7,690 │
@@ -101,15 +101,15 @@ Large dataset detected (1233 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 18599 (41.3%)  │
-│ read               █████████████        12157 (27.0%)  │
-│ edit               ██████               5916 (13.2%)   │
-│ grep               ██                   2432 ( 5.4%)   │
-│ glob               █                    1811 ( 4.0%)   │
-│ write              █                    1689 ( 3.8%)   │
-│ task               █                    1023 ( 2.3%)   │
-│ question           █                    698 ( 1.6%)    │
-│ webfetch           █                    492 ( 1.1%)    │
+│ bash               ████████████████████ 18781 (41.3%)  │
+│ read               █████████████        12289 (27.0%)  │
+│ edit               ██████               5957 (13.1%)   │
+│ grep               ██                   2475 ( 5.4%)   │
+│ glob               █                    1845 ( 4.1%)   │
+│ write              █                    1711 ( 3.8%)   │
+│ task               █                    1044 ( 2.3%)   │
+│ question           █                    698 ( 1.5%)    │
+│ webfetch           █                    498 ( 1.1%)    │
 │ invalid            █                    107 ( 0.2%)    │
 │ todowrite          █                     37 ( 0.1%)    │
 │ websearch          █                     15 ( 0.0%)    │
