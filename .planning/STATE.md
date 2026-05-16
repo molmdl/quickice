@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 027 | Fix exception handling across 5 files (logging, UI feedback, tracebacks) | 2026-05-16 | 719de7f | [027-fix-exception-handling](./quick/027-fix-exception-handling/) |
 | 026 | Add Madrid2019 ion parameter citation to documentation | 2026-05-16 | cfc5286 | [026-add-madrid2019-citation](./quick/026-add-madrid2019-citation/) |
 | 025 | Fix HydrateStructureGenerator docstring (guest molecule accuracy) | 2026-05-16 | 6defeed | [025-fix-hydrate-guest-docstring](./quick/025-fix-hydrate-guest-docstring/) |
 | 024 | Clarify ice phases documentation (detection vs generation) | 2026-05-16 | 89c7efd | [024-clarify-ice-phases-documentation](./quick/024-clarify-ice-phases-documentation/) |
@@ -332,8 +333,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-16
-**Completed:** Quick Tasks 020-026 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs, docstring fix, Madrid2019 citation)
-**Status:** Documentation citations complete, scientific attribution added
+**Completed:** Quick Tasks 020-027 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs, docstring fix, Madrid2019 citation, exception handling fixes)
+**Status:** Exception handling improved across 5 files with logging, UI feedback, and tracebacks
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -357,4 +358,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Task 026 complete (Madrid2019 citation)*
+*State updated: 2026-05-16 — Quick Task 027 complete (Exception handling fixes)*
