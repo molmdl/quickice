@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 022 | Optimize H-bond detection with KDTree | 2026-05-16 | d4a333e | [022-optimize-hbond-detection-kdtree](./quick/022-optimize-hbond-detection-kdtree/) |
 | 021 | Remove unused build_molecule_index function | 2026-05-16 | 187368f | [021-remove-unused-build-molecule-index](./quick/021-remove-unused-build-molecule-index/) |
 | 020 | Version bump to 4.5.0 | 2026-05-16 | bb9d9ed | [020-version-bump-4.5](./quick/020-version-bump-4.5/) |
 | 019 | Remove old custom molecule preview system | 2026-05-10 | b7c1452 | [019-remove-old-custom-preview](./quick/019-remove-old-custom-preview/) |
@@ -325,8 +326,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-16 07:56 UTC
-**Completed:** Quick Task 021 (Remove unused build_molecule_index function)
+**Last session:** 2026-05-16 08:02 UTC
+**Completed:** Quick Task 022 (Optimize H-bond detection with KDTree)
 **Status:** Phase 35 complete (7/7 plans), screenshots deferred
 
 **Phase 35 Status:**
@@ -350,4 +351,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Task 021 complete*
+*State updated: 2026-05-16 — Quick Task 022 complete*
