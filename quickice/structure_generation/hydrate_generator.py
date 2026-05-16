@@ -32,9 +32,12 @@ _lattice_modules_loaded = {}
 
 class HydrateStructureGenerator:
     """Generator for hydrate structures using GenIce2.
-    
+
     Supports sI, sII, sH hydrate lattices with configurable guest molecules
-    (CH4, THF, CO2, H2) and cage occupancy.
+    (CH4, THF) and cage occupancy.
+
+    Note: GenIce2 supports additional guest types (CO2, H2), but these are not
+    exposed in QuickIce's GUEST_MOLECULES configuration.
     """
     
     def __init__(self):
