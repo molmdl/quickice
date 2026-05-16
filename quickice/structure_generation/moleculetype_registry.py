@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 class MoleculetypeRegistry:
     """Registry for unique GROMACS moleculetype naming.
     
-    Ensures CH4 from hydrate cages (CH4_HYD) is distinct from
+    Ensures CH4 from hydrate cages (CH4_H) is distinct from
     CH4 dissolved in liquid (CH4_L) in GROMACS topology files.
     
+    Note: Hydrate guests use _H suffix (5 chars max) for GRO format compatibility.
     Note: Liquid solutes use _L suffix (5 chars max) for GRO format compatibility.
     
     Attributes:
@@ -24,16 +25,16 @@ class MoleculetypeRegistry:
     Example:
         >>> registry = MoleculetypeRegistry()
         >>> registry.register_hydrate_guest('CH4')
-        'CH4_HYD'
+        'CH4_H'
         >>> registry.register_liquid_solute('CH4')
         'CH4_L'
         >>> registry.get_gromacs_name('hydrate_CH4')
-        'CH4_HYD'
+        'CH4_H'
     """
     
     RESERVED_NAMES: Set[str] = {
         "SOL", "NA", "CL", "CH4", "THF", "CO2", "H2",
-        "CH4_HYD", "CH4_L", "THF_HYD", "THF_L"
+        "CH4_H", "CH4_L", "THF_H", "THF_L"
     }
     
     def __init__(self) -> None:
@@ -43,19 +44,19 @@ class MoleculetypeRegistry:
         logger.info("MoleculetypeRegistry initialized")
     
     def register_hydrate_guest(self, molecule: str) -> str:
-        """Register hydrate guest molecule with _HYD suffix.
+        """Register hydrate guest molecule with _H suffix.
         
         Args:
             molecule: Molecule name (e.g., 'CH4', 'THF')
             
         Returns:
-            Registered name with _HYD suffix (e.g., 'CH4_HYD')
+            Registered name with _H suffix (e.g., 'CH4_H')
             
         Example:
             >>> registry.register_hydrate_guest('CH4')
-            'CH4_HYD'
+            'CH4_H'
         """
-        registered_name = f"{molecule}_HYD"
+        registered_name = f"{molecule}_H"
         source_key = f"hydrate_{molecule}"
         
         # Check if already registered
@@ -151,7 +152,7 @@ class MoleculetypeRegistry:
             
         Example:
             >>> registry.get_gromacs_name('hydrate_CH4')
-            'CH4_HYD'
+            'CH4_H'
         """
         return self._registered.get(source, source.upper())
     
