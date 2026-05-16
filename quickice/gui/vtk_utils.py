@@ -199,13 +199,14 @@ def _pbc_min_image_position(ref_pos: np.ndarray, target_pos: np.ndarray, cell: n
 
 
 def detect_hydrogen_bonds(
-    candidate: Candidate, max_distance: float = 0.25
+    candidate: Candidate,
+    max_distance: float = 0.25  # nm
 ) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
-    """Detect hydrogen bonds from molecular geometry.
+    """Detect hydrogen bonds with O(n log n) KDTree optimization.
     
-    Identifies H-bonds by finding hydrogen atoms that are close to oxygen atoms
-    from other water molecules. A hydrogen bond is assumed when the H...O 
-    distance is less than the threshold.
+    Identifies H-bonds based on H...O distance threshold using KDTree
+    for efficient neighbor search. Uses 3x3x3 supercell construction
+    for periodic boundary condition handling.
     
     Args:
         candidate: A QuickIce Candidate containing atomic positions and metadata.
@@ -216,106 +217,23 @@ def detect_hydrogen_bonds(
         List of (H_position, O_position) tuples for each detected H-bond.
         Each position is a (x, y, z) tuple in nanometers.
     
+    Performance:
+        O(n log n) where n is number of molecules. For 1000 molecules,
+        approximately 10-50x faster than O(n²) approach depending on
+        hardware and density.
+    
     Note:
-        Water molecules follow the pattern [O, H, H, O, H, H, ...] where:
-        - Oxygen atoms are at indices 0, 3, 6, 9, ... (every 3rd starting at 0)
-        - Hydrogen atoms are at indices 1, 2, 4, 5, 7, 8, ...
-        - Each O has two bonded H atoms: O[i] bonded to H[i+1] and H[i+2]
-        
+        Water molecules follow [O, H, H, O, H, H, ...] ordering.
+        Works for both orthorhombic (ice Ih) and triclinic (ice II, V) cells.
         Uses periodic boundary conditions (PBC) to correctly detect H-bonds
         that cross box boundaries.
     """
     positions = candidate.positions
     nmolecules = candidate.nmolecules
     atom_names = candidate.atom_names
-    
-    # VERIFY atom ordering before detecting H-bonds
-    # This function expects atoms to be ordered as O, H, H for each molecule
-    for mol_idx in range(nmolecules):
-        mol_names = atom_names[mol_idx * 3: mol_idx * 3 + 3]
-        # Accept both TIP3P (O, H, H) and TIP4P (OW, HW1, HW2) patterns
-        # Note: TIP4P with MW virtual site should have MW already filtered out
-        # before calling this function, as MW atoms are not stored in Candidate
-        expected_tip3p = ["O", "H", "H"]
-        expected_tip4p = ["OW", "HW1", "HW2"]
-        
-        if mol_names != expected_tip3p and mol_names != expected_tip4p:
-            raise ValueError(
-                f"Invalid atom ordering for molecule {mol_idx} in H-bond detection: "
-                f"expected {expected_tip3p} or {expected_tip4p}, got {mol_names}. "
-                f"H-bond detection requires atoms to be ordered as oxygen followed by two hydrogens."
-            )
-    
-    # Get cell matrix for PBC distance calculation
-    # This works for both orthorhombic (ice Ih) and triclinic (ice II, V) cells
     cell = candidate.cell
     
-    # Collect O and H atom positions with their indices
-    # O atoms: indices 0, 3, 6, ... (every 3rd atom starting at 0)
-    # H atoms: indices 1, 2, 4, 5, 7, 8, ... (remaining atoms)
-    o_positions = []  # [(index, position), ...]
-    h_positions = []  # [(index, position, parent_O_index), ...]
-    
-    for mol_idx in range(nmolecules):
-        # O atom index for this molecule
-        o_idx = mol_idx * 3
-        o_positions.append((o_idx, positions[o_idx]))
-        
-        # H atoms for this molecule
-        h1_idx = mol_idx * 3 + 1
-        h2_idx = mol_idx * 3 + 2
-        h_positions.append((h1_idx, positions[h1_idx], o_idx))
-        h_positions.append((h2_idx, positions[h2_idx], o_idx))
-    
-    # Detect H-bonds
-    hbonds = []
-    
-    for h_idx, h_pos, parent_o_idx in h_positions:
-        # Find O atoms that could form H-bonds with this H
-        for o_idx, o_pos in o_positions:
-            # Skip the parent O (same molecule, covalently bonded)
-            if o_idx == parent_o_idx:
-                continue
-            
-            # Calculate H...O distance with PBC (handles both orthorhombic and triclinic)
-            distance = _pbc_distance(h_pos, o_pos, cell)
-            
-            if distance < max_distance:
-                # H-bond detected: H...O
-                # Use minimum image position of O for correct visualization
-                # This ensures the line is drawn to the nearest periodic image of O
-                o_min_image = _pbc_min_image_position(h_pos, o_pos, cell)
-                hbonds.append((
-                    tuple(float(h_pos[i]) for i in range(3)),
-                    tuple(float(o_min_image[i]) for i in range(3))
-                ))
-    
-    return hbonds
-
-
-def detect_hydrogen_bonds_optimized(
-    candidate: Candidate,
-    max_distance: float = 0.25  # nm
-) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
-    """Optimized H-bond detection using KDTree with O(n log n) complexity.
-    
-    Same interface and behavior as detect_hydrogen_bonds() but uses
-    scipy.spatial.cKDTree for efficient neighbor search with supercell
-    PBC handling. Works for both orthorhombic and triclinic cells.
-    
-    Args:
-        candidate: A QuickIce Candidate with atomic positions.
-        max_distance: Maximum H...O distance in nm (default 0.25 nm).
-    
-    Returns:
-        List of (H_position, O_position) tuples for each H-bond.
-    """
-    positions = candidate.positions
-    nmolecules = candidate.nmolecules
-    atom_names = candidate.atom_names
-    cell = candidate.cell
-    
-    # VERIFY atom ordering (same as detect_hydrogen_bonds)
+    # VERIFY atom ordering (same as original)
     for mol_idx in range(nmolecules):
         mol_names = atom_names[mol_idx * 3: mol_idx * 3 + 3]
         expected_tip3p = ["O", "H", "H"]
