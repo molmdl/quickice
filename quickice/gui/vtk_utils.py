@@ -6,6 +6,7 @@ hydrogen bonds and unit cell visualization.
 """
 
 import numpy as np
+from scipy.spatial import cKDTree
 from vtkmodules.all import (
     vtkMolecule,
     vtkActor,
@@ -288,6 +289,114 @@ def detect_hydrogen_bonds(
                     tuple(float(h_pos[i]) for i in range(3)),
                     tuple(float(o_min_image[i]) for i in range(3))
                 ))
+    
+    return hbonds
+
+
+def detect_hydrogen_bonds_optimized(
+    candidate: Candidate,
+    max_distance: float = 0.25  # nm
+) -> list[tuple[tuple[float, float, float], tuple[float, float, float]]]:
+    """Optimized H-bond detection using KDTree with O(n log n) complexity.
+    
+    Same interface and behavior as detect_hydrogen_bonds() but uses
+    scipy.spatial.cKDTree for efficient neighbor search with supercell
+    PBC handling. Works for both orthorhombic and triclinic cells.
+    
+    Args:
+        candidate: A QuickIce Candidate with atomic positions.
+        max_distance: Maximum H...O distance in nm (default 0.25 nm).
+    
+    Returns:
+        List of (H_position, O_position) tuples for each H-bond.
+    """
+    positions = candidate.positions
+    nmolecules = candidate.nmolecules
+    atom_names = candidate.atom_names
+    cell = candidate.cell
+    
+    # VERIFY atom ordering (same as detect_hydrogen_bonds)
+    for mol_idx in range(nmolecules):
+        mol_names = atom_names[mol_idx * 3: mol_idx * 3 + 3]
+        expected_tip3p = ["O", "H", "H"]
+        expected_tip4p = ["OW", "HW1", "HW2"]
+        if mol_names != expected_tip3p and mol_names != expected_tip4p:
+            raise ValueError(
+                f"Invalid atom ordering for molecule {mol_idx}: {mol_names}"
+            )
+    
+    # Extract O and H positions with metadata
+    o_positions = []  # List of (atom_idx, position)
+    h_positions = []  # List of (atom_idx, position, parent_o_idx)
+    
+    for mol_idx in range(nmolecules):
+        # O atom for this molecule
+        o_idx = mol_idx * 3
+        o_positions.append((o_idx, positions[o_idx]))
+        
+        # H atoms for this molecule
+        h1_idx = mol_idx * 3 + 1
+        h2_idx = mol_idx * 3 + 2
+        h_positions.append((h1_idx, positions[h1_idx], o_idx))
+        h_positions.append((h2_idx, positions[h2_idx], o_idx))
+    
+    n_h = len(h_positions)
+    n_o = len(o_positions)
+    
+    if n_h == 0 or n_o == 0:
+        return []
+    
+    # Build triclinic supercell for H atoms
+    # Cell vectors: cell[0], cell[1], cell[2] (each is a 3D vector)
+    h_coords = np.array([h[1] for h in h_positions])  # (n_h, 3)
+    supercell_h = []
+    
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            for k in (-1, 0, 1):
+                # Triclinic offset: i*a + j*b + k*c
+                offset = i * cell[0] + j * cell[1] + k * cell[2]
+                supercell_h.append(h_coords + offset)
+    
+    supercell_h = np.vstack(supercell_h)  # (27*n_h, 3)
+    
+    # Build KDTree from H supercell
+    tree = cKDTree(supercell_h)
+    
+    # Extract O coordinates for querying
+    o_coords = np.array([o[1] for o in o_positions])  # (n_o, 3)
+    
+    # Query all O atoms against KDTree
+    # Find all H atoms within max_distance of each O
+    hbonds = []
+    
+    for o_local_idx, o_pos in enumerate(o_coords):
+        o_atom_idx = o_positions[o_local_idx][0]
+        
+        # Query KDTree for H atoms within max_distance
+        indices = tree.query_ball_point(o_pos, max_distance)
+        
+        for idx in indices:
+            # Map back to original H atom
+            h_original_idx = idx % n_h
+            supercell_offset = idx // n_h
+            
+            h_atom_idx, h_pos, parent_o_idx = h_positions[h_original_idx]
+            
+            # Skip if this is the same molecule
+            if parent_o_idx == o_atom_idx:
+                continue
+            
+            # Get minimum image position of H relative to this O
+            # For visualization, we need the O position in the image
+            # closest to the H
+            h_supercell_pos = supercell_h[idx]
+            o_min_image = _pbc_min_image_position(h_supercell_pos, o_pos, cell)
+            
+            hbonds.append((
+                tuple(float(h_supercell_pos[i]) for i in range(3)),
+                tuple(float(o_min_image[i]) for i in range(3))
+            ))
     
     return hbonds
 
