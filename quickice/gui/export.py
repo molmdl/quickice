@@ -368,6 +368,8 @@ class IonGROMACSExporter:
             
             return True
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
             return False
 
@@ -721,6 +723,8 @@ class GROMACSExporter:
             
             return True
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
             return False
 
@@ -849,5 +853,7 @@ class InterfaceGROMACSExporter:
             
             return True
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(self.parent, "Export Error", f"Failed: {e}")
             return False
