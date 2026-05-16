@@ -290,6 +290,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 026 | Add Madrid2019 ion parameter citation to documentation | 2026-05-16 | cfc5286 | [026-add-madrid2019-citation](./quick/026-add-madrid2019-citation/) |
 | 025 | Fix HydrateStructureGenerator docstring (guest molecule accuracy) | 2026-05-16 | 6defeed | [025-fix-hydrate-guest-docstring](./quick/025-fix-hydrate-guest-docstring/) |
 | 024 | Clarify ice phases documentation (detection vs generation) | 2026-05-16 | 89c7efd | [024-clarify-ice-phases-documentation](./quick/024-clarify-ice-phases-documentation/) |
 | 023 | UPX compression feasibility check (investigation) | 2026-05-16 | 2c51ae3 | [023-check-upx-compression-feasibility](./quick/023-check-upx-compression-feasibility/) |
@@ -331,8 +332,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-16
-**Completed:** Quick Tasks 020-025 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs, docstring fix)
-**Status:** Documentation accuracy improvements complete, UPX pending user decision
+**Completed:** Quick Tasks 020-026 (version bump, dead code removal, O(n²) optimization, UPX check, ice phase docs, docstring fix, Madrid2019 citation)
+**Status:** Documentation citations complete, scientific attribution added
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -356,4 +357,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Task 025 complete (docstring fix)*
+*State updated: 2026-05-16 — Quick Task 026 complete (Madrid2019 citation)*
