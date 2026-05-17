@@ -2,11 +2,6 @@
 
 A portable GUI application for generating ice structures, ice-water interfaces, hydrate systems, export to full GROMACS-ready format, providing an interface for basic [GenIce2](https://github.com/genice-dev/GenIce2) functions with more focus on gromacs input preparation.
 
-While this is mainly a vibe coding project coded by free or open-source LLMs under human supervision, if you found QuickIce GUI useful in your research please cite:
-```
-QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (accessed on [DD MM YYYY])
-```
-
 > **Experimental**
 >
 > - This is a "pure vibe coding project" created as a coding exercise.
@@ -299,6 +294,13 @@ Key limitations:
 | `pytest` | Testing framework |
 
 ## References
+
+If you found QuickIce useful, please cite the [original publication of GenIce2](#genice2), and library of ice/water property curves [IAPWS](#iapws-r14-08).
+
+While QuickIce is mainly a vibe coding project coded by free or open-source LLMs under human supervision, you are also welcomed to cite this repository:
+```
+QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (accessed on [DD MM YYYY])
+```
 
 ### GenIce2
 - Repository: https://github.com/genice-dev/GenIce2
