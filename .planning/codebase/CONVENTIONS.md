@@ -1,279 +1,361 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-05-12
+**Analysis Date:** 2026-05-22
 
 ## Naming Patterns
 
 **Files:**
-- Python modules use `snake_case.py` (e.g., `interface_builder.py`, `solute_inserter.py`)
-- Test files use `test_<module>.py` pattern (e.g., `test_validators.py`, `test_phase_mapping.py`)
-- GUI modules are in `quickice/gui/` with descriptive names (`solute_panel.py`, `main_window.py`)
+- Python modules use `snake_case.py`: `interface_builder.py`, `hydrate_generator.py`, `overlap_resolver.py`
+- Test files use `test_` prefix + `snake_case`: `test_structure_generation.py`, `test_phase_mapping.py`
+- Subdirectory test packages: `tests/test_output/` (with `__init__.py`)
+- GUI modules are in `quickice/gui/` with descriptive names: `main_window.py`, `phase_diagram_widget.py`, `custom_molecule_worker.py`
 
 **Functions:**
-- Use `snake_case` for all function names
-- Validator functions prefixed with `validate_` (e.g., `validate_temperature`, `validate_pressure`)
-- Private methods prefixed with single underscore (e.g., `_generate_single`, `_parse_gro`)
-- Factory methods use `from_` prefix (e.g., `from_dict`, `from_lattice_type`)
+- Public functions use `snake_case`: `lookup_phase()`, `generate_candidates()`, `calculate_supercell()`
+- Private/internal functions use `_` prefix: `_calculate_oo_distances_pbc()`, `_build_result()`, `_parse_gro()`
+- Signal handler methods use `_on_` prefix: `_on_generate_clicked()`, `_on_hydrate_generation_complete()`
+- Setup methods use `_setup_` prefix: `_setup_ui()`, `_setup_connections()`, `_setup_shortcuts()`
+- Class methods for construction use `from_dict()` or `from_lattice_type()` pattern: `InterfaceConfig.from_dict()`, `HydrateLatticeInfo.from_lattice_type()`
+- Validator functions use `validate_` prefix: `validate_temperature()`, `validate_box_dimension()`
 
 **Variables:**
-- Use `snake_case` for local and module-level variables
-- Constants use `UPPER_SNAKE_CASE` (e.g., `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`, `MINIMUM_BOX_DIMENSION`)
-- Loop indices use single letters or descriptive names (`i`, `idx`)
+- Instance attributes use `_` prefix for private: `self._viewmodel`, `self._current_result`, `self._is_generating`
+- Module-level constants use `UPPER_SNAKE_CASE`: `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`, `HYDRATE_LATTICES`, `MINIMUM_BOX_DIMENSION`
+- Temporary/local variables use `snake_case`: `pressure_mpa`, `lattice_info`, `gen_result`
+- Type-checked private attributes with type hints: `self._worker: Optional[GenerationWorker] = None`
 
 **Types:**
-- Dataclasses use `PascalCase` (e.g., `Candidate`, `InterfaceConfig`, `HydrateStructure`)
-- Exception classes use `PascalCase` with `Error` suffix (e.g., `UnknownPhaseError`, `UnsupportedPhaseError`)
-- Type aliases use `PascalCase` (e.g., `MoleculeIndex`)
+- Dataclasses use `PascalCase`: `Candidate`, `InterfaceConfig`, `HydrateStructure`, `RankedCandidate`
+- Exception classes use `PascalCase` with `Error` suffix: `StructureGenerationError`, `InterfaceGenerationError`, `UnknownPhaseError`
+- Enums use `PascalCase` for class, `UPPER_SNAKE_CASE` for members: `TabIndex(IntEnum)` with `ICE = 0`, `HYDRATE = 1`
 
 ## Code Style
 
 **Formatting:**
-- No explicit formatting tool detected (no .prettierrc, black config, etc.)
-- 4-space indentation throughout
-- Max line length appears to be ~100 characters
-- Double quotes for strings in most files
+- PEP 8 compliant with 4-space indentation
+- No formal formatting tool (no black, ruff format, or autopep8 detected in configs)
+- Line length follows PEP 8 default (~79-100 chars, no strict enforcement)
+- Trailing newlines at end of files
 
 **Linting:**
-- No linting configuration files detected
-- Code follows PEP 8 conventions organically
-
-**Type Hints:**
-- Type hints used throughout the codebase
-- Import from `typing` module: `from typing import Any, Optional`
-- Modern union syntax used: `int | None` (Python 3.10+)
-- Example from `quickice/structure_generation/types.py`:
-  ```python
-  def to_candidate(self) -> Candidate:
-      """Convert hydrate structure to ice Candidate."""
-  
-  positions: np.ndarray
-  atom_names: list[str]  # Modern syntax, not List[str]
-  metadata: dict[str, Any] = field(default_factory=dict)
-  ```
+- No linter config files detected (no `.eslintrc`, `flake8`, `pylint`, `ruff.toml`)
+- Code follows PEP 8 conventions by convention, not enforcement
 
 ## Import Organization
 
 **Order:**
-1. Standard library imports
-2. Third-party imports (numpy, pytest)
-3. Local application imports
+1. Standard library: `import logging`, `import os`, `import sys`, `from dataclasses import dataclass, field`
+2. Third-party: `import numpy as np`, `from PySide6.QtCore import QObject, Signal`, `from scipy.spatial import cKDTree`
+3. Local application: `from quickice.structure_generation.types import Candidate`, `from quickice.ranking.types import RankingResult`
 
-**Example from `quickice/structure_generation/generator.py`:**
-```python
-import time  # Standard library
-
-import numpy as np  # Third-party
-
-from genice2.plugin import safe_import  # Third-party
-from genice2.genice import GenIce
-
-from quickice.structure_generation.mapper import (...)  # Local
-from quickice.structure_generation.types import Candidate, GenerationResult
-```
+**Style:**
+- Standard library imports use `import X` for top-level, `from X import Y` for specific items
+- NumPy always imported as `np`
+- PySide6 imports use `from PySide6.QtWidgets import (multi-line)` with parenthesized wrapping
+- Local imports use absolute paths: `from quickice.structure_generation.types import ...`
+- Lazy imports inside `run()` methods of QThread workers to avoid blocking main thread
 
 **Path Aliases:**
-- Imports use full module path: `from quickice.structure_generation.types import Candidate`
-- No path aliases configured (no `from ..types import`)
+- No path aliases or `sys.path` modifications used
+- All imports are absolute from package root `quickice.*`
 
 ## Error Handling
 
-**Custom Exceptions:**
-- Hierarchical exception classes with base exception
-- Example from `quickice/structure_generation/errors.py`:
+**Patterns:**
+- Custom exception hierarchy with base classes:
+  - `StructureGenerationError` in `quickice/structure_generation/errors.py` → `UnsupportedPhaseError`, `InterfaceGenerationError`
+  - `PhaseMappingError` in `quickice/phase_mapping/errors.py` → `UnknownPhaseError`
+- Error attributes for structured context:
   ```python
-  class StructureGenerationError(Exception):
-      """Base error for structure generation."""
-      pass
-
   class UnsupportedPhaseError(StructureGenerationError):
-      """Phase not supported by GenIce."""
       def __init__(self, message: str, phase_id: str):
           super().__init__(message)
           self.phase_id = phase_id
-
-  class InterfaceGenerationError(StructureGenerationError):
-      """Error during interface structure generation."""
-      def __init__(self, message: str, mode: str):
-          full_message = f"[{mode}] {message}"
-          super().__init__(full_message)
-          self.mode = mode
   ```
-
-**Error Context:**
-- Errors include relevant context in message
-- Example from `quickice/phase_mapping/errors.py`:
+- Error messages include `[mode]` prefix for mode-specific failures:
   ```python
-  class UnknownPhaseError(PhaseMappingError):
-      def __init__(self, message: str = "No ice phase found", 
-                   temperature: float = None, pressure: float = None):
-          hint = "Conditions may be outside supported phase diagram regions."
-          full_message = f"{message}. {hint}"
-          super().__init__(full_message, temperature, pressure)
+  # In InterfaceGenerationError
+  full_message = f"[{mode}] {message}"
   ```
-
-**Validation Errors:**
-- Use `ArgumentTypeError` for CLI validation
-- Example from `quickice/validation/validators.py`:
+- `__post_init__` validation in dataclasses raises `ValueError` with descriptive messages:
   ```python
-  def validate_temperature(value: str) -> float:
-      try:
-          temp = float(value)
-      except ValueError:
-          raise ArgumentTypeError(f"Temperature must be a number, got '{value}'")
-      
-      if temp < 0 or temp > 500:
-          raise ArgumentTypeError(f"Temperature must be between 0 and 500K, got {temp}K")
-      
-      return temp
+  def __post_init__(self):
+      if not (0.1 <= self.overlap_threshold <= 1.0):
+          raise ValueError(
+              f"overlap_threshold={self.overlap_threshold} nm is outside reasonable range..."
+          )
+  ```
+- Worker pattern: try/except in `run()` catches specific exceptions first, then generic `Exception`:
+  ```python
+  except InterfaceGenerationError as e:
+      error_result = InterfaceGenerationResult(success=False, error=str(e))
+      self.error.emit(str(e))
+      self.finished.emit(error_result)
+  except Exception as e:
+      error_result = InterfaceGenerationResult(
+          success=False,
+          error=f"Interface generation failed ({type(e).__name__}): {e}"
+      )
+  ```
+- CLI error handling: catch specific exceptions and exit with code 1, print to stderr:
+  ```python
+  except UnknownPhaseError as e:
+      print(f"Error: {e}", file=sys.stderr)
+      return 1
+  ```
+- GUI error handling: `QMessageBox.critical()` for user-facing errors:
+  ```python
+  QMessageBox.critical(self, "Generation Error",
+      f"Failed to generate ice structure:\n\n{error_msg}",
+      QMessageBox.StandardButton.Ok)
+  ```
+- Validation functions differ by context:
+  - CLI validators raise `ArgumentTypeError` (from `quickice/validation/validators.py`)
+  - GUI validators return `Tuple[bool, str]` (from `quickice/gui/validators.py`)
+- `raise ... from e` used for exception chaining in generator:
+  ```python
+  raise StructureGenerationError(
+      f'Failed to generate ice structure ({type(e).__name__}): {e}'
+  ) from e
   ```
 
 ## Logging
 
-**Framework:** Python standard library `logging`
+**Framework:** Python `logging` module
 
 **Pattern:**
-```python
-import logging
-logger = logging.getLogger(__name__)
-```
+- Module-level logger at top of file: `logger = logging.getLogger(__name__)`
+- Used in 20 modules across the codebase
+- GUI workers and main_window use logger for error tracking
+- Structure generation modules use logger for info/debug messages
 
-**Usage:**
-- `logger.info()` for significant events (registration, initialization)
-- `logger.warning()` for fallback behavior, out-of-range values
-- `logger.debug()` for detailed diagnostic information
+**When to Log:**
+- `logger.info()`: Registry operations, generation start/complete, molecule counts
+- `logger.debug()`: Cache hits, already-registered items
+- `logger.error()`: Caught exceptions in workers and handlers, always with `exc_info=True`:
+  ```python
+  logger.error(f"Solute insertion failed: {e}", exc_info=True)
+  ```
+- No `logger.warning()` usage detected in current codebase
 
-**Example from `quickice/structure_generation/moleculetype_registry.py`:**
-```python
-logger.info(f"Registered hydrate guest: {molecule} → {registered_name}")
-logger.debug(f"Hydrate guest {molecule} already registered as {registered_name}")
-```
+**No explicit log configuration:**
+- No `logging.basicConfig()` or custom handlers in application code
+- Relies on root logger configuration (if any)
 
 ## Comments
 
 **When to Comment:**
-- Module-level docstrings explain purpose and context
-- Class docstrings document attributes and usage
-- Method docstrings use Google-style with Args, Returns, Raises
-- Inline comments for non-obvious logic
-
-**JSDoc/TSDoc Equivalent (Python Docstrings):**
-- Google-style docstrings used throughout
-- Example from `quickice/structure_generation/generator.py`:
+- Module-level docstrings on ALL files (triple-quoted with purpose description)
+- Class-level docstrings describing attributes, signals, and usage patterns
+- Method-level docstrings with Args/Returns/Raises sections
+- Inline comments for physics/science context (e.g., unit conversions, IAPWS references)
+- Section headers using `# ===` for grouping related methods:
   ```python
-  def _generate_single(self, seed: int) -> Candidate:
-      '''Generate a single ice structure candidate.
-
-      Args:
-          seed: Random seed for hydrogen bond network diversity
-
-      Returns:
-          Candidate with generated coordinates and metadata
-
-      Raises:
-          StructureGenerationError: If GenIce fails to generate
-
-      Note:
-          GenIce internally uses the global np.random state (not the newer
-          Generator API). We save and restore the global state around each
-          generation call to minimize side effects on external code.
-      '''
+  # === Interface Generation Handlers (Interface Construction tab) ===
+  # === Worker signal handlers ===
   ```
+
+**Docstrings:**
+- Google-style docstrings with `Args:`, `Returns:`, `Raises:`, `Example:` sections
+- Attribute docstrings in dataclasses using `"""description."""` format
+- Signal documentation in class docstring:
+  ```python
+  Signals:
+      progress: Emitted with percentage (0-100)
+      status: Emitted with status message
+      finished: Emitted with GenerationResult on completion
+  ```
+- Usage examples in worker class docstrings showing the pattern
 
 ## Function Design
 
-**Size:** Functions generally under 50 lines; complex operations split into helper methods
+**Size:** Methods range from 5-50 lines. Long methods (>50 lines) are typically event handlers in `MainWindow` that orchestrate multiple UI updates.
 
 **Parameters:**
-- Use dataclasses for complex configurations
-- Optional parameters use `Optional` type hint with `None` default
-- Example from `quickice/structure_generation/types.py`:
-  ```python
-  @dataclass
-  class HydrateConfig:
-      lattice_type: str = "sI"
-      guest_type: str = "ch4"
-      cage_occupancy_small: float = 100.0
-      cage_occupancy_large: float = 100.0
-      supercell_x: int = 1
-      supercell_y: int = 1
-      supercell_z: int = 1
-  ```
+- Type hints on all public methods: `def start_generation(self, temperature: float, pressure: float, nmolecules: int):`
+- Optional parameters use `Optional[T]` or `T | None`: `base_seed: int | None = None`
+- Dataclass configs preferred over dict parameters for complex configurations
 
 **Return Values:**
-- Return dataclasses/typed objects, not raw dictionaries
-- Use result objects for complex return data (e.g., `GenerationResult`, `RankingResult`)
+- Dataclasses for structured results: `GenerationResult`, `RankingResult`, `HydrateStructure`
+- `Tuple[bool, str]` for validation results (is_valid, error_message)
+- `Optional[T]` for results that may be absent: `get_last_ranking_result() -> Optional[RankingResult]`
+- `set[int]` for overlap detection results
 
 ## Module Design
 
 **Exports:**
-- Use `__all__` in `__init__.py` files for explicit public API
-- Example from `quickice/structure_generation/__init__.py`:
-  ```python
-  __all__ = [
-      # Types
-      "Candidate",
-      "GenerationResult",
-      "InterfaceConfig",
-      # Errors
-      "StructureGenerationError",
-      "UnsupportedPhaseError",
-      # Generator
-      "IceStructureGenerator",
-      "generate_candidates",
-  ]
-  ```
+- `__init__.py` files define explicit `__all__` lists
+- `quickice/structure_generation/__init__.py` re-exports all key types, errors, and functions
+- `quickice/ranking/__init__.py` re-exports types and scoring functions
+- Individual scoring functions exported "for advanced use"
 
 **Barrel Files:**
-- Each module has `__init__.py` that exports key classes/functions
-- Sub-modules imported explicitly: `from quickice.structure_generation.types import Candidate`
+- `__init__.py` modules serve as barrel files for each subpackage
+- Import from barrel files in application code: `from quickice.structure_generation import generate_candidates`
+- Import from specific modules for targeted use: `from quickice.structure_generation.types import Candidate`
 
-## Dataclasses
+## PySide6/Qt Conventions
 
-**Pattern:**
-- Heavy use of `@dataclass` decorator for structured data
-- Use `field(default_factory=dict)` for mutable defaults
-- Validation in `__post_init__` method
-- Example from `quickice/structure_generation/types.py`:
+**Signal-Slot Pattern:**
+- Signals declared as class attributes: `progress = Signal(int)`, `finished = Signal(object)`
+- Slot methods decorated with `@Slot(type)`: `@Slot(int)`, `@Slot(str)`, `@Slot(object)`, `@Slot()`
+- Signal names use `snake_case`: `generation_started`, `generation_progress`, `generation_complete`
+- Signal connections use direct method reference: `self._worker.progress.connect(self._on_progress)`
+- Signal emission uses `.emit()`: `self.progress.emit(10)`, `self.generation_complete.emit(result)`
+
+**MVVM Architecture:**
+- `MainWindow` = View layer (connects UI to ViewModel)
+- `MainViewModel` = ViewModel (manages workers and state, emits UI update signals)
+- `GenerationWorker`, `InterfaceGenerationWorker` = Model workers (background computation)
+
+**QThread Worker Conventions (Two Patterns Used):**
+
+Pattern 1 - QObject + QThread (preferred for new workers):
+```python
+# Worker is QObject, NOT QThread subclass
+# See: quickice/gui/workers.py, quickice/gui/custom_molecule_worker.py
+class GenerationWorker(QObject):
+    progress = Signal(int)
+    finished = Signal(object)
+    
+    def __init__(self, temperature, pressure, nmolecules):
+        super().__init__()
+        self._temperature = temperature
+    
+    def run(self):
+        # Imports INSIDE run() for thread safety
+        from quickice.phase_mapping import lookup_phase
+        try:
+            # Check cancellation
+            if QThread.currentThread().isInterruptionRequested():
+                self.cancelled.emit()
+                return
+            # Do work, emit progress
+            self.finished.emit(result)
+        except Exception as e:
+            self.error.emit(str(e))
+            self.finished.emit(error_result)
+```
+
+Pattern 2 - QThread subclass (used for hydrate worker):
+```python
+# See: quickice/gui/hydrate_worker.py
+class HydrateWorker(QThread):
+    progress_updated = Signal(str)
+    generation_complete = Signal(object)
+    
+    def run(self):
+        # QThread.run() already runs in worker thread
+        try:
+            self.generation_complete.emit(result)
+        except Exception as e:
+            self.generation_error.emit(str(e))
+```
+
+**ViewModel Thread Setup Pattern:**
+```python
+# See: quickice/gui/viewmodel.py
+self._worker = GenerationWorker(temperature, pressure, nmolecules)
+self._thread = QThread()
+self._worker.moveToThread(self._thread)
+
+# Connect thread start to worker run
+self._thread.started.connect(self._worker.run)
+
+# Connect worker signals to ViewModel slots
+self._worker.progress.connect(self._on_progress)
+self._worker.finished.connect(self._on_finished)
+
+# Cleanup on thread finish
+self._thread.finished.connect(self._worker.deleteLater)
+self._thread.finished.connect(self._thread.deleteLater)
+
+self._thread.start()
+```
+
+**Cancellation Pattern:**
+```python
+# Request interruption (non-blocking)
+self._thread.requestInterruption()
+self._thread.quit()
+# Wait with timeout to prevent UI freeze
+self._thread.wait(100)  # 100ms timeout
+
+# In worker, check periodically:
+if QThread.currentThread().isInterruptionRequested():
+    self.cancelled.emit()
+    return
+```
+
+**VTK Availability Check:**
+```python
+# See: quickice/gui/view.py
+_VTK_AVAILABLE = False
+try:
+    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
+        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
+    else:
+        _VTK_AVAILABLE = True
+    if _VTK_AVAILABLE:
+        from quickice.gui.dual_viewer import DualViewerWidget
+except Exception:
+    _VTK_AVAILABLE = False
+```
+
+**GUI State Management:**
+- `ui_enabled_changed = Signal(bool)` - True = UI enabled, False = generating
+- ViewModel emits UI state signals; View connects and enables/disables controls
+- Store current results as instance variables: `self._current_result`, `self._current_interface_result`
+- Tab data flow managed through stored state, not direct method calls
+
+## Dataclass Conventions
+
+**Config Dataclasses:**
+- Always include `__post_init__` for validation
+- Provide `from_dict()` classmethod for UI dict → dataclass conversion:
   ```python
-  @dataclass
-  class InterfaceConfig:
-      mode: str
-      box_x: float
-      box_y: float
-      box_z: float
-      seed: int
-      ice_thickness: float = 0.0
-      overlap_threshold: float = 0.25
+  @classmethod
+  def from_dict(cls, d: dict) -> "InterfaceConfig":
+      return cls(mode=d["mode"], box_x=d["box_x"], ...)
+  ```
+- Use `field(default_factory=dict)` for mutable default attributes
+- Use `field(default_factory=list)` for list defaults
 
-      def __post_init__(self):
-          """Validate configuration parameters after initialization."""
-          if not (0.1 <= self.overlap_threshold <= 1.0):
-              raise ValueError(f"overlap_threshold={self.overlap_threshold} nm is outside range")
-
-      @classmethod
-      def from_dict(cls, d: dict) -> "InterfaceConfig":
-          """Create InterfaceConfig from dictionary."""
-          return cls(
-              mode=d["mode"],
-              box_x=d["box_x"],
-              # ...
-          )
+**Result Dataclasses:**
+- Carry all data needed for downstream processing and export
+- Include `metadata: dict[str, Any] = field(default_factory=dict)` for extensible info
+- Use `Any` type for cross-module references to avoid circular imports:
+  ```python
+  interface_structure: Any = None  # InterfaceStructure (avoid circular import)
   ```
 
-## Constants
+**Type Annotations:**
+- Python 3.10+ union syntax: `int | None` (not `Optional[int]`)
+- `list[str]` not `List[str]` (PEP 585 style)
+- `dict[str, Any]` not `Dict[str, Any]`
+- `np.ndarray` for numpy arrays (no generic parameterization)
 
-**Module-Level Constants:**
-- Define at top of module after imports
-- Use dictionaries for lookup tables
-- Example from `quickice/structure_generation/types.py`:
+**Molecule Index Tracking:**
+- `MoleculeIndex` dataclass with `start_idx`, `count`, `mol_type`
+- `molecule_index: list[MoleculeIndex]` tracks each molecule's position in atom array
+- Supports variable atoms-per-molecule: ions (1), ice (3), TIP4P water (4), CH4 (5), THF (12)
+
+## Unit Conventions
+
+**All internal coordinates and distances are in nanometers (nm).**
+- Explicit unit in parameter names: `threshold_nm`, `box_dims_nm`, `positions` (nm)
+- Pressure in MPa throughout (no GPa or Pa)
+- Temperature in Kelvin
+- Concentration in mol/L (M)
+- Angle values in degrees (Euler angles for rotations)
+- Density in g/cm³
+- Unit validation in `__post_init__`: range checks to catch nm vs Å mismatches
   ```python
-  MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
-      "ice":   {"atoms": 3, "res_name": "SOL", "description": "Ice (TIP3P)"},
-      "water": {"atoms": 4, "res_name": "SOL", "description": "Water (TIP4P-ICE)"},
-      "na":    {"atoms": 1, "res_name": "NA",  "description": "Sodium ion"},
-  }
+  if not (0.1 <= self.overlap_threshold <= 1.0):
+      raise ValueError("...This suggests a unit mismatch...")
   ```
 
 ---
 
-*Convention analysis: 2026-05-12*
+*Convention analysis: 2026-05-22*
