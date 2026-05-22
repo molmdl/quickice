@@ -5,373 +5,453 @@
 ## Test Framework
 
 **Runner:**
-- pytest >= 9.0.0
-- Config: No `pytest.ini`, `conftest.py`, or `pyproject.toml` pytest section detected
-- Implicit configuration via pytest defaults
+- pytest 9.0+ (from `requirements-dev.txt`)
+- Config: No `pytest.ini` or `pyproject.toml` `[tool.pytest]` section — uses defaults
+- Total tests: 537 collected (as of 2026-05-22)
 
 **Assertion Library:**
-- `pytest.raises()` for exception testing
-- `np.testing.assert_array_equal()` and `np.testing.assert_allclose()` for numpy arrays
-- Standard Python `assert` statements for all other assertions
-- No custom assertion helpers or pytest plugins
+- Plain `assert` statements (no `assertEqual`, `assertRaises`, etc.)
+- Custom assertion messages with f-strings for clarity
 
 **Run Commands:**
 ```bash
-pytest                              # Run all tests
-pytest tests/test_phase_mapping.py  # Run specific file
-pytest tests/ -v                    # Verbose output
-pytest tests/ -k "test_lookup"      # Run tests matching pattern
-pytest tests/ -x                    # Stop on first failure
-python -m pytest tests/test_ranking.py -v  # Alternative invocation
+python -m pytest                    # Run all tests
+python -m pytest tests/test_pocket_invariants.py  # Specific file
+python -m pytest -k "pocket"        # By keyword
+python -m pytest --co -q            # List collected tests
 ```
 
-**No coverage configuration detected.** No `.coveragerc`, `pytest-cov`, or coverage targets.
+**Coverage:**
+- `.coverage` file present at project root (coverage.py)
+- No minimum coverage threshold enforced
+- No coverage reporting command in CI
 
 ## Test File Organization
 
 **Location:**
-- Separate `tests/` directory at project root (not co-located with source)
-- Subdirectory `tests/test_output/` for output-related tests
-- Test packages have `__init__.py` files
+- Co-located in `tests/` directory at project root
+- E2E export tests in subdirectory: `tests/test_output/`
+- No `__init__.py` in `tests/` (uses pytest autodiscovery)
+- `tests/test_output/__init__.py` present for subdirectory discovery
 
 **Naming:**
-- Files: `test_<feature>.py` (e.g., `test_phase_mapping.py`, `test_structure_generation.py`)
-- Classes: `Test<Feature>` (e.g., `TestLookupPhaseIceIh`, `TestValidateTemperature`)
-- Methods: `test_<behavior>` (e.g., `test_lookup_atmospheric_near_melting`, `test_rejects_negative_temperature`)
+- Unit tests: `test_{feature_or_module}.py`
+  - Examples: `test_overlap_removal_invariants.py`, `test_itp_parser_edge_cases.py`
+- E2E tests: `test_gromacs_export_{type}.py` in `tests/test_output/`
+  - Examples: `test_gromacs_export_interface.py`, `test_gromacs_export_ice.py`
 
 **Structure:**
 ```
 tests/
 ├── __init__.py
-├── test_atom_names_filtering.py       # Atom name processing
-├── test_atom_ordering_validation.py    # Atom ordering checks
-├── test_cli_integration.py            # CLI subprocess tests
-├── test_custom_molecule.py            # Custom molecule workflow
-├── test_custom_molecule_concentration.py  # Concentration calculations
-├── test_custom_molecule_panel_34_6.py # GUI panel integration
-├── test_custom_molecule_renderer.py    # VTK renderer tests
-├── test_gromacs_molecule_ordering.py   # GROMACS export ordering
-├── test_hydrate_guest_tiling.py        # Hydrate guest tiling
-├── test_ice_ih_density.py             # Ice Ih density calculations
-├── test_integration_v35.py            # CLI integration (v3.5 features)
-├── test_interface_modes_audit.py      # Interface mode validation
-├── test_interface_ordering_validation.py  # Interface atom ordering
-├── test_ion_hydrate_fix.py            # Ion+hydrate bug fix
-├── test_ion_source_dropdown.py       # GUI ion source dropdown
-├── test_med03_minimum_box_size.py     # Minimum box size validation
-├── test_moleculetype_registry.py      # GROMACS moleculetype naming
-├── test_pbc_hbonds.py                # Periodic boundary H-bonds
-├── test_phase_mapping.py             # Phase diagram lookup
-├── test_piece_mode_validation.py     # Piece mode water layer
-├── test_ranking.py                   # Scoring/ranking
-├── test_solute_insertion.py          # Solute insertion workflow
-├── test_solute_ion_molecule_index.py # Molecule index tracking
-├── test_structure_generation.py      # Structure generation (largest)
-├── test_triclinic_interface.py       # Triclinic cell support
-├── test_validators.py                # Input validators
-├── test_water_density.py             # Water density calculations
-└── test_output/
-    ├── __init__.py
-    ├── test_molecule_wrapping.py     # PBC molecule wrapping
-    ├── test_pdb_writer.py            # PDB file output
-    └── test_validator.py            # Space group/overlap validation
+├── test_atom_names_filtering.py
+├── test_atom_ordering_validation.py
+├── test_cli_integration.py
+├── test_custom_molecule.py
+├── test_custom_molecule_concentration.py
+├── test_custom_molecule_panel_34_6.py
+├── test_custom_molecule_renderer.py
+├── test_gromacs_molecule_ordering.py
+├── test_hydrate_guest_tiling.py
+├── test_ice_ih_density.py
+├── test_integration_v35.py
+├── test_interface_modes_audit.py
+├── test_interface_ordering_validation.py
+├── test_ion_hydrate_fix.py
+├── test_ion_source_dropdown.py
+├── test_itp_parser_edge_cases.py
+├── test_med03_minimum_box_size.py
+├── test_moleculetype_registry.py
+├── test_output/
+│   ├── __init__.py
+│   ├── conftest.py              # Shared E2E fixtures
+│   ├── test_gromacs_export_chain.py
+│   ├── test_gromacs_export_custom.py
+│   ├── test_gromacs_export_hydrate.py
+│   ├── test_gromacs_export_ice.py
+│   ├── test_gromacs_export_interface.py
+│   ├── test_gromacs_export_ion.py
+│   ├── test_gromacs_export_solute.py
+│   ├── test_molecule_wrapping.py
+│   ├── test_pdb_writer.py
+│   └── test_validator.py
+├── test_overlap_removal_invariants.py
+├── test_pbc_hbonds.py
+├── test_phase_mapping.py
+├── test_piece_mode_validation.py
+├── test_pocket_cubic_guests.py
+├── test_pocket_edge_cases.py
+├── test_pocket_invariants.py
+├── test_ranking.py
+├── test_solute_insertion.py
+├── test_solute_ion_molecule_index.py
+├── test_structure_generation.py
+├── test_triclinic_interface.py
+├── test_validators.py
+└── test_water_density.py
 ```
 
 ## Test Structure
 
 **Suite Organization:**
 ```python
-class TestLookupPhaseIceIh:
-    """Tests for Ice Ih (normal atmospheric ice) lookups."""
+class TestWaterAtomCountDivisibleByFour:
+    """Invariant: water atom count % 4 == 0 after overlap removal.
 
-    def test_lookup_atmospheric_near_melting(self):
-        """Temperature 273K, Pressure 0 MPa should return ice_ih."""
-        result = lookup_phase(273, 0)
-        assert result["phase_id"] == "ice_ih"
-        assert result["phase_name"] == "Ice Ih"
+    TIP4P water has 4 atoms per molecule (OW, HW1, HW2, MW).
+    remove_overlapping_molecules always removes whole molecules, so
+    if input atom count is divisible by 4, output must be too.
+    """
+
+    def _make_water_positions(self, n_molecules: int) -> np.ndarray:
+        """Create n_molecules water molecule positions (4 atoms each)."""
+        positions = []
+        for i in range(n_molecules):
+            x = float(i)
+            positions.append([x, 0.0, 0.0])       # OW
+            positions.append([x + 0.08, 0.06, 0.0])  # HW1
+            positions.append([x - 0.08, 0.06, 0.0])  # HW2
+            positions.append([x, 0.015, 0.0])      # MW
+        return np.array(positions)
+
+    def test_no_overlap_count_divisible_by_4(self):
+        positions = self._make_water_positions(10)
+        overlapping = set()
+        result, n_remaining = remove_overlapping_molecules(
+            positions, overlapping, atoms_per_molecule=4
+        )
+        assert len(result) % 4 == 0
+        assert n_remaining == 10
 ```
+File: `tests/test_overlap_removal_invariants.py`
 
 **Patterns:**
-- One test class per feature/phase/component
-- Descriptive docstrings on every test method explaining expected behavior
-- Test method names describe the scenario: `test_<condition>_<expected_behavior>`
-- Boundary value testing (minimum, maximum, just above/below limits)
-- Regression tests reference bug context: `"""This is a regression test for the bug where guest molecules were lost..."""`
+- **Class-per-test-group**: `Test{FeatureName}` classes grouping related tests
+- **Helper methods**: Private `_make_*` and `_create_*` methods for test data construction
+- **Parametrized tests**: `@pytest.mark.parametrize` for shape variants:
+  ```python
+  @pytest.mark.parametrize("shape", ["sphere", "cubic"])
+  def test_pocket_boundary_conditions(self, shape):
+  ```
+  File: `tests/test_pocket_edge_cases.py`
+- **Skip marks**: `@pytest.mark.skip(reason="pytest-qt not installed in test environment")`
+  File: `tests/test_solute_insertion.py`
 
-**Test Class Naming Conventions:**
-- Group by feature under test: `TestLookupPhaseIceIh`, `TestLookupPhaseIceVii`, `TestLookupPhaseIceVi`
-- Group by validation target: `TestValidateTemperature`, `TestValidatePressure`
-- Group by component: `TestSoluteInserter`, `TestSoluteInsertion`, `TestSoluteRenderer`
-- Group by bug/fix: `TestPolygonOverlapFixes`, `TestHydrateGuestNaming`
-- Group by integration scope: `TestIntegrationWithPhase2`, `TestCLIIntegration`
-
-## Fixtures
-
-**pytest Fixtures:**
-```python
-@pytest.fixture
-def simple_candidate():
-    """Create a simple candidate for testing."""
-    positions = np.array([...])
-    atom_names = ['O', 'H', 'H', ...]
-    cell = np.eye(3) * 1.0
-    return Candidate(
-        positions=positions,
-        atom_names=atom_names,
-        cell=cell,
-        nmolecules=4,
-        phase_id='ice_ih',
-        seed=1000,
-        metadata={'density': 0.9167}
-    )
-```
-
-**Fixture patterns:**
-- Used primarily in `test_ranking.py` and `test_structure_generation.py`
-- Create mock data objects with realistic physical values
-- No shared `conftest.py` - fixtures are defined per-test-file
-- `@pytest.fixture(autouse=True)` used in GUI tests for QApplication setup
+**Setup/Teardown:**
+- No `setUp`/`tearDown` methods (pytest style)
+- `@pytest.fixture` for shared setup
+- `autouse=True` fixtures for GUI tests:
+  ```python
+  @pytest.fixture(autouse=True)
+  def setup_app(self, qapp):
+      self.app = qapp
+  ```
+  File: `tests/test_custom_molecule_panel_34_6.py`
 
 ## Mocking
 
-**Framework:** No mocking framework detected (no `unittest.mock`, `pytest-mock`, or `mocker` fixture)
+**Framework:** `unittest.mock` (stdlib) via `from unittest.mock import patch`
 
-**Patterns:**
-- Tests use real GenIce2 generation (not mocked) for structure generation tests
-- CLI tests use `subprocess.run()` to test actual script execution
-- GUI tests create real Qt widgets with QApplication singleton
-- No monkeypatching or mock objects detected in test suite
+**QFileDialog mocking pattern** (established for E2E export tests):
+```python
+@pytest.fixture
+def mock_save_dialog(tmp_path):
+    """Factory fixture for export.py QFileDialog mocking.
+
+    Returns a callable that creates (save_path, dialog_patch, mb_patch).
+
+    Usage in tests::
+
+        def test_example(mock_save_dialog):
+            save_path, dialog_patch, mb_patch = mock_save_dialog("output.gro")
+            with dialog_patch, mb_patch:
+                # code under test that calls QFileDialog.getSaveFileName
+                ...
+            assert Path(save_path).exists()
+    """
+    def _create(filename="test.gro"):
+        save_path = str(tmp_path / filename)
+        dialog_patch = patch(
+            'quickice.gui.export.QFileDialog.getSaveFileName',
+            return_value=(save_path, "GRO Files (*.gro)")
+        )
+        mb_patch = patch('quickice.gui.export.QMessageBox')
+        return save_path, dialog_patch, mb_patch
+    return _create
+```
+File: `tests/test_output/conftest.py` (lines 426-449)
+
+**QMessageBox mocking pattern:**
+```python
+mb_patch = patch('quickice.gui.export.QMessageBox')
+# Used alongside dialog_patch in `with dialog_patch, mb_patch:` context
+```
+
+**Cancelled dialog mocking pattern:**
+```python
+@pytest.fixture
+def mock_cancel_dialog():
+    """Factory fixture for cancelled QFileDialog simulation.
+
+    Returns empty string ("", "") from getSaveFileName.
+    """
+    def _create(module_path='quickice.gui.export'):
+        dialog_patch = patch(
+            f'{module_path}.QFileDialog.getSaveFileName',
+            return_value=("", "")
+        )
+        mb_patch = patch(f'{module_path}.QMessageBox')
+        return dialog_patch, mb_patch
+    return _create
+```
+File: `tests/test_output/conftest.py` (lines 477-499)
 
 **What to Mock:**
-- Not currently mocked - tests use real implementations
-- VTK rendering is tested with real VTK (requires display or offscreen)
+- `QFileDialog.getSaveFileName` — always mock in export tests (opens native dialog)
+- `QMessageBox` — always mock alongside dialog mocks (may show warning dialogs)
+- Module path must be where the name is **looked up**, not where it's defined:
+  - `'quickice.gui.export.QFileDialog.getSaveFileName'` (not `'PySide6.QtWidgets...'`)
+  - `'quickice.gui.hydrate_export.QFileDialog.getSaveFileName'` for hydrate export
 
 **What NOT to Mock:**
-- Phase mapping calculations (use real IAPWS data)
-- Structure generation (use real GenIce2)
-- Scoring functions (use real numpy calculations)
+- Structure generation functions (use real `assemble_pocket()`, `assemble_slab()`)
+- Overlap detection (`detect_overlaps`, `remove_overlapping_molecules`)
+- ITP/GRO parsers (use real `parse_itp_file()`, `parse_gro_file()`)
+- GROMACS writers (write to `tmp_path` and verify file contents)
 
 ## Fixtures and Factories
 
-**Test Data:**
+**Test Data (Structure Fixtures):**
 ```python
-# Mock interface structure for solute insertion tests
 @pytest.fixture
-def interface_structure(self):
-    """Create mock interface structure for testing."""
-    n_ice_molecules = 100
-    ice_positions = []
-    for i in range(n_ice_molecules):
-        ice_positions.append([i * 0.3, 0, 0])      # O
-        ice_positions.append([i * 0.3 + 0.1, 0.1, 0])  # H
-        ice_positions.append([i * 0.3 + 0.1, -0.1, 0])  # H
-    # ... water positions, cell, etc.
-    return InterfaceStructure(positions=..., atom_names=..., cell=..., ...)
+def simple_interface():
+    """InterfaceStructure: 2 ice molecules + 2 water molecules, NO guests.
+
+    14 atoms total:
+        - 6 ice atoms:  2 × (O, H, H)
+        - 8 water atoms: 2 × (OW, HW1, HW2, MW)
+    """
+    positions = np.zeros((14, 3))
+    positions[0:3] = np.array([[0.1, 0.1, 0.1], [0.15, 0.12, 0.1], [0.08, 0.12, 0.1]])
+    positions[3:6] = np.array([[0.2, 0.1, 0.1], [0.25, 0.12, 0.1], [0.18, 0.12, 0.1]])
+    positions[6:10] = np.array([[0.5, 0.5, 2.0], [0.55, 0.52, 2.0],
+                                [0.48, 0.52, 2.0], [0.50, 0.51, 2.0]])
+    positions[10:14] = np.array([[1.0, 0.5, 2.0], [1.05, 0.52, 2.0],
+                                  [0.98, 0.52, 2.0], [1.00, 0.51, 2.0]])
+    atom_names = ["O", "H", "H", "O", "H", "H",
+                  "OW", "HW1", "HW2", "MW", "OW", "HW1", "HW2", "MW"]
+    cell = np.eye(3) * 3.0
+    molecule_index = [
+        MoleculeIndex(0, 3, "ice"), MoleculeIndex(3, 3, "ice"),
+        MoleculeIndex(6, 4, "water"), MoleculeIndex(10, 4, "water"),
+    ]
+    return InterfaceStructure(
+        positions=positions, atom_names=atom_names, cell=cell,
+        ice_atom_count=6, water_atom_count=8, ice_nmolecules=2,
+        water_nmolecules=2, mode="slab", report="test",
+        guest_atom_count=0, guest_nmolecules=0, molecule_index=molecule_index,
+    )
 ```
+File: `tests/test_output/conftest.py` (lines 142-188)
+
+**Mock Candidate Factories:**
+```python
+def create_mock_ice_candidate(n_molecules: int = 96, cell_dim: float = 0.9) -> Candidate:
+    """Create a mock Ice Ih candidate with configurable molecule count."""
+    grid = int(np.ceil(n_molecules ** (1/3)))
+    positions = []
+    atom_names = []
+    spacing_x = cell_dim / grid
+    for i in range(n_molecules):
+        ix = i % grid
+        iy = (i // grid) % grid
+        iz = i // (grid * grid)
+        x = ix * spacing_x
+        y = iy * spacing_x
+        z = iz * spacing_x
+        positions.extend([[x, y, z], [x + 0.1, y, z + 0.05], [x + 0.05, y + 0.1, z + 0.1]])
+        atom_names.extend(["O", "H", "H"])
+    positions = np.array(positions)
+    cell = np.diag([cell_dim, cell_dim, cell_dim])
+    return Candidate(
+        positions=positions, atom_names=atom_names, cell=cell,
+        nmolecules=n_molecules, phase_id="ice_ih", seed=42,
+        metadata={"temperature": 273.15, "pressure": 0.101325}
+    )
+```
+File: `tests/test_pocket_invariants.py` (lines 18-55)
+
+```python
+def create_mock_hydrate_candidate(n_water: int = 32, n_guest: int = 4,
+                                   cell_dim: float = 0.9) -> Candidate:
+    """Create a mock hydrate candidate with TIP4P water framework + Me guests."""
+```
+File: `tests/test_pocket_invariants.py` (lines 58-106)
+
+**Chain dependency fixtures:**
+- `custom_structure` depends on `simple_interface`
+- `solute_structure` depends on `interface_with_ch4_guests`
+- `ion_structure` depends on `simple_interface`
+File: `tests/test_output/conftest.py` (lines 296-419)
 
 **Location:**
-- Fixtures defined inline in test files (no shared fixture directory)
-- Real test data files in `quickice/data/custom/` (e.g., `etoh.gro`, `etoh.itp`)
-- Bundled ITP/GRO files used for solute template and custom molecule tests
+- Structure fixtures: `tests/test_output/conftest.py`
+- Mock candidate factories: defined as module-level functions in individual test files
+- `tests/test_ranking/conftest.py` style: inline `@pytest.fixture` in test classes
+
+**Temp file pattern:**
+```python
+def _write_and_parse(content: str) -> ITPMoleculeInfo:
+    """Write ITP content to a temp file, parse it, and return the result."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".itp", delete=False, encoding="utf-8"
+    ) as f:
+        f.write(content)
+        tmp_path = Path(f.name)
+    try:
+        return parse_itp_file(tmp_path)
+    finally:
+        tmp_path.unlink()
+```
+File: `tests/test_itp_parser_edge_cases.py` (lines 37-47)
 
 ## Coverage
 
-**Requirements:** None enforced
+**Requirements:** None enforced (no minimum threshold)
 
 **View Coverage:**
 ```bash
-# Not configured; would require:
-pytest --cov=quickice tests/
+python -m pytest --cov=quickice --cov-report=term-missing
 ```
+
+**Current coverage file:** `.coverage` (present at project root)
 
 ## Test Types
 
 **Unit Tests:**
-- Most test files are unit tests for specific functions/classes
-- Phase mapping lookup: `test_phase_mapping.py` (19 test classes, 618 lines)
-- Validators: `test_validators.py` (boundary value testing, 231 lines)
-- Scoring functions: `test_ranking.py` (fixture-based, 691 lines)
-- Data types: `test_structure_generation.py` (dataclass creation, 752 lines)
+- Scope: Individual functions and classes
+- Approach: Mock external dependencies, test logic directly
+- Examples:
+  - `test_overlap_removal_invariants.py`: Tests `remove_overlapping_molecules`, `filter_atom_names`, `detect_overlaps` directly
+  - `test_itp_parser_edge_cases.py`: Tests `parse_itp_file()` with crafted temp files
+  - `test_validators.py`: Tests CLI and GUI validator functions
 
 **Integration Tests:**
-- CLI integration: `test_cli_integration.py` (subprocess-based, 292 lines)
-- CLI interface generation: `test_integration_v35.py` (GRO file validation, 513 lines)
-- Cross-module integration: `TestIntegrationWithPhase2` in `test_structure_generation.py`
-- Solute insertion pipeline: `test_solute_insertion.py` (complete workflow, 269 lines)
-- Custom molecule workflow: `test_custom_molecule.py` (GRO/ITP parsing + insertion, 521+ lines)
+- Scope: End-to-end structure generation pipelines
+- Approach: Call `assemble_pocket()`, `assemble_slab()` with mock candidates (no GenIce2 dependency)
+- Examples:
+  - `test_pocket_invariants.py`: Calls `assemble_pocket()` end-to-end with `create_mock_ice_candidate()`
+  - `test_structure_generation.py`: Tests the full generation pipeline
 
-**E2E Tests:**
-- Not formally separated; CLI tests (`test_cli_integration.py`, `test_integration_v35.py`) serve as E2E
-- No browser or GUI E2E framework
+**E2E Export Tests:**
+- Scope: Full GROMACS file export with dialog mocking
+- Approach: Mock `QFileDialog`/`QMessageBox`, call exporter, verify file contents
+- Examples:
+  - `test_gromacs_export_interface.py`: Tests `InterfaceGROMACSExporter` end-to-end
+  - `test_gromacs_export_ice.py`: Tests `GROMACSExporter` end-to-end
+  - `test_gromacs_export_hydrate.py`: Tests `HydrateGROMACSExporter` end-to-end
 
-## GUI Test Patterns
+**E2E Test coverage by tab:**
+| Test File | Tab | Structure Fixture |
+|-----------|-----|-------------------|
+| `test_gromacs_export_ice.py` | Tab 1 (Ice) | `simple_candidate`, `ranked_candidate` |
+| `test_gromacs_export_interface.py` | Tab 2 (Interface) | `simple_interface`, `interface_with_ch4_guests`, `interface_with_thf_guests` |
+| `test_gromacs_export_custom.py` | Tab 3 (Custom) | `custom_structure` |
+| `test_gromacs_export_solute.py` | Tab 4 (Solute) | `solute_structure` |
+| `test_gromacs_export_ion.py` | Tab 5 (Ion) | `ion_structure` |
+| `test_gromacs_export_hydrate.py` | Tab 6 (Hydrate) | `simple_hydrate_structure` |
+| `test_gromacs_export_chain.py` | Chain dependency | Combines above |
 
-**QApplication Setup (Manual Singleton Pattern):**
-```python
-# Used in: tests/test_custom_molecule_panel_34_6.py, tests/test_ion_source_dropdown.py
-import sys
-from PySide6.QtWidgets import QApplication
-
-class TestIonSourceDropdown:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup test environment with QApplication and IonPanel instance."""
-        # QApplication is required for Qt widgets
-        # Create QApplication if it doesn't exist (singleton pattern)
-        if not QApplication.instance():
-            self.app = QApplication(sys.argv)
-        else:
-            self.app = QApplication.instance()
-        
-        # Create the widget under test
-        self.panel = IonPanel()
-```
-
-**Key points about GUI testing:**
-- No `pytest-qt` plugin - manual QApplication management
-- Singleton pattern ensures only one QApplication per test session
-- `autouse=True` fixture ensures QApplication exists before each test
-- Tests access widget attributes directly: `assert hasattr(self.panel, 'source_combo')`
-- Tests programmatically interact with widgets: `self.panel.source_combo.setCurrentIndex(1)`
-- No signal spy or wait mechanisms - synchronous assertions only
-
-**VTK Rendering Tests:**
-- `test_custom_molecule_renderer.py` tests VTK actor creation
-- Requires VTK to be importable (may fail in CI without display)
-- Tests create actors and check `assert actor is not None`, `assert hasattr(actor, 'GetMapper')`
-- No offscreen rendering setup in test files
-
-## CLI Integration Test Pattern
-
-**Subprocess-based testing:**
-```python
-# Used in: tests/test_cli_integration.py, tests/test_integration_v35.py
-QUICKICE_SCRIPT = Path(__file__).parent.parent / "quickice.py"
-
-def run_cli(*args: str, timeout: int = 60) -> tuple[int, str, str]:
-    """Run quickice.py with given arguments."""
-    cmd = [sys.executable, str(QUICKICE_SCRIPT)] + list(args)
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    return result.returncode, result.stdout, result.stderr
-```
-
-**GRO File Validation Helper:**
-```python
-# Used in: tests/test_integration_v35.py
-def validate_gro_file(filepath: Path) -> dict:
-    """Validate a GROMACS .gro file.
-    
-    Returns dict with keys: valid, atom_count, box_dimensions, errors, coordinates
-    """
-    # Parses header, atom lines, box dimensions
-    # Validates coordinates within box bounds
-    # Checks triclinic vs orthogonal format
-```
-
-**CLI test assertions:**
-```python
-def test_cli_slab_interface_ice_ih(self):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        returncode, stdout, stderr = run_cli(
-            "--interface", "--mode", "slab",
-            "--temperature", "250", "--pressure", "0.1",
-            "--box-x", "3.0", "--box-y", "3.0", "--box-z", "8.0",
-            "--ice-thickness", "2.0", "--water-thickness", "4.0",
-            "--output", tmpdir
-        )
-        assert returncode == 0
-        assert "Interface generation complete" in stdout
-        gro_files = list(Path(tmpdir).glob("*.gro"))
-        assert len(gro_files) == 1
-        result = validate_gro_file(gro_files[0])
-        assert result['valid']
-```
+**E2E Tests Not Used:** No browser/protocol testing (desktop app)
 
 ## Common Patterns
 
+**Invariant testing pattern:**
+```python
+# Test the invariant directly
+def test_no_overlap_count_divisible_by_4(self):
+    positions = self._make_water_positions(10)
+    overlapping = set()
+    result, n_remaining = remove_overlapping_molecules(
+        positions, overlapping, atoms_per_molecule=4
+    )
+    assert len(result) % 4 == 0
+    assert n_remaining == 10
+
+# Test end-to-end through the code that has the assertion
+def test_sphere_standard_diameter(self):
+    candidate = create_mock_ice_candidate(n_molecules=96, cell_dim=0.9)
+    config = InterfaceConfig(
+        mode="pocket", box_x=3.0, box_y=3.0, box_z=3.0,
+        seed=42, pocket_diameter=1.0, pocket_shape="sphere"
+    )
+    result = assemble_pocket(candidate, config)
+    # If we got here, all 3 assertion blocks passed
+    assert len(result.atom_names) == len(result.positions)
+    assert result.water_atom_count % 4 == 0
+```
+
 **Async Testing:**
-- Not used - all tests are synchronous
-- Worker threads are not directly tested (signal emission tested through real execution)
-- No `qwait` or event loop processing in tests
+- Not used (no asyncio in codebase)
+- Background threads via QThread in GUI workers, but tests don't test async behavior directly
 
 **Error Testing:**
 ```python
-# Exception type and message verification
-with pytest.raises(UnsupportedPhaseError) as exc_info:
-    get_genice_lattice_name("ice_xxx")
-assert exc_info.value.phase_id == "ice_xxx"
+# Testing ValueError with range hints
+def test_invalid_threshold_raises_value_error(self):
+    with pytest.raises(ValueError, match="outside reasonable range"):
+        detect_overlaps(ice_o, water_o, box, threshold_nm=5.0)  # 5.0 nm is out of range
 
-# Exception message content verification
-with pytest.raises(ArgumentTypeError) as exc_info:
-    validate_temperature("abc")
-assert "temperature" in str(exc_info.value).lower()
-
-# UnknownPhaseError includes T,P in message
-with pytest.raises(UnknownPhaseError) as exc_info:
-    lookup_phase(500, 500)
-assert "500" in str(exc_info.value)
+# Testing graceful error handling (try/except in test)
+def test_small_pocket_may_raise(self):
+    try:
+        result = assemble_pocket(candidate, config)
+        assert result.water_atom_count % 4 == 0
+    except Exception as e:
+        assert "zero" in str(e).lower() or "Water filling" in str(e)
 ```
+File: `tests/test_pocket_invariants.py`
 
-**Numpy Array Testing:**
+**File content verification pattern:**
 ```python
-# Exact array equality
-np.testing.assert_array_equal(candidate.positions, positions)
-
-# Array shape checking
-assert isinstance(candidate.positions, np.ndarray)
-assert candidate.positions.shape[1] == 3
-
-# Physical validity checks
-assert np.all(np.isfinite(candidate.positions))
-assert np.all(np.abs(candidate.positions) < 10)
-
-# Approximate comparison
-assert abs(result["density"] - 0.9167) < 0.001
+def test_gro_file_has_ice_and_water_atoms(self, simple_interface, mock_save_dialog):
+    save_path, dialog_p, mb_p = mock_save_dialog("interface_slab.gro")
+    exporter = InterfaceGROMACSExporter(parent_widget=None)
+    with dialog_p, mb_p:
+        result = exporter.export_interface_gromacs(simple_interface)
+    assert result is True
+    gro_path = Path(save_path)
+    lines = gro_path.read_text().splitlines()
+    atom_count = int(lines[1].strip())  # Line 2 of .gro has count
+    assert atom_count == 16
 ```
+File: `tests/test_output/test_gromacs_export_interface.py`
 
-**Dataclass Creation in Tests:**
+**ITP file content verification pattern:**
 ```python
-# Direct construction with numpy arrays
-candidate = Candidate(
-    positions=np.array([[0.0, 0.0, 0.0]]),
-    atom_names=["O"],
-    cell=np.eye(3),
-    nmolecules=1,
-    phase_id="ice_ih",
-    seed=0
-)
-
-# from_dict() pattern for config dataclasses
-config = InterfaceConfig.from_dict(config_dict)
-
-# MoleculeIndex for multi-molecule tracking
-molecule_index = [
-    MoleculeIndex(0, 4, 'water'),
-    MoleculeIndex(8, 4, 'water'),
-    MoleculeIndex(4, 5, 'ch4'),
-]
+ch4_itp = (tmp_path / "ch4_hydrate.itp").read_text()
+assert "[ moleculetype ]" in ch4_itp
 ```
+File: `tests/test_output/test_gromacs_export_interface.py`
 
-**Test File Self-Execution:**
-Some test files include self-execution pattern:
+**Parametrized shape testing:**
 ```python
-if __name__ == "__main__":
-    import pytest
-    pytest.main([__file__, "-v"])
+@pytest.mark.parametrize("shape", ["sphere", "cubic"])
+def test_pocket_edge_case(self, shape):
+    """Run test for both pocket shapes."""
 ```
+File: `tests/test_pocket_edge_cases.py`
 
-## Test Data Dependencies
+**Adding new E2E export tests:**
+1. Add structure fixture to `tests/test_output/conftest.py`
+2. Create `test_gromacs_export_{type}.py` in `tests/test_output/`
+3. Use `mock_save_dialog` and `mock_cancel_dialog` from conftest
+4. Assert file existence and content after export
 
-**Required External Dependencies:**
-- GenIce2 must be installed for structure generation tests
-- VTK must be importable for renderer tests (skips gracefully if unavailable)
-- Matplotlib required for phase diagram tests
-- scipy required for PBC/cKDTree tests
-
-**Bundled Test Data:**
-- `quickice/data/custom/etoh.gro` - Ethanol GRO file for custom molecule tests
-- `quickice/data/custom/etoh.itp` - Ethanol ITP file for custom molecule tests
-- `quickice/data/tip4p_ice.itp` - TIP4P-ICE water model topology
+**Adding new pocket/slab tests:**
+1. Use `create_mock_ice_candidate()` or `create_mock_hydrate_candidate()` for test data
+2. Call `assemble_pocket()` or `assemble_slab()` with `InterfaceConfig`
+3. Assert structural invariants: `result.water_atom_count % 4 == 0`, `len(result.atom_names) == len(result.positions)`
 
 ---
 

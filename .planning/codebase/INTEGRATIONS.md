@@ -4,119 +4,112 @@
 
 ## APIs & External Services
 
-**Scientific formulations (embedded, not network APIs):**
-- IAPWS (International Association for the Properties of Water and Steam) - Thermodynamic property equations
-  - SDK/Client: `iapws` Python package (v1.5.5)
-  - Auth: None (open scientific formulation library)
-  - Used via: `iapws.IAPWS95`, `iapws._iapws._Ice`, `iapws.IAPWS97`
-  - Files: `quickice/phase_mapping/water_density.py`, `quickice/phase_mapping/ice_ih_density.py`, `quickice/gui/phase_diagram_widget.py`
-  - Note: All calculations are local (no network calls). IAPWS provides mathematical formulations implemented in pure Python.
+**Scientific Libraries (in-process, no network calls):**
 
-**GenIce2 ice generation engine:**
-- SDK/Client: `genice2` Python package (v2.2.13.1) + `genice-core` (v1.4.3)
-- Auth: None (open scientific software)
-- Used via: `genice2.genice.GenIce`, `genice2.plugin.safe_import`, `genice2.formats.gromacs`, `genice2.lattices` (sI, sII, sH), `genice2.molecules` (tip3p, tip4p), `genice2.valueparser.parse_guest`
-- Files: `quickice/structure_generation/generator.py`, `quickice/structure_generation/hydrate_generator.py`
-- Note: Local computation only. GenIce2 generates crystal structures algorithmically (no network calls).
+- **GenIce2** - Ice crystal lattice generation engine
+  - SDK/Client: `genice2` pip package (v2.2.13.1)
+  - Usage: Generates ice lattice structures (Ice Ih, Ic, II, III, V, VI, VII, VIII) and hydrate lattices (sI, sII, sH)
+  - Integration pattern: Lazy import with thread-safe locking in `quickice/structure_generation/hydrate_generator.py`; direct import in `quickice/structure_generation/generator.py`
+  - Key classes: `GenIce`, `safe_import`, `gromacs` format handler, `TIP4P` molecule, lattice modules (sI, sII, sH)
+  - No authentication required (local computation)
+
+- **IAPWS (iapws library)** - International Association for the Properties of Water and Steam thermodynamic formulations
+  - SDK/Client: `iapws` pip package (v1.5.5)
+  - Usage: Three IAPWS formulations used:
+    1. `_Ice(T, P)` → `props["rho"]` - Ice Ih density via IAPWS R10-06(2009) in `quickice/phase_mapping/ice_ih_density.py`
+    2. `IAPWS95(T=T, P=P).rho` - Liquid water density via IAPWS-95 in `quickice/phase_mapping/water_density.py`
+    3. `IAPWS97(T=T, P=P)` - Steam tables for phase diagram saturation curve in `quickice/gui/phase_diagram_widget.py`
+  - Integration pattern: Cached with `@lru_cache(maxsize=256)` in both density modules; warnings suppressed for metastable states
+  - No authentication required (local computation)
+
+- **scipy** - Scientific computing algorithms
+  - `scipy.spatial.cKDTree` - PBC-aware overlap detection in `quickice/structure_generation/overlap_resolver.py`, `quickice/structure_generation/ion_inserter.py`, `quickice/structure_generation/solute_inserter.py`, `quickice/structure_generation/custom_molecule_inserter.py`, `quickice/gui/vtk_utils.py`, `quickice/ranking/scorer.py`
+  - `scipy.spatial.transform.Rotation` - Molecule orientation for solute/custom molecule placement in `quickice/structure_generation/solute_inserter.py`, `quickice/structure_generation/custom_molecule_inserter.py`
+
+- **VTK** - 3D visualization toolkit
+  - SDK/Client: `vtkmodules` (v9.5.2, conda-forge)
+  - Usage: Molecular rendering (vtkMolecule, vtkMoleculeMapper), hydrogen bond visualization, viewport screenshots
+  - Qt integration: `vtkmodules.qt.QVTKRenderWindowInteractor` embedded in PySide6 widgets
+  - Rendering modules used: `vtkRenderer`, `vtkInteractorStyleTrackballCamera`, `vtkMoleculeMapper`, `vtkColorTransferFunction`, `vtkWindowToImageFilter`, `vtkPNGWriter`, `vtkJPEGWriter`
+  - Availability check: Runtime detection with fallback for SSH X11 forwarding (`_VTK_AVAILABLE` flag in viewer modules)
+
+- **matplotlib** - Plotting library
+  - SDK/Client: `matplotlib` (v3.10.8)
+  - Usage: Phase diagram rendering with Qt embedding (`FigureCanvasQTAgg`), viewport export (PNG/JPEG)
+  - Integration: `matplotlib.backends.backend_qtagg.FigureCanvasQTAgg` for in-app diagram; `matplotlib.pyplot` for static PNG/SVG generation
+
+- **Shapely** - Computational geometry
+  - SDK/Client: `shapely` (v2.1.2)
+  - Usage: Phase polygon construction and point-in-polygon testing for interactive phase diagram
+  - Integration: `shapely.geometry.Point`, `shapely.geometry.Polygon` in `quickice/gui/phase_diagram_widget.py`
+
+- **NumPy** - Numerical computing
+  - SDK/Client: `numpy` (v2.4.3)
+  - Usage: Core array operations for all molecular coordinates, cell matrices, density calculations
+  - Integration: Everywhere — positions, cells, supercell calculations, neighbor search, density computation
 
 ## Data Storage
 
 **Databases:**
-- None. All data is computed on-the-fly or loaded from bundled files.
+- None (no database layer)
 
 **File Storage:**
 - Local filesystem only
-  - Bundled molecular data: `quickice/data/` (ITP, GRO, TOP files)
-  - Phase boundary data: `quickice/phase_mapping/data/ice_phases.json`
-  - Custom molecule examples: `quickice/data/custom/`
-  - User output: configurable via `--output` CLI flag (default: `output/`)
+  - Output files written to user-specified directory (default: `output/`)
+  - GROMACS format: `.gro` (coordinates), `.top` (topology), `.itp` (molecule topology)
+  - PDB format: `.pdb` (coordinates with CRYST1 records)
+  - Phase diagrams: `.png`, `.svg`
+  - Force field data: `quickice/data/*.itp`, `quickice/data/*.gro`
 
 **Caching:**
-- Python `lru_cache` (in-memory, per-process)
-  - `quickice/phase_mapping/water_density.py`: `water_density_kgm3()` cached with maxsize=256
-  - `quickice/phase_mapping/ice_ih_density.py`: `ice_ih_density_kgm3()` cached with maxsize=256
-  - No disk cache, no Redis, no Memcached
+- Python `@lru_cache(maxsize=256)` - IAPWS density calculations in `quickice/phase_mapping/ice_ih_density.py` and `quickice/phase_mapping/water_density.py`
+- Matplotlib boundary sampling cache (`_SHARED_BOUNDARY_CACHE`) - Phase diagram polygon vertices in `quickice/output/phase_diagram.py`
+- No Redis/Memcached or external caching
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- None. Desktop application with no user authentication.
+- None (desktop application, no user authentication)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None (no Sentry, Rollbar, etc.)
+- None (no Sentry, Bugsnag, etc.)
 
 **Logs:**
 - Python `logging` module with `logging.getLogger(__name__)` pattern
-- Level: WARNING for fallback density calculations, INFO for file parsing
-- No centralized log aggregation
-- No log file output configured (console logging only)
+- Logger names follow module hierarchy (e.g., `quickice.phase_mapping.ice_ih_density`, `quickice.gui.main_window`)
+- IAPWS warnings suppressed for metastable states via `warnings.catch_warnings()` in density modules
+- Warning-level logging for fallback density values in `quickice/phase_mapping/ice_ih_density.py` and `quickice/phase_mapping/water_density.py`
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Desktop application (not hosted on servers)
+- Desktop application (no server hosting)
+- Source distribution via git repository
+- Windows executable via GitHub Actions artifact
 
 **CI Pipeline:**
-- None detected (no `.github/workflows/`, no `.gitlab-ci.yml`, no `Makefile` with CI targets)
+- GitHub Actions: `.github/workflows/build-windows.yml`
+  - Trigger: Manual (`workflow_dispatch`) only
+  - Runner: `windows-latest`
+  - Steps: Checkout → Miniconda setup (from `environment-build.yml`) → PyInstaller build → Package docs + licenses → ZIP artifact → Upload artifact
+  - Output: `quickice-v4.0.0-windows-x86_64.zip`
 
-**Build Pipeline:**
-- `scripts/build-linux.sh` → PyInstaller → `dist/quickice-gui/quickice-gui` (Linux standalone)
-- `scripts/assemble-dist.sh` → Distribution assembly
-- Spec file: `quickice-gui.spec` (PyInstaller configuration)
+**Dependabot:**
+- `.github/dependabot.yml` - Weekly checks for conda and pip ecosystem updates (PR limit: 0, so only detection, no auto-PRs)
 
 ## Environment Configuration
 
 **Required env vars:**
-- None required (all configuration via CLI arguments or GUI inputs)
+- `PYTHONPATH` - Must include project root for `quickice` package import (set by `setup.sh`)
 
-**PYTHONPATH setup:**
-- `source setup.sh` adds project root to `PYTHONPATH` (needed for `import quickice`)
-
-**Conda environment:**
-- `environment.yml` defines runtime environment (`quickice`)
-- `environment-build.yml` defines build environment (`quickice-build`) with PyInstaller added
+**Optional env vars:**
+- `QUICKICE_FORCE_VTK` - Set to `"true"` to force VTK initialization in SSH X11 forwarding environments
+- `DISPLAY` - X11 display variable (checked by VTK availability detection in viewer modules)
 
 **Secrets location:**
-- Not applicable (no secrets in this application)
-
-## GROMACS Integration
-
-**File formats handled:**
-- `.gro` (GROMACS coordinate files) — Read and write
-  - Parser: `quickice/structure_generation/gro_parser.py` (`parse_gro_string`, `parse_gro_file`)
-  - Writer: `quickice/output/gromacs_writer.py` (`write_gro_file`, `write_interface_gro_file`, `write_multi_molecule_gro_file`)
-  - Hydrate parser: `quickice/structure_generation/hydrate_generator.py` (`_parse_gro_result`)
-  - Template: `quickice/data/tip4p.gro` (single TIP4P water molecule)
-
-- `.top` (GROMACS topology files) — Write only
-  - Writer: `quickice/output/gromacs_writer.py` (`write_top_file`, `write_interface_top_file`, `write_multi_molecule_top_file`)
-  - Uses `#include` directives for molecule ITP files
-
-- `.itp` (GROMACS molecule topology files) — Read and bundled write
-  - Parser: `quickice/structure_generation/itp_parser.py` (`parse_itp_file`)
-  - ITP residue reader: `quickice/output/gromacs_writer.py` (`parse_itp_residue_name`, `parse_itp_atomtypes`)
-  - Bundled files: `quickice/data/tip4p-ice.itp`, `quickice/data/ch4.itp`, `quickice/data/ch4_hydrate.itp`, `quickice/data/ch4_liquid.itp`, `quickice/data/thf.itp`, `quickice/data/thf_hydrate.itp`, `quickice/data/thf_liquid.itp`
-  - Ion ITP generator: `quickice/structure_generation/gromacs_ion_export.py` (`generate_ion_itp`)
-
-**GROMACS conventions:**
-- TIP4P-ICE water model (4-site: OW, HW1, HW2, MW)
-- GAFF2 force field for guest molecules (CH4, THF)
-- Madrid2019 ion parameters for Na+/Cl-
-- Atom/residue numbers wrap at 100000 (GRO format limit)
-- Coordinates in nanometers (GROMACS standard)
-- Triclinic box vectors in GRO format (9 values: v1x v2y v3z v1y v1z v2x v2z v3x v3y)
-
-## File Format Export
-
-**Output formats:**
-- PDB (Protein Data Bank) — `quickice/output/pdb_writer.py` with CRYST1 records
-- GRO (GROMACS coordinates) — `quickice/output/gromacs_writer.py`
-- TOP (GROMACS topology) — `quickice/output/gromacs_writer.py`
-- ITP (GROMACS molecule topology) — Generated for ions; bundled for water/guests
-- PNG/SVG — Phase diagram images (`quickice/output/phase_diagram.py`)
-- PNG/JPEG — 3D viewport screenshots (via VTK `vtkWindowToImageFilter`)
+- None (no secrets required — desktop application with no network authentication)
 
 ## Webhooks & Callbacks
 
@@ -126,27 +119,48 @@
 **Outgoing:**
 - None
 
-## Third-Party Dependencies (Transitive via GenIce2)
+## GROMACS Integration (File-based)
 
-The following packages are installed as GenIce2 dependencies but not directly imported by QuickIce code:
+**Input:**
+- Reads `.gro` files: `quickice/structure_generation/gro_parser.py` (GRO coordinate parsing)
+- Reads `.itp` files: `quickice/structure_generation/itp_parser.py` (topology parsing for custom molecules)
+- Water template: `quickice/data/tip4p.gro` (TIP4P water coordinates for water filling)
 
-| Package | Version | Purpose (GenIce2 internal) |
-|---------|---------|---------------------------|
-| `cycless` | 0.7 | Cycle detection in hydrogen bond networks |
-| `graphstat` | 0.3.3 | Graph statistics computation |
-| `pairlist` | 0.6.4 | Pair list computation for molecular interactions |
-| `openpyscad` | 0.5.0 | OpenSCAD 3D model generation |
-| `yaplotlib` | 0.1.3 | Yaplot visualization format output |
-| `deprecated` | 1.3.1 | Deprecation warning decorators |
-| `deprecation` | 2.1.0 | Deprecation decorator utilities |
-| `methodtools` | 0.4.7 | LRU cache for class methods |
-| `wirerope` | 1.0.0 | Decorator utility |
-| `wrapt` | 2.1.2 | Transparent object wrapping |
-| `six` | 1.17.0 | Python 2/3 compatibility layer |
-| `spglib` | 2.7.0 | Space group symmetry (used by GenIce2 lattice analysis) |
-| `networkx` | 3.6.1 | Graph/network algorithms for hydrogen bond topology |
+**Output:**
+- Writes `.gro` files: `quickice/output/gromacs_writer.py` - `write_gro_file()`, `write_interface_gro_file()`, `write_ion_gro_file()`, `write_solute_gro_file()`, `write_multi_molecule_gro_file()`
+- Writes `.top` files: `quickice/output/gromacs_writer.py` - `write_top_file()`, `write_interface_top_file()`, `write_ion_top_file()`, `write_solute_top_file()`, `write_multi_molecule_top_file()`
+- Generates `.itp` content: `quickice/structure_generation/gromacs_ion_export.py` - `generate_ion_itp()`, `write_ion_itp()`
+- Copies ITP files: `tip4p-ice.itp`, `ch4_hydrate.itp`, `thf_hydrate.itp`, `ch4_liquid.itp`, `thf_liquid.itp`, `ion.itp`
+- Utility functions: `comment_out_atomtypes_in_itp()`, `detect_guest_type_from_atoms()`, `wrap_molecules_into_box()`, `wrap_positions_into_box()`, `compute_mw_position()`, `get_tip4p_itp_path()`
 
-**Note for PyInstaller:** The spec file (`quickice-gui.spec`) explicitly collects all data/binaries/hidden-imports from `iapws`, `genice2`, `genice_core`, `matplotlib`, `scipy`, `numpy`, `shapely`, `networkx`, and `spglib` to ensure complete bundling.
+**PDB Output:**
+- `quickice/output/pdb_writer.py` - `write_pdb_with_cryst1()`, `write_ranked_candidates()` (CRYST1 records with cell parameters)
+
+**Molecule Naming Registry:**
+- `quickice/structure_generation/moleculetype_registry.py` - Ensures unique GROMACS moleculetype names (e.g., `CH4_H` for hydrate guests vs `CH4_L` for liquid solutes)
+
+## GenIce2 Lattice Mapping
+
+**Phase ID → GenIce lattice name mapping** (in `quickice/structure_generation/mapper.py`):
+
+| QuickIce Phase ID | GenIce Lattice | Unit Cell Molecules |
+|-------------------|---------------|--------------------|
+| ice_ih | ice1h | 16 |
+| ice_ic | ice1c | 8 |
+| ice_ii | ice2 | 12 |
+| ice_iii | ice3 | 12 |
+| ice_v | ice5 | 28 |
+| ice_vi | ice6 | 10 |
+| ice_vii | ice7 | 16 |
+| ice_viii | ice8 | 64 |
+
+**Hydrate lattice mapping:**
+
+| QuickIce Type | GenIce Lattice | Water Molecules/Unit Cell |
+|---------------|---------------|--------------------------|
+| sI | CS1 | 46 |
+| sII | CS2 | 136 |
+| sH | sH | 34 |
 
 ---
 
