@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 1 of 8 complete |
-| Status | In progress — Plan 01 (conftest fixtures) complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-01 (shared conftest.py with 13 fixtures) |
+| Plan | 2 of 8 complete |
+| Status | In progress — Plan 02 (ice export tests) complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-02 (5 ice GROMACS exporter E2E tests) |
 
-**Progress:** █████████░ 99% (184/191 plans)
+**Progress:** █████████░ 99% (185/191 plans)
 
 ---
 
@@ -84,10 +84,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 8 plans (01-08)
 **Purpose:** End-to-end tests for the GROMACS export pipeline across all 6 tabs
-**Progress:** Plan 01 complete (shared conftest.py fixtures), Plans 02-08 pending
+**Progress:** Plan 01-02 complete, Plans 03-08 pending
 **Key deliverables:**
 - ✓ Shared conftest.py with 13 fixtures covering all 6 structure types (Plan 01)
-- ⏳ Ice candidate export tests (Plan 02)
+- ✓ Ice candidate export tests — 5 tests for GROMACSExporter (Plan 02)
 - ⏳ Hydrate structure export tests (Plan 03)
 - ⏳ Interface structure export tests (Plan 04)
 - ⏳ Custom molecule export tests (Plan 05)
@@ -253,6 +253,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | No QApplication fixture for export tests | Exporters only use static QFileDialog/QMessageBox calls, fully mocked | ✓ Shipped (e2e-export-test-01) |
 | Factory pattern for mock dialog fixtures | Returns (path, dialog_patch, mb_patch) tuple for test flexibility | ✓ Shipped (e2e-export-test-01) |
 | custom_structure uses etoh.itp | Points to existing file rather than creating temp files | ✓ Shipped (e2e-export-test-01) |
+| ITP filename uses .gro stem | ice_test.gro → ice_test.itp, NOT tip4p-ice.itp | ✓ Shipped (e2e-export-test-02) |
+| Mock dialog pattern validated | (save_path, dialog_patch, mb_patch) works for GROMACSExporter | ✓ Shipped (e2e-export-test-02) |
+| TIP4P-ICE 3→4 expansion confirmed | nmolecules * 4 atoms (OW,HW1,HW2,MW), not nmolecules * 3 | ✓ Shipped (e2e-export-test-02) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -352,12 +355,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-01 (shared conftest.py with 13 fixtures for E2E export tests)
-**Status:** Plan 01 complete. Plans 02-08 pending.
+**Completed:** e2e-export-test-02 (5 ice GROMACS exporter E2E tests with mock pattern validation)
+**Status:** Plans 01-02 complete. Plans 03-08 pending.
 
 **e2e-export-test Phase Progress:**
 - ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
-- ⏳ 02: Ice candidate export tests
+- ✓ 02: Ice candidate export tests (5 tests: file creation, cancel, atom count, atom names, molecules section)
 - ⏳ 03: Hydrate structure export tests
 - ⏳ 04: Interface structure export tests
 - ⏳ 05: Custom molecule export tests
@@ -366,8 +369,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ⏳ 08: Cross-tab chain export tests
 
 **Next session:**
-- Continue with e2e-export-test Plan 02 (Ice candidate export tests)
-- All subsequent plans import fixtures from tests/test_output/conftest.py
+- Continue with e2e-export-test Plan 03 (Hydrate structure export tests)
+- Mock pattern from Plan 02 confirmed for reuse in Plans 03-08
 
 ---
-*State updated: 2026-05-22 — Batch 3 MEDIUM fixes complete (8 issues: BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2)*
+*State updated: 2026-05-22 — e2e-export-test Plan 02 complete (5 ice GROMACS exporter E2E tests)*
