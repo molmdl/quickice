@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
 | Plan | 4 of 8 complete |
-| Status | In progress — Plan 04 (interface export tests) complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-04 (6 interface GROMACS exporter E2E tests) |
+| Status | In progress — Plans 01-04 complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-03 (hydrate GROMACS exporter E2E tests + registry case bugfix) |
 
 **Progress:** █████████░ 99% (187/191 plans)
 
@@ -84,12 +84,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 8 plans (01-08)
 **Purpose:** End-to-end tests for the GROMACS export pipeline across all 6 tabs
-**Progress:** Plan 01-02 complete, Plans 03-08 pending
+**Progress:** Plans 01-04 complete, Plans 05-08 pending
 **Key deliverables:**
 - ✓ Shared conftest.py with 13 fixtures covering all 6 structure types (Plan 01)
 - ✓ Ice candidate export tests — 5 tests for GROMACSExporter (Plan 02)
-- ⏳ Hydrate structure export tests (Plan 03)
-- ⏳ Interface structure export tests (Plan 04)
+- ✓ Hydrate structure export tests — 5 tests for HydrateGROMACSExporter + registry case bugfix (Plan 03)
+- ✓ Interface structure export tests (Plan 04)
 - ⏳ Custom molecule export tests (Plan 05)
 - ⏳ Solute export tests (Plan 06)
 - ⏳ Ion export tests (Plan 07)
@@ -256,6 +256,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | ITP filename uses .gro stem | ice_test.gro → ice_test.itp, NOT tip4p-ice.itp | ✓ Shipped (e2e-export-test-02) |
 | Mock dialog pattern validated | (save_path, dialog_patch, mb_patch) works for GROMACSExporter | ✓ Shipped (e2e-export-test-02) |
 | TIP4P-ICE 3→4 expansion confirmed | nmolecules * 4 atoms (OW,HW1,HW2,MW), not nmolecules * 3 | ✓ Shipped (e2e-export-test-02) |
+| Hydrate mock path differs from other exporters | QFileDialog in quickice.gui.hydrate_export, NOT quickice.gui.export | ✓ Shipped (e2e-export-test-03) |
+| Registry keys must use uppercase mol_type | register_hydrate_guest('CH4') stores hydrate_CH4; write_multi_molecule_top_file must use .upper() for lookup | ✓ Shipped (e2e-export-test-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -355,13 +357,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-04 (6 interface GROMACS exporter E2E tests with conditional guest ITP)
+**Completed:** e2e-export-test-03 (hydrate GROMACS exporter E2E tests + registry case bugfix)
 **Status:** Plans 01-04 complete. Plans 05-08 pending.
 
 **e2e-export-test Phase Progress:**
 - ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
-- ⏳ 02: Ice candidate export tests
-- ⏳ 03: Hydrate structure export tests
+- ✓ 02: Ice candidate export tests (5 tests for GROMACSExporter)
+- ✓ 03: Hydrate structure export tests (5 tests for HydrateGROMACSExporter + registry case bugfix)
 - ✓ 04: Interface structure export tests (6 tests: no guests, CH4, THF, cancel, guest count zero, atom count)
 - ⏳ 05: Custom molecule export tests
 - ⏳ 06: Solute export tests
@@ -370,7 +372,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Next session:**
 - Continue with e2e-export-test Plan 05 (Custom molecule export tests)
-- Guest ITP conditional logic validated for downstream tabs (Custom, Solute, Ion)
+- Registry case bugfix benefits Plans 06 (solute _L suffix) and 08 (chain test)
 
 ---
-*State updated: 2026-05-22 — e2e-export-test Plan 04 complete (6 interface GROMACS exporter E2E tests)*
+*State updated: 2026-05-22 — e2e-export-test Plan 03 complete (5 hydrate GROMACS exporter E2E tests + registry case bugfix)*
