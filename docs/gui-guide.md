@@ -160,8 +160,8 @@ The File menu provides multiple export formats:
 
 ### Save PDB
 
-- **Ctrl+S**: Save PDB from left viewer (rank #1)
-- **Ctrl+Shift+S**: Save PDB from right viewer (rank #2)
+- **Ctrl+S**: Save/Export from active tab (unified)
+- **Ctrl+Shift+S**: Save PDB (right viewer, Tab 0 only)
 - Format: PDB (Protein Data Bank) with atomic coordinates
 - Native file dialog with .pdb extension
 
@@ -204,12 +204,15 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 | Enter | Generate structures |
 | Escape | Cancel generation |
 | Ctrl+S | Save/Export from active tab (unified) |
+| Ctrl+Alt+P | Save PDB (left viewer) |
 | Ctrl+Shift+S | Save PDB (right viewer, Tab 0 only) |
 | Ctrl+D | Save phase diagram |
 | Ctrl+Alt+S | Save viewport screenshot |
 | Ctrl+G | Export ice for GROMACS (Tab 0) |
 | Ctrl+H | Export hydrate for GROMACS (Tab 1) |
 | Ctrl+I | Export interface for GROMACS (Tab 2) |
+| Ctrl+M | Export custom molecules for GROMACS (Tab 3) |
+| Ctrl+L | Export solutes for GROMACS (Tab 4) |
 | Ctrl+J | Export ions for GROMACS (Tab 5) |
 
 **Note:** Ctrl+S provides unified export from the currently active tab:
@@ -218,7 +221,7 @@ Credit: itp file adapted from [sklogwiki](http://www.sklogwiki.org/SklogWiki/ind
 - Tab 2: Export interface for GROMACS
 - Tab 3: Export custom molecules for GROMACS
 - Tab 4: Export solutes for GROMACS
-- Tab 5: Export ions for GROMACS |
+- Tab 5: Export ions for GROMACS
 
 ## Hydrate Generation (Tab 1)
 
@@ -278,7 +281,7 @@ Set unit cell repetitions (nx × ny × nz):
 4. Set supercell dimensions
 5. Click "Generate Hydrate"
 6. View structure in 3D viewer
-7. Export for GROMACS (Ctrl+E)
+7. Export for GROMACS (Ctrl+H)
 
 ### 3D Viewer
 
