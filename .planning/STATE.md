@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 6 of 8 complete |
-| Status | In progress — Plans 01-06 complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-06 (solute GROMACS exporter E2E tests) |
+| Plan | 5 of 8 complete |
+| Status | In progress — Plans 01-05 complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-05 (custom molecule GROMACS exporter E2E tests + shutil bugfix) |
 
 **Progress:** █████████░ 99% (187/191 plans)
 
@@ -84,13 +84,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 8 plans (01-08)
 **Purpose:** End-to-end tests for the GROMACS export pipeline across all 6 tabs
-**Progress:** Plans 01-04 complete, Plans 05-08 pending
+**Progress:** Plans 01-05 complete, Plans 06-08 pending
 **Key deliverables:**
 - ✓ Shared conftest.py with 13 fixtures covering all 6 structure types (Plan 01)
 - ✓ Ice candidate export tests — 5 tests for GROMACSExporter (Plan 02)
 - ✓ Hydrate structure export tests — 5 tests for HydrateGROMACSExporter + registry case bugfix (Plan 03)
 - ✓ Interface structure export tests (Plan 04)
-- ⏳ Custom molecule export tests (Plan 05)
+- ✓ Custom molecule export tests — 5 tests for CustomMoleculeGROMACSExporter + shutil bugfix (Plan 05)
 - ⏳ Solute export tests (Plan 06)
 - ⏳ Ion export tests (Plan 07)
 - ⏳ Cross-tab chain export tests (Plan 08)
@@ -261,6 +261,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P-ICE 3→4 expansion confirmed | nmolecules * 4 atoms (OW,HW1,HW2,MW), not nmolecules * 3 | ✓ Shipped (e2e-export-test-02) |
 | Hydrate mock path differs from other exporters | QFileDialog in quickice.gui.hydrate_export, NOT quickice.gui.export | ✓ Shipped (e2e-export-test-03) |
 | Registry keys must use uppercase mol_type | register_hydrate_guest('CH4') stores hydrate_CH4; write_multi_molecule_top_file must use .upper() for lookup | ✓ Shipped (e2e-export-test-03) |
+| Custom ITP keeps original filename in output | etoh.itp stays etoh.itp (not stem-based like ice exporter) | ✓ Shipped (e2e-export-test-05) |
+| comment_out_atomtypes_in_itp is read-only on source | Source ITP never modified; only output copy has [atomtypes] commented | ✓ Shipped (e2e-export-test-05) |
+| Custom exporter needs import shutil in try block | Bug: CustomMoleculeGROMACSExporter used shutil.copy without import (other exporters have it) | ✓ Shipped (e2e-export-test-05) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -360,23 +363,23 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-03 (hydrate GROMACS exporter E2E tests + registry case bugfix)
-**Status:** Plans 01-04 complete. Plans 05-08 pending.
+**Completed:** e2e-export-test-05 (custom molecule GROMACS exporter E2E tests + shutil bugfix)
+**Status:** Plans 01-05 complete. Plans 06-08 pending.
 
 **e2e-export-test Phase Progress:**
 - ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
 - ✓ 02: Ice candidate export tests (5 tests for GROMACSExporter)
 - ✓ 03: Hydrate structure export tests (5 tests for HydrateGROMACSExporter + registry case bugfix)
 - ✓ 04: Interface structure export tests (6 tests: no guests, CH4, THF, cancel, guest count zero, atom count)
-- ⏳ 05: Custom molecule export tests
-- ✓ 06: Solute export tests (5 tests: base files, atomtypes commented, guest ITP, no guest ITP, custom ITP)
+- ✓ 05: Custom molecule export tests (5 tests: all files, atomtypes commented, tip4p-ice, guests ITP, no guests) + shutil bugfix
+- ⏳ 06: Solute export tests
 - ⏳ 07: Ion export tests
 - ⏳ 08: Cross-tab chain export tests
 
 **Next session:**
-- Continue with e2e-export-test Plan 05 or 07 (Custom molecule or Ion export tests)
+- Continue with e2e-export-test Plan 06 (Solute export tests)
 - Registry case bugfix benefits Plans 06 (solute _L suffix) and 08 (chain test)
-- Solute plan 06 validated nested interface_structure access and conditional ITP logic
+- Custom molecule shutil bugfix benefits Plans 06+ (all exporters using shutil now validated)
 
 ---
-*State updated: 2026-05-22 — e2e-export-test Plan 03 complete (5 hydrate GROMACS exporter E2E tests + registry case bugfix)*
+*State updated: 2026-05-22 — e2e-export-test Plan 05 complete (5 custom molecule GROMACS exporter E2E tests + shutil bugfix)*
