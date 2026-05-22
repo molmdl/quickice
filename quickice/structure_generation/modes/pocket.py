@@ -328,6 +328,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             water_outside,
             atoms_per_molecule=4
         )
+        # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
+        assert len(water_positions) % 4 == 0, (
+            f"Water atom count {len(water_positions)} not divisible by 4 "
+            f"after water-outside-cavity removal"
+        )
+        assert len(water_atom_names) == len(water_positions), (
+            f"Atom names length {len(water_atom_names)} != positions length {len(water_positions)} "
+            f"after water-outside-cavity removal"
+        )
 
     # === HYDRATE FIX: Tile and place guests in pocket region ===
     processed_guest_positions = None
@@ -459,6 +468,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
                 guest_overlap_indices,
                 atoms_per_molecule=4
             )
+            # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
+            assert len(water_positions) % 4 == 0, (
+                f"Water atom count {len(water_positions)} not divisible by 4 "
+                f"after guest-water overlap removal"
+            )
+            assert len(water_atom_names) == len(water_positions), (
+                f"Atom names length {len(water_atom_names)} != positions length {len(water_positions)} "
+                f"after guest-water overlap removal"
+            )
 
     # Detect overlaps between remaining ice and cavity water
     # Ice O atoms: indices [0, atoms_per_mol, 2*atoms_per_mol, ...] (3 or 4 per molecule)
@@ -487,6 +505,15 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
             water_atom_names,
             overlapping_mol_indices,
             atoms_per_molecule=4
+        )
+        # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
+        assert len(water_positions) % 4 == 0, (
+            f"Water atom count {len(water_positions)} not divisible by 4 "
+            f"after ice-water overlap removal"
+        )
+        assert len(water_atom_names) == len(water_positions), (
+            f"Atom names length {len(water_atom_names)} != positions length {len(water_positions)} "
+            f"after ice-water overlap removal"
         )
 
 # === HYDRATE FIX: Combine all positions including guests ===
