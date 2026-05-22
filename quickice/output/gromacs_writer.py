@@ -838,7 +838,7 @@ def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
     from collections import Counter
     counts = Counter(sample)
 
-    # THF: C5H8O (5 C, 8 H, 1 O = 14 atoms typically)
+    # THF: C4H8O (4 C, 8 H, 1 O = 13 atoms)
     # Check BEFORE CH4 since THF also has C and H
     # GenIce2 THF: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
     # Atoms can be named C, CA, or CB for carbons

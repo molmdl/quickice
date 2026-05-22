@@ -74,7 +74,7 @@ def count_guest_atoms(atom_names: list[str], start: int) -> int:
                     break
             return max(count, 5)  # At least 5 for CH4
 
-    # THF: C5H8O = 14 atoms, but GenIce2 outputs 13 atoms (some versions)
+    # THF: C4H8O = 13 atoms
     # Atoms: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
     # Note: Carbon atoms can be named C, CA, or CB
     if first_atom == "O":

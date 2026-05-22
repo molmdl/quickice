@@ -14,7 +14,7 @@ MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
     "na":    {"atoms": 1, "res_name": "NA",  "description": "Sodium ion"},
     "cl":    {"atoms": 1, "res_name": "CL",  "description": "Chloride ion"},
     "ch4":   {"atoms": 5, "res_name": "CH4", "description": "Methane"},
-    "thf":   {"atoms": 12, "res_name": "THF", "description": "Tetrahydrofuran"},
+    "thf":   {"atoms": 13, "res_name": "THF", "description": "Tetrahydrofuran"},
 }
 
 
@@ -27,7 +27,7 @@ class MoleculeIndex:
     - ice (3 atoms): O, H, H
     - water (4 atoms): OW, HW1, HW2, MW (TIP4P)
     - CH4 (5 atoms): C + 4H
-    - THF (12 atoms): C4O + 8H
+    - THF (13 atoms): C4H8O (4C + 8H + 1O)
     
     Attributes:
         start_idx: First atom index in positions array (0-based)
@@ -84,7 +84,7 @@ GUEST_MOLECULES: dict[str, dict[str, Any]] = {
     "thf": {
         "name": "Tetrahydrofuran",
         "formula": "C₄H₈O",
-        "atoms": 12,
+        "atoms": 13,
         "description": "THF guest molecule (structure stabilizer)",
         "force_field": "GAFF/GAFF2",
     },
@@ -244,7 +244,7 @@ class InterfaceStructure:
         Ice candidates from GenIce use 3 atoms per molecule (O, H, H).
         Hydrate ice uses 4 atoms per molecule (OW, HW1, HW2, MW).
         Water from tip4p.gro uses 4 atoms per molecule (OW, HW1, HW2, MW).
-        Guest molecules vary (CH4: 5 atoms, THF: 12 atoms).
+        Guest molecules vary (CH4: 5 atoms, THF: 13 atoms).
         The InterfaceStructure stores them combined with ice_atom_count,
         water_atom_count, and guest_atom_count marking the boundaries.
         Do NOT normalize atom counts.
