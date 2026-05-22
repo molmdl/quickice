@@ -300,7 +300,7 @@
 
 | ID | Severity | Issue | Fix |
 |----|----------|-------|-----|
-| SEC-02 | 🟢 LOW | Line 24: `shell=True` in subprocess call | Remove `shell=True` or delete the file |
+| SEC-02 | 🟢 LOW | Line 24: `shell=True` in subprocess call | Historical UAT record script (289 lines, not shipped, not in app/test suite). Low risk — user can remove `shell=True` or delete the file if desired |
 
 ---
 

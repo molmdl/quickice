@@ -342,9 +342,10 @@ Plans:
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
+| e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-11 - Added 35-07 for Quick Task documentation*
+*Last updated: 2026-05-22 - e2e-export-test phase complete*
 *For current state, see .planning/STATE.md*
