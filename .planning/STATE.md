@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 7 of 8 complete |
-| Status | In progress — Plans 01-07 complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-07 (IonGROMACSExporter E2E tests with Madrid2019 validation) |
+| Plan | 8 of 8 complete |
+| Status | Phase complete — All 8 plans done |
+| Last activity | 2026-05-22 — Completed e2e-export-test-08 (Full chain E2E export tests) |
 
-**Progress:** █████████░ 99% (187/191 plans)
+**Progress:** ██████████ 100% (188/191 plans)
 
 ---
 
@@ -80,11 +80,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
 
-### e2e-export-test E2E GROMACS Export Testing (IN PROGRESS)
+### e2e-export-test E2E GROMACS Export Testing (COMPLETE)
 
 **Phases:** 8 plans (01-08)
 **Purpose:** End-to-end tests for the GROMACS export pipeline across all 6 tabs
-**Progress:** Plans 01-07 complete, Plan 08 pending
+**Progress:** All 8 plans complete
 **Key deliverables:**
 - ✓ Shared conftest.py with 13 fixtures covering all 6 structure types (Plan 01)
 - ✓ Ice candidate export tests — 5 tests for GROMACSExporter (Plan 02)
@@ -93,7 +93,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Custom molecule export tests — 5 tests for CustomMoleculeGROMACSExporter + shutil bugfix (Plan 05)
 - ✓ Solute export tests — 5 tests for SoluteGROMACSExporter (Plan 06)
 - ✓ Ion export tests — 7 tests for IonGROMACSExporter + Madrid2019 validation (Plan 07)
-- ⏳ Cross-tab chain export tests (Plan 08)
+- ✓ Cross-tab chain export tests — 4 tests for full pipeline (Plan 08)
 
 ### v4.0 Molecule Insertion (SHIPPED 2026-05-01)
 
@@ -266,6 +266,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Custom exporter needs import shutil in try block | Bug: CustomMoleculeGROMACSExporter used shutil.copy without import (other exporters have it) | ✓ Shipped (e2e-export-test-05) |
 | ion.itp is GENERATED via write_ion_itp() | Distinct from other ITPs that are copied from data directory | ✓ Shipped (e2e-export-test-07) |
 | solute_molecule_indices relative to solute_positions | (start, end) tuples index into solute_positions/solute_atom_names, NOT main positions array | ✓ Shipped (e2e-export-test-07) |
+| IonStructure carries forward ALL conditional data | guest_nmolecules, solute_*, custom_molecule_* all accessible from IonStructure for cumulative ITP export | ✓ Shipped (e2e-export-test-08) |
+| Chain E2E test validates cumulative file sets | Each pipeline level produces ALL previous ITPs plus its own additions | ✓ Shipped (e2e-export-test-08) |
+| Full chain produces 5 ITP files | tip4p-ice.itp + ion.itp + ch4_hydrate.itp + ch4_liquid.itp + etoh.itp | ✓ Shipped (e2e-export-test-08) |
+| Minimal chain produces 2 ITP files | tip4p-ice.itp + ion.itp only when no guests/solutes/custom | ✓ Shipped (e2e-export-test-08) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -365,8 +369,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-07 (IonGROMACSExporter E2E tests with Madrid2019 validation)
-**Status:** Plans 01-07 complete. Plan 08 pending.
+**Completed:** e2e-export-test-08 (Full chain E2E export tests)
+**Status:** e2e-export-test phase COMPLETE. All 8 plans done.
 
 **e2e-export-test Phase Progress:**
 - ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
@@ -376,11 +380,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 05: Custom molecule export tests (5 tests: all files, atomtypes commented, tip4p-ice, guests ITP, no guests) + shutil bugfix
 - ✓ 06: Solute export tests (5 tests for SoluteGROMACSExporter)
 - ✓ 07: Ion export tests (7 tests: base files, generated ion.itp, Madrid2019 charges, no guests, guest ITP, solute ITP, custom ITP)
-- ⏳ 08: Cross-tab chain export tests
+- ✓ 08: Cross-tab chain export tests (4 tests: interface→custom, interface→solute, full chain, minimal chain)
 
 **Next session:**
-- Continue with e2e-export-test Plan 08 (cross-tab chain export tests)
-- Key insight: solute_molecule_indices is relative to solute_positions (0-based), not main positions array
+- e2e-export-test phase is complete
+- Ready for next milestone work or regression testing
 
 ---
 *State updated: 2026-05-22 — e2e-export-test Plan 07 complete (7 IonGROMACSExporter E2E tests with Madrid2019 validation)*
