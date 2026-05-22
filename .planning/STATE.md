@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | batch3-medium (post-release fixes) |
+| Phase | batch4-low-priority (post-release fixes) |
 | Plan | 1 of 1 complete |
-| Status | Batch complete — 8 MEDIUM issues fixed |
-| Last activity | 2026-05-22 — Completed batch3-medium-01 (BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2) |
+| Status | Batch complete — 17 LOW issues fixed |
+| Last activity | 2026-05-22 — Completed batch4-01 (BUG-02a/b/c, NEW-01/02a/b, SCI-01/03/04/1, UNIT-03, TD-06a/b, FRAG-04a/b) |
 
 **Progress:** ██████████ 100% (183/183 plans)
 
@@ -334,8 +334,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** Batch 3 MEDIUM fixes (8 issues: BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2)
-**Status:** All MEDIUM priority issues resolved. Commit 80753c5.
+**Completed:** Batch 4 LOW fixes (17 issues: BUG-02a/b/c, NEW-01/02a/b, SCI-01/03/04/1, UNIT-03, TD-06a/b, FRAG-04a/b)
+**Status:** All LOW priority issues resolved. Commit 9fa898f.
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -345,6 +345,19 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-05 (GUI guide & user guides) complete
 - ✓ 35-06 (Phase 34.5/34.6 feature docs) complete, screenshots deferred
 - ✓ 35-07 (Quick Task 017/018 documentation) complete
+
+**Batch 4 LOW fixes (2026-05-22):**
+- ✓ BUG-02a/b/c: THF atom count 12→13, formula C5H8O→C4H8O (3 files)
+- ✓ NEW-01: Expand GENERIC_RESIDUE_NAMES with 6 additional PDB names
+- ✓ NEW-02a/b: ITP parser BOM stripping and line ending normalization
+- ✓ SCI-01: AVOGADRO constant 6.022e23→6.02214076e23 (CODATA 2017) in scorer.py
+- ✓ SCI-03: Petrenko & Whitworth citations in ranking/types.py and docs/ranking.md
+- ✓ SCI-04/1: Madrid2019_085 header in ion.itp and source comment in ion_inserter.py
+- ✓ UNIT-03: Debug logging [Water Count Debug] logger.info→logger.debug (10 calls)
+- ✓ TD-06a: Water template cache thread safety via @lru_cache(maxsize=1)
+- ✓ TD-06b: GenIce2 thread safety via threading.Lock with double-check locking
+- ✓ FRAG-04a: Fallback density warning improvement (ice Ih)
+- ✓ FRAG-04b: Extrapolated IAPWS values logged at debug level
 
 **Batch 3 MEDIUM fixes (2026-05-22):**
 - ✓ BUG-03: O(n²) molecule_index.index() → enumerate() in gromacs_writer.py
