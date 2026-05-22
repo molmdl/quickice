@@ -71,7 +71,7 @@ def ice_ih_density_kgm3(T_K: float, P_MPa: float) -> float:
         # NotImplementedError: P > 208.566 MPa or T > 273.16 K (out of IAPWS range)
         # ValueError: Invalid input values
         # OverflowError: Numerical overflow in extreme conditions
-        logger.warning(f"Using fallback density for ice Ih at T={T_K}K, P={P_MPa}MPa")
+        logger.warning(f"Using fallback density {FALLBACK_DENSITY_GCM3} g/cm³ (273.15K, 0.1MPa) for ice Ih at T={T_K}K, P={P_MPa}MPa — IAPWS calculation failed, density is approximate")
         return FALLBACK_DENSITY_GCM3 * 1000
 
 

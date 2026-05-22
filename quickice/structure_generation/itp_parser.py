@@ -58,6 +58,9 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         raise FileNotFoundError(f"ITP file not found: {filepath}")
     
     content = filepath.read_text()
+    # Normalize: strip BOM, normalize line endings
+    content = content.lstrip('\ufeff')
+    content = content.replace('\r\n', '\n').replace('\r', '\n')
     logger.info(f"Parsing ITP file: {filepath.name}")
     
     # Extract moleculetype name

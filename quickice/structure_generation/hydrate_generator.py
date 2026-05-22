@@ -5,6 +5,7 @@ with configurable lattice type, guest molecules, and cage occupancy.
 """
 
 import numpy as np
+import threading
 from pathlib import Path
 
 from quickice.structure_generation.types import (
@@ -23,10 +24,8 @@ _LATTICE_MODULES = {
     "sH": "sH",
 }
 
-# Lazy-loaded GenIce2 modules (loaded in _ensure_genice_import)
-_genice_lib = None
-_gromacs_format = None
-_lattice_modules_loaded = {}
+# Thread-safe lock for GenIce2 lazy loading (loaded in _ensure_genice_import)
+_genice_lock = threading.Lock()
 
 
 class HydrateStructureGenerator:
@@ -47,9 +46,15 @@ class HydrateStructureGenerator:
     
     def _ensure_genice_import(self):
         """Lazy import of GenIce2 to avoid startup overhead."""
-        global _genice_lib, _gromacs_format, _lattice_modules_loaded
         
-        if self._genice_lib is None:
+        if self._genice_lib is not None:
+            return
+        
+        with _genice_lock:
+            # Double-check after acquiring lock
+            if self._genice_lib is not None:
+                return
+
             try:
                 import genice2.genice as genice_lib
                 from genice2.formats import gromacs

@@ -9,6 +9,7 @@ from IAPWS calculations.
 """
 
 import math
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -140,8 +141,7 @@ WATER_ATOM_NAMES_TEMPLATE = ["OW", "HW1", "HW2", "MW"]
 # = 3891.3 g / (6.022e23 * 6.52 nm³ * 1e-21 cm³/nm³) = 3891.3 g / 3924 cm³ ≈ 0.991 g/cm³
 TEMPLATE_DENSITY_GCM3 = 0.991
 
-# Module-level cache for water template (never changes)
-_water_template_cache: Optional[tuple[np.ndarray, list[str], np.ndarray]] = None
+# (cached via @lru_cache on load_water_template)
 
 
 def round_to_periodicity(
@@ -213,11 +213,12 @@ def scale_positions_for_density(
     return positions * scale
 
 
+@lru_cache(maxsize=1)
 def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
     """Load the bundled TIP4P water template from tip4p.gro.
 
-    Uses shared gro_parser module. Results are cached at module
-    level since the template never changes.
+    Uses shared gro_parser module. Results are cached via
+    @lru_cache(maxsize=1) since the template never changes.
     
     NOTE: The template file has molecules spanning PBC boundaries (atoms
     outside [0, box_dims)). This is CORRECT - we should NOT wrap individual
@@ -231,11 +232,6 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
             - atom_names: 864 entries ["OW", "HW1", "HW2", "MW", ...]
             - box_dims: [1.86824, 1.86824, 1.86824] box dimensions in nm
     """
-    global _water_template_cache
-
-    if _water_template_cache is not None:
-        return _water_template_cache
-
     # Locate the bundled tip4p.gro file
     gro_path = Path(__file__).parent.parent / "data" / "tip4p.gro"
 
@@ -248,9 +244,6 @@ def load_water_template() -> tuple[np.ndarray, list[str], np.ndarray]:
         box_dims = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
     else:
         box_dims = cell
-
-    # Cache the result
-    _water_template_cache = (positions, atom_names, box_dims)
 
     return positions, atom_names, box_dims
 

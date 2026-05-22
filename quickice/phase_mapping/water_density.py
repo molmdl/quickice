@@ -73,6 +73,7 @@ def water_density_kgm3(T_K: float, P_MPa: float) -> float:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="extrapolated")
             water = IAPWS95(T=T_K, P=P_MPa)
+            logger.debug(f"Using extrapolated IAPWS-95 value at T={T_K:.1f}K, P={P_MPa:.1f}MPa")
             rho = water.rho
             
             # Sanity check: density should be in reasonable range

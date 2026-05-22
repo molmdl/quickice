@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Generic residue names commonly used in computational chemistry
 # These are placeholders that should not trigger mismatch warnings
-GENERIC_RESIDUE_NAMES = {"MOL", "UNK", "LIG", "XXX", "RES"}
+GENERIC_RESIDUE_NAMES = {"MOL", "UNK", "LIG", "XXX", "RES", "DRG", "API", "HET", "UNL", "LIG1", "MOL1"}
 
 
 @dataclass
