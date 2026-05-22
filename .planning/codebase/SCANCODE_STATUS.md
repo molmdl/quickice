@@ -1,38 +1,56 @@
 # Scancode Analysis Status
 
-**Updated:** 2026-05-22
+**Updated:** 2026-05-22 (post-fix refresh)
 
 ## Codebase Mapping (Refreshed 2026-05-22)
 
-7 documents in `.planning/codebase/` (2528 total lines including verification):
-- STACK.md (158), ARCHITECTURE.md (191), STRUCTURE.md (370)
-- CONVENTIONS.md (361), TESTING.md (378), INTEGRATIONS.md (153)
-- CONCERNS.md (317), CONCERNS_VERIFICATION.md (600)
+7 documents in `.planning/codebase/` (1854 total lines):
+- STACK.md (131), ARCHITECTURE.md (208), STRUCTURE.md (343)
+- CONVENTIONS.md (327), TESTING.md (458), INTEGRATIONS.md (167)
+- CONCERNS.md (220)
 
-## Concerns Verification Summary
+## Fix Batches Applied
 
-| Result | Count | Details |
-|--------|-------|---------|
-| Confirmed | 26 | Real issues still present |
-| Fixed | 5 | Addressed by QT-021, 022, 026, 027 |
-| False Alarm | 1 | TD-04 (duplicate comment lines) — misidentified |
-| Partially Fixed | 4 | PERF-03, BUG-02, SCI-04, EXC-01 |
-| Escalated | 1 | BUG-01 (OW safeguard missing in BOTH pocket.py and piece.py) |
-| Duplicate | 1 | PERF-04 = TD-06 |
+| Batch | Fixes | Commit(s) |
+|-------|-------|------------|
+| 1 CRITICAL | FLOW-01/02/03, BUG-01, EXC-02, MOL-1/2/3/4 | d75dde1, 5e18c0e, b90c2e3 |
+| 2 HIGH | KS-1/2/3, MOL-5, FF-1 | a9ed3de |
+| 3 MEDIUM | BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2 | 80753c5 |
+| 4 LOW | BUG-02a/b/c, NEW-01/02, SCI-01/03/04, UNIT-03, TD-06, FRAG-04 | f217c6d, 95a6b8c, 9fa898f |
+| 5 Security | SEC-01, BUNDLE-01 | 22bd382 |
+| 6A Test Gaps | TEST-04, TEST-05 | 687fdad |
+| 6B TEST-01 | E2E GROMACS export tests (37 tests) | separate session |
+| 7 TEST-02 | Pocket edge cases (51 tests) + cubic bug fix | 925489e, c30e870, 6a43594 |
 
-## Priority Action Items
+## Issue Status Summary
 
-1. **BUG-01 ESCALATED** — OW-safeguard missing in pocket.py AND piece.py (water misclassified as guests)
-2. **EXC-02** — Silent FileNotFoundError for guest ITP files → broken exports with no user warning
-3. **BUG-03** — O(n²) molecule_index.index() in gromacs_writer.py:1102
-4. **TEST-01, TEST-05** — No end-to-end export test, no overlap-removal invariant
+| Status | Count |
+|--------|-------|
+| Fixed | 44 |
+| Deferred (design needed) | 9 |
+| Ignored (SEC-02) | 1 |
+| **Total** | **54** |
+
+## Remaining Deferred Items
+
+| ID | Issue | Decision Needed |
+|----|-------|-----------------|
+| FRAG-03 | Split gromacs_writer.py into per-structure modules | Architecture refactor |
+| BUG-04 | diversity_score() always returns 1.0 | New algorithm design |
+| TD-05 | np.random global state (not thread-safe) | GenIce2 dependency |
+| BUNDLE-02 | collect_all('genice2') includes unused plugins | Runtime investigation |
+| TD-01 | Duplicate functions across slab/pocket/piece | Consolidation refactor |
+| TD-07 | No upload-time atomtypes warning | UX decision |
+| PERF-02 | 27× supercell → cKDTree(boxsize=) | Verification needed |
+| UNIT-02 | Fallback density no GUI indicator | GUI architecture |
+| EXC-01 | IAPWS failures no visual indicator | Matplotlib changes |
 
 ## Scancode Item Status (A–E)
 
-| Item | Description | Previous Reports | Current Status |
-|------|-------------|------------------|----------------|
-| A | Function/data flow trace for GROMACS export | `.planning/code_analysis/20260512_gromacs_flow_trace.md` | Needs refresh after v4.5 changes |
-| B | Vulnerability/safety/performance scan | `.planning/code_analysis/20260512_153657_vulnerability_scan.md`, CONCERNS.md, CONCERNS_VERIFICATION.md | Refreshed & verified (26 confirmed / 5 fixed / 1 false alarm) |
-| C | Documentation cross-check & citation suggestions | `.planning/code_analysis/20260512_154906_documentation_crosscheck.md`, `20260516_documentation_issues_verification.md` | Partially addressed (QT-024,025,026,028) |
-| D | Dead code identification | `.planning/code_analysis/20260512_155106_dead_code.md`, `20260512_dead_code_verification.md` | Partially addressed (QT-021 removed build_molecule_index) |
-| E | Portable distribution & PyInstaller optimization | `.planning/code_analysis/2026-05-12_portable_distribution.md`, `PACKAGING_2026-05-02.md` | Partially addressed (QT-008,023; UPX pending) |
+| Item | Description | Reports | Current Status |
+|------|-------------|---------|----------------|
+| A | Function/data flow trace for GROMACS export | `20260512_gromacs_flow_trace.md`, `20260522_gromacs_flow_trace.md` | DONE — full E2E chain traced, tests written |
+| B | Vulnerability/safety/performance scan | `20260512_153657_vulnerability_scan.md`, CONCERNS.md | DONE — 44 fixes applied, 9 deferred |
+| C | Documentation cross-check & citation suggestions | `20260522_documentation_crosscheck.md`, `20260522_citation_inventory.md` | DONE — 20 doc issues + 10 citation issues identified |
+| D | Dead code identification | `20260512_155106_dead_code.md`, `20260512_dead_code_verification.md` | PARTIAL — build_molecule_index removed, NEW-02 dead imports removed |
+| E | Portable distribution & PyInstaller optimization | `2026-05-12_portable_distribution.md`, `PACKAGING_2026-05-02.md` | PARTIAL — BUNDLE-01 excludes added, BUNDLE-02 deferred |
