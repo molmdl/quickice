@@ -295,8 +295,8 @@ The hydrate viewer displays:
 **File → Export Hydrate for GROMACS (Ctrl+H)**
 
 Exported files:
-- `hydrate_{lattice}.gro` — Coordinates
-- `hydrate_{lattice}.top` — Topology
+- `hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro` — Coordinates (e.g., `hydrate_sI_ch4_2x2x2.gro`)
+- `hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.top` — Topology
 - `ch4_hydrate.itp` or `thf_hydrate.itp` — Guest molecule parameters (GAFF2)
 
 The water framework uses TIP4P-ICE for ice compatibility.
@@ -704,8 +704,8 @@ Solute molecules are placed:
 **File → Export Solutes for GROMACS (Ctrl+S)**
 
 Exported files:
-- `interface_with_solutes.gro` — Coordinates with solutes
-- `interface_with_solutes.top` — Topology with solute moleculetype
+- `solute_{type}_{count}molecules.gro` — Coordinates with solutes (e.g., `solute_ch4_45molecules.gro`)
+- `solute_{type}_{count}molecules.top` — Topology with solute moleculetype
 - `ch4_liquid.itp` or `thf_liquid.itp` — Solute force field parameters
 
 Solute molecules appear after SOL in the [ molecules ] section with names `CH4_L` or `THF_L`.

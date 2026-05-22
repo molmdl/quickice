@@ -1090,7 +1090,7 @@ def write_multi_molecule_gro_file(
         
         lines = []
         atom_num = 0
-        for mol in molecule_index:
+        for res_idx, mol in enumerate(molecule_index):
             # Get residue name from itp file for guest molecules
             if mol.mol_type in ["ch4", "thf", "co2", "h2"]:
                 res_name = get_guest_residue_name(mol.mol_type)
@@ -1099,7 +1099,7 @@ def write_multi_molecule_gro_file(
                 res_name = gromacs_info["res_name"]
             
             # Residue number wraps at 100000
-            res_num = (molecule_index.index(mol) + 1) % 100000
+            res_num = (res_idx + 1) % 100000
             
             # Get atom names and positions for this molecule
             mol_atom_names = []

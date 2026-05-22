@@ -56,6 +56,16 @@ def parse_gro_string(gro_string: str) -> tuple[np.ndarray, list[str], np.ndarray
         z = float(line[36:44])
         positions[i] = [x, y, z]
 
+    # Validate coordinate range: GRO coordinates must be in nm.
+    # Values > 50 nm likely indicate an Å→nm unit mixup (50nm ≈ 500Å).
+    max_coord = np.max(np.abs(positions))
+    if max_coord > 50.0:
+        raise ValueError(
+            f"Coordinate value {max_coord:.2f} nm exceeds 50 nm limit. "
+            f"Possible unit mixup: coordinates may be in Ångströms instead of nm. "
+            f"GRO format requires nm (1 nm = 10 Å)."
+        )
+
     # Parse cell dimensions (last line)
     # For orthogonal boxes: "v1 v2 v3"
     # For non-orthogonal: "v1x v2y v3z v1y v1z v2x v2z v3x v3y"

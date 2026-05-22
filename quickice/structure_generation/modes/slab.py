@@ -373,6 +373,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             overlapping_mol_indices,
             atoms_per_molecule=4
         )
+        # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
+        assert len(trimmed_water_positions) % 4 == 0, (
+            f"Water atom count {len(trimmed_water_positions)} not divisible by 4 "
+            f"after ice-water overlap removal"
+        )
     else:
         trimmed_water_positions = water_positions
 
@@ -551,6 +556,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                     water_atom_names,
                     guest_overlap_indices,
                     atoms_per_molecule=4
+                )
+                # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
+                assert len(trimmed_water_positions) % 4 == 0, (
+                    f"Water atom count {len(trimmed_water_positions)} not divisible by 4 "
+                    f"after guest-water overlap removal"
                 )
 
     # === HYDRATE FIX: Combine all positions including guests ===

@@ -1196,17 +1196,16 @@ class MainWindow(QMainWindow):
             # Update solute panel with liquid volume for solute count calculation
             # Calculate from water_atom_count (TIP4P has 4 atoms per molecule)
             # Volume = water_nmolecules * 0.0299 nm³ per molecule
-            logger.info(f"[Liquid Volume Debug] hasattr(result, 'water_atom_count'): {hasattr(result, 'water_atom_count')}")
-            if hasattr(result, 'water_atom_count'):
-                logger.info(f"[Liquid Volume Debug] result.water_atom_count: {result.water_atom_count}")
+            # CustomMoleculeStructure always has water_atom_count (required dataclass field)
+            assert result.water_atom_count >= 0, f"Invalid water_atom_count: {result.water_atom_count}"
             
-            if hasattr(result, 'water_atom_count') and result.water_atom_count > 0:
+            if result.water_atom_count > 0:
                 water_nmolecules = result.water_atom_count // 4
                 liquid_vol = water_nmolecules * 0.0299
                 self.solute_panel.set_liquid_volume(liquid_vol)
                 logger.info(f"Updated solute panel liquid volume: {liquid_vol:.2f} nm³ from {water_nmolecules} water molecules")
             else:
-                logger.warning(f"[Liquid Volume Debug] FAILED to set liquid volume! hasattr={hasattr(result, 'water_atom_count')}, value={getattr(result, 'water_atom_count', 'N/A')}")
+                logger.warning(f"Cannot set liquid volume: water_atom_count={result.water_atom_count}")
 
             # Pass result to IonPanel (Tab 5) for source selection
             # This enables both workflow paths:
@@ -1215,7 +1214,7 @@ class MainWindow(QMainWindow):
             self.ion_panel.set_custom_molecule_structure(result)
 
             # Update ion panel with liquid volume for ion count calculation
-            if hasattr(result, 'water_atom_count') and result.water_atom_count > 0:
+            if result.water_atom_count > 0:
                 self.ion_panel.set_liquid_volume(liquid_vol)
 
             # Calculate water molecules replaced
@@ -1227,12 +1226,12 @@ class MainWindow(QMainWindow):
             if hasattr(self, '_current_interface_result') and self._current_interface_result is not None:
                 original_water_count = self._current_interface_result.water_nmolecules
                 logger.info(f"[Water Count Debug] original_water_count: {original_water_count}")
-                logger.info(f"[Water Count Debug] hasattr(result, 'interface_structure'): {hasattr(result, 'interface_structure')}")
-                if hasattr(result, 'interface_structure') and result.interface_structure is not None:
+                # CustomMoleculeStructure.interface_structure is a typed dataclass field (can be None)
+                if result.interface_structure is not None:
                     modified_water_count = result.interface_structure.water_nmolecules
                     logger.info(f"[Water Count Debug] modified_water_count: {modified_water_count}")
                 else:
-                    logger.warning(f"[Water Count Debug] result.interface_structure is missing or None!")
+                    logger.warning("[Water Count Debug] result.interface_structure is None, using original count as fallback")
                     modified_water_count = original_water_count  # Fallback to avoid negative count
                 water_replaced = original_water_count - modified_water_count
                 logger.info(f"[Water Count Debug] water_replaced calculation: {original_water_count} - {modified_water_count} = {water_replaced}")
