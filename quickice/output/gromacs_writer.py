@@ -1189,12 +1189,14 @@ def write_multi_molecule_top_file(
         # For now, maintain backward compatibility
         if registry:
             # Check for hydrate guest registration
-            hydrate_key = f"hydrate_{mol_type}"
+            # Registry keys use uppercase molecule names (e.g. hydrate_CH4),
+            # but mol_type from molecule_index is lowercase (e.g. "ch4")
+            hydrate_key = f"hydrate_{mol_type.upper()}"
             if hydrate_key in reg._registered:
                 res_name = reg.get_gromacs_name(hydrate_key)
             # Check for liquid solute registration
             else:
-                liquid_key = f"liquid_{mol_type}"
+                liquid_key = f"liquid_{mol_type.upper()}"
                 if liquid_key in reg._registered:
                     res_name = reg.get_gromacs_name(liquid_key)
         
