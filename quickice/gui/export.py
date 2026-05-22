@@ -222,6 +222,33 @@ class CustomMoleculeGROMACSExporter:
             
             logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
+            # Copy water .itp file (must match the #include "tip4p-ice.itp" in .top file)
+            from quickice.output.gromacs_writer import get_tip4p_itp_path
+            water_itp_source = get_tip4p_itp_path()
+            water_itp_dest = path.with_name("tip4p-ice.itp")
+            shutil.copy(water_itp_source, water_itp_dest)
+            
+            # Copy guest .itp file if guests are present
+            guest_count = sum(1 for m in custom_structure.molecule_index if m.mol_type == "guest")
+            if custom_structure.guest_atom_count > 0 and guest_count > 0:
+                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
+                guest_start = custom_structure.ice_atom_count + custom_structure.water_atom_count
+                guest_atom_names = custom_structure.atom_names[guest_start:guest_start + custom_structure.guest_atom_count]
+                guest_type = detect_guest_type_from_atoms(guest_atom_names)
+                
+                if guest_type:
+                    try:
+                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                        shutil.copy(guest_itp_source, guest_itp_dest)
+                    except FileNotFoundError:
+                        QMessageBox.warning(
+                            self.parent, "Missing Guest ITP",
+                            f"Guest ITP file for '{guest_type}' not found.\n"
+                            f"The exported .top file will reference it, but it won't be bundled.\n"
+                            f"Add the missing .itp file manually before running GROMACS."
+                        )
+            
             logger.info(f"Exported custom molecule system: {path}")
             return True
             
@@ -335,9 +362,12 @@ class IonGROMACSExporter:
                         guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
                         shutil.copy(guest_itp_source, guest_itp_dest)
                     except FileNotFoundError:
-                        # Guest .itp file not found - will cause GROMACS to fail
-                        # but don't block export, user can add manually
-                        pass
+                        QMessageBox.warning(
+                            self.parent, "Missing Guest ITP",
+                            f"Guest ITP file for '{guest_type}' not found.\n"
+                            f"The exported .top file will reference it, but it won't be bundled.\n"
+                            f"Add the missing .itp file manually before running GROMACS."
+                        )
             
             # Copy solute .itp file if solutes are present (liquid solutes use _liquid.itp)
             if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
@@ -879,9 +909,12 @@ class InterfaceGROMACSExporter:
                         guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
                         shutil.copy(guest_itp_source, guest_itp_dest)
                     except FileNotFoundError:
-                        # Guest .itp file not found - will cause GROMACS to fail
-                        # but don't block export, user can add manually
-                        pass
+                        QMessageBox.warning(
+                            self.parent, "Missing Guest ITP",
+                            f"Guest ITP file for '{guest_type}' not found.\n"
+                            f"The exported .top file will reference it, but it won't be bundled.\n"
+                            f"Add the missing .itp file manually before running GROMACS."
+                        )
             
             return True
         except Exception as e:

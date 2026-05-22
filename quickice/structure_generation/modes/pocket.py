@@ -60,8 +60,24 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4) -> tuple[
                 i += atoms_per_mol
             else:
                 guest_atoms = count_guest_atoms(atom_names, i)
-                guest_indices.extend(range(i, i + guest_atoms))
-                i += guest_atoms
+                
+                # SAFEGUARD: Check if the detected "guest" is actually a water molecule
+                # that was misidentified due to counting errors
+                if guest_atoms > 0:
+                    end_idx = min(i + guest_atoms, len(atom_names))
+                    has_ow = any(atom_names[j] == "OW" for j in range(i, end_idx))
+                    
+                    if has_ow:
+                        # This is actually a water molecule - add to water_indices
+                        water_indices.extend(range(i, end_idx))
+                        i = end_idx
+                    else:
+                        # Legitimate guest - add to guest_indices
+                        guest_indices.extend(range(i, i + guest_atoms))
+                        i += guest_atoms
+                else:
+                    # No atoms detected - skip 1 to avoid infinite loop
+                    i += 1
         else:
             guest_indices.extend(range(i, len(atom_names)))
             i = len(atom_names)

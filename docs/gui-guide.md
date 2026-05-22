@@ -294,7 +294,7 @@ The hydrate viewer displays:
 Exported files:
 - `hydrate_{lattice}.gro` — Coordinates
 - `hydrate_{lattice}.top` — Topology
-- `ch4.itp` or `thf.itp` — Guest molecule parameters (GAFF)
+- `ch4_hydrate.itp` or `thf_hydrate.itp` — Guest molecule parameters (GAFF2)
 
 The water framework uses TIP4P-ICE for ice compatibility.
 
@@ -705,9 +705,9 @@ Exported files:
 - `interface_with_solutes.top` — Topology with solute moleculetype
 - `ch4_liquid.itp` or `thf_liquid.itp` — Solute force field parameters
 
-Solute molecules appear after SOL in the [ molecules ] section with names `CH4_LIQ` or `THF_LIQ`.
+Solute molecules appear after SOL in the [ molecules ] section with names `CH4_L` or `THF_L`.
 
-**Note:** Solute ITP files use `_LIQ` suffix to distinguish from hydrate guests (`CH4_HYD`, `THF_HYD`), allowing both to coexist in simulations.
+**Note:** Solute ITP files use `_L` suffix to distinguish from hydrate guests (`CH4_H`, `THF_H`), allowing both to coexist in simulations.
 
 ---
 

@@ -178,7 +178,7 @@ Press **Ctrl+S** from any tab to export the current structure:
 | Active Tab | Export Action | Files Generated |
 |------------|---------------|-----------------|
 | Tab 0 | Ice GROMACS | .gro, .top, tip4p_ice.itp |
-| Tab 1 | Hydrate GROMACS | .gro, .top, tip4p_ice.itp, ch4.itp/thf.itp |
+| Tab 1 | Hydrate GROMACS | .gro, .top, tip4p_ice.itp, ch4_hydrate.itp/thf_hydrate.itp |
 | Tab 2 | Interface GROMACS | .gro, .top, tip4p_ice.itp |
 | Tab 3 | Custom Molecule GROMACS | .gro, .top, tip4p_ice.itp, custom.itp |
 | Tab 4 | Solute GROMACS | .gro, .top, tip4p_ice.itp, ch4_liquid.itp/thf_liquid.itp |
@@ -191,8 +191,8 @@ Multi-molecule topologies follow GROMACS convention:
 ```
 [ molecules ]
 SOL               5919    ; Water molecules
-CH4_HYD           128     ; Hydrate guests (from Tab 1)
-THF_LIQ           45      ; Liquid solutes (from Tab 4)
+CH4_H             128     ; Hydrate guests (from Tab 1)
+THF_L             45      ; Liquid solutes (from Tab 4)
 CUSTOM_MOL_1      10      ; Custom molecules (from Tab 3)
 NA                12      ; Ions (from Tab 5)
 CL                12
