@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — e2e-export-test phase complete
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — pocket-edge-tests phase complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — Phase 34.5 complete (Validation & Preview)
+**Current focus:** v4.5 Solute & Custom Molecule Insertion — pocket-edge-tests phase complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 8 of 8 complete |
-| Status | Phase complete — All 8 plans done |
-| Last activity | 2026-05-22 — Completed e2e-export-test-08 (Full chain E2E export tests) |
+| Phase | pocket-edge-tests (Pocket mode edge cases) |
+| Plan | 3 of 3 complete |
+| Status | Phase complete — All 3 plans done (invariants, edge cases, cubic bug fix) |
+| Last activity | 2026-05-22 — Completed pocket-edge-tests-03 (cubic guest removal bug fix) |
 
-**Progress:** ██████████ 100% (188/191 plans)
+**Progress:** ██████████ 100% (191/191 plans)
 
 ---
 
@@ -94,6 +94,18 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Solute export tests — 5 tests for SoluteGROMACSExporter (Plan 06)
 - ✓ Ion export tests — 7 tests for IonGROMACSExporter + Madrid2019 validation (Plan 07)
 - ✓ Cross-tab chain export tests — 4 tests for full pipeline (Plan 08)
+
+### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
+
+**Phases:** 3 plans (01-03)
+**Purpose:** Add FRAG-02 assertions, comprehensive edge-case tests, and fix cubic guest removal bug
+**Progress:** All 3 plans complete
+**Key deliverables:**
+- ✓ FRAG-02 assertions in pocket.py after each overlap removal phase (Plan 01)
+- ✓ 11 invariant tests across 4 classes (sphere, cubic, extremes, rectangular) (Plan 01)
+- ✓ 33 edge case tests across 5 classes (shapes, sizes, geometry, invariants, hydrate) (Plan 02)
+- ✓ Cubic pocket guest removal bug fix (shape-aware distance criterion) (Plan 03)
+- ✓ 7 cubic guest tests across 3 classes (cubic removal, sphere regression, corner bug) (Plan 03)
 
 ### v4.0 Molecule Insertion (SHIPPED 2026-05-01)
 
@@ -270,6 +282,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Chain E2E test validates cumulative file sets | Each pipeline level produces ALL previous ITPs plus its own additions | ✓ Shipped (e2e-export-test-08) |
 | Full chain produces 5 ITP files | tip4p-ice.itp + ion.itp + ch4_hydrate.itp + ch4_liquid.itp + etoh.itp | ✓ Shipped (e2e-export-test-08) |
 | Minimal chain produces 2 ITP files | tip4p-ice.itp + ion.itp only when no guests/solutes/custom | ✓ Shipped (e2e-export-test-08) |
+| FRAG-02 assertions in pocket.py | Water count % 4 == 0 and atom_names == positions after each overlap removal | ✓ Shipped (pocket-edge-tests-01) |
+| Shape-aware guest removal | Cubic pockets use cubic criterion; sphere uses Euclidean; unknown falls back to Euclidean | ✓ Shipped (pocket-edge-tests-03) |
+| Test files in flat tests/ directory | Avoids name collision with tests/test_structure_generation.py | ✓ Shipped (pocket-edge-tests) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -369,22 +384,17 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-08 (Full chain E2E export tests)
-**Status:** e2e-export-test phase COMPLETE. All 8 plans done.
+**Completed:** pocket-edge-tests-03 (cubic pocket guest removal bug fix)
+**Status:** pocket-edge-tests phase COMPLETE. All 3 plans done.
 
-**e2e-export-test Phase Progress:**
-- ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
-- ✓ 02: Ice candidate export tests (5 tests for GROMACSExporter)
-- ✓ 03: Hydrate structure export tests (5 tests for HydrateGROMACSExporter + registry case bugfix)
-- ✓ 04: Interface structure export tests (6 tests: no guests, CH4, THF, cancel, guest count zero, atom count)
-- ✓ 05: Custom molecule export tests (5 tests: all files, atomtypes commented, tip4p-ice, guests ITP, no guests) + shutil bugfix
-- ✓ 06: Solute export tests (5 tests for SoluteGROMACSExporter)
-- ✓ 07: Ion export tests (7 tests: base files, generated ion.itp, Madrid2019 charges, no guests, guest ITP, solute ITP, custom ITP)
-- ✓ 08: Cross-tab chain export tests (4 tests: interface→custom, interface→solute, full chain, minimal chain)
+**pocket-edge-tests Phase Progress:**
+- ✓ 01: FRAG-02 assertions in pocket.py (6 assertions after 3 overlap removal phases) + 11 invariant tests
+- ✓ 02: 33 edge case tests across 5 classes (shape variants, size extremes, box geometry, structural invariants, hydrate)
+- ✓ 03: Cubic guest removal bug fix + 7 targeted tests (cubic removal, sphere regression, corner bug)
 
 **Next session:**
-- e2e-export-test phase is complete
+- pocket-edge-tests phase is complete
 - Ready for next milestone work or regression testing
 
 ---
-*State updated: 2026-05-22 — e2e-export-test phase COMPLETE (8 plans, 37 tests, 3 bug fixes)*
+*State updated: 2026-05-22 — pocket-edge-tests phase COMPLETE (3 plans, 51 tests, 1 bug fix)*
