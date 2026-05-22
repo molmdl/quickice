@@ -393,11 +393,23 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
                 guest_o_idx = np.arange(0, len(tilable_guest_positions), guest_atoms_per_mol)
                 guest_o_positions = tilable_guest_positions[guest_o_idx]
                 
-                # Calculate distances from center
-                distances = np.linalg.norm(guest_o_positions - center, axis=1)
-                
-                # Keep guests OUTSIDE cavity (dist >= radius)
-                outside_mask = distances >= radius
+                # Calculate distances from center — shape-aware criterion
+                if config.pocket_shape == "sphere":
+                    # Spherical cavity: Euclidean distance from center
+                    distances = np.linalg.norm(guest_o_positions - center, axis=1)
+                    outside_mask = distances >= radius
+                elif config.pocket_shape == "cubic":
+                    # Cubic cavity: max of |dx|, |dy|, |dz| from center
+                    # Guest is inside cubic cavity if ALL |dx|, |dy|, |dz| < radius
+                    # Keep guests OUTSIDE cubic cavity (at least one |d| >= radius)
+                    dx = np.abs(guest_o_positions[:, 0] - center[0])
+                    dy = np.abs(guest_o_positions[:, 1] - center[1])
+                    dz = np.abs(guest_o_positions[:, 2] - center[2])
+                    outside_mask = ~((dx < radius) & (dy < radius) & (dz < radius))
+                else:
+                    # Unknown shape should have been caught earlier, but handle defensively
+                    distances = np.linalg.norm(guest_o_positions - center, axis=1)
+                    outside_mask = distances >= radius
                 
                 if not np.any(outside_mask):
                     # No guests outside cavity - tile more aggressively
