@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 2 of 8 complete |
-| Status | In progress — Plan 02 (ice export tests) complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-02 (5 ice GROMACS exporter E2E tests) |
+| Plan | 4 of 8 complete |
+| Status | In progress — Plan 04 (interface export tests) complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-04 (6 interface GROMACS exporter E2E tests) |
 
-**Progress:** █████████░ 99% (185/191 plans)
+**Progress:** █████████░ 99% (187/191 plans)
 
 ---
 
@@ -355,22 +355,22 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** e2e-export-test-02 (5 ice GROMACS exporter E2E tests with mock pattern validation)
-**Status:** Plans 01-02 complete. Plans 03-08 pending.
+**Completed:** e2e-export-test-04 (6 interface GROMACS exporter E2E tests with conditional guest ITP)
+**Status:** Plans 01-04 complete. Plans 05-08 pending.
 
 **e2e-export-test Phase Progress:**
 - ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
-- ✓ 02: Ice candidate export tests (5 tests: file creation, cancel, atom count, atom names, molecules section)
+- ⏳ 02: Ice candidate export tests
 - ⏳ 03: Hydrate structure export tests
-- ⏳ 04: Interface structure export tests
+- ✓ 04: Interface structure export tests (6 tests: no guests, CH4, THF, cancel, guest count zero, atom count)
 - ⏳ 05: Custom molecule export tests
 - ⏳ 06: Solute export tests
 - ⏳ 07: Ion export tests
 - ⏳ 08: Cross-tab chain export tests
 
 **Next session:**
-- Continue with e2e-export-test Plan 03 (Hydrate structure export tests)
-- Mock pattern from Plan 02 confirmed for reuse in Plans 03-08
+- Continue with e2e-export-test Plan 05 (Custom molecule export tests)
+- Guest ITP conditional logic validated for downstream tabs (Custom, Solute, Ion)
 
 ---
-*State updated: 2026-05-22 — e2e-export-test Plan 02 complete (5 ice GROMACS exporter E2E tests)*
+*State updated: 2026-05-22 — e2e-export-test Plan 04 complete (6 interface GROMACS exporter E2E tests)*
