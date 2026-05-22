@@ -206,6 +206,8 @@ class CustomMoleculeGROMACSExporter:
         top_path = path.with_name(path.stem + '.top')
         
         try:
+            import shutil
+            
             # Write .gro file with complete system
             from quickice.output.gromacs_writer import (
                 write_custom_molecule_gro_file,
