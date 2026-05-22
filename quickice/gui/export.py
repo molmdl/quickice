@@ -117,9 +117,12 @@ class SoluteGROMACSExporter:
                         guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
                         shutil.copy(guest_itp_source, guest_itp_dest)
                     except FileNotFoundError:
-                        # Guest .itp file not found - will cause GROMACS to fail
-                        # but don't block export, user can add manually
-                        pass
+                        QMessageBox.warning(
+                            self.parent, "Missing Guest ITP",
+                            f"Guest ITP file for '{guest_type}' not found.\n"
+                            f"The exported .top file will reference it, but it won't be bundled.\n"
+                            f"Add the missing .itp file manually before running GROMACS."
+                        )
             
             # Copy solute .itp file (liquid solutes use _liquid.itp)
             solute_type_lower = solute_type
