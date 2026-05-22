@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | batch4-low-priority (post-release fixes) |
-| Plan | 1 of 1 complete |
-| Status | Batch complete — 17 LOW issues fixed |
-| Last activity | 2026-05-22 — Completed batch4-01 (BUG-02a/b/c, NEW-01/02a/b, SCI-01/03/04/1, UNIT-03, TD-06a/b, FRAG-04a/b) |
+| Phase | e2e-export-test (E2E GROMACS export testing) |
+| Plan | 1 of 8 complete |
+| Status | In progress — Plan 01 (conftest fixtures) complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-01 (shared conftest.py with 13 fixtures) |
 
-**Progress:** ██████████ 100% (183/183 plans)
+**Progress:** █████████░ 99% (184/191 plans)
 
 ---
 
@@ -79,6 +79,21 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
+
+### e2e-export-test E2E GROMACS Export Testing (IN PROGRESS)
+
+**Phases:** 8 plans (01-08)
+**Purpose:** End-to-end tests for the GROMACS export pipeline across all 6 tabs
+**Progress:** Plan 01 complete (shared conftest.py fixtures), Plans 02-08 pending
+**Key deliverables:**
+- ✓ Shared conftest.py with 13 fixtures covering all 6 structure types (Plan 01)
+- ⏳ Ice candidate export tests (Plan 02)
+- ⏳ Hydrate structure export tests (Plan 03)
+- ⏳ Interface structure export tests (Plan 04)
+- ⏳ Custom molecule export tests (Plan 05)
+- ⏳ Solute export tests (Plan 06)
+- ⏳ Ion export tests (Plan 07)
+- ⏳ Cross-tab chain export tests (Plan 08)
 
 ### v4.0 Molecule Insertion (SHIPPED 2026-05-01)
 
@@ -235,6 +250,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Both workflow paths tested | Custom → Solute → Ion AND Custom → Ion direct | ✓ Shipped (34.6-08) |
 | MoleculeIndex per molecule tracking | One entry per molecule with start_idx and atom count | ✓ Shipped (34.6-08) |
 | Qt offscreen for headless testing | QT_QPA_PLATFORM=offscreen for CI environments | ✓ Shipped (34.6-08) |
+| No QApplication fixture for export tests | Exporters only use static QFileDialog/QMessageBox calls, fully mocked | ✓ Shipped (e2e-export-test-01) |
+| Factory pattern for mock dialog fixtures | Returns (path, dialog_patch, mb_patch) tuple for test flexibility | ✓ Shipped (e2e-export-test-01) |
+| custom_structure uses etoh.itp | Points to existing file rather than creating temp files | ✓ Shipped (e2e-export-test-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -334,52 +352,22 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-05-22
-**Completed:** Batch 4 LOW fixes (17 issues: BUG-02a/b/c, NEW-01/02a/b, SCI-01/03/04/1, UNIT-03, TD-06a/b, FRAG-04a/b)
-**Status:** All LOW priority issues resolved. Commit 9fa898f.
+**Completed:** e2e-export-test-01 (shared conftest.py with 13 fixtures for E2E export tests)
+**Status:** Plan 01 complete. Plans 02-08 pending.
 
-**Phase 35 Status:**
-- ✓ 35-01 (unified export shortcuts) complete
-- ✓ 35-02 (tooltips) complete
-- ✓ 35-03 (help dialog) complete
-- ✓ 35-04 (README update) complete
-- ✓ 35-05 (GUI guide & user guides) complete
-- ✓ 35-06 (Phase 34.5/34.6 feature docs) complete, screenshots deferred
-- ✓ 35-07 (Quick Task 017/018 documentation) complete
-
-**Batch 4 LOW fixes (2026-05-22):**
-- ✓ BUG-02a/b/c: THF atom count 12→13, formula C5H8O→C4H8O (3 files)
-- ✓ NEW-01: Expand GENERIC_RESIDUE_NAMES with 6 additional PDB names
-- ✓ NEW-02a/b: ITP parser BOM stripping and line ending normalization
-- ✓ SCI-01: AVOGADRO constant 6.022e23→6.02214076e23 (CODATA 2017) in scorer.py
-- ✓ SCI-03: Petrenko & Whitworth citations in ranking/types.py and docs/ranking.md
-- ✓ SCI-04/1: Madrid2019_085 header in ion.itp and source comment in ion_inserter.py
-- ✓ UNIT-03: Debug logging [Water Count Debug] logger.info→logger.debug (10 calls)
-- ✓ TD-06a: Water template cache thread safety via @lru_cache(maxsize=1)
-- ✓ TD-06b: GenIce2 thread safety via threading.Lock with double-check locking
-- ✓ FRAG-04a: Fallback density warning improvement (ice Ih)
-- ✓ FRAG-04b: Extrapolated IAPWS values logged at debug level
-
-**Batch 3 MEDIUM fixes (2026-05-22):**
-- ✓ BUG-03: O(n²) molecule_index.index() → enumerate() in gromacs_writer.py
-- ✓ FRAG-02: Invariant assertions after overlap removal in slab.py
-- ✓ FRAG-01: Replace hasattr/getattr with direct access in main_window.py
-- ✓ UNIT-01: GRO coordinate range validation (>50nm) in gro_parser.py
-- ✓ EXP-1: Fix hydrate filename pattern in docs
-- ✓ EXP-2: Fix solute filename pattern in docs
-- ✓ VER-1: Fix stale version 4.0.0→4.5.0 in CLI docs
-- ✓ CIT-GAFF2: Add GAFF/GAFF2 citations to README.md
-
-**Pending from 35-06:**
-Screenshot recapture (deferred checkpoint):
-1. Rename existing screenshot files (remove tabX prefix)
-2. Launch GUI and recapture new screenshots
-3. Update image references in gui-guide.md
+**e2e-export-test Phase Progress:**
+- ✓ 01: Shared conftest.py fixtures (13 fixtures: 10 structure + 3 mock dialog)
+- ⏳ 02: Ice candidate export tests
+- ⏳ 03: Hydrate structure export tests
+- ⏳ 04: Interface structure export tests
+- ⏳ 05: Custom molecule export tests
+- ⏳ 06: Solute export tests
+- ⏳ 07: Ion export tests
+- ⏳ 08: Cross-tab chain export tests
 
 **Next session:**
-- Complete screenshot management (35-06 deferred)
-- Run `/gsd-verify-work 35` for UAT
-- Decide on UPX installation for bundle optimization
-- Proceed to milestone completion
+- Continue with e2e-export-test Plan 02 (Ice candidate export tests)
+- All subsequent plans import fixtures from tests/test_output/conftest.py
 
 ---
 *State updated: 2026-05-22 — Batch 3 MEDIUM fixes complete (8 issues: BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2)*
