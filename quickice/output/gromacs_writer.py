@@ -15,7 +15,7 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure, I
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 if TYPE_CHECKING:
-    from quickice.structure_generation.types import CustomMoleculeStructure
+    from quickice.structure_generation.types import CustomMoleculeStructure, SoluteStructure
 
 logger = logging.getLogger(__name__)
 
@@ -2052,3 +2052,463 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         f.write(f"{custom_structure.moleculetype_name:<17s}{custom_count}\n")
 
     logger.info(f"Wrote topology file: {filepath}")
+
+
+def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) -> None:
+    """Write solute structure to GROMACS .gro format.
+
+    Exports molecules in ORDER: SOL (ice+water), guest, custom, solute.
+    This matches the expected topology order and GROMACS requirements.
+    Ice molecules are expanded from 3→4 atoms (MW virtual site added).
+    Water molecules have MW recomputed from OW/HW1/HW2 positions.
+
+    Args:
+        solute_structure: SoluteStructure object with solute + interface data
+        filepath: Output file path for .gro file
+
+    Note:
+        GROMACS .gro format limits atom and residue numbers to 5 digits.
+        For systems with >99999 atoms, atom numbers wrap at 100000.
+    """
+    interface = solute_structure.interface_structure
+
+    # Build ordered list of molecules: SOL (ice+water), guest, custom, solute
+    ordered_mols = []
+
+    # Pass 1: SOL molecules (ice + water) from interface
+    for mol in interface.molecule_index:
+        if mol.mol_type in ("ice", "water"):
+            ordered_mols.append(("sol", mol))
+
+    # Pass 2: guest molecules (if present in interface)
+    if interface.guest_atom_count > 0 and interface.guest_nmolecules > 0:
+        for mol in interface.molecule_index:
+            if mol.mol_type == "guest":
+                ordered_mols.append(("guest", mol))
+
+    # Pass 3: custom molecules (if present, propagated from custom tab)
+    has_custom = (solute_structure.custom_molecule_count > 0 and
+                  solute_structure.custom_molecule_positions is not None)
+    if has_custom:
+        atoms_per_custom = 0
+        if solute_structure.custom_molecule_atom_count > 0 and solute_structure.custom_molecule_count > 0:
+            atoms_per_custom = solute_structure.custom_molecule_atom_count // solute_structure.custom_molecule_count
+
+        for i in range(solute_structure.custom_molecule_count):
+            start = i * atoms_per_custom
+            ordered_mols.append(("custom", type('obj', (object,), {
+                'start_idx': start,
+                'count': atoms_per_custom,
+                'mol_type': 'custom'
+            })()))
+
+    # Pass 4: solute molecules (from solute_structure.positions)
+    has_solutes = solute_structure.n_molecules > 0 and solute_structure.positions is not None
+    if has_solutes:
+        for start, end in solute_structure.molecule_indices:
+            ordered_mols.append(("solute", type('obj', (object,), {
+                'start_idx': start,
+                'count': end - start,
+                'mol_type': 'solute'
+            })()))
+
+    # Count total atoms for header
+    total_atoms = 0
+    for mol_type, mol in ordered_mols:
+        if mol_type == "sol":
+            if mol.mol_type == "ice":
+                total_atoms += 4  # Ice: 3→4 atoms (OW, HW1, HW2, MW)
+            else:
+                total_atoms += mol.count  # Water: 4 atoms
+        elif mol_type == "guest":
+            total_atoms += mol.count
+        elif mol_type == "custom":
+            total_atoms += mol.count
+        elif mol_type == "solute":
+            total_atoms += mol.count
+
+    # Warn if GRO atom limit exceeded
+    if total_atoms > 99999:
+        logger.warning(f"GRO format wraps atom numbers at 100,000 (have {total_atoms} atoms)")
+
+    # Wrap positions into box using molecule-aware wrapping
+    wrapped_positions = wrap_molecules_into_box(
+        interface.positions, interface.molecule_index, interface.cell
+    )
+
+    atom_num = 0
+    res_num = 0
+    lines = []
+
+    with open(filepath, 'w') as f:
+        # Title line
+        title_parts = ["Ice/water interface"]
+        if has_custom:
+            title_parts.append(f"{solute_structure.custom_molecule_count} custom molecules")
+        if has_solutes:
+            title_parts.append(f"{solute_structure.n_molecules} {solute_structure.solute_type.upper()} solutes")
+        title_parts.append("exported by QuickIce")
+        f.write(" + ".join(title_parts) + "\n")
+
+        # Number of atoms
+        f.write(f"{total_atoms:5d}\n")
+
+        for mol_type, mol in ordered_mols:
+            if mol_type == "sol":
+                # SOL molecule (ice or water)
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+                start = mol.start_idx
+
+                if mol.mol_type == "ice":
+                    # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                    o_pos = wrapped_positions[start]
+                    h1_pos = wrapped_positions[start + 1]
+                    h2_pos = wrapped_positions[start + 2]
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+                    # OW (oxygen)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   OW{atom_num_wrapped:5d}"
+                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                    # HW1
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW1{atom_num_wrapped:5d}"
+                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                    # HW2
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW2{atom_num_wrapped:5d}"
+                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                    # MW (virtual site)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   MW{atom_num_wrapped:5d}"
+                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+                else:  # water
+                    # Water: 4 atoms (OW, HW1, HW2, MW) — recompute MW
+                    o_pos = wrapped_positions[start]
+                    h1_pos = wrapped_positions[start + 1]
+                    h2_pos = wrapped_positions[start + 2]
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+                    # OW
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   OW{atom_num_wrapped:5d}"
+                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                    # HW1
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW1{atom_num_wrapped:5d}"
+                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                    # HW2
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"  HW2{atom_num_wrapped:5d}"
+                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                    # MW (virtual site)
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}SOL  "
+                                f"   MW{atom_num_wrapped:5d}"
+                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+            elif mol_type == "guest":
+                # Guest molecule (CH4, THF, etc.) — hydrate cage guests
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+
+                start = mol.start_idx
+                mol_atom_names = interface.atom_names[start:start + mol.count]
+                mol_positions = wrapped_positions[start:start + mol.count]
+
+                # Detect guest type and get residue name
+                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                if guest_type:
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                else:
+                    guest_res_name = "GUE"  # Fallback
+
+                # Reorder guest atoms to match .itp canonical order
+                reorder_mapping = None
+                if guest_type in ["ch4", "thf"]:
+                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                    if reorder_mapping is not None:
+                        mol_positions = [mol_positions[i] for i in reorder_mapping]
+
+                for i in range(mol.count):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    atom_name = mol_atom_names[i]
+                    pos = mol_positions[i]
+                    lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+            elif mol_type == "custom":
+                # Custom molecule — write from solute_structure custom attributes
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+
+                res_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CST"
+                res_name = res_name[:5]
+
+                start = mol.start_idx
+                if solute_structure.custom_molecule_atom_names:
+                    mol_atom_names = solute_structure.custom_molecule_atom_names[start:start + mol.count]
+                else:
+                    mol_atom_names = [f"C{i}" for i in range(mol.count)]
+
+                if solute_structure.custom_molecule_positions is not None:
+                    mol_positions = solute_structure.custom_molecule_positions[start:start + mol.count]
+                else:
+                    mol_positions = np.zeros((mol.count, 3))
+
+                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+            elif mol_type == "solute":
+                # Solute molecule (CH4_L or THF_L) — write from solute_structure
+                res_num += 1
+                res_num_wrapped = res_num % 100000
+
+                start = mol.start_idx
+                count = mol.count
+
+                # Get atom names and positions from solute_structure
+                mol_atom_names = solute_structure.atom_names[start:start + count]
+                mol_positions = solute_structure.positions[start:start + count]
+
+                # Get residue name from registry
+                solute_type_upper = solute_structure.solute_type.upper()
+                if solute_structure.registry:
+                    solute_res_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")
+                else:
+                    solute_res_name = f"{solute_type_upper}_L"
+
+                # Truncate to 5 chars for GRO format
+                solute_res_name = solute_res_name[:5]
+
+                for i in range(count):
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    atom_name = mol_atom_names[i]
+                    pos = mol_positions[i]
+                    lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
+                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+        f.writelines(lines)
+
+        # Box vectors (triclinic format)
+        cell = interface.cell
+        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+    logger.info(f"Wrote GRO file for solute system: {filepath}")
+
+
+def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) -> None:
+    """Write GROMACS topology file for solute structure.
+
+    Uses SOL molecule type for water and ice, includes solute molecules
+    with registry-based moleculetype name (e.g., CH4_L or THF_L).
+    Also handles guest molecules (from hydrate cages) and custom molecules
+    (propagated from custom tab).
+
+    Writes [molecules] section in order: SOL (ice+water), guest, custom, solute.
+
+    Args:
+        solute_structure: SoluteStructure object with solute + interface data
+        filepath: Output file path for .top file
+    """
+    interface = solute_structure.interface_structure
+
+    # Count molecules by type from interface's molecule_index
+    sol_count = sum(1 for m in interface.molecule_index if m.mol_type in ("water", "ice"))
+    guest_count = sum(1 for m in interface.molecule_index if m.mol_type == "guest")
+
+    # Check for custom molecules (propagated from custom tab)
+    has_custom = (solute_structure.custom_molecule_count > 0 and
+                  solute_structure.custom_molecule_positions is not None)
+    custom_count = solute_structure.custom_molecule_count if has_custom else 0
+
+    # Check for solutes
+    has_solutes = solute_structure.n_molecules > 0 and solute_structure.positions is not None
+    solute_count = solute_structure.n_molecules if has_solutes else 0
+
+    # Detect guest type from atom names (for correct .itp and residue name)
+    guest_type = None
+    guest_res_name = "GUE"  # Fallback
+    if guest_count > 0 and interface.guest_atom_count > 0:
+        for mol in interface.molecule_index:
+            if mol.mol_type == "guest":
+                start = mol.start_idx
+                mol_atom_names = interface.atom_names[start:start + mol.count]
+                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                if guest_type:
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                break
+
+    with open(filepath, 'w') as f:
+        # Header
+        f.write("; Generated by QuickIce\n")
+        f.write("; TIP4P-ICE water model")
+        if guest_count > 0:
+            f.write(" with guest molecules")
+        if has_custom:
+            f.write(f" and {custom_count} custom molecules")
+        if has_solutes:
+            f.write(f" and {solute_count} {solute_structure.solute_type.upper()} solutes")
+        f.write("\n")
+        f.write(f"; Structure: {sol_count} SOL (ice+water)")
+        if guest_count > 0:
+            f.write(f" + {guest_count} guests")
+        if has_custom:
+            f.write(f" + {custom_count} custom molecules")
+        if has_solutes:
+            f.write(f" + {solute_count} {solute_structure.solute_type.upper()} solutes")
+        f.write("\n\n")
+
+        # [ defaults ] - force field defaults
+        f.write("[ defaults ]\n")
+        f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
+        f.write("1               2               yes             0.0     0.0\n\n")
+
+        # [ atomtypes ] - MUST be before #include directives
+        f.write("[ atomtypes ]\n")
+        f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
+        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
+        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
+
+        # Guest atom types (if present)
+        if guest_count > 0 and guest_type:
+            if guest_type == "ch4":
+                f.write("; CH4 atom types (GAFF2)\n")
+                f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            elif guest_type == "thf":
+                f.write("; THF atom types (GAFF2)\n")
+                f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
+                f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
+                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+                f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
+
+        # Custom molecule atom types (if present)
+        if has_custom and solute_structure.custom_itp_path:
+            from pathlib import Path as FilePath
+            custom_itp_path = FilePath(solute_structure.custom_itp_path)
+            if custom_itp_path.exists():
+                custom_atomtypes = parse_itp_atomtypes(custom_itp_path)
+                if custom_atomtypes:
+                    custom_mol_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CUSTOM"
+                    f.write(f"; {custom_mol_name} custom molecule atom types\n")
+                    for atomtype in custom_atomtypes:
+                        if len(atomtype) >= 8:
+                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
+
+        # Solute atom types (if present)
+        if has_solutes:
+            solute_type_lower = solute_structure.solute_type.lower()
+            solute_itp_name = f"{solute_type_lower}_liquid.itp"
+            solute_type_upper = solute_structure.solute_type.upper()
+            f.write(f"; {solute_type_upper} solute atom types\n")
+
+            from pathlib import Path as FilePath
+            import quickice
+            package_dir = FilePath(quickice.__file__).parent
+            solute_itp_path = package_dir / "data" / solute_itp_name
+
+            if not solute_itp_path.exists():
+                solute_itp_path = FilePath(__file__).parent.parent / "data" / solute_itp_name
+
+            if solute_itp_path.exists():
+                solute_atomtypes = parse_itp_atomtypes(solute_itp_path)
+                if solute_atomtypes:
+                    for atomtype in solute_atomtypes:
+                        if len(atomtype) >= 8:
+                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
+                else:
+                    f.write(f"; {solute_type_upper} atom types defined in {solute_itp_name}\n")
+            else:
+                f.write(f"; {solute_type_upper} atom types defined in {solute_itp_name}\n")
+
+        f.write("\n")
+
+        # Include molecule definitions (AFTER atomtypes)
+        f.write("; Molecule definitions\n")
+        f.write('#include "tip4p-ice.itp"\n')
+
+        # Include guest topology if guests present
+        if guest_count > 0 and guest_type:
+            f.write(f'#include "{guest_type}_hydrate.itp"\n')
+
+        # Include custom molecule ITP if custom molecules present
+        if has_custom and solute_structure.custom_itp_path:
+            from pathlib import Path as FilePath
+            custom_itp_name = FilePath(solute_structure.custom_itp_path).name
+            f.write(f'#include "{custom_itp_name}"\n')
+
+        # Include solute ITP (liquid solutes use _liquid.itp)
+        if has_solutes:
+            solute_type_lower = solute_structure.solute_type.lower()
+            solute_itp_name = f"{solute_type_lower}_liquid.itp"
+            f.write(f'#include "{solute_itp_name}"\n')
+
+        f.write("\n")
+
+        # [ system ] section
+        f.write("[ system ]\n")
+        system_name = f"Ice/water + {solute_count} {solute_structure.solute_type.upper()} solutes"
+        if guest_count > 0:
+            system_name = f"Ice/water + {guest_count} guests + {solute_count} {solute_structure.solute_type.upper()} solutes"
+        if has_custom:
+            system_name += f" + {custom_count} custom molecules"
+        f.write(f"{system_name}\n\n")
+
+        # [ molecules ] section - ORDER: SOL, guest, custom, solute
+        # This matches write_solute_gro_file() output order
+        f.write("[ molecules ]\n")
+        f.write("; Compound        #mols\n")
+
+        if sol_count > 0:
+            f.write(f"SOL              {sol_count}\n")
+
+        if guest_count > 0:
+            f.write(f"{guest_res_name:<17s}{guest_count}\n")
+
+        if has_custom:
+            custom_mol_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CUSTOM"
+            f.write(f"{custom_mol_name:<17s}{custom_count}\n")
+
+        if has_solutes:
+            if solute_structure.registry:
+                solute_mol_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")
+            else:
+                solute_mol_name = f"{solute_structure.solute_type.upper()}_L"
+            f.write(f"{solute_mol_name:<17s}{solute_count}\n")
+
+    logger.info(f"Wrote topology file for solute system: {filepath}")

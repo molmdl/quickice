@@ -27,6 +27,16 @@ class SoluteGROMACSExporter:
     """Handle GROMACS file export for solute structures.
     
     Exports: ice + water + solutes (CH4 or THF).
+    Also handles guest molecules (from hydrate cages) and custom molecules
+    (propagated from custom molecule tab) if present in the source interface.
+    
+    Files produced:
+    - .gro file with molecules in order: SOL (ice+water), guest, custom, solute
+    - .top file with matching [molecules] section and #include directives
+    - tip4p-ice.itp (copied)
+    - {solute}_liquid.itp (copied with atomtypes commented)
+    - {guest}_hydrate.itp (copied if guests present)
+    - {custom}.itp (copied with atomtypes commented if custom molecules present)
     """
     
     def __init__(self, parent_widget):
@@ -68,60 +78,13 @@ class SoluteGROMACSExporter:
         top_path = path.with_name(path.stem + '.top')
         
         try:
-            # Combine interface structure with solutes for export
-            interface = solute_structure.interface_structure
+            # Write .gro file using dedicated solute writer
+            from quickice.output.gromacs_writer import write_solute_gro_file
+            write_solute_gro_file(solute_structure, str(path))
             
-            # Build combined structure: ice + water + solutes
-            all_positions = np.vstack([
-                interface.positions,
-                solute_structure.positions
-            ])
-            all_atom_names = interface.atom_names + solute_structure.atom_names
-            
-            # Write .gro file
-            from quickice.output.gromacs_writer import write_gro_file
-            write_gro_file(all_positions, all_atom_names, solute_structure.cell, str(path))
-            
-            # Write .top file with moleculetype names from registry
-            from quickice.output.gromacs_writer import write_top_file
-            # Build molecule index for combined structure
-            molecule_index = []
-            
-            # Add ice molecules
-            ice_nmolecules = interface.ice_nmolecules
-            ice_atoms_per_molecule = interface.ice_atom_count // ice_nmolecules if ice_nmolecules > 0 else 0
-            idx = 0
-            for i in range(ice_nmolecules):
-                molecule_index.append({
-                    'mol_type': 'ICE_IH',
-                    'start_idx': idx,
-                    'count': ice_atoms_per_molecule
-                })
-                idx += ice_atoms_per_molecule
-            
-            # Add water molecules
-            water_nmolecules = interface.water_nmolecules
-            water_atoms_per_molecule = interface.water_atom_count // water_nmolecules if water_nmolecules > 0 else 0
-            for i in range(water_nmolecules):
-                molecule_index.append({
-                    'mol_type': 'WATER_LIQ',
-                    'start_idx': idx,
-                    'count': water_atoms_per_molecule
-                })
-                idx += water_atoms_per_molecule
-            
-            # Add solute molecules
-            solute_type = solute_structure.solute_type
-            moleculetype_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_type}")
-            for start, end in solute_structure.molecule_indices:
-                molecule_index.append({
-                    'mol_type': moleculetype_name,
-                    'start_idx': interface.ice_atom_count + interface.water_atom_count + start,
-                    'count': end - start
-                })
-            
-            write_top_file(all_positions, all_atom_names, solute_structure.cell, str(top_path), 
-                          molecule_index, registry=solute_structure.registry)
+            # Write .top file using dedicated solute writer
+            from quickice.output.gromacs_writer import write_solute_top_file
+            write_solute_top_file(solute_structure, str(top_path))
             
             # Copy water topology file (tip4p-ice.itp) for water molecules
             import shutil
@@ -130,16 +93,58 @@ class SoluteGROMACSExporter:
             water_itp_path = path.with_name("tip4p-ice.itp")
             shutil.copy(itp_source, water_itp_path)
             
-            # Copy solute .itp file (liquid solutes use _liquid.itp files)
-            # Solute tab only handles liquid solutes, always use _liquid.itp
-            solute_type_lower = solute_type.lower()
+            # Copy guest .itp file if guests are present in the interface
+            interface = solute_structure.interface_structure
+            if interface.guest_nmolecules > 0 and interface.guest_atom_count > 0:
+                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
+                
+                guest_type = None
+                for mol in interface.molecule_index:
+                    if mol.mol_type == "guest":
+                        mol_atom_names = interface.atom_names[mol.start_idx:mol.start_idx + mol.count]
+                        guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                        if guest_type:
+                            break
+                
+                # Fallback: use heuristic based on atom count
+                if guest_type is None and interface.guest_nmolecules > 0:
+                    atoms_per_guest = interface.guest_atom_count // interface.guest_nmolecules
+                    guest_type = "thf" if atoms_per_guest >= 10 else "ch4"
+                
+                if guest_type:
+                    try:
+                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                        shutil.copy(guest_itp_source, guest_itp_dest)
+                    except FileNotFoundError:
+                        # Guest .itp file not found - will cause GROMACS to fail
+                        # but don't block export, user can add manually
+                        pass
+            
+            # Copy solute .itp file (liquid solutes use _liquid.itp)
+            solute_type_lower = solute_type
             solute_itp_name = f"{solute_type_lower}_liquid.itp"
 
             from pathlib import Path as FilePath
             solute_itp_source = FilePath(__file__).parent.parent / "data" / solute_itp_name
             if solute_itp_source.exists():
+                from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                itp_content = solute_itp_source.read_text()
+                modified_content = comment_out_atomtypes_in_itp(itp_content)
                 solute_itp_dest = path.with_name(solute_itp_name)
-                shutil.copy(solute_itp_source, solute_itp_dest)
+                solute_itp_dest.write_text(modified_content)
+                logger.info(f"Solute ITP copied with atomtypes commented: {solute_itp_dest}")
+            
+            # Copy custom molecule .itp file if custom molecules are present
+            if solute_structure.custom_molecule_count > 0 and solute_structure.custom_molecule_positions is not None:
+                if solute_structure.custom_itp_path and Path(solute_structure.custom_itp_path).exists():
+                    from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                    custom_itp_source = Path(solute_structure.custom_itp_path)
+                    custom_itp_dest = path.with_name(custom_itp_source.name)
+                    itp_content = custom_itp_source.read_text()
+                    modified_content = comment_out_atomtypes_in_itp(itp_content)
+                    custom_itp_dest.write_text(modified_content)
+                    logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
             return True
         except Exception as e:
