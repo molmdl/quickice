@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 35-integration-documentation |
-| Plan | 7 of 7 complete |
-| Status | Phase complete — screenshots deferred (35-06 checkpoint) |
-| Last activity | 2026-05-11 — Completed 35-07-PLAN.md (Quick Task 017/018 documentation) |
+| Phase | batch3-medium (post-release fixes) |
+| Plan | 1 of 1 complete |
+| Status | Batch complete — 8 MEDIUM issues fixed |
+| Last activity | 2026-05-22 — Completed batch3-medium-01 (BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2) |
 
-**Progress:** ██████████ 100% (182/182 plans)
+**Progress:** ██████████ 100% (183/183 plans)
 
 ---
 
@@ -333,9 +333,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-16
-**Completed:** Quick Task 028 (hydrate guest naming _HYD→_H with hydrate-specific ITP files)
-**Status:** Hydrate export produces self-consistent GROMACS topology (CH4_H/THF_H moleculetype matches ITP)
+**Last session:** 2026-05-22
+**Completed:** Batch 3 MEDIUM fixes (8 issues: BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2)
+**Status:** All MEDIUM priority issues resolved. Commit 80753c5.
 
 **Phase 35 Status:**
 - ✓ 35-01 (unified export shortcuts) complete
@@ -345,6 +345,16 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-05 (GUI guide & user guides) complete
 - ✓ 35-06 (Phase 34.5/34.6 feature docs) complete, screenshots deferred
 - ✓ 35-07 (Quick Task 017/018 documentation) complete
+
+**Batch 3 MEDIUM fixes (2026-05-22):**
+- ✓ BUG-03: O(n²) molecule_index.index() → enumerate() in gromacs_writer.py
+- ✓ FRAG-02: Invariant assertions after overlap removal in slab.py
+- ✓ FRAG-01: Replace hasattr/getattr with direct access in main_window.py
+- ✓ UNIT-01: GRO coordinate range validation (>50nm) in gro_parser.py
+- ✓ EXP-1: Fix hydrate filename pattern in docs
+- ✓ EXP-2: Fix solute filename pattern in docs
+- ✓ VER-1: Fix stale version 4.0.0→4.5.0 in CLI docs
+- ✓ CIT-GAFF2: Add GAFF/GAFF2 citations to README.md
 
 **Pending from 35-06:**
 Screenshot recapture (deferred checkpoint):
@@ -359,4 +369,4 @@ Screenshot recapture (deferred checkpoint):
 - Proceed to milestone completion
 
 ---
-*State updated: 2026-05-16 — Quick Task 028 complete (Hydrate guest naming fix: _HYD→_H)*
+*State updated: 2026-05-22 — Batch 3 MEDIUM fixes complete (8 issues: BUG-03, FRAG-01/02, UNIT-01, EXP-1/2, VER-1, CIT-GAFF2)*
