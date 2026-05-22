@@ -124,7 +124,7 @@ def main() -> int:
             print()
             
             # Export GROMACS files
-            output_path = Path(args.output)
+            output_path = Path(args.output).resolve()
             output_path.mkdir(parents=True, exist_ok=True)
             
             # Generate output filename: interface_{phase}_{mode}.gro
@@ -191,7 +191,7 @@ def main() -> int:
         
         # Export GROMACS files if requested
         if args.gromacs:
-            output_path = Path(args.output)
+            output_path = Path(args.output).resolve()
             output_path.mkdir(parents=True, exist_ok=True)
             
             # Filter candidates if --candidate specified
