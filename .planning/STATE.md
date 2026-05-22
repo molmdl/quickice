@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-export-test (E2E GROMACS export testing) |
-| Plan | 4 of 8 complete |
-| Status | In progress — Plans 01-04 complete |
-| Last activity | 2026-05-22 — Completed e2e-export-test-03 (hydrate GROMACS exporter E2E tests + registry case bugfix) |
+| Plan | 6 of 8 complete |
+| Status | In progress — Plans 01-06 complete |
+| Last activity | 2026-05-22 — Completed e2e-export-test-06 (solute GROMACS exporter E2E tests) |
 
 **Progress:** █████████░ 99% (187/191 plans)
 
@@ -255,6 +255,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | custom_structure uses etoh.itp | Points to existing file rather than creating temp files | ✓ Shipped (e2e-export-test-01) |
 | ITP filename uses .gro stem | ice_test.gro → ice_test.itp, NOT tip4p-ice.itp | ✓ Shipped (e2e-export-test-02) |
 | Mock dialog pattern validated | (save_path, dialog_patch, mb_patch) works for GROMACSExporter | ✓ Shipped (e2e-export-test-02) |
+| SoluteGROMACSExporter nested access validated | interface_structure accessed for guest detection without AttributeError | ✓ Shipped (e2e-export-test-06) |
+| Solute liquid ITP atomtypes commented | comment_out_atomtypes_in_itp() applied to solute ITP files | ✓ Shipped (e2e-export-test-06) |
+| Conditional custom ITP in solute export | custom_molecule_count > 0 AND positions AND itp_path exists | ✓ Shipped (e2e-export-test-06) |
 | TIP4P-ICE 3→4 expansion confirmed | nmolecules * 4 atoms (OW,HW1,HW2,MW), not nmolecules * 3 | ✓ Shipped (e2e-export-test-02) |
 | Hydrate mock path differs from other exporters | QFileDialog in quickice.gui.hydrate_export, NOT quickice.gui.export | ✓ Shipped (e2e-export-test-03) |
 | Registry keys must use uppercase mol_type | register_hydrate_guest('CH4') stores hydrate_CH4; write_multi_molecule_top_file must use .upper() for lookup | ✓ Shipped (e2e-export-test-03) |
@@ -366,13 +369,14 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 03: Hydrate structure export tests (5 tests for HydrateGROMACSExporter + registry case bugfix)
 - ✓ 04: Interface structure export tests (6 tests: no guests, CH4, THF, cancel, guest count zero, atom count)
 - ⏳ 05: Custom molecule export tests
-- ⏳ 06: Solute export tests
+- ✓ 06: Solute export tests (5 tests: base files, atomtypes commented, guest ITP, no guest ITP, custom ITP)
 - ⏳ 07: Ion export tests
 - ⏳ 08: Cross-tab chain export tests
 
 **Next session:**
-- Continue with e2e-export-test Plan 05 (Custom molecule export tests)
+- Continue with e2e-export-test Plan 05 or 07 (Custom molecule or Ion export tests)
 - Registry case bugfix benefits Plans 06 (solute _L suffix) and 08 (chain test)
+- Solute plan 06 validated nested interface_structure access and conditional ITP logic
 
 ---
 *State updated: 2026-05-22 — e2e-export-test Plan 03 complete (5 hydrate GROMACS exporter E2E tests + registry case bugfix)*
