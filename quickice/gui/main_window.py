@@ -1218,43 +1218,43 @@ class MainWindow(QMainWindow):
                 self.ion_panel.set_liquid_volume(liquid_vol)
 
             # Calculate water molecules replaced
-            logger.info(f"[Water Count Debug] Starting water replacement calculation...")
-            logger.info(f"[Water Count Debug] hasattr(_current_interface_result): {hasattr(self, '_current_interface_result')}")
+            logger.debug(f"[Water Count Debug] Starting water replacement calculation...")
+            logger.debug(f"[Water Count Debug] hasattr(_current_interface_result): {hasattr(self, '_current_interface_result')}")
             if hasattr(self, '_current_interface_result'):
-                logger.info(f"[Water Count Debug] _current_interface_result is None: {self._current_interface_result is None}")
+                logger.debug(f"[Water Count Debug] _current_interface_result is None: {self._current_interface_result is None}")
             
             if hasattr(self, '_current_interface_result') and self._current_interface_result is not None:
                 original_water_count = self._current_interface_result.water_nmolecules
-                logger.info(f"[Water Count Debug] original_water_count: {original_water_count}")
+                logger.debug(f"[Water Count Debug] original_water_count: {original_water_count}")
                 # CustomMoleculeStructure.interface_structure is a typed dataclass field (can be None)
                 if result.interface_structure is not None:
                     modified_water_count = result.interface_structure.water_nmolecules
-                    logger.info(f"[Water Count Debug] modified_water_count: {modified_water_count}")
+                    logger.debug(f"[Water Count Debug] modified_water_count: {modified_water_count}")
                 else:
                     logger.warning("[Water Count Debug] result.interface_structure is None, using original count as fallback")
                     modified_water_count = original_water_count  # Fallback to avoid negative count
                 water_replaced = original_water_count - modified_water_count
-                logger.info(f"[Water Count Debug] water_replaced calculation: {original_water_count} - {modified_water_count} = {water_replaced}")
+                logger.debug(f"[Water Count Debug] water_replaced calculation: {original_water_count} - {modified_water_count} = {water_replaced}")
             else:
                 water_replaced = 0
                 logger.warning(f"[Water Count Debug] _current_interface_result not available, setting water_replaced=0")
 
             # Log success with complete system info
-            logger.info(f"[Water Count Debug] Logging success message...")
+            logger.debug(f"[Water Count Debug] Logging success message...")
             self.custom_molecule_panel.log_message(
                 f"Custom molecule insertion complete: {result.custom_molecule_count} molecules, "
                 f"{len(result.positions)} total atoms (ice+water+custom)"
             )
 
             # Log water replacement count if any water was replaced
-            logger.info(f"[Water Count Debug] Checking if water_replaced > 0: {water_replaced > 0}")
+            logger.debug(f"[Water Count Debug] Checking if water_replaced > 0: {water_replaced > 0}")
             if water_replaced > 0:
-                logger.info(f"[Water Count Debug] Logging water replacement message: {water_replaced} waters")
+                logger.debug(f"[Water Count Debug] Logging water replacement message: {water_replaced} waters")
                 self.custom_molecule_panel.log_message(
                     f"Replaced {water_replaced} overlapping liquid water molecules"
                 )
             else:
-                logger.info(f"[Water Count Debug] No water replacement message (water_replaced={water_replaced})")
+                logger.debug(f"[Water Count Debug] No water replacement message (water_replaced={water_replaced})")
 
         except Exception as e:
             # Log the error with full traceback

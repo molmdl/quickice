@@ -12,7 +12,6 @@ from quickice.structure_generation.types import (
     HydrateStructure,
     HydrateLatticeInfo,
     MoleculeIndex,
-    MOLECULE_TYPE_INFO,
     HYDRATE_LATTICES,
     GUEST_MOLECULES,
 )

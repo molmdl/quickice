@@ -21,8 +21,10 @@ from quickice.structure_generation.types import (
 )
 
 
+# Ion parameters from Madrid2019_085 (Zeron et al., J. Chem. Phys. 2019)
+
 # Physical constants
-AVOGADRO = 6.02214076e23  # mol^-1
+AVOGADRO = 6.02214076e23  # mol^-1 (CODATA 2017)
 
 # Ion van der Waals radii (in nm)
 NA_VDW_RADIUS = 0.190  # 190 pm

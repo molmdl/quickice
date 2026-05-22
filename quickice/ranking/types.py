@@ -18,8 +18,8 @@ class ScoringConfig:
         oo_cutoff: Cutoff distance for O-O neighbor detection in nm (default: 0.35 nm)
     """
 
-    ideal_oo_distance: float = 0.276  # nm - ideal O-O distance in ice (H-bond length)
-    oo_cutoff: float = 0.35  # nm - cutoff for H-bond detection
+    ideal_oo_distance: float = 0.276  # nm - ideal O-O distance in ice (Petrenko & Whitworth, 1999, Physics of Ice)
+    oo_cutoff: float = 0.35  # nm - cutoff for O-O neighbor detection (common PBC cutoff)
 
 
 @dataclass

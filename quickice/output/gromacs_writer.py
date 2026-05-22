@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Optional
 import numpy as np
 
 from quickice.utils.molecule_utils import count_guest_atoms
-from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex, MOLECULE_TYPE_INFO
+from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 if TYPE_CHECKING:

@@ -28,7 +28,7 @@ energy_score = mean(|d_OO - 0.276|) × 100
 
 Where:
 - `d_OO` = O-O distances within cutoff (0.35 nm)
-- `0.276` = Ideal O-O distance in nm (typical hydrogen bond length)
+- `0.276` = Ideal O-O distance in nm (Petrenko & Whitworth, 1999, Physics of Ice)
 - `100` = Scaling factor for visibility
 
 ### Interpretation

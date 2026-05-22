@@ -37,7 +37,8 @@ def generate_ion_itp(na_count: int, cl_count: int) -> str:
     Returns:
         ion.itp file content as string with [moleculetype] and [atoms] sections.
     """
-    itp_content = f"""[ moleculetype ]
+    itp_content = f"""; Madrid2019_085 ion model (Zeron et al., J. Chem. Phys. 2019)
+[ moleculetype ]
 ; Name        nrexcl
 NA            1
 
