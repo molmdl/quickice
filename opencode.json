@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "small_model": "synthetic/hf:openai/gpt-oss-120b",
+  "small_model": "synthetic/syn:small:text",
   "agent": {
     "gsd-planner": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-plan-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
@@ -13,9 +13,9 @@
     "gsd-debugger": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-verifier": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-integration-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
-    "gsd-set-profile": { "model": "github-copilot/gpt-5-mini" },
-    "gsd-settings": { "model": "github-copilot/gpt-5-mini" },
-    "gsd-set-model": { "model": "github-copilot/gpt-5-mini" },
+    "gsd-set-profile": { "model": "synthetic/syn:small:text" },
+    "gsd-settings": { "model": "synthetic/syn:small:text" },
+    "gsd-set-model": { "model": "synthetic/syn:small:text" },
     "cp-gsd-planner": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-plan-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-phase-researcher": { "model": "synthetic/hf:zai-org/GLM-5.1" },
@@ -27,9 +27,9 @@
     "cp-gsd-debugger": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-verifier": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-integration-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
-    "cp-gsd-set-profile": { "model": "github-copilot/gpt-5-mini" },
-    "cp-gsd-settings": { "model": "github-copilot/gpt-5-mini" },
-    "cp-gsd-set-model": { "model": "github-copilot/gpt-5-mini" }
+    "cp-gsd-set-profile": { "model": "synthetic/syn:small:text" },
+    "cp-gsd-settings": { "model": "synthetic/syn:small:text" },
+    "cp-gsd-set-model": { "model": "synthetic/syn:small:text" }
   },
   "permission": {
     "external_directory": {

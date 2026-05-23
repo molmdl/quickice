@@ -1,23 +1,23 @@
 Actual cost is lower with as we use the synthetic coding plan instead of API pricing
-Large dataset detected (1319 sessions). This may take a while...
+Large dataset detected (1320 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          1,319 │
-│Messages                                         38,046 │
+│Sessions                                          1,320 │
+│Messages                                         38,072 │
 │Days                                                 59 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                     $1017.85 │
-│Avg Cost/Day                                     $17.25 │
+│Total Cost                                     $1018.38 │
+│Avg Cost/Day                                     $17.26 │
 │Avg Tokens/Session                                 1.4M │
-│Median Tokens/Session                            917.3K │
-│Input                                            308.3M │
+│Median Tokens/Session                            916.1K │
+│Input                                            308.4M │
 │Output                                            14.1M │
-│Cache Read                                      1564.3M │
+│Cache Read                                      1564.7M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -57,12 +57,12 @@ Large dataset detected (1319 sessions). This may take a while...
 │  Cost                                         $10.0363 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5.1                           │
-│  Messages                                        1,432 │
-│  Input Tokens                                     9.5M │
-│  Output Tokens                                  645.9K │
-│  Cache Read                                      77.8M │
+│  Messages                                        1,452 │
+│  Input Tokens                                     9.7M │
+│  Output Tokens                                  648.7K │
+│  Cache Read                                      78.2M │
 │  Cache Write                                         0 │
-│  Cost                                         $89.2751 │
+│  Cost                                         $89.8060 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5.1                                │
 │  Messages                                          984 │
@@ -109,15 +109,15 @@ Large dataset detected (1319 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 19824 (40.9%)  │
-│ read               █████████████        13519 (27.9%)  │
-│ edit               ██████               6184 (12.8%)   │
+│ bash               ████████████████████ 19835 (40.9%)  │
+│ read               █████████████        13520 (27.9%)  │
+│ edit               ██████               6187 (12.8%)   │
 │ grep               ██                   2667 ( 5.5%)   │
 │ glob               █                    1950 ( 4.0%)   │
-│ write              █                    1790 ( 3.7%)   │
+│ write              █                    1791 ( 3.7%)   │
 │ task               █                    1105 ( 2.3%)   │
 │ question           █                    702 ( 1.4%)    │
-│ webfetch           █                    498 ( 1.0%)    │
+│ webfetch           █                    500 ( 1.0%)    │
 │ invalid            █                    107 ( 0.2%)    │
 │ todowrite          █                     56 ( 0.1%)    │
 │ websearch          █                     15 ( 0.0%)    │
