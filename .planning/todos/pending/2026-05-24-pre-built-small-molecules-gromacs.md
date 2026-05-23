@@ -17,6 +17,6 @@ TBD — Research needed:
 
 1. **License:** Check AMBER geostd license (likely Amber Force Field terms — verify redistribution rights for bundled .gro/.itp in GROMACS format)
 2. **Size:** Inventory the molecule set in amber_geostd.tar.bz2 (count, types, file sizes)
-3. **Conversion:** Research AMBER → GROMACS format conversion (parm7/nc → .gro/.itp). Tools: ACPYPE, ParmEd, InterMol. Evaluate quality and automation feasibility.
+3. **Conversion:** Research AMBER → GROMACS format conversion (parm7/nc → .gro/.itp). Implement own conversion logic rather than adding external library dependencies (ACPYPE, ParmEd, InterMol as reference only). Evaluate quality and automation feasibility.
 4. **Implementation:** Convert subset, bundle as data files, add GUI search/browse panel to Custom Molecule tab
-5. **Utility:** Consider shipping a standalone conversion function (AMBER → GROMACS) for user-supplied AMBER files
+5. **Utility:** Ship a standalone conversion function (AMBER → GROMACS) for user-supplied AMBER files — own implementation, no extra deps
