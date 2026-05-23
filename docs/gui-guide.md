@@ -257,7 +257,7 @@ Hydrate Generation allows you to:
 | CH₄ | Methane | GAFF2 | sI small cages, sII small cages |
 | THF | Tetrahydrofuran | GAFF2 | sII large cages |
 
-**GAFF2 Preparation:** Guest molecule parameters use GAFF2 with RESP2(0.5) partial charges, prepared using Multiwfn and Sobtop. Partial charge prepared using the RESP2.sh script from Multiwfn. QM calcution were done using Gaussian 16 Rev. C01. See [main README](../README.md#guest-molecules-gaff2) for full citations.
+**GAFF2 Preparation:** Guest molecule parameters use GAFF2 with RESP2(0.5) partial charges, prepared using Multiwfn and Sobtop. Partial charge prepared using the RESP2.sh script from Multiwfn. QM calculations were done using Gaussian 16 Rev. C01. See [main README](../README.md#guest-molecules-gaff2) for full citations.
 
 ### Cage Occupancy
 
@@ -425,7 +425,7 @@ Generate an interface structure in Tab 2 first. Custom molecule insertion requir
 
 ![Custom Molecule Panel](images/custom-molecule-panel.png)
 
-*Screenshto of Custom Molecule Upload tab showing file upload controls and 3D viewer*
+*Screenshot of Custom Molecule Upload tab showing file upload controls and 3D viewer*
 
 **Note:** Screenshot update pending for v4.5.
 

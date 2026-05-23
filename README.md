@@ -215,16 +215,16 @@ DOI: https://doi.org/10.1063/1.1931662
 
 CH₄ and THF use GAFF2 force field with RESP2(0.5) partial charges:
 
-- Prepared with Sobtop 2026.1.16 and Multiwfn 3.8(dev) using the RESP2.sh script from Multiwfn. QM calcution were done using Gaussian 16 Rev. C01.
+- Prepared with Sobtop 2026.1.16 and Multiwfn 3.8(dev) using the RESP2.sh script from Multiwfn. QM calculations were done using Gaussian 16 Rev. C01.
 - See [docs/gro-itp-guide.md](docs/gro-itp-guide.md) for custom molecule preparation
 
 ## Ice Phase Support
 
 QuickIce distinguishes between phase detection and structure generation capabilities:
 
-### Phase Detection (12 phases)
+### Phase Detection (13 phases)
 
-The interactive phase diagram can identify 12 ice polymorphs based on temperature and pressure conditions:
+The interactive phase diagram can identify 13 ice polymorphs based on temperature and pressure conditions:
 
 | Phase | Crystal System | Pressure Range | Temperature Range |
 |-------|----------------|----------------|-------------------|
@@ -239,6 +239,7 @@ The interactive phase diagram can identify 12 ice polymorphs based on temperatur
 | Ice VIII | Ordered VII | > 2000 MPa | < 273K |
 | Ice IX | Ordered III | 200-400 MPa | < 175K |
 | Ice XI | Ordered Ih | Low pressure | < 72K |
+| Ice XV | Ordered VI | 950-2100 MPa | 50-100K |
 | Ice X | Symmetric | > 40 GPa | > 273K |
 
 **Note:** Phase boundaries depend on both T and P simultaneously. Ranges above are approximate.

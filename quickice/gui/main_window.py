@@ -1423,7 +1423,7 @@ class MainWindow(QMainWindow):
         extensibility (e.g., logging tab changes).
         
         Args:
-            index: New tab index (0 = Ice Generation, 1 = Interface Construction)
+            index: New tab index (0 = Ice Generation, 1 = Hydrate Generation, 2 = Interface Construction, 3 = Custom Molecule, 4 = Solute Insertion, 5 = Ion Insertion)
         """
         # Qt preserves all widget state automatically
         # No explicit state saving needed - widgets maintain their state

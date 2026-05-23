@@ -10,8 +10,18 @@ import sys
 import subprocess
 from pathlib import Path
 
-def run_test(name, command, expected_result):
-    """Run a single UAT test."""
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent  # quickice repo root
+
+
+def run_test(name, command, expected_result, merge_stderr=False):
+    """Run a single UAT test.
+
+    Args:
+        name: Test name for display
+        command: Command as a list (e.g., ["python", "-c", "..."])
+        expected_result: Expected output description
+        merge_stderr: If True, merge stderr into stdout (replaces shell 2>&1)
+    """
     print(f"\n{'='*60}")
     print(f"Test: {name}")
     print(f"Expected: {expected_result}")
@@ -21,14 +31,19 @@ def run_test(name, command, expected_result):
     try:
         result = subprocess.run(
             command,
-            shell=True,
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
+            cwd=str(PROJECT_DIR),
+            stderr=subprocess.STDOUT if merge_stderr else subprocess.PIPE,
         )
         
-        stdout = result.stdout.strip()
-        stderr = result.stderr.strip()
+        if merge_stderr:
+            stdout = result.stdout.strip()
+            stderr = ""
+        else:
+            stdout = result.stdout.strip()
+            stderr = result.stderr.strip()
         
         print(f"Exit code: {result.returncode}")
         if stdout:
@@ -58,7 +73,7 @@ def main():
     print("Expected: T=260K, P=400MPa returns Ice V (ice_v)")
     print("-"*60)
     ret, out, err = run_test("Ice V lookup", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(260, 400)['phase_id'])\"",
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(260, 400)['phase_id'])"],
         "ice_v")
     passed = "ice_v" in out
     results.append(("Test #8: Ice V", passed))
@@ -70,7 +85,7 @@ def main():
     print("Expected: T=240K, P=220MPa returns Ice III (ice_iii)")
     print("-"*60)
     ret, out, err = run_test("Ice III lookup", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(240, 220)['phase_id'])\"",
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(240, 220)['phase_id'])"],
         "ice_iii")
     passed = "ice_iii" in out
     results.append(("Test #9: Ice III", passed))
@@ -82,8 +97,8 @@ def main():
     print("Expected: T=400K, P=2000MPa returns Liquid (UnknownPhaseError)")
     print("-"*60)
     ret, out, err = run_test("Ice VII below melt", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(400, 2000)\" 2>&1",
-        "UnknownPhaseError")
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(400, 2000)"],
+        "UnknownPhaseError", merge_stderr=True)
     passed = "UnknownPhaseError" in out or "Liquid" in out
     results.append(("Test #10: VII below melt", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
@@ -94,7 +109,7 @@ def main():
     print("Expected: T=400K, P=3000MPa returns Ice VII (ice_vii)")
     print("-"*60)
     ret, out, err = run_test("Ice VII above melt", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(400, 3000)['phase_id'])\"",
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(400, 3000)['phase_id'])"],
         "ice_vii")
     passed = "ice_vii" in out
     results.append(("Test #11: VII above melt", passed))
@@ -106,8 +121,8 @@ def main():
     print("Expected: T=500K, P=4500MPa returns Liquid (UnknownPhaseError)")
     print("-"*60)
     ret, out, err = run_test("VII melt curve direction", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(500, 4500)\" 2>&1",
-        "UnknownPhaseError")
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; lookup_phase(500, 4500)"],
+        "UnknownPhaseError", merge_stderr=True)
     passed = "UnknownPhaseError" in out or "Liquid" in out
     results.append(("Test #12: VII melt direction", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
@@ -118,8 +133,8 @@ def main():
     print("Expected: Generates 10 candidates")
     print("-"*60)
     ret, out, err = run_test("Structure generation", 
-        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 64 --no-diagram -o /tmp/uat_test_13 2>&1",
-        "10 candidates")
+        ["python", "quickice.py", "-T", "250", "-P", "100", "-N", "64", "--no-diagram", "-o", "/tmp/uat_test_13"],
+        "10 candidates", merge_stderr=True)
     passed = ret == 0 and ("10 candidates" in out or "Generated" in out)
     results.append(("Test #13: Structure gen", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
@@ -149,8 +164,8 @@ def main():
     print("Expected: PNG phase diagram generated")
     print("-"*60)
     ret, out, err = run_test("Phase diagram", 
-        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 64 -o /tmp/uat_test_16 2>&1",
-        "phase_diagram.png")
+        ["python", "quickice.py", "-T", "250", "-P", "100", "-N", "64", "-o", "/tmp/uat_test_16"],
+        "phase_diagram.png", merge_stderr=True)
     passed = ret == 0
     if Path("/tmp/uat_test_16/phase_diagram.png").exists():
         print("Found phase_diagram.png")
@@ -174,8 +189,8 @@ def main():
     print("Expected: Can disable phase diagram")
     print("-"*60)
     ret, out, err = run_test("--no-diagram", 
-        "cd ~/quickice && python quickice.py -T 250 -P 100 -N 32 --no-diagram -o /tmp/uat_test_18 2>&1",
-        "no diagram")
+        ["python", "quickice.py", "-T", "250", "-P", "100", "-N", "32", "--no-diagram", "-o", "/tmp/uat_test_18"],
+        "no diagram", merge_stderr=True)
     passed = ret == 0
     results.append(("Test #18: --no-diagram", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
@@ -186,7 +201,7 @@ def main():
     print("Expected: T=50K, P=10MPa returns Ice XI (ice_xi)")
     print("-"*60)
     ret, out, err = run_test("Ice XI lookup", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(50, 10)['phase_id'])\"",
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(50, 10)['phase_id'])"],
         "ice_xi")
     passed = "ice_xi" in out
     results.append(("Test #19: Ice XI", passed))
@@ -198,7 +213,7 @@ def main():
     print("Expected: T=300K, P=50000MPa returns Ice X (ice_x)")
     print("-"*60)
     ret, out, err = run_test("Ice X lookup", 
-        "cd ~/quickice && python -c \"from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(300, 50000)['phase_id'])\"",
+        ["python", "-c", "from quickice.phase_mapping.lookup import lookup_phase; print(lookup_phase(300, 50000)['phase_id'])"],
         "ice_x")
     passed = "ice_x" in out
     results.append(("Test #20: Ice X", passed))
@@ -244,9 +259,10 @@ def main():
     print("Expected: pytest runs and all tests pass")
     print("-"*60)
     ret, out, err = run_test("pytest", 
-        "cd ~/quickice && python -m pytest tests/ -v --tb=short 2>&1 | tail -20",
-        "passed")
+        ["python", "-m", "pytest", "tests/", "-v", "--tb=short"],
+        "passed", merge_stderr=True)
     passed = ret == 0 and "passed" in out
+    # Show last 500 chars of output (replaces shell "tail -20")
     print(out[-500:] if len(out) > 500 else out)
     results.append(("Test #24: Test suite", passed))
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
