@@ -405,3 +405,257 @@ class TestRandomPlacement:
             f"Concentration roundtrip failed: C={C}, count={count}, C2={C2}, "
             f"|C2-C|={abs(C2 - C):.4f}"
         )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Custom placement tests (Workflow 5c)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestCustomPlacement:
+    """Tests for user-specified molecule placement (Workflow 5c)."""
+
+    def test_custom_placement_at_valid_position(self, interface_slab):
+        """Valid position in liquid region should pass validation.
+
+        A position well within the liquid region should be within_bounds
+        and is_valid.
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            positions=[(1.5, 1.5, 4.0)],
+            rotations=[(0, 0, 0)],
+        )
+        inserter = CustomMoleculeInserter(config)
+
+        result = inserter.validate_single_placement(
+            interface_slab, (1.5, 1.5, 4.0), (0, 0, 0)
+        )
+
+        assert isinstance(result, PlacementValidationResult)
+        assert result.within_bounds is True, (
+            f"Position (1.5, 1.5, 4.0) should be within liquid region: "
+            f"error='{result.error_message}'"
+        )
+        assert result.is_valid is True, (
+            f"Valid position should pass validation: error='{result.error_message}'"
+        )
+
+    def test_custom_placement_out_of_bounds(self, interface_slab):
+        """Position in ice region (z near 0) should be out of bounds.
+
+        The liquid region starts after the ice layer. A position at
+        z ≈ 0 should be in the ice region, not the liquid region.
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            positions=[(0.5, 0.5, 0.1)],
+            rotations=[(0, 0, 0)],
+        )
+        inserter = CustomMoleculeInserter(config)
+
+        result = inserter.validate_single_placement(
+            interface_slab, (0.5, 0.5, 0.1), (0, 0, 0)
+        )
+
+        assert result.within_bounds is False, (
+            f"Position in ice region should be out of bounds"
+        )
+        assert result.is_valid is False, (
+            f"Out-of-bounds position should fail validation"
+        )
+
+    def test_custom_placement_overlap_detected(self, interface_slab):
+        """Position overlapping with ice atoms should detect overlap.
+
+        A position very close to the ice region (0.1, 0.1, 0.1) will
+        either be out of bounds or will overlap with ice atoms.
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            positions=[(0.1, 0.1, 0.1)],
+            rotations=[(0, 0, 0)],
+        )
+        inserter = CustomMoleculeInserter(config)
+
+        result = inserter.validate_single_placement(
+            interface_slab, (0.1, 0.1, 0.1), (0, 0, 0)
+        )
+
+        # Position (0.1, 0.1, 0.1) is in ice region → either out of bounds or overlap
+        assert result.has_overlap is True or result.within_bounds is False, (
+            f"Position in ice region should trigger overlap or be out of bounds. "
+            f"within_bounds={result.within_bounds}, has_overlap={result.has_overlap}"
+        )
+
+    def test_custom_placement_no_interface_returns_invalid(self, interface_slab):
+        """validate_single_placement with no liquid region should return invalid.
+
+        A structure with water_atom_count == 0 has no liquid region,
+        making custom placement impossible.
+        """
+        # Create a synthetic structure with no water
+        from quickice.structure_generation.types import InterfaceStructure
+
+        no_water_structure = InterfaceStructure(
+            positions=interface_slab.positions[:interface_slab.ice_atom_count],
+            atom_names=interface_slab.atom_names[:interface_slab.ice_atom_count],
+            cell=interface_slab.cell,
+            ice_atom_count=interface_slab.ice_atom_count,
+            water_atom_count=0,
+            ice_nmolecules=interface_slab.ice_nmolecules,
+            water_nmolecules=0,
+            mode="slab",
+            report="",
+            guest_atom_count=0,
+            guest_nmolecules=0,
+        )
+
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            positions=[(1.5, 1.5, 4.0)],
+            rotations=[(0, 0, 0)],
+        )
+        inserter = CustomMoleculeInserter(config)
+
+        result = inserter.validate_single_placement(
+            no_water_structure, (1.5, 1.5, 4.0), (0, 0, 0)
+        )
+
+        assert result.is_valid is False, (
+            "No liquid region should make placement invalid"
+        )
+        assert result.error_message is not None, "Should have error message"
+        assert "liquid" in result.error_message.lower() or "no " in result.error_message.lower(), (
+            f"Error message should mention no liquid region: '{result.error_message}'"
+        )
+
+    def test_place_custom_with_user_positions(self, interface_slab):
+        """place_custom() should produce structure with user-specified molecules.
+
+        Placing 1 ethanol at (1.5, 1.5, 4.0) should yield
+        custom_molecule_count == 1 and correct complete system atom counts.
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="custom",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            positions=[(1.5, 1.5, 4.0)],
+            rotations=[(0, 0, 0)],
+        )
+        inserter = CustomMoleculeInserter(config)
+        custom = inserter.place_custom(
+            interface_slab,
+            positions=[(1.5, 1.5, 4.0)],
+            rotations=[(0, 0, 0)],
+        )
+
+        assert isinstance(custom, CustomMoleculeStructure)
+        assert custom.custom_molecule_count == 1, (
+            f"Expected 1 molecule, got {custom.custom_molecule_count}"
+        )
+        assert custom.custom_molecule_atom_count == ETOH_ATOM_COUNT, (
+            f"Expected {ETOH_ATOM_COUNT} custom atoms, got {custom.custom_molecule_atom_count}"
+        )
+
+        # Verify complete system atom counts sum correctly
+        expected_total = (
+            custom.ice_atom_count
+            + custom.water_atom_count
+            + custom.guest_atom_count
+            + custom.custom_molecule_atom_count
+        )
+        actual_total = len(custom.positions)
+        assert actual_total == expected_total, (
+            f"Atom count mismatch: {actual_total} positions vs {expected_total} expected"
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Edge case tests
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestCustomMoleculeEdgeCases:
+    """Edge case tests for custom molecule workflow."""
+
+    def test_custom_molecule_moleculetype_registration(self, interface_slab):
+        """After place_random(), moleculetype_name should be registered in the registry.
+
+        CustomMoleculeInserter registers each placed molecule type with
+        MoleculetypeRegistry, producing a name like "CUSTOM_MOL_1".
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="random",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            molecule_count=2,
+        )
+        inserter = CustomMoleculeInserter(config)
+        custom = inserter.place_random(interface_slab, 2)
+
+        # moleculetype_name should be set
+        assert custom.moleculetype_name, "moleculetype_name should not be empty"
+        assert "CUSTOM" in custom.moleculetype_name.upper() or "MOL" in custom.moleculetype_name.upper(), (
+            f"Expected moleculetype name containing CUSTOM/MOL, got '{custom.moleculetype_name}'"
+        )
+
+        # Registry should have the registered type
+        assert inserter.registry is not None, "Registry should not be None"
+        # The registry should have at least one custom moleculetype registered
+        custom_keys = [k for k in inserter.registry._registered if k.startswith("custom_")]
+        assert len(custom_keys) >= 1, (
+            f"Registry should have registered custom moleculetype, "
+            f"keys: {list(inserter.registry._registered.keys())}"
+        )
+
+    def test_custom_molecule_from_hydrate_interface(self, interface_hydrate_slab):
+        """Custom molecule placement on hydrate interface should preserve guests.
+
+        The interface_hydrate_slab fixture has guest molecules (CH4 from
+        hydrate). After custom molecule insertion, guests should still be
+        present and custom molecules correctly placed.
+        """
+        config = CustomMoleculeConfig(
+            placement_mode="random",
+            gro_path=ETOH_GRO,
+            itp_path=ETOH_ITP,
+            molecule_count=2,
+        )
+        inserter = CustomMoleculeInserter(config)
+        custom = inserter.place_random(interface_hydrate_slab, 2)
+
+        # Guests should be preserved
+        assert custom.guest_atom_count > 0, (
+            f"Guest atoms should be preserved from hydrate interface, "
+            f"got guest_atom_count={custom.guest_atom_count}"
+        )
+
+        # Custom molecules should be placed
+        assert custom.custom_molecule_count == 2, (
+            f"Expected 2 custom molecules, got {custom.custom_molecule_count}"
+        )
+        assert custom.custom_molecule_atom_count == 2 * ETOH_ATOM_COUNT, (
+            f"Expected {2 * ETOH_ATOM_COUNT} custom atoms, got {custom.custom_molecule_atom_count}"
+        )
+
+        # Complete system should have all components
+        expected_total = (
+            custom.ice_atom_count
+            + custom.water_atom_count
+            + custom.guest_atom_count
+            + custom.custom_molecule_atom_count
+        )
+        actual_total = len(custom.positions)
+        assert actual_total == expected_total, (
+            f"Atom count mismatch on hydrate interface: "
+            f"{actual_total} positions vs {expected_total} expected"
+        )
