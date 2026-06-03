@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — e2e-api-workflow phase COMPLETE (112 e2e tests, 7/7 must-haves verified)
+**Current Focus:** e2e-compute-export phase — bridging computation pipeline with GROMACS export validation
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-api-workflow — E2E API workflow testing COMPLETE (All 5 plans done)
+**Current focus:** e2e-compute-export — E2E compute-export bridge testing (Plan 01 of 05 complete)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -26,23 +26,23 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | Field | Value |
 |-------|-------|
-| Milestone | e2e-api-workflow |
-| Phase | e2e-api-workflow (E2E API Workflow Testing) |
-| Plan | 5 of 5 complete |
-| Status | Phase COMPLETE — All 5 plans done (112 e2e tests total) |
-| Last activity | 2026-06-03 — Completed e2e-api-workflow-05 (ion insertion + workflow chain e2e tests) |
+| Milestone | e2e-compute-export |
+| Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
+| Plan | 1 of 5 complete |
+| Status | In progress — Plan 01 complete (16 tests), Plans 02-05 pending |
+| Last activity | 2026-06-03 — Completed e2e-compute-export-01 (shared helpers + ice/interface export tests) |
 
-**Progress:** ██████████ 100% (192/192 plans)
+**Progress:** ███████░░░ 70% (135/192 plans across all milestones + e2e-compute-export)
 
 ---
 
 ## Milestone History
 
-### e2e-api-workflow E2E API Workflow Testing (IN PROGRESS)
+### e2e-api-workflow E2E API Workflow Testing (COMPLETE)
 
 **Phases:** 5 plans (01-05)
 **Purpose:** End-to-end API-level tests for QuickIce v4.5 UAT workflows 2-9
-**Progress:** Plan 01 complete (28 tests), Plan 02 complete (21 tests), Plan 03 complete (20 tests), Plan 04 complete (17 tests), Plan 05 complete (26 tests)
+**Progress:** All 5 plans complete
 **Key deliverables:**
 - ✓ Shared conftest.py with 12 module-scoped real generation fixtures (Plan 01)
 - ✓ 12 ice generation e2e tests covering all 6 orthogonal phases (Plan 01)
@@ -124,6 +124,18 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Solute insertion tests — 17 tests for Interface/Custom sources, CH4_H/CH4_L coexistence (Plan 04)
 - ✓ Ion insertion + workflow chain tests — 26 tests, P0 bug I5 exposed, F1-F7 chains (Plan 05)
 - ✓ Total: 112 e2e tests, 7/7 must-haves verified, all pass in ~13s
+
+### e2e-compute-export E2E Compute-Export Bridge Testing (IN PROGRESS)
+
+**Phases:** 5 plans (01-05)
+**Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions
+**Progress:** Plan 01 complete (16 tests), Plans 02-05 pending
+**Key deliverables:**
+- ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
+- ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
+- ✓ 4 Interface (no guests) export tests — GRO SOL-only, atom count, TOP molecules, #include (Plan 01)
+- ✓ 6 Interface+Hydrate Guest export tests — SOL before guests, atom count, TOP molecules+guests, #include hydrate ITP, ITP existence, no interleaving (Plan 01)
+- ✓ Total: 16 bridge tests, 5/5 must-haves verified
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -330,6 +342,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Solute→Ion workaround helper _solute_to_ion_source() | Encapsulates I5 bug workaround (attach solute attrs to interface_structure); matches GUI behavior | ✓ Shipped (e2e-api-workflow-05) |
 | guest_atom_count > 0 for F4 chain instead of guest_nmolecules > 0 | CustomMoleculeStructure lacks guest_nmolecules field; guest_atom_count IS preserved. Known limitation. | ✓ Shipped (e2e-api-workflow-05) |
 | Custom molecule count+atom_count verification, not positions | CustomMoleculeStructure doesn't have custom_molecule_positions; uses molecule_index to track custom molecules | ✓ Shipped (e2e-api-workflow-05) |
+| sys.path.insert for e2e_export_helpers import | pytest doesn't auto-add tests/ to sys.path; conftest import is unreliable | ✓ Shipped (e2e-compute-export-01) |
+| Alpha-char filter for GRO residue parsing | Box vector lines have numeric-only content in [5:10] columns; prevent false positive residue names | ✓ Shipped (e2e-compute-export-01) |
+| write_top_file uses inline [moleculetype] not #include | Older ice candidate writer writes full SOL definition inline; only interface+ writers use #include | ✓ Shipped (e2e-compute-export-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -430,20 +445,20 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-03
-**Completed:** e2e-api-workflow-05 (ion insertion + workflow chain e2e tests: 26 tests)
-**Status:** e2e-api-workflow phase COMPLETE. All 5 of 5 plans done.
+**Completed:** e2e-compute-export-01 (shared helpers + Ice/Interface export bridge tests: 16 tests)
+**Status:** e2e-compute-export Plan 01 of 05 complete.
 
-**e2e-api-workflow Phase Progress:**
-- ✓ 01: Shared conftest.py (12 module-scoped fixtures) + 12 ice e2e tests + 16 hydrate e2e tests (28 total)
-- ✓ 02: Interface generation e2e tests (5 slab + 1 pocket + 1 piece + 2 hydrate + 2 molecule counts + 2 Ice II + 1 Ice Ic + 4 edge cases + 3 invalid config = 21 tests)
-- ✓ 03: Custom molecule e2e tests (6 validation + 7 random placement + 5 custom placement + 2 edge cases = 20 tests)
-- ✓ 04: Solute insertion e2e tests (5 Interface source + 2 CH4_H/CH4_L coexistence P0 + 2 Custom source + 2 molecule count + 2 S4/S5 combos + 4 attribute propagation = 17 tests)
-- ✓ 05: Ion insertion e2e tests (14 tests) + workflow chain e2e tests (12 tests) = 26 tests total
+**e2e-compute-export Phase Progress:**
+- ✓ 01: Shared e2e_export_helpers.py (6 parsing + 9 chain-building helpers) + Ice/Interface export tests (16 total)
+- ⏳ 02: Hydrate candidate export tests (pending)
+- ⏳ 03: Custom molecule export tests (pending)
+- ⏳ 04: Solute export tests (pending)
+- ⏳ 05: Ion + full chain export tests (pending)
 
 **Next session:**
-- e2e-api-workflow milestone COMPLETE with 112 total e2e tests
-- Key findings: P0 SoluteStructure→IonInserter AttributeError bug exposed, guest_nmolecules lost through CustomMoleculeStructure (known limitation)
-- Potential next milestone: bug fixes or next feature work
+- Continue e2e-compute-export phase with Plan 02
+- Key findings from Plan 01: write_top_file uses inline [moleculetype] (not #include), box vector lines need alpha-char filter in GRO parsing, CH4_H fits GRO 5-char residue name limit
+- All parsing helpers ready for Plans 02-05
 
 ---
-*State updated: 2026-06-03 — e2e-api-workflow Plan 05 complete (26 tests, 112 total e2e tests)*
+*State updated: 2026-06-03 — e2e-compute-export Plan 01 complete (16 bridge tests, shared helpers module)*
