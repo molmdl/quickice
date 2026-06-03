@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export phase — bridging computation pipeline with GROMACS export validation
+**Current Focus:** e2e-compute-export phase COMPLETE — 116 bridge tests, 24/24 must-haves verified
 
 ---
 
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | e2e-compute-export |
 | Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
 | Plan | 5 of 5 complete |
-| Status | Phase complete — All 5 plans done (90+ bridge tests) |
-| Last activity | 2026-06-03 — Completed e2e-compute-export-05 (Simple chain F5-F7 + cross-chain invariants: 25 tests) |
+| Status | ✓ Verified complete — 116 tests, 24/24 must-haves passed |
+| Last activity | 2026-06-03 — e2e-compute-export VERIFIED (116 bridge tests, 3 bug fixes in gromacs_writer.py) |
 
 **Progress:** █████████░ 90% (162/192 plans across all milestones)
 

@@ -293,7 +293,7 @@ Plans:
 
 **Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
 
-**Total Plans:** 36 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7)
+**Total Plans:** 36 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-export-test: 8, e2e-api-workflow: 5, e2e-compute-export: 5)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | 🔄 Planned | 0/5 | 5 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 5 | 5 |
 
 ---
 
@@ -369,11 +369,11 @@ Plans:
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
 **Plans:** 5 plans in 3 waves
-- [ ] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (3 scenarios, ~9 tests)
-- [ ] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (3 scenarios, ~9 tests)
-- [ ] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (3 scenarios + 8 ITP checks, ~17 tests)
-- [ ] e2e-compute-export-04-PLAN.md — (Wave 3) Full chain export F1-F4 (4 chains, ~12 tests)
-- [ ] e2e-compute-export-05-PLAN.md — (Wave 3) Simple chain export F5-F7 + cross-chain invariants (~13 tests)
+- [x] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (16 tests)
+- [x] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (21 tests + 3 bugfixes)
+- [x] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (28 tests + bugfix)
+- [x] e2e-compute-export-04-PLAN.md — (Wave 3) Full chain export F1-F4 (26 tests + bugfix)
+- [x] e2e-compute-export-05-PLAN.md — (Wave 3) Simple chain export F5-F7 + cross-chain invariants (25 tests)
 
 ---
 
@@ -411,5 +411,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-03 - e2e-api-workflow phase complete (112 tests, 7/7 must-haves verified)*
+*Last updated: 2026-06-03 - e2e-compute-export phase complete (116 tests, 24/24 must-haves verified)*
 *For current state, see .planning/STATE.md*
