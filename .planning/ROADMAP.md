@@ -344,6 +344,33 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | 🔄 Planned | 0 | 2 |
+
+---
+
+### Phase e2e-compute-export: E2E Compute→Export Bridge Testing
+
+**Goal:** Real computation pipeline output feeds into GROMACS exporters with correct atom ordering, topology format, and ITP bundling
+**Depends on:** e2e-api-workflow (complete), e2e-export-test (complete)
+**Requirements:** No new requirements — bridges two existing test phases
+
+**Success Criteria:**
+1. Full chain (Ice→Interface→Custom→Solute→Ion) output produces valid GROMACS .gro/.top/.itp files
+2. Molecule ordering in .gro matches GROMACS convention: SOL→guests→solutes→custom→ions
+3. .top [molecules] section lists all molecule types with correct counts
+4. ITP files bundled correctly for each molecule type in the chain
+5. Atom counts in .gro match structure positions (no atoms lost in export)
+
+**Details:**
+- Uses REAL structure generation (conftest.py fixtures from e2e-api-workflow)
+- Calls GROMACS exporter methods directly (no QFileDialog mocking)
+- Validates exported file content (parse .gro residue names, .top molecule sections, .itp presence)
+- Tests the interface between computation pipeline output and export pipeline input
+- Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
+
+**Plans:**
+- [ ] e2e-compute-export-01-PLAN.md — Shared test helpers + single-structure export validation (~10 tests)
+- [ ] e2e-compute-export-02-PLAN.md — Full chain compute→export bridge tests (~12 tests)
 
 ---
 
