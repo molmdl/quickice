@@ -6,6 +6,7 @@ wave: 2
 depends_on: ["e2e-api-workflow-01"]
 files_modified:
   - tests/test_e2e_ion_insertion.py
+  - tests/test_e2e_workflow_chains.py
 autonomous: true
 
 must_haves:
@@ -15,10 +16,14 @@ must_haves:
     - "SoluteStructure → IonInserter raises AttributeError (BUG I5 exposure)"
     - "Charge neutrality: na_count == cl_count in all IonStructure results"
     - "Guest/custom/solute attributes propagate through ion insertion"
+    - "Full chain Ice→Interface→Custom→Solute→Ion produces valid structure with all molecule types present at each step"
   artifacts:
     - path: "tests/test_e2e_ion_insertion.py"
       provides: "~12 ion insertion e2e tests"
       exports: ["test_ion_from_interface_source", "test_solute_structure_attribute_error_bug", "test_ion_charge_neutrality"]
+    - path: "tests/test_e2e_workflow_chains.py"
+      provides: "~12 workflow chain e2e tests"
+      exports: ["test_full_chain_ice_slab_custom_solute_ion", "test_hydrate_chain_solute_ion"]
   key_links:
     - from: "tests/test_e2e_ion_insertion.py"
       to: "quickice/structure_generation/ion_inserter.py"
@@ -28,6 +33,22 @@ must_haves:
       to: "quickice/structure_generation/types.py"
       via: "SoluteStructure has molecule_indices not molecule_index"
       pattern: "SoluteStructure|molecule_index"
+    - from: "tests/test_e2e_workflow_chains.py"
+      to: "tests/conftest.py"
+      via: "pytest fixtures (ice_ih_candidate, interface_slab, interface_hydrate_slab)"
+      pattern: "ice_ih_candidate|interface_slab|interface_hydrate_slab"
+    - from: "tests/test_e2e_workflow_chains.py"
+      to: "quickice/structure_generation/custom_molecule_inserter.py"
+      via: "CustomMoleculeInserter(config).place_random(interface, N)"
+      pattern: "CustomMoleculeInserter"
+    - from: "tests/test_e2e_workflow_chains.py"
+      to: "quickice/structure_generation/solute_inserter.py"
+      via: "SoluteInserter(config).insert_solutes(source_structure, config)"
+      pattern: "SoluteInserter"
+    - from: "tests/test_e2e_workflow_chains.py"
+      to: "quickice/structure_generation/ion_inserter.py"
+      via: "IonInserter(config).replace_water_with_ions(source_structure, ion_pairs)"
+      pattern: "replace_water_with_ions"
 ---
 
 <objective>
