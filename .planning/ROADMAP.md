@@ -343,9 +343,43 @@ Plans:
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
+| e2e-api-workflow - E2E API Workflow Testing | 🔄 Planned | 0 | 5 |
+
+---
+
+### Phase e2e-api-workflow: E2E API Workflow Testing
+
+**Goal:** API-level end-to-end tests for the computation pipeline catch logic bugs before human UAT
+**Depends on:** e2e-export-test (complete)
+**Requirements:** No new requirements — tests verify existing v4.5 requirements work correctly at API level
+
+**Success Criteria:**
+1. Ice generation produces valid Candidate objects for all orthogonal phases
+2. Hydrate generation works for sI/sII × ch4/thf with correct guest counts
+3. Interface generation works for slab, pocket, piece modes with structural invariants
+4. Custom molecule validation catches atom count mismatch, handles generic residue names
+5. Solute insertion works from Interface and Custom sources with CH4_H/CH4_L coexistence
+6. Ion insertion achieves charge neutrality, SoluteStructure bug (I5) exposed
+7. Full workflow chains (F1-F7) produce structurally valid results
+
+**Plans:**
+- [ ] e2e-api-workflow-01-PLAN.md — Shared conftest + ice/hydrate generation tests (~13 tests)
+- [ ] e2e-api-workflow-02-PLAN.md — Interface generation tests (~13 tests)
+- [ ] e2e-api-workflow-03-PLAN.md — Custom molecule validation + placement tests (~20 tests)
+- [ ] e2e-api-workflow-04-PLAN.md — Solute insertion tests (~15 tests)
+- [ ] e2e-api-workflow-05-PLAN.md — Ion insertion + workflow chain tests (~24 tests)
+
+**Details:**
+- 7 test files in flat tests/ directory (project convention)
+- Module-scoped fixtures for real GenIce2 generation (~3-5s amortized)
+- P0 tests: Full chain F1, CH4_H/CH4_L coexistence (S3), SoluteStructure bug (I5)
+- P1 tests: Custom placement validation (C2), THF solute (S2), hydrate chain (F3), custom→ion (I3)
+- P2 tests: Remaining combinations for coverage expansion
+- Known bug exposure: SoluteStructure.molecule_index AttributeError when passed to IonInserter
+- Total: ~82 tests across 5 plans, ~90s total execution time
 
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-05-22 - e2e-export-test phase complete*
+*Last updated: 2026-06-03 - e2e-api-workflow phase planned*
 *For current state, see .planning/STATE.md*
