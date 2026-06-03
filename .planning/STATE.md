@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-api-workflow — E2E API workflow testing COMPLETE (All 5 plans done)
+**Current Focus:** v4.5 Solute & Custom Molecule Insertion — e2e-api-workflow phase COMPLETE (112 e2e tests, 7/7 must-haves verified)
 
 ---
 
@@ -109,6 +109,21 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Solute export tests — 5 tests for SoluteGROMACSExporter (Plan 06)
 - ✓ Ion export tests — 7 tests for IonGROMACSExporter + Madrid2019 validation (Plan 07)
 - ✓ Cross-tab chain export tests — 4 tests for full pipeline (Plan 08)
+
+### e2e-api-workflow E2E API Workflow Testing (COMPLETE)
+
+**Phases:** 5 plans (01-05)
+**Purpose:** API-level end-to-end tests for the computation pipeline catching logic bugs before human UAT
+**Progress:** All 5 plans complete
+**Key deliverables:**
+- ✓ Shared conftest.py with 12 module-scoped fixtures for real GenIce2 generation (Plan 01)
+- ✓ Ice generation tests — 12 tests covering all 6 orthogonal phases (Plan 01)
+- ✓ Hydrate generation tests — 16 tests covering sI/sII × CH4/THF (Plan 01)
+- ✓ Interface generation tests — 21 tests for slab/pocket/piece modes, Ice II rejection (Plan 02)
+- ✓ Custom molecule tests — 20 tests for validation, random/custom placement (Plan 03)
+- ✓ Solute insertion tests — 17 tests for Interface/Custom sources, CH4_H/CH4_L coexistence (Plan 04)
+- ✓ Ion insertion + workflow chain tests — 26 tests, P0 bug I5 exposed, F1-F7 chains (Plan 05)
+- ✓ Total: 112 e2e tests, 7/7 must-haves verified, all pass in ~13s
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 

@@ -343,7 +343,7 @@ Plans:
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
-| e2e-api-workflow - E2E API Workflow Testing | 🔄 Planned | 0 | 5 |
+| e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 
 ---
 
@@ -363,11 +363,11 @@ Plans:
 7. Full workflow chains (F1-F7) produce structurally valid results
 
 **Plans:**
-- [ ] e2e-api-workflow-01-PLAN.md — Shared conftest + ice/hydrate generation tests (~13 tests)
-- [ ] e2e-api-workflow-02-PLAN.md — Interface generation tests (~13 tests)
-- [ ] e2e-api-workflow-03-PLAN.md — Custom molecule validation + placement tests (~20 tests)
-- [ ] e2e-api-workflow-04-PLAN.md — Solute insertion tests (~15 tests)
-- [ ] e2e-api-workflow-05-PLAN.md — Ion insertion + workflow chain tests (~24 tests)
+- [x] e2e-api-workflow-01-PLAN.md — Shared conftest + ice/hydrate generation tests (~28 tests)
+- [x] e2e-api-workflow-02-PLAN.md — Interface generation tests (~21 tests)
+- [x] e2e-api-workflow-03-PLAN.md — Custom molecule validation + placement tests (~20 tests)
+- [x] e2e-api-workflow-04-PLAN.md — Solute insertion tests (~17 tests)
+- [x] e2e-api-workflow-05-PLAN.md — Ion insertion + workflow chain tests (~26 tests)
 
 **Details:**
 - 7 test files in flat tests/ directory (project convention)
@@ -381,5 +381,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-03 - e2e-api-workflow phase planned*
+*Last updated: 2026-06-03 - e2e-api-workflow phase complete (112 tests, 7/7 must-haves verified)*
 *For current state, see .planning/STATE.md*
