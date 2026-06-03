@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 Solute & Custom Molecule Insertion — pocket-edge-tests phase complete
+**Current Focus:** e2e-api-workflow — E2E API workflow testing (Plan 01 complete)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 Solute & Custom Molecule Insertion — pocket-edge-tests phase complete
+**Current focus:** e2e-api-workflow — E2E API workflow testing (Plan 01 complete)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -26,17 +26,31 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | Field | Value |
 |-------|-------|
-| Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | pocket-edge-tests (Pocket mode edge cases) |
-| Plan | 3 of 3 complete |
-| Status | Phase complete — All 3 plans done (invariants, edge cases, cubic bug fix) |
-| Last activity | 2026-05-22 — Completed pocket-edge-tests-03 (cubic guest removal bug fix) |
+| Milestone | e2e-api-workflow |
+| Phase | e2e-api-workflow (E2E API Workflow Testing) |
+| Plan | 1 of 5 complete |
+| Status | In progress — Plan 01 done (shared conftest + ice/hydrate tests) |
+| Last activity | 2026-06-03 — Completed e2e-api-workflow-01 (shared conftest + ice/hydrate e2e tests) |
 
-**Progress:** ██████████ 100% (191/191 plans)
+**Progress:** ██████████ 100% (192/192 plans)
 
 ---
 
 ## Milestone History
+
+### e2e-api-workflow E2E API Workflow Testing (IN PROGRESS)
+
+**Phases:** 5 plans (01-05)
+**Purpose:** End-to-end API-level tests for QuickIce v4.5 UAT workflows 2-9
+**Progress:** Plan 01 complete (28 tests)
+**Key deliverables:**
+- ✓ Shared conftest.py with 12 module-scoped real generation fixtures (Plan 01)
+- ✓ 12 ice generation e2e tests covering all 6 orthogonal phases (Plan 01)
+- ✓ 16 hydrate generation e2e tests covering sI/sII × CH4/THF + error handling (Plan 01)
+- ⏳ Interface generation e2e tests (Plan 02)
+- ⏳ Custom molecule e2e tests (Plan 03)
+- ⏳ Solute insertion e2e tests (Plan 04)
+- ⏳ Ion insertion + workflow chain e2e tests (Plan 05)
 
 ### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
 
@@ -285,6 +299,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | FRAG-02 assertions in pocket.py | Water count % 4 == 0 and atom_names == positions after each overlap removal | ✓ Shipped (pocket-edge-tests-01) |
 | Shape-aware guest removal | Cubic pockets use cubic criterion; sphere uses Euclidean; unknown falls back to Euclidean | ✓ Shipped (pocket-edge-tests-03) |
 | Test files in flat tests/ directory | Avoids name collision with tests/test_structure_generation.py | ✓ Shipped (pocket-edge-tests) |
+| 12 fixtures (not 8) in e2e conftest | Added 4 raw HydrateStructure fixtures for hydrate-specific tests needing molecule_index | ✓ Shipped (e2e-api-workflow-01) |
+| PHASE_CONDITIONS dict in conftest | Shared T/P mapping prevents duplication across test files | ✓ Shipped (e2e-api-workflow-01) |
+| Fractional coordinate tolerance 0.01 | GenIce numerical rounding may place atoms slightly outside [0, L) | ✓ Shipped (e2e-api-workflow-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -384,18 +401,20 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-05-22
-**Completed:** pocket-edge-tests-03 (cubic pocket guest removal bug fix)
-**Status:** pocket-edge-tests phase COMPLETE. All 3 plans done.
+**Last session:** 2026-06-03
+**Completed:** e2e-api-workflow-01 (shared conftest + ice/hydrate e2e tests)
+**Status:** e2e-api-workflow phase in progress. Plan 1 of 5 done.
 
-**pocket-edge-tests Phase Progress:**
-- ✓ 01: FRAG-02 assertions in pocket.py (6 assertions after 3 overlap removal phases) + 11 invariant tests
-- ✓ 02: 33 edge case tests across 5 classes (shape variants, size extremes, box geometry, structural invariants, hydrate)
-- ✓ 03: Cubic guest removal bug fix + 7 targeted tests (cubic removal, sphere regression, corner bug)
+**e2e-api-workflow Phase Progress:**
+- ✓ 01: Shared conftest.py (12 module-scoped fixtures) + 12 ice e2e tests + 16 hydrate e2e tests (28 total)
+- ⏳ 02: Interface generation e2e tests
+- ⏳ 03: Custom molecule e2e tests
+- ⏳ 04: Solute insertion e2e tests
+- ⏳ 05: Ion insertion + workflow chain e2e tests
 
 **Next session:**
-- pocket-edge-tests phase is complete
-- Ready for next milestone work or regression testing
+- Continue with e2e-api-workflow-02 (interface generation tests)
+- conftest.py fixtures (interface_slab, interface_pocket, interface_hydrate_slab) ready for Plan 02
 
 ---
-*State updated: 2026-05-22 — pocket-edge-tests phase COMPLETE (3 plans, 51 tests, 1 bug fix)*
+*State updated: 2026-06-03 — e2e-api-workflow Plan 01 complete (28 tests, 12 fixtures)*
