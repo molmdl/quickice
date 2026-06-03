@@ -84,7 +84,7 @@ Import parsing helpers: `from conftest import parse_gro_residue_names, parse_gro
 Import writer functions: `from quickice.output.gromacs_writer import write_ion_gro_file, write_ion_top_file`
 
 **Class TestFullChainF1Export:**
-- `test_f1_gro_molecule_ordering(self, interface_slab, tmp_path)`: Build F1 chain (interface_slab → custom(3) → solute(CH4,0.3) → ion(0.15)). Call `write_ion_gro_file(ion, str(tmp_path / "f1.gro"))`. Parse residue names. Find SOL, custom (first non-SOL non-NA/CL residue), NA, CL indices. Assert max(SOL indices) < min(custom indices). Assert max(custom indices) < min(NA indices). Assert max(NA indices) < min(CL indices).
+- `test_f1_gro_molecule_ordering(self, interface_slab, tmp_path)`: Build F1 chain (interface_slab → custom(3) → solute(CH4,0.3) → ion(0.15)). Call `write_ion_gro_file(ion, str(tmp_path / "f1.gro"))`. Parse residue names. Find SOL, custom (first non-SOL non-NA/CL residue), NA, CL indices. Assert max(SOL indices) < min(custom indices). Find CH4_L indices (solute residues). Assert max(custom indices) < min(CH4_L indices). Assert max(CH4_L indices) < min(NA indices). Assert max(NA indices) < min(CL indices).
 - `test_f1_top_molecules_section(self, interface_slab, tmp_path)`: Call `write_ion_top_file(ion, str(tmp_path / "f1.top"))`. Parse `parse_top_molecules`. Assert "SOL" in molecules with count == ice+water. Assert "NA" count == ion.na_count. Assert "CL" count == ion.cl_count. Assert custom moleculetype name in molecules with count == 3. Assert "CH4_L" (or solute moleculetype name) in molecules with count matching solute count.
 - `test_f1_atom_count_conservation(self, interface_slab, tmp_path)`: After building F1 chain and writing .gro, parse `parse_gro_atom_count(gro_path)`. Count total output atoms: ice_nmolecules*4 + water_nmolecules*4 + custom_molecule_atom_count + solute atom count + na_count + cl_count. Assert .gro atom count == calculated total. This verifies no atoms are lost in the export.
 
@@ -130,8 +130,8 @@ Add additional tests to `tests/test_e2e_compute_export_chain.py` (append to the 
 
 **Class TestAtomConservation:**
 - `test_no_atoms_lost_in_export(self, interface_slab, tmp_path)`: Build F1 chain. Calculate EXPECTED output atom count:
-  - SOL (ice): ion.ice_nmolecules * 4 (3→4 expansion with MW)
-  - SOL (water): ion.water_nmolecules * 4
+  - SOL (ice): sum(1 for m in ion.molecule_index if m.mol_type == 'ice') * 4 (3→4 expansion with MW)
+  - SOL (water): sum(1 for m in ion.molecule_index if m.mol_type == 'water') * 4
   - Guests: ion.guest_atom_count (if > 0)
   - Custom: ion.custom_molecule_atom_count (if > 0)
   - Solutes: len(ion.solute_atom_names) if ion.solute_positions is not None

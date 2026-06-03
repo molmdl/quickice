@@ -24,7 +24,7 @@ must_haves:
       provides: "GRO/TOP parsing helper functions (parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes)"
       contains: "def parse_gro_residue_names"
     - path: "tests/test_e2e_compute_export.py"
-      provides: "Single-structure export e2e tests (~8 tests)"
+      provides: "Single-structure export e2e tests (~12 tests)"
       contains: "class TestIceExport"
   key_links:
     - from: "tests/conftest.py"
@@ -42,7 +42,7 @@ Add GRO/TOP parsing helpers to conftest.py and create e2e tests that export REAL
 
 Purpose: Establish the compute→export bridge for single-structure exports (Ice, Interface, Interface+guests, Custom, Solute, Ion) using real GenIce2-generated data — not synthetic fixtures.
 
-Output: Shared parsing helpers in conftest.py + test_e2e_compute_export.py with ~8 passing tests
+Output: Shared parsing helpers in conftest.py + test_e2e_compute_export.py with ~12 passing tests
 </objective>
 
 <execution_context>
@@ -146,7 +146,7 @@ def parse_top_includes(top_path: str) -> list[str]:
 ```
 
 2. Update `tests/test_gromacs_molecule_ordering.py` to import `parse_gro_residue_names` from conftest instead of defining it locally:
-   - Add `from tests.conftest import parse_gro_residue_names` at the top imports
+   - Add `from conftest import parse_gro_residue_names` at the top imports
    - Remove the local `parse_gro_residue_names` function definition (lines 20-62)
    - Note: pytest conftest.py is auto-imported for fixtures but NOT for regular functions. Use explicit import: `from conftest import parse_gro_residue_names` (relative import works since tests/ is the test root)
 
@@ -195,7 +195,7 @@ CRITICAL implementation details:
 - CH4_L residue name in GRO: the solute writer uses `solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")` which returns "CH4_L" (5 chars, fits GRO 5-char limit). Use this in assertions.
   </action>
   <verify>cd /share/home/nglokwan/quickice && python -m pytest tests/test_e2e_compute_export.py -v --no-header -q 2>&1 | tail -15</verify>
-  <done>All ~10 single-structure export tests pass: Ice (2), Interface (4), Custom (2), Solute (2), Ion (2). Each test validates .gro residue ordering AND .top [molecules] section. Atom counts in .gro headers match actual atom lines.</done>
+  <done>All ~12 single-structure export tests pass: Ice (2), Interface (4), Custom (2), Solute (2), Ion (2). Each test validates .gro residue ordering AND .top [molecules] section. Atom counts in .gro headers match actual atom lines.</done>
 </task>
 
 </tasks>
@@ -209,7 +209,7 @@ CRITICAL implementation details:
 <success_criteria>
 1. 4 parsing helper functions added to conftest.py (parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes)
 2. test_gromacs_molecule_ordering.py updated to import from conftest (no local definition)
-3. test_e2e_compute_export.py created with ~10 tests covering all 5 single-structure export types
+3. test_e2e_compute_export.py created with ~12 tests covering all 5 single-structure export types
 4. All tests pass with real GenIce2-generated data
 5. Atom count verification works for every .gro file
 </success_criteria>
