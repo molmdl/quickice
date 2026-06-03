@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-api-workflow — E2E API workflow testing (Plans 01-03 complete)
+**Current Focus:** e2e-api-workflow — E2E API workflow testing (Plans 01-04 complete)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-api-workflow — E2E API workflow testing (Plans 01-03 complete)
+**Current focus:** e2e-api-workflow — E2E API workflow testing (Plans 01-04 complete)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | e2e-api-workflow |
 | Phase | e2e-api-workflow (E2E API Workflow Testing) |
-| Plan | 3 of 5 complete |
-| Status | In progress — Plans 01-03 done (shared conftest + ice/hydrate + interface + custom molecule tests) |
-| Last activity | 2026-06-03 — Completed e2e-api-workflow-02 (interface generation e2e tests) |
+| Plan | 4 of 5 complete |
+| Status | In progress — Plans 01-04 done (shared conftest + ice/hydrate + interface + custom molecule + solute insertion tests) |
+| Last activity | 2026-06-03 — Completed e2e-api-workflow-04 (solute insertion e2e tests) |
 
 **Progress:** ██████████ 100% (192/192 plans)
 
@@ -42,14 +42,14 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 5 plans (01-05)
 **Purpose:** End-to-end API-level tests for QuickIce v4.5 UAT workflows 2-9
-**Progress:** Plan 01 complete (28 tests), Plan 02 complete (21 tests), Plan 03 complete (20 tests)
+**Progress:** Plan 01 complete (28 tests), Plan 02 complete (21 tests), Plan 03 complete (20 tests), Plan 04 complete (17 tests)
 **Key deliverables:**
 - ✓ Shared conftest.py with 12 module-scoped real generation fixtures (Plan 01)
 - ✓ 12 ice generation e2e tests covering all 6 orthogonal phases (Plan 01)
 - ✓ 16 hydrate generation e2e tests covering sI/sII × CH4/THF + error handling (Plan 01)
 - ✓ Interface generation e2e tests covering slab/pocket/piece + hydrate→interface + Ice II rejection + error handling (Plan 02)
 - ✓ Custom molecule e2e tests covering validation + random/custom placement + edge cases (Plan 03)
-- ⏳ Solute insertion e2e tests (Plan 04)
+- ✓ Solute insertion e2e tests covering Interface/Custom sources, CH4_H/CH4_L coexistence (P0), THF 13-atom, zero concentration, attribute propagation (Plan 04)
 - ⏳ Ion insertion + workflow chain e2e tests (Plan 05)
 
 ### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
@@ -308,6 +308,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Interface molecule counts over molecule_index | InterfaceStructure.molecule_index is empty after generate_interface(); downstream inserters build it. Tests verify ice_nmolecules+water_nmolecules+guest_nmolecules consistency | ✓ Shipped (e2e-api-workflow-02) |
 | Inline fixtures for Ice Ic, Ice II, piece | Not in shared conftest; module-scoped inline keeps conftest clean | ✓ Shipped (e2e-api-workflow-02) |
 | Ice II generated at 200K/300MPa | Confirmed via lookup_phase; GenIce2 supports generation, validate_interface_config rejects | ✓ Shipped (e2e-api-workflow-02) |
+| Register hydrate guest before solute insertion in tests | Simulates real workflow where hydrate export registers guests first; SoluteInserter creates its own registry so hydrate guest must be registered manually before insert_solutes() | ✓ Shipped (e2e-api-workflow-04) |
+| Inline THF hydrate interface for S4 test | conftest.py only has CH4 hydrate fixture; THF hydrate generated inline to avoid fixture explosion | ✓ Shipped (e2e-api-workflow-04) |
+| THF_ATOMS_PER_MOLECULE=13 and CH4_ATOMS_PER_MOLECULE=5 as module constants | Avoids magic numbers in test assertions; matches MOLECULE_TYPE_INFO in types.py | ✓ Shipped (e2e-api-workflow-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -408,19 +411,19 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-03
-**Completed:** e2e-api-workflow-02 (interface generation e2e tests: 21 tests)
-**Status:** e2e-api-workflow phase in progress. Plans 1-3 of 5 done.
+**Completed:** e2e-api-workflow-04 (solute insertion e2e tests: 17 tests)
+**Status:** e2e-api-workflow phase in progress. Plans 1-4 of 5 done.
 
 **e2e-api-workflow Phase Progress:**
 - ✓ 01: Shared conftest.py (12 module-scoped fixtures) + 12 ice e2e tests + 16 hydrate e2e tests (28 total)
 - ✓ 02: Interface generation e2e tests (5 slab + 1 pocket + 1 piece + 2 hydrate + 2 molecule counts + 2 Ice II + 1 Ice Ic + 4 edge cases + 3 invalid config = 21 tests)
 - ✓ 03: Custom molecule e2e tests (6 validation + 7 random placement + 5 custom placement + 2 edge cases = 20 tests)
-- ⏳ 04: Solute insertion e2e tests
+- ✓ 04: Solute insertion e2e tests (5 Interface source + 2 CH4_H/CH4_L coexistence P0 + 2 Custom source + 2 molecule count + 2 S4/S5 combos + 4 attribute propagation = 17 tests)
 - ⏳ 05: Ion insertion + workflow chain e2e tests
 
 **Next session:**
-- Continue with e2e-api-workflow-04 (solute insertion tests)
+- Continue with e2e-api-workflow-05 (ion insertion + workflow chain tests)
 - conftest.py fixtures ready; interface_slab, interface_hydrate_slab available
 
 ---
-*State updated: 2026-06-03 — e2e-api-workflow Plan 02 complete (21 tests, 69 total e2e tests)*
+*State updated: 2026-06-03 — e2e-api-workflow Plan 04 complete (17 tests, 86 total e2e tests)*
