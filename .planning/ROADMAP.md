@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | 🔄 Planned | 0 | 2 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | 🔄 Planned | 0 | 5 |
 
 ---
 
@@ -369,8 +369,11 @@ Plans:
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
 **Plans:**
-- [ ] e2e-compute-export-01-PLAN.md — Shared test helpers + single-structure export validation (~10 tests)
-- [ ] e2e-compute-export-02-PLAN.md — Full chain compute→export bridge tests (~12 tests)
+- [ ] e2e-compute-export-01-PLAN.md — Shared test helpers + Ice/Interface single-structure export (~9 tests)
+- [ ] e2e-compute-export-02-PLAN.md — Custom + Solute single-structure export (~9 tests)
+- [ ] e2e-compute-export-03-PLAN.md — Ion single-structure export + ITP baseline validation (~17 tests)
+- [ ] e2e-compute-export-04-PLAN.md — Full chain export F1-F4 (~12 tests)
+- [ ] e2e-compute-export-05-PLAN.md — Simple chain export F5-F7 + cross-chain invariants (~13 tests)
 
 ---
 

@@ -5,44 +5,41 @@ type: execute
 wave: 1
 depends_on: []
 files_modified:
-  - tests/conftest.py
-  - tests/test_gromacs_molecule_ordering.py
-  - tests/test_e2e_compute_export.py
+  - tests/e2e_export_helpers.py
+  - tests/test_e2e_ice_interface_export.py
 autonomous: true
 
 must_haves:
   truths:
     - "Ice candidate exported via write_gro_file produces valid .gro with only SOL residues"
-    - "Interface structure exported produces .gro with SOL before guests, .top with correct [molecules]"
-    - "Custom molecule structure exported produces .gro with SOL before custom molecules"
-    - "Solute structure exported produces .gro with SOL before solutes"
-    - "Ion structure exported produces .gro with SOL → ions ordering"
-    - "Atom count in .gro header matches actual atom lines for every export"
-    - ".top [molecules] section lists correct molecule type counts for every export level"
+    - "Interface structure exported produces .gro with SOL before guests"
+    - "Interface+hydrate structure exported produces .gro with SOL before CH4/THF guest residues"
+    - "GRO atom count header matches actual atom lines for ice, interface, and hydrate-interface exports"
+    - "TOP [molecules] section lists correct molecule type counts for every export level"
   artifacts:
-    - path: "tests/conftest.py"
-      provides: "GRO/TOP parsing helper functions (parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes)"
-      contains: "def parse_gro_residue_names"
-    - path: "tests/test_e2e_compute_export.py"
-      provides: "Single-structure export e2e tests (~12 tests)"
-      contains: "class TestIceExport"
+    - path: "tests/e2e_export_helpers.py"
+      provides: "GRO/TOP/ITP parsing functions + chain-building helpers"
+      exports: ["parse_gro_residue_names", "parse_gro_atom_count", "parse_top_molecules", "parse_top_includes", "check_itp_moleculetype", "_insert_custom_molecules", "_insert_solutes", "_solute_to_ion_source", "_insert_ions", "_insert_ions_from_solute"]
+    - path: "tests/test_e2e_ice_interface_export.py"
+      provides: "Single-structure export tests for Ice + Interface (3 scenarios)"
+      contains: "class TestIceCandidateExport"
   key_links:
-    - from: "tests/conftest.py"
-      to: "tests/test_e2e_compute_export.py"
+    - from: "tests/e2e_export_helpers.py"
+      to: "tests/test_e2e_ice_interface_export.py"
       via: "import of parse_gro_residue_names and parse_top_molecules"
-      pattern: "from.*conftest.*import|parse_gro_residue_names|parse_top_molecules"
-    - from: "tests/test_e2e_compute_export.py"
+      pattern: "from e2e_export_helpers import"
+    - from: "tests/test_e2e_ice_interface_export.py"
       to: "quickice/output/gromacs_writer.py"
-      via: "direct writer function calls (no QFileDialog)"
-      pattern: "write_(ice|interface|custom_molecule|solute|ion)_(gro|top)_file"
+      via: "direct writer function calls"
+      pattern: "write_(gro|top|interface_gro|interface_top)_file"
 ---
 
 <objective>
-Add GRO/TOP parsing helpers to conftest.py and create e2e tests that export REAL structures (from GenIce2 fixtures) via pure writer functions, validating .gro atom ordering and .top [molecules] section correctness.
+Create the shared test helpers module and first single-structure export validation tests for Ice and Interface structure types.
 
-Purpose: Establish the compute→export bridge for single-structure exports (Ice, Interface, Interface+guests, Custom, Solute, Ion) using real GenIce2-generated data — not synthetic fixtures.
+Purpose: Establish the foundation (parsing helpers + chain builders) that all subsequent plans depend on, and validate that the simplest export paths (Ice Candidate + Interface with/without guests) produce valid GROMACS output from real GenIce2-generated structures.
 
-Output: Shared parsing helpers in conftest.py + test_e2e_compute_export.py with ~12 passing tests
+Output: tests/e2e_export_helpers.py (shared helpers) + tests/test_e2e_ice_interface_export.py (3 test classes, ~9 test methods)
 </objective>
 
 <execution_context>
@@ -54,7 +51,9 @@ Output: Shared parsing helpers in conftest.py + test_e2e_compute_export.py with 
 @.planning/PROJECT.md
 @.planning/ROADMAP.md
 @.planning/STATE.md
+@.planning/phases/e2e-compute-export/e2e-compute-export-RESEARCH.md
 @tests/conftest.py
+@tests/test_e2e_workflow_chains.py
 @tests/test_gromacs_molecule_ordering.py
 @quickice/output/gromacs_writer.py
 </context>
@@ -62,156 +61,140 @@ Output: Shared parsing helpers in conftest.py + test_e2e_compute_export.py with 
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Add GRO/TOP parsing helpers to conftest.py</name>
-  <files>tests/conftest.py, tests/test_gromacs_molecule_ordering.py</files>
+  <name>Task 1: Create shared test helpers module</name>
+  <files>tests/e2e_export_helpers.py</files>
   <action>
-1. Add the following parsing helper functions to the END of `tests/conftest.py` (AFTER the fixture definitions, before any `if __name__` block). These are plain module-level functions, NOT fixtures:
+Create tests/e2e_export_helpers.py (NOT test_-prefixed — avoids pytest auto-collection). This module contains ALL parsing and chain-building helpers used by bridge test files.
 
+**GRO/TOP/ITP parsing functions** (based on test_gromacs_molecule_ordering.py lines 20-62 + new additions):
+
+1. `parse_gro_residue_names(gro_path: str) -> list[str]` — Copy from test_gromacs_molecule_ordering.py lines 20-62. Parse residue names from columns [5:10] of each atom line. Skip lines < 20 chars and box vector lines.
+
+2. `parse_gro_atom_count(gro_path: str) -> int` — Read line 2 (atom count) from .gro file. Return int.
+
+3. `parse_top_molecules(top_path: str) -> dict[str, int]` — Parse [ molecules ] section. Track whether we're inside [ molecules ] by detecting `[` brackets. Skip comment lines (starting with `;`) and blank lines. Return dict of molecule_name -> count.
+
+4. `parse_top_includes(top_path: str) -> list[str]` — Parse all #include directives. Extract filename between double quotes. Return list of ITP filenames.
+
+5. `check_itp_has_moleculetype(itp_path: str) -> bool` — Open ITP file, check if `[ moleculetype ]` appears anywhere. Return True/False.
+
+6. `assert_gro_residue_ordering(residue_names: list[str], expected_order: list[str])` — Assert that residue names appear in the specified order with no interleaving. For each pair of consecutive expected types, find the last index of the first type and first index of the second type, assert last < first. Skip types not present in residue_names.
+
+**Chain-building helpers** (COPY from test_e2e_workflow_chains.py lines 37-169, do NOT import from that file):
+
+7. `DATA_DIR`, `ETOH_GRO`, `ETOH_ITP` — Paths to quickice/data/custom/etoh.gro and etoh.itp
+
+8. `_liquid_volume_nm3(structure) -> float` — Copy from lines 46-52
+
+9. `_insert_custom_molecules(interface, n_molecules=3)` — Copy from lines 55-64
+
+10. `_insert_solutes(source_structure, solute_type='CH4', concentration=0.3, seed=42)` — Copy from lines 67-71
+
+11. `_solute_to_ion_source(solute)` — Copy from lines 74-96 (BUG I5 workaround, MANDATORY for solute→ion chains)
+
+12. `_insert_ions(source_structure, concentration=0.15, seed=42)` — Copy from lines 99-105
+
+13. `_insert_ions_from_solute(solute, concentration=0.15, seed=42)` — Copy from lines 108-111
+
+14. `_hydrate_sI_ch4_candidate()` — Copy from lines 114-126
+
+15. `_hydrate_sI_thf_candidate()` — Copy from lines 128-140
+
+16. `_make_slab_interface(candidate, ...)` — Copy from lines 142-154
+
+17. `_make_pocket_interface(candidate, ...)` — Copy from lines 157-169
+
+**Imports needed:**
 ```python
-# ── GRO/TOP parsing helpers (shared across e2e export test files) ─────────────
-
-def parse_gro_residue_names(gro_path: str) -> list[str]:
-    """Parse residue names from GROMACS .gro file.
-    
-    GRO format: line 1=title, line 2=atom count, lines 3+=atom records.
-    Residue name at columns 6-10 (0-indexed: [5:10]).
-    
-    Returns list of residue names in file order.
-    """
-    residue_names = []
-    with open(gro_path, 'r') as f:
-        lines = f.readlines()
-    if len(lines) < 3:
-        return residue_names
-    for line in lines[2:]:
-        if len(line.strip()) < 20:
-            continue
-        res_name = line[5:10].strip()
-        if res_name and not res_name.replace('.', '').replace('-', '').isspace():
-            residue_names.append(res_name)
-    return residue_names
-
-
-def parse_gro_atom_count(gro_path: str) -> int:
-    """Parse atom count from GROMACS .gro file line 2."""
-    with open(gro_path, 'r') as f:
-        lines = f.readlines()
-    if len(lines) < 2:
-        return 0
-    return int(lines[1].strip())
-
-
-def parse_top_molecules(top_path: str) -> dict[str, int]:
-    """Parse [molecules] section from GROMACS .top file.
-    
-    Returns dict mapping molecule type name to count.
-    """
-    molecules = {}
-    in_molecules = False
-    with open(top_path, 'r') as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped.startswith('['):
-                in_molecules = '[ molecules ]' in stripped.lower() or stripped == '[ molecules ]'
-                continue
-            if not in_molecules:
-                continue
-            if not stripped or stripped.startswith(';') or stripped.startswith('#'):
-                continue
-            parts = stripped.split()
-            if len(parts) >= 2:
-                try:
-                    molecules[parts[0]] = int(parts[1])
-                except ValueError:
-                    continue
-    return molecules
-
-
-def parse_top_includes(top_path: str) -> list[str]:
-    """Parse #include directives from GROMACS .top file.
-    
-    Returns list of included filenames (e.g., ['tip4p-ice.itp', 'ion.itp']).
-    """
-    includes = []
-    with open(top_path, 'r') as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped.startswith('#include'):
-                # Extract filename from #include "filename.itp"
-                start = stripped.find('"')
-                end = stripped.rfind('"')
-                if start != -1 and end != -1 and end > start:
-                    includes.append(stripped[start+1:end])
-    return includes
+import numpy as np
+from pathlib import Path
+from quickice.structure_generation.generator import IceStructureGenerator
+from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
+from quickice.structure_generation.interface_builder import generate_interface
+from quickice.structure_generation.ion_inserter import IonInserter
+from quickice.structure_generation.solute_inserter import SoluteInserter
+from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
+from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
+from quickice.structure_generation.types import (
+    InterfaceConfig, HydrateConfig, IonConfig, IonStructure,
+    SoluteConfig, SoluteStructure, CustomMoleculeConfig, CustomMoleculeStructure, MoleculeIndex,
+)
 ```
 
-2. Update `tests/test_gromacs_molecule_ordering.py` to import `parse_gro_residue_names` from conftest instead of defining it locally:
-   - Add `from conftest import parse_gro_residue_names` at the top imports
-   - Remove the local `parse_gro_residue_names` function definition (lines 20-62)
-   - Note: pytest conftest.py is auto-imported for fixtures but NOT for regular functions. Use explicit import: `from conftest import parse_gro_residue_names` (relative import works since tests/ is the test root)
-
-IMPORTANT: The `parse_gro_residue_names` function in conftest.py must have IDENTICAL logic to the one in test_gromacs_molecule_ordering.py (columns [5:10], same skip logic for box vectors). Copy the implementation exactly.
+**IMPORTANT:** Do NOT add these helpers to conftest.py. The `from conftest import X` syntax is unreliable in pytest. Use this separate module and import with `from e2e_export_helpers import ...`.
   </action>
-  <verify>cd /share/home/nglokwan/quickice && python -m pytest tests/test_gromacs_molecule_ordering.py -v --no-header -q 2>&1 | tail -5</verify>
-  <done>All 4 existing molecule ordering tests still pass; parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes are importable from conftest.py</done>
+  <verify>python -c "from e2e_export_helpers import parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes, check_itp_has_moleculetype, assert_gro_residue_ordering, _insert_custom_molecules, _insert_solutes, _solute_to_ion_source, _insert_ions, _insert_ions_from_solute" — all imports succeed</verify>
+  <done>e2e_export_helpers.py exists with all 17 functions/constants, all importable, no pytest collection issues</done>
 </task>
 
 <task type="auto">
-  <name>Task 2: Create test_e2e_compute_export.py with single-structure export tests</name>
-  <files>tests/test_e2e_compute_export.py</files>
+  <name>Task 2: Create Ice/Interface single-structure export validation tests</name>
+  <files>tests/test_e2e_ice_interface_export.py</files>
   <action>
-Create `tests/test_e2e_compute_export.py` with end-to-end tests that take REAL GenIce2-generated structures (from conftest.py fixtures) and export them via pure writer functions (no QFileDialog), validating the output .gro and .top files.
+Create tests/test_e2e_ice_interface_export.py with 3 test classes covering 3 single-structure export scenarios.
 
-Test structure — use `tmp_path` pytest fixture for output directory. Import writer functions directly from `quickice.output.gromacs_writer`. Import parsing helpers from `conftest`. Reuse the chain-building helper pattern from `tests/test_e2e_workflow_chains.py` (copy the inline helper functions: `_insert_custom_molecules`, `_insert_solutes`, `_insert_ions`, `_solute_to_ion_source`, `_insert_ions_from_solute`).
+**Scenario 1: Ice Candidate Export** (class `TestIceCandidateExport`)
+- Uses `ice_ih_candidate` fixture from conftest.py
+- Calls `write_gro_file(candidate, gro_path)` and `write_top_file(candidate, top_path)`
+- Validates:
+  - GRO residue names: only "SOL" present (ice is all SOL)
+  - GRO atom count: header matches actual atom lines (remember: ice_nmolecules * 4 for TIP4P-ICE expansion)
+  - TOP [molecules]: `{"SOL": ice_nmolecules}`
+  - TOP #include: `["tip4p-ice.itp"]`
+  - ITP tip4p-ice.itp exists in quickice/data/ and has [ moleculetype ]
+  - Atom conservation: positions.shape[0] == sum of all molecule counts * atoms_per_molecule (ice * 4)
 
-**Class TestIceExport:**
-- `test_ice_gro_has_only_sol_residues(self, ice_ih_candidate, tmp_path)`: Call `write_gro_file(ice_ih_candidate, str(tmp_path / "ice.gro"))`. Parse residue names via `parse_gro_residue_names`. Assert ALL residues are "SOL". Assert `parse_gro_atom_count` matches len of residue_names list.
-- `test_ice_top_molecules_section(self, ice_ih_candidate, tmp_path)`: Call `write_top_file(ice_ih_candidate, str(tmp_path / "ice.top"))`. Parse via `parse_top_molecules`. Assert `molecules["SOL"] == ice_ih_candidate.nmolecules`.
+**Scenario 2: Interface (no guests) Export** (class `TestInterfaceExport`)
+- Uses `interface_slab` fixture from conftest.py
+- Calls `write_interface_gro_file(iface, gro_path)` and `write_interface_top_file(iface, top_path)`
+- Validates:
+  - GRO residue names: only "SOL" present (ice + water both SOL)
+  - GRO atom count: header matches actual lines (ice_nmolecules * 4 + water_nmolecules * 4)
+  - TOP [molecules]: `{"SOL": ice_nmolecules + water_nmolecules}`
+  - TOP #include: `["tip4p-ice.itp"]` (no guest ITP since no guests)
+  - ITP tip4p-ice.itp exists and has [ moleculetype ]
 
-**Class TestInterfaceExport:**
-- `test_interface_gro_sol_only_no_guests(self, interface_slab, tmp_path)`: Call `write_interface_gro_file(interface_slab, ...)`. Parse residue names. Assert all are "SOL" (no guests in plain interface). Assert `parse_gro_atom_count` matches len of residue names.
-- `test_interface_top_molecules(self, interface_slab, tmp_path)`: Call `write_interface_top_file(interface_slab, ...)`. Parse molecules dict. Assert `molecules["SOL"] == interface_slab.ice_nmolecules + interface_slab.water_nmolecules`. Assert no guest entry in dict (guest_nmolecules=0).
-- `test_interface_hydrate_gro_has_guests(self, interface_hydrate_slab, tmp_path)`: Call `write_interface_gro_file(interface_hydrate_slab, ...)`. Parse residue names. Find SOL and CH4_H residue indices. Assert max(SOL indices) < min(CH4_H indices) — SOL before guests. Assert `parse_gro_atom_count` matches len of residue names.
-- `test_interface_hydrate_top_has_guest_itp(self, interface_hydrate_slab, tmp_path)`: Call `write_interface_top_file(interface_hydrate_slab, ...)`. Parse `parse_top_molecules` — assert SOL count and CH4_H count > 0. Parse `parse_top_includes` — assert "ch4_hydrate.itp" in includes AND "tip4p-ice.itp" in includes.
+**Scenario 3: Interface + Hydrate Guests Export** (class `TestInterfaceHydrateExport`)
+- Uses `interface_hydrate_slab` fixture from conftest.py
+- Calls `write_interface_gro_file(iface, gro_path)` and `write_interface_top_file(iface, top_path)`
+- Validates:
+  - GRO residue names: "SOL" before guest residue name (CH4 for CH4 hydrate)
+  - GRO atom count: header matches actual lines
+  - TOP [molecules]: `{"SOL": ice_nmolecules + water_nmolecules, "CH4": guest_nmolecules}` (guest res name from get_hydrate_guest_residue_name)
+  - TOP #include: `["tip4p-ice.itp", "ch4_hydrate.itp"]`
+  - ITP ch4_hydrate.itp exists in quickice/data/ and has [ moleculetype ]
+  - No interleaving of SOL and guest residues
 
-**Class TestCustomMoleculeExport:**
-- `test_custom_gro_molecule_ordering(self, interface_slab, tmp_path)`: Build custom structure via `_insert_custom_molecules(interface_slab, n_molecules=3)`. Call `write_custom_molecule_gro_file(custom, str(tmp_path / "custom.gro"))`. Parse residue names. Assert SOL residues exist AND come before any non-SOL residues. Assert atom count matches.
-- `test_custom_top_has_itp(self, interface_slab, tmp_path)`: Call `write_custom_molecule_top_file(custom, ...)`. Parse includes — assert "tip4p-ice.itp" AND "etoh.itp" in includes. Parse molecules — assert custom molecule type count == 3.
-
-**Class TestSoluteExport:**
-- `test_solute_gro_molecule_ordering(self, interface_slab, tmp_path)`: Build solute via `_insert_solutes(interface_slab, solute_type='CH4', concentration=0.5)`. Call `write_solute_gro_file(solute, ...)`. Parse residue names. Assert SOL before any solute residues. Assert CH4_L (or CH4LIQ — check what registry produces, it should be "CH4_L") residues present.
-- `test_solute_top_molecules_and_itp(self, interface_slab, tmp_path)`: Call `write_solute_top_file(solute, ...)`. Parse includes — assert "ch4_liquid.itp" in includes. Parse molecules — assert CH4_L count matches solute.n_molecules.
-
-**Class TestIonExport:**
-- `test_ion_gro_molecule_ordering(self, interface_slab, tmp_path)`: Build ion via `_insert_ions(interface_slab, concentration=0.15)`. Call `write_ion_gro_file(ion, ...)`. Parse residue names. Find SOL, NA, CL indices. Assert max(SOL) < min(NA) < min(CL) — correct ordering. Assert atom count matches.
-- `test_ion_top_molecules_and_itp(self, interface_slab, tmp_path)`: Call `write_ion_top_file(ion, ...)`. Parse includes — assert "ion.itp" AND "tip4p-ice.itp" in includes. Parse molecules — assert NA count == ion.na_count AND CL count == ion.cl_count.
-
-CRITICAL implementation details:
-- Use `from conftest import parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes` (NOT `from tests.conftest`)
-- Use `from pathlib import Path` and `DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"` for ETOH paths
-- Use `tmp_path` pytest fixture (not tempfile) — it's per-test and auto-cleaned
-- For CustomMoleculeConfig, use `ETOH_GRO = DATA_DIR / "etoh.gro"` and `ETOH_ITP = DATA_DIR / "etoh.itp"` (same pattern as workflow_chains.py)
-- The SoluteInserter needs `inserter.registry.register_hydrate_guest("CH4")` ONLY for hydrate interface tests, NOT for plain interface tests
-- CH4_L residue name in GRO: the solute writer uses `solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")` which returns "CH4_L" (5 chars, fits GRO 5-char limit). Use this in assertions.
+**Implementation notes:**
+- Use `tmp_path` fixture for output directories (pytest built-in)
+- Import parsing functions from e2e_export_helpers: `from e2e_export_helpers import parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes, check_itp_has_moleculetype, assert_gro_residue_ordering`
+- Import writer functions from quickice.output.gromacs_writer
+- For ITP existence checks, use `Path(quickice.__file__).parent / "data" / itp_name` to locate data files
+- TIP4P-ICE expansion: ice_nmolecules * 4 atoms (NOT * 3) — MW virtual site added at export
+- GRO residue names at columns [5:10] (0-indexed) — 5-char limit
+- Hydrate candidate has 4-atom ice (OW, HW1, HW2, MW already), so no 3→4 expansion needed for interface_hydrate_slab
   </action>
-  <verify>cd /share/home/nglokwan/quickice && python -m pytest tests/test_e2e_compute_export.py -v --no-header -q 2>&1 | tail -15</verify>
-  <done>All ~12 single-structure export tests pass: Ice (2), Interface (4), Custom (2), Solute (2), Ion (2). Each test validates .gro residue ordering AND .top [molecules] section. Atom counts in .gro headers match actual atom lines.</done>
+  <verify>cd /share/home/nglokwan/quickice && python -m pytest tests/test_e2e_ice_interface_export.py -v --timeout=120 -x</verify>
+  <done>3 test classes with ~9 test methods all pass, validating Ice/Interface export bridge with real GenIce2 data</done>
 </task>
 
 </tasks>
 
 <verification>
-1. `python -m pytest tests/test_e2e_compute_export.py -v` — all tests pass
-2. `python -m pytest tests/test_gromacs_molecule_ordering.py -v` — existing 4 tests still pass (refactoring didn't break them)
-3. `python -m pytest tests/ -k "compute_export" --co -q` — lists all new tests
+1. All imports from e2e_export_helpers.py succeed
+2. pytest tests/test_e2e_ice_interface_export.py passes (3 classes, ~9 methods)
+3. No conftest.py modifications needed (helpers in separate module)
+4. All test methods use real GenIce2 fixtures (not synthetic)
+5. All test methods call writer functions directly (no QFileDialog mocking)
 </verification>
 
 <success_criteria>
-1. 4 parsing helper functions added to conftest.py (parse_gro_residue_names, parse_gro_atom_count, parse_top_molecules, parse_top_includes)
-2. test_gromacs_molecule_ordering.py updated to import from conftest (no local definition)
-3. test_e2e_compute_export.py created with ~12 tests covering all 5 single-structure export types
-4. All tests pass with real GenIce2-generated data
-5. Atom count verification works for every .gro file
+- tests/e2e_export_helpers.py exists with 17 functions/constants, all importable
+- tests/test_e2e_ice_interface_export.py exists with 3 test classes
+- All tests pass with real GenIce2 data
+- GRO residue ordering validated for ice (SOL only) and interface (SOL + guests)
+- TOP [molecules] section validated for all 3 scenarios
+- ITP files validated for existence and [ moleculetype ] section
 </success_criteria>
 
 <output>
