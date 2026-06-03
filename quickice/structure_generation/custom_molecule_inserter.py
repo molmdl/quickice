@@ -490,15 +490,32 @@ class CustomMoleculeInserter:
         
         # Guest molecules (shift indices for new water count)
         guest_atom_count = len(guest_atom_names)
-        if guest_atom_count > 0 and hasattr(structure, 'molecule_index'):
+        if guest_atom_count > 0:
             shift = water_atom_count - new_water_atom_count
-            for mol_idx in structure.molecule_index:
-                if mol_idx.mol_type == "guest":
-                    new_molecule_index.append(MoleculeIndex(
-                        start_idx=mol_idx.start_idx - shift,
-                        count=mol_idx.count,
-                        mol_type="guest"
-                    ))
+            guest_entries_found = False
+            if hasattr(structure, 'molecule_index'):
+                for mol_idx in structure.molecule_index:
+                    if mol_idx.mol_type == "guest":
+                        new_molecule_index.append(MoleculeIndex(
+                            start_idx=mol_idx.start_idx - shift,
+                            count=mol_idx.count,
+                            mol_type="guest"
+                        ))
+                        guest_entries_found = True
+            
+            if not guest_entries_found:
+                # molecule_index is empty but guests exist — build from counts
+                guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+                if guest_nmolecules > 0:
+                    atoms_per_guest = guest_atom_count // guest_nmolecules
+                    current_idx = ice_atom_count + new_water_atom_count
+                    for _ in range(guest_nmolecules):
+                        new_molecule_index.append(MoleculeIndex(
+                            start_idx=current_idx,
+                            count=atoms_per_guest,
+                            mol_type="guest"
+                        ))
+                        current_idx += atoms_per_guest
         
         # Create new InterfaceStructure
         return InterfaceStructure(
@@ -681,11 +698,29 @@ class CustomMoleculeInserter:
         
         # Guest molecules (if present)
         if guest_atom_count > 0:
-            # Add guest molecule indices from structure
+            # Add guest molecule indices from structure's molecule_index if available
+            # For freshly generated interfaces, molecule_index is empty even when
+            # guest_atom_count > 0, so we must build entries from guest_nmolecules
+            guest_entries_found = False
             if hasattr(structure, 'molecule_index'):
                 for mol_idx in structure.molecule_index:
                     if mol_idx.mol_type == "guest":
                         complete_molecule_index.append(mol_idx)
+                        guest_entries_found = True
+            
+            if not guest_entries_found:
+                # molecule_index is empty but guests exist — build from counts
+                guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+                if guest_nmolecules > 0:
+                    atoms_per_guest = guest_atom_count // guest_nmolecules
+                    current_idx = ice_atom_count + water_atom_count
+                    for _ in range(guest_nmolecules):
+                        complete_molecule_index.append(MoleculeIndex(
+                            start_idx=current_idx,
+                            count=atoms_per_guest,
+                            mol_type="guest"
+                        ))
+                        current_idx += atoms_per_guest
         
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
@@ -834,10 +869,26 @@ class CustomMoleculeInserter:
         
         # Guest molecules
         if guest_atom_count > 0:
+            guest_entries_found = False
             if hasattr(modified_structure, 'molecule_index'):
                 for mol_idx in modified_structure.molecule_index:
                     if mol_idx.mol_type == "guest":
                         complete_molecule_index.append(mol_idx)
+                        guest_entries_found = True
+            
+            if not guest_entries_found:
+                # molecule_index is empty but guests exist — build from counts
+                guest_nmolecules = getattr(modified_structure, 'guest_nmolecules', 0)
+                if guest_nmolecules > 0:
+                    atoms_per_guest = guest_atom_count // guest_nmolecules
+                    current_idx = ice_atom_count + water_atom_count
+                    for _ in range(guest_nmolecules):
+                        complete_molecule_index.append(MoleculeIndex(
+                            start_idx=current_idx,
+                            count=atoms_per_guest,
+                            mol_type="guest"
+                        ))
+                        current_idx += atoms_per_guest
         
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
