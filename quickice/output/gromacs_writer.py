@@ -1913,18 +1913,78 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
             res_num += 1
             res_num_wrapped = res_num % 100000
             
-            mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
-            mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
-            
-            for i in range(mol.count):
+            if mol.mol_type == "ice":
+                # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                o_pos = wrapped_positions[mol.start_idx]
+                h1_pos = wrapped_positions[mol.start_idx + 1]
+                h2_pos = wrapped_positions[mol.start_idx + 2]
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                
+                # OW (oxygen)
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                atom_name = mol_atom_names[i]
-                pos = mol_positions[i]
-                lines.append(
-                    f"{res_num_wrapped:5d}SOL  {atom_name:>5s}{atom_num_wrapped:5d}"
-                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n"
-                )
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"   OW{atom_num_wrapped:5d}"
+                             f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                
+                # HW1
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"  HW1{atom_num_wrapped:5d}"
+                             f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                
+                # HW2
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"  HW2{atom_num_wrapped:5d}"
+                             f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                
+                # MW (virtual site)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"   MW{atom_num_wrapped:5d}"
+                             f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                
+            else:  # water
+                # Water: 4 atoms (OW, HW1, HW2, MW) — recompute MW
+                mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+                mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
+                
+                o_pos = mol_positions[0]
+                h1_pos = mol_positions[1]
+                h2_pos = mol_positions[2]
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                
+                # OW
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"   OW{atom_num_wrapped:5d}"
+                             f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                
+                # HW1
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"  HW1{atom_num_wrapped:5d}"
+                             f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                
+                # HW2
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"  HW2{atom_num_wrapped:5d}"
+                             f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                
+                # MW (virtual site)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num_wrapped:5d}SOL  "
+                             f"   MW{atom_num_wrapped:5d}"
+                             f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
         
         elif mol_type == "guest":
             # Guest molecule (from interface)
@@ -2121,15 +2181,49 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
     ordered_mols = []
 
     # Pass 1: SOL molecules (ice + water) from interface
-    for mol in interface.molecule_index:
-        if mol.mol_type in ("ice", "water"):
-            ordered_mols.append(("sol", mol))
+    # FALLBACK: When molecule_index is empty (real GenIce2 data), build
+    # synthetic molecule entries from ice_nmolecules and water_nmolecules
+    # counts, mirroring write_interface_gro_file's approach.
+    if interface.molecule_index:
+        for mol in interface.molecule_index:
+            if mol.mol_type in ("ice", "water"):
+                ordered_mols.append(("sol", mol))
+    else:
+        # Build from ice_nmolecules/water_nmolecules when molecule_index is empty
+        # (real GenIce2-generated InterfaceStructures have empty molecule_index)
+        atoms_per_ice_mol = 3 if "O" in interface.atom_names[:interface.ice_atom_count] else 4
+        for mol_idx in range(interface.ice_nmolecules):
+            base_idx = mol_idx * atoms_per_ice_mol
+            ordered_mols.append(("sol", type('obj', (object,), {
+                'start_idx': base_idx,
+                'count': atoms_per_ice_mol,
+                'mol_type': 'ice'
+            })()))
+        for mol_idx in range(interface.water_nmolecules):
+            base_idx = interface.ice_atom_count + mol_idx * 4
+            ordered_mols.append(("sol", type('obj', (object,), {
+                'start_idx': base_idx,
+                'count': 4,
+                'mol_type': 'water'
+            })()))
 
     # Pass 2: guest molecules (if present in interface)
     if interface.guest_atom_count > 0 and interface.guest_nmolecules > 0:
-        for mol in interface.molecule_index:
-            if mol.mol_type == "guest":
-                ordered_mols.append(("guest", mol))
+        if interface.molecule_index:
+            for mol in interface.molecule_index:
+                if mol.mol_type == "guest":
+                    ordered_mols.append(("guest", mol))
+        else:
+            # Build guest entries from counts when molecule_index is empty
+            guest_start = interface.ice_atom_count + interface.water_atom_count
+            atoms_per_guest = interface.guest_atom_count // max(interface.guest_nmolecules, 1)
+            for mol_idx in range(interface.guest_nmolecules):
+                start = guest_start + mol_idx * atoms_per_guest
+                ordered_mols.append(("guest", type('obj', (object,), {
+                    'start_idx': start,
+                    'count': atoms_per_guest,
+                    'mol_type': 'guest'
+                })()))
 
     # Pass 3: custom molecules (if present, propagated from custom tab)
     has_custom = (solute_structure.custom_molecule_count > 0 and
@@ -2177,9 +2271,15 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
         logger.warning(f"GRO format wraps atom numbers at 100,000 (have {total_atoms} atoms)")
 
     # Wrap positions into box using molecule-aware wrapping
-    wrapped_positions = wrap_molecules_into_box(
-        interface.positions, interface.molecule_index, interface.cell
-    )
+    if interface.molecule_index:
+        wrapped_positions = wrap_molecules_into_box(
+            interface.positions, interface.molecule_index, interface.cell
+        )
+    else:
+        # Fallback: atom-by-atom wrapping when molecule_index is empty
+        wrapped_positions = wrap_positions_into_box(
+            interface.positions, interface.cell
+        )
 
     atom_num = 0
     res_num = 0
@@ -2392,8 +2492,14 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
     interface = solute_structure.interface_structure
 
     # Count molecules by type from interface's molecule_index
-    sol_count = sum(1 for m in interface.molecule_index if m.mol_type in ("water", "ice"))
-    guest_count = sum(1 for m in interface.molecule_index if m.mol_type == "guest")
+    # FALLBACK: When molecule_index is empty (real GenIce2 data), use
+    # ice_nmolecules + water_nmolecules from the interface structure
+    if interface.molecule_index:
+        sol_count = sum(1 for m in interface.molecule_index if m.mol_type in ("water", "ice"))
+        guest_count = sum(1 for m in interface.molecule_index if m.mol_type == "guest")
+    else:
+        sol_count = interface.ice_nmolecules + interface.water_nmolecules
+        guest_count = interface.guest_nmolecules if interface.guest_nmolecules > 0 else 0
 
     # Check for custom molecules (propagated from custom tab)
     has_custom = (solute_structure.custom_molecule_count > 0 and
@@ -2408,14 +2514,23 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
     guest_type = None
     guest_res_name = "GUE"  # Fallback
     if guest_count > 0 and interface.guest_atom_count > 0:
-        for mol in interface.molecule_index:
-            if mol.mol_type == "guest":
-                start = mol.start_idx
-                mol_atom_names = interface.atom_names[start:start + mol.count]
-                guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                if guest_type:
-                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
-                break
+        if interface.molecule_index:
+            for mol in interface.molecule_index:
+                if mol.mol_type == "guest":
+                    start = mol.start_idx
+                    mol_atom_names = interface.atom_names[start:start + mol.count]
+                    guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                    if guest_type:
+                        guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    break
+        else:
+            # Fallback: detect guest type from atom names in guest region
+            guest_start = interface.ice_atom_count + interface.water_atom_count
+            guest_end = guest_start + interface.guest_atom_count
+            mol_atom_names = interface.atom_names[guest_start:guest_end]
+            guest_type = detect_guest_type_from_atoms(mol_atom_names)
+            if guest_type:
+                guest_res_name = get_hydrate_guest_residue_name(guest_type)
 
     with open(filepath, 'w') as f:
         # Header
