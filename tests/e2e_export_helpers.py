@@ -78,8 +78,10 @@ def parse_gro_residue_names(gro_path: str) -> list[str]:
             # Format: "    1SOL  OW    1   0.123   0.456   0.789"
             res_name = line[5:10].strip()
 
-            # Skip box vector lines (contain only numbers, no residue name)
-            if res_name and not res_name.replace('.', '').replace('-', '').isspace():
+            # Skip box vector lines: residue names must contain at least
+            # one alphabetic character. Box vector lines have only numbers
+            # (e.g., "1.56457" from line "   1.56457   1.47072...").
+            if res_name and any(c.isalpha() for c in res_name):
                 residue_names.append(res_name)
 
     return residue_names
