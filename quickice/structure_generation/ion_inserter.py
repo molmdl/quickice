@@ -488,6 +488,37 @@ class IonInserter:
         custom_gro_path = getattr(structure, 'custom_gro_path', None)
         custom_itp_path = getattr(structure, 'custom_itp_path', None)
         
+        # If custom_molecule_positions is None but custom_molecule_count > 0,
+        # the source is a CustomMoleculeStructure which stores custom molecules
+        # in its molecule_index (mol_type="custom") and shared positions array.
+        # Extract the positions/atom_names/moleculetype from there.
+        if (custom_molecule_positions is None
+                and custom_molecule_count > 0
+                and hasattr(structure, 'molecule_index')
+                and hasattr(structure, 'positions')
+                and hasattr(structure, 'atom_names')):
+            custom_mols = [m for m in structure.molecule_index if m.mol_type == "custom"]
+            if custom_mols:
+                # Build custom_molecule_positions from the shared positions array
+                custom_pos_list = []
+                custom_names_list = []
+                for mol in custom_mols:
+                    custom_pos_list.append(structure.positions[mol.start_idx:mol.start_idx + mol.count])
+                    if mol.start_idx + mol.count <= len(structure.atom_names):
+                        custom_names_list.extend(
+                            structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+                        )
+                if custom_pos_list:
+                    custom_molecule_positions = np.vstack(custom_pos_list)
+                if custom_names_list:
+                    custom_molecule_atom_names = custom_names_list
+                # Get moleculetype name from CustomMoleculeStructure attributes
+                if not custom_molecule_moleculetype:
+                    custom_molecule_moleculetype = getattr(structure, 'moleculetype_name', '')
+                # Get ITP path from CustomMoleculeStructure
+                if custom_itp_path is None:
+                    custom_itp_path = getattr(structure, 'itp_path', None)
+        
         return IonStructure(
             positions=combined,
             atom_names=new_atom_names,
