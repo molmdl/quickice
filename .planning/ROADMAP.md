@@ -1,7 +1,7 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7 inserted)
 **Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 35/40)
 
 ## Overview
@@ -255,6 +255,42 @@ Plans:
 
 ---
 
+### Phase 34.7: Fix Verified Scancode Bugs (INSERTED)
+
+**Goal:** Fix verified critical/high bugs in GROMACS export pipeline and inserters discovered during codebase scanning, ensuring correct atom coordinates, reproducible placement, and consistent forcefield defaults
+**Depends on:** Phase 34.6
+**Plans:** 3 plans
+
+Plans:
+- [ ] 34.7-01-PLAN.md — Fix GROMACS writer bugs: BUG-05 (HW1 Z-coordinate), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ standardization)
+- [ ] 34.7-02-PLAN.md — Fix inserter bugs: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random)
+- [ ] 34.7-03-PLAN.md — Fix KDTree optimization: TREE-01 (conditional rebuild in ion inserter)
+
+**Details:**
+
+Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
+
+| ID | Severity | Finding | Fix Complexity |
+|----|----------|---------|---------------|
+| BUG-05 | 🔴 CRITICAL | HW1 Z-coordinate copy-paste at gromacs_writer.py:1971 (`h2_pos[2]` should be `h1_pos[2]`) | Trivial (1 char) |
+| MW-01 | 🟠 HIGH | `write_ice_gro_file` uses atom-level wrapping; MW recomputed from discontinuous positions | Simple (switch to `wrap_molecules_into_box`) |
+| RNG-01 | 🟠 HIGH | `CustomMoleculeInserter.place_random()` uses unseeded RNG; non-reproducible results | Moderate (add seed param + seed Rotation.random) |
+| DEFLT-01 | 🟠 HIGH | `fudgeLJ=0.5` in simple writers vs `0.0` in multi-molecule writers; different simulation results | Moderate (determine correct values from forcefield docs) |
+| ATOM-01 | 🟡 MEDIUM | Hardcoded `// 4` for water atom count in 7+ places; breaks for non-TIP4P models | Moderate (replace with derived value or constant) |
+| TREE-01 | 🟡 MEDIUM | KDTree rebuilt every iteration in ion inserter even when no ion placed | Simple (rebuild only on successful placement) |
+
+**Scope decisions:**
+- BUG-05, MW-01: Must fix (wrong simulation results)
+- RNG-01: Must fix (scientific reproducibility)
+- DEFLT-01: Must fix (inconsistent simulation behavior)
+- ATOM-01: Should fix (latent maintenance trap)
+- TREE-01: Should fix (performance waste)
+- GUEST-01 (LOW): Defer — no current molecule misidentified, latent design concern only
+
+**Verification reference:** `.planning/codebase/20260608_ISSUES_VERIFICATION.md`
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -291,9 +327,9 @@ Plans:
 
 ## Milestone Summary
 
-**Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
+**Phase Count:** 11 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, and 34.7 inserted)
 
-**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-export-test: 8, e2e-api-workflow: 5, e2e-compute-export: 10)
+**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 35/40)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -341,6 +377,7 @@ Plans:
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
+| 34.7 - Fix Verified Scancode Bugs | ⏳ Not started | 0 | 3 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
@@ -416,5 +453,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-08 - e2e-compute-export phase COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)*
+*Last updated: 2026-06-08 - Phase 34.7 inserted (Fix Verified Scancode Bugs), e2e-compute-export COMPLETE*
 *For current state, see .planning/STATE.md*
