@@ -8,6 +8,8 @@ Tests cover:
   - Interface slab (#include tip4p-ice.itp)
   - F5-F7 simple chains (2-3 ITPs)
   - F1, F3, F4 complex chains (4-5 ITPs)
+  - F2 (Interface→Custom→Ion, 3 ITPs, no solute)
+  - F1+THF, F3+THF, F4+CH4 cross-combinations (dedup validation)
 
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
@@ -321,3 +323,132 @@ class TestChainF4GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4.gro", top_file="f4.top")
         assert exit_code == 0, f"gmx grompp failed for F4:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F2: Interface→Custom→Ion (3 ITPs, Bug 2+3 without solute atomtypes)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF2GmxValidation:
+    """Validate F2 chain (Interface→Custom→Ion) export passes gmx grompp.
+
+    3 ITPs: tip4p-ice.itp, etoh.itp, ion.itp
+    Tests Bug 2 fix: [molecules] uses "etoh" not "MOL" without solute atomtypes present.
+    Tests Bug 3 fix: Custom-only atomtype dedup (no GAFF2 interference).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self, interface_slab):
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        self.ion = _insert_ions(custom, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f2.gro")
+        top_path = str(gmx_workspace / "f2.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f2.gro", top_file="f2.top")
+        assert exit_code == 0, f"gmx grompp failed for F2:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F1+THF: Interface→Custom→Solute(THF)→Ion (4 ITPs, Bug 3 dedup hc)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF1ThfGmxValidation:
+    """Validate F1+THF chain (Interface→Custom→Solute(THF)→Ion) export passes gmx grompp.
+
+    4 ITPs: tip4p-ice.itp, etoh.itp, thf_liquid.itp, ion.itp
+    Tests Bug 3 fix: THF solute atomtypes (os, c5, hc, h1) + etoh custom atomtypes
+    (oh, ho, hc) — "hc" shared between THF GAFF2 and etoh, tests dedup.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self, interface_slab):
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='THF', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f1_thf.gro")
+        top_path = str(gmx_workspace / "f1_thf.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1_thf.gro", top_file="f1_thf.top")
+        assert exit_code == 0, f"gmx grompp failed for F1+THF:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F3+THF: Hydrate sI-CH4→Interface→Solute(THF)→Ion (4 ITPs)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF3ThfGmxValidation:
+    """Validate F3+THF chain (Hydrate sI-CH4→Interface→Solute(THF)→Ion) export passes gmx grompp.
+
+    4 ITPs: tip4p-ice.itp, ch4_hydrate.itp, thf_liquid.itp, ion.itp
+    Tests CH4_H hydrate guest (c3, hc GAFF2 atomtypes) + THF_L solute
+    (os, c5, hc, h1 GAFF2 atomtypes) — "hc" shared, tests dedup.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='THF', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f3_thf.gro")
+        top_path = str(gmx_workspace / "f3_thf.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_thf.gro", top_file="f3_thf.top")
+        assert exit_code == 0, f"gmx grompp failed for F3+THF:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F4+CH4: Hydrate sI-THF→Custom→Solute(CH4)→Ion (5 ITPs, 3-source dedup)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF4Ch4GmxValidation:
+    """Validate F4+CH4 chain (Hydrate sI-THF→Custom→Solute(CH4)→Ion) export passes gmx grompp.
+
+    5 ITPs: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, ch4_liquid.itp, ion.itp
+    Most complex dedup scenario — THREE atomtype sources with "hc" shared across
+    all three:
+    - THF_H hydrate guest (os, c5, hc, h1)
+    - CH4_L solute (c3, hc)
+    - etoh custom (oh, ho, hc)
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        hydrate = _hydrate_sI_thf_candidate()
+        interface = _make_slab_interface(hydrate)
+        custom = _insert_custom_molecules(interface, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f4_ch4.gro")
+        top_path = str(gmx_workspace / "f4_ch4.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_ch4.gro", top_file="f4_ch4.top")
+        assert exit_code == 0, f"gmx grompp failed for F4+CH4:\n{stderr[-500:]}"
