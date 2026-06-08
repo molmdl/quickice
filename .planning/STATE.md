@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export phase COMPLETE — 9 of 9 plans (3 GROMACS bug fixes + grompp helpers + 14 grompp validation tests + .tpr cleanup)
+**Current Focus:** e2e-compute-export phase COMPLETE — 10 of 10 plans (3 GROMACS bug fixes + grompp helpers + 14 grompp validation tests + .tpr cleanup + tmp/ cleanup utility)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — E2E compute-export bridge testing COMPLETE (9/9 plans, 130 total tests including 14 grompp validation)
+**Current focus:** e2e-compute-export — E2E compute-export bridge testing COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | e2e-compute-export |
 | Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
-| Plan | 9 of 9 COMPLETE |
-| Status | Phase COMPLETE — verified 37/37 must-haves (130 total tests, 14 grompp validation pass) |
-| Last activity | 2026-06-08 — Phase e2e-compute-export complete (9/9 plans) |
+| Plan | 10 of 10 COMPLETE |
+| Status | Phase COMPLETE — verified 37/37 must-haves (130 total tests, 14 grompp validation pass) + cleanup utility |
+| Last activity | 2026-06-08 — Phase e2e-compute-export complete (10/10 plans, cleanup utility added) |
 
-**Progress:** ██████████ 100% (166/192 plans across all milestones, e2e-compute-export 9/9 COMPLETE)
+**Progress:** ██████████ 100% (167/192 plans across all milestones, e2e-compute-export 10/10 COMPLETE)
 
 ---
 
@@ -127,9 +127,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
 
-**Phases:** 9 plans (01-09)
+**Phases:** 10 plans (01-10)
 **Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
-**Progress:** 9 of 9 plans COMPLETE (116 bridge tests + 14 grompp validation tests = 130 total)
+**Progress:** 10 of 10 plans COMPLETE (116 bridge tests + 14 grompp validation tests = 130 total + cleanup utility)
 **Key deliverables:**
 - ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
 - ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
@@ -161,6 +161,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ sII hydrate helper functions — _hydrate_sII_ch4_candidate(), _hydrate_sII_thf_candidate() (Plan 09)
 - ✓ Stale .tpr backup cleanup in run_gmx_grompp() — prevents 99-backup limit failure on re-runs (Plan 09)
 - ✓ Total: 130 tests (116 bridge + 14 grompp validation) — PHASE COMPLETE
+- ✓ Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags (Plan 10)
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -394,6 +395,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | gmx_workspace fixture persists files | tmp/e2e-gmx-validation/ directory for post-test debugging of .gro, .top, .itp, .tpr | ✓ Shipped (e2e-compute-export-07) |
 | sII uses same ITP filenames as sI | ch4_hydrate.itp, thf_hydrate.itp identical for both lattice types; difference is in candidate atom counts | ✓ Shipped (e2e-compute-export-09) |
 | Clean stale .tpr backups before grompp | GROMACS 99-backup limit causes grompp failure on persistent workspaces; cleanup prevents accumulation | ✓ Shipped (e2e-compute-export-09) |
+| tmp/ cleanup utility with --dry-run | scripts/clean-test-output.sh preserves em.mdp and e2e-gmx-validation/ by default; --stale-backups-only for lightweight GROMACS backup cleanup | ✓ Shipped (e2e-compute-export-10) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -494,8 +496,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Completed:** e2e-compute-export-09 (2 sII hydrate grompp validation tests + stale .tpr backup cleanup fix)
-**Status:** e2e-compute-export phase COMPLETE — 9/9 plans (130 total tests)
+**Completed:** e2e-compute-export-10 (test output cleanup utility with --dry-run, --include-gmx-validation, --stale-backups-only)
+**Status:** e2e-compute-export phase COMPLETE — 10/10 plans (130 total tests + cleanup utility)
 
 **e2e-compute-export Phase Progress:**
 - ✓ 01: Shared e2e_export_helpers.py (6 parsing + 9 chain-building helpers) + Ice/Interface export tests (16 total)
@@ -507,6 +509,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 07: 8 grompp validation tests (ice, interface, F1-F7) — ALL pass exit code 0, validating all 3 bug fixes
 - ✓ 08: 4 cross-combination grompp validation tests (F2, F1+THF, F3+THF, F4+CH4) — ALL pass exit code 0, total 12 grompp tests
 - ✓ 09: 2 sII hydrate grompp validation tests (F3-sII, F4-sII) + stale .tpr backup cleanup — ALL pass, total 14 grompp tests
+- ✓ 10: Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags
 
 ---
-*State updated: 2026-06-08 — e2e-compute-export phase COMPLETE (9/9 plans, 130 total tests including 14 grompp validation)*
+*State updated: 2026-06-08 — e2e-compute-export phase COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)*
