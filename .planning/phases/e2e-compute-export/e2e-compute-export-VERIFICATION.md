@@ -1,12 +1,20 @@
 ---
 phase: e2e-compute-export
-verified: 2026-06-08T08:47:49Z
+verified: 2026-06-08T11:31:50Z
 status: passed
-score: 30/30 must-haves verified
+score: 37/37 must-haves verified
 re_verification:
   previous_status: passed
-  previous_score: 24/24
-  gaps_closed: []
+  previous_score: 30/30
+  gaps_closed:
+    - "F2 chain grompp validation (Plan 08)"
+    - "F1+THF cross-combination grompp validation (Plan 08)"
+    - "F3+THF cross-combination grompp validation (Plan 08)"
+    - "F4+CH4 cross-combination grompp validation (Plan 08)"
+    - "sII CH4 hydrate chain grompp validation (Plan 09)"
+    - "sII THF hydrate chain grompp validation (Plan 09)"
+    - "sII hydrate helper functions (Plan 09)"
+    - "Stale .tpr backup cleanup in run_gmx_grompp (Plan 09)"
   gaps_remaining: []
   regressions: []
 ---
@@ -14,9 +22,9 @@ re_verification:
 # Phase e2e-compute-export: Verification Report
 
 **Phase Goal:** Real computation pipeline output feeds into GROMACS exporters with correct atom ordering, topology format, and ITP bundling
-**Verified:** 2026-06-08T08:47:49Z
+**Verified:** 2026-06-08T11:31:50Z
 **Status:** passed
-**Re-verification:** Yes — expanded verification after Plans 06-07 completion
+**Re-verification:** Yes — after Plans 08-09 completion (9/9 plans complete)
 
 ## Goal Achievement
 
@@ -25,67 +33,75 @@ re_verification:
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | Ice candidate exported via write_gro_file produces valid .gro with only SOL residues | ✓ VERIFIED | TestIceCandidateExport::test_gro_only_sol_residues PASSED |
-| 2 | Interface structure exported produces .gro with SOL before guests | ✓ VERIFIED | TestInterfaceExport::test_gro_only_sol_residues + TestInterfaceHydrateExport::test_gro_sol_before_guest_residues PASSED |
-| 3 | Interface+hydrate structure exported produces .gro with SOL before CH4/THF guest residues | ✓ VERIFIED | TestInterfaceHydrateExport::test_gro_sol_before_guest_residues + test_no_sol_guest_interleaving PASSED |
-| 4 | GRO atom count header matches actual atom lines for ice, interface, and hydrate-interface exports | ✓ VERIFIED | test_gro_atom_count_matches_header PASSED in all 3 TestIce/Interface/Hydrate classes |
-| 5 | TOP [molecules] section lists correct molecule type counts for every export level | ✓ VERIFIED | test_top_molecules_section PASSED for all 3 ice/interface/hydrate scenarios |
+| 2 | Interface structure exported produces .gro with SOL before guests | ✓ VERIFIED | TestInterfaceExport::test_gro_only_sol_residues PASSED |
+| 3 | Interface+hydrate structure exported produces .gro with SOL before CH4/THF guest residues | ✓ VERIFIED | TestInterfaceHydrateExport::test_gro_sol_before_guest_residues PASSED |
+| 4 | GRO atom count header matches actual atom lines for ice, interface, and hydrate-interface exports | ✓ VERIFIED | test_gro_atom_count_matches_header PASSED in all 3 classes |
+| 5 | TOP [molecules] section lists correct molecule type counts for every export level | ✓ VERIFIED | test_top_molecules_section PASSED for all ice/interface/hydrate scenarios |
 | 6 | Custom molecule structure exported produces .gro with SOL before custom residue name | ✓ VERIFIED | TestCustomMoleculeExport::test_gro_sol_before_custom_residues PASSED |
 | 7 | Solute from Interface exported produces .gro with SOL before solute residue name | ✓ VERIFIED | TestSoluteFromInterface::test_gro_sol_before_solute_residues PASSED |
 | 8 | Solute from Custom exported produces .gro with SOL before custom before solute | ✓ VERIFIED | TestSoluteFromCustom::test_gro_sol_before_custom_before_solute PASSED |
-| 9 | GRO atom count header matches actual atom lines for all 3 custom/solute export scenarios | ✓ VERIFIED | test_gro_atom_count_matches_header PASSED in all custom/solute test classes |
+| 9 | GRO atom count header matches actual atom lines for all custom/solute export scenarios | ✓ VERIFIED | test_gro_atom_count_matches_header PASSED in all custom/solute test classes |
 | 10 | TOP [molecules] section lists correct molecule type counts for custom and solute exports | ✓ VERIFIED | test_top_molecules_section PASSED for Custom and both Solute scenarios |
 | 11 | Ion from Interface exported produces .gro with SOL before NA before CL | ✓ VERIFIED | TestIonFromInterface::test_gro_sol_before_na_before_cl PASSED |
 | 12 | Ion from Custom exported produces .gro with SOL before custom before NA before CL | ✓ VERIFIED | TestIonFromCustom::test_gro_sol_before_custom_before_na_before_cl PASSED |
 | 13 | Ion from Solute (workaround) exported produces .gro with SOL before solute before NA before CL | ✓ VERIFIED | TestIonFromSolute::test_gro_sol_before_solute_before_na_before_cl PASSED |
-| 14 | All ITP files referenced by exporters exist in quickice/data/ with [ moleculetype ] sections | ✓ VERIFIED | TestITPBaseline: all 6 ITP existence + moleculetype tests PASSED; also confirmed via grep |
-| 15 | ion.itp generated by write_ion_itp contains [ moleculetype ] section | ✓ VERIFIED | TestITPBaseline::test_generated_ion_itp PASSED (both NA and CL moleculetypes found) |
+| 14 | All ITP files referenced by exporters exist in quickice/data/ with [ moleculetype ] sections | ✓ VERIFIED | TestITPBaseline: all 6 ITP existence + moleculetype tests PASSED |
+| 15 | ion.itp generated by write_ion_itp contains [ moleculetype ] section | ✓ VERIFIED | TestITPBaseline::test_generated_ion_itp PASSED |
 | 16 | F1 chain (Interface→Custom→Solute→Ion) export produces .gro with SOL→MOL→CH4_L→NA→CL ordering | ✓ VERIFIED | TestChainF1::test_gro_residue_ordering PASSED |
 | 17 | F2 chain (Interface→Custom→Ion) export produces .gro with SOL→MOL→NA→CL ordering | ✓ VERIFIED | TestChainF2::test_gro_residue_ordering PASSED |
 | 18 | F3 chain (Hydrate→Interface→Solute→Ion) export produces .gro with SOL→CH4_H→CH4_L→NA→CL ordering | ✓ VERIFIED | TestChainF3::test_gro_residue_ordering PASSED |
-| 19 | F4 chain (Hydrate→Interface→Custom→Solute→Ion) export produces .gro with guest→custom→solute→NA→CL ordering | ✓ VERIFIED | TestChainF4::test_gro_residue_ordering PASSED (SOL→THF_H→MOL→THF_L→NA→CL) |
+| 19 | F4 chain (Hydrate→Interface→Custom→Solute→Ion) export produces .gro with guest→custom→solute→NA→CL ordering | ✓ VERIFIED | TestChainF4::test_gro_residue_ordering PASSED |
 | 20 | All chain exports produce .top [molecules] sections listing every molecule type with correct counts | ✓ VERIFIED | test_top_molecules_section PASSED for all F1-F7 chains |
 | 21 | F5 chain (Interface→Ion) export produces .gro with SOL→NA→CL (minimal chain) | ✓ VERIFIED | TestChainF5::test_gro_sol_before_na_before_cl PASSED |
 | 22 | F6 chain (Interface→Solute(CH4)→Ion) export produces .gro with SOL→CH4_L→NA→CL | ✓ VERIFIED | TestChainF6::test_gro_sol_before_ch4l_before_na_before_cl PASSED |
 | 23 | F7 chain (Interface→Solute(THF)→Ion) export produces .gro with SOL→THF_L→NA→CL | ✓ VERIFIED | TestChainF7::test_gro_sol_before_thfl_before_na_before_cl PASSED |
-| 24 | Deeper chains have more ITP files than shallower chains | ✓ VERIFIED | TestCrossChainInvariants::test_itp_count_increases_with_chain_depth PASSED (F5=2 < F6=3 < F1=4) |
+| 24 | Deeper chains have more ITP files than shallower chains | ✓ VERIFIED | TestCrossChainInvariants::test_itp_count_increases_with_chain_depth PASSED |
 | 25 | Base atom count (ice+water) is preserved across all chain depths | ✓ VERIFIED | TestCrossChainInvariants::test_base_atom_count_preserved_across_chains PASSED |
-| 26 | write_ion_top_file writes GAFF2 atomtypes for solutes (c3,hc for CH4; os,c5,hc,h1 for THF) | ✓ VERIFIED | Code: lines 1685-1743 have needs_ch4_atomtypes/needs_thf_atomtypes with solute_type check; F4 TOP verified: os,c5,hc,h1 present |
-| 27 | write_ion_top_file [molecules] section uses ITP moleculetype name (e.g., etoh) not registry default (MOL) | ✓ VERIFIED | Code: lines 1670-1683 use parse_itp_file; F4 TOP [molecules] confirmed: {"SOL":3620,"THF_H":288,"etoh":3,"THF_L":12,"NA":5,"CL":5} |
-| 28 | write_ion_top_file does not produce duplicate atomtype definitions | ✓ VERIFIED | Code: lines 1745-1762 use _written_atomtypes set for dedup; F4 TOP verified: OW_ice,HW_ice,MW,NA,CL,os,c5,hc,h1,c3,oh,ho — no duplicates |
-| 29 | write_solute_top_file and write_custom_molecule_top_file have the same three fixes applied | ✓ VERIFIED | write_solute_top_file: lines 2568-2636 (Bug1: solute GAFF2, Bug2: parse_itp_file, Bug3: _written_atomtypes); write_custom_molecule_top_file: lines 2079-2137 (Bug1: guest GAFF2, Bug2: parse_itp_file, Bug3: _written_atomtypes) |
-| 30 | _stage_itp_files() helper copies all #include-referenced ITPs to workspace with atomtypes commented out | ✓ VERIFIED | Code: lines 370-412 in e2e_export_helpers.py; verified F4 staging: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, thf_liquid.itp staged; etoh.itp atomtypes commented out |
-| 31 | run_gmx_grompp() helper executes gmx grompp and returns exit code + stderr | ✓ VERIFIED | Code: lines 415-452 in e2e_export_helpers.py; callable, returns tuple[int, str]; 8/8 tests pass |
+| 26 | write_ion_top_file writes GAFF2 atomtypes for solutes (c3,hc for CH4; os,c5,hc,h1 for THF) | ✓ VERIFIED | Bug 1 fix in 3 writers; grompp validation tests confirm |
+| 27 | write_ion_top_file [molecules] section uses ITP moleculetype name (e.g., etoh) not registry default (MOL) | ✓ VERIFIED | Bug 2 fix in 3 writers; F1/F4 [molecules] confirmed "etoh" |
+| 28 | write_ion_top_file does not produce duplicate atomtype definitions | ✓ VERIFIED | Bug 3 fix in 3 writers; _written_atomtypes set dedup confirmed |
+| 29 | write_solute_top_file and write_custom_molecule_top_file have the same three fixes applied | ✓ VERIFIED | Code verified: GAFF2 atomtypes, parse_itp_file, _written_atomtypes in all 3 writers |
+| 30 | _stage_itp_files() helper copies all #include-referenced ITPs to workspace with atomtypes commented out | ✓ VERIFIED | Code: lines 370-412 in e2e_export_helpers.py |
+| 31 | run_gmx_grompp() helper executes gmx grompp and returns exit code + stderr | ✓ VERIFIED | Code: lines 440-487 in e2e_export_helpers.py |
 | 32 | Ice candidate exported files pass gmx grompp without errors | ✓ VERIFIED | TestIceCandidateGmxValidation::test_gmx_grompp_succeeds PASSED |
 | 33 | Interface exported files pass gmx grompp without errors | ✓ VERIFIED | TestInterfaceGmxValidation::test_gmx_grompp_succeeds PASSED |
-| 34 | F5, F6, F7 chain exported files pass gmx grompp without errors | ✓ VERIFIED | TestChainF5/F6/F7GmxValidation::test_gmx_grompp_succeeds all PASSED |
-| 35 | F1, F3, F4 chain exported files pass gmx grompp without errors | ✓ VERIFIED | TestChainF1/F3/F4GmxValidation::test_gmx_grompp_succeeds all PASSED |
+| 34 | F5, F6, F7 chain exported files pass gmx grompp without errors | ✓ VERIFIED | TestChainF5/F6/F7GmxValidation PASSED |
+| 35 | F1, F3, F4 chain exported files pass gmx grompp without errors | ✓ VERIFIED | TestChainF1/F3/F4GmxValidation PASSED |
+| 36 | F2 chain (Interface→Custom→Ion) passes gmx grompp with 3 ITPs | ✓ VERIFIED | TestChainF2GmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 37 | F1+THF cross-combination passes gmx grompp (hc shared between THF GAFF2 and etoh) | ✓ VERIFIED | TestChainF1ThfGmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 38 | F3+THF cross-combination passes gmx grompp (hc shared between CH4_H and THF_L) | ✓ VERIFIED | TestChainF3ThfGmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 39 | F4+CH4 cross-combination passes gmx grompp (3-source "hc" dedup) | ✓ VERIFIED | TestChainF4Ch4GmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 40 | sII CH4 hydrate chain passes gmx grompp (F3-sII) | ✓ VERIFIED | TestChainF3SIIGmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 41 | sII THF hydrate chain passes gmx grompp (F4-sII) | ✓ VERIFIED | TestChainF4SIIGmxValidation::test_gmx_grompp_succeeds PASSED (exit code 0) |
+| 42 | sII hydrate helper functions generate valid candidates | ✓ VERIFIED | _hydrate_sII_ch4_candidate() and _hydrate_sII_thf_candidate() at lines 327-352; both used by sII test fixtures |
+| 43 | Stale .tpr backup cleanup prevents GROMACS 99-backup limit failure | ✓ VERIFIED | Lines 463-468: glob("em.tpr*") + unlink; tested via all 14 grompp runs passing reliably |
 
-**Score:** 30/30 truths verified (35 items listed; items 20, 34, 35 cover multiple chains collectively)
+**Score:** 37/37 core truths verified (43 items listed; items 20, 34, 35 cover multiple chains collectively)
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `tests/e2e_export_helpers.py` | GRO/TOP/ITP parsing + chain-building + grompp helpers | ✓ VERIFIED | 452 lines, 16 exported functions/constants including MDP_PATH, _stage_itp_files, run_gmx_grompp |
+| `tests/e2e_export_helpers.py` | GRO/TOP/ITP parsing + chain-building + grompp helpers + sII helpers + .tpr cleanup | ✓ VERIFIED | 487 lines, sI+sII hydrate helpers, _stage_itp_files, run_gmx_grompp with .tpr cleanup |
 | `tests/test_e2e_ice_interface_export.py` | Ice + Interface single-structure export tests | ✓ VERIFIED | 344 lines, 3 classes, 16 test methods |
-| `tests/test_e2e_custom_export.py` | Custom molecule single-structure export tests | ✓ VERIFIED | 206 lines, 1 class, 7 test methods; updated for "etoh" in [molecules] |
-| `tests/test_e2e_solute_export.py` | Solute single-structure export tests | ✓ VERIFIED | 399 lines, 2 classes, 13 test methods; updated for "etoh" in [molecules] |
-| `tests/test_e2e_ion_export.py` | Ion single-structure export tests | ✓ VERIFIED | 524 lines, 3 classes, 20 test methods; updated for "etoh" in [molecules] |
+| `tests/test_e2e_custom_export.py` | Custom molecule single-structure export tests | ✓ VERIFIED | 206 lines, 1 class, 7 test methods |
+| `tests/test_e2e_solute_export.py` | Solute single-structure export tests | ✓ VERIFIED | 399 lines, 2 classes, 13 test methods |
+| `tests/test_e2e_ion_export.py` | Ion single-structure export tests | ✓ VERIFIED | 524 lines, 3 classes, 20 test methods |
 | `tests/test_e2e_itp_baseline.py` | ITP file baseline validation | ✓ VERIFIED | 151 lines, 1 class, 8 test methods |
-| `tests/test_e2e_chain_export_1.py` | Full chain export tests F1-F4 | ✓ VERIFIED | 662 lines, 4 classes, 26 test methods; updated for "etoh" in [molecules] |
+| `tests/test_e2e_chain_export_1.py` | Full chain export tests F1-F4 | ✓ VERIFIED | 662 lines, 4 classes, 26 test methods |
 | `tests/test_e2e_chain_export_2.py` | Simple chain export tests F5-F7 | ✓ VERIFIED | 522 lines, 3 classes, 21 test methods |
 | `tests/test_e2e_cross_chain_invariants.py` | Cross-chain invariant tests | ✓ VERIFIED | 313 lines, 1 class, 4 test methods |
-| `tests/test_e2e_gmx_validation.py` | GROMACS grompp validation tests | ✓ VERIFIED | 323 lines, 8 classes, 8 test methods; all PASSED |
-| `quickice/output/gromacs_writer.py` | All GROMACS writer functions with 3 bug fixes | ✓ VERIFIED | 2693 lines, 12 write_* functions; 3 bug fixes in write_ion/solute/custom_top_file |
+| `tests/test_e2e_gmx_validation.py` | GROMACS grompp validation tests (14 test classes) | ✓ VERIFIED | 521 lines, 14 classes, 14 test methods; all PASSED |
+| `quickice/output/gromacs_writer.py` | All GROMACS writer functions with 3 bug fixes | ✓ VERIFIED | 2693 lines, 12 write_* functions |
 | `quickice/structure_generation/gromacs_ion_export.py` | Ion ITP generator | ✓ VERIFIED | 162 lines, write_ion_itp function |
-| `quickice/structure_generation/itp_parser.py` | ITP parser (parse_itp_file used for Bug 2 fix) | ✓ VERIFIED | parse_itp_file importable, returns .molecule_name |
+| `quickice/structure_generation/itp_parser.py` | ITP parser (parse_itp_file) | ✓ VERIFIED | parse_itp_file importable, returns .molecule_name |
 | `quickice/data/tip4p-ice.itp` | TIP4P-ICE water model ITP | ✓ VERIFIED | Exists, [ moleculetype ] SOL |
 | `quickice/data/ch4_hydrate.itp` | CH4 hydrate guest ITP | ✓ VERIFIED | Exists, [ moleculetype ] CH4_H |
 | `quickice/data/thf_hydrate.itp` | THF hydrate guest ITP | ✓ VERIFIED | Exists, [ moleculetype ] THF_H |
-| `quickice/data/ch4_liquid.itp` | CH4 liquid solute ITP | ✓ VERIFIED | Exists, [ moleculetype ] CH4_L, [atomtypes] pre-commented |
-| `quickice/data/thf_liquid.itp` | THF liquid solute ITP | ✓ VERIFIED | Exists, [ moleculetype ] THF_L, [atomtypes] pre-commented |
-| `quickice/data/custom/etoh.itp` | Custom ethanol molecule ITP | ✓ VERIFIED | Exists, [ moleculetype ] etoh, [atomtypes] active |
-| `tests/em.mdp` | Energy minimization MDP for grompp validation | ✓ VERIFIED | Exists (370 bytes), MDP_PATH points to it |
+| `quickice/data/ch4_liquid.itp` | CH4 liquid solute ITP | ✓ VERIFIED | Exists, [ moleculetype ] CH4_L |
+| `quickice/data/thf_liquid.itp` | THF liquid solute ITP | ✓ VERIFIED | Exists, [ moleculetype ] THF_L |
+| `quickice/data/custom/etoh.itp` | Custom ethanol molecule ITP | ✓ VERIFIED | Exists, [ moleculetype ] etoh |
+| `tests/em.mdp` | Energy minimization MDP for grompp validation | ✓ VERIFIED | Exists, MDP_PATH points to it |
 
 ### Key Link Verification
 
@@ -99,34 +115,33 @@ re_verification:
 | `test_e2e_ion_export.py` | `gromacs_ion_export.py` | `write_ion_itp` | ✓ WIRED | Direct function call |
 | `test_e2e_chain_export_1.py` | `gromacs_writer.py` + `gromacs_ion_export.py` | `write_ion_gro_file`, `write_ion_top_file`, `write_ion_itp` | ✓ WIRED | Direct function calls |
 | `test_e2e_cross_chain_invariants.py` | chain builders | `_insert_ions`, `_insert_ions_from_solute`, etc. | ✓ WIRED | Chain builders called and results passed to exporters |
-| `test_e2e_gmx_validation.py` | `e2e_export_helpers.py` | `_stage_itp_files`, `run_gmx_grompp`, `MDP_PATH` | ✓ WIRED | All 3 imported and used in test methods |
+| `test_e2e_gmx_validation.py` | `e2e_export_helpers.py` | `_stage_itp_files`, `run_gmx_grompp`, `MDP_PATH`, sI+sII helpers | ✓ WIRED | All 3 imported and used; sII helpers imported at lines 47-48 |
 | `test_e2e_gmx_validation.py` | `gromacs_writer.py` | `write_gro_file`, `write_top_file`, `write_interface_*`, `write_ion_*` | ✓ WIRED | 6 write_* functions imported and called |
 | `test_e2e_gmx_validation.py` | `gromacs_ion_export.py` | `write_ion_itp` | ✓ WIRED | Imported and called before grompp |
-| `gromacs_writer.py` | `itp_parser.py` | `parse_itp_file` for moleculetype name extraction | ✓ WIRED | Line 16: import; lines 1677, 2084, 2560: usage |
-| `e2e_export_helpers.py` | `gromacs_writer.py` | `comment_out_atomtypes_in_itp` for ITP staging | ✓ WIRED | Line 380: imported inside _stage_itp_files |
-| conftest.py fixtures | GenIce2 structures | `IceStructureGenerator`, `HydrateStructureGenerator`, `generate_interface` | ✓ WIRED | Real structures used by test fixtures |
+| `gromacs_writer.py` | `itp_parser.py` | `parse_itp_file` for moleculetype name extraction | ✓ WIRED | import + 3 usage sites |
+| `e2e_export_helpers.py` | `gromacs_writer.py` | `comment_out_atomtypes_in_itp` for ITP staging | ✓ WIRED | Imported inside _stage_itp_files |
+| `e2e_export_helpers.py` | `hydrate_generator.py` | `HydrateStructureGenerator` with sI+sII configs | ✓ WIRED | sI at lines 299-324, sII at lines 327-352 |
 
 ### Requirements Coverage
 
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| Full chain output produces valid .gro/.top/.itp files | ✓ SATISFIED | F1-F7 chain tests all PASSED |
+| Full chain output produces valid .gro/.top/.itp files | ✓ SATISFIED | F1-F7 chain tests + grompp validation all PASSED |
 | Molecule ordering in .gro matches GROMACS convention | ✓ SATISFIED | assert_gro_residue_ordering verifies SOL→guests→solutes→custom→ions in all chains |
 | .top [molecules] section lists all molecule types with correct counts | ✓ SATISFIED | All test_top_molecules_section tests PASSED with precise count verification |
 | ITP files bundled correctly for each molecule type | ✓ SATISFIED | All test_top_includes tests PASSED; ITP counts verified per chain depth |
 | Atom counts in .gro match structure positions | ✓ SATISFIED | All test_gro_atom_count_matches_header + test_atom_conservation tests PASSED |
-| Solute GAFF2 atomtypes written in TOP [atomtypes] | ✓ SATISFIED | Bug 1 fix in 3 writers; F4/F6/F7 grompp tests validate |
-| [molecules] uses ITP moleculetype name not registry default | ✓ SATISFIED | Bug 2 fix in 3 writers; F1/F4 grompp tests validate |
-| No duplicate atomtype definitions in TOP | ✓ SATISFIED | Bug 3 fix in 3 writers; F4 grompp test validates (most complex chain) |
-| Exported files pass gmx grompp (simulation-ready) | ✓ SATISFIED | 8/8 gmx grompp validation tests PASSED with exit code 0 |
+| Solute GAFF2 atomtypes written in TOP [atomtypes] | ✓ SATISFIED | Bug 1 fix in 3 writers; F6/F7 + F1+THF/F3+THF grompp tests validate |
+| [molecules] uses ITP moleculetype name not registry default | ✓ SATISFIED | Bug 2 fix in 3 writers; F1/F2/F4 grompp tests validate |
+| No duplicate atomtype definitions in TOP | ✓ SATISFIED | Bug 3 fix in 3 writers; F4+CH4 grompp test validates most complex 3-source dedup |
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `gromacs_writer.py` | 830, 883 | `return []` | ℹ️ Info | Legitimate empty-list fallback for atom detection when input is empty — not a stub |
+| `test_e2e_gmx_validation.py` | 1-15 | Module docstring missing sII coverage mention | ℹ️ Info | Cosmetic only; tests exist and pass |
 
-No TODO/FIXME/HACK/PLACEHOLDER patterns. No stub implementations. No placeholder content. All handlers have real implementations.
+No TODO/FIXME/HACK/PLACEHOLDER patterns found. No stub implementations. No placeholder content. All handlers have real implementations.
 
 ### Bug Fix Verification
 
@@ -134,15 +149,15 @@ No TODO/FIXME/HACK/PLACEHOLDER patterns. No stub implementations. No placeholder
 
 | Writer | Fix Applied | Evidence |
 |--------|------------|----------|
-| `write_ion_top_file` | needs_ch4_atomtypes / needs_thf_atomtypes with solute_type check | Lines 1685-1750: hardcoded GAFF2 types; F6/F7 grompp PASSED |
-| `write_solute_top_file` | needs_ch4_atomtypes / needs_thf_atomtypes with solute_type check | Lines 2568-2624: hardcoded GAFF2 types |
-| `write_custom_molecule_top_file` | GAFF2 types for guests only (no solutes in this writer) | Lines 2089-2127: hardcoded GAFF2 types for guests |
+| `write_ion_top_file` | needs_ch4_atomtypes / needs_thf_atomtypes with solute_type check | Lines 1685-1750; F6/F7/F1+THF/F3+THF grompp PASSED |
+| `write_solute_top_file` | needs_ch4_atomtypes / needs_thf_atomtypes with solute_type check | Lines 2568-2624 |
+| `write_custom_molecule_top_file` | GAFF2 types for guests only | Lines 2089-2127 |
 
 **Bug 2: Moleculetype name mismatch (CRITICAL)**
 
 | Writer | Fix Applied | Evidence |
 |--------|------------|----------|
-| `write_ion_top_file` | parse_itp_file(custom_itp_path).molecule_name | Lines 1670-1683; F1/F4 [molecules] confirmed "etoh" |
+| `write_ion_top_file` | parse_itp_file(custom_itp_path).molecule_name | Lines 1670-1683; F1/F2/F4 [molecules] confirmed "etoh" |
 | `write_solute_top_file` | parse_itp_file(custom_itp_path).molecule_name | Lines 2553-2566 |
 | `write_custom_molecule_top_file` | parse_itp_file(itp_path).molecule_name | Lines 2079-2087 |
 
@@ -150,7 +165,7 @@ No TODO/FIXME/HACK/PLACEHOLDER patterns. No stub implementations. No placeholder
 
 | Writer | Fix Applied | Evidence |
 |--------|------------|----------|
-| `write_ion_top_file` | _written_atomtypes set with dedup check | Lines 1745-1762; F4 TOP: 12 unique types, no duplicates |
+| `write_ion_top_file` | _written_atomtypes set with dedup check | Lines 1745-1762; F4+CH4 grompp validates 3-source dedup |
 | `write_solute_top_file` | _written_atomtypes set with dedup check | Lines 2621-2636 |
 | `write_custom_molecule_top_file` | _written_atomtypes set with dedup check | Lines 2124-2137 |
 
@@ -164,28 +179,34 @@ No TODO/FIXME/HACK/PLACEHOLDER patterns. No stub implementations. No placeholder
 | TestChainF6GmxValidation | Interface→Solute(CH4)→Ion | 3 | 0 | Bug 1 fix (CH4 atomtypes) |
 | TestChainF7GmxValidation | Interface→Solute(THF)→Ion | 3 | 0 | Bug 1 fix (THF atomtypes) |
 | TestChainF1GmxValidation | Interface→Custom→Solute→Ion | 4 | 0 | Bug 2+3 fixes (etoh name + dedup) |
-| TestChainF3GmxValidation | Hydrate→Interface→Solute→Ion | 4 | 0 | CH4_H/CH4_L coexistence |
-| TestChainF4GmxValidation | Hydrate→Interface→Custom→Solute→Ion | 5 | 0 | ALL 3 bugs simultaneously |
+| TestChainF3GmxValidation | Hydrate sI-CH4→Interface→Solute→Ion | 4 | 0 | CH4_H/CH4_L coexistence |
+| TestChainF4GmxValidation | Hydrate sI-THF→Custom→Solute→Ion | 5 | 0 | ALL 3 bugs simultaneously |
+| TestChainF2GmxValidation | Interface→Custom→Ion | 3 | 0 | Bug 2+3 without solute atomtypes |
+| TestChainF1ThfGmxValidation | Interface→Custom→Solute(THF)→Ion | 4 | 0 | THF+etoh "hc" dedup |
+| TestChainF3ThfGmxValidation | Hydrate sI-CH4→Interface→Solute(THF)→Ion | 4 | 0 | CH4_H+THF_L "hc" dedup |
+| TestChainF4Ch4GmxValidation | Hydrate sI-THF→Custom→Solute(CH4)→Ion | 5 | 0 | 3-source "hc" dedup (most complex) |
+| TestChainF3SIIGmxValidation | Hydrate sII-CH4→Interface→Solute→Ion | 4 | 0 | sII lattice validation |
+| TestChainF4SIIGmxValidation | Hydrate sII-THF→Custom→Solute→Ion | 5 | 0 | sII lattice + all 3 bugs |
 
 ### Human Verification Required
 
-None — all must-haves are programmatically verified. The 8 grompp validation tests serve as the highest-level verification by running the actual GROMACS simulator on exported files. 124 tests total (116 bridge + 8 grompp) all PASS.
+None — all must-haves are programmatically verified. The 14 grompp validation tests serve as the highest-level verification by running the actual GROMACS simulator on exported files. 130 tests total (116 bridge + 14 grompp) all PASS.
 
 ### Gaps Summary
 
-No gaps found. All 30 must-have truths are verified through 124 passing automated tests (116 bridge content tests + 8 GROMACS grompp simulation tests). The test suite comprehensively covers:
+No gaps found. All 37 must-have truths verified through 130 passing automated tests (116 bridge content tests + 14 GROMACS grompp simulation tests). The complete test suite covers:
 
 - **3 single-structure export scenarios** (Ice, Interface, Interface+Hydrate) — 16 tests
-- **2 custom/solute single-structure scenarios** (Custom, Solute from Interface, Solute from Custom) — 20 tests
-- **3 ion single-structure scenarios** (Ion from Interface, Ion from Custom, Ion from Solute) — 20 tests
+- **2 custom/solute single-structure scenarios** — 20 tests
+- **3 ion single-structure scenarios** — 20 tests
 - **8 ITP baseline checks** — 8 tests
 - **7 chain export scenarios** (F1-F7) — 48 tests
 - **4 cross-chain invariants** — 4 tests
-- **8 GROMACS grompp validation scenarios** (Ice, Interface, F5-F7, F1, F3, F4) — 8 tests
+- **14 GROMACS grompp validation scenarios** (Ice, Interface, F5-F7, F1, F3, F4, F2, F1+THF, F3+THF, F4+CH4, F3-sII, F4-sII) — 14 tests
 
-All tests use real GenIce2-generated structures (not mocks) and exercise the full compute→export bridge. The grompp validation tests go further by confirming the exported files are GROMACS-simulation-ready.
+Phase COMPLETE: 9/9 plans executed, 130 total tests, all passing. The grompp validation tests cover both sI and sII hydrate lattice types, all cross-combinations of guest/solute/custom molecules, and validate the 3 critical bug fixes work together in the most demanding dedup scenarios.
 
 ---
 
-_Verified: 2026-06-08T08:47:49Z_
+_Verified: 2026-06-08T11:31:50Z_
 _Verifier: OpenCode (gsd-verifier)_

@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export phase — 8 of 9 plans (3 GROMACS bug fixes + grompp helpers + grompp validation + cross-combination tests)
+**Current Focus:** e2e-compute-export phase COMPLETE — 9 of 9 plans (3 GROMACS bug fixes + grompp helpers + 14 grompp validation tests + .tpr cleanup)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — E2E compute-export bridge testing (8/9 plans, 128 total tests including 12 grompp validation)
+**Current focus:** e2e-compute-export — E2E compute-export bridge testing COMPLETE (9/9 plans, 130 total tests including 14 grompp validation)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | e2e-compute-export |
 | Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
 | Plan | 9 of 9 COMPLETE |
-| Status | Phase complete — sII hydrate grompp validation tests + stale backup fix (Plan 09) |
-| Last activity | 2026-06-08 — Plan 09: 2 sII grompp tests + .tpr backup cleanup fix |
+| Status | Phase COMPLETE — verified 37/37 must-haves (130 total tests, 14 grompp validation pass) |
+| Last activity | 2026-06-08 — Phase e2e-compute-export complete (9/9 plans) |
 
-**Progress:** ██████████ 100% (165/192 plans across all milestones, e2e-compute-export 9/9)
+**Progress:** ██████████ 100% (166/192 plans across all milestones, e2e-compute-export 9/9 COMPLETE)
 
 ---
 

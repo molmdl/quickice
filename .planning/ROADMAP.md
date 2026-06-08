@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
-**Total Plans:** 39 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 9)
+**Total Plans:** 39 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 9, completed: 35/39)
 
 ## Overview
 
@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | ◆ In Progress | 7 | 9 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 9 | 9 |
 
 ---
 
@@ -368,7 +368,7 @@ Plans:
 - Tests the interface between computation pipeline output and export pipeline input
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
-**Plans:** 9 plans in 6 waves (7 complete, 2 new)
+**Plans:** 9 plans in 6 waves
 - [x] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (16 tests)
 - [x] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (21 tests + 3 bugfixes)
 - [x] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (28 tests + bugfix)
@@ -376,8 +376,8 @@ Plans:
 - [x] e2e-compute-export-05-PLAN.md — (Wave 3) Simple chain export F5-F7 + cross-chain invariants (25 tests)
 - [x] e2e-compute-export-06-PLAN.md — (Wave 4) Fix 3 GROMACS-simulation bugs in TOP writers + grompp validation helpers
 - [x] e2e-compute-export-07-PLAN.md — (Wave 4) GROMACS grompp validation tests: ice, interface, F1-F7 (8 tests)
-- [ ] e2e-compute-export-08-PLAN.md — (Wave 5) Missing grompp cross-combinations: F2, F1+THF, F3+THF, F4+CH4 (4 tests)
-- [ ] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
+- [x] e2e-compute-export-08-PLAN.md — (Wave 5) Missing grompp cross-combinations: F2, F1+THF, F3+THF, F4+CH4 (4 tests)
+- [x] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
 
 ---
 
@@ -415,5 +415,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-08 - e2e-compute-export phase extended with Plans 08-09 (missing grompp combinations + sII hydrate)*
+*Last updated: 2026-06-08 - e2e-compute-export phase COMPLETE (9/9 plans, 130 total tests including 14 grompp validation)*
 *For current state, see .planning/STATE.md*
