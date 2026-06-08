@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
-**Total Plans:** 35 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 6)
+**Total Plans:** 37 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7)
 
 ## Overview
 
@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 5 | 7 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ◆ In Progress | 5 | 7 |
 
 ---
 
@@ -368,14 +368,14 @@ Plans:
 - Tests the interface between computation pipeline output and export pipeline input
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
-**Plans:** 7 plans in 4 waves
+**Plans:** 7 plans in 4 waves (5 complete, 2 new)
 - [x] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (16 tests)
 - [x] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (21 tests + 3 bugfixes)
 - [x] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (28 tests + bugfix)
 - [x] e2e-compute-export-04-PLAN.md — (Wave 3) Full chain export F1-F4 (26 tests + bugfix)
 - [x] e2e-compute-export-05-PLAN.md — (Wave 3) Simple chain export F5-F7 + cross-chain invariants (25 tests)
-- [ ] e2e-compute-export-06-PLAN.md — (Wave 4) Fix GROMACS-simulation bugs in TOP writers + grompp validation helpers
-- [ ] e2e-compute-export-07-PLAN.md — (Wave 4) GROMACS grompp validation tests (8 tests)
+- [ ] e2e-compute-export-06-PLAN.md — (Wave 4) Fix 3 GROMACS-simulation bugs in TOP writers + grompp validation helpers
+- [ ] e2e-compute-export-07-PLAN.md — (Wave 4) GROMACS grompp validation tests: ice, interface, F1-F7 (8 tests)
 
 ---
 

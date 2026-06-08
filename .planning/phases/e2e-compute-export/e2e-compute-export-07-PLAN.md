@@ -136,7 +136,7 @@ def gmx_workspace(request):
     Files persist after test run for debugging.
     """
     base = Path(__file__).parent.parent / "tmp" / "e2e-gmx-validation"
-    workspace = base / request.node.name
+    workspace = base / request.node.name.replace("::", "_")
     workspace.mkdir(parents=True, exist_ok=True)
     yield workspace
 ```
@@ -335,9 +335,8 @@ class TestChainF1GmxValidation:
 
     @pytest.fixture(autouse=True)
     def _build_chain(self, interface_slab):
-        from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
-        registry = MoleculetypeRegistry()
-        registry.register_liquid_solute("CH4")
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
         custom = _insert_custom_molecules(interface_slab, n_molecules=3)
         solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
@@ -356,21 +355,25 @@ class TestChainF1GmxValidation:
 
 **Test Class 7: F3 (Hydrate→Interface→Solute→Ion)**
 
+IMPORTANT: F3 starts from a HYDRATE candidate, NOT from the interface_slab fixture.
+Use `_hydrate_sI_ch4_candidate()` + `_make_slab_interface()` (both from e2e_export_helpers.py)
+to generate the hydrate-based interface inline. This matches the pattern in test_e2e_chain_export_1.py.
+
 ```python
 class TestChainF3GmxValidation:
     """Validate F3 chain (Hydrate→Interface→Solute→Ion) export passes gmx grompp.
     
     4 ITPs: tip4p-ice.itp, ch4_hydrate.itp, ch4_liquid.itp, ion.itp
-    Tests hydrate guest (CH4_H) + solute (CH4_L) coexistence — same GAFF2 atomtypes
-    used for both, must not duplicate.
+    Tests hydrate guest (CH4_H) + solute (CH4_L) coexistence.
     """
 
     @pytest.fixture(autouse=True)
-    def _build_chain(self, interface_slab):
-        from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
-        registry = MoleculetypeRegistry()
-        registry.register_liquid_solute("CH4")
-        solute = _insert_solutes(interface_slab, solute_type='CH4', concentration=0.3)
+    def _build_chain(self):
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='CH4', concentration=0.3)
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
 
     def test_gmx_grompp_succeeds(self, gmx_workspace):
@@ -383,40 +386,6 @@ class TestChainF3GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3.gro", top_file="f3.top")
         assert exit_code == 0, f"gmx grompp failed for F3:\n{stderr[-500:]}"
-```
-
-Wait — F3 starts with a HYDRATE, not the interface_slab fixture. The interface_slab
-fixture uses ice_ih_candidate. For F3, we need a hydrate→interface chain.
-
-Use `_hydrate_sI_ch4_candidate()` + `_make_slab_interface()` (both from e2e_export_helpers.py)
-to generate the hydrate-based interface inline. This matches the pattern in test_e2e_chain_export_1.py.
-
-Also need to register the hydrate guest before solute insertion (established pattern from
-Plan 04 — see STATE.md decision "Register hydrate guest before insert_solutes for F3/F4").
-
-Corrected F3 test:
-
-```python
-class TestChainF3GmxValidation:
-    """Validate F3 chain (Hydrate→Interface→Solute→Ion) export passes gmx grompp.
-    
-    4 ITPs: tip4p-ice.itp, ch4_hydrate.itp, ch4_liquid.itp, ion.itp
-    Tests hydrate guest (CH4_H) + solute (CH4_L) coexistence.
-    """
-
-    @pytest.fixture(autouse=True)
-    def _build_chain(self):
-        from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
-        registry = MoleculetypeRegistry()
-        registry.register_hydrate_guest("CH4")
-        registry.register_liquid_solute("CH4")
-        hydrate = _hydrate_sI_ch4_candidate()
-        interface = _make_slab_interface(hydrate)
-        solute = _insert_solutes(interface, solute_type='CH4', concentration=0.3)
-        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
-
-    def test_gmx_grompp_succeeds(self, gmx_workspace):
-        # ... same 6-step pattern ...
 ```
 
 **Test Class 8: F4 (Hydrate→Interface→Custom→Solute→Ion)**
@@ -439,9 +408,8 @@ class TestChainF4GmxValidation:
 
     @pytest.fixture(autouse=True)
     def _build_chain(self):
-        from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
-        registry = MoleculetypeRegistry()
-        registry.register_hydrate_guest("THF")
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
         hydrate = _hydrate_sI_thf_candidate()
         interface = _make_slab_interface(hydrate)
         custom = _insert_custom_molecules(interface, n_molecules=3)
