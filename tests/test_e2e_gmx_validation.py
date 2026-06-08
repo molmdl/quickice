@@ -44,6 +44,8 @@ from e2e_export_helpers import (
     _make_slab_interface,
     _hydrate_sI_ch4_candidate,
     _hydrate_sI_thf_candidate,
+    _hydrate_sII_ch4_candidate,
+    _hydrate_sII_thf_candidate,
     _stage_itp_files,
     run_gmx_grompp,
     MDP_PATH,
@@ -452,3 +454,68 @@ class TestChainF4Ch4GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_ch4.gro", top_file="f4_ch4.top")
         assert exit_code == 0, f"gmx grompp failed for F4+CH4:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F3-sII: Hydrate sII-CH4→Interface→Solute(CH4)→Ion (4 ITPs)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF3SIIGmxValidation:
+    """Validate F3-sII chain (Hydrate sII-CH4→Interface→Solute→Ion) passes gmx grompp.
+
+    4 ITPs: tip4p-ice.itp, ch4_hydrate.itp, ch4_liquid.itp, ion.itp
+    Tests sII hydrate guest export + grompp validation.
+    sII has different cage structure (5^12 6^4 large + 5^12 small) from sI.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        hydrate = _hydrate_sII_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='CH4', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f3_sII.gro")
+        top_path = str(gmx_workspace / "f3_sII.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_sII.gro", top_file="f3_sII.top")
+        assert exit_code == 0, f"gmx grompp failed for F3-sII:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F4-sII: Hydrate sII-THF→Interface→Custom→Solute(THF)→Ion (5 ITPs)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF4SIIGmxValidation:
+    """Validate F4-sII chain (Hydrate sII-THF→Interface→Custom→Solute→Ion) passes gmx grompp.
+
+    5 ITPs: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, thf_liquid.itp, ion.itp
+    Tests sII hydrate with full custom+solute+ion chain.
+    Most complex sII chain — tests all 3 bug fixes with sII lattice.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        hydrate = _hydrate_sII_thf_candidate()
+        interface = _make_slab_interface(hydrate)
+        custom = _insert_custom_molecules(interface, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='THF', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f4_sII.gro")
+        top_path = str(gmx_workspace / "f4_sII.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_sII.gro", top_file="f4_sII.top")
+        assert exit_code == 0, f"gmx grompp failed for F4-sII:\n{stderr[-500:]}"

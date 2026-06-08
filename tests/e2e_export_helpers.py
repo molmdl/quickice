@@ -324,6 +324,34 @@ def _hydrate_sI_thf_candidate():
     return structure.to_candidate()
 
 
+def _hydrate_sII_ch4_candidate():
+    """Generate hydrate sII+CH4 candidate inline (for chains needing different config)."""
+    gen = HydrateStructureGenerator()
+    config = HydrateConfig(
+        lattice_type="sII",
+        guest_type="ch4",
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    structure = gen.generate(config)
+    return structure.to_candidate()
+
+
+def _hydrate_sII_thf_candidate():
+    """Generate hydrate sII+THF candidate inline."""
+    gen = HydrateStructureGenerator()
+    config = HydrateConfig(
+        lattice_type="sII",
+        guest_type="thf",
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    structure = gen.generate(config)
+    return structure.to_candidate()
+
+
 def _make_slab_interface(candidate, box_x=3.0, box_y=3.0, box_z=8.0,
                          ice_thickness=2.0, water_thickness=4.0, seed=42):
     """Helper: generate slab interface from a candidate."""
