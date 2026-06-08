@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | Field | Value |
 |-------|-------|
-| Milestone | e2e-compute-export |
-| Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
-| Plan | 10 of 10 COMPLETE |
-| Status | Phase COMPLETE — verified 41/41 must-haves (130 total tests, 14 grompp validation pass + cleanup utility) |
-| Last activity | 2026-06-08 — Phase e2e-compute-export complete (10/10 plans, cleanup utility added) |
+| Milestone | v4.5 Solute & Custom Molecule Insertion |
+| Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs) |
+| Plan | 03 of N in progress |
+| Status | In progress — TREE-01 optimization complete with regression tests |
+| Last activity | 2026-06-08 — Completed 34.7-03-PLAN.md (TREE-01 KDTree rebuild optimization) |
 
-**Progress:** ██████████ 100% (167/192 plans across all milestones, e2e-compute-export 10/10 COMPLETE)
+**Progress:** █████████░ 87% (168/192 plans across all milestones)
 
 ---
 
@@ -397,6 +397,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | sII uses same ITP filenames as sI | ch4_hydrate.itp, thf_hydrate.itp identical for both lattice types; difference is in candidate atom counts | ✓ Shipped (e2e-compute-export-09) |
 | Clean stale .tpr backups before grompp | GROMACS 99-backup limit causes grompp failure on persistent workspaces; cleanup prevents accumulation | ✓ Shipped (e2e-compute-export-09) |
 | tmp/ cleanup utility with --dry-run | scripts/clean-test-output.sh preserves em.mdp and e2e-gmx-validation/ by default; --stale-backups-only for lightweight GROMACS backup cleanup | ✓ Shipped (e2e-compute-export-10) |
+| ion_tree None init with conditional KDTree rebuild | TREE-01: ion_tree initialized as None before loop, rebuilt only after ion_positions.append(); skips rebuild on overlap rejection iterations | ✓ Shipped (34.7-03) |
+| Strictly-increasing KDTree rebuild sizes as regression test | TestTREE01 detects redundant rebuilds via duplicate sizes (not exact count, which is affected by charge neutrality cleanup) | ✓ Shipped (34.7-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -497,20 +499,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Completed:** e2e-compute-export-10 (test output cleanup utility with --dry-run, --include-gmx-validation, --stale-backups-only)
-**Status:** e2e-compute-export phase COMPLETE — 10/10 plans (130 total tests + cleanup utility)
+**Completed:** 34.7-03 (TREE-01 ion inserter KDTree conditional rebuild optimization + 3 regression tests)
+**Status:** Phase 34.7 in progress — TREE-01 complete
 
-**e2e-compute-export Phase Progress:**
-- ✓ 01: Shared e2e_export_helpers.py (6 parsing + 9 chain-building helpers) + Ice/Interface export tests (16 total)
-- ✓ 02: Custom molecule (7) + Solute (14) export tests + 3 gromacs_writer.py bugfixes (21 total)
-- ✓ 03: Ion export tests (3 sources: Interface/Custom/Solute + BUG I5 workaround) + ITP baseline validation (28 total)
-- ✓ 04: Full chain export tests F1-F4 (26 tests) + CustomMoleculeInserter guest molecule_index build fix
-- ✓ 05: Simple chain F5-F7 (21 tests) + cross-chain invariants (4 tests) = 25 total
-- ✓ 06: Fix 3 GROMACS-simulation-blocking bugs (solute atomtypes, moleculetype name, dedup) + grompp helpers
-- ✓ 07: 8 grompp validation tests (ice, interface, F1-F7) — ALL pass exit code 0, validating all 3 bug fixes
-- ✓ 08: 4 cross-combination grompp validation tests (F2, F1+THF, F3+THF, F4+CH4) — ALL pass exit code 0, total 12 grompp tests
-- ✓ 09: 2 sII hydrate grompp validation tests (F3-sII, F4-sII) + stale .tpr backup cleanup — ALL pass, total 14 grompp tests
-- ✓ 10: Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags
+**Phase 34.7 Progress:**
+- ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
 
 ---
-*State updated: 2026-06-08 — e2e-compute-export phase COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)*
+*State updated: 2026-06-08 — Phase 34.7 plan 03 complete (TREE-01 KDTree optimization + regression tests)*
