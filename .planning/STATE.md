@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs) |
-| Plan | 03 of N in progress |
-| Status | In progress — TREE-01 optimization complete with regression tests |
-| Last activity | 2026-06-08 — Completed 34.7-03-PLAN.md (TREE-01 KDTree rebuild optimization) |
+| Plan | 02 COMPLETE (ATOM-01, RNG-01 fixed + 5 regression tests) |
+| Status | In progress — Plans 01-02 complete, Plan 03 complete (TREE-01); all 6 bugs fixed |
+| Last activity | 2026-06-08 — Completed 34.7-02-PLAN.md (ATOM-01 hardcoded // 4 + RNG-01 unseeded RNG fixes) |
 
-**Progress:** █████████░ 87% (168/192 plans across all milestones)
+**Progress:** █████████░ 87% (170/192 plans across all milestones)
 
 ---
 
@@ -397,6 +397,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | sII uses same ITP filenames as sI | ch4_hydrate.itp, thf_hydrate.itp identical for both lattice types; difference is in candidate atom counts | ✓ Shipped (e2e-compute-export-09) |
 | Clean stale .tpr backups before grompp | GROMACS 99-backup limit causes grompp failure on persistent workspaces; cleanup prevents accumulation | ✓ Shipped (e2e-compute-export-09) |
 | tmp/ cleanup utility with --dry-run | scripts/clean-test-output.sh preserves em.mdp and e2e-gmx-validation/ by default; --stale-backups-only for lightweight GROMACS backup cleanup | ✓ Shipped (e2e-compute-export-10) |
+| BUG-05: HW1 Z uses h1_pos[2] not h2_pos[2] | Copy-paste error in write_custom_molecule_gro_file() silently corrupted HW1 Z-coordinate | ✓ Shipped (34.7-01) |
+| MW-01: Molecule-aware wrapping for ice GRO | wrap_molecules_into_box with MoleculeIndex(count=3) prevents split molecules at PBC; MW computed from correctly wrapped O/H1/H2 | ✓ Shipped (34.7-01) |
+| DEFLT-01: All 6 TOP writers use fudgeLJ=0.5 fudgeQQ=0.8333 | Standardized to Amber forcefield defaults; 0.5 safe for TIP4P-ICE (no 1-4 pairs), correct for GAFF2 systems | ✓ Shipped (34.7-01) |
 | ion_tree None init with conditional KDTree rebuild | TREE-01: ion_tree initialized as None before loop, rebuilt only after ion_positions.append(); skips rebuild on overlap rejection iterations | ✓ Shipped (34.7-03) |
 | Strictly-increasing KDTree rebuild sizes as regression test | TestTREE01 detects redundant rebuilds via duplicate sizes (not exact count, which is affected by charge neutrality cleanup) | ✓ Shipped (34.7-03) |
 
@@ -499,11 +502,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Completed:** 34.7-03 (TREE-01 ion inserter KDTree conditional rebuild optimization + 3 regression tests)
-**Status:** Phase 34.7 in progress — TREE-01 complete
+**Completed:** 34.7-01 (BUG-05/MW-01/DEFLT-01 bug fixes + 9 regression tests)
+**Status:** Phase 34.7 in progress — Plan 01 complete, Plans 02+ pending
 
 **Phase 34.7 Progress:**
+- ✓ 01: BUG-05 (HW1 Z h2_pos→h1_pos), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ=0.5/fudgeQQ=0.8333) + 9 regression tests
 - ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
 
 ---
-*State updated: 2026-06-08 — Phase 34.7 plan 03 complete (TREE-01 KDTree optimization + regression tests)*
+*State updated: 2026-06-08 — Phase 34.7 plan 01 complete (BUG-05/MW-01/DEFLT-01 fixes + 9 regression tests)*
