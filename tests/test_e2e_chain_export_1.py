@@ -67,12 +67,11 @@ class TestChainF1:
     """Validate F1 chain: Interface → Custom → Solute → Ion.
 
     5 molecule types in GRO: SOL → MOL → CH4_L → NA → CL
-    TOP [molecules]: SOL, MOL, CH4_L, NA, CL
+    TOP [molecules]: SOL, etoh, CH4_L, NA, CL
     TOP #include: tip4p-ice.itp, etoh.itp, ch4_liquid.itp, ion.itp
 
-    NOTE: Custom molecule residue name is "MOL" (from moleculetype_name
-    in registry), NOT "ETOH" (the ITP file moleculetype name is lowercase
-    "etoh" but the registry defaults to "MOL").
+    NOTE: GRO residue name is "MOL" (from registry moleculetype_name),
+    but TOP [molecules] uses ITP moleculetype name "etoh" (Bug 2 fix).
     """
 
     @pytest.fixture(autouse=True)
@@ -135,9 +134,9 @@ class TestChainF1:
             f"Expected SOL count {expected_sol}, got {molecules['SOL']}"
         )
 
-        assert "MOL" in molecules, "TOP should list MOL molecule"
-        assert molecules["MOL"] == 3, (
-            f"Expected MOL count 3, got {molecules['MOL']}"
+        assert "etoh" in molecules, "TOP should list etoh molecule (ITP moleculetype name)"
+        assert molecules["etoh"] == 3, (
+            f"Expected etoh count 3, got {molecules['etoh']}"
         )
 
         assert "CH4_L" in molecules, "TOP should list CH4_L solute molecule"
@@ -233,11 +232,12 @@ class TestChainF2:
     """Validate F2 chain: Interface → Custom → Ion.
 
     4 molecule types in GRO: SOL → MOL → NA → CL (no solutes)
-    TOP [molecules]: SOL, MOL, NA, CL
+    TOP [molecules]: SOL, etoh, NA, CL
     TOP #include: tip4p-ice.itp, etoh.itp, ion.itp
 
     NOTE: F2 uses _insert_ions() directly (no BUG I5 workaround needed,
     since custom→ion doesn't go through SoluteStructure).
+    GRO residue is "MOL" but TOP [molecules] uses ITP name "etoh".
     """
 
     @pytest.fixture(autouse=True)
@@ -291,9 +291,9 @@ class TestChainF2:
         assert "SOL" in molecules, "TOP should list SOL molecule"
         assert molecules["SOL"] == expected_sol
 
-        assert "MOL" in molecules, "TOP should list MOL molecule"
-        assert molecules["MOL"] == 3, (
-            f"Expected MOL count 3, got {molecules['MOL']}"
+        assert "etoh" in molecules, "TOP should list etoh molecule (ITP moleculetype name)"
+        assert molecules["etoh"] == 3, (
+            f"Expected etoh count 3, got {molecules['etoh']}"
         )
 
         assert "NA" in molecules, "TOP should list NA molecule"
@@ -498,7 +498,7 @@ class TestChainF4:
     """Validate F4 chain: Hydrate → Interface → Custom → Solute → Ion.
 
     6 molecule types in GRO: SOL → THF_H → MOL → THF_L → NA → CL
-    TOP [molecules]: SOL, THF_H (or THF), MOL, THF_L, NA, CL
+    TOP [molecules]: SOL, THF_H (or THF), etoh, THF_L, NA, CL
     TOP #include: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, thf_liquid.itp, ion.itp
 
     KNOWN LIMITATION: guest_nmolecules may be 0 after passing through
@@ -583,9 +583,9 @@ class TestChainF4:
         )
         assert molecules[guest_key] > 0, "THF_H count should be > 0"
 
-        assert "MOL" in molecules, "TOP should list MOL molecule"
-        assert molecules["MOL"] == 2, (
-            f"Expected MOL count 2, got {molecules['MOL']}"
+        assert "etoh" in molecules, "TOP should list etoh molecule (ITP moleculetype name)"
+        assert molecules["etoh"] == 2, (
+            f"Expected etoh count 2, got {molecules['etoh']}"
         )
 
         assert "THF_L" in molecules, "TOP should list THF_L solute molecule"

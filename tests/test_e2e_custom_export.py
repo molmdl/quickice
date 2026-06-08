@@ -63,11 +63,12 @@ class TestCustomMoleculeExport:
 
     Custom molecule system has SOL (ice+water) + custom residue molecules.
     The moleculetype_name comes from MoleculetypeRegistry.register_custom_molecule()
-    which defaults to "MOL" (not the ITP moleculetype name "etoh").
+    which defaults to "MOL" (the GRO residue name), but the TOP [molecules]
+    section now uses the ITP moleculetype name "etoh" (Bug 2 fix).
 
     GRO residue ordering: SOL before custom residue (no interleaving).
     GRO atom count = ice_nmolecules*4 + water_nmolecules*4 + custom_molecule_count*atoms_per_mol.
-    TOP [molecules] = {"SOL": ice+water, "MOL": custom_molecule_count}
+    TOP [molecules] = {"SOL": ice+water, "etoh": custom_molecule_count}
     TOP #include = ["tip4p-ice.itp", "etoh.itp"] (custom ITP uses original filename)
     """
 
@@ -75,7 +76,8 @@ class TestCustomMoleculeExport:
     def _build_custom(self, interface_slab):
         """Build custom molecule structure for all tests in this class."""
         self.custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-        self.mol_name = self.custom.moleculetype_name  # "MOL" from registry
+        self.mol_name = self.custom.moleculetype_name  # "MOL" from registry (GRO residue name)
+        self.top_mol_name = "etoh"  # ITP moleculetype name (TOP [molecules] name, Bug 2 fix)
 
     def test_gro_sol_before_custom_residues(self, tmp_path):
         """GRO file has SOL residues before custom molecule residues with no interleaving."""
@@ -138,13 +140,13 @@ class TestCustomMoleculeExport:
             f"Expected SOL count {sol_count}, got {molecules['SOL']}"
         )
 
-        # Custom molecule count
-        assert self.mol_name in molecules, (
-            f"Expected {self.mol_name} in [molecules], got {list(molecules.keys())}"
+        # Custom molecule count (TOP uses ITP moleculetype name "etoh")
+        assert self.top_mol_name in molecules, (
+            f"Expected {self.top_mol_name} in [molecules], got {list(molecules.keys())}"
         )
-        assert molecules[self.mol_name] == self.custom.custom_molecule_count, (
-            f"Expected {self.mol_name} count {self.custom.custom_molecule_count}, "
-            f"got {molecules[self.mol_name]}"
+        assert molecules[self.top_mol_name] == self.custom.custom_molecule_count, (
+            f"Expected {self.top_mol_name} count {self.custom.custom_molecule_count}, "
+            f"got {molecules[self.top_mol_name]}"
         )
 
     def test_top_includes_tip4p_ice_and_custom_itp(self, tmp_path):

@@ -207,7 +207,7 @@ class TestIonFromCustom:
 
     Ion from Custom has SOL, then MOL (custom molecule), then NA, then CL.
     GRO atom count = ice*4 + water*4 + custom_atoms + na_count + cl_count.
-    TOP [molecules] = {"SOL": ice+water, "MOL": n_custom, "NA": na_count, "CL": cl_count}
+    TOP [molecules] = {"SOL": ice+water, "etoh": n_custom, "NA": na_count, "CL": cl_count}
     TOP #include = ["tip4p-ice.itp", "etoh.itp", "ion.itp"]
     """
 
@@ -266,9 +266,9 @@ class TestIonFromCustom:
             f"Expected SOL count {expected_sol}, got {molecules['SOL']}"
         )
 
-        assert "MOL" in molecules, "TOP should list MOL molecule"
-        assert molecules["MOL"] == 3, (
-            f"Expected MOL count 3, got {molecules['MOL']}"
+        assert "etoh" in molecules, "TOP should list etoh molecule (ITP moleculetype name)"
+        assert molecules["etoh"] == 3, (
+            f"Expected etoh count 3, got {molecules['etoh']}"
         )
 
         assert "NA" in molecules, "TOP should list NA molecule"

@@ -217,12 +217,12 @@ class TestSoluteFromCustom:
     Result has SOL (ice+water) + custom (MOL) + solute (CH4_L).
 
     GRO residue ordering: SOL before custom before solute (no interleaving).
-    TOP [molecules] = {"SOL": ice+water, "MOL": 3, "CH4_L": n_molecules}
+    TOP [molecules] = {"SOL": ice+water, "etoh": 3, "CH4_L": n_molecules}
     TOP #include = ["tip4p-ice.itp", "etoh.itp", "ch4_liquid.itp"]
 
-    Custom molecule moleculetype_name comes from MoleculetypeRegistry which
-    defaults to "MOL" (not the ITP moleculetype name "etoh"). The custom ITP
-    filename in #include uses the ORIGINAL filename "etoh.itp".
+    Custom molecule GRO residue is "MOL" (from moleculetype_name in registry),
+    but TOP [molecules] uses ITP moleculetype name "etoh" (Bug 2 fix). The
+    custom ITP filename in #include uses the ORIGINAL filename "etoh.itp".
 
     NOTE: When the source is a CustomMoleculeStructure, the SoluteInserter
     modifies the interface and molecule_index is populated (from CustomMoleculeInserter).
@@ -234,7 +234,8 @@ class TestSoluteFromCustom:
     def _build_solute_from_custom(self, interface_slab):
         """Build custom→solute chain for all tests in this class."""
         custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-        self.custom_mol_name = custom.moleculetype_name  # "MOL" from registry
+        self.custom_mol_name = custom.moleculetype_name  # "MOL" from registry (GRO residue name)
+        self.top_mol_name = "etoh"  # ITP moleculetype name (TOP [molecules] name, Bug 2 fix)
         self.solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
         self.interface = self.solute.interface_structure
 
@@ -315,13 +316,13 @@ class TestSoluteFromCustom:
             f"Expected SOL count {expected_sol}, got {molecules['SOL']}"
         )
 
-        # Custom molecule count (propagated from CustomMoleculeStructure)
-        assert self.custom_mol_name in molecules, (
-            f"Expected {self.custom_mol_name} in [molecules], got {list(molecules.keys())}"
+        # Custom molecule count (TOP uses ITP moleculetype name "etoh")
+        assert self.top_mol_name in molecules, (
+            f"Expected {self.top_mol_name} in [molecules], got {list(molecules.keys())}"
         )
-        assert molecules[self.custom_mol_name] == self.solute.custom_molecule_count, (
-            f"Expected {self.custom_mol_name} count {self.solute.custom_molecule_count}, "
-            f"got {molecules[self.custom_mol_name]}"
+        assert molecules[self.top_mol_name] == self.solute.custom_molecule_count, (
+            f"Expected {self.top_mol_name} count {self.solute.custom_molecule_count}, "
+            f"got {molecules[self.top_mol_name]}"
         )
 
         # Solute molecule count

@@ -11,7 +11,7 @@ F7: Interface→Solute(THF)→Ion
 CRITICAL NOTES:
 - F5 uses _insert_ions() directly (no BUG I5 workaround needed)
 - F6/F7 use _insert_ions_from_solute() with BUG I5 workaround
-- Custom molecule residue name is "MOL" (from moleculetype_name), NOT "ETOH"
+- Custom molecule residue name is "MOL" (from moleculetype_name in GRO), "etoh" in TOP [molecules]
 - THF solute (THF_L) has 13 atoms per molecule, CH4 solute (CH4_L) has 5
 - ion.itp must be generated to tmp_path before write_ion_top_file
 - SOL counts should come from ion.molecule_index (not original interface counts)

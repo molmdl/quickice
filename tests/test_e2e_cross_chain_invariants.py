@@ -14,7 +14,7 @@ Implementation: Build chains inline, use same interface_slab fixture for F5/F6/F
 F3 uses inline hydrate candidate generation: _hydrate_sI_ch4_candidate() + _make_slab_interface()
 
 CRITICAL NOTES from prior plans:
-- Custom molecule residue name is "MOL" (from moleculetype_name), NOT "ETOH"
+- Custom molecule GRO residue name is "MOL", TOP [molecules] uses ITP name "etoh"
 - F6/F7 use _insert_ions_from_solute() with BUG I5 workaround
 - THF has 13 atoms, CH4 has 5 atoms, ethanol has 9 atoms
 - ion.itp must be generated to tmp_path before write_ion_top_file
