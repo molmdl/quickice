@@ -23,7 +23,7 @@ needs_update: 2
 | IDX-01 | Stale start_idx after ion list mutation | **REFUTED** | — | Code explicitly regenerates start_idx at lines 445-448 after any mutation |
 | ATOM-01 | Hardcoded water atom count of 4 | **CONFIRMED** | 🟡 MEDIUM | Multiple `// 4` and `count=4` hardcoded in custom_molecule_inserter and solute_inserter |
 | TREE-01 | O(N²) KDTree rebuilds in overlap checking | **PARTIALLY CORRECT** | 🟡 MEDIUM | Trees are rebuilt on each insertion, but N is small (molecule count, not atom count) |
-| GUEST-01 | CO2 misidentified as THF by count_guest_atoms | **CONFIRMED** | 🟡 MEDIUM | `first_atom == "O"` returns 13 immediately at line 82 of molecule_utils.py |
+| GUEST-01 | CO2 misidentified as THF by count_guest_atoms | **PARTIALLY CORRECT** | 🟢 LOW | CO2 IS misidentified via line 84-90, but QuickIce never uses CO2; all supported molecules are correctly identified |
 | DEFLT-01 | `[ defaults ]` section fudgeLJ inconsistency | **CONFIRMED** | 🟠 HIGH | fudgeLJ=0.5 in simple writers vs 0.0 in multi-molecule writers |
 
 ---
@@ -308,50 +308,90 @@ For typical use cases (M = 10-100 molecules being placed), this is acceptable. T
 
 **Claim:** `count_guest_atoms()` uses atom count heuristics that could misidentify molecules, specifically CO2 (3 atoms starting with C) could be confused with THF.
 
-**Verdict:** ✅ **CONFIRMED** — The function has a genuine misidentification risk, but the CO2→THF path is not the primary concern.
+**User correction:** QuickIce does NOT implement CO2. The supported molecules are Water (TIP4P-ICE: 4 atoms), CH4 (5 atoms), THF (13 atoms), custom molecules (user-uploaded, variable count), and ions Na+/Cl- (1 atom each).
+
+**Verdict:** ⚠️ **PARTIALLY CORRECT** — The CO2→THF misidentification IS real in the code (via an unexpected code path), but is NOT triggered for any of QuickIce's supported molecules. All supported molecules are correctly identified.
 
 **Evidence:**
 
-In `quickice/utils/molecule_utils.py`, `count_guest_atoms()`:
+#### Previous verification error corrected
+
+The previous verification (2026-06-08) contained a **critical code-flow error**. It claimed that CO2 (atoms: C, O, O) would "fall through to line 103" and be correctly identified as 3 atoms. This is **wrong** — CO2 never reaches line 103 because line 84-90 intercepts it first:
+
+**Actual code flow for CO2 (C, O, O):**
 
 ```python
-# Line 80-82: THF starts with O → returns 13 immediately
-if first_atom == "O":
-    # THF starts with O and has 13 atoms
-    return 13
-```
-
-**Any molecule starting with "O" will be classified as THF with 13 atoms.** This is a broader misidentification risk than just CO2. For example:
-- An alcohol (O, C, H, ...) would be classified as 13-atom THF
-- A carbonyl compound starting with O would be misidentified
-- Any guest molecule with oxygen as the first atom in the atom_names list
-
-The scan's specific claim about CO2 is **incorrect as stated** — CO2 starts with C, not O, so it would NOT trigger the THF path at line 80. Instead, CO2 hits line 53 (`if first_atom == "C"`) which checks for CH4:
-```python
-# Line 53-75: CH4 check when first_atom == "C"
+# Line 53: first_atom == "C" → TRUE, enters CH4 check
 if first_atom == "C" or (first_atom == "H" and len(sample) >= 5):
-    c_count = sum(1 for a in sample if a == 'C')
-    h_count = sum(1 for a in sample if a == 'H')
+    c_count = sum(1 for a in sample if a == 'C')  # c_count = 1
+    h_count = sum(1 for a in sample if a == 'H')  # h_count = 0
+    # Line 60: CH4 check FAILS (h_count=0 < 4)
     if c_count >= 1 and h_count >= 4 and (c_count + h_count) >= 5:
-        return max(count, 5)  # CH4
-```
+        return max(count, 5)  # NOT reached
 
-For CO2 (atoms: C, O, O), `h_count` would be 0, so the CH4 check fails. Then it falls through to line 103:
-```python
-# Line 103-104: CO2 check
+# Line 80: first_atom == "O"? NO ("C" != "O") → skip
+
+# Line 84: first_atom in ["C", "CA", "CB"]? YES → enters THF-C-start check
+if first_atom in ["C", "CA", "CB"]:
+    if start + 1 < len(atom_names):
+        next_atoms = atom_names[start:start + 15]  # = ["C", "O", "O", ...]
+        if 'O' in next_atoms:  # TRUE! O is in the sample
+            return 13  # ← MISIDENTIFIED AS THF!
+
+# Line 103: UNREACHABLE for CO2 — already returned 13 at line 90
 if first_atom == "C" and any(a == 'O' for a in sample[:3]):
-    return 3  # C + O + O
+    return 3  # Would return 3, but never reached
 ```
 
-This correctly identifies CO2. So **CO2 is NOT misidentified as THF** by the current code. However, the scan's concern about heuristic-based identification is valid — the function is fragile and depends on atom ordering.
+**So CO2 IS misidentified as THF (13 atoms)**, but via line 84-90 (the "C/CA/CB with O in sample" path), NOT via line 80 (the "first atom is O" path). The CO2-specific handler at line 103 is **dead code** — it can never be reached because any molecule starting with "C" that contains "O" is caught by line 84-90 first.
 
-**The real risk:** Molecules starting with "O" that are NOT THF will be counted as 13 atoms. The function assumes a closed world of known guest types (Me, CH4, THF, CO2, H2) and doesn't handle unknown molecules well.
+#### Why this doesn't affect QuickIce's supported molecules
 
-**Impact:** If a user adds a new guest molecule starting with "O" (e.g., methanol, acetone), it would be misidentified as THF with 13 atoms, corrupting the molecule boundaries.
+`count_guest_atoms()` is called from exactly three files: `modes/slab.py`, `modes/pocket.py`, and `modes/piece.py`, within their `_detect_guest_atoms()` functions. These functions:
 
-**Actual severity:** 🟡 MEDIUM — Currently works for supported molecules (CH4, THF, CO2, H2) but fragile. The scan's specific CO2→THF claim is wrong, but the broader pattern-matching risk is real.
+1. **Iterate through candidate atom_names** from hydrate candidates (GenIce2 output)
+2. **Filter out water** (first_atom == "OW" → add to water_indices, skip)
+3. **Call `count_guest_atoms()` only on non-OW atoms** (i.e., guest molecules)
 
-**Fix complexity:** MODERATE — Replace heuristic detection with explicit molecule type tracking (e.g., add `guest_type` field to MoleculeIndex).
+The only molecules that can appear as non-OW atoms in hydrate candidates are:
+- **CH4** from GenIce2 (atoms: C, H, H, H, H) → first_atom = "C", no O in sample → CH4 path returns 5 ✓
+- **THF** from GenIce2 (atoms: O, CA, CA, CB, CB, H×8) → first_atom = "O" → line 80 returns 13 ✓
+- **Me** (united-atom CH4) → first_atom = "Me" → returns 1 ✓
+
+**No other molecule types reach `count_guest_atoms()` because:**
+- **Water** is filtered out by the "OW" check in `_detect_guest_atoms()` before the function is called
+- **Custom molecules** are added by `CustomMoleculeInserter` AFTER the interface structure is built — they never appear in hydrate candidates
+- **Ions** (Na+, Cl-) are added by `ion_inserter.py` AFTER the interface is built — they never appear in hydrate candidates
+- **CO2/H2** are NOT exposed in QuickIce's `GUEST_MOLECULES` configuration (types.py line 76-91: only "ch4" and "thf")
+- `HydrateConfig.__post_init__()` (types.py line 299) validates `guest_type not in GUEST_MOLECULES` → raises ValueError
+
+**The hydrate_generator uses a completely different, more robust detection method** — `_build_molecule_index()` (hydrate_generator.py line 483-581) uses **residue names** from GenIce2 GRO output (line 520: `if residue == "THF"`) and explicit pattern matching (`if atom == "C" and next_atoms all "H" → CH4`), NOT `count_guest_atoms()`. This method is inherently correct and not affected by the heuristic fragility.
+
+#### Verified correct for all supported molecules
+
+| Molecule | Atom names | first_atom | Code path | Result | Correct? |
+|----------|-----------|------------|-----------|--------|----------|
+| CH4 (C-first) | C, H, H, H, H | "C" | Line 53 → c=1, h=4 → returns 5 | 5 | ✓ |
+| CH4 (H-first) | H, H, H, H, C | "H" | Line 53 → c=1, h=4 → returns 5 | 5 | ✓ |
+| THF | O, CA, CA, CB, CB, H×8 | "O" | Line 80 → returns 13 | 13 | ✓ |
+| Me | Me | "Me" | Line 48 → returns 1 | 1 | ✓ |
+| Water (OW) | OW, HW1, HW2, MW | "OW" | Line 45 → returns 0 (never called) | N/A | ✓ |
+| Na+ | NA/Na | "NA" | Default → returns 1 | 1 | ✓ |
+| Cl- | CL/Cl | "CL" | Default → returns 1 | 1 | ✓ |
+
+#### The latent design concern
+
+The function has two fragile code paths that would misidentify hypothetical molecules:
+1. **Line 80-82**: Any molecule starting with "O" → assumed THF (13 atoms). This doesn't affect any current molecule but would misclassify e.g., methanol or acetone if they were ever added.
+2. **Line 84-90**: Any molecule starting with C/CA/CB that contains "O" in its atom list → assumed THF (13 atoms). This makes the CO2 handler at line 103 unreachable dead code.
+
+However, `count_guest_atoms()` is ONLY called on atoms from GenIce2 hydrate candidates, and GenIce2 only produces CH4 or THF guests in QuickIce. Custom molecules and ions are handled by completely separate code paths with explicit atom counts.
+
+**Impact:** ZERO for QuickIce's current supported molecules. The heuristic is correct for all actual use cases. The fragility would only matter if new guest types were added to `GUEST_MOLECULES` without updating `count_guest_atoms()`.
+
+**Actual severity:** 🟢 LOW — No supported molecule is misidentified. The function works correctly for all QuickIce use cases. The heuristic fragility is a latent design concern, not an active bug. The "CO2 misidentified as THF" claim is technically true in the code but irrelevant because CO2 is not a supported molecule.
+
+**Fix complexity:** LOW — For current use, no fix needed. For future-proofing: (1) Delete dead CO2 code at line 102-104; (2) Add explicit `guest_type` parameter to `count_guest_atoms()` so the caller (which already knows the guest type) can pass it directly instead of relying on heuristics.
 
 ---
 
@@ -398,9 +438,8 @@ The fudgeLJ=0.0/fudgeQQ=0.0 values in the multi-molecule writers appear to be **
 | Verdict | Count | Issues |
 |---------|-------|--------|
 | CONFIRMED | 4 | BUG-05, RNG-01, ATOM-01, DEFLT-01 |
-| PARTIALLY CORRECT | 2 | MW-01, TREE-01 |
+| PARTIALLY CORRECT | 3 | MW-01, TREE-01, GUEST-01 |
 | REFUTED | 1 | IDX-01 |
-| (GUEST-01 confirmed but specific CO2 claim refuted) | 1 | GUEST-01 |
 
 ### By Severity (actual, not claimed)
 
@@ -408,7 +447,8 @@ The fudgeLJ=0.0/fudgeQQ=0.0 values in the multi-molecule writers appear to be **
 |----------|-------|--------|
 | 🔴 CRITICAL | 1 | BUG-05 (HW1 Z-coordinate copy-paste) |
 | 🟠 HIGH | 3 | MW-01 (MW from wrapped atoms), RNG-01 (unseeded RNG), DEFLT-01 (fudgeLJ inconsistency) |
-| 🟡 MEDIUM | 3 | ATOM-01 (hardcoded 4), TREE-01 (KDTree rebuilds), GUEST-01 (heuristic fragility) |
+| 🟡 MEDIUM | 2 | ATOM-01 (hardcoded 4), TREE-01 (KDTree rebuilds) |
+| 🟢 LOW | 1 | GUEST-01 (heuristic fragility — latent, no current molecule misidentified) |
 | N/A | 1 | IDX-01 (refuted) |
 
 ### Most Critical Verified Issue
