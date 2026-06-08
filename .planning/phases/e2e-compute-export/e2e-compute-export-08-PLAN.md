@@ -2,7 +2,7 @@
 phase: e2e-compute-export
 plan: "08"
 type: execute
-wave: 1
+wave: 5
 depends_on: []
 files_modified:
   - tests/test_e2e_gmx_validation.py
@@ -25,8 +25,8 @@ must_haves:
       pattern: "from e2e_export_helpers import"
     - from: "tests/test_e2e_gmx_validation.py"
       to: "quickice/output/gromacs_writer.py"
-      via: "write_custom_molecule_gro_file, write_custom_molecule_top_file"
-      pattern: "write_custom_molecule_(gro|top)_file"
+      via: "write_ion_gro_file, write_ion_top_file for all chain exports"
+      pattern: "write_ion_(gro|top)_file"
 ---
 
 <objective>
@@ -63,65 +63,39 @@ Output: 4 new test classes in test_e2e_gmx_validation.py (4 new tests, total bec
   <name>Task 1: Add F2 and cross-combination grompp validation tests</name>
   <files>tests/test_e2e_gmx_validation.py</files>
   <action>
-Add 4 new test classes to the END of tests/test_e2e_gmx_validation.py. Each follows the EXACT same 6-step pattern used by existing test classes. Also add the missing import for write_custom_molecule_gro_file and write_custom_molecule_top_file.
-
-**Step 0: Add imports**
-
-Add `write_custom_molecule_gro_file` and `write_custom_molecule_top_file` to the existing import block from `quickice.output.gromacs_writer`. The current import block (lines 23-30) imports 6 writer functions; add these 2 more.
+Add 4 new test classes to the END of tests/test_e2e_gmx_validation.py. Each follows the EXACT same 6-step pattern used by existing test classes. No new imports needed — all required writer functions are already imported.
 
 **Step 1: TestChainF2GmxValidation (Interface→Custom→Ion)**
+
+F2 chain: Interface→Custom→Ion. The final output is IonStructure, so use write_ion_gro_file/write_ion_top_file (same as F5-F7). The unique thing about F2 is that no solute is inserted, so the TOP file will have custom molecule atomtypes (oh, ho, hc from etoh.itp) but NO GAFF2 solute atomtypes. This tests Bug 2 fix (moleculetype name "etoh" in [molecules]) and Bug 3 fix (custom-only atomtype dedup) without any GAFF2 atomtype interference.
+
+3 ITPs: tip4p-ice.itp, etoh.itp, ion.itp
 
 ```python
 class TestChainF2GmxValidation:
     """Validate F2 chain (Interface→Custom→Ion) export passes gmx grompp.
 
     3 ITPs: tip4p-ice.itp, etoh.itp, ion.itp
-    Tests Bug 2 fix: [molecules] must use ITP moleculetype name "etoh" (not "MOL")
-    WITHOUT solute atomtypes present (tests custom-only dedup).
-    Uses write_custom_molecule_gro_file/write_custom_molecule_top_file
-    (different writer path from F1 which ends at IonStructure).
+    Tests Bug 2 fix: [molecules] uses "etoh" not "MOL" without solute atomtypes present.
+    Tests Bug 3 fix: Custom-only atomtype dedup (no GAFF2 interference).
     """
 
     @pytest.fixture(autouse=True)
     def _build_chain(self, interface_slab):
         custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-        self.custom = custom
+        self.ion = _insert_ions(custom, concentration=0.15)
 
     def test_gmx_grompp_succeeds(self, gmx_workspace):
         gro_path = str(gmx_workspace / "f2.gro")
         top_path = str(gmx_workspace / "f2.top")
-        write_custom_molecule_gro_file(self.custom, gro_path)
-        write_custom_molecule_top_file(self.custom, top_path)
-        write_ion_itp(gmx_workspace / "ion.itp", 0, 0)  # F2 has no ions, but write_custom_molecule_top_file may not include ion.itp
-        # Actually F2 DOES insert ions, so use _insert_ions not _insert_custom_molecules alone
-        # CORRECTION: F2 chain is Interface→Custom→Ion, so we need ion output
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f2.gro", top_file="f2.top")
         assert exit_code == 0, f"gmx grompp failed for F2:\n{stderr[-500:]}"
 ```
-
-IMPORTANT CORRECTION for F2: The F2 chain is Interface→Custom→Ion. This means we need:
-1. `_insert_custom_molecules(interface_slab, n_molecules=3)` → CustomMoleculeStructure
-2. `_insert_ions(custom, concentration=0.15)` → IonStructure
-
-Then use `write_ion_gro_file(self.ion, ...)` and `write_ion_top_file(self.ion, ...)` (the FINAL output is from the IonStructure, same as F5-F7). The write_custom_molecule_* functions are NOT used for F2 since the chain ends at ions.
-
-HOWEVER — the unique thing about F2 is that no solute is inserted, so the TOP file will have custom molecule atomtypes (oh, ho, hc from etoh.itp) but NO GAFF2 solute atomtypes. This tests Bug 2 fix (moleculetype name "etoh" in [molecules]) and Bug 3 fix (custom-only atomtype dedup) without any GAFF2 atomtype interference.
-
-F2 build chain:
-```python
-@pytest.fixture(autouse=True)
-def _build_chain(self, interface_slab):
-    custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-    self.ion = _insert_ions(custom, concentration=0.15)
-```
-
-F2 export uses ion writers (same as F5):
-```python
-write_ion_gro_file(self.ion, gro_path)
-write_ion_top_file(self.ion, top_path)
-write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
 ```
 
 **Step 2: TestChainF1ThfGmxValidation (Interface→Custom→Solute(THF)→Ion)**
@@ -177,7 +151,7 @@ Key validation: THF_H hydrate guest (os, c5, hc, h1) + CH4_L solute (c3, hc) + e
 - F2 uses `_insert_ions()` (NOT `_insert_ions_from_solute()`) since no solute is in the chain
 - F1-Thf, F3-Thf, F4-Ch4 use `_insert_ions_from_solute()` (BUG I5 workaround) since they have solutes
 - All test classes use `gmx_workspace` fixture
-- Add the missing writer imports (`write_custom_molecule_gro_file`, `write_custom_molecule_top_file`) even though F2 ultimately uses ion writers — they're imported for completeness and may be needed if F2 is later modified to test custom molecule writers directly
+- No new imports needed — all 4 test classes use write_ion_gro_file/write_ion_top_file (already imported) since all chains end at IonStructure
   </action>
   <verify>cd /share/home/nglokwan/quickice && python -m pytest tests/test_e2e_gmx_validation.py -v --tb=short 2>&1 | tail -40</verify>
   <done>4 new test classes added (TestChainF2GmxValidation, TestChainF1ThfGmxValidation, TestChainF3ThfGmxValidation, TestChainF4Ch4GmxValidation), all 12 grompp validation tests pass with exit code 0</done>

@@ -2,8 +2,8 @@
 phase: e2e-compute-export
 plan: "09"
 type: execute
-wave: 1
-depends_on: []
+wave: 6
+depends_on: ["e2e-compute-export-08"]
 files_modified:
   - tests/e2e_export_helpers.py
   - tests/test_e2e_gmx_validation.py
