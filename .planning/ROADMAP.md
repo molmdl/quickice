@@ -293,7 +293,7 @@ Plans:
 
 **Phase Count:** 10 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, and 34.6 inserted)
 
-**Total Plans:** 38 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-export-test: 8, e2e-api-workflow: 5, e2e-compute-export: 7)
+**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-export-test: 8, e2e-api-workflow: 5, e2e-compute-export: 10)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 9 | 10 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 10 | 10 |
 
 ---
 
@@ -378,7 +378,7 @@ Plans:
 - [x] e2e-compute-export-07-PLAN.md — (Wave 4) GROMACS grompp validation tests: ice, interface, F1-F7 (8 tests)
 - [x] e2e-compute-export-08-PLAN.md — (Wave 5) Missing grompp cross-combinations: F2, F1+THF, F3+THF, F4+CH4 (4 tests)
 - [x] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
-- [ ] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
+- [x] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
 
 ---
 
@@ -416,5 +416,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-08 - e2e-compute-export phase COMPLETE (9/9 plans, 130 total tests including 14 grompp validation)*
+*Last updated: 2026-06-08 - e2e-compute-export phase COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)*
 *For current state, see .planning/STATE.md*

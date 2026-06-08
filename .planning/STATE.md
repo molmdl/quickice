@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | e2e-compute-export |
 | Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
 | Plan | 10 of 10 COMPLETE |
-| Status | Phase COMPLETE — verified 37/37 must-haves (130 total tests, 14 grompp validation pass) + cleanup utility |
+| Status | Phase COMPLETE — verified 41/41 must-haves (130 total tests, 14 grompp validation pass + cleanup utility) |
 | Last activity | 2026-06-08 — Phase e2e-compute-export complete (10/10 plans, cleanup utility added) |
 
 **Progress:** ██████████ 100% (167/192 plans across all milestones, e2e-compute-export 10/10 COMPLETE)
