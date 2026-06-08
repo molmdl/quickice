@@ -402,6 +402,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | DEFLT-01: All 6 TOP writers use fudgeLJ=0.5 fudgeQQ=0.8333 | Standardized to Amber forcefield defaults; 0.5 safe for TIP4P-ICE (no 1-4 pairs), correct for GAFF2 systems | ✓ Shipped (34.7-01) |
 | ion_tree None init with conditional KDTree rebuild | TREE-01: ion_tree initialized as None before loop, rebuilt only after ion_positions.append(); skips rebuild on overlap rejection iterations | ✓ Shipped (34.7-03) |
 | Strictly-increasing KDTree rebuild sizes as regression test | TestTREE01 detects redundant rebuilds via duplicate sizes (not exact count, which is affected by charge neutrality cleanup) | ✓ Shipped (34.7-03) |
+| WATER_ATOMS_PER_MOLECULE = 4 constant in types.py | ATOM-01: Single source of truth for water atom count replaces all bare // 4 and count=4 in inserters | ✓ Shipped (34.7-02) |
+| CustomMoleculeInserter seed parameter with self.rng | RNG-01: Optional seed for reproducible placement; self.rng = random.Random(seed); backward-compatible (seed=None) | ✓ Shipped (34.7-02) |
+| Rotation.random(random_state=...) in both inserters | RNG-01: CustomMoleculeInserter uses self.seed; SoluteInserter uses self.rng.randint(0, 2**31-1) for varying but reproducible rotations | ✓ Shipped (34.7-02) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -502,12 +505,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Completed:** 34.7-01 (BUG-05/MW-01/DEFLT-01 bug fixes + 9 regression tests)
-**Status:** Phase 34.7 in progress — Plan 01 complete, Plans 02+ pending
+**Completed:** 34.7-02 (ATOM-01 hardcoded // 4 + RNG-01 unseeded RNG fixes + 5 regression tests)
+**Status:** Phase 34.7 COMPLETE — All 3 plans done (6 bugs fixed, 17 regression tests)
 
 **Phase 34.7 Progress:**
 - ✓ 01: BUG-05 (HW1 Z h2_pos→h1_pos), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ=0.5/fudgeQQ=0.8333) + 9 regression tests
+- ✓ 02: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random) + 5 regression tests
 - ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
 
 ---
-*State updated: 2026-06-08 — Phase 34.7 plan 01 complete (BUG-05/MW-01/DEFLT-01 fixes + 9 regression tests)*
+*State updated: 2026-06-08 — Phase 34.7 plan 02 complete (ATOM-01/RNG-01 fixes + 5 regression tests)*
