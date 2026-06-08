@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export phase COMPLETE — 10 of 10 plans (3 GROMACS bug fixes + grompp helpers + 14 grompp validation tests + .tpr cleanup + tmp/ cleanup utility)
+**Current Focus:** Phase 34.7 inserted — Fix verified scancode bugs (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — E2E compute-export bridge testing COMPLETE (10/10 plans, 130 total tests including 14 grompp validation + cleanup utility)
+**Current focus:** Phase 34.7 — Fix verified scancode bugs (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -250,6 +250,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT) — ✓ Complete
 - Phase 34.5 inserted after Phase 34.4: Placement validation & preview enhancement (URGENT) — ✓ Complete
 - Phase 34.6 inserted after Phase 34.5: Revise custom panel for valid input handling with real molecule testing (URGENT)
+- Phase 34.7 inserted after Phase 34.6: Fix verified scancode bugs — BUG-05 (HW1 copy-paste), MW-01 (wrapping), RNG-01 (unseeded), DEFLT-01 (fudgeLJ), ATOM-01 (hardcoded 4), TREE-01 (KDTree) (URGENT)
 
 ### v4.5 Key Decisions
 
