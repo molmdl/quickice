@@ -17,6 +17,10 @@ MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
     "thf":   {"atoms": 13, "res_name": "THF", "description": "Tetrahydrofuran"},
 }
 
+# Default atoms per water molecule (TIP4P-ICE: OW, HW1, HW2, MW)
+# Used as fallback when molecule count is unavailable
+WATER_ATOMS_PER_MOLECULE: int = 4
+
 
 @dataclass
 class MoleculeIndex:

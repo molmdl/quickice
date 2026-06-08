@@ -20,6 +20,7 @@ from quickice.structure_generation.types import (
     SoluteStructure,
     InterfaceStructure,
     MoleculeIndex,
+    WATER_ATOMS_PER_MOLECULE,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
@@ -378,13 +379,13 @@ class SoluteInserter:
         water_nmolecules = getattr(structure, 'water_nmolecules', None)
         if water_nmolecules is None:
             # Calculate from water_atom_count (assume TIP4P: 4 atoms per molecule)
-            water_nmolecules = water_atom_count // 4 if water_atom_count > 0 else 0
+            water_nmolecules = water_atom_count // WATER_ATOMS_PER_MOLECULE if water_atom_count > 0 else 0
         
         if water_nmolecules > 0:
             atoms_per_water = water_atom_count // water_nmolecules
         else:
             # Fallback to TIP4P (most common in this codebase)
-            atoms_per_water = 4
+            atoms_per_water = WATER_ATOMS_PER_MOLECULE
         
         water_start = ice_atom_count
         water_end = ice_atom_count + water_atom_count
@@ -528,7 +529,7 @@ class SoluteInserter:
                     current_idx += mol.count
             
             # Add kept water molecules with updated indices
-            atoms_per_water = water_atom_count // n_water_molecules if n_water_molecules > 0 else 4
+            atoms_per_water = water_atom_count // n_water_molecules if n_water_molecules > 0 else WATER_ATOMS_PER_MOLECULE
             for mol_idx in water_molecules_to_keep:
                 new_molecule_index.append(MoleculeIndex(
                     start_idx=current_idx,
@@ -645,7 +646,7 @@ class SoluteInserter:
         water_nmolecules = getattr(structure, 'water_nmolecules', None)
         if water_nmolecules is None:
             # Calculate from water_atom_count (assume TIP4P: 4 atoms per molecule)
-            water_nmolecules = water_atom_count // 4 if water_atom_count > 0 else 0
+            water_nmolecules = water_atom_count // WATER_ATOMS_PER_MOLECULE if water_atom_count > 0 else 0
         
         liquid_volume_nm3 = water_nmolecules * 0.0299
         

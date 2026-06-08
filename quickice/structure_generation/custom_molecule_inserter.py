@@ -20,6 +20,7 @@ from quickice.structure_generation.types import (
     CustomMoleculeStructure,
     InterfaceStructure,
     PlacementValidationResult,
+    WATER_ATOMS_PER_MOLECULE,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.gro_parser import parse_gro_file
@@ -380,7 +381,7 @@ class CustomMoleculeInserter:
             atoms_per_water = water_atom_count // structure.water_nmolecules
         else:
             # Fallback to TIP4P (most common in this codebase)
-            atoms_per_water = 4
+            atoms_per_water = WATER_ATOMS_PER_MOLECULE
         
         water_start = ice_atom_count
         water_end = ice_atom_count + water_atom_count
@@ -465,7 +466,7 @@ class CustomMoleculeInserter:
         # Ice molecules
         if ice_atom_count > 0:
             # Use ice_nmolecules to get correct count (handles both 3-atom and 4-atom ice)
-            ice_nmolecules = getattr(structure, 'ice_nmolecules', ice_atom_count // 4)
+            ice_nmolecules = getattr(structure, 'ice_nmolecules', ice_atom_count // WATER_ATOMS_PER_MOLECULE)
             if ice_nmolecules > 0:
                 ice_atoms_per_mol = ice_atom_count // ice_nmolecules
                 current_idx = 0
@@ -686,15 +687,15 @@ class CustomMoleculeInserter:
         
         # Water molecules (4 atoms per molecule)
         if water_atom_count > 0:
-            water_mol_count = water_atom_count // 4
+            water_mol_count = water_atom_count // WATER_ATOMS_PER_MOLECULE
             current_idx = ice_atom_count
             for _ in range(water_mol_count):
                 complete_molecule_index.append(MoleculeIndex(
                     start_idx=current_idx,
-                    count=4,
+                    count=WATER_ATOMS_PER_MOLECULE,
                     mol_type="water"
                 ))
-                current_idx += 4
+                current_idx += WATER_ATOMS_PER_MOLECULE
         
         # Guest molecules (if present)
         if guest_atom_count > 0:
@@ -861,11 +862,11 @@ class CustomMoleculeInserter:
         
         # Water molecules
         if water_atom_count > 0:
-            water_mol_count = water_atom_count // 4
+            water_mol_count = water_atom_count // WATER_ATOMS_PER_MOLECULE
             current_idx = ice_atom_count
             for _ in range(water_mol_count):
-                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + 4, "water"))
-                current_idx += 4
+                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + WATER_ATOMS_PER_MOLECULE, "water"))
+                current_idx += WATER_ATOMS_PER_MOLECULE
         
         # Guest molecules
         if guest_atom_count > 0:
