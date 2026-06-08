@@ -460,6 +460,13 @@ def run_gmx_grompp(workspace: Path, gro_file: str = "struct.gro",
     """
     import subprocess
     
+    # Clean stale .tpr backups to avoid GROMACS "Won't make more than 99 backups" error
+    for f in workspace.glob("em.tpr*"):
+        f.unlink(missing_ok=True)
+    # Also remove the specific tpr_file if it exists (no backup needed for tests)
+    tpr_path = workspace / tpr_file
+    tpr_path.unlink(missing_ok=True)
+    
     cmd = [
         "gmx", "grompp",
         "-f", mdp_file,
