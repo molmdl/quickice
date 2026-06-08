@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7 inserted)
-**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 35/40)
+**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 38/40)
 
 ## Overview
 
@@ -262,9 +262,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 34.7-01-PLAN.md — Fix GROMACS writer bugs: BUG-05 (HW1 Z-coordinate), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ standardization)
-- [ ] 34.7-02-PLAN.md — Fix inserter bugs: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random)
-- [ ] 34.7-03-PLAN.md — Fix KDTree optimization: TREE-01 (conditional rebuild in ion inserter)
+- [x] 34.7-01-PLAN.md — Fix GROMACS writer bugs: BUG-05 (HW1 Z-coordinate), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ standardization)
+- [x] 34.7-02-PLAN.md — Fix inserter bugs: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random)
+- [x] 34.7-03-PLAN.md — Fix KDTree optimization: TREE-01 (conditional rebuild in ion inserter)
 
 **Details:**
 
@@ -329,7 +329,7 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 
 **Phase Count:** 11 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, and 34.7 inserted)
 
-**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 35/40)
+**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 38/40)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -377,7 +377,7 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
-| 34.7 - Fix Verified Scancode Bugs | ⏳ Not started | 0 | 3 |
+| 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |

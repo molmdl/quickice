@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.7 inserted — Fix verified scancode bugs (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01)
+**Current Focus:** Phase 34.7 complete — Fix verified scancode bugs (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01). All 6 bugs fixed, 17 regression tests added.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.7 — Fix verified scancode bugs (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM)
+**Current focus:** Phase 34.7 COMPLETE — Fix verified scancode bugs (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM). 3/3 plans executed, 8/8 must-haves verified.
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs) |
-| Plan | 02 COMPLETE (ATOM-01, RNG-01 fixed + 5 regression tests) |
-| Status | In progress — Plans 01-02 complete, Plan 03 complete (TREE-01); all 6 bugs fixed |
-| Last activity | 2026-06-08 — Completed 34.7-02-PLAN.md (ATOM-01 hardcoded // 4 + RNG-01 unseeded RNG fixes) |
+| Plan | 3 of 3 COMPLETE |
+| Status | Phase COMPLETE — verified 8/8 must-haves (17 regression tests, 6 bugs fixed) |
+| Last activity | 2026-06-08 — Phase 34.7 complete (3/3 plans, BUG-05/MW-01/RNG-01/DEFLT-01/ATOM-01/TREE-01 fixed) |
 
-**Progress:** █████████░ 87% (170/192 plans across all milestones)
+**Progress:** █████████░ 90% (170/192 plans across all milestones, Phase 34.7 3/3 COMPLETE)
 
 ---
 
@@ -55,9 +55,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
 
-**Phases:** 32-35 (6 phases planned)
+**Phases:** 32-35 (with 34.1-34.7 inserted)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.6 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.7 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -91,6 +91,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Comprehensive integration tests with 10 tests covering complete system (Phase 34.6-08)
 - ✓ Phase 34.5/34.6 feature documentation in GUI guide (Phase 35-06)
 - ✓ Quick Task 017/018 documentation (concentration input, delete/overlap) (Phase 35-07)
+- ✓ BUG-05 (CRITICAL): HW1 Z-coordinate copy-paste fix in gromacs_writer.py (Phase 34.7-01)
+- ✓ MW-01 (HIGH): Molecule-aware wrapping in ice GRO writer (Phase 34.7-01)
+- ✓ DEFLT-01 (HIGH): All TOP writers use fudgeLJ=0.5, fudgeQQ=0.8333 (Phase 34.7-01)
+- ✓ ATOM-01 (MEDIUM): WATER_ATOMS_PER_MOLECULE constant replacing hardcoded // 4 (Phase 34.7-02)
+- ✓ RNG-01 (HIGH): Seeded RNG in CustomMoleculeInserter + Rotation.random (Phase 34.7-02)
+- ✓ TREE-01 (MEDIUM): Conditional KDTree rebuild in ion inserter (Phase 34.7-03)
+- ✓ 17 regression tests for all 6 bug fixes (Phase 34.7)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -250,7 +257,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.4 inserted after Phase 34.3: Solute source dropdown to complete Custom→Solute workflow (URGENT) — ✓ Complete
 - Phase 34.5 inserted after Phase 34.4: Placement validation & preview enhancement (URGENT) — ✓ Complete
 - Phase 34.6 inserted after Phase 34.5: Revise custom panel for valid input handling with real molecule testing (URGENT)
-- Phase 34.7 inserted after Phase 34.6: Fix verified scancode bugs — BUG-05 (HW1 copy-paste), MW-01 (wrapping), RNG-01 (unseeded), DEFLT-01 (fudgeLJ), ATOM-01 (hardcoded 4), TREE-01 (KDTree) (URGENT)
+- Phase 34.7 inserted after Phase 34.6: Fix verified scancode bugs — BUG-05 (HW1 copy-paste), MW-01 (wrapping), RNG-01 (unseeded), DEFLT-01 (fudgeLJ), ATOM-01 (hardcoded 4), TREE-01 (KDTree) (URGENT) — ✓ COMPLETE
 
 ### v4.5 Key Decisions
 
@@ -505,8 +512,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Completed:** 34.7-02 (ATOM-01 hardcoded // 4 + RNG-01 unseeded RNG fixes + 5 regression tests)
-**Status:** Phase 34.7 COMPLETE — All 3 plans done (6 bugs fixed, 17 regression tests)
+**Completed:** Phase 34.7 complete (6 bugs fixed, 17 regression tests, 8/8 must-haves verified)
+**Status:** Phase 34.7 VERIFIED — All 3 plans done, verification passed
 
 **Phase 34.7 Progress:**
 - ✓ 01: BUG-05 (HW1 Z h2_pos→h1_pos), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ=0.5/fudgeQQ=0.8333) + 9 regression tests
@@ -514,4 +521,4 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
 
 ---
-*State updated: 2026-06-08 — Phase 34.7 plan 02 complete (ATOM-01/RNG-01 fixes + 5 regression tests)*
+*State updated: 2026-06-08 — Phase 34.7 COMPLETE and VERIFIED (6 bugs fixed, 17 regression tests, 8/8 must-haves)*

@@ -1,4 +1,26 @@
 Actual cost is lower with as we use the synthetic coding plan instead of API pricing
+Large dataset detected (1383 sessions). This may take a while...
+┌────────────────────────────────────────────────────────┐
+│                       OVERVIEW                         │
+├────────────────────────────────────────────────────────┤
+│Sessions                                          1,383 │
+│Messages                                         40,401 │
+│Days                                                 75 │
+└────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────┐
+│                    COST & TOKENS                       │
+├────────────────────────────────────────────────────────┤
+│Total Cost                                     $1193.12 │
+│Avg Cost/Day                                     $15.91 │
+│Avg Tokens/Session                                 1.5M │
+│Median Tokens/Session                            957.8K │
+│Input                                            314.6M │
+│Output                                            15.0M │
+│Cache Read                                      1730.5M │
+│Cache Write                                        6.5M │
+└────────────────────────────────────────────────────────┘
+
 ┌────────────────────────────────────────────────────────┐
 │                      MODEL USAGE                       │
 ├────────────────────────────────────────────────────────┤
@@ -27,12 +49,12 @@ Actual cost is lower with as we use the synthetic coding plan instead of API pri
 │  Cost                                          $0.0000 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5.1                           │
-│  Messages                                        2,447 │
-│  Input Tokens                                    12.6M │
-│  Output Tokens                                    1.1M │
-│  Cache Read                                     153.0M │
+│  Messages                                        3,693 │
+│  Input Tokens                                    15.8M │
+│  Output Tokens                                    1.6M │
+│  Cache Read                                     244.0M │
 │  Cache Write                                         0 │
-│  Cost                                        $168.8938 │
+│  Cost                                        $264.5460 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/minimax/minimax-m2.5                        │
 │  Messages                                        2,291 │
@@ -87,17 +109,17 @@ Actual cost is lower with as we use the synthetic coding plan instead of API pri
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 20482 (41.1%)  │
-│ read               █████████████        13887 (27.9%)  │
-│ edit               ██████               6308 (12.7%)   │
-│ grep               ██                   2733 ( 5.5%)   │
-│ glob               ██                   2057 ( 4.1%)   │
-│ write              █                    1831 ( 3.7%)   │
-│ task               █                    1126 ( 2.3%)   │
-│ question           █                    707 ( 1.4%)    │
+│ bash               ████████████████████ 21291 (41.1%)  │
+│ read               █████████████        14599 (28.2%)  │
+│ edit               ██████               6481 (12.5%)   │
+│ grep               ██                   2861 ( 5.5%)   │
+│ glob               ██                   2151 ( 4.2%)   │
+│ write              █                    1865 ( 3.6%)   │
+│ task               █                    1156 ( 2.2%)   │
+│ question           █                    709 ( 1.4%)    │
 │ webfetch           █                    500 ( 1.0%)    │
 │ invalid            █                    107 ( 0.2%)    │
-│ todowrite          █                     58 ( 0.1%)    │
+│ todowrite          █                     73 ( 0.1%)    │
 │ websearch          █                     15 ( 0.0%)    │
 │ codesearch         █                      5 ( 0.0%)    │
 │ skill              █                      1 ( 0.0%)    │
