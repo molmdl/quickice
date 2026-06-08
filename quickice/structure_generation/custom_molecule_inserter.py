@@ -51,11 +51,13 @@ class CustomMoleculeInserter:
                      all-atom overlap checking (reuses SoluteInserter pattern)
     
     Mode 2 (Custom): User-specified positions and rotations (Euler angles),
-                     no overlap checking (user responsibility)
+                      no overlap checking (user responsibility)
     
     Attributes:
         config: CustomMoleculeConfig with placement settings
         registry: MoleculetypeRegistry for GROMACS naming
+        rng: Seeded random.Random instance for reproducible placement
+        seed: Random seed for reproducibility (optional)
         template_positions: Template molecule positions from GRO file
         template_atom_names: Template atom names from GRO file
         residue_name: Residue name from GRO/ITP file
@@ -64,16 +66,20 @@ class CustomMoleculeInserter:
     def __init__(
         self,
         config: CustomMoleculeConfig,
-        registry: MoleculetypeRegistry | None = None
+        registry: MoleculetypeRegistry | None = None,
+        seed: int | None = None,
     ):
         """Initialize CustomMoleculeInserter.
         
         Args:
             config: CustomMoleculeConfig with placement settings
             registry: MoleculetypeRegistry (optional, creates new if None)
+            seed: Random seed for reproducible placement (optional)
         """
         self.config = config
         self.registry = registry if registry is not None else MoleculetypeRegistry()
+        self.rng = random.Random(seed)
+        self.seed = seed
         
         # Load template from GRO file
         self.template_positions, self.template_atom_names, cell = parse_gro_file(
@@ -544,7 +550,7 @@ class CustomMoleculeInserter:
         Reuses SoluteInserter pattern:
         - Build cKDTree from existing atoms (exclude MW virtual sites)
         - Sample random positions in liquid region bounds
-        - Generate random rotations using Rotation.random()
+        - Generate random rotations using Rotation.random(random_state=seed)
         - Check all-atom overlaps with min_separation threshold
         
         Args:
@@ -595,15 +601,14 @@ class CustomMoleculeInserter:
             
             for attempt in range(self.config.max_attempts):
                 # Generate random position in liquid region
-                rng = random.Random()
                 position = np.array([
-                    rng.uniform(min_coords[0], max_coords[0]),
-                    rng.uniform(min_coords[1], max_coords[1]),
-                    rng.uniform(min_coords[2], max_coords[2])
+                    self.rng.uniform(min_coords[0], max_coords[0]),
+                    self.rng.uniform(min_coords[1], max_coords[1]),
+                    self.rng.uniform(min_coords[2], max_coords[2])
                 ])
                 
                 # Generate random rotation
-                rotation = Rotation.random()
+                rotation = Rotation.random(random_state=self.seed)
                 rotation_matrix = rotation.as_matrix()
                 
                 # Apply rotation

@@ -232,7 +232,7 @@ class SoluteInserter:
         Returns:
             (3, 3) rotation matrix
         """
-        rotation = Rotation.random()
+        rotation = Rotation.random(random_state=self.rng.randint(0, 2**31 - 1))
         return rotation.as_matrix()
     
     def _rotate_molecule(
