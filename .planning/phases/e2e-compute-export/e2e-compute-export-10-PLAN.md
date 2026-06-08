@@ -3,7 +3,7 @@ phase: e2e-compute-export
 plan: 10
 type: execute
 wave: 7
-depends_on: []
+depends_on: ["09"]
 files_modified:
   - scripts/clean-test-output.sh
 autonomous: true

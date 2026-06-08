@@ -344,7 +344,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 9 | 9 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 9 | 10 |
 
 ---
 
