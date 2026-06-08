@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6 inserted)
-**Total Plans:** 39 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 9, completed: 35/39)
+**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 35/40)
 
 ## Overview
 
@@ -368,7 +368,7 @@ Plans:
 - Tests the interface between computation pipeline output and export pipeline input
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
-**Plans:** 9 plans in 6 waves
+**Plans:** 10 plans in 7 waves
 - [x] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (16 tests)
 - [x] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (21 tests + 3 bugfixes)
 - [x] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (28 tests + bugfix)
@@ -378,6 +378,7 @@ Plans:
 - [x] e2e-compute-export-07-PLAN.md — (Wave 4) GROMACS grompp validation tests: ice, interface, F1-F7 (8 tests)
 - [x] e2e-compute-export-08-PLAN.md — (Wave 5) Missing grompp cross-combinations: F2, F1+THF, F3+THF, F4+CH4 (4 tests)
 - [x] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
+- [ ] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
 
 ---
 
