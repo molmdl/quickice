@@ -359,6 +359,7 @@ class IonInserter:
         na_count = 0
         cl_count = 0
         ion_positions = []  # Track placed ion positions
+        ion_tree = None  # KDTree for ion-ion overlap checking (rebuilt only on successful placement)
         
         for i, water_idx in enumerate(selected):
             water_mol = water_mols[water_idx]
@@ -376,8 +377,7 @@ class IonInserter:
                     continue
             
             # Also check against previously placed ions
-            if ion_positions:
-                ion_tree = cKDTree(np.array(ion_positions))
+            if ion_tree is not None:
                 min_ion_dist = ion_tree.query(water_pos, k=1)[0]
                 if min_ion_dist < MIN_SEPARATION:
                     # Too close to other ions - skip
@@ -385,6 +385,7 @@ class IonInserter:
             
             # Valid position - add ion
             ion_positions.append(water_pos)
+            ion_tree = cKDTree(np.array(ion_positions))
             
             if i % 2 == 0:
                 # Add Na+
