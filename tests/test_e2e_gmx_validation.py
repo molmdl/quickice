@@ -218,3 +218,106 @@ class TestChainF7GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f7.gro", top_file="f7.top")
         assert exit_code == 0, f"gmx grompp failed for F7:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F1: Interface→Custom→Solute→Ion (4 ITPs, Bug 2+3)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF1GmxValidation:
+    """Validate F1 chain (Interface→Custom→Solute→Ion) export passes gmx grompp.
+
+    4 ITPs: tip4p-ice.itp, etoh.itp, ch4_liquid.itp, ion.itp
+    Tests Bug 2 fix: [molecules] must use ITP moleculetype name "etoh" (not "MOL").
+    Tests Bug 3 fix: No duplicate atomtypes (hc shared between GAFF2 and custom).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self, interface_slab):
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f1.gro")
+        top_path = str(gmx_workspace / "f1.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1.gro", top_file="f1.top")
+        assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F3: Hydrate→Interface→Solute→Ion (4 ITPs)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF3GmxValidation:
+    """Validate F3 chain (Hydrate→Interface→Solute→Ion) export passes gmx grompp.
+
+    4 ITPs: tip4p-ice.itp, ch4_hydrate.itp, ch4_liquid.itp, ion.itp
+    Tests hydrate guest (CH4_H) + solute (CH4_L) coexistence.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='CH4', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f3.gro")
+        top_path = str(gmx_workspace / "f3.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3.gro", top_file="f3.top")
+        assert exit_code == 0, f"gmx grompp failed for F3:\n{stderr[-500:]}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F4: Hydrate→Interface→Custom→Solute→Ion (5 ITPs, ALL 3 bugs)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class TestChainF4GmxValidation:
+    """Validate F4 chain (Hydrate→Interface→Custom→Solute→Ion) export passes gmx grompp.
+
+    5 ITPs: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, thf_liquid.itp, ion.itp
+    Most complex chain — tests ALL three bug fixes:
+    - Solute atomtypes (THF: os, c5, hc, h1) must be in TOP [atomtypes]
+    - Custom moleculetype name "etoh" in [molecules] (not "MOL")
+    - No duplicate atomtypes (hc, h1 shared between THF GAFF2 and etoh custom)
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        # Note: SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
+        hydrate = _hydrate_sI_thf_candidate()
+        interface = _make_slab_interface(hydrate)
+        custom = _insert_custom_molecules(interface, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='THF', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f4.gro")
+        top_path = str(gmx_workspace / "f4.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4.gro", top_file="f4.top")
+        assert exit_code == 0, f"gmx grompp failed for F4:\n{stderr[-500:]}"
