@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export phase COMPLETE — 116 bridge tests, 24/24 must-haves verified
+**Current Focus:** e2e-compute-export phase — 6 of 7 plans complete (3 GROMACS bug fixes + grompp helpers)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — E2E compute-export bridge testing (All 5 plans complete)
+**Current focus:** e2e-compute-export — E2E compute-export bridge testing (6 of 7 plans complete, 3 GROMACS bug fixes + grompp helpers)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | e2e-compute-export |
 | Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
-| Plan | 5 of 5 complete |
-| Status | ✓ Verified complete — 116 tests, 24/24 must-haves passed |
-| Last activity | 2026-06-03 — e2e-compute-export VERIFIED (116 bridge tests, 3 bug fixes in gromacs_writer.py) |
+| Plan | 6 of 7 complete |
+| Status | In progress — 3 GROMACS-simulation-blocking bugs fixed + grompp helpers added |
+| Last activity | 2026-06-08 — Plan 06: Fixed solute atomtypes, moleculetype name, dedup + grompp helpers |
 
-**Progress:** █████████░ 90% (162/192 plans across all milestones)
+**Progress:** █████████░ 90% (163/192 plans across all milestones)
 
 ---
 
@@ -125,11 +125,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Ion insertion + workflow chain tests — 26 tests, P0 bug I5 exposed, F1-F7 chains (Plan 05)
 - ✓ Total: 112 e2e tests, 7/7 must-haves verified, all pass in ~13s
 
-### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
+### e2e-compute-export E2E Compute-Export Bridge Testing (IN PROGRESS)
 
-**Phases:** 5 plans (01-05)
-**Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions
-**Progress:** All 5 plans complete (90+ bridge tests)
+**Phases:** 7 plans (01-07)
+**Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
+**Progress:** 6 of 7 plans complete (Plans 01-05 with 116 bridge tests, Plan 06 with 3 bug fixes + grompp helpers)
 **Key deliverables:**
 - ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
 - ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
@@ -147,7 +147,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 26 Full chain export tests — F1 (Interface→Custom→Solute→Ion, 5 types, 4 ITPs), F2 (Interface→Custom→Ion, 4 types, 3 ITPs), F3 (Hydrate→Interface→Solute→Ion, P0 CH4_H/CH4_L coexistence), F4 (Hydrate→Interface→Custom→Solute→Ion, 6 types, 5 ITPs) + CustomMoleculeInserter guest molecule_index build fix (Plan 04)
 - ✓ 21 Simple chain export tests — F5 (Interface→Ion, 3 types, 2 ITPs), F6 (CH4 solute, 4 types, 3 ITPs), F7 (THF solute, 13-atom validation) (Plan 05)
 - ✓ 4 Cross-chain invariant tests — ITP count increases with depth, ice count preserved across chains, molecule type count increases, hydrate adds guest ITP (Plan 05)
-- ✓ Total: 116+ bridge tests, all must-haves verified
+- ✓ 3 GROMACS-simulation-blocking bug fixes — solute atomtypes (hardcoded GAFF2), moleculetype name mismatch (parse_itp_file), duplicate atomtypes (dedup set) (Plan 06)
+- ✓ Grompp validation helpers — MDP_PATH, _stage_itp_files(), run_gmx_grompp() in e2e_export_helpers.py (Plan 06)
+- ✓ F1/F4/F6 chains verified passing gmx grompp (exit code 0) (Plan 06)
+- ✓ All 228 bridge tests pass after bug fixes (Plan 06)
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -367,6 +370,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | write_custom_molecule_gro_file ice 3→4 expansion | Custom molecule writer wrote raw 3-atom ice (O,H,H) instead of TIP4P-ICE 4-atom (OW,HW1,HW2,MW); fixed to match other writer patterns | ✓ Shipped (e2e-compute-export-02) |
 | write_solute_* empty molecule_index fallback | Real GenIce2 InterfaceStructures have empty molecule_index; solute GRO/TOP writers now fall back to ice_nmolecules/water_nmolecules counts | ✓ Shipped (e2e-compute-export-02) |
 | moleculetype_name is MOL (registry default) not ETOH (ITP name) | MoleculetypeRegistry.register_custom_molecule() defaults to "MOL"; ITP moleculetype name "etoh" is not used for registry registration | ✓ Shipped (e2e-compute-export-02) |
+| TOP [molecules] uses ITP moleculetype name for custom molecules | GROMACS requires [molecules] name to match ITP [moleculetype] name; parse_itp_file() extracts actual name ("etoh") instead of registry default ("MOL") | ✓ Shipped (e2e-compute-export-06) |
+| Hardcoded GAFF2 atomtypes for solutes | ch4_liquid.itp/thf_liquid.itp have [atomtypes] pre-commented; parsing returns empty, so hardcode GAFF2 types (c3, hc, os, c5, h1) in TOP [atomtypes] section | ✓ Shipped (e2e-compute-export-06) |
+| Atomtype deduplication via tracking set | When THF guest + etoh custom share hc/h1 types, dedup set prevents GROMACS warnings about redefined atomtypes | ✓ Shipped (e2e-compute-export-06) |
+| GRO residue name stays "MOL" | GROMACS doesn't require GRO residue names to match ITP moleculetype names; only [molecules] entries must match | ✓ Shipped (e2e-compute-export-06) |
 | SOL atom count from molecule_index when populated | When molecule_index is available (solute-from-custom), compute expected counts from it; ice_nmolecules may be 0 in modified interfaces | ✓ Shipped (e2e-compute-export-02) |
 | Ice count (not SOL count) is cross-chain invariant | Ion replacement varies by chain depth (F1 replaces more water than F5); ice count is the true invariant — crystalline base never modified | ✓ Shipped (e2e-compute-export-05) |
 | ITP cumulative count increases with chain depth | F5(2 ITPs) < F6(3) < F1(4); deeper chains accumulate more molecule definitions | ✓ Shipped (e2e-compute-export-05) |
@@ -470,9 +477,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-03
-**Completed:** e2e-compute-export-04 (Full chain F1-F4: 26 tests + CustomMoleculeInserter guest molecule_index build fix)
-**Status:** e2e-compute-export phase COMPLETE — All 5 plans done, 116+ bridge tests
+**Last session:** 2026-06-08
+**Completed:** e2e-compute-export-06 (3 GROMACS-simulation-blocking bug fixes + grompp validation helpers)
+**Status:** e2e-compute-export phase 6/7 plans done
 
 **e2e-compute-export Phase Progress:**
 - ✓ 01: Shared e2e_export_helpers.py (6 parsing + 9 chain-building helpers) + Ice/Interface export tests (16 total)
@@ -480,12 +487,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 03: Ion export tests (3 sources: Interface/Custom/Solute + BUG I5 workaround) + ITP baseline validation (28 total)
 - ✓ 04: Full chain export tests F1-F4 (26 tests) + CustomMoleculeInserter guest molecule_index build fix
 - ✓ 05: Simple chain F5-F7 (21 tests) + cross-chain invariants (4 tests) = 25 total
+- ✓ 06: Fix 3 GROMACS-simulation-blocking bugs (solute atomtypes, moleculetype name, dedup) + grompp helpers
+- ⏳ 07: Grompp validation tests (pending)
 
 **Next session:**
-- e2e-compute-export phase is COMPLETE
-- Key findings from Plan 04: CustomMoleculeInserter silently dropped guest molecules from molecule_index when source interface had empty molecule_index; CH4_H/CH4_L and THF_H/THF_L coexistence validated in multi-step chains; guest_atom_count > 0 replaces guest_nmolecules for F4 chain validation
-- Key findings from Plan 05: ice count (not SOL count) is the true invariant across chain depths; THF_L 13-atom per molecule validated in chain context; F5(2 ITPs) < F6(3) < F1(4) ITP cumulative count pattern confirmed
-- BUG I5 workaround confirmed working for all Solute→Ion pathways (F1, F3, F4, F6, F7, cross-chain)
+- e2e-compute-export-07: Add grompp validation tests for F1-F7 chains using MDP_PATH, _stage_itp_files(), run_gmx_grompp()
+- Key findings from Plan 06: All three GROMACS bugs fixed and verified; F1/F4/F6 chains pass gmx grompp with exit code 0; _stage_itp_files() correctly comments out [atomtypes] in staged ITPs; dedup set prevents duplicate atomtype warnings for THF+etoh combination
 
 ---
-*State updated: 2026-06-03 — e2e-compute-export Plan 05 complete (25 bridge tests, phase COMPLETE)*
+*State updated: 2026-06-08 — e2e-compute-export Plan 06 complete (3 bug fixes + grompp helpers, 228 bridge tests all pass)*
