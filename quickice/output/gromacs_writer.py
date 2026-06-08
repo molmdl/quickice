@@ -452,7 +452,15 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     if n_atoms > 99999:
         logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
     
-    wrapped_positions = wrap_positions_into_box(candidate.positions, candidate.cell)
+    # Build molecule_index for molecule-aware wrapping
+    # NOTE: count=3 here (OW, HW1, HW2) is the WRAPPING set — MW is computed AFTER
+    # wrapping from these 3 atoms, so MW is not included in the molecule_index for wrapping.
+    # This is distinct from WATER_ATOMS_PER_MOLECULE=4 (total including MW) used elsewhere.
+    ice_molecule_index = [
+        MoleculeIndex(start_idx=i * 3, count=3, mol_type="ice")
+        for i in range(nmol)
+    ]
+    wrapped_positions = wrap_molecules_into_box(candidate.positions, ice_molecule_index, candidate.cell)
     
     expected_atoms = nmol * 3
     if len(wrapped_positions) < expected_atoms:
@@ -1709,7 +1717,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.0     0.0\n\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be before #include directives
         # TIP4P-ICE water atom types
@@ -1968,7 +1976,7 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
                 atom_num_wrapped = atom_num % 100000
                 lines.append(f"{res_num_wrapped:5d}SOL  "
                              f"  HW1{atom_num_wrapped:5d}"
-                             f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                             f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
                 
                 # HW2
                 atom_num += 1
@@ -2098,7 +2106,7 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.0     0.0\n\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
@@ -2594,7 +2602,7 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.0     0.0\n\n")
+        f.write("1               2               yes             0.5     0.8333\n\n")
 
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
