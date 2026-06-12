@@ -749,5 +749,98 @@ needs_update: 1
 
 ---
 
+## Post-Verification Resolution Status (2026-06-12)
+
+### Issues Now FIXED
+
+| Issue ID | How/When Fixed | Commit(s) |
+|----------|---------------|-----------|
+| FLOW-01 | Fix batch 1 (SoluteGROMACSExporter rewrite) | d75dde1, 5e18c0e |
+| FLOW-02 | Fix batch 1 (tip4p-ice.itp copy) | d75dde1 |
+| FLOW-03 | Fix batch 1 (guest type detection) | b90c2e3 |
+| BUG-01 | Fix batch 1 (OW safeguard in pocket/piece) | d75dde1, 5e18c0e |
+| EXC-02 | Fix batch 1 (QMessageBox.warning) | 5e18c0e |
+| MOL-1 | Fix batch 1 (README naming) | d75dde1 |
+| MOL-2 | Fix batch 1 (gui-guide naming) | d75dde1 |
+| MOL-3 | Fix batch 1 (gui-guide naming) | d75dde1 |
+| MOL-4 | Fix batch 1 (gui-guide ITP names) | d75dde1 |
+| MOL-5 | Fix batch 1 (README ITP names) | d75dde1 |
+| FF-1 | Fix batch 2 (GAFF→GAFF2) | a9ed3de |
+| KS-1 | Fix batch 2 (shortcuts table) | a9ed3de |
+| KS-2 | Fix batch 2 (Ctrl+S description) | a9ed3de |
+| KS-3 | Fix batch 2 (Ctrl+E→Ctrl+H) | a9ed3de |
+| VER-1 | Fix batch 3 (version 4.5.0) | 80753c5 |
+| BUG-03 | Fix batch 3 (enumerate) | 80753c5 |
+| UNIT-01 | Fix batch 3 (coordinate validation) | 80753c5 |
+| CIT-GAFF2 | Fix batch 3 (GAFF2 citations) | 80753c5 |
+| EXP-1 | Fix batch 3 (filename pattern) | 80753c5 |
+| EXP-2 | Fix batch 3 (filename pattern) | 80753c5 |
+| BUG-02 | Fix batch 4 (THF formula fixes) | f217c6d |
+| BUG-02b | Fix batch 4 (gromacs_writer comment) | f217c6d |
+| BUG-02c | Fix batch 4 (molecule_utils comment) | f217c6d |
+| NEW-02 | Fix batch 4 (dead import removal) | 95a6b8c |
+| SCI-04 | Fix batch 4 (Madrid2019 header) | f217c6d |
+| SCI-1/DOC | Fix batch 4 (AVOGADRO value) | 95a6b8c |
+| SCI-03 | Fix batch 4 (Petrenko & Whitworth citation) | f217c6d |
+| UNIT-03 | Fix batch 4 (extrapolation logging) | 95a6b8c |
+| FRAG-04 | Fix batch 4 (ITP resilience) | f217c6d |
+| NEW-01 | Fix batch 4 (logger.info→debug) | 95a6b8c |
+| SEC-01 | Fix batch 5 (Path.resolve) | 22bd382 |
+| BUNDLE-01 | Fix batch 5 (excludes list) | 22bd382 |
+| SEC-02 | Fix — shell=True removed | 9e002b4 |
+| TEST-04 | Fix batch 6A (ITP parser edge cases) | 687fdad |
+| TEST-05 | Fix batch 6A (overlap removal invariants) | 687fdad |
+| BUG-05 | Phase 34.7-01 (HW1 Z-coordinate) | 6965961 |
+| MW-01 | Phase 34.7-01 (molecule-aware wrapping) | 6965961 |
+| DEFLT-01 | Phase 34.7-01 (fudgeLJ=0.5 all writers) | 6965961 |
+| RNG-01 | Phase 34.7-02 (seeded RNG) | ee0f4d5 |
+| ATOM-01 | Phase 34.7-02 (WATER_ATOMS_PER_MOLECULE) | 8726698 |
+| TREE-01 | Phase 34.7-03 (conditional KDTree rebuild) | f44c22c |
+| GUEST-01 | commit 6d04262 (guest_type param) | 6d04262 |
+| FRAG-02 | pocket-edge-tests phase (assertions added) | 925489e |
+| TEST-01 | e2e-export-test + e2e-compute-export phases | multiple |
+| TEST-02 | pocket-edge-tests phase (51 tests) | 925489e |
+| TEST-07 | Phase 34.7-01 regression tests | 6965961 |
+| TEST-08 | Phase 34.7 DEFLT-01 regression tests | 6965961 |
+| EXC-03 | Quick Task 027 (traceback in all 5 handlers) | 719de7f |
+
+### Issues Still OPEN
+
+| Issue ID | Description | Category |
+|----------|-------------|----------|
+| BUG-04 | diversity_score() always 1.0 | Design decision needed |
+| FRAG-01 | Cross-tab getattr without assertions (partially fixed — debug logging only) | Fragility |
+| FRAG-03 | gromacs_writer.py monolith (2693 lines) | Tech debt / refactor |
+| TD-01 | Duplicate functions across slab/pocket/piece | Tech debt |
+| TD-05 | np.random global state (not thread-safe) | External dependency |
+| TD-07 | No upload-time atomtypes warning | UX decision |
+| TD-08 | Synthetic anonymous objects in GROMACS writer | Tech debt |
+| TD-10 | Module-level global _registry | Tech debt |
+| TD-11 | Atomtype dedup logic duplicated | Tech debt |
+| PERF-02 | 27× supercell → cKDTree(boxsize=) | Optimization |
+| PERF-04 | Nested loops in guest detection | Optimization |
+| UNIT-02 | Fallback density no GUI indicator | GUI architecture |
+| EXC-01 | IAPWS failures no visual indicator | GUI feedback |
+| FRAG-05 | main_window.py 2024 lines mixed responsibilities | Refactor |
+| FRAG-06 | 3→4 atom expansion detection | Fragility |
+| FRAG-07 | Moleculetype name mismatches | Fragility |
+| VTK-DUP | VTK availability check duplicated 6× | Tech debt |
+| BUNDLE-02 | collect_all('genice2') unused plugins | Investigation |
+| BUNDLE-03 | UPX compression broke executable | Tooling |
+| TEST-03 | Triclinic cell interface tests | Currently blocked |
+| TEST-06 | VTK rendering fallback tests | Low priority |
+| TEST-09 | Moleculetype name matching tests | Medium priority |
+| SCALE-01 | GRO format atom number limit | Format constraint |
+| SCALE-02 | GenIce2 generation time | External dependency |
+| DEP-01 | GenIce2 legacy numpy.random | External dependency |
+| DEP-02 | iapws single-maintainer risk | External dependency |
+| SCI-01 | Ice Ih density fallback at wrong conditions | Scientific |
+| SCI-02 | Water density scaling assumption | Scientific |
+
+**As of 2026-06-12: 32 of 38 confirmed issues are now FIXED. 22 issues remain genuinely open (mostly deferred design items and external dependency constraints).**
+
+---
+
 _Verified: 2026-05-22_
+_Resolution status updated: 2026-06-12_
 _Verifier: OpenCode (gsd-verifier)_

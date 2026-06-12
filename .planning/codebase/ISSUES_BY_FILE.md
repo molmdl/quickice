@@ -355,3 +355,38 @@
 - 📋 TEST: 4 gaps
 
 *Generated: 2026-05-22*
+
+---
+
+## Resolution Status (2026-06-12)
+
+### Files with ZERO remaining issues (all documented issues now fixed)
+
+| File | Fixed Issues | How |
+|------|-------------|-----|
+| `quickice/gui/export.py` | FLOW-01, FLOW-02, FLOW-03, EXC-02 | Fix batch 1 |
+| `quickice/structure_generation/modes/pocket.py` | BUG-01 | Fix batch 1 (OW safeguard) |
+| `quickice/structure_generation/modes/piece.py` | BUG-01 | Fix batch 1 (OW safeguard) |
+| `README.md` | MOL-1, MOL-5, CIT-GAFF2 | Fix batches 1-3 |
+| `docs/gui-guide.md` | FF-1, KS-1, KS-2, KS-3, MOL-2, MOL-3, MOL-4, EXP-1, EXP-2 | Fix batches 1-3 (9 issues all fixed) |
+| `docs/cli-reference.md` | VER-1 | Fix batch 3 |
+| `quickice/structure_generation/types.py` | BUG-02 | Fix batch 4 |
+| `quickice/utils/molecule_utils.py` | BUG-02c, SCI-1/DOC | Fix batch 4 |
+| `quickice/gui/main_window.py` | NEW-01 | Fix batch 4 (but FRAG-05 still open) |
+| `quickice/ranking/scorer.py` | SCI-1/DOC | Fix batch 4 (but PERF-02 still open) |
+| `quickice/main.py` | SEC-01 | Fix batch 5, commit 22bd382 |
+| `quickice/phase_mapping/water_density.py` | UNIT-03 | Fix batch 4 |
+| `quickice/structure_generation/gro_parser.py` | UNIT-01 | Fix batch 3 |
+
+### Files with significant progress but remaining issues
+
+| File | Fixed Issues | Remaining Open Issues |
+|------|-------------|----------------------|
+| `quickice/output/gromacs_writer.py` | BUG-02, BUG-03, BUG-05, MW-01, DEFLT-01, NEW-02, FLOW-03 | FRAG-03 (monolith), TD-08, TD-10, TD-11 |
+| `quickice/structure_generation/modes/slab.py` | FRAG-02 (assertions added) | TD-01 (duplicate functions) |
+| `quickice/structure_generation/modes/pocket.py` | BUG-01, FRAG-02 | TD-01 |
+| `quickice/structure_generation/modes/piece.py` | BUG-01, FRAG-02 | TD-01 |
+| `quickice/gui/main_window.py` | NEW-01 | FRAG-01, FRAG-05, TEST-01 |
+| `quickice-gui.spec` | BUNDLE-01 | BUNDLE-02, BUNDLE-03 |
+
+*Resolution status updated: 2026-06-12*

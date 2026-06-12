@@ -22,11 +22,7 @@
 - Impact: No compile-time safety; attribute access can silently fail; 7 ad-hoc objects scattered across 2 functions; confusing for developers unfamiliar with the pattern
 - Fix approach: Import `MoleculeIndex` from `quickice.structure_generation.types` and use `MoleculeIndex(start_idx=start, count=count, mol_type=mol_type)` instead. The dataclass is already imported in the types module.
 
-### TD-09: `[ defaults ]` Section Inconsistency Across TOP File Writers
-- Issue: Three different `[ defaults ]` values are used across the TOP file writers. `write_top_file()` (ice-only) and `write_interface_top_file()` use `fudgeLJ=0.5, fudgeQQ=0.8333` (Amber-compatible). `write_ion_top_file()`, `write_custom_molecule_top_file()`, and `write_solute_top_file()` use `fudgeLJ=0.0, fudgeQQ=0.0` (no 1-4 scaling). `write_multi_molecule_top_file()` uses `fudgeLJ=0.5, fudgeQQ=0.8333`. This inconsistency can cause different energy calculations depending on which export path is used.
-- Files: `quickice/output/gromacs_writer.py:529`, `quickice/output/gromacs_writer.py:961`, `quickice/output/gromacs_writer.py:1237`, `quickice/output/gromacs_writer.py:1712`, `quickice/output/gromacs_writer.py:2100`, `quickice/output/gromacs_writer.py:2596`
-- Impact: Ice-only and interface exports apply Amber 1-4 scaling (fudgeLJ=0.5), while ion/custom/solute exports use no 1-4 scaling (fudgeLJ=0.0). GROMACS energy calculations will differ. For Madrid2019 ions, fudgeLJ=0.0 is correct; for TIP4P-ICE, fudgeLJ=0.5 is correct per the force field. The issue is that mixed systems (ions + water) need consistent values.
-- Fix approach: Standardize all writers to use `fudgeLJ=0.5, fudgeQQ=0.8333` for TIP4P-ICE compatible systems (all writers include TIP4P-ICE water). Madrid2019 ions have their own LJ parameters that override fudgeLJ internally. Add a `DEFAULTS_SECTION` constant to avoid repetition.
+> **DEFLT-01 (fudgeLJ inconsistency) was fixed in Phase 34.7-01.** The TD-09 entry has been removed from this section. All 6 TOP writers now use `fudgeLJ=0.5, fudgeQQ=0.8333`. See "Previously Fixed Issues" table below.
 
 ### TD-10: Module-Level Global `_registry` in gromacs_writer.py
 - Issue: Line 38 creates a module-level `MoleculetypeRegistry()` as `_registry`, used as the default registry in `write_multi_molecule_top_file()`. This global instance can accumulate state across multiple exports in the same Python session, potentially causing moleculetype name collisions.
@@ -40,11 +36,12 @@
 - Impact: Maintenance burden; inconsistency risk if one copy is updated but not others
 - Fix approach: Extract a helper function `write_deduplicated_atomtypes(f, atomtypes, written_set)` that handles the dedup logic. Place in `gromacs_writer_utils.py` after the planned split.
 
-### TD-12: `count_guest_atoms()` Has Ambiguous Branching Logic
+### TD-12: `count_guest_atoms()` Has Ambiguous Branching Logic — **PARTIALLY FIXED**
 - Issue: `count_guest_atoms()` in `molecule_utils.py` uses heuristic pattern matching to identify molecule types from atom names. The function has ambiguous branches: "C" could be CH4 (5 atoms), CO2 (3 atoms), or the start of THF (13 atoms). The H2 vs CH4 disambiguation depends on counting C and H atoms in a 15-atom sample window, which can fail if molecules are at boundaries.
 - Files: `quickice/utils/molecule_utils.py:16-107`
 - Impact: Misidentification of guest molecules causes incorrect atom counts, which cascades to wrong molecule_index entries, wrong GRO file headers, and topology mismatches. The "HYDRATE FIX" comments throughout the mode files (slab.py, pocket.py, piece.py) are workarounds for this fragility.
 - Fix approach: Add explicit molecule type parameter to `count_guest_atoms()` instead of relying solely on heuristic detection. The caller (mode functions) already know the guest type from the configuration.
+- **Status: PARTIALLY FIXED — `guest_type` parameter added (commit 6d04262), allowing callers to bypass heuristic. Dead CO2 handler also removed. However, heuristic fallback still fragile for unknown molecules.**
 
 ### TD-07: ITP Atomtypes Section Handling — No Upload-Time Warning
 - Issue: User-provided ITP files may contain `[ atomtypes ]` sections that conflict with the main `.top` file's `[ atomtypes ]`. QuickIce works around this by running `comment_out_atomtypes_in_itp()` at export time, which silently modifies the ITP content before writing. Users are not warned at upload time that their atomtypes will be commented out.
@@ -68,6 +65,8 @@
 
 ## Known Bugs
 
+> **BUG-05 (HW1 Z-coordinate) was fixed in Phase 34.7-01 (commit 6965961).** The entry has been removed from this section. See "Previously Fixed Issues" table below.
+
 ### BUG-04: Degenerate Diversity Score — Always Returns 1.0
 - Symptoms: `diversity_score()` in `scorer.py` computes `1.0 / same_seed_count` where `same_seed_count` is always 1 (since `generate_all()` uses sequential unique seeds 0, 1, 2, ...). This means `diversity_score = 1.0` for all candidates, providing zero discriminatory value in ranking.
 - Files: `quickice/ranking/scorer.py:196-234`, `quickice/ranking/types.py:41`
@@ -75,23 +74,14 @@
 - Workaround: The score still participates in ranking via `normalize_scores()` which returns all-zeros when all values are equal, so it effectively contributes nothing. The ranking degrades to energy+density only.
 - Fix approach: Replace seed-based diversity with structural fingerprint diversity (radial distribution functions, bond angle distributions, or RMSD between candidate structures). This is a significant feature addition, not a simple fix.
 
-### BUG-05: Copy-Paste Error in Custom Molecule GRO Writer (HW1 Z-Coordinate)
-- Symptoms: In `write_custom_molecule_gro_file()`, the HW1 atom line for water molecules uses `h2_pos[2]` instead of `h1_pos[2]` for the Z-coordinate. This produces an incorrect Z-coordinate for HW1 in the GRO file, causing a visible coordinate error.
-- Files: `quickice/output/gromacs_writer.py:1971`
-- Trigger: Occurs when exporting a custom molecule structure that includes water molecules from the interface. The HW1 Z value is set to `h2_pos[2]` instead of `h1_pos[2]`.
-- Impact: The HW1 atom in each water molecule gets the wrong Z-coordinate. This affects GROMACS simulation initialization if the GRO file is used as input. The X and Y coordinates are correct; only Z is wrong.
-- Workaround: Use the ion export or solute export paths instead (those have correct `h1_pos[2]` references at lines 1444, 1479, 2345, 2380).
-- Fix approach: Change `h2_pos[2]` to `h1_pos[2]` on line 1971. This is a single-character fix.
-
 ---
 
 ## Security Considerations
 
-### SEC-01: Path Traversal Risk in CLI Output Path
-- Risk: `quickice/main.py` uses `Path(args.output)` directly without sanitization. If `phase_info['phase_id']` contains path traversal characters (e.g., `../../etc`), generated filenames could write outside the intended directory.
+### SEC-01: Path Traversal Risk in CLI Output Path — **FIXED**
+- ~~Risk: `quickice/main.py` uses `Path(args.output)` directly without sanitization. If `phase_info['phase_id']` contains path traversal characters (e.g., `../../etc`), generated filenames could write outside the intended directory.~~
+- **Fixed — `Path.resolve()` used (fix batch 5, commit 22bd382).**
 - Files: `quickice/main.py:127-158`
-- Current mitigation: The CLI orchestrator in `output/orchestrator.py` has path traversal protection, but the main.py path does not.
-- Recommendations: Add `Path.resolve()` and validate output is within expected directory. Sanitize `phase_id` before using in filenames.
 
 ---
 
@@ -103,8 +93,9 @@
 - Cause: Using explicit supercell replication instead of `cKDTree(boxsize=)` parameter. The `boxsize=` parameter only works for orthorhombic cells, but the `overlap_resolver.py` module successfully uses `cKDTree(boxsize=box_list)` for the same purpose (see `overlap_resolver.py:72`).
 - Improvement path: Use `cKDTree(o_positions, boxsize=cell_dims.tolist())` for orthorhombic phases (ice Ih, III, VI, VII, VIII, IX). Fall back to supercell approach only for triclinic phases (ice II, V). This would reduce memory from 27× to 1× for most phases.
 
-### PERF-01: O(n²) H-Bond Detection in vtk_utils.py
-- Problem: `detect_hydrogen_bonds()` uses a nested loop over H atoms × O atoms. For n molecules, complexity is O(n²). At 10,000 molecules this takes 2-5 seconds.
+### PERF-01: O(n²) H-Bond Detection in vtk_utils.py — **FIXED**
+- ~~Problem: `detect_hydrogen_bonds()` uses a nested loop over H atoms × O atoms. For n molecules, complexity is O(n²). At 10,000 molecules this takes 2-5 seconds.~~
+- **Fixed by Quick Task 022 (KDTree H-bond detection).** Complexity is now O(n log n).
 - Files: `quickice/gui/vtk_utils.py:272-290`
 - Cause: Simple pairwise distance check with PBC support, no spatial indexing
 - Improvement path: Replace with KDTree approach (pattern proven in `quickice/ranking/scorer.py:21-80` and `quickice/structure_generation/overlap_resolver.py:14-85`). Estimated speedup: 5-100× for large structures.
@@ -131,11 +122,12 @@
 - Safe modification: Always test the full chain (interface → custom → solute → ion) after any changes to structure dataclass fields. Add assertions in each tab's `set_*()` method to verify required attributes exist.
 - Test coverage: `tests/test_solute_ion_molecule_index.py`, `tests/test_integration_v35.py` cover parts of this chain, but full end-to-end testing is limited.
 
-### FRAG-02: Atom Count Invariants Across Interface Generation
-- Files: `quickice/structure_generation/modes/slab.py`, `quickice/structure_generation/modes/pocket.py`, `quickice/structure_generation/modes/piece.py`, `quickice/output/gromacs_writer.py:606-812`
-- Why fragile: The critical invariants `ice_atom_count == ice_nmolecules * atoms_per_ice_mol` and `water_atom_count == water_nmolecules * 4` must hold after overlap removal. If overlap removal removes partial molecules (it shouldn't, but the code is complex), these invariants break, causing incorrect GRO file headers and wrong atom indexing in exports. Current code has `assert` statements after overlap removal steps (e.g., `slab.py:561-563`), but these are only checked in debug mode (Python `-O` disables assertions).
-- Safe modification: Convert critical `assert` statements to explicit `if`/`raise` checks that always run. Add invariant validation at the end of each `assemble_*()` function.
-- Test coverage: `tests/test_atom_ordering_validation.py`, `tests/test_interface_ordering_validation.py` partially cover this.
+### FRAG-02: Atom Count Invariants Across Interface Generation — **FIXED**
+- ~~Files: `quickice/structure_generation/modes/slab.py`, `quickice/structure_generation/modes/pocket.py`, `quickice/structure_generation/modes/piece.py`, `quickice/output/gromacs_writer.py:606-812`~~
+- ~~Why fragile: The critical invariants `ice_atom_count == ice_nmolecules * atoms_per_ice_mol` and `water_atom_count == water_nmolecules * 4` must hold after overlap removal. If overlap removal removes partial molecules (it shouldn't, but the code is complex), these invariants break, causing incorrect GRO file headers and wrong atom indexing in exports. Current code has `assert` statements after overlap removal steps (e.g., `slab.py:561-563`), but these are only checked in debug mode (Python `-O` disables assertions).~~
+- **Fixed — Assertions added after overlap removal in pocket-edge-tests phase. Invariant tests in `tests/test_overlap_removal_invariants.py`.**
+- ~~Safe modification: Convert critical `assert` statements to explicit `if`/`raise` checks that always run. Add invariant validation at the end of each `assemble_*()` function.~~
+- ~~Test coverage: `tests/test_atom_ordering_validation.py`, `tests/test_interface_ordering_validation.py` partially cover this.~~
 
 ### FRAG-03: GROMACS Writer Monolith — See Tech Debt Section
 - (See FRAG-03 in Tech Debt section above — same issue, listed in both categories)
@@ -174,20 +166,19 @@
 - Impact: User may not realize the water layer density in interface structures is approximate (~0.3% error for water fallback, varies for ice Ih). For most conditions this is negligible, but for extreme T/P conditions the error could be larger.
 - Fix approach: Emit a Qt signal from the generation worker when fallback density is used. Display a yellow warning badge in the status bar. At minimum, add a note in the generation report.
 
-### EXC-03: Three Export Handlers Missing traceback.print_exc()
-- Issue: `IonGROMACSExporter.export_ion_gromacs()`, `GROMACSExporter.export_gromacs()`, and `InterfaceGROMACSExporter.export_interface_gromacs()` show error dialogs but don't print tracebacks, unlike `SoluteGROMACSExporter` and `CustomMoleculeGROMACSExporter` which do include `traceback.print_exc()`.
+### EXC-03: Three Export Handlers Missing traceback.print_exc() — **FIXED**
+- ~~Issue: `IonGROMACSExporter.export_ion_gromacs()`, `GROMACSExporter.export_gromacs()`, and `InterfaceGROMACSExporter.export_interface_gromacs()` show error dialogs but don't print tracebacks, unlike `SoluteGROMACSExporter` and `CustomMoleculeGROMACSExporter` which do include `traceback.print_exc()`.~~
+- **Fixed — Now shows `QMessageBox.warning` (fix batch 1) and `traceback.print_exc()` in all 5 handlers (Quick Task 027, commit 719de7f).**
 - Files: `quickice/gui/export.py:370-374`, `quickice/gui/export.py:725-729`, `quickice/gui/export.py:882-886`
-- Impact: Makes debugging export failures harder for users and developers
-- Fix approach: Add `import traceback; traceback.print_exc()` to all three handlers for consistency with other exporters.
 
 ---
 
 ## PyInstaller Bundle Issues
 
-### BUNDLE-01: PyInstaller Spec Excludes Tests (FIXED)
-- Issue: The `excludes` list in `quickice-gui.spec:27` now contains `['*/tests/*', '*/test/*', '*/docs/*', '*/__pycache__/*', '*/.pytest_cache/*', '*/egg-info/*']`.
+### BUNDLE-01: PyInstaller Spec Excludes Tests — **FIXED**
+- ~~Issue: The `excludes` list in `quickice-gui.spec:27` now contains `['*/tests/*', '*/test/*', '*/docs/*', '*/__pycache__/*', '*/.pytest_cache/*', '*/egg-info/*']`.~~
+- **Fixed — excludes list populated in fix batch 5, commit 22bd382.**
 - Files: `quickice-gui.spec:27`
-- Status: **FIXED** — test directories are now excluded from the bundle.
 
 ### BUNDLE-02: GenIce2 Includes All Lattice/Molecule/Format Plugins
 - Issue: GenIce2's plugin system means `collect_all('genice2')` includes ALL lattice types, molecule types, and format plugins — many of which QuickIce never uses. QuickIce only uses: `genice2.genice.GenIce`, `genice2.plugin.safe_import`, lattices for supported ice phases (1h, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, sI, sII, sH), the `tip3p` molecule, the `tip4p` molecule, and the `gromacs` format.
@@ -206,17 +197,13 @@
 
 ## Test Coverage Gaps
 
-### TEST-01: GROMACS Export End-to-End Testing (Full Chain)
-- What's not tested: Complete GRO+TOP+ITP export for ion structures with solutes AND custom molecules present (the full interface→custom→solute→ion chain). Tests exist for individual tabs but not the full chain.
-- Files: `quickice/output/gromacs_writer.py`, `quickice/gui/export.py`
-- Risk: Changes to attribute passing between tabs could silently break export
-- Priority: High
+### TEST-01: GROMACS Export End-to-End Testing (Full Chain) — **FIXED**
+- ~~What's not tested: Complete GRO+TOP+ITP export for ion structures with solutes AND custom molecules present (the full interface→custom→solute→ion chain). Tests exist for individual tabs but not the full chain.~~
+- **Fixed — e2e-export-test + e2e-compute-export phases, 17+ test files with 258+ tests.**
 
-### TEST-02: Pocket Mode Edge Cases
-- What's not tested: Pocket mode with very thin cavities, large boxes with small pockets, non-spherical (cubic) cavities
-- Files: `quickice/structure_generation/modes/pocket.py`
-- Risk: Pocket mode could produce incorrect structures for unusual parameters
-- Priority: Medium
+### TEST-02: Pocket Mode Edge Cases — **FIXED**
+- ~~What's not tested: Pocket mode with very thin cavities, large boxes with small pockets, non-spherical (cubic) cavities~~
+- **Fixed — pocket-edge-tests phase, 51 tests.**
 
 ### TEST-03: Triclinic Cell Interface Generation
 - What's not tested: Interface generation for triclinic ice phases (Ice II, Ice V). The code currently blocks these phases, but if support is added, there are no tests to validate it.
@@ -224,23 +211,17 @@
 - Risk: Triclinic cell handling may be broken when this feature is enabled
 - Priority: Medium (currently blocked by design)
 
-### TEST-05: Atom Count Consistency After Multiple Overlap Removal Steps
-- What's not tested: Scenarios where both ice-water overlap AND guest-water overlap removal occur in slab mode (the `# GUEST-WATER OVERLAP FIX` section in `slab.py:532-564`).
-- Files: `quickice/structure_generation/modes/slab.py:532-564`
-- Risk: Invariant `water_atom_count == water_nmolecules * 4` could break after two rounds of overlap removal
-- Priority: High
+### TEST-05: Atom Count Consistency After Multiple Overlap Removal Steps — **FIXED**
+- ~~What's not tested: Scenarios where both ice-water overlap AND guest-water overlap removal occur in slab mode (the `# GUEST-WATER OVERLAP FIX` section in `slab.py:532-564`).~~
+- **Fixed — `tests/test_overlap_removal_invariants.py` (fix batch 6A, commit 687fdad).**
 
-### TEST-07: Custom Molecule GRO Writer HW1 Z-Coordinate
-- What's not tested: The custom molecule GRO writer's water molecule output (specifically the HW1 line). BUG-05 above shows `h2_pos[2]` is used instead of `h1_pos[2]` at line 1971.
-- Files: `quickice/output/gromacs_writer.py:1971`
-- Risk: Incorrect HW1 Z-coordinate in exported GRO files; GROMACS may detect the geometry error
-- Priority: High
+### TEST-07: Custom Molecule GRO Writer HW1 Z-Coordinate — **FIXED**
+- ~~What's not tested: The custom molecule GRO writer's water molecule output (specifically the HW1 line). BUG-05 above shows `h2_pos[2]` is used instead of `h1_pos[2]` at line 1971.~~
+- **Fixed — Phase 34.7-01 regression tests (commit 6965961).** BUG-05 itself also fixed in same commit.
 
-### TEST-08: `[ defaults ]` Consistency Across Export Paths
-- What's not tested: Verification that all TOP file writers produce consistent `[ defaults ]` sections. Currently, some writers use `fudgeLJ=0.5` and others use `fudgeLJ=0.0`.
-- Files: `quickice/output/gromacs_writer.py:529,961,1237,1712,2100,2596`
-- Risk: Different GROMACS energy calculations depending on export path
-- Priority: Medium
+### TEST-08: `[ defaults ]` Consistency Across Export Paths — **FIXED**
+- ~~What's not tested: Verification that all TOP file writers produce consistent `[ defaults ]` sections. Currently, some writers use `fudgeLJ=0.5` and others use `fudgeLJ=0.0`.~~
+- **Fixed — Phase 34.7 DEFLT-01 regression tests (commit 6965961).** All writers now use `fudgeLJ=0.5, fudgeQQ=0.8333`.
 
 ### TEST-09: Moleculetype Name Matching in TOP vs ITP Files
 - What's not tested: Post-export verification that `[ molecules ]` names in TOP files match `[ moleculetype ]` names in corresponding ITP files. A mismatch causes GROMACS fatal errors.
@@ -308,29 +289,46 @@
 
 The following issues were identified in prior analyses and have been **FIXED**. They are listed here for traceability only — do not treat as active concerns.
 
-| ID | Description | Key File |
-|----|-------------|----------|
-| FLOW-01/02/03 | Exporter crashes/wrong output | `quickice/output/gromacs_writer.py` |
-| BUG-01 | OW safeguard | `quickice/structure_generation/modes/*.py` |
-| BUG-02a/b/c | THF formula | `quickice/structure_generation/types.py` |
-| BUG-03 | O(n²) residue lookup | `quickice/output/gromacs_writer.py:1102` |
-| MOL-1–5 | Naming mismatches | Various |
-| KS-1/2/3 | Keyboard shortcuts | `quickice/gui/main_window.py` |
-| FF-1 | GAFF→GAFF2 | `quickice/output/gromacs_writer.py` |
-| FRAG-01/02 | Fragile code (assertions added) | `quickice/structure_generation/modes/*.py` |
-| EXC-02 | FileNotFoundError:pass | `quickice/gui/export.py` |
-| EXP-1/2 | Filename patterns | `quickice/output/` |
-| VER-1 | Version | `quickice/__init__.py` |
-| CIT-GAFF2 | Citations | `quickice/output/gromacs_writer.py` |
-| SCI-01/03/04 | Scientific accuracy | Various |
-| TD-05/06 | Threading/cache | `quickice/structure_generation/generator.py` |
-| SEC-01 | Path.resolve | `quickice/main.py` |
-| BUNDLE-01 | PyInstaller excludes | `quickice-gui.spec` |
-| TEST-01/02/04/05 | Test gaps | `tests/` |
-| NEW-01/02 | Logger/dead imports | Various |
-| FRAG-04a/b | Resilience improvements | Various |
-| UNIT-01/03 | Validation/logging | Various |
+| ID | Description | Key File | Fixed How/When |
+|----|-------------|----------|----------------|
+| FLOW-01/02/03 | Exporter crashes/wrong output | `quickice/output/gromacs_writer.py` | Fix batch 1 |
+| BUG-01 | OW safeguard | `quickice/structure_generation/modes/*.py` | Fix batch 1 |
+| BUG-02a/b/c | THF formula | `quickice/structure_generation/types.py` | Fix batch 4 |
+| BUG-03 | O(n²) residue lookup | `quickice/output/gromacs_writer.py:1102` | Fix batch 3 |
+| BUG-05 | HW1 Z-coordinate copy-paste | `quickice/output/gromacs_writer.py:1971` | Phase 34.7-01, commit 6965961 |
+| MOL-1–5 | Naming mismatches | Various | Fix batches 1-2 |
+| KS-1/2/3 | Keyboard shortcuts | `quickice/gui/main_window.py` | Fix batch 2 |
+| FF-1 | GAFF→GAFF2 | `quickice/output/gromacs_writer.py` | Fix batch 2 |
+| FRAG-01/02 | Fragile code (assertions added) | `quickice/structure_generation/modes/*.py` | Fix batch 3 / pocket-edge-tests |
+| EXC-02 | FileNotFoundError:pass | `quickice/gui/export.py` | Fix batch 1 (QMessageBox.warning) |
+| EXC-03 | Missing traceback.print_exc | `quickice/gui/export.py` | Quick Task 027, commit 719de7f |
+| EXP-1/2 | Filename patterns | `quickice/output/` | Fix batch 3 |
+| VER-1 | Version | `quickice/__init__.py` | Fix batch 3 |
+| CIT-GAFF2 | Citations | `quickice/output/gromacs_writer.py` | Fix batch 3 |
+| SCI-01 | Ice Ih density fallback | `quickice/phase_mapping/ice_ih_density.py` | Fix batch 4 (warning added) |
+| SCI-03 | O-O distance citations | `quickice/ranking/types.py` | Fix batch 4 (Petrenko & Whitworth citation) |
+| SCI-04 | Madrid2019 header | `quickice/structure_generation/gromacs_ion_export.py` | Fix batch 4 + e2e-compute-export |
+| TD-05/06 | Threading/cache | `quickice/structure_generation/generator.py` | Fix batch 4 (lru_cache + Lock) |
+| DEFLT-01 | fudgeLJ inconsistency | `quickice/output/gromacs_writer.py` | Phase 34.7-01, commit 6965961 |
+| PERF-01 | O(n²) H-bond detection | `quickice/gui/vtk_utils.py` | Quick Task 022 (KDTree) |
+| SEC-01 | Path.resolve | `quickice/main.py` | Fix batch 5, commit 22bd382 |
+| BUNDLE-01 | PyInstaller excludes | `quickice-gui.spec` | Fix batch 5, commit 22bd382 |
+| TEST-01 | E2E export chain tests | `tests/` | e2e-export-test + e2e-compute-export |
+| TEST-02 | Pocket mode edge cases | `tests/` | pocket-edge-tests phase, 51 tests |
+| TEST-04 | ITP parsing edge cases | `tests/` | `tests/test_itp_parser_edge_cases.py` (fix batch 6A) |
+| TEST-05 | Overlap removal invariants | `tests/` | `tests/test_overlap_removal_invariants.py` (fix batch 6A) |
+| TEST-07 | BUG-05 regression tests | `tests/` | Phase 34.7-01 regression tests |
+| TEST-08 | DEFLT-01 regression tests | `tests/` | Phase 34.7 regression tests |
+| NEW-01/02 | Logger/dead imports | Various | Fix batch 4 |
+| FRAG-04a/b | Resilience improvements | Various | Fix batch 4 |
+| UNIT-01/03 | Validation/logging | Various | Fix batch 3 / batch 4 |
+| MW-01 | MW from wrapped atoms | `quickice/output/gromacs_writer.py` | Phase 34.7-01, commit 6965961 |
+| RNG-01 | Unseeded RNG | `quickice/structure_generation/custom_molecule_inserter.py` | Phase 34.7-02, commit ee0f4d5 |
+| ATOM-01 | Hardcoded water atom count | Various | Phase 34.7-02, commit 8726698 |
+| TREE-01 | KDTree rebuild optimization | `quickice/structure_generation/ion_inserter.py` | Phase 34.7-03, commit f44c22c |
+| GUEST-01 | CO2 misidentification / dead code | `quickice/utils/molecule_utils.py` | commit 6d04262 |
 
 ---
 
 *Concerns audit: 2026-06-08*
+*Resolution status updated: 2026-06-12*

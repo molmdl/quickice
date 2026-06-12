@@ -1,6 +1,6 @@
 # Scancode Analysis Status
 
-**Updated:** 2026-05-22 (post-fix refresh)
+**Updated:** 2026-06-12 (post-Phase 34.7 refresh)
 
 ## Codebase Mapping (Refreshed 2026-05-22)
 
@@ -21,15 +21,16 @@
 | 6A Test Gaps | TEST-04, TEST-05 | 687fdad |
 | 6B TEST-01 | E2E GROMACS export tests (37 tests) | separate session |
 | 7 TEST-02 | Pocket edge cases (51 tests) + cubic bug fix | 925489e, c30e870, 6a43594 |
+| 8 Phase 34.7 | BUG-05, MW-01, DEFLT-01, RNG-01, ATOM-01, TREE-01, GUEST-01 | 6965961, ee0f4d5, 8726698, f44c22c, 6d04262 |
 
 ## Issue Status Summary
 
 | Status | Count |
 |--------|-------|
-| Fixed | 44 |
+| Fixed | 51 |
 | Deferred (design needed) | 9 |
 | Ignored (SEC-02) | 1 |
-| **Total** | **54** |
+| **Total** | **61** |
 
 ## Remaining Deferred Items
 

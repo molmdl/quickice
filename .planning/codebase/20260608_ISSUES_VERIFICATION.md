@@ -455,7 +455,35 @@ The fudgeLJ=0.0/fudgeQQ=0.0 values in the multi-molecule writers appear to be **
 
 **BUG-05: HW1 Z-coordinate copy-paste** — This is a silent data corruption bug. Every water molecule written through `write_custom_molecule_gro_file()` has its HW1 atom's Z-coordinate set to HW2's Z-coordinate instead of HW1's. The bug is trivial to fix (one character change) but has significant physical impact: it corrupts the TIP4P-ICE geometry, affecting the MW virtual site position and all downstream GROMACS force calculations.
 
+> **Update 2026-06-12:** BUG-05 is now **FIXED** — Phase 34.7-01, commit 6965961. Line 1979 now correctly uses `h1_pos[2]` for HW1 Z-coordinate.
+
+---
+
+## Resolution Status
+
+| ID | Verdict | Resolution |
+|----|---------|------------|
+| BUG-05 | CONFIRMED | **FIXED** — Phase 34.7-01, commit 6965961 (h1_pos[2] for HW1) |
+| MW-01 | PARTIALLY CORRECT | **FIXED** — Phase 34.7-01, commit 6965961 (wrap_molecules_into_box in ice writer) |
+| RNG-01 | CONFIRMED | **FIXED** — Phase 34.7-02, commit ee0f4d5 (seeded RNG + Rotation.random) |
+| IDX-01 | REFUTED | N/A — Was already refuted (code regenerates indices) |
+| ATOM-01 | CONFIRMED | **FIXED** — Phase 34.7-02, commit 8726698 (WATER_ATOMS_PER_MOLECULE constant) |
+| TREE-01 | PARTIALLY CORRECT | **FIXED** — Phase 34.7-03, commit f44c22c (conditional KDTree rebuild) |
+| GUEST-01 | PARTIALLY CORRECT | **FIXED** — commit 6d04262 (guest_type param + dead CO2 removal) |
+| DEFLT-01 | CONFIRMED | **FIXED** — Phase 34.7-01, commit 6965961 (all writers fudgeLJ=0.5, fudgeQQ=0.8333) |
+
+### Updated Summary with Resolution
+
+| Verdict | Count | Issues | All Resolved? |
+|---------|-------|--------|---------------|
+| CONFIRMED | 4 | BUG-05 ✅, RNG-01 ✅, ATOM-01 ✅, DEFLT-01 ✅ | **Yes** |
+| PARTIALLY CORRECT | 3 | MW-01 ✅, TREE-01 ✅, GUEST-01 ✅ | **Yes** |
+| REFUTED | 1 | IDX-01 (N/A) | N/A |
+
+**All 7 active issues from this report are now FIXED.** The only non-active issue (IDX-01) was already refuted.
+
 ---
 
 _Verified: 2026-06-08_
+_Resolution status updated: 2026-06-12_
 _Verifier: OpenCode (gsd-verifier)_

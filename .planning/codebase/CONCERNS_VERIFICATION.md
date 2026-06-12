@@ -596,5 +596,37 @@ No test for the invariant `water_atom_count == water_nmolecules * 4` after the g
 
 ---
 
+## Post-Verification Fix Status (2026-06-12)
+
+Issues confirmed in this verification report that have since been fixed:
+
+| Issue ID | Description | How Fixed | When |
+|----------|-------------|-----------|------|
+| BUG-01 | OW safeguard missing in pocket.py and piece.py | Fix batch 1 (OW safeguard added) | commit d75dde1, 5e18c0e |
+| BUG-02 | THF atom count 12→13 in types.py | Fix batch 4 | commit f217c6d |
+| EXC-02 | Silent FileNotFoundError:pass | Fix batch 1 (QMessageBox.warning) | commit 5e18c0e |
+| BUNDLE-01 | collect_all() with excludes=[] | Fix batch 5 (excludes list populated) | commit 22bd382 |
+| TD-06 | Module-level caches without thread safety | Fix batch 4 (lru_cache + Lock) | commits f217c6d, 95a6b8c |
+| FRAG-02 | Missing invariant checks after overlap removal | pocket-edge-tests phase (assertions added) | commit 925489e |
+| TEST-01 | No E2E GROMACS export test | e2e-export-test + e2e-compute-export phases | multiple sessions |
+| TEST-02 | No pocket mode edge case tests | pocket-edge-tests phase (51 tests) | commit 925489e |
+| TEST-04 | No ITP parsing edge case tests | Fix batch 6A | commit 687fdad |
+| TEST-05 | No overlap removal invariant test | Fix batch 6A | commit 687fdad |
+| BUG-05 | HW1 Z-coordinate copy-paste | Phase 34.7-01 | commit 6965961 |
+| MW-01 | MW recomputation from wrapped atoms | Phase 34.7-01 | commit 6965961 |
+| DEFLT-01 | fudgeLJ inconsistency | Phase 34.7-01 | commit 6965961 |
+| RNG-01 | Unseeded RNG in CustomMoleculeInserter | Phase 34.7-02 | commit ee0f4d5 |
+| ATOM-01 | Hardcoded water atom count | Phase 34.7-02 | commit 8726698 |
+| TREE-01 | KDTree rebuild every iteration | Phase 34.7-03 | commit f44c22c |
+| GUEST-01 | CO2 misidentification / dead code | Phase 34.7-08 | commit 6d04262 |
+| PERF-01 | O(n²) H-bond detection | Quick Task 022 (KDTree) | commit d4a333e |
+| SCI-03 | O-O distance citations | Fix batch 4 (Petrenko & Whitworth) | commit f217c6d |
+| SCI-04 | Madrid2019 header in ion.itp | Fix batch 4 + e2e-compute-export | commits f217c6d, 95a6b8c |
+| SEC-01 | Path traversal in CLI | Fix batch 5 (Path.resolve) | commit 22bd382 |
+| EXC-03 | Missing traceback.print_exc | Quick Task 027 | commit 719de7f |
+
+---
+
 *Verified: 2026-05-22*
+*Post-verification fix status updated: 2026-06-12*
 *Verifier: OpenCode (gsd-verifier)*
