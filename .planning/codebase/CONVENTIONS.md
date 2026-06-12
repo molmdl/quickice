@@ -1,249 +1,282 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-06-08
+**Analysis Date:** 2026-06-12
 
 ## Naming Patterns
 
 **Files:**
-- Source modules: `snake_case.py` (e.g., `ion_inserter.py`, `hydrate_generator.py`, `gromacs_writer.py`)
-- Test files: `test_<module>.py` for unit tests (e.g., `test_validators.py`, `test_ranking.py`)
-- Test files: `test_e2e_<feature>.py` for end-to-end tests (e.g., `test_e2e_ice_generation.py`, `test_e2e_gmx_validation.py`)
-- GUI panel files: `<feature>_panel.py`, `<feature>_viewer.py`, `<feature>_renderer.py` (e.g., `hydrate_panel.py`, `hydrate_viewer.py`, `hydrate_renderer.py`)
-- Helper files: Descriptive `snake_case.py` (e.g., `e2e_export_helpers.py`)
-- Data files: `.gro`, `.itp`, `.mdp` (GROMACS format files in `quickice/data/`)
+- Use `snake_case.py` for all Python modules: `gromacs_writer.py`, `ion_inserter.py`, `phase_diagram_widget.py`
+- Test files use `test_` prefix: `test_structure_generation.py`, `test_e2e_ice_generation.py`
+- E2E test files use `test_e2e_` prefix: `test_e2e_workflow_chains.py`, `test_e2e_gmx_validation.py`
+- Regression test files reference bug IDs: `test_scancode_bugs_gromacs.py`
+- Shared non-test helpers in tests/ use NO `test_` prefix: `e2e_export_helpers.py`
+- Subdirectory test packages use `__init__.py`: `tests/test_output/__init__.py`
+
+**Classes:**
+- Use `PascalCase` for all classes: `IceStructureGenerator`, `InterfaceConfig`, `HydrateGROMACSExporter`
+- Data classes use descriptive noun names: `Candidate`, `GenerationResult`, `InterfaceStructure`
+- Test classes use `Test` prefix + descriptive name: `TestLookupPhaseIceIh`, `TestBUG05`
+- Exception classes use `Error` suffix: `StructureGenerationError`, `UnknownPhaseError`, `InterfaceGenerationError`
+- GUI widget classes use descriptive noun + role: `MainWindow`, `PhaseDiagramPanel`, `SolutePanel`
+- GUI worker classes use `Worker` suffix: `GenerationWorker`, `HydrateWorker`, `CustomMoleculeWorker`
+- GUI exporter classes use `Exporter` suffix: `GROMACSExporter`, `PDBExporter`, `IonGROMACSExporter`
+- Enum classes use `PascalCase`: `TabIndex(IntEnum)`
 
 **Functions:**
-- Public functions: `snake_case` (e.g., `lookup_phase()`, `generate_interface()`, `rank_candidates()`)
-- Private/internal functions: `_leading_underscore` (e.g., `_generate_single()`, `_parse_gro_result()`)
-- Test helper functions: `_leading_underscore` (e.g., `_insert_ions()`, `_solute_to_ion_source()`)
-- Validators: `validate_<field>` (e.g., `validate_temperature()`, `validate_pressure()`)
-- Factory class methods: `from_<source>` (e.g., `InterfaceConfig.from_dict()`, `HydrateLatticeInfo.from_lattice_type()`)
+- Use `snake_case` for all functions: `lookup_phase()`, `generate_interface()`, `calculate_supercell()`
+- Private helper methods use `_` prefix: `_generate_single()`, `_is_orthorhombic()`, `_calculate_oo_distances_pbc()`
+- Boolean predicate functions use `_is_` prefix: `_is_orthorhombic()`, `is_cell_orthogonal()`
+- Factory class methods use `from_` prefix: `InterfaceConfig.from_dict()`, `HydrateConfig.from_dict()`, `HydrateLatticeInfo.from_lattice_type()`
+- Validation functions use `validate_` prefix: `validate_temperature()`, `validate_pressure()`, `validate_nmolecules()`
+- Writer functions use `write_` prefix: `write_gro_file()`, `write_top_file()`, `write_interface_gro_file()`
 
 **Variables:**
-- Module-level constants: `UPPER_SNAKE_CASE` (e.g., `PHASE_CONDITIONS`, `HYDRATE_LATTICES`, `UNIT_CELL_MOLECULES`, `AVOGADRO`, `MIN_SEPARATION`)
-- Instance attributes: `snake_case` with leading underscore for private (e.g., `self._temperature`, `self._is_generating`)
-- Local variables: `snake_case` (e.g., `phase_info`, `candidate`, `volume_nm3`)
-- NumPy arrays: descriptive names with type context (e.g., `positions`, `cell`, `supercell_o`, `o_positions`)
+- Use `snake_case` for all local variables and module-level constants
+- Module-level constants use `UPPER_SNAKE_CASE`: `PHASE_TO_GENICE`, `UNIT_CELL_MOLECULES`, `MINIMUM_BOX_DIMENSION`, `HYDRATE_LATTICES`
+- Private instance attributes use `_` prefix: `self._viewmodel`, `self._current_interface_result`
+- Dictionaries mapping identifiers use descriptive names: `MOLECULE_TO_GROMACS`, `GUEST_MOLECULES`, `PHASE_CONDITIONS`
 
 **Types:**
-- Dataclasses: `PascalCase` (e.g., `Candidate`, `InterfaceConfig`, `HydrateStructure`, `IonStructure`)
-- Exception classes: `PascalCase` with `Error` suffix (e.g., `StructureGenerationError`, `UnknownPhaseError`, `InterfaceGenerationError`)
-- Worker classes: `PascalCase` with descriptive suffix (e.g., `GenerationWorker`, `InterfaceGenerationWorker`)
-- PySide6 widget classes: `PascalCase` with `Widget`/`Panel` suffix (e.g., `HydratePanel`, `PhaseDiagramWidget`)
+- Use Python 3.10+ union syntax `X | None` for optional types: `seed: int | None = None`
+- Use `list[X]` and `dict[X, Y]` (lowercase) for generic types, NOT `List[X]` or `Dict[X, Y]`
+- Legacy `typing` imports exist in older files but new code should use built-in generics
+- Type hints on `Any` for circular-import avoidance: `registry: Any = None  # MoleculetypeRegistry`
+- Use `TYPE_CHECKING` for import-time type checking to avoid circular imports:
+  ```python
+  from typing import TYPE_CHECKING
+  if TYPE_CHECKING:
+      from quickice.structure_generation.types import CustomMoleculeStructure
+  ```
 
 ## Code Style
 
 **Formatting:**
-- No formal formatter config detected (no `.prettierrc`, no `black` config, no `ruff.toml`)
-- Python 3.14 with modern syntax: `X | None` union types instead of `Optional[X]` (e.g., `seed: int | None = None`)
-- `list[str]`, `dict[str, Any]` generic syntax (not `List[str]`, `Dict[str, Any]`)
-- `from __future__ import annotations` is NOT used — project targets Python 3.14 natively
+- No project-level formatter config (no `.flake8`, `.prettierrc`, `ruff.toml`, or `black` config found)
+- Indentation: 4 spaces
+- Max line length: ~100-120 characters (not strictly enforced)
+- Trailing newlines in all files
 
 **Linting:**
-- No linter config detected (no `.eslintrc`, no `flake8`, no `pylint`, no `ruff`)
-- Code follows PEP 8 conventions informally
-- Use `logging.getLogger(__name__)` pattern — DO NOT use `print()` for library code
+- No linter config found (no `.eslintrc`, `setup.cfg`, or `ruff.toml`)
+- No CI-enforced lint checks
+- Code quality maintained through testing discipline, not automated linting
 
-**Key Style Rules:**
-- Docstrings: Triple-quoted with `"""..."""` for all public modules, classes, and functions
-- Attribute docstrings in dataclasses use `Attributes:` section
-- Method docstrings use `Args:`, `Returns:`, `Raises:` sections
-- Class-level docstrings include `Signals:` section for PySide6 objects
-- Section separators use `# ── Section Name ─────` pattern in long files (see `conftest.py`)
-- Unicode box drawing for test section headers: `# ══════════════════ Title ══════════════════` (see `test_e2e_gmx_validation.py`)
+**String Quotes:**
+- Both single and double quotes used inconsistently across the codebase
+- Some files (e.g., `quickice/structure_generation/generator.py`) use triple single quotes `'''` for module/class docstrings
+- Most files use triple double quotes `"""` for docstrings (preferred pattern)
+- Use `"""` for docstrings, `"` or `'` for string literals (be consistent within a file)
 
 ## Import Organization
 
 **Order:**
-1. Standard library (`import numpy as np`, `import time`, `from pathlib import Path`)
-2. Third-party packages (`from PySide6.QtCore import ...`, `from genice2.genice import GenIce`, `from scipy.spatial import cKDTree`)
-3. Local application imports (`from quickice.structure_generation.types import ...`, `from quickice.gui.workers import ...`)
+1. Standard library imports (`import sys`, `import logging`, `from pathlib import Path`)
+2. Third-party imports (`import numpy as np`, `import pytest`, `from PySide6.QtWidgets import ...`)
+3. Local application imports (`from quickice.structure_generation.types import ...`)
+
+**Pattern:**
+```python
+# Standard library
+import logging
+from pathlib import Path
+from typing import Any, Optional
+
+# Third-party
+import numpy as np
+from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtCore import Signal, QThread
+
+# Local application
+from quickice.structure_generation.types import Candidate, InterfaceConfig
+from quickice.phase_mapping.lookup import lookup_phase
+```
 
 **Path Aliases:**
-- `numpy` is always imported as `np`
-- `pytest` is always imported as `pytest`
-- No other aliases used
+- No custom import aliases or `sys.path` modifications in source code
+- Test files sometimes add `sys.path.insert(0, ...)` for test helper imports:
+  ```python
+  sys.path.insert(0, str(Path(__file__).parent))
+  from e2e_export_helpers import parse_top_includes, run_gmx_grompp
+  ```
 
-**Circular Import Avoidance:**
-- Use `TYPE_CHECKING` guard for type hints only (e.g., `gromacs_writer.py` line 18: `if TYPE_CHECKING: from quickice.structure_generation.types import CustomMoleculeStructure, SoluteStructure`)
-- Use lazy imports inside `run()` methods of QThread workers (e.g., `workers.py` lines 88-89: `from quickice.phase_mapping import lookup_phase` inside `run()`)
-- Use `Any` type annotation with comment for forward references (e.g., `registry: Any  # MoleculetypeRegistry (avoid circular import)`)
+**Relative vs Absolute Imports:**
+- Use ABSOLUTE imports exclusively: `from quickice.structure_generation.types import Candidate`
+- NEVER use relative imports like `from .types import Candidate`
+- This is consistent across all modules
 
 ## Error Handling
 
-**Patterns:**
+**Custom Exception Hierarchy:**
+- Base exception per subsystem with specific children:
+  - `StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError` in `quickice/structure_generation/errors.py`
+  - `PhaseMappingError` → `UnknownPhaseError` in `quickice/phase_mapping/errors.py`
+- Exceptions carry context attributes: `UnsupportedPhaseError.phase_id`, `InterfaceGenerationError.mode`
+- Error messages include physical context and guidance:
+  ```python
+  raise InterfaceGenerationError(
+      f"Box X dimension ({config.box_x:.3f} nm) is too small. "
+      f"Minimum is {MINIMUM_BOX_DIMENSION:.1f} nm. "
+      f"Water molecules have diameter ~0.28 nm; boxes smaller than 1.0 nm "
+      f"cause numerical issues and cannot fit realistic structures.",
+      mode=config.mode
+  )
+  ```
 
-1. **Custom exception hierarchy** with domain-specific base classes:
-   - `StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError` in `quickice/structure_generation/errors.py`
-   - `PhaseMappingError` → `UnknownPhaseError` in `quickice/phase_mapping/errors.py`
-   - Custom errors carry context attributes (e.g., `InterfaceGenerationError.mode`, `UnsupportedPhaseError.phase_id`, `UnknownPhaseError.temperature/pressure`)
+**Validation Pattern:**
+- CLI validators raise `ArgumentTypeError` with descriptive messages in `quickice/validation/validators.py`
+- GUI validators return `tuple[bool, str]` with `(is_valid, error_message)` in `quickice/gui/validators.py`
+- Dataclass `__post_init__` validates config parameters:
+  ```python
+  def __post_init__(self):
+      if self.lattice_type not in HYDRATE_LATTICES:
+          raise ValueError(f"Unknown lattice type: {self.lattice_type}")
+  ```
+- Validation ranges include rationale in error messages (units, typical values)
 
-2. **Validation in `__post_init__`**: All config dataclasses validate in `__post_init__` and raise `ValueError` with descriptive messages:
-   ```python
-   def __post_init__(self):
-       if self.concentration_molar < 0:
-           raise ValueError(f"concentration_molar must be >= 0, got {self.concentration_molar}")
-   ```
-   See `quickice/structure_generation/types.py` — `InterfaceConfig`, `HydrateConfig`, `IonConfig`, `SoluteConfig`, `CustomMoleculeConfig`
+**Exception Wrapping:**
+- Wrap third-party exceptions with context:
+  ```python
+  except Exception as e:
+      raise StructureGenerationError(
+          f'Failed to generate ice structure ({type(e).__name__}): {e}'
+      ) from e
+  ```
 
-3. **CLI validators raise `ArgumentTypeError`** (from `argparse`):
-   ```python
-   from argparse import ArgumentTypeError
-   raise ArgumentTypeError(f"Temperature must be between 0 and 500K, got {temp}K")
-   ```
-   See `quickice/validation/validators.py`
-
-4. **GUI validators return `tuple[bool, str]`** (no exceptions):
-   ```python
-   def validate_temperature(value: str) -> Tuple[bool, str]:
-       if temp < 0 or temp > 500:
-           return (False, "Temperature must be between 0 and 500 K")
-       return (True, "")
-   ```
-   See `quickice/gui/validators.py`
-
-5. **Exception wrapping with `from e`** for context preservation:
-   ```python
-   except Exception as e:
-       raise StructureGenerationError(
-           f'Failed to generate ice structure ({type(e).__name__}): {e}'
-       ) from e
-   ```
-   See `quickice/structure_generation/generator.py` line 152
-
-6. **`finally` blocks for state restoration** (e.g., numpy random state):
-   ```python
-   original_state = np.random.get_state()
-   try:
-       np.random.seed(seed)
-       # ... generation code
-   except Exception as e:
-       raise StructureGenerationError(...) from e
-   finally:
-       np.random.set_state(original_state)
-   ```
-   See `quickice/structure_generation/generator.py` lines 101-157
+**CLI Error Handling:**
+- Top-level `main()` catches specific exceptions first, then generic:
+  ```python
+  except UnknownPhaseError as e:
+      print(f"Error: {e}", file=sys.stderr)
+      return 1
+  except InterfaceGenerationError as e:
+      print(f"Error: {e}", file=sys.stderr)
+      return 1
+  except Exception as e:
+      print(f"Error: {e}", file=sys.stderr)
+      return 1
+  ```
 
 ## Logging
 
 **Framework:** Python `logging` module
 
 **Pattern:**
-- Create logger at module level: `logger = logging.getLogger(__name__)`
-- Used in ~20 source files across `quickice/` (GUI panels, renderers, core modules)
-- Non-GUI code uses `logging` (e.g., `quickice/structure_generation/custom_molecule_inserter.py`, `quickice/structure_generation/solute_inserter.py`)
-- GUI panels use `logger.debug()` and `logger.info()` for user-facing operations
-- Scientific computation modules use `logger.debug()` for numerical details
-- `print()` is used ONLY in CLI entry points (`quickice/main.py`) for user output — NEVER in library code
+- Use `logger = logging.getLogger(__name__)` at module level
+- Found in ~20 source modules, primarily GUI and output modules:
+  - `quickice/gui/main_window.py`, `quickice/gui/export.py`, `quickice/gui/ion_panel.py`
+  - `quickice/output/gromacs_writer.py`, `quickice/structure_generation/solute_inserter.py`
+- Non-GUI computation modules (`types.py`, `scorer.py`, `validators.py`) do NOT log
+- No central logging configuration found — relies on Python defaults
 
 **When to Log:**
-- Use `logger.debug()` for diagnostic information (coordinates, intermediate values)
-- Use `logger.info()` for significant events (generation started, export complete)
-- Use `logger.warning()` for recoverable issues (skipped ITP, missing file)
-- Use `logger.error()` for unrecoverable errors in library code
+- GUI worker lifecycle: thread start, completion, cancellation, errors
+- Export operations: file path selection, write success/failure
+- Computation milestones: generation progress, insertion counts
+- NOT for routine validation failures (those raise exceptions)
 
 ## Comments
 
 **When to Comment:**
-- Every module has a module-level docstring describing purpose
-- Every public class has a docstring with `Attributes:` section
-- Every public function/method has a docstring with `Args:`, `Returns:`, `Raises:` sections
-- Inline comments explain physics/units (e.g., `# 0.25 nm = 2.5 Å for typical O-O overlap detection`)
-- `Note:` sections for non-obvious behavior (e.g., wrapping, coordinate conventions)
-- `IMPORTANT:` sections for critical constraints (e.g., "Do NOT wrap positions here!")
+- Module docstrings on ALL source files (triple-double-quoted `"""`)
+- Class docstrings with `Attributes:` sections for dataclasses
+- Method docstrings with `Args:`, `Returns:`, `Raises:` sections
+- Inline comments for non-obvious physical constants or GROMACS-specific formatting
+- `# ──` separator lines for section headers in longer files
+- `Note:` paragraphs for important caveats (thread safety, backward compatibility)
+
+**Docstring Style:**
+- Google-style with `Args:`, `Returns:`, `Raises:`, `Attributes:`, `Example:` sections
+- Full docstrings on all public classes and functions
+- Private methods (`_method`) also get docstrings
+- Test class docstrings explain what the class tests and why:
+  ```python
+  class TestBUG05:
+      """Regression tests for BUG-05: HW1 Z-coordinate uses h2_pos[2] instead of h1_pos[2].
+      
+      Before the fix, write_custom_molecule_gro_file() output HW1 Z as h2_pos[2]...
+      """
+  ```
 
 **JSDoc/TSDoc:**
 - Not applicable (Python project)
-- Use Google-style docstrings with `Args:`, `Returns:`, `Raises:`, `Examples:` sections
-- Physics references included in docstrings (e.g., "Petrenko & Whitworth, 1999, Physics of Ice")
+- Use Python docstrings with Google-style sections instead
 
 ## Function Design
 
-**Size:** Functions range from 1-liner helpers to ~80 line methods. No strict limit, but complex logic is decomposed.
+**Size:** Most functions are 20-60 lines. Longer functions (up to ~100 lines) exist in writer code that formats GRO/TOP files line-by-line.
 
-**Parameters:** Use type hints for all parameters. Use `dataclass` configs for multi-parameter functions instead of many arguments:
-```python
-# Instead of:
-def generate(config_mode, box_x, box_y, box_z, seed, ...):
-# Use:
-def generate(config: InterfaceConfig):
-```
-See `quickice/structure_generation/types.py` for all config dataclasses.
+**Parameters:**
+- Use typed parameters with default values where appropriate
+- Config objects (`InterfaceConfig`, `HydrateConfig`, `SoluteConfig`, `CustomMoleculeConfig`) group related parameters
+- Use `__post_init__` validation on config dataclasses for fail-fast behavior
+- CLI argument validators double as type converters
 
 **Return Values:**
-- Use `dataclass` result types for complex returns (e.g., `GenerationResult`, `RankingResult`, `InterfaceStructure`)
-- Use `tuple` for simple multi-value returns (e.g., `(exit_code, stderr_text)`)
-- NumPy arrays for coordinate data: always `(N, 3)` shape with `dtype=np.float64`
-- Cell matrices: always `(3, 3)` stored as ROW vectors
+- Use result dataclasses for multi-value returns: `GenerationResult`, `RankingResult`, `PlacementValidationResult`
+- Boolean functions return `True`/`False` explicitly (not truthy/falsy)
+- Export functions return `bool` for success/failure
+- CLI `main()` returns integer exit code
 
 ## Module Design
 
 **Exports:**
-- Use `__init__.py` with explicit `__all__` list for public API (see `quickice/structure_generation/__init__.py`)
-- Import and re-export commonly-used types from `__init__.py`
-- Private functions use `_leading_underscore`
+- Each package has `__init__.py` with explicit `__all__` list
+- `quickice/structure_generation/__init__.py` re-exports types, errors, generator, builder, and utility functions
+- `quickice/phase_mapping/__init__.py` re-exports lookup, errors, and data functions
+- Import from package level when multiple items needed: `from quickice.structure_generation import generate_candidates`
+- Import from module level for single items: `from quickice.structure_generation.types import Candidate`
 
 **Barrel Files:**
-- `quickice/structure_generation/__init__.py` re-exports key types and functions
-- `quickice/ranking/__init__.py` re-exports ranking API
-- `quickice/phase_mapping/__init__.py` re-exports `lookup_phase`, `UnknownPhaseError`
-- Test helper modules are NOT `test_`-prefixed to avoid pytest auto-collection (see `e2e_export_helpers.py` line 7)
+- All packages use barrel `__init__.py` with `__all__`
+- Pattern: import specific items, list in `__all__`, enable clean imports from package root
+- Example from `quickice/structure_generation/__init__.py`:
+  ```python
+  from quickice.structure_generation.errors import (
+      StructureGenerationError,
+      UnsupportedPhaseError,
+      InterfaceGenerationError,
+  )
+  __all__ = [
+      "StructureGenerationError",
+      "UnsupportedPhaseError",
+      ...
+  ]
+  ```
 
-## MVVM Architecture Pattern
+**Data Files:**
+- Molecular topology files (`.itp`, `.gro`) live in `quickice/data/` and `quickice/data/custom/`
+- Access via `Path(quickice.__file__).parent / "data"` pattern
+- Test MDP file: `tests/em.mdp`
 
-**Pattern:** Model-View-ViewModel with QThread workers
+## Dataclass Conventions
 
-- **Model**: Domain logic in `quickice/structure_generation/`, `quickice/phase_mapping/`, `quickice/ranking/`
-- **ViewModel**: `quickice/gui/viewmodel.py` — `MainViewModel(QObject)` with Qt signals
-- **View**: `quickice/gui/view.py`, `*_panel.py`, `*_viewer.py` — PySide6 widgets
-- **Workers**: `quickice/gui/workers.py` — `GenerationWorker(QObject)` with `run()` method moved to QThread
+- Use `@dataclass` for all structured data types (no raw dicts for domain objects)
+- Default values use `field(default_factory=...)` for mutable defaults: `metadata: dict[str, Any] = field(default_factory=dict)`
+- Use `__post_init__` for validation that raises `ValueError` on invalid input
+- Use `@classmethod` factory methods: `from_dict()`, `from_lattice_type()`
+- Store numpy arrays as `np.ndarray` with shape documented in docstring
+- Use `Any` type with inline comment to avoid circular imports: `registry: Any = None  # MoleculetypeRegistry`
 
-**Signal naming convention:**
-- Past tense for completed events: `generation_complete`, `generation_error`, `generation_cancelled`
-- State change: `ui_enabled_changed`, `generation_started`
-- Streaming: `generation_progress(int)`, `generation_status(str)`, `generation_log(str)`
+## GUI Architecture Conventions
 
-**Worker pattern (NOT subclassing QThread):**
-```python
-worker = GenerationWorker(temperature, pressure, nmolecules)
-thread = QThread()
-worker.moveToThread(thread)
-thread.started.connect(worker.run)
-worker.finished.connect(thread.quit)
-worker.finished.connect(worker.deleteLater)
-thread.finished.connect(thread.deleteLater)
-thread.start()
-```
+- Follow MVVM pattern: `MainWindow` (View) → `MainViewModel` (ViewModel) → Workers (Model)
+- Worker pattern: `QObject` subclass with `run()` method, moved to `QThread` via `moveToThread()`
+- Signal/Slot communication between layers
+- Never import GUI modules (`PySide6`) in computation modules (`structure_generation`, `phase_mapping`, `ranking`, `output`)
+- GUI validators return `tuple[bool, str]`; CLI validators raise `ArgumentTypeError`
+- Export classes handle `QFileDialog`/`QMessageBox` interaction and delegate to writer functions
+- Tab indices defined in `quickice/gui/constants.py` as `IntEnum`
 
-## Domain-Specific Conventions
+## Unit Conventions
 
-**Units:**
-- All coordinates in nanometers (nm) — NOT Angstroms
-- Pressure in MPa
-- Temperature in Kelvin
-- Concentration in mol/L (M)
-- Density in g/cm³
-- Validation catches unit mismatches (e.g., `overlap_threshold` range check in `InterfaceConfig`)
-
-**GROMACS File Format:**
-- `.gro` files: GROMACS coordinate format with fixed-width columns
-- `.top` files: GROMACS topology with `#include` directives for `.itp` files
-- `.itp` files: Molecular topology include files
-- `.mdp` files: Molecular dynamics parameters (e.g., `tests/em.mdp`)
-
-**Atom naming:**
-- TIP3P ice: O, H, H (3 atoms per molecule)
-- TIP4P-ICE water: OW, HW1, HW2, MW (4 atoms per molecule)
-- CH4 guest: C, H, H, H, H (5 atoms)
-- THF guest: O, CA, CA, CB, CB + 8H (13 atoms)
-- Ions: NA (Na+), CL (Cl-)
-
-**Cell matrix convention:**
-- `cell` is `(3, 3)` stored as ROW vectors
-- Each row is a lattice vector: `[[a_x, a_y, a_z], [b_x, b_y, b_z], [c_x, c_y, c_z]]`
-- Position transformation: `new_position = position @ cell`
-- VTK requires column vectors (transpose needed)
+- All distances in **nanometers (nm)** throughout the codebase
+- Temperatures in **Kelvin (K)**
+- Pressures in **MPa** (megapascals)
+- Density in **g/cm³**
+- Concentration in **mol/L (M)**
+- Conversion helpers exist in `quickice/structure_generation/overlap_resolver.py`: `angstrom_to_nm()`, `nm_to_angstrom()`
+- Validation ranges include nm rationale (e.g., "0.25 nm = 2.5 Å")
 
 ---
 
-*Convention analysis: 2026-06-08*
+*Convention analysis: 2026-06-12*

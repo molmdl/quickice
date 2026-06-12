@@ -1,409 +1,408 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-06-08
+**Analysis Date:** 2026-06-12
 
 ## Test Framework
 
 **Runner:**
-- pytest 9.0.2
-- No config file detected (no `pytest.ini`, `pyproject.toml`, or `setup.cfg` with pytest section)
-- Python 3.14
+- pytest 9.0.3
+- No config file (no `pytest.ini`, `pyproject.toml`, `setup.cfg`, or `conftest.ini`)
+- Pytest discovers tests automatically via `test_*.py` naming convention
 
 **Assertion Library:**
-- `assert` statements (Python built-in) — primary pattern
-- `np.testing.assert_array_equal` for NumPy array comparisons
-- `np.testing.assert_array_almost_equal` for floating-point array comparisons
-- `pytest.raises` for exception testing (~65 uses across all test files)
+- Standard pytest assertions: `assert`, `assert ... == ...`
+- NumPy-specific: `np.testing.assert_array_equal()`, `np.testing.assert_allclose()`
+- No separate assertion library (no `assertpy`, `expects`, etc.)
 
 **Run Commands:**
 ```bash
 pytest                              # Run all tests
-pytest tests/test_validators.py     # Run single file
-pytest -m slow                      # Run slow tests (high-pressure ice phases)
-pytest tests/test_e2e_gmx_validation.py  # GROMACS grompp validation (requires gmx)
+pytest tests/test_phase_mapping.py # Run specific file
+pytest -k "test_ice_ih"           # Run tests matching name
+pytest -m slow                     # Run only slow-marked tests
+pytest tests/test_output/          # Run output submodule tests
+pytest --tb=short                   # Shorter tracebacks
 ```
+
+**Pytest Markers:**
+- `@pytest.mark.slow` — for expensive GenIce2 generation tests (high-pressure phases)
+- `@pytest.mark.parametrize` — for parameterized tests (pocket shapes, concentrations, phases)
+- `@pytest.mark.skip(reason="...")` — for tests requiring unavailable dependencies (e.g., `pytest-qt`)
+- Custom markers are defined inline (no `pytest.ini` registration)
 
 ## Test File Organization
 
 **Location:**
-- Primary test directory: `tests/` at project root
-- Secondary test directory: `tests/test_output/` for export-specific tests
-- NOT co-located — all tests in separate `tests/` directory
+- All tests in `tests/` directory at project root (NOT co-located with source)
+- Sub-directory `tests/test_output/` for GROMACS export tests
+- Shared conftest at `tests/conftest.py` and `tests/test_output/conftest.py`
 
 **Naming:**
-- Unit tests: `test_<module_name>.py` (e.g., `test_validators.py`, `test_ranking.py`, `test_phase_mapping.py`)
-- E2E generation tests: `test_e2e_<feature>.py` (e.g., `test_e2e_ice_generation.py`, `test_e2e_hydrate_generation.py`)
-- E2E export tests: `test_e2e_<feature>_export.py` (e.g., `test_e2e_ion_export.py`, `test_e2e_solute_export.py`)
-- E2E GROMACS validation: `test_e2e_gmx_validation.py`
-- E2E workflow chains: `test_e2e_workflow_chains.py`
-- Test helpers: NOT `test_`-prefixed (e.g., `e2e_export_helpers.py` — line 7: "NOT test_-prefixed to avoid pytest auto-collection")
-- GUI export tests: `tests/test_output/test_gromacs_export_<feature>.py`
+- Unit/bridge tests: `test_<feature>.py` — e.g., `test_validators.py`, `test_ranking.py`
+- E2E tests: `test_e2e_<workflow>.py` — e.g., `test_e2e_ice_generation.py`, `test_e2e_workflow_chains.py`
+- Regression tests: `test_scancode_bugs_<area>.py` — e.g., `test_scancode_bugs_gromacs.py`
+- Shared helpers (NOT auto-collected): `e2e_export_helpers.py` (no `test_` prefix)
 
 **Structure:**
 ```
 tests/
-├── conftest.py                      # Module-scoped e2e fixtures
-├── e2e_export_helpers.py             # Shared GRO/TOP parsing, chain builders
-├── em.mdp                           # Energy minimization MDP for grompp
-├── test_validators.py               # CLI validator unit tests
-├── test_ranking.py                  # Ranking unit tests
-├── test_phase_mapping.py            # Phase lookup unit tests (62 test methods)
-├── test_structure_generation.py      # Structure generation unit tests (59 test methods)
-├── test_e2e_ice_generation.py       # E2E ice generation
-├── test_e2e_hydrate_generation.py   # E2E hydrate generation
-├── test_e2e_interface_generation.py # E2E interface generation
-├── test_e2e_ion_insertion.py        # E2E ion insertion
-├── test_e2e_solute_insertion.py     # E2E solute insertion
-├── test_e2e_custom_molecule.py      # E2E custom molecule
-├── test_e2e_workflow_chains.py      # E2E full pipeline chains (F1-F7)
-├── test_e2e_gmx_validation.py       # GROMACS grompp validation (10+ chains)
-├── test_e2e_chain_export_1.py       # Chain export validation (part 1)
-├── test_e2e_chain_export_2.py       # Chain export validation (part 2)
-├── test_e2e_cross_chain_invariants.py  # Cross-chain invariant checks
-├── test_e2e_ice_interface_export.py # Ice interface export validation
-├── test_e2e_ion_export.py           # Ion export validation
-├── test_e2e_solute_export.py        # Solute export validation
-├── test_e2e_itp_baseline.py        # ITP baseline validation
-├── test_output/
-│   ├── conftest.py                  # Export test fixtures + mock dialogs
-│   ├── test_gromacs_export_ice.py
-│   ├── test_gromacs_export_interface.py
-│   ├── test_gromacs_export_hydrate.py
-│   ├── test_gromacs_export_ion.py
-│   ├── test_gromacs_export_solute.py
-│   ├── test_gromacs_export_custom.py
-│   ├── test_gromacs_export_chain.py
-│   ├── test_pdb_writer.py
-│   ├── test_molecule_wrapping.py
-│   └── test_validator.py
+├── conftest.py                          # Root shared fixtures (GenIce2 structure generation)
+├── e2e_export_helpers.py               # GRO/TOP parsing + chain-building helpers
+├── em.mdp                              # GROMACS energy-minimization MDP file
+├── __init__.py                         # Package marker
+├── test_validators.py                  # CLI validator unit tests
+├── test_phase_mapping.py               # Phase lookup unit/integration tests
+├── test_structure_generation.py        # Generator unit/integration tests
+├── test_ranking.py                     # Scoring and ranking unit tests
+├── test_e2e_ice_generation.py          # E2E: ice generation pipeline
+├── test_e2e_hydrate_generation.py      # E2E: hydrate generation
+├── test_e2e_interface_generation.py    # E2E: interface construction
+├── test_e2e_ion_insertion.py           # E2E: ion insertion
+├── test_e2e_solute_insertion.py        # E2E: solute insertion
+├── test_e2e_workflow_chains.py         # E2E: full chain F1–F7
+├── test_e2e_gmx_validation.py          # E2E: gmx grompp validation
+├── test_e2e_chain_export_1.py          # E2E: chain export part 1
+├── test_e2e_chain_export_2.py          # E2E: chain export part 2
+├── test_scancode_bugs_gromacs.py       # Regression: GROMACS writer bugs
+├── test_scancode_bugs_ion.py           # Regression: ion insertion bugs
+├── test_scancode_bugs_inserters.py     # Regression: inserter bugs
+├── test_pocket_edge_cases.py           # Edge cases: pocket mode
+├── test_pocket_invariants.py           # Invariants: pocket structure
+├── test_overlap_removal_invariants.py  # Invariants: overlap removal
+├── test_pbc_hbonds.py                  # PBC hydrogen bond detection
+├── test_triclinic_interface.py         # Triclinic cell interface tests
+├── ... (67 total test files)
+└── test_output/                        # GROMACS export tests
+    ├── conftest.py                     # Export-specific fixtures (mock dialogs, synthetic structures)
+    ├── test_gromacs_export_ice.py
+    ├── test_gromacs_export_interface.py
+    ├── test_gromacs_export_hydrate.py
+    ├── test_gromacs_export_ion.py
+    ├── test_gromacs_export_solute.py
+    ├── test_gromacs_export_custom.py
+    ├── test_gromacs_export_chain.py
+    ├── test_molecule_wrapping.py
+    ├── test_pdb_writer.py
+    └── test_validator.py
 ```
 
 ## Test Structure
 
 **Suite Organization:**
 ```python
-class TestValidateTemperature:
-    """Tests for temperature validation."""
+class TestLookupPhaseIceIh:
+    """Tests for Ice Ih (normal atmospheric ice) lookups."""
 
-    def test_accepts_valid_minimum_boundary(self):
-        """Temperature 0K should be accepted."""
-        result = validate_temperature("0")
-        assert result == 0.0
-        assert isinstance(result, float)
-
-    def test_rejects_negative_temperature(self):
-        """Temperature -1K should be rejected."""
-        with pytest.raises(ArgumentTypeError) as exc_info:
-            validate_temperature("-1")
-        assert "temperature" in str(exc_info.value).lower()
+    def test_lookup_atmospheric_near_melting(self):
+        """Temperature 273K, Pressure 0 MPa should return ice_ih."""
+        result = lookup_phase(273, 0)
+        assert result["phase_id"] == "ice_ih"
+        assert result["phase_name"] == "Ice Ih"
 ```
 
 **Patterns:**
-- **Class-per-feature**: Each test class groups related tests (e.g., `TestValidateTemperature`, `TestAllOrthogonalPhases`, `TestChainF1GmxValidation`)
-- **Descriptive docstrings**: Every test method has a docstring describing the expected behavior
-- **Boundary testing**: Test minimum, maximum, and just-beyond boundary values (see `test_validators.py`)
-- **Error message validation**: Check that error messages contain relevant keywords (e.g., `assert "temperature" in str(exc_info.value).lower()`)
-- **Parametrized tests**: `@pytest.mark.parametrize` for multi-case scenarios:
+- Each test class groups related tests by feature/bug/behavior
+- Class names use `Test` prefix + descriptive name: `TestBUG05`, `TestIceCandidateGmxValidation`
+- Test method names use descriptive `snake_case`: `test_lookup_atmospheric_near_melting`, `test_gmx_grompp_succeeds`
+- Test docstrings describe expected behavior and context (especially for regression tests)
+- Descriptive assertion messages on non-obvious checks:
   ```python
-  @pytest.mark.parametrize(
-      "phase_id",
-      ["ice_ih", "ice_ic", "ice_iii", "ice_vi", "ice_vii", "ice_viii"],
+  assert result["phase_id"] == "ice_v", (
+      f"Expected ice_v at T=260K, P=400MPa but got {result['phase_id']}. "
+      "This indicates polygon overlap error not fixed."
   )
-  def test_all_orthogonal_phases_generate_successfully(self, phase_id):
   ```
-  See `tests/test_e2e_ice_generation.py` lines 56-61
 
-- **Slow test markers**: `@pytest.mark.slow` for expensive tests (high-pressure phases)
-  See `tests/test_e2e_ice_generation.py` line 88
+**Setup Pattern:**
+- Use `@pytest.fixture` for expensive GenIce2 generation (module-scoped for amortization):
+  ```python
+  @pytest.fixture(scope="module")
+  def ice_ih_candidate():
+      """Generate Ice Ih candidate at 250 K, 0.1 MPa with 96 target molecules."""
+      phase_info = lookup_phase(250, 0.1)
+      gen = IceStructureGenerator(phase_info, 96)
+      candidates = gen.generate_all(1)
+      return candidates[0]
+  ```
+- Use `@pytest.fixture(autouse=True)` for per-class setup in chain tests:
+  ```python
+  @pytest.fixture(autouse=True)
+  def _build_chain(self, interface_slab):
+      self.ion = _insert_ions(interface_slab, concentration=0.15)
+  ```
+- Use `tmp_path` fixture for file output tests (pytest built-in)
+- Use custom workspace fixture for GROMACS grompp tests:
+  ```python
+  @pytest.fixture
+  def gmx_workspace(request):
+      """Persistent workspace under tmp/e2e-gmx-validation/ for GROMACS grompp."""
+      base = Path(__file__).parent.parent / "tmp" / "e2e-gmx-validation"
+      workspace = base / request.node.name.replace("::", "_")
+      workspace.mkdir(parents=True, exist_ok=True)
+      yield workspace
+  ```
 
-- **Skip markers**: `@pytest.mark.skip(reason="pytest-qt not installed in test environment")`
-  See `tests/test_solute_insertion.py` lines 235, 249
+**Teardown Pattern:**
+- No explicit teardown — fixtures handle cleanup via `yield` or `tmp_path`
+- Workspace fixture yields directory (persists for debugging, no cleanup)
 
-## Fixtures
-
-**Framework:** pytest fixtures with explicit scope
-
-**Top-level conftest (`tests/conftest.py`):**
-```python
-@pytest.fixture(scope="module")
-def ice_ih_candidate():
-    """Generate Ice Ih candidate at 250 K, 0.1 MPa with 96 target molecules."""
-    phase_info = lookup_phase(250, 0.1)
-    gen = IceStructureGenerator(phase_info, 96)
-    candidates = gen.generate_all(1)
-    return candidates[0]
-
-@pytest.fixture(scope="module")
-def interface_slab(ice_ih_candidate):
-    """Generate slab interface from Ice Ih candidate."""
-    config = InterfaceConfig(mode="slab", box_x=3.0, box_y=3.0, box_z=8.0, ...)
-    return generate_interface(ice_ih_candidate, config)
-```
-
-**Key fixture patterns:**
-- ALL top-level conftest fixtures use `scope="module"` to amortize expensive GenIce2 calls (~3-5s each)
-- Fixtures build on each other: `interface_slab` depends on `ice_ih_candidate`
-- Hydrate fixtures generate both `Candidate` and `HydrateStructure` variants
-- `conftest.py` explicitly states: "No qtbot or QApplication fixture — these tests are API-only, no GUI"
-
-**Export conftest (`tests/test_output/conftest.py`):**
-```python
-@pytest.fixture
-def simple_candidate():
-    """1-molecule ice Candidate with 3 atoms (O, H, H)."""
-    positions = np.array([[0.1, 0.1, 0.1], [0.15, 0.12, 0.1], [0.08, 0.12, 0.1]])
-    return Candidate(positions=positions, atom_names=["O", "H", "H"], ...)
-
-@pytest.fixture
-def mock_save_dialog(tmp_path):
-    """Factory fixture for export.py QFileDialog mocking."""
-    def _create(filename="test.gro"):
-        save_path = str(tmp_path / filename)
-        dialog_patch = patch('quickice.gui.export.QFileDialog.getSaveFileName',
-                            return_value=(save_path, "GRO Files (*.gro)"))
-        mb_patch = patch('quickice.gui.export.QMessageBox')
-        return save_path, dialog_patch, mb_patch
-    return _create
-```
-
-**GROMACS workspace fixture:**
-```python
-@pytest.fixture
-def gmx_workspace(request):
-    """Persistent workspace under tmp/e2e-gmx-validation/ for GROMACS grompp."""
-    base = Path(__file__).parent.parent / "tmp" / "e2e-gmx-validation"
-    workspace = base / request.node.name.replace("::", "_")
-    workspace.mkdir(parents=True, exist_ok=True)
-    yield workspace
-```
-See `tests/test_e2e_gmx_validation.py` lines 55-66
-
-**Chain-building fixtures (autouse pattern):**
-```python
-class TestChainF1GmxValidation:
-    @pytest.fixture(autouse=True)
-    def _build_chain(self, interface_slab):
-        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-        solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
-        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
-```
-See `tests/test_e2e_gmx_validation.py` lines 240-247
+**Assertion Pattern:**
+- Standard Python `assert` with descriptive messages
+- NumPy array comparisons: `np.testing.assert_array_equal()`, `np.testing.assert_allclose()`
+- Approximate float comparisons: `assert abs(result["density"] - 0.9167) < 0.001`
+- Exception testing: `with pytest.raises(UnknownPhaseError) as exc_info:`
 
 ## Mocking
 
-**Framework:** `unittest.mock` (stdlib) — used minimally
+**Framework:** `unittest.mock` (standard library)
 
 **Patterns:**
-- **QFileDialog mocking**: Only used in `tests/test_output/` for GUI export tests
+- Mock `QFileDialog` and `QMessageBox` for export tests:
   ```python
-  dialog_patch = patch('quickice.gui.export.QFileDialog.getSaveFileName',
-                       return_value=(save_path, "GRO Files (*.gro)"))
-  mb_patch = patch('quickice.gui.export.QMessageBox')
-  with dialog_p, mb_p:
-      result = exporter.export_gromacs(ranked_candidate, T=195, P=1.36)
+  @pytest.fixture
+  def mock_save_dialog(tmp_path):
+      """Factory fixture for export.py QFileDialog mocking."""
+      def _create(filename="test.gro"):
+          save_path = str(tmp_path / filename)
+          dialog_patch = patch(
+              'quickice.gui.export.QFileDialog.getSaveFileName',
+              return_value=(save_path, "GRO Files (*.gro)")
+          )
+          mb_patch = patch('quickice.gui.export.QMessageBox')
+          return save_path, dialog_patch, mb_patch
+      return _create
   ```
 
-- **No mocking of computation modules**: All e2e tests use REAL GenIce2 generation (not mocks)
-- **No mocking of numpy/scipy**: Real numerical computation in tests
-- **subprocess.run for CLI integration**: Direct subprocess calls to `quickice.py`
+- Mock cancel dialog for testing user cancellation:
   ```python
-  result = subprocess.run(
-      [sys.executable, "quickice.py", "--temperature", "273", "--pressure", "0", "--nmolecules", "100"],
-      capture_output=True, text=True,
-  )
-  assert result.returncode == 0
+  @pytest.fixture
+  def mock_cancel_dialog():
+      """Factory fixture for cancelled QFileDialog simulation."""
+      def _create(module_path='quickice.gui.export'):
+          dialog_patch = patch(
+              f'{module_path}.QFileDialog.getSaveFileName',
+              return_value=("", "")
+          )
+          mb_patch = patch(f'{module_path}.QMessageBox')
+          return dialog_patch, mb_patch
+      return _create
   ```
-  See `tests/test_phase_mapping.py` `TestCLIIntegration` class
+
+- Context manager pattern for mock application:
+  ```python
+  def test_export_creates_gro_top_itp(self, ranked_candidate, mock_save_dialog):
+      save_path, dialog_p, mb_p = mock_save_dialog("ice_test.gro")
+      exporter = GROMACSExporter(parent_widget=None)
+      with dialog_p, mb_p:
+          result = exporter.export_gromacs(ranked_candidate, T=195, P=1.36)
+      assert result is True
+  ```
 
 **What to Mock:**
-- QFileDialog (only in export tests)
-- QMessageBox (only in export tests)
-- GUI dialogs that require user interaction
+- Qt dialog classes (`QFileDialog`, `QMessageBox`) — always mock in export tests
+- External processes (`gmx grompp`) — subprocess calls wrapped in helper functions
+- GUI rendering (VTK, OpenGL) — not tested in API-level tests
 
 **What NOT to Mock:**
-- GenIce2 generation (use real generation for e2e tests)
-- NumPy/SciPy computation
-- Phase mapping lookup
-- GROMACS file writing
+- Internal computation pipeline: test with REAL GenIce2-generated structures
+- Data structures: use actual `Candidate`, `InterfaceStructure`, `IonStructure` objects
+- GRO/TOP file writers: write to real `tmp_path` and verify file contents
+- Phase lookup: use real curve-based computation, not mocked lookups
 
 ## Fixtures and Factories
 
 **Test Data:**
-```python
-# Inline test structures (export tests)
-positions = np.array([[0.1, 0.1, 0.1], [0.15, 0.12, 0.1], [0.08, 0.12, 0.1]])
-atom_names = ["O", "H", "H"]
-cell = np.array([[0.9, 0.0, 0.0], [0.0, 0.78, 0.0], [0.0, 0.0, 0.72]])
-candidate = Candidate(positions=positions, atom_names=atom_names, cell=cell, nmolecules=1, phase_id="ice_ih", seed=42, metadata={})
-```
-See `tests/test_output/conftest.py`
+- Synthetic minimal structures for unit tests (1-2 molecules):
+  ```python
+  @pytest.fixture
+  def simple_candidate():
+      """1-molecule ice Candidate with 3 atoms (O, H, H)."""
+      positions = np.array([[0.1, 0.1, 0.1], [0.15, 0.12, 0.1], [0.08, 0.12, 0.1]])
+      atom_names = ["O", "H", "H"]
+      cell = np.array([[0.9, 0.0, 0.0], [0.0, 0.78, 0.0], [0.0, 0.0, 0.72]])
+      return Candidate(positions=positions, atom_names=atom_names, cell=cell,
+                        nmolecules=1, phase_id="ice_ih", seed=42, metadata={})
+  ```
 
-**Shared test data paths:**
-```python
-DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
-ETOH_GRO = DATA_DIR / "etoh.gro"
-ETOH_ITP = DATA_DIR / "etoh.itp"
-MDP_PATH = Path(__file__).resolve().parent / "em.mdp"
-```
-See `tests/e2e_export_helpers.py` lines 36-38, `tests/test_e2e_workflow_chains.py` lines 37-38
+- Real GenIce2-generated structures for E2E tests (module-scoped):
+  ```python
+  @pytest.fixture(scope="module")
+  def ice_ih_candidate():
+      phase_info = lookup_phase(250, 0.1)
+      gen = IceStructureGenerator(phase_info, 96)
+      candidates = gen.generate_all(1)
+      return candidates[0]
+  ```
+
+- Chain fixture building (incremental composition):
+  ```python
+  @pytest.fixture
+  def custom_structure(simple_interface):
+      """CustomMoleculeStructure: interface + 1 ethanol molecule."""
+      ...
+
+  @pytest.fixture
+  def solute_structure(interface_with_ch4_guests):
+      """SoluteStructure with 1 CH4 solute molecule."""
+      ...
+
+  @pytest.fixture
+  def ion_structure(simple_interface):
+      """Minimal IonStructure: 2 water + 1 Na + 1 Cl."""
+      ...
+  ```
 
 **Location:**
-- Synthetic test data: Inline in `tests/test_output/conftest.py`
-- Real molecule data: `quickice/data/custom/` (etoh.gro, etoh.itp)
-- MDP file: `tests/em.mdp`
-- GROMACS validation workspaces: `tmp/e2e-gmx-validation/`
+- Root conftest: `tests/conftest.py` — expensive GenIce2 fixtures (module-scoped)
+- Export conftest: `tests/test_output/conftest.py` — synthetic structures + mock dialog factories
+- Inline fixtures: per-class or per-file `@pytest.fixture` for test-specific data
+- Shared helpers: `tests/e2e_export_helpers.py` — chain-building + GRO/TOP parsing
 
 ## Coverage
 
-**Requirements:** No enforced target detected
+**Requirements:** Not enforced (no coverage target, no `pytest-cov` installed)
 
-**Coverage file:** `.coverage` exists at project root (from prior runs)
+**Coverage file:** `.coverage` exists at project root (from previous runs)
 
 **View Coverage:**
 ```bash
-pytest --cov=quickice --cov-report=html    # Generate HTML report
-pytest --cov=quickice --cov-report=term    # Terminal report
+# pytest-cov is NOT currently installed; add with: pip install pytest-cov
+pytest --cov=quickice --cov-report=html
+# Then open htmlcov/index.html
 ```
 
 ## Test Types
 
 **Unit Tests:**
-- Pure function testing with known inputs/outputs
-- Boundary value testing (min, max, just-beyond)
-- Error message content validation
-- Dataclass validation (`__post_init__` checks)
-- Examples: `test_validators.py` (33 tests), `test_ranking.py` (36 tests), `test_phase_mapping.py` (62 tests)
+- Pure logic with no external dependencies
+- Test data validation, mapping functions, scoring, configuration
+- Files: `test_validators.py`, `test_ranking.py`, `test_structure_generation.py` (mapping/class tests)
+- Pattern: Create minimal synthetic objects, test single behavior per method
+- No Qt dependencies, no GenIce2 calls
 
-**Integration Tests:**
-- Cross-module integration (e.g., `lookup_phase()` → `IceStructureGenerator` → `Candidate`)
-- Full pipeline chain tests (Interface → Custom → Solute → Ion)
-- CLI integration via subprocess
-- Examples: `test_structure_generation.py` `TestIntegrationWithPhase2`, `test_e2e_workflow_chains.py`
+**Integration/Bridge Tests:**
+- Test pipeline stages with real GenIce2 computation
+- Verify data flows correctly between modules
+- Files: `test_structure_generation.py` (generation tests), `test_e2e_ice_generation.py`, `test_e2e_workflow_chains.py`
+- Pattern: Use conftest fixtures for shared expensive structures, build chains inline
 
-**E2E Tests (Generation):**
-- Real GenIce2 structure generation for all ice phases
-- Structural invariant validation (positions finite, cell volume positive, atom counts match)
-- Hydrate generation with different lattice types and guest molecules
-- Examples: `test_e2e_ice_generation.py`, `test_e2e_hydrate_generation.py`, `test_e2e_interface_generation.py`
+**E2E Tests:**
+- Full pipeline from phase lookup through GROMACS export validation
+- Includes `gmx grompp` validation against actual GROMACS binary
+- Files: `test_e2e_gmx_validation.py`, `test_e2e_chain_export_1.py`, `test_e2e_chain_export_2.py`
+- Pattern: Generate structure → export GRO/TOP/ITP → stage ITP files → run grompp → assert exit code 0
 
-**E2E Tests (Export):**
-- GROMACS file export validation (GRO/TOP/ITP format)
-- Residue ordering verification
-- GROMACS `gmx grompp` validation (most rigorous — runs actual GROMACS)
-- Chain export tests (F1-F7 workflow chains with varying complexity)
-- Examples: `test_e2e_gmx_validation.py`, `test_e2e_chain_export_1.py`, `test_e2e_chain_export_2.py`
+**Regression Tests:**
+- Named by bug ID: `TestBUG05`, `TestMW01`, `TestDEFLT01`, `TestTREE01`, `TestATOM01`, `TestRNG01`
+- Each class verifies a specific bug is fixed and cannot regress
+- Files: `test_scancode_bugs_gromacs.py`, `test_scancode_bugs_ion.py`, `test_scancode_bugs_inserters.py`
 
-**E2E Tests (GROMACS Validation):**
-The most rigorous test type — validates exported files pass `gmx grompp`:
-```python
-exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1.gro", top_file="f1.top")
-assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
-```
-Covered chains (in `test_e2e_gmx_validation.py`):
-- Ice candidate (inline moleculetype, no ITPs)
-- Interface slab (#include tip4p-ice.itp)
-- F5: Interface→Ion (2 ITPs)
-- F6: Interface→Solute(CH4)→Ion (3 ITPs)
-- F7: Interface→Solute(THF)→Ion (3 ITPs)
-- F1: Interface→Custom→Solute→Ion (4 ITPs)
-- F3: Hydrate→Interface→Solute→Ion (4 ITPs)
-- F4: Hydrate→Interface→Custom→Solute→Ion (5 ITPs)
-- F2: Interface→Custom→Ion (3 ITPs)
-- Cross-combinations with THF/CH4 variants
+**GUI Export Tests:**
+- Test GROMACS/PDB export with mocked Qt dialogs
+- Verify file contents (atom counts, residue names, topology sections)
+- Located in `tests/test_output/`
 
 ## Common Patterns
 
-**Async/Threaded Testing:**
-- No async test patterns — workers are tested via their API, not directly
-- GUI tests are skipped when pytest-qt is unavailable (`@pytest.mark.skip(reason="pytest-qt not installed")`)
+**Async/Worker Testing:**
+- Not directly tested — GUI worker threads are tested indirectly via export results
+- `pytest-qt` is NOT installed; GUI-dependent tests use `@pytest.mark.skip`
 
 **Error Testing:**
 ```python
-# Pattern 1: Exception type + message content
-with pytest.raises(ArgumentTypeError) as exc_info:
-    validate_temperature("-1")
-assert "temperature" in str(exc_info.value).lower()
-
-# Pattern 2: Custom exception attributes
+# Custom exceptions with attributes
 with pytest.raises(UnsupportedPhaseError) as exc_info:
     get_genice_lattice_name("ice_xxx")
 assert exc_info.value.phase_id == "ice_xxx"
 
-# Pattern 3: UnknownPhaseError for out-of-range conditions
-with pytest.raises(UnknownPhaseError):
-    lookup_phase(260, 300)
-
-# Pattern 4: Error message contains input values
+# Error message content verification
 with pytest.raises(UnknownPhaseError) as exc_info:
     lookup_phase(500, 500)
 assert "500" in str(exc_info.value)
+
+# CLI validator error type
+with pytest.raises(ArgumentTypeError) as exc_info:
+    validate_temperature("-1")
+assert "temperature" in str(exc_info.value).lower()
 ```
 
-**Array Comparison Testing:**
+**Parameterized Testing:**
 ```python
-# Exact array comparison
-np.testing.assert_array_equal(candidate.positions, positions)
-
-# Floating-point array comparison
-np.testing.assert_array_almost_equal(wrapped, positions)
-
-# Approximate scalar comparison
-assert abs(result["density"] - 0.9167) < 0.001
-
-# Finite values check
-assert np.all(np.isfinite(candidate.positions))
-
-# Shape assertions
-assert candidate.positions.ndim == 2
-assert candidate.positions.shape[1] == 3
-assert candidate.cell.shape == (3, 3)
+@pytest.mark.parametrize(
+    "phase_id",
+    ["ice_ih", "ice_ic", "ice_iii", "ice_vi", "ice_vii", "ice_viii"],
+)
+def test_all_orthogonal_phases_generate_successfully(self, phase_id):
+    T, P = PHASE_CONDITIONS[phase_id]
+    phase_info = lookup_phase(T, P)
+    gen = IceStructureGenerator(phase_info, 96)
+    candidates = gen.generate_all(1, base_seed=42)
+    assert len(candidates) >= 1
 ```
 
-**Structural Invariant Testing:**
+**Invariant Testing:**
 ```python
-# Atom count = molecules × atoms_per_molecule
-atoms_per_molecule = 3  # TIP3P: O, H, H
-expected_atoms = candidate.nmolecules * atoms_per_molecule
-assert len(candidate.positions) == expected_atoms
-
-# Fractional coordinates within [0, 1] + tolerance
-cell_inv = np.linalg.inv(cell)
-frac_coords = candidate.positions @ cell_inv
-tolerance = 0.01
-assert np.all(frac_coords >= -tolerance)
-assert np.all(frac_coords <= 1.0 + tolerance)
+# Structural invariants across all molecules
+def test_ice_candidate_has_correct_atom_count(self, ice_ih_candidate):
+    candidate = ice_ih_candidate
+    atoms_per_molecule = 3  # TIP3P: O, H, H
+    expected_atoms = candidate.nmolecules * atoms_per_molecule
+    assert len(candidate.positions) == expected_atoms
 ```
 
-**GROMACS File Parsing in Tests:**
+**GROMACS File Validation:**
 ```python
-# Parse GRO residue names
-def parse_gro_residue_names(gro_path: str) -> list[str]:
-    # Fixed-width column parsing per GROMACS spec
-    res_name = line[5:10].strip()
-    ...
+# Parse and verify GRO file content
+gro_path = Path(save_path)
+lines = gro_path.read_text().splitlines()
+atom_count = int(lines[1].strip())
+assert atom_count == 4  # 1 molecule * 4 atoms (TIP4P-ICE)
 
-# Parse TOP [ molecules ] section
-def parse_top_molecules(top_path: str) -> dict[str, int]:
-    ...
+# Parse and verify TOP [molecules] section
+from e2e_export_helpers import parse_top_molecules
+molecules = parse_top_molecules(top_path)
+assert molecules["SOL"] == expected_water_count
 
-# Assert residue ordering
-assert_gro_residue_ordering(residue_names, ["SOL", "CH4"])
+# Run actual gmx grompp
+exit_code, stderr = run_gmx_grompp(workspace, gro_file="f1.gro", top_file="f1.top")
+assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
 ```
-See `tests/e2e_export_helpers.py` for all parsing helpers
 
-## Test Statistics
+**Test Data Paths:**
+```python
+# Standard pattern for referencing test data files
+DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
+ETOH_GRO = DATA_DIR / "etoh.gro"
+ETOH_ITP = DATA_DIR / "etoh.itp"
 
-- **Total test files**: 40+ Python test files
-- **Total test classes**: 193
-- **Total test functions**: 760
-- **Largest test files** (by line count):
-  - `test_structure_generation.py` (752 lines, 59 tests)
-  - `test_ranking.py` (691 lines, 36 tests)
-  - `test_e2e_chain_export_1.py` (662 lines, 26 tests)
-  - `test_e2e_custom_molecule.py` (661 lines, 20 tests)
-  - `test_custom_molecule_panel_34_6.py` (653 lines)
-  - `test_phase_mapping.py` (618 lines, 62 tests)
+# GROMACS MDP file for grompp validation
+MDP_PATH = Path(__file__).resolve().parent / "em.mdp"
+```
+
+## Fixture Scoping Strategy
+
+| Scope | Use Case | Example |
+|-------|----------|---------|
+| `function` (default) | Synthetic test data, mock dialogs | `simple_candidate`, `mock_save_dialog` |
+| `class` | Per-class chain building | `@pytest.fixture(autouse=True) _build_chain` |
+| `module` | Expensive GenIce2 structures | `ice_ih_candidate`, `hydrate_sI_ch4_candidate` |
+| `session` | Not used | — |
+
+**Key principle:** Module-scoped fixtures amortize GenIce2 generation cost (~3-5s each) across all tests in a file. The conftest.py comment explicitly states this design intent.
+
+## Writing New Tests — Guidelines
+
+1. **Place unit tests** in `tests/test_<feature>.py`
+2. **Place E2E tests** in `tests/test_e2e_<workflow>.py`
+3. **Place export tests** in `tests/test_output/test_gromacs_export_<tab>.py`
+4. **Place regression tests** in `tests/test_scancode_bugs_<area>.py` with bug ID class names
+5. **Use module-scoped fixtures** for any GenIce2-dependent structure generation
+6. **Never import Qt modules** in API-level tests; mock `QFileDialog`/`QMessageBox` for export tests
+7. **Use `e2e_export_helpers.py`** for chain-building helpers; do NOT import from other test files
+8. **Add `@pytest.mark.slow`** for tests taking >5 seconds
+9. **Assert with descriptive messages** on non-obvious checks, especially for regression tests
+10. **Test GROMACS compatibility** by verifying `gmx grompp` exit code 0 for new export features
 
 ---
 
-*Testing analysis: 2026-06-08*
+*Testing analysis: 2026-06-12*
