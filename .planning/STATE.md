@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.8 in progress — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 2/3 plans complete, 26 regression tests added.
+**Current Focus:** Phase 34.8 COMPLETE — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 3/3 plans complete, 47 regression tests added.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.8 IN PROGRESS — Fix Performance Issues and Test Gaps (PERF-02 scorer boxsize optimization + TEST-09 moleculetype name matching, 26 regression tests).
+**Current focus:** Phase 34.8 COMPLETE — Fix Performance Issues and Test Gaps (PERF-02 scorer boxsize optimization + TEST-09 moleculetype name matching + BUG-04 diversity fingerprint, 47 regression tests).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.8-fix-performance-and-test-gaps (Fix Performance Issues and Test Gaps) |
-| Plan | 2 of 3 COMPLETE |
-| Status | Phase IN PROGRESS — PERF-02 boxsize optimization complete (11 tests) + TEST-09 complete (15 tests) |
-| Last activity | 2026-06-12 — Completed 34.8-01-PLAN.md (PERF-02 scorer boxsize optimization) |
+| Plan | 3 of 3 COMPLETE |
+| Status | Phase COMPLETE — PERF-02 (11 tests) + TEST-09 (15 tests) + BUG-04 (21 tests) = 47 regression tests |
+| Last activity | 2026-06-12 — Completed 34.8-03-PLAN.md (BUG-04 diversity fingerprint) |
 
-**Progress:** █████████░ 92% (172/188 plans across all milestones, Phase 34.8 2/3 IN PROGRESS)
+**Progress:** ██████████ 93% (173/188 plans across all milestones, Phase 34.8 3/3 COMPLETE)
 
 ---
 
@@ -100,6 +100,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ GUEST-01 (LOW): Remove dead CO2 code, add guest_type parameter to count_guest_atoms (Phase 34.7-08)
 - ✓ 59 regression tests for all 7 bug/design fixes (Phase 34.7)
 - ✓ PERF-02: cKDTree(boxsize=) for orthorhombic O-O distance PBC in scorer (Phase 34.8-01)
+- ✓ BUG-04: O-O distance histogram fingerprint for diversity_score (Phase 34.8-03)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -416,6 +417,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Rotation.random(random_state=...) in both inserters | RNG-01: CustomMoleculeInserter uses self.seed; SoluteInserter uses self.rng.randint(0, 2**31-1) for varying but reproducible rotations | ✓ Shipped (34.7-02) |
 | Explicit guest_type parameter in count_guest_atoms | GUEST-01: Bypasses fragile heuristic for correct identification; guest_type='ch4'→5, 'thf'→13; backward-compatible (guest_type=None) | ✓ Shipped (34.7-08) |
 | cKDTree(boxsize=) for orthorhombic PBC in scorer | PERF-02: 1× memory instead of 27× supercell; matches overlap_resolver.py pattern; minimum image convention for distance computation | ✓ Shipped (34.8-01) |
+| O-O distance histogram fingerprint for diversity_score | BUG-04: Replaces seed counting (always 1.0) with structural fingerprint; cosine similarity comparison; diversity = 1 - mean_similarity | ✓ Shipped (34.8-03) |
+| _compute_oo_histogram helper | Normalized O-O distance distribution histogram (n_bins=20) as structural fingerprint | ✓ Shipped (34.8-03) |
+| _histogram_cosine_similarity helper | Cosine similarity for histogram comparison; returns 0.0 for zero-norm degenerate case | ✓ Shipped (34.8-03) |
 | Minimum image convention for boxsize distances | Direct Euclidean on wrapped coords gives wrong distances near PBC boundaries; use delta - cell_dims * np.round(delta / cell_dims) | ✓ Shipped (34.8-01) |
 | Set-based canonical pair deduplication for supercell | Old filter (i < n_oxygen, i < j_original) missed cross-block PBC pairs; canonical (min, max) deduplication correctly counts all unique atom pairs | ✓ Shipped (34.8-01) |
 | Dead CO2 handler removed from molecule_utils | GUEST-01: Unreachable return-3 code intercepted by earlier THF heuristic; removed to prevent confusion | ✓ Shipped (34.7-08) |
@@ -519,13 +523,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-12
-**Completed:** 34.8-01-PLAN.md (PERF-02 scorer boxsize optimization, 11 regression tests + 2 bug fixes)
-**Status:** Phase 34.8 IN PROGRESS — 2/3 plans complete
+**Completed:** 34.8-03-PLAN.md (BUG-04 diversity fingerprint, 21 regression tests)
+**Status:** Phase 34.8 COMPLETE — 3/3 plans, 47 regression tests
 
 **Phase 34.8 Progress:**
 - ✓ 01: PERF-02 Scorer cKDTree(boxsize=) optimization for orthorhombic cells (11 regression tests, 2 bug fixes)
 - ✓ 02: TEST-09 TOP/ITP moleculetype name matching (15 regression tests across 6 export types)
-- ⏳ 03: BUG-04 Fix diversity_score with structural fingerprints
+- ✓ 03: BUG-04 O-O distance histogram fingerprint for diversity_score (21 regression tests)
 
 ---
-*State updated: 2026-06-12 — Phase 34.8 IN PROGRESS (2/3 plans, 26 regression tests)*
+*State updated: 2026-06-12 — Phase 34.8 COMPLETE (3/3 plans, 47 regression tests)*

@@ -298,9 +298,9 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 34.8-01-PLAN.md — PERF-02: Optimize scorer memory with cKDTree boxsize (Wave 1)
+- [x] 34.8-01-PLAN.md — PERF-02: Optimize scorer memory with cKDTree boxsize (Wave 1)
 - [x] 34.8-02-PLAN.md — TEST-09: Add TOP/ITP moleculetype name matching test (Wave 1)
-- [ ] 34.8-03-PLAN.md — BUG-04: Fix diversity_score with structural fingerprints (Wave 2, depends on 01)
+- [x] 34.8-03-PLAN.md — BUG-04: Fix diversity_score with structural fingerprints (Wave 2, depends on 01)
 
 **Details:**
 
@@ -414,7 +414,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
-| 34.8 - Fix Performance Issues and Test Gaps | ○ Pending | 0 | 3 |
+| 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 3 | 3 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
