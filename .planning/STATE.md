@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.7 complete — Fix verified scancode bugs (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01). All 6 bugs fixed, 17 regression tests added.
+**Current Focus:** Phase 34.7 complete — Fix verified scancode bugs + GUEST-01 latent design concern (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01, GUEST-01). All 7 bugs fixed, 59 regression tests added.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.7 COMPLETE — Fix verified scancode bugs (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM). 3/3 plans executed, 8/8 must-haves verified.
+**Current focus:** Phase 34.7 COMPLETE — Fix verified scancode bugs + GUEST-01 (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM, GUEST-01 LOW). 4 plans executed, 8/8 must-haves verified + GUEST-01 design fix.
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs) |
-| Plan | 3 of 3 COMPLETE |
-| Status | Phase COMPLETE — verified 8/8 must-haves (17 regression tests, 6 bugs fixed) |
-| Last activity | 2026-06-08 — Phase 34.7 complete (3/3 plans, BUG-05/MW-01/RNG-01/DEFLT-01/ATOM-01/TREE-01 fixed) |
+| Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs + GUEST-01) |
+| Plan | 4 of 3+1 COMPLETE |
+| Status | Phase COMPLETE — verified 8/8 must-haves (17+42 regression tests, 6+1 bugs/design fixes) |
+| Last activity | 2026-06-12 — Phase 34.7 complete (4 plans, BUG-05/MW-01/RNG-01/DEFLT-01/ATOM-01/TREE-01/GUEST-01 fixed) |
 
 **Progress:** █████████░ 90% (170/192 plans across all milestones, Phase 34.7 3/3 COMPLETE)
 
@@ -97,7 +97,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ ATOM-01 (MEDIUM): WATER_ATOMS_PER_MOLECULE constant replacing hardcoded // 4 (Phase 34.7-02)
 - ✓ RNG-01 (HIGH): Seeded RNG in CustomMoleculeInserter + Rotation.random (Phase 34.7-02)
 - ✓ TREE-01 (MEDIUM): Conditional KDTree rebuild in ion inserter (Phase 34.7-03)
-- ✓ 17 regression tests for all 6 bug fixes (Phase 34.7)
+- ✓ GUEST-01 (LOW): Remove dead CO2 code, add guest_type parameter to count_guest_atoms (Phase 34.7-08)
+- ✓ 59 regression tests for all 7 bug/design fixes (Phase 34.7)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -412,6 +413,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | WATER_ATOMS_PER_MOLECULE = 4 constant in types.py | ATOM-01: Single source of truth for water atom count replaces all bare // 4 and count=4 in inserters | ✓ Shipped (34.7-02) |
 | CustomMoleculeInserter seed parameter with self.rng | RNG-01: Optional seed for reproducible placement; self.rng = random.Random(seed); backward-compatible (seed=None) | ✓ Shipped (34.7-02) |
 | Rotation.random(random_state=...) in both inserters | RNG-01: CustomMoleculeInserter uses self.seed; SoluteInserter uses self.rng.randint(0, 2**31-1) for varying but reproducible rotations | ✓ Shipped (34.7-02) |
+| Explicit guest_type parameter in count_guest_atoms | GUEST-01: Bypasses fragile heuristic for correct identification; guest_type='ch4'→5, 'thf'→13; backward-compatible (guest_type=None) | ✓ Shipped (34.7-08) |
+| Dead CO2 handler removed from molecule_utils | GUEST-01: Unreachable return-3 code intercepted by earlier THF heuristic; removed to prevent confusion | ✓ Shipped (34.7-08) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -511,14 +514,15 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-08
-**Completed:** Phase 34.7 complete (6 bugs fixed, 17 regression tests, 8/8 must-haves verified)
-**Status:** Phase 34.7 VERIFIED — All 3 plans done, verification passed
+**Last session:** 2026-06-12
+**Completed:** Phase 34.7 complete (7 bug/design fixes, 59 regression tests, 8/8 must-haves verified)
+**Status:** Phase 34.7 VERIFIED — All 4 plans done, verification passed
 
 **Phase 34.7 Progress:**
 - ✓ 01: BUG-05 (HW1 Z h2_pos→h1_pos), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ=0.5/fudgeQQ=0.8333) + 9 regression tests
 - ✓ 02: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random) + 5 regression tests
 - ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
+- ✓ 08: GUEST-01 dead CO2 removal + guest_type parameter for count_guest_atoms + 42 regression tests
 
 ---
 *State updated: 2026-06-08 — Phase 34.7 COMPLETE and VERIFIED (6 bugs fixed, 17 regression tests, 8/8 must-haves)*
