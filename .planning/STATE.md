@@ -100,7 +100,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ GUEST-01 (LOW): Remove dead CO2 code, add guest_type parameter to count_guest_atoms (Phase 34.7-08)
 - ✓ 59 regression tests for all 7 bug/design fixes (Phase 34.7)
 - ✓ PERF-02: cKDTree(boxsize=) for orthorhombic O-O distance PBC in scorer (Phase 34.8-01)
+- ✓ TEST-09: TOP [molecules] names match ITP [moleculetype] names regression tests (Phase 34.8-02)
 - ✓ BUG-04: O-O distance histogram fingerprint for diversity_score (Phase 34.8-03)
+- ✓ 47 regression tests for PERF-02 + TEST-09 + BUG-04 fixes (Phase 34.8)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -261,6 +263,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.5 inserted after Phase 34.4: Placement validation & preview enhancement (URGENT) — ✓ Complete
 - Phase 34.6 inserted after Phase 34.5: Revise custom panel for valid input handling with real molecule testing (URGENT)
 - Phase 34.7 inserted after Phase 34.6: Fix verified scancode bugs — BUG-05 (HW1 copy-paste), MW-01 (wrapping), RNG-01 (unseeded), DEFLT-01 (fudgeLJ), ATOM-01 (hardcoded 4), TREE-01 (KDTree) (URGENT) — ✓ COMPLETE
+- Phase 34.8 inserted after Phase 34.7: Fix performance and test gaps — PERF-02 (cKDTree boxsize), TEST-09 (moleculetype names), BUG-04 (diversity fingerprint) — ✓ COMPLETE
 
 ### v4.5 Key Decisions
 
@@ -423,6 +426,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Minimum image convention for boxsize distances | Direct Euclidean on wrapped coords gives wrong distances near PBC boundaries; use delta - cell_dims * np.round(delta / cell_dims) | ✓ Shipped (34.8-01) |
 | Set-based canonical pair deduplication for supercell | Old filter (i < n_oxygen, i < j_original) missed cross-block PBC pairs; canonical (min, max) deduplication correctly counts all unique atom pairs | ✓ Shipped (34.8-01) |
 | Dead CO2 handler removed from molecule_utils | GUEST-01: Unreachable return-3 code intercepted by earlier THF heuristic; removed to prevent confusion | ✓ Shipped (34.7-08) |
+| cKDTree(boxsize=) for orthorhombic scorer PBC | PERF-02: 1× memory vs 27× supercell for O-O distance calculation; minimum image convention for distances | ✓ Shipped (34.8-01) |
+| Set-based canonical pair deduplication for supercell | Pre-existing bug: old filter missed cross-block PBC pairs; replaced with (min(i,j), max(i,j)) set | ✓ Shipped (34.8-01) |
+| TOP/ITP moleculetype name matching regression test | TEST-09: 15 tests verify [molecules] names match [moleculetype] names across all 6 export types | ✓ Shipped (34.8-02) |
+| O-O distance histogram fingerprint for diversity_score | BUG-04: Cosine similarity between O-O distance distributions replaces seed-based approach (always returned 1.0) | ✓ Shipped (34.8-03) |
+| diversity_score returns 0.5 for degenerate cases | Single candidate, no O atoms, or zero O-O distances → neutral score instead of crash | ✓ Shipped (34.8-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
