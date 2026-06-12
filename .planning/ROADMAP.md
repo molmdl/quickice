@@ -299,7 +299,7 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 
 Plans:
 - [ ] 34.8-01-PLAN.md — PERF-02: Optimize scorer memory with cKDTree boxsize (Wave 1)
-- [ ] 34.8-02-PLAN.md — TEST-09: Add TOP/ITP moleculetype name matching test (Wave 1)
+- [x] 34.8-02-PLAN.md — TEST-09: Add TOP/ITP moleculetype name matching test (Wave 1)
 - [ ] 34.8-03-PLAN.md — BUG-04: Fix diversity_score with structural fingerprints (Wave 2, depends on 01)
 
 **Details:**

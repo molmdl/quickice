@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.7 complete — Fix verified scancode bugs + GUEST-01 latent design concern (BUG-05, MW-01, RNG-01, DEFLT-01, ATOM-01, TREE-01, GUEST-01). All 7 bugs fixed, 59 regression tests added.
+**Current Focus:** Phase 34.8 in progress — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 1/3 plans complete, 15 regression tests added for TEST-09.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.7 COMPLETE — Fix verified scancode bugs + GUEST-01 (BUG-05 CRITICAL, MW-01/RNG-01/DEFLT-01 HIGH, ATOM-01/TREE-01 MEDIUM, GUEST-01 LOW). 4 plans executed, 8/8 must-haves verified + GUEST-01 design fix.
+**Current focus:** Phase 34.8 IN PROGRESS — Fix Performance Issues and Test Gaps (TEST-09 moleculetype name matching, 15 regression tests added).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.7-fix-verified-scancode-bugs (Fix Verified Scancode Bugs + GUEST-01) |
-| Plan | 4 of 3+1 COMPLETE |
-| Status | Phase COMPLETE — verified 8/8 must-haves (17+42 regression tests, 6+1 bugs/design fixes) |
-| Last activity | 2026-06-12 — Phase 34.7 complete (4 plans, BUG-05/MW-01/RNG-01/DEFLT-01/ATOM-01/TREE-01/GUEST-01 fixed) |
+| Phase | 34.8-fix-performance-and-test-gaps (Fix Performance Issues and Test Gaps) |
+| Plan | 1 of 3 COMPLETE |
+| Status | Phase IN PROGRESS — TEST-09 complete (15 regression tests for moleculetype name consistency) |
+| Last activity | 2026-06-12 — Completed 34.8-02-PLAN.md (TEST-09 TOP/ITP moleculetype name matching) |
 
-**Progress:** █████████░ 90% (170/192 plans across all milestones, Phase 34.7 3/3 COMPLETE)
+**Progress:** █████████░ 91% (171/188+ plans across all milestones, Phase 34.8 1/3 IN PROGRESS)
 
 ---
 
@@ -515,14 +515,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-12
-**Completed:** Phase 34.7 complete (7 bug/design fixes, 59 regression tests, 8/8 must-haves verified)
-**Status:** Phase 34.7 VERIFIED — All 4 plans done, verification passed
+**Completed:** 34.8-02-PLAN.md (TEST-09 moleculetype name matching, 15 regression tests)
+**Status:** Phase 34.8 IN PROGRESS — 1/3 plans complete
 
-**Phase 34.7 Progress:**
-- ✓ 01: BUG-05 (HW1 Z h2_pos→h1_pos), MW-01 (molecule-aware wrapping), DEFLT-01 (fudgeLJ=0.5/fudgeQQ=0.8333) + 9 regression tests
-- ✓ 02: ATOM-01 (WATER_ATOMS_PER_MOLECULE constant), RNG-01 (seeded RNG + Rotation.random) + 5 regression tests
-- ✓ 03: TREE-01 KDTree rebuild optimization (ion_tree=None, conditional rebuild after placement) + 3 TestTREE01 regression tests
-- ✓ 08: GUEST-01 dead CO2 removal + guest_type parameter for count_guest_atoms + 42 regression tests
+**Phase 34.8 Progress:**
+- ✓ 02: TEST-09 TOP/ITP moleculetype name matching (15 regression tests across 6 export types)
+- ⏳ 01: PERF-02 Optimize scorer memory with cKDTree boxsize
+- ⏳ 03: BUG-04 Fix diversity_score with structural fingerprints
 
 ---
-*State updated: 2026-06-08 — Phase 34.7 COMPLETE and VERIFIED (6 bugs fixed, 17 regression tests, 8/8 must-haves)*
+*State updated: 2026-06-12 — Phase 34.8 IN PROGRESS (1/3 plans, 15 regression tests)*
