@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.8 in progress — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 1/3 plans complete, 15 regression tests added for TEST-09.
+**Current Focus:** Phase 34.8 in progress — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 2/3 plans complete, 26 regression tests added.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.8 IN PROGRESS — Fix Performance Issues and Test Gaps (TEST-09 moleculetype name matching, 15 regression tests added).
+**Current focus:** Phase 34.8 IN PROGRESS — Fix Performance Issues and Test Gaps (PERF-02 scorer boxsize optimization + TEST-09 moleculetype name matching, 26 regression tests).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.8-fix-performance-and-test-gaps (Fix Performance Issues and Test Gaps) |
-| Plan | 1 of 3 COMPLETE |
-| Status | Phase IN PROGRESS — TEST-09 complete (15 regression tests for moleculetype name consistency) |
-| Last activity | 2026-06-12 — Completed 34.8-02-PLAN.md (TEST-09 TOP/ITP moleculetype name matching) |
+| Plan | 2 of 3 COMPLETE |
+| Status | Phase IN PROGRESS — PERF-02 boxsize optimization complete (11 tests) + TEST-09 complete (15 tests) |
+| Last activity | 2026-06-12 — Completed 34.8-01-PLAN.md (PERF-02 scorer boxsize optimization) |
 
-**Progress:** █████████░ 91% (171/188+ plans across all milestones, Phase 34.8 1/3 IN PROGRESS)
+**Progress:** █████████░ 92% (172/188 plans across all milestones, Phase 34.8 2/3 IN PROGRESS)
 
 ---
 
@@ -99,6 +99,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ TREE-01 (MEDIUM): Conditional KDTree rebuild in ion inserter (Phase 34.7-03)
 - ✓ GUEST-01 (LOW): Remove dead CO2 code, add guest_type parameter to count_guest_atoms (Phase 34.7-08)
 - ✓ 59 regression tests for all 7 bug/design fixes (Phase 34.7)
+- ✓ PERF-02: cKDTree(boxsize=) for orthorhombic O-O distance PBC in scorer (Phase 34.8-01)
 - ⏳ Screenshots and release notes (Phase 35-06 deferred)
 
 **Roadmap:** [.planning/ROADMAP.md](./ROADMAP.md)
@@ -414,6 +415,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | CustomMoleculeInserter seed parameter with self.rng | RNG-01: Optional seed for reproducible placement; self.rng = random.Random(seed); backward-compatible (seed=None) | ✓ Shipped (34.7-02) |
 | Rotation.random(random_state=...) in both inserters | RNG-01: CustomMoleculeInserter uses self.seed; SoluteInserter uses self.rng.randint(0, 2**31-1) for varying but reproducible rotations | ✓ Shipped (34.7-02) |
 | Explicit guest_type parameter in count_guest_atoms | GUEST-01: Bypasses fragile heuristic for correct identification; guest_type='ch4'→5, 'thf'→13; backward-compatible (guest_type=None) | ✓ Shipped (34.7-08) |
+| cKDTree(boxsize=) for orthorhombic PBC in scorer | PERF-02: 1× memory instead of 27× supercell; matches overlap_resolver.py pattern; minimum image convention for distance computation | ✓ Shipped (34.8-01) |
+| Minimum image convention for boxsize distances | Direct Euclidean on wrapped coords gives wrong distances near PBC boundaries; use delta - cell_dims * np.round(delta / cell_dims) | ✓ Shipped (34.8-01) |
+| Set-based canonical pair deduplication for supercell | Old filter (i < n_oxygen, i < j_original) missed cross-block PBC pairs; canonical (min, max) deduplication correctly counts all unique atom pairs | ✓ Shipped (34.8-01) |
 | Dead CO2 handler removed from molecule_utils | GUEST-01: Unreachable return-3 code intercepted by earlier THF heuristic; removed to prevent confusion | ✓ Shipped (34.7-08) |
 
 ### v4.0 Key Decisions (Shipped)
@@ -515,13 +519,13 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-12
-**Completed:** 34.8-02-PLAN.md (TEST-09 moleculetype name matching, 15 regression tests)
-**Status:** Phase 34.8 IN PROGRESS — 1/3 plans complete
+**Completed:** 34.8-01-PLAN.md (PERF-02 scorer boxsize optimization, 11 regression tests + 2 bug fixes)
+**Status:** Phase 34.8 IN PROGRESS — 2/3 plans complete
 
 **Phase 34.8 Progress:**
+- ✓ 01: PERF-02 Scorer cKDTree(boxsize=) optimization for orthorhombic cells (11 regression tests, 2 bug fixes)
 - ✓ 02: TEST-09 TOP/ITP moleculetype name matching (15 regression tests across 6 export types)
-- ⏳ 01: PERF-02 Optimize scorer memory with cKDTree boxsize
 - ⏳ 03: BUG-04 Fix diversity_score with structural fingerprints
 
 ---
-*State updated: 2026-06-12 — Phase 34.8 IN PROGRESS (1/3 plans, 15 regression tests)*
+*State updated: 2026-06-12 — Phase 34.8 IN PROGRESS (2/3 plans, 26 regression tests)*
