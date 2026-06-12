@@ -81,9 +81,17 @@ def _calculate_oo_distances_pbc(
         
         pairs = tree.query_pairs(cutoff)
         
+        # Compute minimum image distances for each pair
+        # query_pairs with boxsize identifies pairs by minimum image distance,
+        # but direct Euclidean distance between wrapped coords may differ
+        # (e.g., atoms at x=0.1 and x=1.4 in a 1.5 nm box have direct distance
+        # 1.3 nm but minimum image distance 0.2 nm)
         distances = []
         for i, j in pairs:
-            dist = np.linalg.norm(o_wrapped[j] - o_wrapped[i])
+            delta = o_wrapped[j] - o_wrapped[i]
+            # Minimum image convention: shift delta to nearest image
+            delta = delta - cell_dims * np.round(delta / cell_dims)
+            dist = np.linalg.norm(delta)
             distances.append(dist)
     else:
         # Triclinic: use 3x3x3 supercell fallback (27x memory)
@@ -101,14 +109,19 @@ def _calculate_oo_distances_pbc(
         
         pairs = tree.query_pairs(cutoff)
         
-        # Extract distances, filtering for central cell atoms
+        # Extract distances using set-based deduplication
+        # The old filter (i < n_oxygen, i < j_original) missed cross-block PBC pairs
+        # where atom i in the first image and atom j in another image had j_original < i
+        # Use canonical pair deduplication to correctly count all unique pairs
+        seen_pairs = set()
         distances = []
         for i, j in pairs:
-            # Only count pairs where i is in central cell
-            if i < n_oxygen:
-                j_original = j % n_oxygen
-                # Avoid double counting: i < j_original
-                if i < j_original:
+            i_orig = i % n_oxygen
+            j_orig = j % n_oxygen
+            if i_orig != j_orig:
+                canonical = (min(i_orig, j_orig), max(i_orig, j_orig))
+                if canonical not in seen_pairs:
+                    seen_pairs.add(canonical)
                     dist = np.linalg.norm(supercell_o[j] - supercell_o[i])
                     distances.append(dist)
     
