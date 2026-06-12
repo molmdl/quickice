@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7 inserted)
-**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 38/40)
+**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
+**Total Plans:** 45+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 10, completed: 38/45+)
 
 ## Overview
 
@@ -291,6 +291,42 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 
 ---
 
+### Phase 34.8: Fix Performance Issues and Test Gaps (INSERTED)
+
+**Goal:** Optimize scorer memory usage (27×→1× via cKDTree boxsize) and close test coverage gaps (moleculetype name matching, diversity_score correctness) to ensure scientific reliability and GROMACS compatibility
+**Depends on:** Phase 34.7
+**Plans:** 3 plans
+
+Plans:
+- [ ] 34.8-01-PLAN.md — PERF-02: Optimize scorer memory with cKDTree boxsize (Wave 1)
+- [ ] 34.8-02-PLAN.md — TEST-09: Add TOP/ITP moleculetype name matching test (Wave 1)
+- [ ] 34.8-03-PLAN.md — BUG-04: Fix diversity_score with structural fingerprints (Wave 2, depends on 01)
+
+**Details:**
+
+Remaining open issues from `.planning/codebase/CONCERNS.md`:
+
+| ID | Category | Finding | Fix Complexity |
+|----|----------|---------|---------------|
+| PERF-02 | 🟠 HIGH | Scorer builds 3×3×3 supercell (~650 MB for 100k atoms) instead of using `cKDTree(boxsize=)` like `overlap_resolver.py` already does | Moderate (replace supercell with boxsize param, keep triclinic fallback) |
+| BUG-04 | 🟡 MEDIUM | `diversity_score()` always returns 1.0 — provides zero discriminatory value in ranking | Moderate (redesign seed-based diversity metric) |
+| TEST-09 | 🟡 MEDIUM | No test verifying `[ molecules ]` names in TOP files match `[ moleculetype ]` names in ITP files — GROMACS fatal error risk | Simple (assert name consistency in exported files) |
+| PERF-04 | 🟢 LOW | Nested loops in guest molecule detection — N is small, low impact | Low priority (batch classification possible but not urgent) |
+| TEST-03 | 🟢 LOW | Triclinic cell interface tests — currently blocked by design (Ice II rejected at validation) | Deferred (add defensive tests only) |
+| TEST-06 | 🟢 LOW | VTK rendering fallback path untested — headless VTK tricky | Deferred (mock-based testing possible) |
+
+**Scope decisions:**
+- PERF-02: Must fix (650 MB memory waste for large structures)
+- BUG-04: Should fix (ranking has zero diversity discrimination)
+- TEST-09: Should fix (GROMACS compatibility regression risk)
+- PERF-04, TEST-03, TEST-06: Defer — low priority, blocked, or tricky
+
+**Reference patterns:**
+- `overlap_resolver.py:72` already uses `cKDTree(positions, boxsize=box_list)` — copy this pattern for scorer
+- Existing e2e test infrastructure in `tests/` provides patterns for TEST-09
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -327,9 +363,9 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 
 ## Milestone Summary
 
-**Phase Count:** 11 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, and 34.7 inserted)
+**Phase Count:** 12 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 40 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 35: 7, e2e-compute-export: 10, completed: 38/40)
+**Total Plans:** 45+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 10, completed: 38/45+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -378,6 +414,7 @@ Verified issues from `.planning/codebase/20260608_ISSUES_VERIFICATION.md`:
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
+| 34.8 - Fix Performance Issues and Test Gaps | ○ Pending | 0 | 3 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
