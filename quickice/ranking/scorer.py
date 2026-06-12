@@ -18,6 +18,23 @@ from quickice.structure_generation.types import Candidate
 from quickice.ranking.types import RankedCandidate, RankingResult, ScoringConfig
 
 
+def _is_orthorhombic(cell: np.ndarray, tol: float = 1e-10) -> bool:
+    """Check if a cell matrix is orthorhombic (diagonal).
+    
+    An orthorhombic cell has negligible off-diagonal elements, meaning
+    the cell vectors are aligned with the coordinate axes. This is the
+    case for cubic, tetragonal, and orthorhombic crystal systems.
+    
+    Args:
+        cell: (3, 3) cell matrix in nm
+        tol: Absolute tolerance for off-diagonal elements
+    
+    Returns:
+        True if cell is orthorhombic (off-diagonal elements negligible)
+    """
+    return np.allclose(cell - np.diag(np.diag(cell)), 0, atol=tol)
+
+
 def _calculate_oo_distances_pbc(
     positions: np.ndarray,
     atom_names: list[str],
@@ -26,7 +43,9 @@ def _calculate_oo_distances_pbc(
 ) -> np.ndarray:
     """Calculate O-O distances with periodic boundary conditions.
     
-    Uses cKDTree for O(n log n) neighbor search with supercell PBC handling.
+    Uses cKDTree for O(n log n) neighbor search. For orthorhombic cells, uses boxsize
+    parameter for automatic PBC handling (1x memory). For triclinic cells, uses 3x3x3
+    supercell (27x memory) as fallback since boxsize only supports orthorhombic PBC.
     
     Args:
         positions: (N_atoms, 3) coordinates in nm
@@ -47,35 +66,51 @@ def _calculate_oo_distances_pbc(
     o_positions = positions[o_indices]
     n_oxygen = len(o_indices)
     
-    # Get cell dimensions (assuming orthorhombic for ice structures)
+    # Get cell dimensions
     cell_dims = np.diag(cell)
     
-    # Build 3x3x3 supercell for PBC handling
-    supercell_o = []
-    for i in (-1, 0, 1):
-        for j in (-1, 0, 1):
-            for k in (-1, 0, 1):
-                offset = np.array([i, j, k]) * cell_dims
-                supercell_o.append(o_positions + offset)
-    
-    supercell_o = np.vstack(supercell_o)
-    
-    # Build KDTree for supercell
-    tree = cKDTree(supercell_o)
-    
-    # Find pairs within cutoff
-    pairs = tree.query_pairs(cutoff)
-    
-    # Extract distances, filtering for central cell atoms
-    distances = []
-    for i, j in pairs:
-        # Only count pairs where i is in central cell
-        if i < n_oxygen:
-            j_original = j % n_oxygen
-            # Avoid double counting: i < j_original
-            if i < j_original:
-                dist = np.linalg.norm(supercell_o[j] - supercell_o[i])
-                distances.append(dist)
+    if _is_orthorhombic(cell):
+        # Orthorhombic: use boxsize parameter for automatic PBC handling (1x memory)
+        # Pattern from overlap_resolver.py — wrap coordinates into [0, box_dims) first
+        o_wrapped = o_positions.copy()
+        for dim in range(3):
+            o_wrapped[:, dim] = np.mod(o_wrapped[:, dim], cell_dims[dim])
+        
+        box_list = cell_dims.tolist()
+        tree = cKDTree(o_wrapped, boxsize=box_list)
+        
+        pairs = tree.query_pairs(cutoff)
+        
+        distances = []
+        for i, j in pairs:
+            dist = np.linalg.norm(o_wrapped[j] - o_wrapped[i])
+            distances.append(dist)
+    else:
+        # Triclinic: use 3x3x3 supercell fallback (27x memory)
+        # boxsize only supports orthorhombic PBC; triclinic needs explicit images
+        supercell_o = []
+        for i in (-1, 0, 1):
+            for j in (-1, 0, 1):
+                for k in (-1, 0, 1):
+                    offset = np.array([i, j, k]) * cell_dims
+                    supercell_o.append(o_positions + offset)
+        
+        supercell_o = np.vstack(supercell_o)
+        
+        tree = cKDTree(supercell_o)
+        
+        pairs = tree.query_pairs(cutoff)
+        
+        # Extract distances, filtering for central cell atoms
+        distances = []
+        for i, j in pairs:
+            # Only count pairs where i is in central cell
+            if i < n_oxygen:
+                j_original = j % n_oxygen
+                # Avoid double counting: i < j_original
+                if i < j_original:
+                    dist = np.linalg.norm(supercell_o[j] - supercell_o[i])
+                    distances.append(dist)
     
     return np.array(distances)
 
