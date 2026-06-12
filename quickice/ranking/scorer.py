@@ -4,14 +4,14 @@ This module implements three scoring functions for evaluating ice structure cand
 
 1. energy_score: Estimates energy based on O-O distance deviation from ideal
 2. density_score: Calculates deviation from expected phase density
-3. diversity_score: Rewards unique seeds (single-phase fallback)
+3. diversity_score: Rewards structural uniqueness (O-O distance distribution fingerprint)
 
 All functions use heuristic approaches appropriate for "vibe coding" - no actual
 physics simulations are performed.
 """
 
 import numpy as np
-from collections import Counter
+# Note: Counter import removed — diversity_score now uses structural fingerprints
 from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
@@ -241,45 +241,126 @@ def density_score(candidate: Candidate) -> float:
     return abs(actual_density - expected_density)
 
 
-def diversity_score(candidate: Candidate, all_candidates: list[Candidate]) -> float:
-    """Calculate diversity score based on structural variety.
+def _compute_oo_histogram(
+    candidate: Candidate,
+    config: ScoringConfig | None = None,
+    n_bins: int = 20
+) -> np.ndarray:
+    """Compute O-O distance distribution histogram as a structural fingerprint.
     
-    For single-phase generation (Phase 3), uses seed-based diversity.
-    Higher score = more unique structure.
+    Creates a normalized histogram of O-O distances, which serves as a
+    structural fingerprint for comparing candidate structures. Candidates
+    with similar O-O distance distributions will have similar fingerprints.
     
-    This function rewards candidates generated from seeds that appear less
-    frequently in the overall candidate set. In Phase 3, candidates are
-    generated for a single phase using different random seeds. This scoring
-    approach ensures that the final ranked list includes diverse structures
-    rather than multiple variations from the same seed.
+    Args:
+        candidate: A Candidate object with positions, atom_names, cell
+        config: Optional ScoringConfig for oo_cutoff. If None, uses default (0.35 nm).
+        n_bins: Number of histogram bins (default 20)
+    
+    Returns:
+        Normalized histogram as float64 array of shape (n_bins,).
+        Returns zeros array if no O-O distances are found.
+    """
+    if config is None:
+        config = ScoringConfig()
+    
+    # Calculate O-O distances with PBC
+    oo_distances = _calculate_oo_distances_pbc(
+        candidate.positions,
+        candidate.atom_names,
+        candidate.cell,
+        cutoff=config.oo_cutoff
+    )
+    
+    if len(oo_distances) == 0:
+        return np.zeros(n_bins, dtype=np.float64)
+    
+    # Create histogram over [0, oo_cutoff] range
+    hist, _ = np.histogram(oo_distances, bins=n_bins, range=(0.0, config.oo_cutoff))
+    
+    # Normalize to probability distribution
+    hist = hist.astype(np.float64)
+    total = hist.sum()
+    if total > 0:
+        hist = hist / total
+    
+    return hist
+
+
+def _histogram_cosine_similarity(hist_a: np.ndarray, hist_b: np.ndarray) -> float:
+    """Compute cosine similarity between two histogram fingerprints.
+    
+    Args:
+        hist_a: First normalized histogram
+        hist_b: Second normalized histogram
+    
+    Returns:
+        Cosine similarity in [0, 1] where 1 = identical distributions,
+        0 = completely different (orthogonal). Returns 0.0 if either
+        histogram has zero norm (degenerate case).
+    """
+    norm_a = np.linalg.norm(hist_a)
+    norm_b = np.linalg.norm(hist_b)
+    
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    
+    return float(np.dot(hist_a, hist_b) / (norm_a * norm_b))
+
+
+def diversity_score(candidate: Candidate, all_candidates: list[Candidate], config: ScoringConfig | None = None) -> float:
+    """Calculate diversity score based on O-O distance distribution fingerprint.
+    
+    Higher score = more structurally unique compared to other candidates.
+    
+    Uses O-O distance distribution histograms as structural fingerprints.
+    Each candidate's fingerprint is compared to all others using cosine
+    similarity. The diversity score is 1 minus the mean cosine similarity
+    with all other candidates, meaning:
+    - Score ~1.0 = very different from others (diverse)
+    - Score ~0.0 = very similar to others (not diverse)
+    
+    This replaces the previous seed-based approach which always returned 1.0
+    because generate_all() assigns unique sequential seeds.
     
     Args:
         candidate: The candidate to score
         all_candidates: All candidates in the generation batch
+        config: Optional ScoringConfig for oo_cutoff. If None, uses default (0.35 nm).
     
     Returns:
-        Diversity score (higher = more unique). Returns 1.0 if all seeds
-        are unique, returns lower values for candidates with duplicate seeds.
-    
-    Note:
-        This is the single-phase fallback approach. If multi-phase generation
-        is implemented in the future, a different diversity metric based on
-        structural fingerprints (e.g., radial distribution functions, bond
-        angle distributions) would be more appropriate.
+        Diversity score (higher = more unique). Range approximately [0, 1].
+        Returns 0.5 (neutral) for single-candidate batches or if fingerprint
+        cannot be computed.
     """
-    # Get all seeds from the candidate set
-    all_seeds = [c.seed for c in all_candidates]
+    if len(all_candidates) <= 1:
+        return 0.5  # Neutral score for single candidate
     
-    # Count occurrences of each seed
-    seed_counts = Counter(all_seeds)
+    if config is None:
+        config = ScoringConfig()
     
-    # Get count of candidates with same seed as this candidate
-    same_seed_count = seed_counts[candidate.seed]
+    # Compute fingerprint for this candidate
+    target_hist = _compute_oo_histogram(candidate, config)
     
-    # Return inverse frequency (higher = more unique)
-    # If seed appears once, score = 1.0 (most unique)
-    # If seed appears twice, score = 0.5 (less unique)
-    return 1.0 / same_seed_count
+    if np.linalg.norm(target_hist) == 0:
+        return 0.5  # Degenerate: no O-O distances
+    
+    # Compute fingerprints for all OTHER candidates
+    similarities = []
+    for other in all_candidates:
+        if other is candidate:
+            continue
+        other_hist = _compute_oo_histogram(other, config)
+        sim = _histogram_cosine_similarity(target_hist, other_hist)
+        similarities.append(sim)
+    
+    if not similarities:
+        return 0.5  # Only candidate
+    
+    # Diversity = 1 - mean_similarity
+    # High similarity → low diversity, low similarity → high diversity
+    mean_sim = np.mean(similarities)
+    return 1.0 - float(mean_sim)
 
 
 def normalize_scores(scores: list[float]) -> np.ndarray:
@@ -367,7 +448,7 @@ def rank_candidates(
     # Calculate raw scores for each component
     energy_scores = [energy_score(c, config) for c in candidates]
     density_scores = [density_score(c) for c in candidates]
-    diversity_scores = [diversity_score(c, candidates) for c in candidates]
+    diversity_scores = [diversity_score(c, candidates, config) for c in candidates]
     
     # Normalize each component to 0-1
     norm_energy = normalize_scores(energy_scores)
