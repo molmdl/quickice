@@ -108,11 +108,11 @@ class SoluteInserter:
         c_pos = np.array([0.0, 0.0, 0.0])
         
         # Place H atoms at tetrahedral positions
-        # Using standard tetrahedral coordinates
-        h1 = np.array([r_ch, r_ch, r_ch]) / np.sqrt(3) * np.sqrt(3)
-        h2 = np.array([r_ch, -r_ch, -r_ch]) / np.sqrt(3) * np.sqrt(3)
-        h3 = np.array([-r_ch, r_ch, -r_ch]) / np.sqrt(3) * np.sqrt(3)
-        h4 = np.array([-r_ch, -r_ch, r_ch]) / np.sqrt(3) * np.sqrt(3)
+        # Tetrahedral directions scaled by r_ch (normalization loop below sets correct bond length)
+        h1 = np.array([r_ch, r_ch, r_ch])
+        h2 = np.array([r_ch, -r_ch, -r_ch])
+        h3 = np.array([-r_ch, r_ch, -r_ch])
+        h4 = np.array([-r_ch, -r_ch, r_ch])
         
         # Scale to correct bond length
         for h in [h1, h2, h3, h4]:
@@ -743,6 +743,9 @@ class SoluteInserter:
         min_coords = liquid_positions.min(axis=0)
         max_coords = liquid_positions.max(axis=0)
         
+        # Save base tree data before loop to avoid O(N²) per-molecule rebuild
+        base_existing_data = existing_tree.data.copy() if existing_tree is not None else None
+        
         # Place molecules
         placed_positions = []
         placed_atom_names = []
@@ -791,15 +794,14 @@ class SoluteInserter:
                 placed_count += 1
                 placed = True
                 
-                # Update tree for next molecule
-                # Add placed atoms to existing tree
-                if existing_tree is None:
-                    existing_tree = cKDTree(solute_positions)
+                # Rebuild tree from base + all accumulated placed positions
+                # This avoids the O(N²) per-molecule vstack pattern
+                if base_existing_data is not None:
+                    all_placed = np.vstack(placed_positions) if placed_positions else np.zeros((0, 3))
+                    existing_tree = cKDTree(np.vstack([base_existing_data, all_placed]))
                 else:
-                    # Rebuild tree with new atoms
-                    all_existing = existing_tree.data
-                    all_positions = np.vstack([all_existing, solute_positions])
-                    existing_tree = cKDTree(all_positions)
+                    all_placed = np.vstack(placed_positions) if placed_positions else np.zeros((0, 3))
+                    existing_tree = cKDTree(all_placed)
                 
                 break  # Move to next molecule
             
