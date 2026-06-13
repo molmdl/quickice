@@ -570,6 +570,9 @@ class CustomMoleculeInserter:
         # Build tree from existing atoms
         existing_tree = self._build_existing_atoms_tree(structure)
         
+        # Save base existing tree data to avoid O(N²) copy chain on rebuild
+        base_existing_data = existing_tree.data.copy() if existing_tree is not None else None
+        
         # Get liquid region bounds
         liquid_start = ice_atom_count
         liquid_end = ice_atom_count + water_atom_count
@@ -608,7 +611,7 @@ class CustomMoleculeInserter:
                 ])
                 
                 # Generate random rotation
-                rotation = Rotation.random(random_state=self.seed)
+                rotation = Rotation.random(random_state=self.rng.randint(0, 2**31-1))
                 rotation_matrix = rotation.as_matrix()
                 
                 # Apply rotation
@@ -634,13 +637,16 @@ class CustomMoleculeInserter:
                 current_idx += len(self.template_atom_names)
                 placed = True
                 
-                # Update tree for next molecule
-                if existing_tree is None:
-                    existing_tree = cKDTree(placed_mol)
+                # Update tree for next molecule (rebuild from base + all placed
+                # molecules to avoid O(N²) copy chain from prior tree.data)
+                if base_existing_data is not None and len(placed_positions) > 0:
+                    all_data = np.vstack([base_existing_data, np.vstack(placed_positions)])
+                    existing_tree = cKDTree(all_data)
+                elif len(placed_positions) > 0:
+                    existing_tree = cKDTree(np.vstack(placed_positions))
                 else:
-                    all_existing = existing_tree.data
-                    all_positions = np.vstack([all_existing, placed_mol])
-                    existing_tree = cKDTree(all_positions)
+                    # First molecule placed but no base tree existed
+                    existing_tree = cKDTree(placed_mol)
                 
                 break  # Move to next molecule
             
