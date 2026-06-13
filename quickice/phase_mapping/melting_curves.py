@@ -2,8 +2,14 @@
 IAPWS R14-08(2011) melting curve equations for ice phases.
 
 Each function returns melting pressure in MPa for given temperature.
-Ice is solid when P < P_melt(T) at given T.
-Liquid when P > P_melt(T).
+
+For low-pressure phases (Ice Ih, III, V, VI):
+  Ice is solid when P < P_melt(T) at given T. Liquid when P > P_melt(T).
+
+For high-pressure phase (Ice VII):
+  Convention is opposite — ice is solid when P > P_melt(T).
+  Ice VII is the high-pressure phase; the melting curve defines the
+  upper pressure boundary of the liquid region.
 """
 
 import math
