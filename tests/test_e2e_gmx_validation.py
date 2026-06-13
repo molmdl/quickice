@@ -37,6 +37,8 @@ from quickice.structure_generation.types import InterfaceConfig
 
 from e2e_export_helpers import (
     parse_top_includes,
+    parse_top_molecules,
+    parse_gro_residue_names,
     _insert_custom_molecules,
     _insert_solutes,
     _insert_ions,
@@ -104,6 +106,39 @@ class TestIceCandidateGmxValidation:
             f"gmx grompp failed for ice candidate:\n{stderr[-500:]}"
         )
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for ice, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for ice, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for ice, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for ice, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Interface (requires tip4p-ice.itp)
@@ -138,6 +173,39 @@ class TestInterfaceGmxValidation:
             f"gmx grompp failed for interface:\n{stderr[-500:]}"
         )
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for interface, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for interface, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for interface, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for interface, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F5: Interface→Ion (minimal chain, 2 ITPs)
@@ -164,6 +232,39 @@ class TestChainF5GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f5.gro", top_file="f5.top")
         assert exit_code == 0, f"gmx grompp failed for F5:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F5, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F5, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F5, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F5, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -194,6 +295,39 @@ class TestChainF6GmxValidation:
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f6.gro", top_file="f6.top")
         assert exit_code == 0, f"gmx grompp failed for F6:\n{stderr[-500:]}"
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F6, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F6, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F6, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F6, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F7: Interface→Solute(THF)→Ion (3 ITPs, Bug 1 fix)
@@ -222,6 +356,39 @@ class TestChainF7GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f7.gro", top_file="f7.top")
         assert exit_code == 0, f"gmx grompp failed for F7:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "THF_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F7, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F7, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "THF_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F7, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F7, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -256,6 +423,39 @@ class TestChainF1GmxValidation:
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1.gro", top_file="f1.top")
         assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "etoh", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F1, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F1, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "MOL", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F1, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F1, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3: Hydrate→Interface→Solute→Ion (4 ITPs)
@@ -288,6 +488,39 @@ class TestChainF3GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3.gro", top_file="f3.top")
         assert exit_code == 0, f"gmx grompp failed for F3:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "CH4_H*", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F3, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F3, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "CH4_H", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F3, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F3, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -326,6 +559,39 @@ class TestChainF4GmxValidation:
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4.gro", top_file="f4.top")
         assert exit_code == 0, f"gmx grompp failed for F4:\n{stderr[-500:]}"
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "THF_H*", "etoh", "THF_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F4, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F4, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "THF_H", "MOL", "THF_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F4, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F4, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F2: Interface→Custom→Ion (3 ITPs, Bug 2+3 without solute atomtypes)
@@ -355,6 +621,39 @@ class TestChainF2GmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f2.gro", top_file="f2.top")
         assert exit_code == 0, f"gmx grompp failed for F2:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "etoh", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F2, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F2, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "MOL", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F2, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F2, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -387,6 +686,39 @@ class TestChainF1ThfGmxValidation:
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1_thf.gro", top_file="f1_thf.top")
         assert exit_code == 0, f"gmx grompp failed for F1+THF:\n{stderr[-500:]}"
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "etoh", "THF_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F1+THF, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F1+THF, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "MOL", "THF_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F1+THF, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F1+THF, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3+THF: Hydrate sI-CH4→Interface→Solute(THF)→Ion (4 ITPs)
@@ -418,6 +750,39 @@ class TestChainF3ThfGmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_thf.gro", top_file="f3_thf.top")
         assert exit_code == 0, f"gmx grompp failed for F3+THF:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "CH4_H*", "THF_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F3+THF, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F3+THF, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "CH4_H", "THF_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F3+THF, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F3+THF, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -455,6 +820,39 @@ class TestChainF4Ch4GmxValidation:
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_ch4.gro", top_file="f4_ch4.top")
         assert exit_code == 0, f"gmx grompp failed for F4+CH4:\n{stderr[-500:]}"
 
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "THF_H*", "etoh", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F4+CH4, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F4+CH4, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "THF_H", "MOL", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F4+CH4, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F4+CH4, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3-sII: Hydrate sII-CH4→Interface→Solute(CH4)→Ion (4 ITPs)
@@ -486,6 +884,39 @@ class TestChainF3SIIGmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_sII.gro", top_file="f3_sII.top")
         assert exit_code == 0, f"gmx grompp failed for F3-sII:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "CH4_H*", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F3-sII, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F3-sII, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "CH4_H", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F3-sII, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F3-sII, "
+                    f"got: {sorted(unique_residues)}"
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -519,3 +950,36 @@ class TestChainF4SIIGmxValidation:
         _stage_itp_files(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_sII.gro", top_file="f4_sII.top")
         assert exit_code == 0, f"gmx grompp failed for F4-sII:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "THF_H*", "etoh", "THF_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F4-sII, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F4-sII, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "THF_H", "MOL", "THF_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F4-sII, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F4-sII, "
+                    f"got: {sorted(unique_residues)}"
+                )
