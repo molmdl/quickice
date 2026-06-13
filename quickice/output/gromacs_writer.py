@@ -920,9 +920,14 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
     has_oxygen = 'O' in mol_unique
     has_hydrogen = 'H' in mol_unique
     
-    # THF: Has O and carbon atoms (CA, CB, or C) (check BEFORE CH4)
+    # CO2: C and O atoms, no H (3 atoms) — MUST check BEFORE THF
+    # CO2 has C and O like THF, but CO2 has no hydrogen
+    if has_carbon and has_oxygen and not has_hydrogen:
+        return "co2"
+    
+    # THF: Has O and carbon atoms (CA, CB, or C), may have H
     # THF atoms are: O, CA, CA, CB, CB, H, H, H, H, H, H, H, H (13 atoms)
-    if has_oxygen and has_carbon:
+    elif has_oxygen and has_carbon:
         return "thf"
     
     # CH4: Only C and H, no O, typically 5 atoms
@@ -932,10 +937,6 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
     # H2: Only H atoms (2 atoms)
     elif mol_unique == {'H'}:
         return "h2"
-    
-    # CO2: C and O atoms (3 atoms, no H)
-    elif has_carbon and has_oxygen and not has_hydrogen:
-        return "co2"
     
     # United-atom methane
     elif mol_unique == {'Me'}:
