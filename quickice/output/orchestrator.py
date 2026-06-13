@@ -49,7 +49,7 @@ def output_ranked_candidates(
     allowed_base = Path.cwd().resolve()
 
     # Security check: output must be within current working directory
-    if not str(output_path).startswith(str(allowed_base)):
+    if not output_path.is_relative_to(allowed_base):
         raise ValueError(
             f"Security error: Output path must be within {allowed_base}. "
             f"Got: {output_path}"
