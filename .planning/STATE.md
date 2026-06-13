@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 34.8 COMPLETE — Fix performance and test gaps (PERF-02, TEST-09, BUG-04). 3/3 plans complete, 47 regression tests added.
+**Current Focus:** Phase e2e-compute-export COMPLETE — 11/11 plans, molecule-type presence assertions added to all 14 grompp tests (Plan 11).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 34.8 COMPLETE — Fix Performance Issues and Test Gaps (PERF-02 scorer boxsize optimization + TEST-09 moleculetype name matching + BUG-04 diversity fingerprint, 47 regression tests).
+**Current focus:** Phase e2e-compute-export COMPLETE — 11/11 plans (116 bridge tests + 14 grompp validation tests with molecule-type presence assertions = 130 total + cleanup utility).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.8-fix-performance-and-test-gaps (Fix Performance Issues and Test Gaps) |
-| Plan | 3 of 3 COMPLETE |
-| Status | Phase COMPLETE — PERF-02 (11 tests) + TEST-09 (15 tests) + BUG-04 (21 tests) = 47 regression tests |
-| Last activity | 2026-06-12 — Completed 34.8-03-PLAN.md (BUG-04 diversity fingerprint) |
+| Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
+| Plan | 11 of 11 COMPLETE |
+| Status | Phase COMPLETE — 130 tests + molecule-type presence assertions in all 14 grompp tests |
+| Last activity | 2026-06-13 — Completed e2e-compute-export-11-PLAN.md (molecule-type presence assertions) |
 
-**Progress:** ██████████ 93% (173/188 plans across all milestones, Phase 34.8 3/3 COMPLETE)
+**Progress:** ██████████ 93% (174/188 plans across all milestones, e2e-compute-export 11/11 COMPLETE)
 
 ---
 
@@ -139,9 +139,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
 
-**Phases:** 10 plans (01-10)
+**Phases:** 11 plans (01-11)
 **Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
-**Progress:** 10 of 10 plans COMPLETE (116 bridge tests + 14 grompp validation tests = 130 total + cleanup utility)
+**Progress:** 11 of 11 plans COMPLETE (116 bridge tests + 14 grompp validation tests with molecule-type presence assertions = 130 total + cleanup utility)
 **Key deliverables:**
 - ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
 - ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
@@ -174,6 +174,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Stale .tpr backup cleanup in run_gmx_grompp() — prevents 99-backup limit failure on re-runs (Plan 09)
 - ✓ Total: 130 tests (116 bridge + 14 grompp validation) — PHASE COMPLETE
 - ✓ Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags (Plan 10)
+- ✓ Molecule-type presence assertions in all 14 grompp validation tests — .top [molecules] keys + .gro residue names + flexible matching for hydrate guests (Plan 11)
+- ✓ Silent-failure gap closed: writer bug dropping molecule from both .gro and .top now detected (Plan 11)
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -410,6 +412,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | sII uses same ITP filenames as sI | ch4_hydrate.itp, thf_hydrate.itp identical for both lattice types; difference is in candidate atom counts | ✓ Shipped (e2e-compute-export-09) |
 | Clean stale .tpr backups before grompp | GROMACS 99-backup limit causes grompp failure on persistent workspaces; cleanup prevents accumulation | ✓ Shipped (e2e-compute-export-09) |
 | tmp/ cleanup utility with --dry-run | scripts/clean-test-output.sh preserves em.mdp and e2e-gmx-validation/ by default; --stale-backups-only for lightweight GROMACS backup cleanup | ✓ Shipped (e2e-compute-export-10) |
+| Molecule-type presence assertions in grompp tests | parse_top_molecules + parse_gro_residue_names assertions close silent-failure gap (molecule missing from both .gro and .top) | ✓ Shipped (e2e-compute-export-11) |
+| Flexible asterisk matching for hydrate guest names | CH4_H* and THF_H* keys in expected_top_keys match either base name (CH4_H) or fallback name; handles registry ambiguity | ✓ Shipped (e2e-compute-export-11) |
 | BUG-05: HW1 Z uses h1_pos[2] not h2_pos[2] | Copy-paste error in write_custom_molecule_gro_file() silently corrupted HW1 Z-coordinate | ✓ Shipped (34.7-01) |
 | MW-01: Molecule-aware wrapping for ice GRO | wrap_molecules_into_box with MoleculeIndex(count=3) prevents split molecules at PBC; MW computed from correctly wrapped O/H1/H2 | ✓ Shipped (34.7-01) |
 | DEFLT-01: All 6 TOP writers use fudgeLJ=0.5 fudgeQQ=0.8333 | Standardized to Amber forcefield defaults; 0.5 safe for TIP4P-ICE (no 1-4 pairs), correct for GAFF2 systems | ✓ Shipped (34.7-01) |
@@ -530,14 +534,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-12
-**Completed:** 34.8-03-PLAN.md (BUG-04 diversity fingerprint, 21 regression tests)
-**Status:** Phase 34.8 COMPLETE — 3/3 plans, 47 regression tests
+**Last session:** 2026-06-13
+**Completed:** e2e-compute-export-11-PLAN.md (molecule-type presence assertions in all 14 grompp tests)
+**Status:** Phase e2e-compute-export COMPLETE — 11/11 plans, 130 tests total
 
-**Phase 34.8 Progress:**
-- ✓ 01: PERF-02 Scorer cKDTree(boxsize=) optimization for orthorhombic cells (11 regression tests, 2 bug fixes)
-- ✓ 02: TEST-09 TOP/ITP moleculetype name matching (15 regression tests across 6 export types)
-- ✓ 03: BUG-04 O-O distance histogram fingerprint for diversity_score (21 regression tests)
+**e2e-compute-export Plan 11 Progress:**
+- ✓ 11: Molecule-type presence assertions (parse_top_molecules + parse_gro_residue_names) in all 14 grompp validation tests
 
 ---
-*State updated: 2026-06-12 — Phase 34.8 COMPLETE (3/3 plans, 47 regression tests)*
+*State updated: 2026-06-13 — e2e-compute-export COMPLETE (11/11 plans, molecule-type presence assertions added)*
