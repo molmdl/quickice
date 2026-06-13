@@ -522,32 +522,26 @@ def tile_structure(
         # This filters out molecules that span the PBC boundary of the original unit cell
         tol = 1e-10
 
-        keep_molecules = []
-        for mol_idx in range(n_tiled_molecules):
-            start_atom = mol_idx * atoms_per_molecule
-            end_atom = start_atom + atoms_per_molecule
-            mol_atoms = all_positions[start_atom:end_atom]
+        # Vectorized molecule filter: reshape into (n_molecules, atoms_per_molecule, 3)
+        # and check if ALL atoms of each molecule are inside [0, target_region)
+        mol_positions = all_positions.reshape(n_tiled_molecules, atoms_per_molecule, 3)
 
-            # Check if ALL atoms of this molecule are inside target region [0, target_region)
-            all_inside_x = np.all((mol_atoms[:, 0] >= 0) & (mol_atoms[:, 0] < lx - tol))
-            all_inside_y = np.all((mol_atoms[:, 1] >= 0) & (mol_atoms[:, 1] < ly - tol))
-            all_inside_z = np.all((mol_atoms[:, 2] >= 0) & (mol_atoms[:, 2] < lz - tol))
+        # Per-molecule, per-dimension: check if all atoms satisfy bounds
+        inside_x = np.all((mol_positions[:, :, 0] >= 0) & (mol_positions[:, :, 0] < lx - tol), axis=1)
+        inside_y = np.all((mol_positions[:, :, 1] >= 0) & (mol_positions[:, :, 1] < ly - tol), axis=1)
+        inside_z = np.all((mol_positions[:, :, 2] >= 0) & (mol_positions[:, :, 2] < lz - tol), axis=1)
 
-            if all_inside_x and all_inside_y and all_inside_z:
-                keep_molecules.append(mol_idx)
+        # Molecule-level mask: keep only molecules where ALL atoms are inside
+        keep_molecule_mask = inside_x & inside_y & inside_z  # (n_molecules,)
 
-        if not keep_molecules:
+        if not np.any(keep_molecule_mask):
             return np.zeros((0, 3), dtype=float), 0
 
-        # Build keep mask for atoms of complete molecules
-        keep_mask = np.zeros(len(all_positions), dtype=bool)
-        for mol_idx in keep_molecules:
-            start_atom = mol_idx * atoms_per_molecule
-            end_atom = start_atom + atoms_per_molecule
-            keep_mask[start_atom:end_atom] = True
+        # Expand molecule mask to atom-level mask using np.repeat
+        keep_atom_mask = np.repeat(keep_molecule_mask, atoms_per_molecule)
 
-        filtered = all_positions[keep_mask]
-        n_kept_molecules = len(keep_molecules)
+        filtered = all_positions[keep_atom_mask]
+        n_kept_molecules = int(np.sum(keep_molecule_mask))
     else:
         # Keep all molecules - no filtering
         # This is used for guest molecules from GenIce2 which are already complete
@@ -573,47 +567,47 @@ def tile_structure(
         tiled_positions = wrap_positions_triclinic(filtered, target_cell, atoms_per_molecule)
     else:
         # Orthogonal wrapping (standard coordinate-axis modulo)
-        tiled_positions = np.zeros_like(filtered)
         n_filtered_molecules = len(filtered) // atoms_per_molecule
 
-        for mol_idx in range(n_filtered_molecules):
-            start_atom = mol_idx * atoms_per_molecule
-            end_atom = start_atom + atoms_per_molecule
-            mol_atoms = filtered[start_atom:end_atom].copy()
+        # Vectorized PBC wrapping: reshape into (n_molecules, atoms_per_molecule, 3)
+        mol_positions = filtered.reshape(n_filtered_molecules, atoms_per_molecule, 3)
 
-            # Calculate shift based on minimum position across all atoms
-            # This handles any edge cases where atoms might be slightly outside [0, target_region)
-            shift = np.zeros(3)
-            for dim in range(3):
-                min_pos = mol_atoms[:, dim].min()
-                max_pos = mol_atoms[:, dim].max()
-                
-                # Only shift if atoms are actually outside [0, target_region)
-                if min_pos < 0:
-                    # Shift up to bring minimum into range
-                    shift[dim] = -np.floor(min_pos / target_region[dim]) * target_region[dim]
-                elif max_pos >= target_region[dim]:
-                    # Shift down to bring maximum into range
-                    shift[dim] = -np.ceil(max_pos / target_region[dim]) * target_region[dim] + target_region[dim]
+        # Compute per-molecule min and max for each dimension
+        min_pos = mol_positions.min(axis=1)  # (n_molecules, 3)
+        max_pos = mol_positions.max(axis=1)  # (n_molecules, 3)
 
-            # Apply shift to all atoms in the molecule
-            shifted = mol_atoms + shift
-            
-            # Second pass: ensure all atoms are within [0, target_region)
-            # This handles edge cases where the first shift pushed atoms out the other side
-            # (e.g., shifting up for negative atoms pushed positive atoms over the boundary)
-            for dim in range(3):
-                min_pos = shifted[:, dim].min()
-                max_pos = shifted[:, dim].max()
-                
-                if min_pos < 0:
-                    # Atoms are still negative after first shift - shift up by one box
-                    shifted[:, dim] += target_region[dim]
-                elif max_pos >= target_region[dim]:
-                    # Atoms are too high after first shift - shift down by one box
-                    shifted[:, dim] -= target_region[dim]
-            
-            tiled_positions[start_atom:end_atom] = shifted
+        # Compute shifts for each molecule and dimension
+        shifts = np.zeros((n_filtered_molecules, 3))
+
+        for dim in range(3):
+            neg_mask = min_pos[:, dim] < 0
+            over_mask = max_pos[:, dim] >= target_region[dim]
+
+            # For negative atoms: shift up to bring minimum into range
+            if np.any(neg_mask):
+                shifts[neg_mask, dim] = -np.floor(min_pos[neg_mask, dim] / target_region[dim]) * target_region[dim]
+            # For over-boundary atoms: shift down to bring maximum into range
+            if np.any(over_mask):
+                shifts[over_mask, dim] = -np.ceil(max_pos[over_mask, dim] / target_region[dim]) * target_region[dim] + target_region[dim]
+
+        # Apply shifts with broadcasting: (n_molecules, 1, 3) + (n_molecules, atoms_per_molecule, 3)
+        shifted = mol_positions + shifts[:, np.newaxis, :]
+
+        # Second pass: ensure all atoms are within [0, target_region)
+        # Handles edge cases where the first shift pushed atoms out the other side
+        for dim in range(3):
+            min_shifted = shifted[:, :, dim].min(axis=1)  # (n_molecules,)
+            max_shifted = shifted[:, :, dim].max(axis=1)  # (n_molecules,)
+
+            still_neg = min_shifted < 0
+            still_over = max_shifted >= target_region[dim]
+
+            if np.any(still_neg):
+                shifted[still_neg, :, dim] += target_region[dim]
+            if np.any(still_over):
+                shifted[still_over, :, dim] -= target_region[dim]
+
+        tiled_positions = shifted.reshape(-1, 3)
 
     # Molecule count is exact (no truncation needed)
     n_molecules = n_kept_molecules
