@@ -222,17 +222,16 @@ CH₄ and THF use GAFF2 force field with RESP2(0.5) partial charges:
 
 QuickIce distinguishes between phase detection and structure generation capabilities:
 
-### Phase Detection (13 phases)
+### Phase Detection (12 phases)
 
-The interactive phase diagram can identify 13 ice polymorphs based on temperature and pressure conditions:
+The interactive phase diagram can identify 12 ice polymorphs based on temperature and pressure conditions:
 
 | Phase | Crystal System | Pressure Range | Temperature Range |
 |-------|----------------|----------------|-------------------|
-| Ice Ih | Hexagonal | 0-200 MPa | 0-273K |
+| Ice Ih | Hexagonal | 0-200 MPa | 0-273.16K |
 | Ice Ic | Cubic | Low pressure | < 150K |
 | Ice II | Rhombohedral | 200-600 MPa | < 250K |
 | Ice III | Tetragonal | 200-400 MPa | 250-260K |
-| Ice IV | Rhombohedral | 400-600 MPa | 250-270K |
 | Ice V | Monoclinic | 400-600 MPa | 250-270K |
 | Ice VI | Tetragonal | 600-2000 MPa | 250-350K |
 | Ice VII | Cubic | > 2000 MPa | 273-355K |
@@ -316,6 +315,20 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 - Document: "Revised Release on the Equation of State 2006 for H₂O Ice Ih"
 - URL: https://www.iapws.org/relguide/Ice-2006.html
 
+### IAPWS-95
+- "Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use"
+- URL: https://www.iapws.org/relguide/IAPWS-95.html
+
+### Journaux et al. (2019, 2020)
+- Journaux, B. et al. (2019). J. Geophys. Res.: Planets, 124. DOI: 10.1029/2019JE006176
+- Journaux, B. et al. (2020). Space Sci. Rev., 216, 7. DOI: 10.1007/s11214-019-0634-7
+
+### Petrenko & Whitworth (1999)
+- Petrenko, V. F. & Whitworth, R. W. (1999). Physics of Ice. Oxford University Press. ISBN: 978-0198518945
+
+### CODATA 2017
+- Tiesinga, E. et al. (2021). Rev. Mod. Phys., 93(2), 025010. DOI: 10.1103/RevModPhys.93.025010
+
 ### spglib
 - Repository: https://github.com/atztogo/spglib
 - Paper: "Spglib: a software library for crystal symmetry search", Sci. Technol. Adv. Mater., Meth. 4, 2384822 (2024)
@@ -340,6 +353,10 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 ### Madrid2019 Ion Parameters
 - Zeron, I. M., Abascal, J. L. F., & Vega, C. (2019). A force field of Li+, Na+, K+, Mg2+, Ca2+, Cl−, and SO42− in aqueous solution based on the TIP4P/2005 water model and scaled charges for the ions. Journal of Chemical Physics, 151, 134504.
 - DOI: https://doi.org/10.1063/1.5121392
+
+### Madrid2019 / TIP4P-ICE Compatibility
+- The Madrid2019 ion model (±0.85e charges) was parameterized for TIP4P/2005 water. QuickIce uses these parameters with TIP4P-ICE water, which is common practice but technically a force field combination.
+- Zeron et al. (2019). J. Chem. Phys. 151, 134504. DOI: 10.1063/1.5121394
 
 ## Testing
 
