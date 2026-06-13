@@ -48,7 +48,7 @@ python quickice.py -T 300 -P 2500 -N 50
 
 ### `--nmolecules`, `-N`
 
-Number of water molecules in the generated structure (4-100000). This argument is required.
+Number of water molecules in the generated structure (4-100000). Required for ice generation; optional for `--interface` mode (default: 256).
 
 **Valid range:** 4 to 100000 molecules
 
@@ -59,6 +59,11 @@ python quickice.py -T 260 -P 0.1 -N 50
 
 # Larger structure for better statistics
 python quickice.py -T 260 -P 0.1 -N 1000
+
+# Interface mode (nmolecules omitted — uses default)
+python quickice.py -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0
 ```
 
 ---
@@ -124,14 +129,14 @@ Select which ranked candidate to export for GROMACS (1-based index).
 
 **Usage:**
 ```bash
-# Export the top-ranked candidate (default)
+# Export all candidates (default)
 python quickice.py -T 250 -P 100 -N 128 --gromacs
 
 # Export the second-ranked candidate
 python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
 ```
 
-Default: 1 (top-ranked structure)
+Default: Export all candidates. Use `--candidate N` to export only rank N.
 
 ---
 
