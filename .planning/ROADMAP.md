@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 46 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 11, completed: 38/46)
+**Total Plans:** 46 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 11, completed: 39/46)
 
 ## Overview
 
@@ -365,7 +365,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 **Phase Count:** 12 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 46 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 11, completed: 38/46)
+**Total Plans:** 46 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 3, Phase 35: 7, e2e-compute-export: 11, completed: 39/46)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -418,7 +418,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | In Progress | 10 | 11 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
 
 ---
 
@@ -453,7 +453,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 - [x] e2e-compute-export-08-PLAN.md — (Wave 5) Missing grompp cross-combinations: F2, F1+THF, F3+THF, F4+CH4 (4 tests)
 - [x] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
 - [x] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
-- [ ] e2e-compute-export-11-PLAN.md — (Wave 1 gap closure) Molecule-type presence assertions in grompp tests
+- [x] e2e-compute-export-11-PLAN.md — (Wave 1 gap closure) Molecule-type presence assertions in grompp tests
 
 ---
 
