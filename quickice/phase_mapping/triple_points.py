@@ -18,7 +18,7 @@ Additional phases (XI, IX, X, XV) from literature:
 from typing import Tuple, Dict
 
 TRIPLE_POINTS: Dict[str, Tuple[float, float]] = {
-    "Ih_III_Liquid": (251.165, 209.9),
+    "Ih_III_Liquid": (251.165, 208.566),  # IAPWS R14-08 value
     "Ih_II_III": (238.45, 212.9),
     "II_III_V": (249.4, 355.5),
     "III_V_Liquid": (256.164, 350.1),

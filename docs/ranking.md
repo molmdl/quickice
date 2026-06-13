@@ -8,7 +8,7 @@ QuickIce generates multiple candidate structures for given thermodynamic conditi
 
 1. **Energy Score** - Based on O-O distance deviation from ideal
 2. **Density Score** - Comparison to expected phase density
-3. **Diversity Score** - Rewards unique structural seeds
+3. **Diversity Score** - Rewards structural uniqueness via O-O distance fingerprint
 
 These scores are combined into a single ranking score, with lower values indicating better candidates.
 
@@ -105,32 +105,60 @@ density_score = |0.980 - 0.9167| = 0.063 g/cm³
 
 ### Concept
 
-The diversity score rewards structures generated from unique random seeds. When multiple candidates share the same seed, they are less diverse and receive lower scores.
+The diversity score measures how structurally unique a candidate is compared to others in the same generation batch. It uses O-O (oxygen-oxygen) distance distribution histograms as structural fingerprints: candidates with similar O-O distance distributions are structurally alike, while those with different distributions are truly diverse.
+
+### Algorithm
+
+1. **Compute O-O distance histogram** for each candidate:
+   - Extract oxygen atom positions (O or OW names)
+   - Calculate O-O distances using `cKDTree` with `boxsize` parameter for periodic boundary conditions (orthorhombic cells) or 3×3×3 supercell fallback (triclinic cells)
+   - Build a 20-bin normalized histogram over the range `[0, oo_cutoff]` (default 0.35 nm)
+
+2. **Compare fingerprints** using cosine similarity:
+   - For each candidate, compute cosine similarity of its histogram against every other candidate's histogram
+   - Cosine similarity ∈ [0, 1], where 1 = identical distributions
+
+3. **Compute diversity score**:
+   ```
+   diversity_score = 1 - mean_similarity
+   ```
 
 ### Formula
 
 ```
-diversity_score = 1.0 / seed_count
+diversity_score = 1 - (1/N) × Σ cos_sim(hist_i, hist_j)   for all j ≠ i
 ```
 
 Where:
-- `seed_count` = Number of candidates with the same seed
+- `hist_i` = Normalized O-O distance histogram for candidate i (20 bins)
+- `cos_sim` = Cosine similarity between histogram vectors
+- `N` = Number of other candidates in the batch
+
+### Degenerate Cases
+
+| Condition | Return Value | Rationale |
+|-----------|-------------|-----------|
+| Single candidate in batch | 0.5 | Neutral — no comparison possible |
+| No oxygen atoms found | 0.5 | Cannot compute fingerprint |
+| No O-O distances within cutoff | 0.5 | Zero-norm histogram |
 
 ### Interpretation
 
-- **Higher score = more unique**
-- `1.0` = Most unique (seed appears once)
-- `0.5` = Seed appears twice
-- `0.33` = Seed appears three times
+- **Higher score = more structurally unique**
+- `~1.0` = Very different from all others (diverse)
+- `~0.0` = Very similar to others (not diverse)
+- `0.5` = Neutral (degenerate case or single candidate)
 
 ### Example Calculation
 
-In a batch of 5 candidates with seeds [1, 2, 1, 3, 1]:
+In a batch of 3 candidates with O-O distance histograms A, B, C:
 
 ```
-Candidate with seed 1: diversity_score = 1.0 / 3 = 0.33
-Candidate with seed 2: diversity_score = 1.0 / 1 = 1.0
-Candidate with seed 3: diversity_score = 1.0 / 1 = 1.0
+cos_sim(A, B) = 0.92    (similar structures)
+cos_sim(A, C) = 0.35    (different structures)
+
+mean_similarity for A = (0.92 + 0.35) / 2 = 0.635
+diversity_score for A = 1 - 0.635 = 0.365
 ```
 
 ---
@@ -207,9 +235,9 @@ combined_score = 0.2 + 0.3 + 0.0 = 0.5
 
 ### Diversity Score
 
-- Based on random seeds, not structural fingerprints
-- Does not detect structural similarity between different seeds
-- May not capture true structural diversity
+- Based on O-O distance distributions only; does not consider hydrogen positions or bond angles
+- Cosine similarity measures distribution shape, not absolute distances
+- Small batches may produce unreliable similarity estimates
 
 ### General
 

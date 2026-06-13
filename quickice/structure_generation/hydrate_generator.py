@@ -4,9 +4,12 @@ Provides HydrateStructureGenerator class for creating hydrate structures
 with configurable lattice type, guest molecules, and cage occupancy.
 """
 
+import logging
 import numpy as np
 import threading
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from quickice.structure_generation.types import (
     HydrateConfig,
@@ -237,7 +240,10 @@ class HydrateStructureGenerator:
         
         for i in range(2, min(2 + n_atoms, len(lines))):
             line = lines[i]
-            if not line.strip() or len(line) < 44:
+            if not line.strip():
+                continue
+            if len(line) < 44:
+                logger.warning("Dropping short GRO line %d: length %d < 44 chars", i+1, len(line))
                 continue
             
             # GRO format fixed-width columns
@@ -270,9 +276,8 @@ class HydrateStructureGenerator:
                 y = float(line[28:36])
                 z = float(line[36:44])
                 positions.append([x, y, z])
-            except (IndexError, ValueError):
-                # Try alternative parsing
-                pass
+            except (IndexError, ValueError) as e:
+                logger.warning("Failed to parse coordinates from GRO line %d: %s", i+1, e)
         
         positions = np.array(positions, dtype=np.float64)
         

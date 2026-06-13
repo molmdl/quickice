@@ -208,7 +208,10 @@ def reorder_guest_atoms(atom_names: list[str], mol_type: str) -> tuple[list[str]
 
     # Return CANONICAL names (not reordered input names!)
     # The input atom_names might be types (c3, hc) but .gro needs names (C, H)
-    if reorder and all(i < len(atom_names) for i in reorder):
+    if (reorder 
+        and len(reorder) == len(atom_names) 
+        and all(i < len(atom_names) for i in reorder)
+        and len(set(reorder)) == len(reorder)):
         return list(canonical), reorder
 
     return atom_names, None

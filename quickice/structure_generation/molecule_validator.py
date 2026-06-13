@@ -72,7 +72,7 @@ def validate_gro_itp_consistency(
         positions, atom_names, cell = parse_gro_file(gro_path)
         gro_atom_count = len(positions)
         logger.info(f"Parsed GRO file {gro_path.name}: {gro_atom_count} atoms")
-    except Exception as e:
+    except (ValueError, OSError) as e:
         errors.append(f"Failed to parse GRO file {gro_path.name}: {e}")
         return ValidationResult(False, errors, warnings)
     
@@ -134,7 +134,7 @@ def validate_custom_molecule(
         positions, atom_names, cell = parse_gro_file(gro_path)
         gro_atom_count = len(positions)
         logger.info(f"Parsed GRO file {gro_path.name}: {gro_atom_count} atoms")
-    except Exception as e:
+    except (ValueError, OSError) as e:
         errors.append(f"Failed to parse GRO file {gro_path.name}: {e}")
         return ValidationResult(False, errors, warnings)
     

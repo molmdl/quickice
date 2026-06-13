@@ -64,9 +64,9 @@ The input panel contains three text fields for thermodynamic parameters:
 
 ### Molecule Count
 
-- Range: 4-216 molecules
+- Range: 4-100,000 molecules
 - Purpose: Controls simulation cell size
-- Validation: Must be integer, error shown if > 216
+- Validation: Must be integer, error shown if > 100,000
 
 ### Help Tooltips
 

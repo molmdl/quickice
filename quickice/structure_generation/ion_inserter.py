@@ -568,12 +568,17 @@ def insert_ions(
     
     # Calculate ion pairs
     if liquid_volume_nm3 is None:
-        # Estimate volume from cell and positions
+        # Estimate liquid volume from water region, NOT total cell
         cell = structure.cell
-        volume = np.abs(np.linalg.det(cell))
-        liquid_volume_nm3 = volume
-    else:
-        liquid_volume_nm3 = liquid_volume_nm3
+        total_volume = np.abs(np.linalg.det(cell))
+        water_atom_count = getattr(structure, 'water_atom_count', 0)
+        total_atom_count = len(structure.positions)
+        if total_atom_count > 0 and water_atom_count > 0:
+            water_fraction = water_atom_count / total_atom_count
+            liquid_volume_nm3 = total_volume * water_fraction
+        else:
+            # Fallback: assume all is liquid (conservative for pure water)
+            liquid_volume_nm3 = total_volume
     
     ion_pairs = inserter.calculate_ion_pairs(concentration_molar, liquid_volume_nm3)
     
