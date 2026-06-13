@@ -383,10 +383,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
             atoms_per_molecule=4
         )
         # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
-        assert len(trimmed_water_positions) % 4 == 0, (
-            f"Water atom count {len(trimmed_water_positions)} not divisible by 4 "
-            f"after ice-water overlap removal"
-        )
+        if len(trimmed_water_positions) % 4 != 0:
+            raise ValueError(
+                f"Water atom count {len(trimmed_water_positions)} is not a multiple of 4 "
+                f"after ice-water overlap removal. Molecular integrity error."
+            )
     else:
         trimmed_water_positions = water_positions
 
@@ -567,10 +568,11 @@ def assemble_slab(candidate: Candidate, config: InterfaceConfig) -> InterfaceStr
                     atoms_per_molecule=4
                 )
                 # Invariant: water atom count must be divisible by 4 (TIP4P has 4 atoms/molecule)
-                assert len(trimmed_water_positions) % 4 == 0, (
-                    f"Water atom count {len(trimmed_water_positions)} not divisible by 4 "
-                    f"after guest-water overlap removal"
-                )
+                if len(trimmed_water_positions) % 4 != 0:
+                    raise ValueError(
+                        f"Water atom count {len(trimmed_water_positions)} is not a multiple of 4 "
+                        f"after guest-water overlap removal. Molecular integrity error."
+                    )
 
     # === HYDRATE FIX: Combine all positions including guests ===
     # Order: ice FIRST, then water, then guests LAST
