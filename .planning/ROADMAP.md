@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 49 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/49)
+**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
+**Total Plans:** 52 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 3, Phase 37: TBD, e2e-compute-export: 11, completed: 39/52)
 
 ## Overview
 
@@ -364,9 +364,69 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 ---
 
+### Phase 36: CLI Feature Parity
+
+**Goal:** User can generate all v4.5 structures (solute, custom molecule, ion source selection, interface mode) from CLI with the same capabilities as the GUI
+**Depends on:** Phase 35
+**Requirements:** CLI-01, CLI-02, CLI-03, CLI-04, CLI-05
+
+**Success Criteria:**
+1. User can insert solutes (THF/CH₄) via CLI with concentration input matching GUI Tab 4 behavior
+2. User can insert custom molecules via CLI with .gro/.itp file paths matching GUI Tab 3 behavior
+3. User can specify ion source (Interface/Custom/Solute) via CLI matching GUI Tab 5 source dropdown
+4. User can specify solute source (Interface/Custom Molecule) via CLI matching GUI Tab 4 source dropdown
+5. User can run interface generation with all modes (slab/pocket/piece) via CLI
+
+**Details:**
+- Extends existing CLI (quickice/cli.py) with v4.5 features
+- CLI-01: Solute insertion (--solute-type, --concentration, --solute-source)
+- CLI-02: Custom molecule insertion (--custom-gro, --custom-itp, --placement-mode)
+- CLI-03: Ion source selection (--ion-source)
+- CLI-04: Interface mode CLI support (already partially exists from v3.5)
+- CLI-05: Solute source selection (--solute-source)
+- Follows existing CLI patterns from Quick Tasks 013/014/015 (hydrate, ion, progress)
+- No GUI dependency — purely backend computation + GROMACS export
+
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 36-01-PLAN.md — Extend CLI parser with v4.5 flags and validation
+- [ ] 36-02-PLAN.md — Create pipeline executor and ITP helpers
+- [ ] 36-03-PLAN.md — Wire main.py and add CLI integration tests
+
+---
+
+### Phase 37: Unified Entry Point
+
+**Goal:** User has a single entry point (`python -m quickice`) that launches CLI or GUI mode, and test suite uses consistent invocation patterns
+**Depends on:** Phase 36
+**Requirements:** No new requirements — tooling improvement for distribution and test consistency
+
+**Success Criteria:**
+1. `python -m quickice` launches GUI by default (when display available)
+2. `python -m quickice --cli` or no-display detection launches CLI mode
+3. PySide6/VTK not installed → graceful fallback to CLI mode with informative message
+4. Test suite uses unified entry point for both CLI and GUI test paths
+5. Existing `python quickice.py` entry point still works (backward compat)
+
+**Details:**
+- Create `quickice/__main__.py` router that detects CLI flags / display availability
+- Handles missing PySide6 gracefully (headless environments, CLI-only installs)
+- Update `quickice.py` and PyInstaller spec to use unified entry point
+- Normalize test suite invocation patterns (consistent `python -m quickice` usage)
+- Resolves pending todo: `.planning/todos/pending/2026-05-09-unify-gui-cli-entry-point.md`
+- CLI-only PyInstaller bundle deferred (stays as pending todo)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 37 to break down)
+
+---
+
 ## Milestone Summary
 
-**Phase Count:** 12 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
+**Phase Count:** 14 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
 **Total Plans:** 49 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/49)
 
@@ -399,7 +459,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | Documentation (DOCS) | 5 | 5 | 100% |
 | **Total v4.5** | **39** | **39** | **100%** |
 
-**Note:** v4.5.1 CLI requirements (CLI-01 to CLI-05) deferred to follow-up milestone.
+**Note:** CLI requirements (CLI-01 to CLI-05) now in Phase 36 of this milestone.
 
 ---
 
@@ -419,6 +479,8 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
+| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 3 |
+| 37 - Unified Entry Point | 🔲 Not Started | 0 | TBD |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
@@ -494,5 +556,5 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-08 - Phase 34.7 inserted (Fix Verified Scancode Bugs), e2e-compute-export COMPLETE*
+*Last updated: 2026-06-14 - Phase 37 added (Unified Entry Point)*
 *For current state, see .planning/STATE.md*
