@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10, 12, 14, 15, 16 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12, 14-17 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10, 12, 14, 15, 16 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10-12, 14-17 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 15 of 18 |
-| Status | In Progress — Plans 01-08, 10, 12, 14, 15, 16 complete |
-| Last activity | 2026-06-15 — Completed 37-10 (test_integration_v35.py migration) |
+| Plan | 17 of 18 |
+| Status | In Progress — Plans 01-08, 10, 12, 14-17 complete |
+| Last activity | 2026-06-15 — Completed 37-17 (setup.sh help message update) |
 
-**Progress:** ██████░░░░ 50% (9/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** ██████░░░░ 61% (11/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -327,7 +327,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | GUI guide workflow documentation | Step-by-step instructions with prerequisites and outcomes | ✓ Shipped (35-05) |
 | GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
-| README unified entry point update | python -m quickice as primary invocation, Entry Point section, Known Issues CLI fix | ✓ Shipped (37-15) |
+| setup.sh help message references unified entry point | python -m quickice --help in setup.sh replaces python quickice.py --help | ✓ Shipped (37-17) |
 | Placement validation logic | Read-only bounds and overlap checking for custom molecules | ✓ Shipped (34.5-01) |
 | Semi-transparent preview rendering | Opacity 0.6 for visual distinction before insertion | ✓ Shipped (34.5-02) |
 | Validation UI integration | Validate & Preview button with signal-slot wiring | ✓ Shipped (34.5-03) |
@@ -601,8 +601,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-10-PLAN.md (test_integration_v35.py migration to run_quickice)
-**Status:** Phase 37 in progress — 9/18 plans done (01-08, 10, 12, 14, 15, 16)
+**Completed:** 37-17-PLAN.md (setup.sh help message update)
+**Status:** Phase 37 in progress — 11/18 plans done (01-08, 10, 12, 14-17)
 
 ---
-*State updated: 2026-06-15 — 37-10 COMPLETE (test_integration_v35.py migration)*
+*State updated: 2026-06-15 — 37-17 COMPLETE (setup.sh help message update)*
