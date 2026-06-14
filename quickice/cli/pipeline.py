@@ -446,11 +446,56 @@ class CLIPipeline:
     def _run_solute_step(self) -> int:
         """Insert solute molecules into the liquid region.
 
+        Source structure is selected via --solute-source (default: interface).
+        FIX #7: SoluteInserter(config, seed=args.seed) — NOT SoluteInserter(config).
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Solute step: not yet implemented")
-        return 1
+        try:
+            from quickice.structure_generation.solute_inserter import SoluteInserter
+            from quickice.structure_generation.types import SoluteConfig
+        except ImportError as e:
+            logger.error("Missing required package: %s", e)
+            report_progress(f"Solute step failed: missing package — {e}")
+            return 1
+
+        try:
+            # Resolve source structure
+            source_name = getattr(self.args, 'solute_source', 'interface')
+            source = self._get_source_structure(source_name)
+
+            if source is None:
+                raise ValueError(
+                    f"No '{source_name}' structure available for solute "
+                    f"insertion. Run the prerequisite step first."
+                )
+
+            config = SoluteConfig(
+                concentration_molar=self.args.solute_concentration,
+                solute_type=self.args.solute_type,
+            )
+
+            # FIX #7: seed=args.seed — NOT just SoluteInserter(config)
+            inserter = SoluteInserter(config, seed=self.args.seed)
+            self._solute_result = inserter.insert_solutes(source, config)
+
+            report_progress(
+                f"Solute: placed {self._solute_result.n_molecules} "
+                f"{config.solute_type} molecules at "
+                f"{config.concentration_molar} M (source={source_name})"
+            )
+
+        except ValueError as e:
+            logger.error("Invalid configuration: %s", e)
+            report_progress(f"Solute step failed: bad config — {e}")
+            return 1
+        except FileNotFoundError as e:
+            logger.error("File not found: %s", e)
+            report_progress(f"Solute step failed: file not found — {e}")
+            return 1
+
+        return 0
 
     def _run_ion_step(self) -> int:
         """Insert ions for charge screening.
