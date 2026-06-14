@@ -362,8 +362,113 @@ class CLIPipeline:
     def _run_export_step(self) -> int:
         """Export GROMACS files for the final structure.
 
+        Selects the most downstream structure available (ion > solute >
+        custom > interface > hydrate > ice) and writes GROMACS .gro/.top
+        files plus required ITP files.
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Export step: not yet implemented")
-        return 1
+        try:
+            from quickice.output.gromacs_writer import (
+                write_gro_file,
+                write_top_file,
+                write_interface_gro_file,
+                write_interface_top_file,
+                write_custom_molecule_gro_file,
+                write_custom_molecule_top_file,
+                write_solute_gro_file,
+                write_solute_top_file,
+                write_ion_gro_file,
+                write_ion_top_file,
+            )
+            from quickice.cli.itp_helpers import copy_itp_files_for_structure
+        except ImportError as e:
+            logger.error("Missing required package: %s", e)
+            report_progress(f"Export step failed: missing package — {e}")
+            return 1
+
+        # Priority order: most downstream wins — FIX #9: hydrate between interface and ice
+        if self._ion_result is not None:
+            structure, step_name = self._ion_result, "ion"
+        elif self._solute_result is not None:
+            structure, step_name = self._solute_result, "solute"
+        elif self._custom_result is not None:
+            structure, step_name = self._custom_result, "custom"
+        elif self._interface_result is not None:
+            structure, step_name = self._interface_result, "interface"
+        elif self._hydrate_result is not None:
+            structure, step_name = self._hydrate_result, "hydrate"
+        else:
+            structure, step_name = self._ice_candidate, "ice"
+
+        if structure is None:
+            logger.error("No structure available for export")
+            report_progress("Export step failed: no structure to export")
+            return 1
+
+        try:
+            gro_path = str(self._output_dir / f"{step_name}.gro")
+            top_path = str(self._output_dir / f"{step_name}.top")
+
+            # Writer dispatch by step type
+            if step_name == "ice":
+                write_gro_file(structure, gro_path)
+                write_top_file(structure, top_path)
+            elif step_name == "hydrate":
+                # HydrateStructure → InterfaceStructure-compatible wrapper
+                # IMPORTANT: HydrateStructure has guest_count and water_count
+                # (NOT guest_nmolecules, water_atom_count, etc.)
+                from quickice.structure_generation.types import (
+                    InterfaceStructure,
+                    WATER_ATOMS_PER_MOLECULE,
+                )
+                hydrate = structure
+                water_atom_count = hydrate.water_count * WATER_ATOMS_PER_MOLECULE
+                guest_atom_count = len(hydrate.positions) - water_atom_count
+                guest_nmolecules = hydrate.guest_count
+                water_nmolecules = hydrate.water_count
+                wrapper = InterfaceStructure(
+                    positions=hydrate.positions,
+                    atom_names=hydrate.atom_names,
+                    cell=hydrate.cell,
+                    molecule_index=hydrate.molecule_index,
+                    mode="hydrate",
+                    report=hydrate.report if hasattr(hydrate, "report") else "",
+                    ice_atom_count=0,
+                    water_atom_count=water_atom_count,
+                    ice_nmolecules=0,
+                    water_nmolecules=water_nmolecules,
+                    guest_atom_count=guest_atom_count,
+                    guest_nmolecules=guest_nmolecules,
+                )
+                write_interface_gro_file(wrapper, gro_path)
+                write_interface_top_file(wrapper, top_path)
+            elif step_name == "interface":
+                write_interface_gro_file(structure, gro_path)
+                write_interface_top_file(structure, top_path)
+            elif step_name == "custom":
+                write_custom_molecule_gro_file(structure, gro_path)
+                write_custom_molecule_top_file(structure, top_path)
+            elif step_name == "solute":
+                write_solute_gro_file(structure, gro_path)
+                write_solute_top_file(structure, top_path)
+            elif step_name == "ion":
+                write_ion_gro_file(structure, gro_path)
+                write_ion_top_file(structure, top_path)
+
+            # Copy ITP files
+            itp_files = copy_itp_files_for_structure(
+                self._output_dir, structure, step_name
+            )
+
+            report_progress(
+                f"Exported GROMACS: {step_name}.gro, {step_name}.top, "
+                f"{len(itp_files)} ITP files → {self._output_dir}"
+            )
+        except OSError as e:
+            logger.error("Export failed: %s", e)
+            report_progress(f"Export step failed: {e}")
+            return 1
+
+        return 0
