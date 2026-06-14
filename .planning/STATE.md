@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 01 complete (v4.5 CLI flag groups + cross-flag validation).
+**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 03 complete (CLIPipeline scaffold with execute(), helpers, and step stubs).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 01 complete (v4.5 CLI flag groups + cross-flag validation + example CSV).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 03 complete (CLIPipeline scaffold with execute(), helpers, and step stubs).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 1 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — CLI parser extended with v4.5 flags |
-| Last activity | 2026-06-14 — Completed 36-01 (v4.5 flag groups + cross-flag validation) |
+| Plan | 3 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — CLIPipeline scaffold with execute(), helpers, and step stubs |
+| Last activity | 2026-06-14 — Completed 36-03 (CLIPipeline scaffold) |
 
-**Progress:** ██████████ 94% (178/188 plans across all milestones, 36-01 1/11 COMPLETE)
+**Progress:** ██████████ 99% (220/221 plans across all milestones, 36-03 3/11 COMPLETE)
 
 ---
 
@@ -447,6 +447,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | getattr(args, 'hydrate', False) for nmolecules check | Backward-compatible: returns False if hydrate attribute doesn't exist on pre-v4.5 args | ✓ Shipped (36-01) |
 | Custom placement random validation only when custom_gro provided | Prevents false positives: --custom-placement random without --custom-gro is harmless default | ✓ Shipped (36-01) |
 | ITP path resolvers with .lower() case normalization | CLI parser choices and SoluteStructure.solute_type may pass uppercase ("CH4", "THF"); .lower() ensures consistent path resolution | ✓ Shipped (36-02) |
+| Step stubs return exit code 1 with report_progress | Clear not-yet-implemented status; replaced incrementally by Plans 05-08 | ✓ Shipped (36-03) |
+| _parse_positions_csv is a @staticmethod | No instance state needed; testable without CLIPipeline instance | ✓ Shipped (36-03) |
+| _get_source_structure raises ValueError for unknown names | Fail-fast on programmer error rather than silent None | ✓ Shipped (36-03) |
+| report_progress prints to stderr with [PROGRESS] prefix | Stderr for diagnostics; prefix enables grep filtering | ✓ Shipped (36-03) |
+| No GUI imports in pipeline.py | CLI module works without PySide6/VTK; matches itp_helpers.py pattern | ✓ Shipped (36-03) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 
 ### v4.0 Key Decisions (Shipped)
@@ -548,8 +553,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-01-PLAN.md (v4.5 CLI flag groups + cross-flag validation + example CSV)
-**Status:** Phase 36 IN PROGRESS — 1/11 plans complete
+**Completed:** 36-03-PLAN.md (CLIPipeline scaffold with execute(), helpers, and step stubs)
+**Status:** Phase 36 IN PROGRESS — 3/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-01 COMPLETE (v4.5 CLI flag groups + cross-flag validation)*
+*State updated: 2026-06-14 — 36-03 COMPLETE (CLIPipeline scaffold with execute(), helpers, and step stubs)*
