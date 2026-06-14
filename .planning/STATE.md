@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 02 complete (ITP path resolvers).
+**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 01 complete (v4.5 CLI flag groups + cross-flag validation).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 02 complete (ITP path resolvers with case normalization).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 01 complete (v4.5 CLI flag groups + cross-flag validation + example CSV).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 2 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — ITP path resolvers done |
-| Last activity | 2026-06-14 — Completed 36-02 (ITP path resolver functions) |
+| Plan | 1 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — CLI parser extended with v4.5 flags |
+| Last activity | 2026-06-14 — Completed 36-01 (v4.5 flag groups + cross-flag validation) |
 
-**Progress:** ██████████ 94% (178/188 plans across all milestones, 36-02 2/11 COMPLETE)
+**Progress:** ██████████ 94% (178/188 plans across all milestones, 36-01 1/11 COMPLETE)
 
 ---
 
@@ -443,6 +443,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Test fixtures use structural O-O differences | diversity tests use different O-O spacing (0.25-0.33nm) instead of seed differences; duplicate structures instead of duplicate seeds | ✓ Shipped (34.8-04) |
 | O-O spacing must be within 0.35nm cutoff in fixtures | Test fixtures must keep all nearest-neighbor O-O distances ≤ 0.33nm for finite energy scores | ✓ Shipped (34.8-04) |
 | PBC boundary clamping after np.mod wrapping | np.mod(-tiny, L) returns exactly L due to float64 precision; cKDTree requires data < boxsize; subtract boxsize to wrap boundary values to 0 | ✓ Shipped (34.8-05) |
+| validate_pipeline_args() calls validate_interface_args() internally | Single entry point for all validation; callers don't need to remember both | ✓ Shipped (36-01) |
+| getattr(args, 'hydrate', False) for nmolecules check | Backward-compatible: returns False if hydrate attribute doesn't exist on pre-v4.5 args | ✓ Shipped (36-01) |
+| Custom placement random validation only when custom_gro provided | Prevents false positives: --custom-placement random without --custom-gro is harmless default | ✓ Shipped (36-01) |
 | ITP path resolvers with .lower() case normalization | CLI parser choices and SoluteStructure.solute_type may pass uppercase ("CH4", "THF"); .lower() ensures consistent path resolution | ✓ Shipped (36-02) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 
@@ -545,8 +548,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-02-PLAN.md (ITP path resolver functions with case normalization)
-**Status:** Phase 36 IN PROGRESS — 2/11 plans complete
+**Completed:** 36-01-PLAN.md (v4.5 CLI flag groups + cross-flag validation + example CSV)
+**Status:** Phase 36 IN PROGRESS — 1/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-02 COMPLETE (ITP path resolvers for CLI export)*
+*State updated: 2026-06-14 — 36-01 COMPLETE (v4.5 CLI flag groups + cross-flag validation)*
