@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 58 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: TBD, e2e-compute-export: 11, completed: 39/58)
+**Total Plans:** 76 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 18, e2e-compute-export: 11, completed: 39/76)
 
 ## Overview
 
@@ -411,24 +411,46 @@ Plans:
 **Requirements:** No new requirements — tooling improvement for distribution and test consistency
 
 **Success Criteria:**
-1. `python -m quickice` launches GUI by default (when display available)
-2. `python -m quickice --cli` or no-display detection launches CLI mode
-3. PySide6/VTK not installed → graceful fallback to CLI mode with informative message
-4. Test suite uses unified entry point for both CLI and GUI test paths
-5. Existing `python quickice.py` entry point still works (backward compat)
+1. `python -m quickice` with no args shows help (like `git` with no args)
+2. `python -m quickice` with computation flags (e.g., `-T 300`) runs CLI mode automatically
+3. `python -m quickice --gui` launches GUI when display available; errors gracefully when not
+4. `python -m quickice --cli` forces CLI mode, skipping PySide6 import entirely
+5. PySide6 not installed → graceful fallback with informative message
+6. Test suite uses unified `run_quickice()` helper from conftest.py
+7. Existing `python quickice.py` entry point still works (backward compat)
 
 **Details:**
-- Create `quickice/__main__.py` router that detects CLI flags / display availability
+- Create `quickice/__main__.py` + `quickice/entry.py` router (detects CLI flags / display availability)
 - Handles missing PySide6 gracefully (headless environments, CLI-only installs)
-- Update `quickice.py` and PyInstaller spec to use unified entry point
-- Normalize test suite invocation patterns (consistent `python -m quickice` usage)
+- Update `quickice.py` to delegate to `entry.main()`
+- Update PyInstaller spec for dual-mode binary (`console=True` + `hide_console='hide-late'`)
+- Add `--cli`/`--gui` flags to argparse for discoverability
+- Normalize test suite invocation (shared `run_quickice()` helper, migrate 4 test files)
+- Update all docs from `python quickice.py` → `python -m quickice`
 - Resolves pending todo: `.planning/todos/pending/2026-05-09-unify-gui-cli-entry-point.md`
 - CLI-only PyInstaller bundle deferred (stays as pending todo)
 
-**Plans:** 0 plans
+**Plans:** 18 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 37 to break down)
+- [ ] 37-01-PLAN.md — Create quickice/entry.py (routing logic) [Wave 1]
+- [ ] 37-02-PLAN.md — Create quickice/__main__.py (3-line stub) [Wave 2]
+- [ ] 37-03-PLAN.md — Update quickice.py to delegate to entry.main() [Wave 2]
+- [ ] 37-04-PLAN.md — Update quickice/cli/parser.py (prog, epilog, --cli/--gui) [Wave 1]
+- [ ] 37-05-PLAN.md — Update quickice-gui.spec (entry point, console flag) [Wave 1]
+- [ ] 37-06-PLAN.md — Add run_quickice() to tests/conftest.py [Wave 1]
+- [ ] 37-07-PLAN.md — Create tests/test_entry_point.py (8-10 routing tests) [Wave 3]
+- [ ] 37-08-PLAN.md — Migrate tests/test_cli_integration.py to run_quickice() [Wave 3]
+- [ ] 37-09-PLAN.md — Migrate tests/test_cli_pipeline.py to run_quickice() [Wave 3]
+- [ ] 37-10-PLAN.md — Migrate tests/test_integration_v35.py to run_quickice() [Wave 3]
+- [ ] 37-11-PLAN.md — Migrate tests/test_phase_mapping.py to run_quickice() [Wave 3]
+- [ ] 37-12-PLAN.md — Update docs/cli-reference.md — replace all quickice.py refs [Wave 2]
+- [ ] 37-13-PLAN.md — Update docs/cli-reference.md — add unified entry sections [Wave 3]
+- [ ] 37-14-PLAN.md — Update docs/flowchart.md [Wave 2]
+- [ ] 37-15-PLAN.md — Update README.md [Wave 2]
+- [ ] 37-16-PLAN.md — Update README_bin.md [Wave 2]
+- [ ] 37-17-PLAN.md — Update setup.sh [Wave 2]
+- [ ] 37-18-PLAN.md — Backward compat + full integration verification [Wave 4]
 
 ---
 
@@ -488,7 +510,7 @@ Plans:
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
-| 37 - Unified Entry Point | 🔲 Not Started | 0 | TBD |
+| 37 - Unified Entry Point | 🔲 Not Started | 0 | 18 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
