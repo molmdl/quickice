@@ -63,7 +63,7 @@ conda env create -f environment.yml
 source setup.sh
 
 # Verify installation
-python -m quickice.gui
+python -m quickice --help
 ```
 
 For detailed GUI documentation, see [docs/gui-guide.md](docs/gui-guide.md).
@@ -74,6 +74,11 @@ For CLI usage, see [docs/cli-reference.md](docs/cli-reference.md).
 
 ### Launch the GUI
 
+```bash
+python -m quickice --gui
+```
+
+Or for direct GUI access (bypasses router):
 ```bash
 python -m quickice.gui
 ```
@@ -91,6 +96,16 @@ python -m quickice.gui
 - Tab 4: Insert THF solutes at 0.5 M concentration
 - Tab 5: Insert NaCl ions at 0.15 M concentration
 - Ctrl+S: Export multi-molecule GROMACS files
+
+## Entry Point
+
+QuickIce uses `python -m quickice` as the unified entry point:
+
+- **No arguments** — Show help (like `git` with no args)
+- **Computation flags** (`-T`, `--interface`, etc.) — CLI mode automatically
+- **`--cli`** — Force CLI mode (skip PySide6 import, useful in CI)
+- **`--gui`** — Force GUI mode (requires PySide6 + display)
+- **`python quickice.py`** — Backward compatible, delegates to unified router
 
 ## Features (6-Tab Workflow)
 
@@ -278,7 +293,7 @@ Key limitations:
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
 - Only pure water ice systems supported
-- CLI support for v4.5 features (Tabs 3-5) pending future release
+- CLI support for v4.5 features (Tabs 3-5) is available via `python -m quickice`
 
 ## Dependencies
 
@@ -375,7 +390,9 @@ pytest tests/gui/test_solute_inserter.py
 
 ```
 quickice/
-├── quickice.py          # CLI entry point
+├── quickice.py          # Backward-compat entry wrapper
+├── quickice/__main__.py # Unified entry point (python -m quickice)
+├── quickice/entry.py    # Entry router (CLI/GUI routing)
 ├── quickice/            # Main package
 │   ├── cli/             # Command-line interface
 │   ├── gui/             # Graphical User Interface
@@ -393,4 +410,4 @@ quickice/
 ---
 
 *QuickIce v4.5 — Solute & Custom Molecule Insertion*
-*Last updated: 2026-05-07*
+*Last updated: 2026-06-15*
