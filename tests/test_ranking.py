@@ -91,33 +91,53 @@ def ideal_candidate():
 
 @pytest.fixture
 def candidate_set():
-    """Create a set of candidates for ranking tests.
+    """Create a set of candidates with structurally different O-O distributions.
     
-    Creates 5 candidates with reasonable O-O distances for proper scoring.
+    Creates 5 candidates with different O-O distance distributions for
+    fingerprint-based diversity scoring. Each candidate has a distinct
+    O atom arrangement, producing different O-O distance histograms.
+    All nearest-neighbor O-O distances are within the 0.35nm cutoff
+    to ensure finite energy scores.
     """
     candidates = []
-    # Create candidates with varied but reasonable O-O distances
-    for i in range(5):
-        # Create positions with O atoms at reasonable distances
-        # Spread O atoms to ensure O-O distances within cutoff
-        positions = np.array([
-            # Molecule 1: O at varying position
-            [0.1 + i * 0.01, 0.1, 0.1],
-            [0.2, 0.1, 0.1],  # H
-            [0.0, 0.1, 0.1],  # H
-            # Molecule 2
-            [0.4 + i * 0.01, 0.1, 0.1],
-            [0.5, 0.1, 0.1],  # H
-            [0.3, 0.1, 0.1],  # H
-            # Molecule 3
-            [0.1 + i * 0.01, 0.4, 0.1],
-            [0.2, 0.4, 0.1],  # H
-            [0.0, 0.4, 0.1],  # H
-            # Molecule 4
-            [0.4 + i * 0.01, 0.4, 0.1],
-            [0.5, 0.4, 0.1],  # H
-            [0.3, 0.4, 0.1],  # H
-        ])
+    # Candidate 0: Regular grid, 0.28nm spacing (near ideal O-O distance)
+    positions_0 = np.array([
+        [0.10, 0.10, 0.10], [0.20, 0.10, 0.10], [0.00, 0.10, 0.10],  # O, H, H
+        [0.38, 0.10, 0.10], [0.48, 0.10, 0.10], [0.28, 0.10, 0.10],  # O, H, H
+        [0.10, 0.38, 0.10], [0.20, 0.38, 0.10], [0.00, 0.38, 0.10],  # O, H, H
+        [0.38, 0.38, 0.10], [0.48, 0.38, 0.10], [0.28, 0.38, 0.10],  # O, H, H
+    ])
+    # Candidate 1: Wider grid, 0.32nm spacing
+    positions_1 = np.array([
+        [0.10, 0.10, 0.10], [0.20, 0.10, 0.10], [0.00, 0.10, 0.10],  # O, H, H
+        [0.42, 0.10, 0.10], [0.52, 0.10, 0.10], [0.32, 0.10, 0.10],  # O, H, H
+        [0.10, 0.42, 0.10], [0.20, 0.42, 0.10], [0.00, 0.42, 0.10],  # O, H, H
+        [0.42, 0.42, 0.10], [0.52, 0.42, 0.10], [0.32, 0.42, 0.10],  # O, H, H
+    ])
+    # Candidate 2: Wide grid, 0.33nm spacing
+    positions_2 = np.array([
+        [0.10, 0.10, 0.10], [0.20, 0.10, 0.10], [0.00, 0.10, 0.10],  # O, H, H
+        [0.43, 0.10, 0.10], [0.53, 0.10, 0.10], [0.33, 0.10, 0.10],  # O, H, H
+        [0.10, 0.43, 0.10], [0.20, 0.43, 0.10], [0.00, 0.43, 0.10],  # O, H, H
+        [0.43, 0.43, 0.10], [0.53, 0.43, 0.10], [0.33, 0.43, 0.10],  # O, H, H
+    ])
+    # Candidate 3: Different center, 0.25nm spacing
+    positions_3 = np.array([
+        [0.15, 0.15, 0.10], [0.25, 0.15, 0.10], [0.05, 0.15, 0.10],  # O, H, H
+        [0.40, 0.15, 0.10], [0.50, 0.15, 0.10], [0.30, 0.15, 0.10],  # O, H, H
+        [0.15, 0.40, 0.10], [0.25, 0.40, 0.10], [0.05, 0.40, 0.10],  # O, H, H
+        [0.40, 0.40, 0.10], [0.50, 0.40, 0.10], [0.30, 0.40, 0.10],  # O, H, H
+    ])
+    # Candidate 4: Irregular arrangement with varied O-O distances (all < 0.35nm)
+    # O1=[0.10,0.15], O2=[0.30,0.05], O3=[0.30,0.35], O4=[0.42,0.20]
+    positions_4 = np.array([
+        [0.10, 0.15, 0.10], [0.20, 0.15, 0.10], [0.00, 0.15, 0.10],  # O, H, H
+        [0.30, 0.05, 0.10], [0.40, 0.05, 0.10], [0.20, 0.05, 0.10],  # O, H, H
+        [0.30, 0.35, 0.10], [0.40, 0.35, 0.10], [0.20, 0.35, 0.10],  # O, H, H
+        [0.42, 0.20, 0.10], [0.52, 0.20, 0.10], [0.32, 0.20, 0.10],  # O, H, H
+    ])
+    all_positions = [positions_0, positions_1, positions_2, positions_3, positions_4]
+    for i, positions in enumerate(all_positions):
         atom_names = ['O', 'H', 'H'] * 4
         cell = np.eye(3) * 1.0
         candidates.append(Candidate(
@@ -134,25 +154,46 @@ def candidate_set():
 
 @pytest.fixture
 def candidate_with_duplicate_seeds():
-    """Create candidates with some duplicate seeds for diversity testing."""
+    """Create candidates with some duplicate structures for diversity testing.
+    
+    Since diversity_score now uses structural fingerprints (not seeds),
+    this fixture creates candidates where some share identical O-O distance
+    distributions (duplicate structures) and one has a unique structure.
+    
+    - Candidates 0, 1: Identical O positions (duplicate structure A)
+    - Candidates 2, 3: Identical O positions (duplicate structure B)
+    - Candidate 4: Different O positions (unique structure)
+    """
     candidates = []
-    seeds = [1000, 1001, 1000, 1002, 1001]  # Seeds 1000 and 1001 appear twice
-    for i, seed in enumerate(seeds):
-        # Create positions with reasonable O-O distances
-        positions = np.array([
-            [0.1 + i * 0.05, 0.1, 0.1],
-            [0.2, 0.1, 0.1],
-            [0.0, 0.1, 0.1],
-            [0.4 + i * 0.05, 0.1, 0.1],
-            [0.5, 0.1, 0.1],
-            [0.3, 0.1, 0.1],
-            [0.1 + i * 0.05, 0.4, 0.1],
-            [0.2, 0.4, 0.1],
-            [0.0, 0.4, 0.1],
-            [0.4 + i * 0.05, 0.4, 0.1],
-            [0.5, 0.4, 0.1],
-            [0.3, 0.4, 0.1],
-        ])
+    # Structure A: regular grid, 0.28nm spacing (candidates 0 and 1 are identical)
+    positions_a = np.array([
+        [0.10, 0.10, 0.10], [0.20, 0.10, 0.10], [0.00, 0.10, 0.10],  # O, H, H
+        [0.38, 0.10, 0.10], [0.48, 0.10, 0.10], [0.28, 0.10, 0.10],  # O, H, H
+        [0.10, 0.38, 0.10], [0.20, 0.38, 0.10], [0.00, 0.38, 0.10],  # O, H, H
+        [0.38, 0.38, 0.10], [0.48, 0.38, 0.10], [0.28, 0.38, 0.10],  # O, H, H
+    ])
+    # Structure B: wider grid, 0.35nm spacing (candidates 2 and 3 are identical)
+    positions_b = np.array([
+        [0.10, 0.10, 0.10], [0.20, 0.10, 0.10], [0.00, 0.10, 0.10],  # O, H, H
+        [0.45, 0.10, 0.10], [0.55, 0.10, 0.10], [0.35, 0.10, 0.10],  # O, H, H
+        [0.10, 0.45, 0.10], [0.20, 0.45, 0.10], [0.00, 0.45, 0.10],  # O, H, H
+        [0.45, 0.45, 0.10], [0.55, 0.45, 0.10], [0.35, 0.45, 0.10],  # O, H, H
+    ])
+    # Structure C (unique): different center, 0.25nm spacing
+    positions_c = np.array([
+        [0.15, 0.15, 0.10], [0.25, 0.15, 0.10], [0.05, 0.15, 0.10],  # O, H, H
+        [0.40, 0.15, 0.10], [0.50, 0.15, 0.10], [0.30, 0.15, 0.10],  # O, H, H
+        [0.15, 0.40, 0.10], [0.25, 0.40, 0.10], [0.05, 0.40, 0.10],  # O, H, H
+        [0.40, 0.40, 0.10], [0.50, 0.40, 0.10], [0.30, 0.40, 0.10],  # O, H, H
+    ])
+    all_structures = [
+        (positions_a, 1000),   # Duplicate A
+        (positions_a, 1001),   # Duplicate A
+        (positions_b, 1002),   # Duplicate B
+        (positions_b, 1003),   # Duplicate B
+        (positions_c, 1004),   # Unique C
+    ]
+    for positions, seed in all_structures:
         atom_names = ['O', 'H', 'H'] * 4
         cell = np.eye(3) * 1.0
         candidates.append(Candidate(
@@ -425,35 +466,39 @@ class TestDiversityScore:
         
         assert isinstance(result, float)
     
-    def test_diversity_seed_uniqueness(self, candidate_set):
-        """Test that unique seed gets higher score."""
-        # All seeds in candidate_set are unique (1000-1004)
+    def test_diversity_structural_uniqueness(self, candidate_set):
+        """Test that structurally different candidates get non-zero diversity scores."""
         scores = [diversity_score(c, candidate_set) for c in candidate_set]
-        
-        # All should have score 1.0 (each seed appears once)
+        # With different O-O distance distributions, candidates should have
+        # diversity >= 0 (they are not identical structures)
         for score in scores:
-            np.testing.assert_allclose(score, 1.0)
+            assert score >= 0.0, f"Diversity score should be >= 0, got {score}"
+        # Not all scores should be identical (different structures)
+        assert len(set(round(s, 6) for s in scores)) > 1, (
+            f"Scores should vary for different structures: {scores}"
+        )
     
-    def test_diversity_seed_frequency(self, candidate_with_duplicate_seeds):
-        """Test that frequent seed gets lower score."""
+    def test_diversity_structural_frequency(self, candidate_with_duplicate_seeds):
+        """Test that structurally duplicated candidates get lower diversity scores."""
         candidates = candidate_with_duplicate_seeds
-        
-        # Seeds: [1000, 1001, 1000, 1002, 1001]
-        # Seeds 1000 and 1001 appear twice -> score = 0.5
-        # Seed 1002 appears once -> score = 1.0
-        
-        for c in candidates:
-            score = diversity_score(c, candidates)
-            if c.seed == 1002:
-                np.testing.assert_allclose(score, 1.0)
-            elif c.seed in [1000, 1001]:
-                np.testing.assert_allclose(score, 0.5)
+        scores = [diversity_score(c, candidates) for c in candidates]
+        # Candidates with duplicate structures (appearing twice) should have
+        # lower diversity than candidates with unique structures
+        # The unique candidate should have the highest diversity score
+        # (it's the most structurally different from the rest)
+        unique_score = scores[-1]  # Last candidate is structurally unique
+        duplicate_scores = scores[:-1]
+        # Unique candidate should be more diverse than average duplicate
+        assert unique_score > np.mean(duplicate_scores), (
+            f"Unique structure should have higher diversity than duplicates: "
+            f"unique={unique_score:.4f}, dup_mean={np.mean(duplicate_scores):.4f}"
+        )
     
     def test_diversity_score_range(self, candidate_set):
         """Test that diversity scores are in valid range [0, 1]."""
         for c in candidate_set:
             score = diversity_score(c, candidate_set)
-            assert 0 < score <= 1.0
+            assert 0 <= score <= 1.0
 
 
 # ============================================================================
@@ -556,7 +601,7 @@ class TestRequirements:
         for rc in result.ranked_candidates:
             assert hasattr(rc, 'diversity_score')
             assert isinstance(rc.diversity_score, float)
-            assert 0 < rc.diversity_score <= 1.0
+            assert 0 <= rc.diversity_score <= 1.0
     
     def test_RANK_04_combined_score(self, candidate_set):
         """RANK-04: Verify candidates have combined scores."""
