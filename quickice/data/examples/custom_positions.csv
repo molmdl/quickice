@@ -1,0 +1,6 @@
+# Custom molecule positions for QuickIce CLI
+# Columns: x(nm), y(nm), z(nm), alpha(deg), beta(deg), gamma(deg)
+# Euler angles use ZXZ convention (same as GUI placement table)
+1.5,1.5,2.5,0.0,0.0,0.0
+0.5,2.5,3.0,90.0,45.0,0.0
+2.5,0.5,2.0,180.0,30.0,90.0
