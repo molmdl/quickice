@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 36-cli-feature-parity COMPLETE — All 11 plans executed, 28 CLI pipeline integration tests passing.
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 04 complete (parser prog name + mode flags)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity COMPLETE — All 11 plans executed.
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 04 complete (parser prog name + mode flags)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 36-cli-feature-parity |
-| Plan | 11 of 11 COMPLETE |
-| Status | Phase COMPLETE — 28 CLI pipeline integration tests |
-| Last activity | 2026-06-14 — Completed 36-11 (CLI pipeline integration tests) |
+| Phase | 37-unified-entry-point |
+| Plan | 06 of 18 |
+| Status | In progress — Wave 1 (Plans 01-06 complete, 12 remaining) |
+| Last activity | 2026-06-14 — Completed 37-06 (run_quickice helper) |
 
-**Progress:** ██████████ 100% (228/228 plans across all milestones, 36-11 11/11 COMPLETE)
+**Progress:** █████░░░░░░ 53% (3/18 plans in Phase 37, 228+ plans across all milestones)
 
 ---
 
@@ -463,6 +463,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | seed=self.args.seed in InterfaceConfig (FIX #3) | Project history: InterfaceConfig requires seed= parameter | ✓ Shipped (36-05) |
 | Hydrate branch placeholder if self._ice_candidate is None | Allows Plan 06 to add hydrate generation before ice candidate code | ✓ Shipped (36-05) |
 | Inline try/except ImportError in step methods | Science deps may be missing; fail gracefully with clear error | ✓ Shipped (36-05) |
+| run_quickice(*args, timeout=60) in conftest.py | Shared subprocess helper replacing 3 per-file run_cli() helpers; python -m quickice canonical invocation | ✓ Shipped (37-06) |
 | No GUI imports in pipeline.py | CLI module works without PySide6/VTK; matches itp_helpers.py pattern | ✓ Shipped (36-03) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 | guest_type .lower() normalization in hydrate branch | CLI parser uses uppercase CH4/THF but HydrateConfig validates against lowercase | ✓ Shipped (36-06) |
@@ -585,8 +586,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-11-PLAN.md (CLI pipeline integration tests — 28 tests)
-**Status:** Phase 36 COMPLETE — 11/11 plans done
+**Completed:** 37-06-PLAN.md (Add run_quickice() helper to conftest.py)
+**Status:** Phase 37 in progress — 3/18 plans done (04, 05, 06)
 
 ---
 *State updated: 2026-06-14 — 36-11 COMPLETE (Phase 36 CLI feature parity finished)*
