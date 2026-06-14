@@ -390,17 +390,17 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 **Plans:** 11 plans in 9 waves
 
 Plans:
-- [ ] 36-01-PLAN.md — Parser flags + validation + CSV example (Wave 1)
-- [ ] 36-02-PLAN.md — ITP path resolvers with case normalization (Wave 1)
-- [ ] 36-03-PLAN.md — CLIPipeline scaffold with execute(), helpers, stubs (Wave 2)
-- [ ] 36-04-PLAN.md — ITP copy function with all 6 step cases including hydrate (Wave 2)
-- [ ] 36-05-PLAN.md — Ice source step + interface step with seed (Wave 3)
-- [ ] 36-06-PLAN.md — Hydrate source step with HydrateStructure attribute mapping (Wave 4)
-- [ ] 36-07-PLAN.md — Export step with hydrate→interface wrapper (Wave 5)
-- [ ] 36-08-PLAN.md — Custom + solute steps with SoluteInserter seed fix (Wave 6)
-- [ ] 36-09-PLAN.md — Ion step with 3 source modes + guest_atom_count offset (Wave 7)
-- [ ] 36-10-PLAN.md — main.py wiring (Wave 8)
-- [ ] 36-11-PLAN.md — CLI integration tests (Wave 9)
+- [x] 36-01-PLAN.md — Parser flags + validation + CSV example (Wave 1)
+- [x] 36-02-PLAN.md — ITP path resolvers with case normalization (Wave 1)
+- [x] 36-03-PLAN.md — CLIPipeline scaffold with execute(), helpers, stubs (Wave 2)
+- [x] 36-04-PLAN.md — ITP copy function with all 6 step cases including hydrate (Wave 2)
+- [x] 36-05-PLAN.md — Ice source step + interface step with seed (Wave 3)
+- [x] 36-06-PLAN.md — Hydrate source step with HydrateStructure attribute mapping (Wave 4)
+- [x] 36-07-PLAN.md — Export step with hydrate→interface wrapper (Wave 5)
+- [x] 36-08-PLAN.md — Custom + solute steps with SoluteInserter seed fix (Wave 6)
+- [x] 36-09-PLAN.md — Ion step with 3 source modes + guest_atom_count offset (Wave 7)
+- [x] 36-10-PLAN.md — main.py wiring (Wave 8)
+- [x] 36-11-PLAN.md — CLI integration tests (Wave 9)
 
 ---
 
@@ -487,7 +487,7 @@ Plans:
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
-| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 11 |
+| 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | 🔲 Not Started | 0 | TBD |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |

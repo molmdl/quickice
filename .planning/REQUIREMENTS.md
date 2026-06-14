@@ -138,12 +138,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-03 | Phase 35 | Pending |
 | DOCS-04 | Phase 35 | Pending |
 | DOCS-05 | Phase 35 | Pending |
+| CLI-01 | Phase 36 | Complete |
+| CLI-02 | Phase 36 | Complete |
+| CLI-03 | Phase 36 | Complete |
+| CLI-04 | Phase 36 | Complete |
+| CLI-05 | Phase 36 | Complete |
 
 **Coverage:**
 - v4.5 requirements: 39 total
-- Mapped to phases: 39
+- CLI requirements: 5 total (moved from v4.5.1 to v4.5)
+- Mapped to phases: 44
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 — Phase 34 complete (CUSTOM-01 to CUSTOM-12, VIS-02)*
+*Last updated: 2026-06-14 — Phase 36 complete (CLI-01 to CLI-05)*
