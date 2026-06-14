@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14-16 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14-16 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 14 of 18 |
-| Status | In Progress — Plans 01-06, 12, 14 complete |
-| Last activity | 2026-06-15 — Completed 37-12 (CLI reference python -m quickice replacement) |
+| Plan | 16 of 18 |
+| Status | In Progress — Plans 01-06, 12, 14, 16 complete |
+| Last activity | 2026-06-15 — Completed 37-16 (README_bin.md platform invocation table) |
 
-**Progress:** █████░░░░░ 50% (9/18 plans in Phase 37, 229+ plans across all milestones)
+**Progress:** ██████░░░░ 56% (10/18 plans in Phase 37, 230+ plans across all milestones)
 
 ---
 
@@ -594,8 +594,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-03-PLAN.md (quickice.py delegates to entry.main)
-**Status:** Phase 37 in progress — 9/18 plans done (01-06, 12, 14)
+**Completed:** 37-16-PLAN.md (README_bin.md platform invocation table and CLI mode docs)
+**Status:** Phase 37 in progress — 10/18 plans done (01-06, 12, 14, 16)
 
 ---
-*State updated: 2026-06-15 — 37-03 COMPLETE (quickice.py delegates to entry.main)*
+*State updated: 2026-06-15 — 37-16 COMPLETE (README_bin.md platform invocation table)*
