@@ -260,7 +260,7 @@ class CLIPipeline:
 
             try:
                 phase_info = lookup_phase(self.args.temperature, self.args.pressure)
-                nmolecules = getattr(self.args, 'nmolecules', 256)
+                nmolecules = self.args.nmolecules or 256
                 gen_result = generate_candidates(
                     phase_info,
                     nmolecules=nmolecules,
@@ -269,7 +269,7 @@ class CLIPipeline:
                 )
                 self._ice_candidate = gen_result.candidates[0]
                 report_progress(
-                    f"Generated ice candidate ({phase_info.phase_id})"
+                    f"Generated ice candidate ({phase_info['phase_id']})"
                 )
             except UnknownPhaseError as e:
                 logger.error("Unknown phase at given T/P: %s", e)
