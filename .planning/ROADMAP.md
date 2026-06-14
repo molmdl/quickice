@@ -302,8 +302,8 @@ Plans:
 - [x] 34.8-01-PLAN.md — PERF-02: Optimize scorer memory with cKDTree boxsize (Wave 1)
 - [x] 34.8-02-PLAN.md — TEST-09: Add TOP/ITP moleculetype name matching test (Wave 1)
 - [x] 34.8-03-PLAN.md — BUG-04: Fix diversity_score with structural fingerprints (Wave 2, depends on 01)
-- [ ] 34.8-04-PLAN.md — GAP: Update diversity tests for fingerprint behavior (Wave 1 gap closure)
-- [ ] 34.8-05-PLAN.md — GAP: Fix Ice V cKDTree boxsize float64 edge case (Wave 1 gap closure)
+- [x] 34.8-04-PLAN.md — GAP: Update diversity tests for fingerprint behavior (Wave 1 gap closure)
+- [x] 34.8-05-PLAN.md — GAP: Fix Ice V cKDTree boxsize float64 edge case (Wave 1 gap closure)
 
 **Details:**
 
@@ -417,7 +417,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 9 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
-| 34.8 - Fix Performance Issues and Test Gaps | ⏳ Gap Closure | 3 | 5 |
+| 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |

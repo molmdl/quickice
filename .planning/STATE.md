@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.8-fix-performance-and-test-gaps |
 | Plan | 5 of 5 COMPLETE |
-| Status | Phase complete |
-| Last activity | 2026-06-14 — Completed 34.8-05-PLAN.md |
+| Status | Phase COMPLETE — all gap closures done, 883 tests pass, 0 failures |
+| Last activity | 2026-06-14 — Completed 34.8-05 + scorer.py boundary clamping |
 
 **Progress:** ██████████ 94% (177/188 plans across all milestones, 34.8 5/5 COMPLETE)
 
