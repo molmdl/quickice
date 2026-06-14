@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 01 complete (unified entry point routing)
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 01 complete (unified entry point routing)
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 01 of 18 |
-| Status | In Progress — Plans 01, 04-06 complete |
-| Last activity | 2026-06-14 — Completed 37-01 (unified entry point routing) |
+| Plan | 14 of 18 |
+| Status | In Progress — Plans 01-06, 12, 14 complete |
+| Last activity | 2026-06-15 — Completed 37-03 (quickice.py delegates to entry.main) |
 
-**Progress:** ███░░░░░░░ 33% (6/18 plans in Phase 37, 228+ plans across all milestones)
+**Progress:** █████░░░░░ 50% (9/18 plans in Phase 37, 229+ plans across all milestones)
 
 ---
 
@@ -593,8 +593,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 37-01-PLAN.md (Unified entry point routing module)
-**Status:** Phase 37 in progress — 4/18 plans done (01, 04, 05, 06)
+**Completed:** 37-14-PLAN.md (Flowchart unified entry point update)
+**Status:** Phase 37 in progress — 8/18 plans done (01-06, 12, 14)
 
 ---
-*State updated: 2026-06-14 — 37-01 COMPLETE (unified entry point routing)*
+*State updated: 2026-06-14 — 37-14 COMPLETE (flowchart unified entry point update)*
