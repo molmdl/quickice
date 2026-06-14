@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 06 complete (hydrate source step with correct HydrateStructure attributes).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 07 complete (export step with all 6 structure types including hydrate wrapper).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 6 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — hydrate source step with correct HydrateStructure attributes |
-| Last activity | 2026-06-14 — Completed 36-06 (hydrate source step) |
+| Plan | 7 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — export step with all 6 structure types including hydrate wrapper |
+| Last activity | 2026-06-14 — Completed 36-07 (export step) |
 
-**Progress:** ██████████ 99% (223/224 plans across all milestones, 36-06 6/11 COMPLETE)
+**Progress:** ██████████ 99% (224/225 plans across all milestones, 36-07 7/11 COMPLETE)
 
 ---
 
@@ -468,6 +468,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | guest_type .lower() normalization in hydrate branch | CLI parser uses uppercase CH4/THF but HydrateConfig validates against lowercase | ✓ Shipped (36-06) |
 | guest_count/water_count (NOT guest_nmolecules/water_nmolecules) on HydrateStructure | HydrateStructure uses different naming from InterfaceStructure; wrong attr causes AttributeError | ✓ Shipped (36-06) |
 | hydrate→candidate via to_candidate() when --interface also set | Enables hydrate→interface workflow chain in CLI | ✓ Shipped (36-06) |
+| Hydrate-only export path (FIX #9) between interface and ice | Hydrate case in _run_export_step priority list enables hydrate-only workflow | ✓ Shipped (36-07) |
+| Hydrate export wrapper computes InterfaceStructure attrs | water_atom_count=water_count*4, guest_atom_count=len(positions)-water_atom_count; guest_count→guest_nmolecules, water_count→water_nmolecules | ✓ Shipped (36-07) |
+| Inline imports for writer functions in export step | Science deps may be missing; fail gracefully with ImportError | ✓ Shipped (36-07) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -568,8 +571,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-06-PLAN.md (hydrate source step with correct HydrateStructure attributes)
-**Status:** Phase 36 IN PROGRESS — 6/11 plans complete
+**Completed:** 36-07-PLAN.md (export step with all 6 structure types including hydrate wrapper)
+**Status:** Phase 36 IN PROGRESS — 7/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-05 COMPLETE (ice candidate + interface step implementation)*
+*State updated: 2026-06-14 — 36-07 COMPLETE (export step with all 6 structure types)*
