@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase e2e-compute-export COMPLETE — 11/11 plans, molecule-type presence assertions added to all 14 grompp tests (Plan 11).
+**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 02 complete (ITP path resolvers).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase e2e-compute-export COMPLETE — 11/11 plans (116 bridge tests + 14 grompp validation tests with molecule-type presence assertions = 130 total + cleanup utility).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 02 complete (ITP path resolvers with case normalization).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.8-fix-performance-and-test-gaps |
-| Plan | 5 of 5 COMPLETE |
-| Status | Phase COMPLETE — all gap closures done, 883 tests pass, 0 failures |
-| Last activity | 2026-06-14 — Completed 34.8-05 + scorer.py boundary clamping |
+| Phase | 36-cli-feature-parity |
+| Plan | 2 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — ITP path resolvers done |
+| Last activity | 2026-06-14 — Completed 36-02 (ITP path resolver functions) |
 
-**Progress:** ██████████ 94% (177/188 plans across all milestones, 34.8 5/5 COMPLETE)
+**Progress:** ██████████ 94% (178/188 plans across all milestones, 36-02 2/11 COMPLETE)
 
 ---
 
@@ -443,6 +443,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Test fixtures use structural O-O differences | diversity tests use different O-O spacing (0.25-0.33nm) instead of seed differences; duplicate structures instead of duplicate seeds | ✓ Shipped (34.8-04) |
 | O-O spacing must be within 0.35nm cutoff in fixtures | Test fixtures must keep all nearest-neighbor O-O distances ≤ 0.33nm for finite energy scores | ✓ Shipped (34.8-04) |
 | PBC boundary clamping after np.mod wrapping | np.mod(-tiny, L) returns exactly L due to float64 precision; cKDTree requires data < boxsize; subtract boxsize to wrap boundary values to 0 | ✓ Shipped (34.8-05) |
+| ITP path resolvers with .lower() case normalization | CLI parser choices and SoluteStructure.solute_type may pass uppercase ("CH4", "THF"); .lower() ensures consistent path resolution | ✓ Shipped (36-02) |
+| Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -543,8 +545,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 34.8-05-PLAN.md (cKDTree boundary clamping for triclinic Ice V interface)
-**Status:** Phase 34.8 COMPLETE — 5/5 plans, ready for Phase 35 remaining work
+**Completed:** 36-02-PLAN.md (ITP path resolver functions with case normalization)
+**Status:** Phase 36 IN PROGRESS — 2/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 34.8-05 COMPLETE (cKDTree boundary clamping fixes Ice V slab interface)*
+*State updated: 2026-06-14 — 36-02 COMPLETE (ITP path resolvers for CLI export)*
