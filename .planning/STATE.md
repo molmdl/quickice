@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 05 complete (ice candidate + interface step implementation).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 06 complete (hydrate source step with correct HydrateStructure attributes).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 5 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — ice candidate + interface step implementation |
-| Last activity | 2026-06-14 — Completed 36-05 (source + interface steps) |
+| Plan | 6 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — hydrate source step with correct HydrateStructure attributes |
+| Last activity | 2026-06-14 — Completed 36-06 (hydrate source step) |
 
-**Progress:** ██████████ 99% (222/223 plans across all milestones, 36-05 5/11 COMPLETE)
+**Progress:** ██████████ 99% (223/224 plans across all milestones, 36-06 6/11 COMPLETE)
 
 ---
 
@@ -465,6 +465,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Inline try/except ImportError in step methods | Science deps may be missing; fail gracefully with clear error | ✓ Shipped (36-05) |
 | No GUI imports in pipeline.py | CLI module works without PySide6/VTK; matches itp_helpers.py pattern | ✓ Shipped (36-03) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
+| guest_type .lower() normalization in hydrate branch | CLI parser uses uppercase CH4/THF but HydrateConfig validates against lowercase | ✓ Shipped (36-06) |
+| guest_count/water_count (NOT guest_nmolecules/water_nmolecules) on HydrateStructure | HydrateStructure uses different naming from InterfaceStructure; wrong attr causes AttributeError | ✓ Shipped (36-06) |
+| hydrate→candidate via to_candidate() when --interface also set | Enables hydrate→interface workflow chain in CLI | ✓ Shipped (36-06) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -565,8 +568,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-05-PLAN.md (ice candidate + interface step implementation)
-**Status:** Phase 36 IN PROGRESS — 5/11 plans complete
+**Completed:** 36-06-PLAN.md (hydrate source step with correct HydrateStructure attributes)
+**Status:** Phase 36 IN PROGRESS — 6/11 plans complete
 
 ---
 *State updated: 2026-06-14 — 36-05 COMPLETE (ice candidate + interface step implementation)*
