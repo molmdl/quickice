@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 04 of 18 |
-| Status | In Progress — Plan 04 complete (parser prog name + mode flags) |
+| Plan | 06 of 18 |
+| Status | In Progress — Plans 04-06 complete (Wave 1) |
 | Last activity | 2026-06-14 — Completed 37-04 (parser prog name & mode flags) |
 
-**Progress:** ██░░░░░░░░ 22% (4/18 plans in Phase 37, 228+ plans across all milestones)
+**Progress:** ███░░░░░░░ 33% (6/18 plans in Phase 37, 228+ plans across all milestones)
 
 ---
 
@@ -458,6 +458,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | comment_out_atomtypes_in_itp on solute/custom ITPs only | Data ITPs (tip4p-ice, hydrate guest) lack [atomtypes]; solute/custom have them and must be commented | ✓ Shipped (36-04) |
 | Partial copy list on error (logger.warning, no crash) | CLI should not fail on missing ITP; return list of successfully copied filenames | ✓ Shipped (36-04) |
 | nmolecules default 256 via `or 256` (NOT getattr) | getattr(args, 'nmolecules', 256) returns None when attr exists; `or 256` handles None correctly | ✓ Shipped (36-11) |
+| --cli/--gui flags with default=False for discoverability | Mode flags consumed by entry router before argparse; added to parser for --help visibility and to prevent unrecognized argument errors | ✓ Shipped (37-04) |
 | base_seed= (NOT seed=) for generate_candidates | Project history: generate_candidates takes base_seed parameter | ✓ Shipped (36-05) |
 | gen_result.candidates[0] for result access | Project history: result is GenerationResult with .candidates list | ✓ Shipped (36-05) |
 | seed=self.args.seed in InterfaceConfig (FIX #3) | Project history: InterfaceConfig requires seed= parameter | ✓ Shipped (36-05) |
@@ -588,8 +589,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 37-06-PLAN.md (Add run_quickice() helper to conftest.py)
+**Completed:** 37-04-PLAN.md (Parser prog name, epilog examples, --cli/--gui flags)
 **Status:** Phase 37 in progress — 3/18 plans done (04, 05, 06)
 
 ---
-*State updated: 2026-06-14 — 37-05 COMPLETE (PyInstaller spec dual-mode update)*
+*State updated: 2026-06-14 — 37-04 COMPLETE (parser prog name & mode flags)*
