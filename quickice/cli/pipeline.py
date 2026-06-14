@@ -195,11 +195,48 @@ class CLIPipeline:
     def _run_source_step(self) -> int:
         """Generate ice candidate or hydrate structure.
 
+        The hydrate branch (when --hydrate is specified) will be added
+        by Plan 06. This implementation handles the ice candidate path
+        only (when --interface is specified without --hydrate).
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Source step: not yet implemented")
-        return 1
+        # [Hydrate branch added by Plan 06 — if getattr(self.args, 'hydrate', False): ...]
+
+        # Ice candidate branch (when --interface without --hydrate):
+        if self._ice_candidate is None:  # Not set by hydrate branch
+            try:
+                from quickice.phase_mapping import lookup_phase, UnknownPhaseError
+                from quickice.structure_generation import generate_candidates
+            except ImportError as e:
+                logger.error("Missing required package: %s", e)
+                report_progress(f"Source step failed: missing package — {e}")
+                return 1
+
+            try:
+                phase_info = lookup_phase(self.args.temperature, self.args.pressure)
+                nmolecules = getattr(self.args, 'nmolecules', 256)
+                gen_result = generate_candidates(
+                    phase_info,
+                    nmolecules=nmolecules,
+                    n_candidates=1,
+                    base_seed=self.args.seed,
+                )
+                self._ice_candidate = gen_result.candidates[0]
+                report_progress(
+                    f"Generated ice candidate ({phase_info.phase_id})"
+                )
+            except UnknownPhaseError as e:
+                logger.error("Unknown phase at given T/P: %s", e)
+                report_progress(f"Source step failed: unknown phase — {e}")
+                return 1
+            except ValueError as e:
+                logger.error("Invalid configuration: %s", e)
+                report_progress(f"Source step failed: bad config — {e}")
+                return 1
+
+        return 0
 
     def _run_interface_step(self) -> int:
         """Generate ice-water interface structure.
