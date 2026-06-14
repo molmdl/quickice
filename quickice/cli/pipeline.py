@@ -241,11 +241,52 @@ class CLIPipeline:
     def _run_interface_step(self) -> int:
         """Generate ice-water interface structure.
 
+        Creates an InterfaceConfig from CLI arguments and calls
+        generate_interface() with the previously generated ice candidate.
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Interface step: not yet implemented")
-        return 1
+        try:
+            from quickice.structure_generation.types import InterfaceConfig
+            from quickice.structure_generation.interface_builder import (
+                generate_interface,
+            )
+            from quickice.structure_generation.errors import (
+                InterfaceGenerationError,
+            )
+        except ImportError as e:
+            logger.error("Missing required package: %s", e)
+            report_progress(f"Interface step failed: missing package — {e}")
+            return 1
+
+        try:
+            config = InterfaceConfig(
+                mode=self.args.mode,
+                box_x=self.args.box_x,
+                box_y=self.args.box_y,
+                box_z=self.args.box_z,
+                ice_thickness=self.args.ice_thickness,
+                water_thickness=self.args.water_thickness,
+                pocket_diameter=getattr(self.args, 'pocket_diameter', None),
+                pocket_shape=getattr(self.args, 'pocket_shape', 'sphere'),
+                seed=self.args.seed,
+            )
+            self._interface_result = generate_interface(
+                self._ice_candidate, config
+            )
+            report_progress(
+                f"Interface: {self._interface_result.ice_nmolecules} ice + "
+                f"{self._interface_result.water_nmolecules} water molecules"
+            )
+            if self._interface_result.report:
+                print(self._interface_result.report, file=sys.stderr)
+        except InterfaceGenerationError as e:
+            logger.error("Interface generation failed: %s", e)
+            report_progress(f"Interface step failed: {e}")
+            return 1
+
+        return 0
 
     def _run_custom_step(self) -> int:
         """Insert custom molecules into the liquid region.
