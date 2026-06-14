@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-35 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 48 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/48)
+**Total Plans:** 49 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/49)
 
 ## Overview
 
@@ -207,7 +207,7 @@ Plans:
 
 **Goal:** Custom Molecule tab exports GROMACS-ready complete systems (ice + water + custom) that can be used as source for Solute tab
 **Depends on:** Phase 34.5
-**Plans:** 8 plans in 4 waves
+**Plans:** 9 plans in 4 waves + gap closure
 
 Plans:
 - [x] 34.6-01-PLAN.md — Fix validation warnings and button state persistence
@@ -218,6 +218,7 @@ Plans:
 - [x] 34.6-06-PLAN.md — Update CustomMoleculeGROMACSExporter for complete system export
 - [x] 34.6-07-PLAN.md — Enable Custom Molecule as source for Solute tab
 - [x] 34.6-08-PLAN.md — Comprehensive integration tests for complete workflow
+- [ ] 34.6-09-PLAN.md — GAP: Fix TOP [molecules] assertion (ETOH→etoh)
 
 **Details:**
 - **MAJOR SCOPE CHANGE**: Each tab should export GROMACS-ready files prepared within the tab
@@ -367,7 +368,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 **Phase Count:** 12 (Phases 32-35, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 48 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 8, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/48)
+**Total Plans:** 49 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/49)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -414,7 +415,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
-| 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 8 | 8 |
+| 34.6 - Revise Custom Panel for Valid Input | ⏳ Gap Closure | 8 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ⏳ Gap Closure | 3 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
