@@ -401,6 +401,88 @@ symmetry analysis:
 
 ---
 
+## Unified Entry Point
+
+QuickIce uses `python -m quickice` as the canonical invocation. When run without arguments, it displays a help message (similar to `git` with no arguments).
+
+```bash
+# Show help
+python -m quickice
+
+# Run CLI mode (implicit when computation flags are present)
+python -m quickice -T 300 -P 0.1 -N 100
+
+# Run GUI mode (when display is available)
+python -m quickice --gui
+```
+
+The backward-compatible `python quickice.py` invocation also works.
+
+### Routing Behavior
+
+| Input | Mode | Behavior |
+|-------|------|----------|
+| No arguments | Help | Print usage and exit 0 |
+| `--help` | Help | Print full argparse help and exit 0 |
+| `--version` | Version | Print version and exit 0 |
+| Computation flags (e.g., `-T`, `--interface`) | CLI | Implicit CLI mode |
+| `--cli` + computation flags | CLI | Explicit CLI mode, skip PySide6 import |
+| `--cli` alone | CLI (error) | Missing required `--temperature` |
+| `--gui` | GUI | Launch GUI (error if no display or PySide6) |
+
+**Priority:** `--gui` > computation flags (→CLI) > no arguments (→help)
+
+---
+
+## Mode Selection
+
+### `--cli`
+
+Force CLI mode and skip PySide6 import entirely. Useful in headless or CI environments where GUI libraries are not available.
+
+```bash
+# CLI mode with explicit flag
+python -m quickice --cli -T 300 -P 0.1 -N 100
+
+# CLI mode is implicit when computation flags are present
+python -m quickice -T 300 -P 0.1 -N 100
+```
+
+Note: `--cli` alone (without computation flags) triggers an argparse error because `--temperature` is required for CLI mode.
+
+### `--gui`
+
+Force GUI mode. Requires PySide6 and a display server. If PySide6 is not installed or no display is available, exits with an error.
+
+```bash
+# Launch GUI explicitly
+python -m quickice --gui
+```
+
+Error messages:
+- PySide6 missing: "Error: --gui requested but PySide6 is not installed." + installation hint
+- No display: "Error: --gui requested but no display is available."
+
+For direct GUI launch without routing: `python -m quickice.gui`
+
+---
+
+## Platform Invocation
+
+| Platform | Command |
+|----------|---------|
+| Source install | `python -m quickice [options]` |
+| Binary (Linux/macOS) | `quickice-gui [options]` |
+| Binary (Windows) | `quickice-gui.exe [options]` |
+
+Windows users: append `.exe` to the binary name. All flags are identical across platforms.
+
+### Backward Compatibility
+
+The `python quickice.py` invocation continues to work for source installations. It delegates to the same unified router as `python -m quickice`.
+
+---
+
 ## See Also
 
 - [Ranking Methodology](./ranking.md) - How candidates are scored and ranked
