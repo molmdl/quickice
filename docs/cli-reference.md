@@ -7,7 +7,7 @@ Complete documentation for QuickIce command-line interface.
 ## Usage
 
 ```bash
-python quickice.py --temperature <T> --pressure <P> --nmolecules <N> [options]
+python -m quickice --temperature <T> --pressure <P> --nmolecules <N> [options]
 ```
 
 ## Required Arguments
@@ -21,10 +21,10 @@ Temperature in Kelvin (0-500K). This argument is required.
 **Examples:**
 ```bash
 # Ice Ih (ambient conditions)
-python quickice.py -T 260 -P 0.1 -N 100
+python -m quickice -T 260 -P 0.1 -N 100
 
 # High temperature
-python quickice.py --temperature 300 --pressure 100 --nmolecules 50
+python -m quickice --temperature 300 --pressure 100 --nmolecules 50
 ```
 
 ---
@@ -38,10 +38,10 @@ Pressure in MPa (0-10000 MPa). This argument is required.
 **Examples:**
 ```bash
 # Ice III (moderate pressure)
-python quickice.py -T 250 -P 250 -N 100
+python -m quickice -T 250 -P 250 -N 100
 
 # Ice VII (very high pressure)
-python quickice.py -T 300 -P 2500 -N 50
+python -m quickice -T 300 -P 2500 -N 50
 ```
 
 ---
@@ -55,13 +55,13 @@ Number of water molecules in the generated structure (4-100000). Required for ic
 **Examples:**
 ```bash
 # Small test structure
-python quickice.py -T 260 -P 0.1 -N 50
+python -m quickice -T 260 -P 0.1 -N 50
 
 # Larger structure for better statistics
-python quickice.py -T 260 -P 0.1 -N 1000
+python -m quickice -T 260 -P 0.1 -N 1000
 
 # Interface mode (nmolecules omitted — uses default)
-python quickice.py -T 250 -P 0.1 --interface --mode slab \
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
   --box-x 5.0 --box-y 5.0 --box-z 10.0 \
   --ice-thickness 3.0 --water-thickness 4.0
 ```
@@ -76,7 +76,7 @@ Output directory for generated PDB files and phase diagram. Default: `output`
 
 **Usage:**
 ```bash
-python quickice.py -T 260 -P 0.1 -N 100 --output my_structures
+python -m quickice -T 260 -P 0.1 -N 100 --output my_structures
 ```
 
 The output directory will contain:
@@ -91,7 +91,7 @@ Disable phase diagram generation. By default, QuickIce generates a phase diagram
 
 **Usage:**
 ```bash
-python quickice.py -T 260 -P 0.1 -N 100 --no-diagram
+python -m quickice -T 260 -P 0.1 -N 100 --no-diagram
 ```
 
 Use this flag when you only need the PDB output files and want to save time.
@@ -105,10 +105,10 @@ Export structure in GROMACS format (.gro, .top, .itp files).
 **Usage:**
 ```bash
 # Export all candidates with shared top/itp files
-python quickice.py -T 250 -P 100 -N 128 --gromacs --output ice_gro
+python -m quickice -T 250 -P 100 -N 128 --gromacs --output ice_gro
 
 # Export specific ranked candidate
-python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
+python -m quickice -T 250 -P 100 -N 128 --gromacs --candidate 2
 ```
 
 When this flag is set, QuickIce exports:
@@ -130,10 +130,10 @@ Select which ranked candidate to export for GROMACS (1-based index).
 **Usage:**
 ```bash
 # Export all candidates (default)
-python quickice.py -T 250 -P 100 -N 128 --gromacs
+python -m quickice -T 250 -P 100 -N 128 --gromacs
 
 # Export the second-ranked candidate
-python quickice.py -T 250 -P 100 -N 128 --gromacs --candidate 2
+python -m quickice -T 250 -P 100 -N 128 --gromacs --candidate 2
 ```
 
 Default: Export all candidates. Use `--candidate N` to export only rank N.
@@ -146,8 +146,8 @@ Display the current QuickIce version.
 
 **Usage:**
 ```bash
-python quickice.py --version
-# Output: python quickice.py 4.5.0
+python -m quickice --version
+# Output: python -m quickice 4.5.0
 ```
 
 ---
@@ -161,7 +161,7 @@ QuickIce supports 8 ice polymorphs (those with GenIce2 lattice implementations).
 The most common form of ice, stable at ambient pressure and temperatures below 273K.
 
 ```bash
-python quickice.py -T 260 -P 0.1 -N 100
+python -m quickice -T 260 -P 0.1 -N 100
 ```
 
 **Phase region:** Low pressure (< 200 MPa), moderate temperature (200-273K)
@@ -173,7 +173,7 @@ python quickice.py -T 260 -P 0.1 -N 100
 Cubic form of ice, metastable at ambient pressure.
 
 ```bash
-python quickice.py -T 200 -P 0.1 -N 100
+python -m quickice -T 200 -P 0.1 -N 100
 ```
 
 **Phase region:** Low pressure (< 200 MPa), low temperature (< 200K)
@@ -185,7 +185,7 @@ python quickice.py -T 200 -P 0.1 -N 100
 Ordered form of ice, stable at moderate pressures.
 
 ```bash
-python quickice.py -T 200 -P 300 -N 100
+python -m quickice -T 200 -P 300 -N 100
 ```
 
 **Phase region:** Moderate pressure (200-500 MPa), low temperature (< 250K)
@@ -197,7 +197,7 @@ python quickice.py -T 200 -P 300 -N 100
 Tetragonal ice, stable at moderate pressures.
 
 ```bash
-python quickice.py -T 250 -P 250 -N 100
+python -m quickice -T 250 -P 250 -N 100
 ```
 
 **Phase region:** Moderate pressure (200-400 MPa), moderate temperature (250-270K)
@@ -209,7 +209,7 @@ python quickice.py -T 250 -P 250 -N 100
 Complex monoclinic structure.
 
 ```bash
-python quickice.py -T 260 -P 450 -N 100
+python -m quickice -T 260 -P 450 -N 100
 ```
 
 **Phase region:** Higher pressure (400-600 MPa), moderate temperature (240-270K)
@@ -221,7 +221,7 @@ python quickice.py -T 260 -P 450 -N 100
 First high-pressure phase with two independent networks.
 
 ```bash
-python quickice.py -T 280 -P 700 -N 100
+python -m quickice -T 280 -P 700 -N 100
 ```
 
 **Phase region:** High pressure (600-2000 MPa), moderate temperature (270-350K)
@@ -233,7 +233,7 @@ python quickice.py -T 280 -P 700 -N 100
 Cubic high-pressure phase with two interpenetrating networks.
 
 ```bash
-python quickice.py -T 300 -P 2500 -N 100
+python -m quickice -T 300 -P 2500 -N 100
 ```
 
 **Phase region:** Very high pressure (> 2000 MPa), any temperature up to 355K
@@ -245,7 +245,7 @@ python quickice.py -T 300 -P 2500 -N 100
 Ordered form of Ice VII, stable at lower temperatures.
 
 ```bash
-python quickice.py -T 200 -P 2500 -N 100
+python -m quickice -T 200 -P 2500 -N 100
 ```
 
 **Phase region:** Very high pressure (> 2000 MPa), low temperature (< 278K)
@@ -301,7 +301,7 @@ All interface modes require box dimensions:
 Generate a layered ice-water-ice slab:
 
 ```bash
-python quickice.py --temperature 250 --pressure 0.1 \
+python -m quickice --temperature 250 --pressure 0.1 \
   --interface --mode slab \
   --box-x 5.0 --box-y 5.0 --box-z 10.0 \
   --ice-thickness 3.0 --water-thickness 4.0 \
@@ -315,7 +315,7 @@ Creates two ice layers (3.0 nm each) with a 4.0 nm water layer between them.
 Generate a water cavity within ice:
 
 ```bash
-python quickice.py --temperature 253 --pressure 500 \
+python -m quickice --temperature 253 --pressure 500 \
   --interface --mode pocket \
   --box-x 4.0 --box-y 4.0 --box-z 4.0 \
   --pocket-diameter 2.0 \
@@ -329,7 +329,7 @@ Creates a 2.0 nm spherical water pocket inside an Ice V matrix.
 Generate an ice fragment in water:
 
 ```bash
-python quickice.py --temperature 180 --pressure 1000 \
+python -m quickice --temperature 180 --pressure 1000 \
   --interface --mode piece \
   --box-x 4.0 --box-y 4.0 --box-z 4.0 \
   --gromacs --output piece_output
