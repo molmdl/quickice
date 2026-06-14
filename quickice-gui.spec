@@ -16,7 +16,7 @@ for pkg in ['iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', '
         print(f"Warning: Could not collect {pkg}: {e}")
 
 a = Analysis(
-    ['quickice/gui/__main__.py'],
+    ['quickice/__main__.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -40,7 +40,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
+    hide_console='hide-late',
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
