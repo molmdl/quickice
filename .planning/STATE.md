@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 10 complete (main.py wired to CLIPipeline).
+**Current focus:** Phase 36-cli-feature-parity COMPLETE — All 11 plans executed.
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 10 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — main.py wired to CLIPipeline for pipeline workflows |
-| Last activity | 2026-06-14 — Completed 36-10 (main.py→CLIPipeline delegation) |
+| Plan | 11 of 11 COMPLETE |
+| Status | Phase COMPLETE — 28 CLI pipeline integration tests |
+| Last activity | 2026-06-14 — Completed 36-11 (CLI pipeline integration tests) |
 
-**Progress:** ██████████ 99% (227/228 plans across all milestones, 36-10 10/11 COMPLETE)
+**Progress:** ██████████ 100% (228/228 plans across all milestones, 36-11 11/11 COMPLETE)
 
 ---
 
@@ -457,7 +457,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | 4-strategy guest type resolution for hydrate step | HydrateStructure: direct attr → config.guest_type → _detect_guest_type → args_ref fallback | ✓ Shipped (36-04) |
 | comment_out_atomtypes_in_itp on solute/custom ITPs only | Data ITPs (tip4p-ice, hydrate guest) lack [atomtypes]; solute/custom have them and must be commented | ✓ Shipped (36-04) |
 | Partial copy list on error (logger.warning, no crash) | CLI should not fail on missing ITP; return list of successfully copied filenames | ✓ Shipped (36-04) |
-| nmolecules default 256 via getattr | Backward-compatible default for args namespaces that lack nmolecules | ✓ Shipped (36-05) |
+| nmolecules default 256 via `or 256` (NOT getattr) | getattr(args, 'nmolecules', 256) returns None when attr exists; `or 256` handles None correctly | ✓ Shipped (36-11) |
 | base_seed= (NOT seed=) for generate_candidates | Project history: generate_candidates takes base_seed parameter | ✓ Shipped (36-05) |
 | gen_result.candidates[0] for result access | Project history: result is GenerationResult with .candidates list | ✓ Shipped (36-05) |
 | seed=self.args.seed in InterfaceConfig (FIX #3) | Project history: InterfaceConfig requires seed= parameter | ✓ Shipped (36-05) |
@@ -482,6 +482,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Pipeline flag detection in main() | has_pipeline_flags branches to CLIPipeline before ice-only path | ✓ Shipped (36-10) |
 | check_output_file() removed | Auto-overwrite by default + --no-overwrite flag in CLIPipeline | ✓ Shipped (36-10) |
 | InterfaceGenerationError kept in main.py except | Defensive programming even though CLIPipeline handles internally | ✓ Shipped (36-10) |
+| Subprocess-based CLI pipeline e2e testing | Full pipeline via subprocess.run with 120s timeout; tempfile cleanup | ✓ Shipped (36-11) |
+| phase_info dict access (NOT attribute) | lookup_phase() returns dict, not namedtuple; use phase_info['phase_id'] | ✓ Shipped (36-11) |
+| slow pytest marker for pipeline tests | Enables -m 'not slow' for fast CI; registered in conftest.py | ✓ Shipped (36-11) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -582,8 +585,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-10-PLAN.md (main.py wired to CLIPipeline)
-**Status:** Phase 36 IN PROGRESS — 10/11 plans complete
+**Completed:** 36-11-PLAN.md (CLI pipeline integration tests — 28 tests)
+**Status:** Phase 36 COMPLETE — 11/11 plans done
 
 ---
-*State updated: 2026-06-14 — 36-10 COMPLETE (main.py→CLIPipeline delegation)*
+*State updated: 2026-06-14 — 36-11 COMPLETE (Phase 36 CLI feature parity finished)*
