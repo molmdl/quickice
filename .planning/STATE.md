@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
 | Plan | 17 of 18 |
-| Status | In Progress — Plans 01-08, 10-12, 14-17 complete |
-| Last activity | 2026-06-15 — Completed 37-11 (test_phase_mapping.py migration) |
+| Status | In Progress — Plans 01-10, 12, 14-17 complete |
+| Last activity | 2026-06-15 — Completed 37-09 (test_cli_pipeline.py migration) |
 
-**Progress:** ██████░░░░ 67% (12/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** ████████░░ 83% (15/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -601,8 +601,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-11-PLAN.md (test_phase_mapping.py migration)
-**Status:** Phase 37 in progress — 12/18 plans done (01-08, 10-12, 14-17)
+**Completed:** 37-09-PLAN.md (test_cli_pipeline.py migration)
+**Status:** Phase 37 in progress — 15/18 plans done (01-10, 12, 14-17)
 
 ---
-*State updated: 2026-06-15 — 37-11 COMPLETE (test_phase_mapping.py migration)*
+*State updated: 2026-06-15 — 37-09 COMPLETE (test_cli_pipeline.py migration)*
