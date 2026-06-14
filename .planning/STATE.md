@@ -57,7 +57,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Phases:** 32-35 (with 34.1-34.7 inserted)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.7 complete, Phase 35 pending (37 requirements satisfied, 2 pending)
+**Progress:** Phase 32-34.7 complete, Phase 35 pending (screenshots), Phase 36 added (CLI parity), Phase 37 added (unified entry point)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -266,6 +266,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.6 inserted after Phase 34.5: Revise custom panel for valid input handling with real molecule testing (URGENT)
 - Phase 34.7 inserted after Phase 34.6: Fix verified scancode bugs — BUG-05 (HW1 copy-paste), MW-01 (wrapping), RNG-01 (unseeded), DEFLT-01 (fudgeLJ), ATOM-01 (hardcoded 4), TREE-01 (KDTree) (URGENT) — ✓ COMPLETE
 - Phase 34.8 inserted after Phase 34.7: Fix performance and test gaps — PERF-02 (cKDTree boxsize), TEST-09 (moleculetype names), BUG-04 (diversity fingerprint) — ✓ COMPLETE
+- Phase 36 added: CLI Feature Parity (CLI-01 to CLI-05, moved from v4.5.1 to v4.5 so work can proceed without GUI)
+- Phase 37 added: Unified Entry Point (router + test consistency, resolves unify-gui-cli-entry-point todo)
 
 ### v4.5 Key Decisions
 
