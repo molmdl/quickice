@@ -500,11 +500,134 @@ class CLIPipeline:
     def _run_ion_step(self) -> int:
         """Insert ions for charge screening.
 
+        Supports 3 source modes (--ion-source):
+        - interface: use the original InterfaceStructure directly
+        - custom: use CustomMoleculeStructure, propagate custom molecule
+          attributes to the interface structure with FIX #4 offset
+          (ice_atom_count + water_atom_count + guest_atom_count)
+        - solute: use SoluteStructure, propagate solute attributes to the
+          interface structure, plus custom molecule attributes if present
+
+        Attribute propagation uses duck-typing (setting attributes on
+        InterfaceStructure at runtime), mirroring GUI MainWindow._on_insert_ions.
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Ion step: not yet implemented")
-        return 1
+        try:
+            from quickice.structure_generation.ion_inserter import insert_ions
+            from quickice.structure_generation.types import WATER_ATOMS_PER_MOLECULE
+        except ImportError as e:
+            logger.error("Missing required package: %s", e)
+            report_progress(f"Ion step failed: missing package — {e}")
+            return 1
+
+        try:
+            # Resolve source mode
+            ion_source = getattr(self.args, 'ion_source', 'interface')
+
+            if ion_source == "interface":
+                source_for_ions = self._interface_result
+                if source_for_ions is None:
+                    raise ValueError(
+                        "No interface structure available. "
+                        "Run --interface step before ion insertion."
+                    )
+
+            elif ion_source == "custom":
+                source = self._custom_result
+                if source is None:
+                    raise ValueError(
+                        "No custom molecule structure available. "
+                        "Run the custom molecule step before using "
+                        "--ion-source custom."
+                    )
+
+                interface = source.interface_structure
+                if interface is None:
+                    raise ValueError(
+                        "Custom molecule structure does not have an "
+                        "associated interface structure."
+                    )
+
+                # FIX #4: offset includes guest_atom_count
+                # (NOT just ice_atom_count + water_atom_count)
+                offset = (
+                    interface.ice_atom_count
+                    + interface.water_atom_count
+                    + interface.guest_atom_count
+                )
+                interface.custom_molecule_positions = source.positions[offset:]
+                interface.custom_molecule_atom_names = source.atom_names[offset:]
+                interface.custom_molecule_count = source.custom_molecule_count
+                interface.custom_molecule_moleculetype = source.moleculetype_name
+                interface.custom_gro_path = source.gro_path
+                interface.custom_itp_path = source.itp_path
+                source_for_ions = interface
+
+            elif ion_source == "solute":
+                source = self._solute_result
+                if source is None:
+                    raise ValueError(
+                        "No solute structure available. "
+                        "Run the solute step before using --ion-source solute."
+                    )
+
+                interface = source.interface_structure
+                if interface is None:
+                    raise ValueError(
+                        "Solute structure does not have an associated "
+                        "interface structure."
+                    )
+
+                # Propagate solute attributes to interface structure
+                interface.solute_type = source.solute_type
+                interface.solute_positions = source.positions
+                interface.solute_atom_names = source.atom_names
+                interface.solute_n_molecules = source.n_molecules
+                interface.solute_molecule_indices = source.molecule_indices
+                interface.solute_registry = source.registry
+
+                # Also propagate custom molecule attributes if present
+                # (handles Custom → Solute → Ion workflow chain)
+                if (hasattr(source, 'custom_molecule_count')
+                        and source.custom_molecule_count > 0):
+                    if (hasattr(source, 'custom_molecule_positions')
+                            and source.custom_molecule_positions is not None):
+                        interface.custom_molecule_count = source.custom_molecule_count
+                        interface.custom_molecule_atom_count = source.custom_molecule_atom_count
+                        interface.custom_molecule_positions = source.custom_molecule_positions
+                        interface.custom_molecule_atom_names = source.custom_molecule_atom_names
+                        interface.custom_molecule_moleculetype = source.custom_molecule_moleculetype
+                        interface.custom_gro_path = source.custom_gro_path
+                        interface.custom_itp_path = source.custom_itp_path
+
+                source_for_ions = interface
+
+            else:
+                raise ValueError(f"Unknown ion source: {ion_source!r}")
+
+            # Calculate liquid volume from water molecule count
+            liquid_volume = getattr(source_for_ions, 'water_nmolecules', 0) * 0.0299
+
+            # Insert ions
+            self._ion_result = insert_ions(
+                source_for_ions,
+                concentration_molar=self.args.ion_concentration,
+                liquid_volume_nm3=liquid_volume,
+                seed=self.args.seed,
+            )
+            report_progress(
+                f"Ion insertion: {self._ion_result.na_count} Na+, "
+                f"{self._ion_result.cl_count} Cl-"
+            )
+
+        except ValueError as e:
+            logger.error("Invalid configuration: %s", e)
+            report_progress(f"Ion step failed: bad config — {e}")
+            return 1
+
+        return 0
 
     def _run_export_step(self) -> int:
         """Export GROMACS files for the final structure.
