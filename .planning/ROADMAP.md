@@ -433,24 +433,24 @@ Plans:
 **Plans:** 18 plans
 
 Plans:
-- [ ] 37-01-PLAN.md — Create quickice/entry.py (routing logic) [Wave 1]
-- [ ] 37-02-PLAN.md — Create quickice/__main__.py (3-line stub) [Wave 2]
-- [ ] 37-03-PLAN.md — Update quickice.py to delegate to entry.main() [Wave 2]
-- [ ] 37-04-PLAN.md — Update quickice/cli/parser.py (prog, epilog, --cli/--gui) [Wave 1]
-- [ ] 37-05-PLAN.md — Update quickice-gui.spec (entry point, console flag) [Wave 1]
-- [ ] 37-06-PLAN.md — Add run_quickice() to tests/conftest.py [Wave 1]
-- [ ] 37-07-PLAN.md — Create tests/test_entry_point.py (8-10 routing tests) [Wave 3]
-- [ ] 37-08-PLAN.md — Migrate tests/test_cli_integration.py to run_quickice() [Wave 3]
-- [ ] 37-09-PLAN.md — Migrate tests/test_cli_pipeline.py to run_quickice() [Wave 4]
-- [ ] 37-10-PLAN.md — Migrate tests/test_integration_v35.py to run_quickice() [Wave 4]
-- [ ] 37-11-PLAN.md — Migrate tests/test_phase_mapping.py to run_quickice() [Wave 4]
-- [ ] 37-12-PLAN.md — Update docs/cli-reference.md — replace all quickice.py refs [Wave 2]
-- [ ] 37-13-PLAN.md — Update docs/cli-reference.md — add unified entry sections [Wave 5]
-- [ ] 37-14-PLAN.md — Update docs/flowchart.md [Wave 2]
-- [ ] 37-15-PLAN.md — Update README.md [Wave 3]
-- [ ] 37-16-PLAN.md — Update README_bin.md [Wave 3]
-- [ ] 37-17-PLAN.md — Update setup.sh [Wave 4]
-- [ ] 37-18-PLAN.md — Backward compat + full integration verification [Wave 5]
+- [x] 37-01-PLAN.md — Create quickice/entry.py (routing logic) [Wave 1]
+- [x] 37-02-PLAN.md — Create quickice/__main__.py (3-line stub) [Wave 2]
+- [x] 37-03-PLAN.md — Update quickice.py to delegate to entry.main() [Wave 2]
+- [x] 37-04-PLAN.md — Update quickice/cli/parser.py (prog, epilog, --cli/--gui) [Wave 1]
+- [x] 37-05-PLAN.md — Update quickice-gui.spec (entry point, console flag) [Wave 1]
+- [x] 37-06-PLAN.md — Add run_quickice() to tests/conftest.py [Wave 1]
+- [x] 37-07-PLAN.md — Create tests/test_entry_point.py (8-10 routing tests) [Wave 3]
+- [x] 37-08-PLAN.md — Migrate tests/test_cli_integration.py to run_quickice() [Wave 3]
+- [x] 37-09-PLAN.md — Migrate tests/test_cli_pipeline.py to run_quickice() [Wave 4]
+- [x] 37-10-PLAN.md — Migrate tests/test_integration_v35.py to run_quickice() [Wave 4]
+- [x] 37-11-PLAN.md — Migrate tests/test_phase_mapping.py to run_quickice() [Wave 4]
+- [x] 37-12-PLAN.md — Update docs/cli-reference.md — replace all quickice.py refs [Wave 2]
+- [x] 37-13-PLAN.md — Update docs/cli-reference.md — add unified entry sections [Wave 5]
+- [x] 37-14-PLAN.md — Update docs/flowchart.md [Wave 2]
+- [x] 37-15-PLAN.md — Update README.md [Wave 3]
+- [x] 37-16-PLAN.md — Update README_bin.md [Wave 3]
+- [x] 37-17-PLAN.md — Update setup.sh [Wave 4]
+- [x] 37-18-PLAN.md — Backward compat + full integration verification [Wave 5]
 
 ---
 
@@ -510,7 +510,7 @@ Plans:
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
-| 37 - Unified Entry Point | 🔲 Not Started | 0 | 18 |
+| 37 - Unified Entry Point | ✓ Complete | 18 | 18 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
