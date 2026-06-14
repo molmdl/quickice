@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-07, 12, 14 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10, 12, 14, 15, 16 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-07, 12, 14 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10, 12, 14, 15, 16 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
 | Plan | 15 of 18 |
-| Status | In Progress — Plans 01-07, 12, 14 complete |
-| Last activity | 2026-06-15 — Completed 37-07 (entry point routing tests) |
+| Status | In Progress — Plans 01-08, 10, 12, 14, 15, 16 complete |
+| Last activity | 2026-06-15 — Completed 37-10 (test_integration_v35.py migration) |
 
-**Progress:** █████░░░░░ 44% (8/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** ██████░░░░ 50% (9/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -499,6 +499,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | importlib.util.find_spec for PySide6 availability | Never imports PySide6 at module level; avoids Qt crash in headless environments | ✓ Shipped (37-01) |
 | quickice.py delegates to entry.main() (no deprecation warning) | Backward compat: python quickice.py still works via unified router; zero maintenance cost | ✓ Shipped (37-03) |
 | from tests.conftest import run_quickice | Root conftest.py shadows tests/conftest.py; tests/ has __init__.py so package import works | ✓ Shipped (37-08) |
+| CLI pipeline output goes to stderr | [PROGRESS] messages written to stderr, not stdout; test assertions must check combined output | ✓ Shipped (37-10) |
 | No-args test updated for unified entry point | python -m quickice with no args returns exit 0 with help (like git); old behavior was exit 1 | ✓ Shipped (37-08) |
 
 ### v4.0 Key Decisions (Shipped)
@@ -600,8 +601,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-07-PLAN.md (entry point routing tests)
-**Status:** Phase 37 in progress — 8/18 plans done (01-07, 12, 14)
+**Completed:** 37-10-PLAN.md (test_integration_v35.py migration to run_quickice)
+**Status:** Phase 37 in progress — 9/18 plans done (01-08, 10, 12, 14, 15, 16)
 
 ---
-*State updated: 2026-06-15 — 37-07 COMPLETE (entry point routing tests)*
+*State updated: 2026-06-15 — 37-10 COMPLETE (test_integration_v35.py migration)*
