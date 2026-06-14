@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 10-12, 14-17 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12, 14-17 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
 | Plan | 17 of 18 |
-| Status | In Progress — Plans 01-08, 10, 12, 14-17 complete |
-| Last activity | 2026-06-15 — Completed 37-17 (setup.sh help message update) |
+| Status | In Progress — Plans 01-08, 10-12, 14-17 complete |
+| Last activity | 2026-06-15 — Completed 37-11 (test_phase_mapping.py migration) |
 
-**Progress:** ██████░░░░ 61% (11/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** ██████░░░░ 67% (12/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -601,8 +601,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-17-PLAN.md (setup.sh help message update)
-**Status:** Phase 37 in progress — 11/18 plans done (01-08, 10, 12, 14-17)
+**Completed:** 37-11-PLAN.md (test_phase_mapping.py migration)
+**Status:** Phase 37 in progress — 12/18 plans done (01-08, 10-12, 14-17)
 
 ---
-*State updated: 2026-06-15 — 37-17 COMPLETE (setup.sh help message update)*
+*State updated: 2026-06-15 — 37-11 COMPLETE (test_phase_mapping.py migration)*
