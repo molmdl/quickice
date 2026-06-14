@@ -12,4 +12,4 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 export PATH="${PATH}:$(pwd)"
 
 echo "QuickIce environment activated."
-echo "Run 'python quickice.py --help' for usage."
+echo "Run 'python -m quickice --help' for usage."
