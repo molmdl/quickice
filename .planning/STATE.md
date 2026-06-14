@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 03 complete (CLIPipeline scaffold with execute(), helpers, and step stubs).
+**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 04 complete (copy_itp_files_for_structure with all 6 step cases).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 03 complete (CLIPipeline scaffold with execute(), helpers, and step stubs).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 04 complete (copy_itp_files_for_structure with all 6 step cases).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 3 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — CLIPipeline scaffold with execute(), helpers, and step stubs |
-| Last activity | 2026-06-14 — Completed 36-03 (CLIPipeline scaffold) |
+| Plan | 4 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — copy_itp_files_for_structure with all 6 step cases |
+| Last activity | 2026-06-14 — Completed 36-04 (copy_itp_files_for_structure) |
 
-**Progress:** ██████████ 99% (220/221 plans across all milestones, 36-03 3/11 COMPLETE)
+**Progress:** ██████████ 99% (221/222 plans across all milestones, 36-04 4/11 COMPLETE)
 
 ---
 
@@ -451,6 +451,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | _parse_positions_csv is a @staticmethod | No instance state needed; testable without CLIPipeline instance | ✓ Shipped (36-03) |
 | _get_source_structure raises ValueError for unknown names | Fail-fast on programmer error rather than silent None | ✓ Shipped (36-03) |
 | report_progress prints to stderr with [PROGRESS] prefix | Stderr for diagnostics; prefix enables grep filtering | ✓ Shipped (36-03) |
+| MoleculeIndex.mol_type dataclass attribute (NOT dict .get()) | MoleculeIndex is a dataclass; must use attribute syntax, not dict-style access | ✓ Shipped (36-04) |
+| getattr(structure, 'guest_nmolecules', None) with guest_count fallback | HydrateStructure uses guest_count not guest_nmolecules; getattr prevents AttributeError | ✓ Shipped (36-04) |
+| interface_structure delegation for SoluteStructure guest detection | SoluteStructure stores guest info on interface_structure; _detect_guest_type falls back to it | ✓ Shipped (36-04) |
+| 4-strategy guest type resolution for hydrate step | HydrateStructure: direct attr → config.guest_type → _detect_guest_type → args_ref fallback | ✓ Shipped (36-04) |
+| comment_out_atomtypes_in_itp on solute/custom ITPs only | Data ITPs (tip4p-ice, hydrate guest) lack [atomtypes]; solute/custom have them and must be commented | ✓ Shipped (36-04) |
+| Partial copy list on error (logger.warning, no crash) | CLI should not fail on missing ITP; return list of successfully copied filenames | ✓ Shipped (36-04) |
 | No GUI imports in pipeline.py | CLI module works without PySide6/VTK; matches itp_helpers.py pattern | ✓ Shipped (36-03) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 
@@ -553,8 +559,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-03-PLAN.md (CLIPipeline scaffold with execute(), helpers, and step stubs)
-**Status:** Phase 36 IN PROGRESS — 3/11 plans complete
+**Completed:** 36-04-PLAN.md (copy_itp_files_for_structure with all 6 step cases)
+**Status:** Phase 36 IN PROGRESS — 4/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-03 COMPLETE (CLIPipeline scaffold with execute(), helpers, and step stubs)*
+*State updated: 2026-06-14 — 36-04 COMPLETE (copy_itp_files_for_structure with all 6 step cases)*
