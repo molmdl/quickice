@@ -25,24 +25,24 @@ def create_parser() -> argparse.ArgumentParser:
         Configured ArgumentParser instance
     """
     parser = argparse.ArgumentParser(
-        prog="python quickice.py",
+        prog="python -m quickice",
         description="QuickIce - Ice structure generation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   Ice generation:
-    python quickice.py --temperature 300 --pressure 100 --nmolecules 100
-    python quickice.py --temperature 250 --pressure 0.1 --nmolecules 256
+    python -m quickice --temperature 300 --pressure 100 --nmolecules 100
+    python -m quickice --temperature 250 --pressure 0.1 --nmolecules 256
 
   Hydrate generation:
-    python quickice.py -T 270 -P 0.1 --hydrate --lattice-type sI --guest CH4
-    python quickice.py -T 260 -P 10 --hydrate --lattice-type sII --guest THF --supercell-x 2
+    python -m quickice -T 270 -P 0.1 --hydrate --lattice-type sI --guest CH4
+    python -m quickice -T 260 -P 10 --hydrate --lattice-type sII --guest THF --supercell-x 2
 
   Interface + custom molecule:
-    python quickice.py -T 270 -P 0.1 --interface --mode slab --box-x 3 --box-y 3 --box-z 5 --ice-thickness 1.5 --water-thickness 2.0 --custom-gro mol.gro --custom-itp mol.itp --custom-placement random --custom-count 5
+    python -m quickice -T 270 -P 0.1 --interface --mode slab --box-x 3 --box-y 3 --box-z 5 --ice-thickness 1.5 --water-thickness 2.0 --custom-gro mol.gro --custom-itp mol.itp --custom-placement random --custom-count 5
 
   Interface + solute + ions:
-    python quickice.py -T 270 -P 0.1 --interface --mode slab --box-x 3 --box-y 3 --box-z 5 --ice-thickness 1.5 --water-thickness 2.0 --solute-type CH4 --solute-concentration 0.5 --ion-concentration 0.15 --ion-source solute
+    python -m quickice -T 270 -P 0.1 --interface --mode slab --box-x 3 --box-y 3 --box-z 5 --ice-thickness 1.5 --water-thickness 2.0 --solute-type CH4 --solute-concentration 0.5 --ion-concentration 0.15 --ion-source solute
         """
     )
     
@@ -356,6 +356,22 @@ Examples:
         "-V",
         action="version",
         version="%(prog)s 4.5.0"
+    )
+    
+    # Mode selection flags (consumed by entry router before argparse runs;
+    # added here for --help discoverability only)
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        default=False,
+        help="Force CLI mode; skip PySide6 import entirely (useful in headless/CI environments)"
+    )
+    
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        default=False,
+        help="Force GUI mode; requires PySide6 and a display"
     )
     
     return parser
