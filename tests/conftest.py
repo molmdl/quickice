@@ -199,3 +199,33 @@ def interface_hydrate_slab(hydrate_sI_ch4_candidate):
         water_thickness=4.0,
     )
     return generate_interface(hydrate_sI_ch4_candidate, config)
+
+
+# ── Subprocess test helper ───────────────────────────────────────────────────
+
+def run_quickice(*args: str, timeout: int = 60) -> tuple[int, str, str]:
+    """Run python -m quickice with given arguments.
+
+    Uses the canonical ``python -m quickice`` invocation (not quickice.py).
+    This is the shared replacement for the per-file run_cli() helpers
+    previously in test_cli_integration.py, test_cli_pipeline.py,
+    and test_integration_v35.py.
+
+    Args:
+        *args: Command-line arguments to pass.
+        timeout: Timeout in seconds (default: 60s).
+
+    Returns:
+        Tuple of (return_code, stdout, stderr).
+    """
+    import subprocess
+    import sys
+
+    cmd = [sys.executable, "-m", "quickice"] + list(args)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    return result.returncode, result.stdout, result.stderr
