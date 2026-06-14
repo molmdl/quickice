@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 08 complete (custom + solute step implementations with FIX #7).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 09 complete (ion step with 3 source modes and FIX #4).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 8 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — custom + solute step implementations with FIX #7 |
-| Last activity | 2026-06-14 — Completed 36-08 (custom + solute steps) |
+| Plan | 9 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — ion step with 3 source modes and attribute propagation |
+| Last activity | 2026-06-14 — Completed 36-09 (ion step with FIX #4) |
 
-**Progress:** ██████████ 99% (225/226 plans across all milestones, 36-08 8/11 COMPLETE)
+**Progress:** ██████████ 99% (226/227 plans across all milestones, 36-09 9/11 COMPLETE)
 
 ---
 
@@ -475,6 +475,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | CustomMoleculeConfig gro_path=gro_path (Path, not str) | CustomMoleculeConfig.gro_path typed as Path in types.py; no str() conversion needed | ✓ Shipped (36-08) |
 | Inline AVOGADRO for custom_concentration→count | Avoids circular dependency on solute_inserter; reuses N = C_M × V_L × NA formula | ✓ Shipped (36-08) |
 | Source resolution via _get_source_structure for solute step | --solute-source selects interface or custom structure as source for insertion | ✓ Shipped (36-08) |
+| FIX #4: Ion step custom source offset includes guest_atom_count | offset = ice_atom_count + water_atom_count + guest_atom_count (NOT just ice+water) | ✓ Shipped (36-09) |
+| Duck-typing attribute propagation for ion step | Setting attrs on InterfaceStructure at runtime mirrors GUI MainWindow._on_insert_ions | ✓ Shipped (36-09) |
+| Solute→ion custom molecule propagation | hasattr guard for custom_molecule_count > 0 with custom_molecule_positions is not None | ✓ Shipped (36-09) |
+| Ion source default 'interface' via getattr | Backward-compatible with pre-v4.5 args namespaces | ✓ Shipped (36-09) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -575,8 +579,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-08-PLAN.md (custom + solute step implementations with FIX #7)
-**Status:** Phase 36 IN PROGRESS — 8/11 plans complete
+**Completed:** 36-09-PLAN.md (ion step with 3 source modes and FIX #4)
+**Status:** Phase 36 IN PROGRESS — 9/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-08 COMPLETE (custom + solute steps with FIX #7)*
+*State updated: 2026-06-14 — 36-09 COMPLETE (ion step with 3 source modes and FIX #4)*
