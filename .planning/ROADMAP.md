@@ -218,7 +218,7 @@ Plans:
 - [x] 34.6-06-PLAN.md — Update CustomMoleculeGROMACSExporter for complete system export
 - [x] 34.6-07-PLAN.md — Enable Custom Molecule as source for Solute tab
 - [x] 34.6-08-PLAN.md — Comprehensive integration tests for complete workflow
-- [ ] 34.6-09-PLAN.md — GAP: Fix TOP [molecules] assertion (ETOH→etoh)
+- [x] 34.6-09-PLAN.md — GAP: Fix TOP [molecules] assertion (ETOH→etoh)
 
 **Details:**
 - **MAJOR SCOPE CHANGE**: Each tab should export GROMACS-ready files prepared within the tab
@@ -415,7 +415,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 | 34.3 - Tab Order Swap | ✓ Complete | 1 | 1 |
 | 34.4 - Solute Source Dropdown | ✓ Complete | 2 | 2 |
 | 34.5 - Placement Validation & Preview | ✓ Complete | 3 | 3 |
-| 34.6 - Revise Custom Panel for Valid Input | ⏳ Gap Closure | 8 | 9 |
+| 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 9 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ⏳ Gap Closure | 3 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
