@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-"""QuickIce CLI entry point.
+"""QuickIce entry point (backward compatible).
 
-This script is run by users: python quickice.py --temperature 300 ...
-It imports from the quickice/ package directory.
-
-Usage:
-    python quickice.py --temperature 300 --pressure 100 --nmolecules 100
+For unified entry, use: python -m quickice
 """
 import sys
-from quickice.main import main
+from quickice.entry import main
 
 if __name__ == "__main__":
     sys.exit(main())
