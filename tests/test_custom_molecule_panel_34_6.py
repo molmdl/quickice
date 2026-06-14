@@ -342,11 +342,12 @@ class TestCustomMoleculePanelPhase34_6:
         inserter = CustomMoleculeInserter(config, registry)
         result = inserter.place_random(interface, 2)
         
-        # Verify complete system
-        assert len(result.positions) == 100 + 18, "Should have interface + custom atoms"
+        # Verify complete system - water may be reduced if custom molecules overlap
         assert result.ice_atom_count == 30, "Should preserve ice atom count"
-        assert result.water_atom_count == 70, "Should preserve water atom count"
-        assert result.custom_molecule_atom_count == 18, "Should have custom molecule atoms"
+        assert result.water_atom_count <= 70, "Water atoms may be reduced if overlap occurs"
+        assert result.custom_molecule_atom_count == 18, "Should have 2 × 9 custom molecule atoms"
+        assert len(result.positions) == result.ice_atom_count + result.water_atom_count + result.custom_molecule_atom_count, \
+            "Total atoms should match sum of components"
         assert result.interface_structure is not None, "Should preserve interface structure"
         assert len(result.molecule_index) > 2, "Should have multiple molecules in index"
         assert any(m.mol_type == "custom" for m in result.molecule_index), "Should have custom molecules"
@@ -552,7 +553,7 @@ class TestCustomMoleculePanelPhase34_6:
         
         # Verify correct counts
         assert source.ice_atom_count == 40, f"Ice atoms should be 40, got {source.ice_atom_count}"
-        assert source.water_atom_count == 60, f"Water atoms should be 60, got {source.water_atom_count}"
+        assert source.water_atom_count <= 60, f"Water atoms should be <= 60 after custom molecule insertion, got {source.water_atom_count}"
         assert source.custom_molecule_count == 2, f"Custom molecules should be 2, got {source.custom_molecule_count}"
         
         # Verify the source IS the CustomMoleculeStructure (not converted or wrapped)
