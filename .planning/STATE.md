@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.8-fix-performance-and-test-gaps |
-| Plan | 4 of 5 COMPLETE |
-| Status | In progress — diversity tests updated for fingerprint-based behavior |
-| Last activity | 2026-06-14 — Completed 34.8-04-PLAN.md |
+| Plan | 5 of 5 COMPLETE |
+| Status | Phase complete |
+| Last activity | 2026-06-14 — Completed 34.8-05-PLAN.md |
 
-**Progress:** ██████████ 93% (176/188 plans across all milestones, 34.8 4/5 COMPLETE)
+**Progress:** ██████████ 94% (177/188 plans across all milestones, 34.8 5/5 COMPLETE)
 
 ---
 
@@ -440,6 +440,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | diversity_score valid range is [0, 1] not (0, 1] | Score 0.0 is valid when all candidates have identical O-O distance distributions (cosine similarity = 1.0 → diversity = 0.0) | ✓ Shipped (34.8-04) |
 | Test fixtures use structural O-O differences | diversity tests use different O-O spacing (0.25-0.33nm) instead of seed differences; duplicate structures instead of duplicate seeds | ✓ Shipped (34.8-04) |
 | O-O spacing must be within 0.35nm cutoff in fixtures | Test fixtures must keep all nearest-neighbor O-O distances ≤ 0.33nm for finite energy scores | ✓ Shipped (34.8-04) |
+| PBC boundary clamping after np.mod wrapping | np.mod(-tiny, L) returns exactly L due to float64 precision; cKDTree requires data < boxsize; subtract boxsize to wrap boundary values to 0 | ✓ Shipped (34.8-05) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -540,8 +541,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 34.8-04-PLAN.md (diversity test fixtures and assertions for fingerprint-based behavior)
-**Status:** Phase 34.8 in progress — 4/5 plans, ready for 34.8-05
+**Completed:** 34.8-05-PLAN.md (cKDTree boundary clamping for triclinic Ice V interface)
+**Status:** Phase 34.8 COMPLETE — 5/5 plans, ready for Phase 35 remaining work
 
 ---
-*State updated: 2026-06-14 — 34.8-04 COMPLETE (diversity tests updated for fingerprint-based diversity_score)*
+*State updated: 2026-06-14 — 34.8-05 COMPLETE (cKDTree boundary clamping fixes Ice V slab interface)*
