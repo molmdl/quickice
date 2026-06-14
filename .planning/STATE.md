@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14-16 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 12, 14-16 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-06, 12, 14-16 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-07, 12, 14 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
 | Plan | 15 of 18 |
-| Status | In Progress — Plans 01-06, 12, 14-16 complete |
-| Last activity | 2026-06-15 — Completed 37-15 (README unified entry point update) |
+| Status | In Progress — Plans 01-07, 12, 14 complete |
+| Last activity | 2026-06-15 — Completed 37-07 (entry point routing tests) |
 
-**Progress:** ██████░░░░ 61% (11/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** █████░░░░░ 44% (8/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -495,6 +495,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Router flags as module-level frozenset | _ROUTER_FLAGS for O(1) membership testing and immutability in _has_pipeline_flags | ✓ Shipped (37-01) |
 | importlib.util.find_spec for PySide6 availability | Never imports PySide6 at module level; avoids Qt crash in headless environments | ✓ Shipped (37-01) |
 | quickice.py delegates to entry.main() (no deprecation warning) | Backward compat: python quickice.py still works via unified router; zero maintenance cost | ✓ Shipped (37-03) |
+| from tests.conftest import run_quickice | Root conftest.py shadows tests/conftest.py; tests/ has __init__.py so package import works | ✓ Shipped (37-08) |
+| No-args test updated for unified entry point | python -m quickice with no args returns exit 0 with help (like git); old behavior was exit 1 | ✓ Shipped (37-08) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -595,8 +597,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-15-PLAN.md (README unified entry point update)
-**Status:** Phase 37 in progress — 11/18 plans done (01-06, 12, 14-16)
+**Completed:** 37-08-PLAN.md (test_cli_integration.py migration to run_quickice)
+**Status:** Phase 37 in progress — 12/18 plans done (01-08, 12, 14-16)
 
 ---
-*State updated: 2026-06-15 — 37-15 COMPLETE (README unified entry point update)*
+*State updated: 2026-06-15 — 37-08 COMPLETE (test_cli_integration.py migration to run_quickice)*
