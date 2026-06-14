@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-08, 12, 14-16 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-07, 12, 14 complete
 
 ---
 
@@ -490,6 +490,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | slow pytest marker for pipeline tests | Enables -m 'not slow' for fast CI; registered in conftest.py | ✓ Shipped (36-11) |
 | PyInstaller spec console=True + hide_console='hide-late' | Dual-mode binary: CLI output visible on Windows; console auto-hides when GUI launches | ✓ Shipped (37-05) |
 | PyInstaller spec entry point quickice/__main__.py | Unified router replaces GUI-only quickice/gui/__main__.py | ✓ Shipped (37-05) |
+| from tests.conftest import for entry point tests | Root conftest.py shadows tests/conftest.py; use from tests.conftest import instead of from conftest | ✓ Shipped (37-07) |
+| Valid ice conditions for pipeline routing tests | T=300 P=0.1 not a valid ice phase (exit 1); use T=250 P=0.1 N=96 --no-diagram (exit 0) | ✓ Shipped (37-07) |
+| Subprocess vs direct-call test split for entry routing | Subprocess for real integration (no-args, --help, --version, CLI flags); direct entry.main() call for mock-based tests (GUI errors) | ✓ Shipped (37-07) |
 | argv parameter accepts full list (argv[0] included) not argv[1:] | None default uses sys.argv; parse_known_args needs argv[0]; effective_args = argv[1:] for routing | ✓ Shipped (37-01) |
 | effective_args over remaining for clean_argv | parse_known_args returns remaining with argv[0] as positional; effective_args avoids double program name in sys.argv | ✓ Shipped (37-01) |
 | Router flags as module-level frozenset | _ROUTER_FLAGS for O(1) membership testing and immutability in _has_pipeline_flags | ✓ Shipped (37-01) |
@@ -597,8 +600,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-08-PLAN.md (test_cli_integration.py migration to run_quickice)
-**Status:** Phase 37 in progress — 12/18 plans done (01-08, 12, 14-16)
+**Completed:** 37-07-PLAN.md (entry point routing tests)
+**Status:** Phase 37 in progress — 8/18 plans done (01-07, 12, 14)
 
 ---
-*State updated: 2026-06-15 — 37-08 COMPLETE (test_cli_integration.py migration to run_quickice)*
+*State updated: 2026-06-15 — 37-07 COMPLETE (entry point routing tests)*
