@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 09 complete (ion step with 3 source modes and FIX #4).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 10 complete (main.py wired to CLIPipeline).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 9 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — ion step with 3 source modes and attribute propagation |
-| Last activity | 2026-06-14 — Completed 36-09 (ion step with FIX #4) |
+| Plan | 10 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — main.py wired to CLIPipeline for pipeline workflows |
+| Last activity | 2026-06-14 — Completed 36-10 (main.py→CLIPipeline delegation) |
 
-**Progress:** ██████████ 99% (226/227 plans across all milestones, 36-09 9/11 COMPLETE)
+**Progress:** ██████████ 99% (227/228 plans across all milestones, 36-10 10/11 COMPLETE)
 
 ---
 
@@ -479,6 +479,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Duck-typing attribute propagation for ion step | Setting attrs on InterfaceStructure at runtime mirrors GUI MainWindow._on_insert_ions | ✓ Shipped (36-09) |
 | Solute→ion custom molecule propagation | hasattr guard for custom_molecule_count > 0 with custom_molecule_positions is not None | ✓ Shipped (36-09) |
 | Ion source default 'interface' via getattr | Backward-compatible with pre-v4.5 args namespaces | ✓ Shipped (36-09) |
+| Pipeline flag detection in main() | has_pipeline_flags branches to CLIPipeline before ice-only path | ✓ Shipped (36-10) |
+| check_output_file() removed | Auto-overwrite by default + --no-overwrite flag in CLIPipeline | ✓ Shipped (36-10) |
+| InterfaceGenerationError kept in main.py except | Defensive programming even though CLIPipeline handles internally | ✓ Shipped (36-10) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -579,8 +582,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-09-PLAN.md (ion step with 3 source modes and FIX #4)
-**Status:** Phase 36 IN PROGRESS — 9/11 plans complete
+**Completed:** 36-10-PLAN.md (main.py wired to CLIPipeline)
+**Status:** Phase 36 IN PROGRESS — 10/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-09 COMPLETE (ion step with 3 source modes and FIX #4)*
+*State updated: 2026-06-14 — 36-10 COMPLETE (main.py→CLIPipeline delegation)*
