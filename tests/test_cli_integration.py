@@ -1,34 +1,9 @@
 """Integration tests for QuickIce CLI.
 
-Tests the full CLI flow using subprocess to run 'python quickice.py'.
+Tests the full CLI flow using the unified entry point (python -m quickice).
 """
 
-import subprocess
-import sys
-from pathlib import Path
-
-
-# Path to the quickice.py script
-QUICKICE_SCRIPT = Path(__file__).parent.parent / "quickice.py"
-
-
-def run_cli(*args: str) -> tuple[int, str, str]:
-    """Run quickice.py with given arguments.
-    
-    Args:
-        *args: Command-line arguments to pass
-        
-    Returns:
-        Tuple of (return_code, stdout, stderr)
-    """
-    cmd = [sys.executable, str(QUICKICE_SCRIPT)] + list(args)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=10
-    )
-    return result.returncode, result.stdout, result.stderr
+from tests.conftest import run_quickice
 
 
 class TestValidInputs:
@@ -36,10 +11,11 @@ class TestValidInputs:
     
     def test_valid_inputs_print_values(self):
         """Valid inputs should print temperature, pressure, and molecules."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "273",
             "--pressure", "0.1",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode == 0
@@ -49,10 +25,11 @@ class TestValidInputs:
     
     def test_boundary_temperature_min(self):
         """Low temperature (72K, boundary of Ice Ic) should be accepted."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "72",
             "--pressure", "0.1",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode == 0
@@ -60,10 +37,11 @@ class TestValidInputs:
     
     def test_boundary_temperature_max(self):
         """High temperature (450K) with sufficient pressure for Ice VII."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "450",
             "--pressure", "5000",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode == 0
@@ -71,10 +49,11 @@ class TestValidInputs:
     
     def test_boundary_pressure_min(self):
         """Minimum pressure (0 MPa) should be accepted for Ice Ih."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "250",
             "--pressure", "0",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode == 0
@@ -82,10 +61,11 @@ class TestValidInputs:
     
     def test_boundary_pressure_max(self):
         """Maximum pressure (10000 MPa) should be accepted for Ice X."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "200",
             "--pressure", "10000",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode == 0
@@ -93,10 +73,11 @@ class TestValidInputs:
     
     def test_boundary_nmolecules_min(self):
         """Minimum nmolecules (4) should be accepted."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "273",
             "--pressure", "0.1",
-            "--nmolecules", "4"
+            "--nmolecules", "4",
+            timeout=10
         )
         
         assert returncode == 0
@@ -104,10 +85,11 @@ class TestValidInputs:
     
     def test_boundary_nmolecules_max(self):
         """Large nmolecules (1000) should be accepted and complete in reasonable time."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "273",
             "--pressure", "0.1",
-            "--nmolecules", "1000"
+            "--nmolecules", "1000",
+            timeout=10
         )
         
         assert returncode == 0
@@ -119,10 +101,11 @@ class TestInvalidInputs:
     
     def test_invalid_temperature_too_low(self):
         """Temperature below 0K should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "-1",
             "--pressure", "100",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -130,10 +113,11 @@ class TestInvalidInputs:
     
     def test_invalid_temperature_too_high(self):
         """Temperature above 500K should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "501",
             "--pressure", "100",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -141,10 +125,11 @@ class TestInvalidInputs:
     
     def test_invalid_temperature_not_numeric(self):
         """Non-numeric temperature should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "abc",
             "--pressure", "100",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -152,10 +137,11 @@ class TestInvalidInputs:
     
     def test_invalid_pressure_too_low(self):
         """Pressure below 0 MPa should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "-1",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -163,10 +149,11 @@ class TestInvalidInputs:
     
     def test_invalid_pressure_too_high(self):
         """Pressure above 10000 MPa should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "10001",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -174,10 +161,11 @@ class TestInvalidInputs:
     
     def test_invalid_pressure_not_numeric(self):
         """Non-numeric pressure should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "abc",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -185,10 +173,11 @@ class TestInvalidInputs:
     
     def test_invalid_nmolecules_too_low(self):
         """Molecule count below 4 should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "100",
-            "--nmolecules", "3"
+            "--nmolecules", "3",
+            timeout=10
         )
         
         assert returncode != 0
@@ -196,10 +185,11 @@ class TestInvalidInputs:
     
     def test_invalid_nmolecules_too_high(self):
         """Molecule count above 100000 should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "100",
-            "--nmolecules", "100001"
+            "--nmolecules", "100001",
+            timeout=10
         )
         
         assert returncode != 0
@@ -207,10 +197,11 @@ class TestInvalidInputs:
     
     def test_invalid_nmolecules_float(self):
         """Float molecule count should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "100",
-            "--nmolecules", "4.5"
+            "--nmolecules", "4.5",
+            timeout=10
         )
         
         assert returncode != 0
@@ -218,10 +209,11 @@ class TestInvalidInputs:
     
     def test_invalid_nmolecules_not_numeric(self):
         """Non-numeric molecule count should be rejected."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
             "--pressure", "100",
-            "--nmolecules", "abc"
+            "--nmolecules", "abc",
+            timeout=10
         )
         
         assert returncode != 0
@@ -233,9 +225,10 @@ class TestMissingArguments:
     
     def test_missing_temperature(self):
         """Missing temperature should show error."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--pressure", "100",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -243,9 +236,10 @@ class TestMissingArguments:
     
     def test_missing_pressure(self):
         """Missing pressure should show error."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
-            "--nmolecules", "100"
+            "--nmolecules", "100",
+            timeout=10
         )
         
         assert returncode != 0
@@ -253,19 +247,21 @@ class TestMissingArguments:
     
     def test_missing_nmolecules(self):
         """Missing nmolecules should show error."""
-        returncode, stdout, stderr = run_cli(
+        returncode, stdout, stderr = run_quickice(
             "--temperature", "300",
-            "--pressure", "100"
+            "--pressure", "100",
+            timeout=10
         )
         
         assert returncode != 0
         assert "--nmolecules is required for ice generation" in stderr.lower()
     
     def test_no_arguments(self):
-        """No arguments should show error."""
-        returncode, stdout, stderr = run_cli()
+        """No arguments should show help (like git with no args)."""
+        returncode, stdout, stderr = run_quickice(timeout=10)
         
-        assert returncode != 0
+        assert returncode == 0
+        assert "usage:" in stdout.lower()
 
 
 class TestHelpAndVersion:
@@ -273,7 +269,7 @@ class TestHelpAndVersion:
     
     def test_help_shows_usage(self):
         """--help should show usage information."""
-        returncode, stdout, stderr = run_cli("--help")
+        returncode, stdout, stderr = run_quickice("--help", timeout=10)
         
         # --help causes argparse to exit with 0
         assert returncode == 0
@@ -285,7 +281,7 @@ class TestHelpAndVersion:
     
     def test_version_shows_version(self):
         """--version should show version number."""
-        returncode, stdout, stderr = run_cli("--version")
+        returncode, stdout, stderr = run_quickice("--version", timeout=10)
         
         # --version causes argparse to exit with 0
         assert returncode == 0
