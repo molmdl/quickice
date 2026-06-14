@@ -14,40 +14,16 @@ timeouts for pipeline steps that involve GenIce2 generation.
 
 import os
 import shutil
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
 import pytest
 
-
-# Path to the quickice.py script
-QUICKICE_SCRIPT = Path(__file__).parent.parent / "quickice.py"
+from tests.conftest import run_quickice
 
 # Custom molecule data paths
 ETOH_GRO = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.gro")
 ETOH_ITP = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.itp")
-
-
-def run_cli(*args: str, timeout: int = 120) -> tuple[int, str, str]:
-    """Run quickice.py with given arguments.
-
-    Args:
-        *args: Command-line arguments to pass.
-        timeout: Timeout in seconds (default: 120s for pipeline tests).
-
-    Returns:
-        Tuple of (return_code, stdout, stderr).
-    """
-    cmd = [sys.executable, str(QUICKICE_SCRIPT)] + list(args)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-    return result.returncode, result.stdout, result.stderr
 
 
 def make_temp_output_dir() -> str:
@@ -69,95 +45,102 @@ class TestPipelineFlagValidation:
 
     def test_solute_type_without_concentration(self):
         """--solute-type CH4 without --solute-concentration → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--solute-type", "CH4",
+            timeout=120,
         )
         assert rc == 2
         assert "solute-concentration" in stderr.lower() or "solute-type" in stderr.lower()
 
     def test_custom_gro_without_custom_itp(self):
         """--custom-gro X.gro without --custom-itp → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--custom-gro", "X.gro",
+            timeout=120,
         )
         assert rc == 2
         assert "custom-itp" in stderr.lower()
 
     def test_custom_itp_without_custom_gro(self):
         """--custom-itp X.itp without --custom-gro → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--custom-itp", "X.itp",
+            timeout=120,
         )
         assert rc == 2
         assert "custom-gro" in stderr.lower()
 
     def test_custom_placement_custom_without_csv(self):
         """--custom-placement custom without --custom-positions-file → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--custom-gro", "X.gro", "--custom-itp", "X.itp",
             "--custom-placement", "custom",
+            timeout=120,
         )
         assert rc == 2
         assert "custom-positions-file" in stderr.lower()
 
     def test_ion_source_solute_without_solute(self):
         """--ion-source solute without --solute-type → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--ion-concentration", "0.15",
             "--ion-source", "solute",
+            timeout=120,
         )
         assert rc == 2
         assert "solute-type" in stderr.lower()
 
     def test_ion_source_custom_without_custom(self):
         """--ion-source custom without --custom-gro → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--ion-concentration", "0.15",
             "--ion-source", "custom",
+            timeout=120,
         )
         assert rc == 2
         assert "custom-gro" in stderr.lower()
 
     def test_solute_source_custom_without_custom(self):
         """--solute-source custom without --custom-gro → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5", "--water-thickness", "2.0",
             "--solute-type", "CH4", "--solute-concentration", "0.5",
             "--solute-source", "custom",
+            timeout=120,
         )
         assert rc == 2
         assert "custom-gro" in stderr.lower()
 
     def test_custom_count_and_concentration_mutually_exclusive(self):
         """Both --custom-count and --custom-concentration → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
@@ -166,6 +149,7 @@ class TestPipelineFlagValidation:
             "--custom-placement", "random",
             "--custom-count", "5",
             "--custom-concentration", "0.5",
+            timeout=120,
         )
         assert rc == 2
         assert "mutually exclusive" in stderr.lower()
@@ -183,12 +167,13 @@ class TestPipelineExitCodes:
         """Valid interface slab pipeline → exit code 0."""
         outdir = make_temp_output_dir()
         try:
-            rc, stdout, stderr = run_cli(
+            rc, stdout, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
         finally:
@@ -196,12 +181,13 @@ class TestPipelineExitCodes:
 
     def test_invalid_args_exit_code_2(self):
         """Missing required flag → exit code 2."""
-        rc, _, stderr = run_cli(
+        rc, _, stderr = run_quickice(
             "-T", "270", "-P", "0.1",
             "--interface", "--mode", "slab",
             "--box-x", "3", "--box-y", "3", "--box-z", "5",
             "--ice-thickness", "1.5",
             # Missing --water-thickness for slab mode
+            timeout=120,
         )
         assert rc == 2
 
@@ -209,7 +195,7 @@ class TestPipelineExitCodes:
         """Invalid file path for --custom-gro → exit code 1."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
@@ -219,6 +205,7 @@ class TestPipelineExitCodes:
                 "--custom-placement", "random",
                 "--custom-count", "3",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 1
         finally:
@@ -237,12 +224,13 @@ class TestPipelineProgressReporting:
         """Pipeline output has [PROGRESS] messages on stderr."""
         outdir = make_temp_output_dir()
         try:
-            rc, stdout, stderr = run_cli(
+            rc, stdout, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             assert "[PROGRESS]" in stderr
@@ -253,12 +241,13 @@ class TestPipelineProgressReporting:
         """stdout remains clean — no [PROGRESS] markers."""
         outdir = make_temp_output_dir()
         try:
-            rc, stdout, stderr = run_cli(
+            rc, stdout, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             assert "[PROGRESS]" not in stdout
@@ -279,12 +268,13 @@ class TestPipelineBasicWorkflows:
         """Interface slab mode produces interface.gro, interface.top, tip4p-ice.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -298,12 +288,13 @@ class TestPipelineBasicWorkflows:
         """Pocket mode produces interface.gro, interface.top, tip4p-ice.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "pocket",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--pocket-diameter", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -317,11 +308,12 @@ class TestPipelineBasicWorkflows:
         """Piece mode produces interface.gro, interface.top, tip4p-ice.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "piece",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -335,10 +327,11 @@ class TestPipelineBasicWorkflows:
         """Hydrate-only produces hydrate.gro, hydrate.top, ch4_hydrate.itp, tip4p-ice.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -353,13 +346,14 @@ class TestPipelineBasicWorkflows:
         """Interface+solute produces solute.gro, solute.top, ch4_liquid.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--solute-type", "CH4", "--solute-concentration", "0.5",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -374,13 +368,14 @@ class TestPipelineBasicWorkflows:
         """Interface+ion produces ion.gro, ion.top, ion.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--ion-concentration", "0.15",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -405,7 +400,7 @@ class TestPipelineAdvancedWorkflows:
         """Full chain: interface→custom→solute→ion with etoh produces ion.gro + 4 ITPs."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
@@ -417,6 +412,7 @@ class TestPipelineAdvancedWorkflows:
                 "--ion-concentration", "0.15",
                 "--ion-source", "solute",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -436,7 +432,7 @@ class TestPipelineAdvancedWorkflows:
         """Hydrate+interface+ion with hydrate guest ITP."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
                 "--interface", "--mode", "slab",
@@ -444,6 +440,7 @@ class TestPipelineAdvancedWorkflows:
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--ion-concentration", "0.15",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -466,7 +463,7 @@ class TestPipelineAdvancedWorkflows:
         """
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
                 "--interface", "--mode", "slab",
@@ -474,6 +471,7 @@ class TestPipelineAdvancedWorkflows:
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--solute-type", "CH4", "--solute-concentration", "0.5",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -495,7 +493,7 @@ class TestPipelineAdvancedWorkflows:
         """Solute from custom source produces correct output with custom ITP."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
@@ -505,6 +503,7 @@ class TestPipelineAdvancedWorkflows:
                 "--solute-type", "CH4", "--solute-concentration", "0.5",
                 "--solute-source", "custom",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -523,13 +522,14 @@ class TestPipelineAdvancedWorkflows:
         """Pocket mode + ion insertion produces ion.gro with ion.itp."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "pocket",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--pocket-diameter", "2.0",
                 "--ion-concentration", "0.15",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -592,12 +592,13 @@ class TestPipelineExportCorrectness:
         """GRO file atom count matches declared count on line 2."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             gro_path = os.path.join(outdir, "interface.gro")
@@ -618,12 +619,13 @@ class TestPipelineExportCorrectness:
         """TOP file contains [ molecules ] section with at least SOL."""
         outdir = make_temp_output_dir()
         try:
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             top_path = os.path.join(outdir, "interface.top")
@@ -638,13 +640,14 @@ class TestPipelineExportCorrectness:
         outdir = make_temp_output_dir()
         try:
             # Test with solute to get ch4_liquid.itp
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--solute-type", "CH4", "--solute-concentration", "0.5",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc == 0
             outpath = Path(outdir)
@@ -662,13 +665,14 @@ class TestPipelineExportCorrectness:
         try:
             # Create a pre-existing file
             Path(outdir, "existing.txt").write_text("existing content")
-            rc, _, stderr = run_cli(
+            rc, _, stderr = run_quickice(
                 "-T", "270", "-P", "0.1",
                 "--interface", "--mode", "slab",
                 "--box-x", "3", "--box-y", "3", "--box-z", "5",
                 "--ice-thickness", "1.5", "--water-thickness", "2.0",
                 "--no-overwrite",
                 "-o", outdir,
+                timeout=120,
             )
             assert rc != 0, "--no-overwrite should cause non-zero exit code"
         finally:
