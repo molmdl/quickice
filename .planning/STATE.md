@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 16 of 18 |
-| Status | In Progress — Plans 01-06, 12, 14, 16 complete |
-| Last activity | 2026-06-15 — Completed 37-16 (README_bin.md platform invocation table) |
+| Plan | 15 of 18 |
+| Status | In Progress — Plans 01-06, 12, 14-16 complete |
+| Last activity | 2026-06-15 — Completed 37-15 (README unified entry point update) |
 
-**Progress:** ██████░░░░ 56% (10/18 plans in Phase 37, 230+ plans across all milestones)
+**Progress:** ██████░░░░ 61% (11/18 plans in Phase 37, 231+ plans across all milestones)
 
 ---
 
@@ -327,6 +327,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | GUI guide workflow documentation | Step-by-step instructions with prerequisites and outcomes | ✓ Shipped (35-05) |
 | GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
+| README unified entry point update | python -m quickice as primary invocation, Entry Point section, Known Issues CLI fix | ✓ Shipped (37-15) |
 | Placement validation logic | Read-only bounds and overlap checking for custom molecules | ✓ Shipped (34.5-01) |
 | Semi-transparent preview rendering | Opacity 0.6 for visual distinction before insertion | ✓ Shipped (34.5-02) |
 | Validation UI integration | Validate & Preview button with signal-slot wiring | ✓ Shipped (34.5-03) |
@@ -594,8 +595,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-16-PLAN.md (README_bin.md platform invocation table and CLI mode docs)
-**Status:** Phase 37 in progress — 10/18 plans done (01-06, 12, 14, 16)
+**Completed:** 37-15-PLAN.md (README unified entry point update)
+**Status:** Phase 37 in progress — 11/18 plans done (01-06, 12, 14-16)
 
 ---
-*State updated: 2026-06-15 — 37-16 COMPLETE (README_bin.md platform invocation table)*
+*State updated: 2026-06-15 — 37-15 COMPLETE (README unified entry point update)*
