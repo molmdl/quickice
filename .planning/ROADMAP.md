@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 52 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 3, Phase 37: TBD, e2e-compute-export: 11, completed: 39/52)
+**Total Plans:** 52 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 5, Phase 37: TBD, e2e-compute-export: 11, completed: 39/52)
 
 ## Overview
 
@@ -387,12 +387,14 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 - Follows existing CLI patterns from Quick Tasks 013/014/015 (hydrate, ion, progress)
 - No GUI dependency — purely backend computation + GROMACS export
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 5 plans in 4 waves
 
 Plans:
-- [ ] 36-01-PLAN.md — Extend CLI parser with v4.5 flags and validation
-- [ ] 36-02-PLAN.md — Create pipeline executor and ITP helpers
-- [ ] 36-03-PLAN.md — Wire main.py and add CLI integration tests
+- [ ] 36-01-PLAN.md — Extend CLI parser with v4.5 flags and validation (Wave 1)
+- [ ] 36-02-PLAN.md — Create ITP path helpers for CLI export (Wave 1)
+- [ ] 36-03-PLAN.md — Create CLIPipeline scaffold with source, interface, and export steps (Wave 2)
+- [ ] 36-04-PLAN.md — Implement insertion steps (custom, solute, ion with attribute propagation) (Wave 3)
+- [ ] 36-05-PLAN.md — Wire main.py and add CLI integration tests including pocket/piece modes (Wave 4)
 
 ---
 
@@ -428,7 +430,7 @@ Plans:
 
 **Phase Count:** 14 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 49 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, e2e-compute-export: 11, completed: 39/49)
+**Total Plans:** 51 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 5, e2e-compute-export: 11, completed: 39/51)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -479,7 +481,7 @@ Plans:
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
-| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 3 |
+| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 5 |
 | 37 - Unified Entry Point | 🔲 Not Started | 0 | TBD |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
