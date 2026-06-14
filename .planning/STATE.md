@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12-17 complete
+**Current Focus:** Phase 37-unified-entry-point COMPLETE — All 18 plans done
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12-17 complete
+**Current focus:** Phase 37-unified-entry-point COMPLETE — All 18 plans done
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 17 of 18 |
-| Status | In Progress — Plans 01-10, 12-17 complete |
-| Last activity | 2026-06-15 — Completed 37-13 (CLI reference unified entry sections) |
+| Plan | 18 of 18 |
+| Status | Phase Complete — All 18 plans done |
+| Last activity | 2026-06-15 — Completed 37-18 (backward compat & integration verification) |
 
-**Progress:** ████████░░ 94% (16/18 plans in Phase 37, 232+ plans across all milestones)
+**Progress:** ██████████ 100% (18/18 plans in Phase 37, 233+ plans across all milestones)
 
 ---
 
@@ -502,6 +502,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | from tests.conftest import run_quickice | Root conftest.py shadows tests/conftest.py; tests/ has __init__.py so package import works | ✓ Shipped (37-08) |
 | CLI pipeline output goes to stderr | [PROGRESS] messages written to stderr, not stdout; test assertions must check combined output | ✓ Shipped (37-10) |
 | No-args test updated for unified entry point | python -m quickice with no args returns exit 0 with help (like git); old behavior was exit 1 | ✓ Shipped (37-08) |
+| Backward-compat doc references acceptable | docs/cli-reference.md and README.md mention python quickice.py only in backward-compat context | ✓ Shipped (37-18) |
+| All 5 phase success criteria verified | Unified routing, --cli force, PySide6 graceful fallback, test suite, quickice.py compat all pass | ✓ Shipped (37-18) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -602,8 +604,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-13-PLAN.md (CLI reference unified entry sections)
-**Status:** Phase 37 in progress — 16/18 plans done (01-10, 12-17)
+**Completed:** 37-18-PLAN.md (backward compat & full integration verification)
+**Status:** Phase 37 COMPLETE — All 18 plans done
 
 ---
-*State updated: 2026-06-15 — 37-13 COMPLETE (CLI reference unified entry sections)*
+*State updated: 2026-06-15 — 37-18 COMPLETE (Phase 37 unified entry point COMPLETE)*
