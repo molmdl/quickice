@@ -5,11 +5,10 @@ import shutil
 from pathlib import Path
 
 from quickice.cli.parser import get_arguments
+from quickice.cli.pipeline import CLIPipeline
 from quickice.phase_mapping import lookup_phase, UnknownPhaseError
 from quickice.structure_generation import generate_candidates
-from quickice.structure_generation.types import InterfaceConfig
 from quickice.structure_generation.interface_builder import (
-    generate_interface,
     InterfaceGenerationError,
 )
 from quickice.ranking import rank_candidates
@@ -17,38 +16,36 @@ from quickice.output import output_ranked_candidates
 from quickice.output.gromacs_writer import (
     write_gro_file,
     write_top_file,
-    write_interface_gro_file,
-    write_interface_top_file,
     get_tip4p_itp_path,
 )
-
-
-def check_output_file(filepath: Path) -> bool:
-    """Check if file exists and prompt for overwrite.
-    
-    Args:
-        filepath: Path to check
-        
-    Returns:
-        True if file doesn't exist or user confirms overwrite, False otherwise
-    """
-    if filepath.exists():
-        response = input(f"File {filepath.name} exists. Overwrite? [y/N] ")
-        return response.lower() == 'y'
-    return True
 
 
 def main() -> int:
     """Main entry point for QuickIce.
     
-    Parses command-line arguments and prints validated inputs.
+    Parses command-line arguments and runs the appropriate workflow:
+    - Pipeline workflow (interface, hydrate, custom, solute, ion) via CLIPipeline
+    - Ice-only workflow (candidate generation + ranking + export) for backward compat
     
     Returns:
-        Exit code (0 for success, non-zero for error).
+        Exit code (0 for success, 1 for runtime error, 2 for argument error).
     """
     try:
         args = get_arguments()
         
+        # Detect pipeline flags and delegate to CLIPipeline
+        has_pipeline_flags = (
+            args.interface
+            or getattr(args, 'hydrate', False)
+            or getattr(args, 'custom_gro', None) is not None
+            or getattr(args, 'solute_type', None) is not None
+            or getattr(args, 'ion_concentration', None) is not None
+        )
+        if has_pipeline_flags:
+            pipeline = CLIPipeline(args)
+            return pipeline.execute()
+        
+        # Ice-only workflow (backward compatible)
         # Print validated inputs
         print("QuickIce - Ice structure generation")
         print()
@@ -68,96 +65,6 @@ def main() -> int:
         else:
             print(f"Density: {density} g/cm³")
         print()
-        
-        # Interface generation workflow (new)
-        if args.interface:
-            # Create InterfaceConfig from CLI arguments
-            config = InterfaceConfig(
-                mode=args.mode,
-                box_x=args.box_x,
-                box_y=args.box_y,
-                box_z=args.box_z,
-                seed=args.seed,
-                ice_thickness=args.ice_thickness or 0.0,
-                water_thickness=args.water_thickness or 0.0,
-                pocket_diameter=args.pocket_diameter or 0.0,
-                pocket_shape=args.pocket_shape,
-            )
-            
-            # Print interface parameters (matching GUI log panel style)
-            print(f"\nStarting {config.mode} interface generation...")
-            print(f"  Box: {config.box_x:.2f} x {config.box_y:.2f} x {config.box_z:.2f} nm")
-            print(f"  Seed: {config.seed}")
-            
-            if config.mode == "slab":
-                print(f"  Ice thickness: {config.ice_thickness:.2f} nm")
-                print(f"  Water thickness: {config.water_thickness:.2f} nm")
-            elif config.mode == "pocket":
-                print(f"  Pocket diameter: {config.pocket_diameter:.2f} nm")
-                print(f"  Pocket shape: {config.pocket_shape}")
-            print()
-            
-            # Generate ice candidate
-            print(f"Generating ice candidate ({phase_info['phase_id']})...")
-            gen_result = generate_candidates(
-                phase_info=phase_info,
-                nmolecules=256,  # Default for interface generation
-                n_candidates=1
-            )
-            candidate = gen_result.candidates[0]
-            print(f"  Generated {candidate.nmolecules} molecules")
-            print()
-            
-            # Generate interface
-            print("Assembling interface...")
-            result = generate_interface(candidate, config)
-            print(f"  Ice molecules: {result.ice_nmolecules}")
-            print(f"  Water molecules: {result.water_nmolecules}")
-            
-            # Print generation report (matching GUI log panel)
-            if result.report:
-                print("\n" + "=" * 50)
-                print(result.report)
-                print("=" * 50)
-            
-            print("\nInterface generation complete.")
-            print()
-            
-            # Export GROMACS files
-            output_path = Path(args.output).resolve()
-            output_path.mkdir(parents=True, exist_ok=True)
-            
-            # Generate output filename: interface_{phase}_{mode}.gro
-            base_name = f"interface_{phase_info['phase_id']}_{config.mode}"
-            gro_filepath = output_path / f"{base_name}.gro"
-            top_filepath = output_path / f"{base_name}.top"
-            itp_filepath = output_path / "tip4p_ice.itp"
-            
-            # Check for file overwrite
-            files_to_check = [gro_filepath, top_filepath, itp_filepath]
-            skip_export = False
-            for f in files_to_check:
-                if not check_output_file(f):
-                    print(f"Skipping export: {f.name} already exists")
-                    skip_export = True
-                    break
-            
-            if not skip_export:
-                # Write GROMACS files
-                write_interface_gro_file(result, str(gro_filepath))
-                write_interface_top_file(result, str(top_filepath))
-                
-                # Copy tip4p_ice.itp
-                itp_source = get_tip4p_itp_path()
-                shutil.copy(itp_source, itp_filepath)
-                
-                print(f"Exported GROMACS files:")
-                print(f"  - {gro_filepath.name}")
-                print(f"  - {top_filepath.name}")
-                print(f"  - {itp_filepath.name}")
-                print(f"  Directory: {args.output}")
-            
-            return 0
         
         # Generate candidates for the phase
         gen_result = generate_candidates(
@@ -277,7 +184,7 @@ def main() -> int:
         return 1
     except SystemExit:
         # argparse calls sys.exit on error or --help
-        # Re-raise to propagate the exit code
+        # Re-raise to propagate the exit code (2 for argument errors)
         raise
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
