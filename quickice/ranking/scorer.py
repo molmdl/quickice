@@ -76,6 +76,13 @@ def _calculate_oo_distances_pbc(
         for dim in range(3):
             o_wrapped[:, dim] = np.mod(o_wrapped[:, dim], cell_dims[dim])
         
+        # Handle floating-point edge case: np.mod(-tiny, L) can return exactly L
+        # due to float64 precision limits. cKDTree requires data < boxsize,
+        # so values exactly on the PBC boundary must wrap to 0.
+        for dim in range(3):
+            on_boundary = o_wrapped[:, dim] >= cell_dims[dim]
+            o_wrapped[on_boundary, dim] -= cell_dims[dim]
+        
         box_list = cell_dims.tolist()
         tree = cKDTree(o_wrapped, boxsize=box_list)
         
