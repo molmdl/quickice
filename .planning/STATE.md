@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 04 complete (parser prog name + mode flags)
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 01 complete (unified entry point routing)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 04 complete (parser prog name + mode flags)
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plan 01 complete (unified entry point routing)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 06 of 18 |
-| Status | In Progress — Plans 04-06 complete (Wave 1) |
-| Last activity | 2026-06-14 — Completed 37-04 (parser prog name & mode flags) |
+| Plan | 01 of 18 |
+| Status | In Progress — Plans 01, 04-06 complete |
+| Last activity | 2026-06-14 — Completed 37-01 (unified entry point routing) |
 
 **Progress:** ███░░░░░░░ 33% (6/18 plans in Phase 37, 228+ plans across all milestones)
 
@@ -489,6 +489,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | slow pytest marker for pipeline tests | Enables -m 'not slow' for fast CI; registered in conftest.py | ✓ Shipped (36-11) |
 | PyInstaller spec console=True + hide_console='hide-late' | Dual-mode binary: CLI output visible on Windows; console auto-hides when GUI launches | ✓ Shipped (37-05) |
 | PyInstaller spec entry point quickice/__main__.py | Unified router replaces GUI-only quickice/gui/__main__.py | ✓ Shipped (37-05) |
+| argv parameter accepts full list (argv[0] included) not argv[1:] | None default uses sys.argv; parse_known_args needs argv[0]; effective_args = argv[1:] for routing | ✓ Shipped (37-01) |
+| effective_args over remaining for clean_argv | parse_known_args returns remaining with argv[0] as positional; effective_args avoids double program name in sys.argv | ✓ Shipped (37-01) |
+| Router flags as module-level frozenset | _ROUTER_FLAGS for O(1) membership testing and immutability in _has_pipeline_flags | ✓ Shipped (37-01) |
+| importlib.util.find_spec for PySide6 availability | Never imports PySide6 at module level; avoids Qt crash in headless environments | ✓ Shipped (37-01) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -589,8 +593,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 37-04-PLAN.md (Parser prog name, epilog examples, --cli/--gui flags)
-**Status:** Phase 37 in progress — 3/18 plans done (04, 05, 06)
+**Completed:** 37-01-PLAN.md (Unified entry point routing module)
+**Status:** Phase 37 in progress — 4/18 plans done (01, 04, 05, 06)
 
 ---
-*State updated: 2026-06-14 — 37-04 COMPLETE (parser prog name & mode flags)*
+*State updated: 2026-06-14 — 37-01 COMPLETE (unified entry point routing)*
