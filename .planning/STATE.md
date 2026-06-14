@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 04 complete (copy_itp_files_for_structure with all 6 step cases).
+**Current Focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 05 complete (ice candidate + interface step implementation).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 04 complete (copy_itp_files_for_structure with all 6 step cases).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 05 complete (ice candidate + interface step implementation).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 4 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — copy_itp_files_for_structure with all 6 step cases |
-| Last activity | 2026-06-14 — Completed 36-04 (copy_itp_files_for_structure) |
+| Plan | 5 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — ice candidate + interface step implementation |
+| Last activity | 2026-06-14 — Completed 36-05 (source + interface steps) |
 
-**Progress:** ██████████ 99% (221/222 plans across all milestones, 36-04 4/11 COMPLETE)
+**Progress:** ██████████ 99% (222/223 plans across all milestones, 36-05 5/11 COMPLETE)
 
 ---
 
@@ -457,6 +457,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | 4-strategy guest type resolution for hydrate step | HydrateStructure: direct attr → config.guest_type → _detect_guest_type → args_ref fallback | ✓ Shipped (36-04) |
 | comment_out_atomtypes_in_itp on solute/custom ITPs only | Data ITPs (tip4p-ice, hydrate guest) lack [atomtypes]; solute/custom have them and must be commented | ✓ Shipped (36-04) |
 | Partial copy list on error (logger.warning, no crash) | CLI should not fail on missing ITP; return list of successfully copied filenames | ✓ Shipped (36-04) |
+| nmolecules default 256 via getattr | Backward-compatible default for args namespaces that lack nmolecules | ✓ Shipped (36-05) |
+| base_seed= (NOT seed=) for generate_candidates | Project history: generate_candidates takes base_seed parameter | ✓ Shipped (36-05) |
+| gen_result.candidates[0] for result access | Project history: result is GenerationResult with .candidates list | ✓ Shipped (36-05) |
+| seed=self.args.seed in InterfaceConfig (FIX #3) | Project history: InterfaceConfig requires seed= parameter | ✓ Shipped (36-05) |
+| Hydrate branch placeholder if self._ice_candidate is None | Allows Plan 06 to add hydrate generation before ice candidate code | ✓ Shipped (36-05) |
+| Inline try/except ImportError in step methods | Science deps may be missing; fail gracefully with clear error | ✓ Shipped (36-05) |
 | No GUI imports in pipeline.py | CLI module works without PySide6/VTK; matches itp_helpers.py pattern | ✓ Shipped (36-03) |
 | Re-export get_tip4p_itp_path from gromacs_writer | Existing function is tested; avoids duplication; inline import avoids circular dependencies | ✓ Shipped (36-02) |
 
@@ -559,8 +565,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-04-PLAN.md (copy_itp_files_for_structure with all 6 step cases)
-**Status:** Phase 36 IN PROGRESS — 4/11 plans complete
+**Completed:** 36-05-PLAN.md (ice candidate + interface step implementation)
+**Status:** Phase 36 IN PROGRESS — 5/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-04 COMPLETE (copy_itp_files_for_structure with all 6 step cases)*
+*State updated: 2026-06-14 — 36-05 COMPLETE (ice candidate + interface step implementation)*
