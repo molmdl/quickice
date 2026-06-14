@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 07 complete (export step with all 6 structure types including hydrate wrapper).
+**Current focus:** Phase 36-cli-feature-parity IN PROGRESS — Plan 08 complete (custom + solute step implementations with FIX #7).
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 36-cli-feature-parity |
-| Plan | 7 of 11 COMPLETE |
-| Status | Phase IN PROGRESS — export step with all 6 structure types including hydrate wrapper |
-| Last activity | 2026-06-14 — Completed 36-07 (export step) |
+| Plan | 8 of 11 COMPLETE |
+| Status | Phase IN PROGRESS — custom + solute step implementations with FIX #7 |
+| Last activity | 2026-06-14 — Completed 36-08 (custom + solute steps) |
 
-**Progress:** ██████████ 99% (224/225 plans across all milestones, 36-07 7/11 COMPLETE)
+**Progress:** ██████████ 99% (225/226 plans across all milestones, 36-08 8/11 COMPLETE)
 
 ---
 
@@ -471,6 +471,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Hydrate-only export path (FIX #9) between interface and ice | Hydrate case in _run_export_step priority list enables hydrate-only workflow | ✓ Shipped (36-07) |
 | Hydrate export wrapper computes InterfaceStructure attrs | water_atom_count=water_count*4, guest_atom_count=len(positions)-water_atom_count; guest_count→guest_nmolecules, water_count→water_nmolecules | ✓ Shipped (36-07) |
 | Inline imports for writer functions in export step | Science deps may be missing; fail gracefully with ImportError | ✓ Shipped (36-07) |
+| FIX #7: SoluteInserter(config, seed=args.seed) | Unseeded SoluteInserter produced non-reproducible placement; seed=args.seed fixes this | ✓ Shipped (36-08) |
+| CustomMoleculeConfig gro_path=gro_path (Path, not str) | CustomMoleculeConfig.gro_path typed as Path in types.py; no str() conversion needed | ✓ Shipped (36-08) |
+| Inline AVOGADRO for custom_concentration→count | Avoids circular dependency on solute_inserter; reuses N = C_M × V_L × NA formula | ✓ Shipped (36-08) |
+| Source resolution via _get_source_structure for solute step | --solute-source selects interface or custom structure as source for insertion | ✓ Shipped (36-08) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -571,8 +575,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 36-07-PLAN.md (export step with all 6 structure types including hydrate wrapper)
-**Status:** Phase 36 IN PROGRESS — 7/11 plans complete
+**Completed:** 36-08-PLAN.md (custom + solute step implementations with FIX #7)
+**Status:** Phase 36 IN PROGRESS — 8/11 plans complete
 
 ---
-*State updated: 2026-06-14 — 36-07 COMPLETE (export step with all 6 structure types)*
+*State updated: 2026-06-14 — 36-08 COMPLETE (custom + solute steps with FIX #7)*
