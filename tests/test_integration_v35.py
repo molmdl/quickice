@@ -4,37 +4,14 @@ Tests GROMACS file validation, CLI interface generation for all modes,
 and triclinic phase support.
 """
 
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
+from tests.conftest import run_quickice
 
-# Path to the quickice.py script
-QUICKICE_SCRIPT = Path(__file__).parent.parent / "quickice.py"
-
-
-def run_cli(*args: str, timeout: int = 60) -> tuple[int, str, str]:
-    """Run quickice.py with given arguments.
-    
-    Args:
-        *args: Command-line arguments to pass
-        timeout: Timeout in seconds (default 60 for interface generation)
-        
-    Returns:
-        Tuple of (return_code, stdout, stderr)
-    """
-    cmd = [sys.executable, str(QUICKICE_SCRIPT)] + list(args)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=timeout
-    )
-    return result.returncode, result.stdout, result.stderr
 
 
 def validate_gro_file(filepath: Path) -> dict:
@@ -200,7 +177,7 @@ class TestCLIInterfaceGeneration:
     def test_cli_slab_interface_ice_ih(self):
         """Slab mode with Ice Ih (baseline orthogonal) should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "250",
@@ -216,8 +193,9 @@ class TestCLIInterfaceGeneration:
             # Verify return code
             assert returncode == 0, f"CLI failed with stderr: {stderr}"
             
-            # Verify output message
-            assert "Interface generation complete" in stdout
+            # Verify output message (CLI pipeline writes [PROGRESS] to stderr)
+            combined_output = stdout + stderr
+            assert "[PROGRESS]" in combined_output, f"Expected [PROGRESS] in output"
             
             # Verify .gro file was created
             gro_files = list(Path(tmpdir).glob("*.gro"))
@@ -232,7 +210,7 @@ class TestCLIInterfaceGeneration:
     def test_cli_piece_interface_ice_ii(self):
         """Piece mode with Ice II should fail with clear error message."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "piece",
                 "--temperature", "238",
@@ -254,7 +232,7 @@ class TestCLIInterfaceGeneration:
     def test_cli_pocket_interface_ice_v(self):
         """Pocket mode with Ice V (triclinic) should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "pocket",
                 "--temperature", "253",
@@ -285,7 +263,7 @@ class TestGROFileValidation:
         """Generated .gro file should have correct atom count."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Generate an interface
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "250",
@@ -324,7 +302,7 @@ class TestGROFileValidation:
         """Coordinates should be within box bounds for orthogonal cells."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Generate interface with Ice Ih (orthogonal)
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "250",
@@ -350,7 +328,7 @@ class TestGROFileValidation:
     def test_gro_box_dimensions_valid(self):
         """Box dimensions should be positive."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "250",
@@ -381,7 +359,7 @@ class TestGROFileValidation:
         """Triclinic cells should have 9 box values (Ice V is supported triclinic phase)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Generate Ice V interface (supported triclinic phase)
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "253",
@@ -410,7 +388,7 @@ class TestTransformedTriclinicCells:
     def test_piece_mode_rejects_ice_ii(self):
         """Piece mode should reject Ice II with clear error message."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "piece",
                 "--temperature", "238",
@@ -434,7 +412,7 @@ class TestTransformedTriclinicCells:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Ice V transformation creates a large cell (~20nm)
             # Use slab mode instead for reliable testing
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "253",
@@ -449,8 +427,9 @@ class TestTransformedTriclinicCells:
             
             assert returncode == 0, f"Interface generation failed for Ice V: {stderr}"
             
-            # Verify output
-            assert "Ice V" in stdout or "ice_v" in stdout.lower()
+            # Verify output (CLI pipeline writes [PROGRESS] to stderr)
+            combined_output = stdout + stderr
+            assert "ice_v" in combined_output.lower(), f"Expected 'ice_v' in output"
             
             gro_files = list(Path(tmpdir).glob("*.gro"))
             assert len(gro_files) == 1
@@ -459,7 +438,7 @@ class TestTransformedTriclinicCells:
         """GROMACS export should work for transformed triclinic cells (Ice V)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Generate Ice V interface (supported triclinic phase)
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "253",
@@ -485,7 +464,7 @@ class TestTransformedTriclinicCells:
     def test_ice_vi_interface_generation(self):
         """Ice VI (also triclinic) should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            returncode, stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
                 "--temperature", "180",
