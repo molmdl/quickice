@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 37-unified-entry-point |
 | Plan | 14 of 18 |
 | Status | In Progress — Plans 01-06, 12, 14 complete |
-| Last activity | 2026-06-15 — Completed 37-03 (quickice.py delegates to entry.main) |
+| Last activity | 2026-06-15 — Completed 37-12 (CLI reference python -m quickice replacement) |
 
 **Progress:** █████░░░░░ 50% (9/18 plans in Phase 37, 229+ plans across all milestones)
 
@@ -493,6 +493,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | effective_args over remaining for clean_argv | parse_known_args returns remaining with argv[0] as positional; effective_args avoids double program name in sys.argv | ✓ Shipped (37-01) |
 | Router flags as module-level frozenset | _ROUTER_FLAGS for O(1) membership testing and immutability in _has_pipeline_flags | ✓ Shipped (37-01) |
 | importlib.util.find_spec for PySide6 availability | Never imports PySide6 at module level; avoids Qt crash in headless environments | ✓ Shipped (37-01) |
+| quickice.py delegates to entry.main() (no deprecation warning) | Backward compat: python quickice.py still works via unified router; zero maintenance cost | ✓ Shipped (37-03) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -592,9 +593,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-14
-**Completed:** 37-14-PLAN.md (Flowchart unified entry point update)
-**Status:** Phase 37 in progress — 8/18 plans done (01-06, 12, 14)
+**Last session:** 2026-06-15
+**Completed:** 37-02-PLAN.md (__main__.py stub for python -m quickice)
+**Status:** Phase 37 in progress — 9/18 plans done (01-06, 12, 14)
 
 ---
-*State updated: 2026-06-14 — 37-14 COMPLETE (flowchart unified entry point update)*
+*State updated: 2026-06-15 — 37-02 COMPLETE (__main__.py stub)*
