@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 57 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 10, Phase 37: TBD, e2e-compute-export: 11, completed: 39/57)
+**Total Plans:** 58 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: TBD, e2e-compute-export: 11, completed: 39/58)
 
 ## Overview
 
@@ -387,19 +387,20 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 - Follows existing CLI patterns from Quick Tasks 013/014/015 (hydrate, ion, progress)
 - No GUI dependency — purely backend computation + GROMACS export
 
-**Plans:** 10 plans in 8 waves
+**Plans:** 11 plans in 9 waves
 
 Plans:
 - [ ] 36-01-PLAN.md — Parser flags + validation + CSV example (Wave 1)
 - [ ] 36-02-PLAN.md — ITP path resolvers with case normalization (Wave 1)
 - [ ] 36-03-PLAN.md — CLIPipeline scaffold with execute(), helpers, stubs (Wave 2)
 - [ ] 36-04-PLAN.md — ITP copy function with all 6 step cases including hydrate (Wave 2)
-- [ ] 36-05-PLAN.md — Source + interface steps with .lower() and seed fixes (Wave 3)
-- [ ] 36-06-PLAN.md — Export step with hydrate-only case (Wave 4)
-- [ ] 36-07-PLAN.md — Custom + solute steps with SoluteInserter seed fix (Wave 5)
-- [ ] 36-08-PLAN.md — Ion step with 3 source modes + guest_atom_count offset (Wave 6)
-- [ ] 36-09-PLAN.md — main.py wiring (Wave 7)
-- [ ] 36-10-PLAN.md — CLI integration tests (Wave 8)
+- [ ] 36-05-PLAN.md — Ice source step + interface step with seed (Wave 3)
+- [ ] 36-06-PLAN.md — Hydrate source step with HydrateStructure attribute mapping (Wave 4)
+- [ ] 36-07-PLAN.md — Export step with hydrate→interface wrapper (Wave 5)
+- [ ] 36-08-PLAN.md — Custom + solute steps with SoluteInserter seed fix (Wave 6)
+- [ ] 36-09-PLAN.md — Ion step with 3 source modes + guest_atom_count offset (Wave 7)
+- [ ] 36-10-PLAN.md — main.py wiring (Wave 8)
+- [ ] 36-11-PLAN.md — CLI integration tests (Wave 9)
 
 ---
 
@@ -435,7 +436,7 @@ Plans:
 
 **Phase Count:** 14 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 51 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 5, e2e-compute-export: 11, completed: 39/51)
+**Total Plans:** 52 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, e2e-compute-export: 11, completed: 39/52)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -486,7 +487,7 @@ Plans:
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
-| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 10 |
+| 36 - CLI Feature Parity | 🔲 Not Started | 0 | 11 |
 | 37 - Unified Entry Point | 🔲 Not Started | 0 | TBD |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |

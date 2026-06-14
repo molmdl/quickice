@@ -186,6 +186,7 @@ def report_progress(message: str):
 - **Subcommand refactor:** Do NOT convert to `quickice generate ice`, `quickice insert-solute`, etc. The existing argparse pattern works, users expect `python quickice.py -T 300 -P 100`, and subcommands break this.
 - **State file persistence:** Do NOT serialize intermediate structures to pickle/JSON between steps. The pipeline runs in a single process — pass objects in memory like the GUI does.
 - **Custom placement position CLI:** Do NOT try to replicate the GUI's table-based position editor on the CLI. For custom placement mode, use a CSV file input instead of individual flags.
+- **GUI imports in CLI code:** Do NOT import anything from `quickice/gui/` in `main.py`, `pipeline.py`, or `parser.py`. This is a hard constraint for future unified entry point and CLI-only PyInstaller bundle. The CLI must remain independently executable without PySide6/VTK installed.
 
 ## Don't Hand-Roll
 
@@ -670,6 +671,37 @@ def _run_solute_step(self):
 **Deprecated/outdated:**
 - Quick Task 013's `--cation`/`--anion` flags: GUI only supports NaCl, no ion type selection needed
 - CLI-01 through CLI-05 from REQUIREMENTS.md: Superseded by updated requirements above (missing source selection, custom molecule, complete system export)
+
+## Future Work: Unified Entry Point & CLI-Only Bundle
+
+Phase 36 focuses on CLI feature parity only. Two related tooling todos are **explicitly deferred** until after Phase 36 completes:
+
+### Unified GUI/CLI Entry Point
+- **Source:** `.planning/todos/pending/2026-05-09-unify-gui-cli-entry-point.md`
+- **Goal:** Single `quickice/__main__.py` that detects `--cli`/`--no-gui` flags and routes to CLI (`quickice/main.py`) or GUI (`quickice/gui/__main__.py`)
+- **Dependency:** "v4.5.1 CLI feature parity must be complete first" — Phase 36 IS that parity work
+- **Estimated effort:** Quick Task (~30 min) — simple router, not a phase
+
+### CLI-Only Executable
+- **Source:** `.planning/todos/pending/2026-05-09-cli-only-executable-for-automation.md`
+- **Goal:** Separate PyInstaller spec excluding VTK/PySide6 for headless environments
+- **Dependency:** "Should be done AFTER CLI feature parity" — Phase 36 IS that parity work
+- **Risk:** Quick Task 016 (aggressive exclusions) was REVERTED — conservative approach needed
+- **Estimated effort:** Quick Task or small phase
+
+### Approach A Preserves Both Future Options
+
+The linear flag extension (Approach A) is critical for future unification because:
+
+| Phase 36 Choice | Impact on Unification | Impact on CLI-Only Bundle |
+|----------------|----------------------|--------------------------|
+| **Approach A (linear flags, extend main.py)** | ✅ Easy — `quickice/__main__.py` checks for `--cli`/display, routes to `main()` or `run_app()` | ✅ Easy — exclude `quickice/gui/` in PyInstaller spec, keep `quickice/cli/` + `quickice/main.py` |
+| Approach B (subcommands) | ⚠️ Already partial unification, but risky refactor breaks existing CLI users | ⚠️ Subcommand router depends on GUI module unless carefully separated |
+| Approach C (state files) | ❌ Different workflow model makes router complex | ❌ State file serialization + GUI exclude = fragile |
+
+**Design constraint for Phase 36:** Keep `quickice/main.py` and `quickice/cli/pipeline.py` free of any `quickice/gui/` imports. This ensures:
+1. Future `quickice/__main__.py` can import CLI path without pulling in PySide6/VTK
+2. PyInstaller CLI-only spec can safely exclude `quickice/gui/` without import errors
 
 ## Open Questions
 
