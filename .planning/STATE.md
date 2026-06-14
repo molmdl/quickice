@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | e2e-compute-export (E2E Compute-Export Bridge Testing) |
-| Plan | 11 of 11 COMPLETE |
-| Status | Phase COMPLETE — 130 tests + molecule-type presence assertions in all 14 grompp tests |
-| Last activity | 2026-06-13 — Completed e2e-compute-export-11-PLAN.md (molecule-type presence assertions) |
+| Phase | 34.6-revise-custom-panel-valid-input |
+| Plan | 9 of 9 COMPLETE |
+| Status | Phase COMPLETE — all 10 Phase 34.6 tests pass (TOP assertion fixed + 2 non-deterministic assertions) |
+| Last activity | 2026-06-14 — Completed 34.6-09-PLAN.md (fix TOP molecules assertion) |
 
-**Progress:** ██████████ 93% (174/188 plans across all milestones, e2e-compute-export 11/11 COMPLETE)
+**Progress:** ██████████ 93% (175/188 plans across all milestones, 34.6 9/9 COMPLETE)
 
 ---
 
@@ -401,6 +401,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Hardcoded GAFF2 atomtypes for solutes | ch4_liquid.itp/thf_liquid.itp have [atomtypes] pre-commented; parsing returns empty, so hardcode GAFF2 types (c3, hc, os, c5, h1) in TOP [atomtypes] section | ✓ Shipped (e2e-compute-export-06) |
 | Atomtype deduplication via tracking set | When THF guest + etoh custom share hc/h1 types, dedup set prevents GROMACS warnings about redefined atomtypes | ✓ Shipped (e2e-compute-export-06) |
 | GRO residue name stays "MOL" | GROMACS doesn't require GRO residue names to match ITP moleculetype names; only [molecules] entries must match | ✓ Shipped (e2e-compute-export-06) |
+| TOP [molecules] assertion uses ITP name not registry name | Test assertions for TOP content must check lowercase ITP [moleculetype] name ("etoh"), not uppercase registry name ("ETOH") | ✓ Shipped (34.6-09) |
+| Non-deterministic mock data assertions use <= | Unseeded np.random mock data makes water overlap non-deterministic; assertions use <= for water counts | ✓ Shipped (34.6-09) |
 | SOL atom count from molecule_index when populated | When molecule_index is available (solute-from-custom), compute expected counts from it; ice_nmolecules may be 0 in modified interfaces | ✓ Shipped (e2e-compute-export-02) |
 | Ice count (not SOL count) is cross-chain invariant | Ion replacement varies by chain depth (F1 replaces more water than F5); ice count is the true invariant — crystalline base never modified | ✓ Shipped (e2e-compute-export-05) |
 | ITP cumulative count increases with chain depth | F5(2 ITPs) < F6(3) < F1(4); deeper chains accumulate more molecule definitions | ✓ Shipped (e2e-compute-export-05) |
@@ -534,12 +536,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-13
-**Completed:** e2e-compute-export-11-PLAN.md (molecule-type presence assertions in all 14 grompp tests)
-**Status:** Phase e2e-compute-export COMPLETE — 11/11 plans, 130 tests total
-
-**e2e-compute-export Plan 11 Progress:**
-- ✓ 11: Molecule-type presence assertions (parse_top_molecules + parse_gro_residue_names) in all 14 grompp validation tests
+**Last session:** 2026-06-14
+**Completed:** 34.6-09-PLAN.md (fix TOP molecules assertion + 2 non-deterministic test assertions)
+**Status:** Phase 34.6 COMPLETE — 9/9 plans, all 10 Phase 34.6 tests pass
 
 ---
-*State updated: 2026-06-13 — e2e-compute-export COMPLETE (11/11 plans, molecule-type presence assertions added)*
+*State updated: 2026-06-14 — 34.6-09 COMPLETE (TOP assertion fixed, 2 non-deterministic assertions fixed)*
