@@ -1,11 +1,10 @@
 """Tests for phase mapping lookup functionality."""
 
-import subprocess
-import sys
-
 import pytest
 from quickice.phase_mapping.lookup import lookup_phase, IcePhaseLookup
 from quickice.phase_mapping.errors import UnknownPhaseError
+
+from tests.conftest import run_quickice
 
 
 class TestLookupPhaseIceIh:
@@ -486,46 +485,30 @@ class TestCLIIntegration:
 
     def test_cli_ice_ih_output(self):
         """CLI should show Ice Ih for T=273K, P=0MPa."""
-        result = subprocess.run(
-            [sys.executable, "quickice.py", "--temperature", "273", "--pressure", "0", "--nmolecules", "100"],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0
-        assert "Ice Ih" in result.stdout
-        assert "ice_ih" in result.stdout
+        rc, stdout, stderr = run_quickice("--temperature", "273", "--pressure", "0", "--nmolecules", "100")
+        assert rc == 0
+        assert "Ice Ih" in stdout
+        assert "ice_ih" in stdout
 
     def test_cli_ice_vii_output(self):
         """CLI should show Ice VII for T=300K, P=2500MPa."""
-        result = subprocess.run(
-            [sys.executable, "quickice.py", "--temperature", "300", "--pressure", "2500", "--nmolecules", "100"],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0
-        assert "Ice VII" in result.stdout
-        assert "ice_vii" in result.stdout
+        rc, stdout, stderr = run_quickice("--temperature", "300", "--pressure", "2500", "--nmolecules", "100")
+        assert rc == 0
+        assert "Ice VII" in stdout
+        assert "ice_vii" in stdout
 
     def test_cli_unknown_region_error(self):
         """CLI should show error for unknown T,P conditions."""
-        result = subprocess.run(
-            [sys.executable, "quickice.py", "--temperature", "500", "--pressure", "500", "--nmolecules", "100"],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 1
-        assert "No ice phase found" in result.stderr
+        rc, stdout, stderr = run_quickice("--temperature", "500", "--pressure", "500", "--nmolecules", "100")
+        assert rc == 1
+        assert "No ice phase found" in stderr
 
     def test_cli_density_output(self):
         """CLI should include density in output."""
-        result = subprocess.run(
-            [sys.executable, "quickice.py", "--temperature", "273", "--pressure", "0", "--nmolecules", "100"],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0
-        assert "Density:" in result.stdout
-        assert "g/cm³" in result.stdout
+        rc, stdout, stderr = run_quickice("--temperature", "273", "--pressure", "0", "--nmolecules", "100")
+        assert rc == 0
+        assert "Density:" in stdout
+        assert "g/cm³" in stdout
 
 
 class TestLookupPhaseIceXi:
