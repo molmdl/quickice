@@ -427,7 +427,7 @@ class TestCustomMoleculePanelPhase34_6:
                 top_content = f.read()
                 assert "[ molecules ]" in top_content, "Should have molecules section"
                 assert "SOL" in top_content, "Should include SOL in molecules"
-                assert "ETOH" in top_content, "Should include custom molecule"
+                assert "etoh" in top_content, "Should include custom molecule (ITP moleculetype name)"
                 assert "etoh.itp" in top_content, "Should reference custom ITP"
         finally:
             Path(gro_path).unlink(missing_ok=True)
