@@ -66,6 +66,15 @@ def detect_overlaps(
         ice_o_wrapped[:, dim] = np.mod(ice_o_wrapped[:, dim], box_dims_nm[dim])
         water_o_wrapped[:, dim] = np.mod(water_o_wrapped[:, dim], box_dims_nm[dim])
 
+    # Handle floating-point edge case: np.mod(-tiny, L) can return exactly L
+    # due to float64 precision limits. cKDTree requires data < boxsize,
+    # so values exactly on the PBC boundary must wrap to 0.
+    for dim in range(3):
+        on_boundary = ice_o_wrapped[:, dim] >= box_dims_nm[dim]
+        ice_o_wrapped[on_boundary, dim] -= box_dims_nm[dim]
+        on_boundary = water_o_wrapped[:, dim] >= box_dims_nm[dim]
+        water_o_wrapped[on_boundary, dim] -= box_dims_nm[dim]
+
     # Build cKDTree with PBC via boxsize parameter
     # CRITICAL: boxsize handles periodic boundaries automatically
     box_list = box_dims_nm.tolist()
