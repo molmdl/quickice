@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 06 of 18 |
-| Status | In progress — Wave 1 (Plans 01-06 complete, 12 remaining) |
-| Last activity | 2026-06-14 — Completed 37-06 (run_quickice helper) |
+| Plan | 04 of 18 |
+| Status | In Progress — Plan 04 complete (parser prog name + mode flags) |
+| Last activity | 2026-06-14 — Completed 37-04 (parser prog name & mode flags) |
 
-**Progress:** █████░░░░░░ 53% (3/18 plans in Phase 37, 228+ plans across all milestones)
+**Progress:** ██░░░░░░░░ 22% (4/18 plans in Phase 37, 228+ plans across all milestones)
 
 ---
 
@@ -486,6 +486,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Subprocess-based CLI pipeline e2e testing | Full pipeline via subprocess.run with 120s timeout; tempfile cleanup | ✓ Shipped (36-11) |
 | phase_info dict access (NOT attribute) | lookup_phase() returns dict, not namedtuple; use phase_info['phase_id'] | ✓ Shipped (36-11) |
 | slow pytest marker for pipeline tests | Enables -m 'not slow' for fast CI; registered in conftest.py | ✓ Shipped (36-11) |
+| PyInstaller spec console=True + hide_console='hide-late' | Dual-mode binary: CLI output visible on Windows; console auto-hides when GUI launches | ✓ Shipped (37-05) |
+| PyInstaller spec entry point quickice/__main__.py | Unified router replaces GUI-only quickice/gui/__main__.py | ✓ Shipped (37-05) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -590,4 +592,4 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 **Status:** Phase 37 in progress — 3/18 plans done (04, 05, 06)
 
 ---
-*State updated: 2026-06-14 — 36-11 COMPLETE (Phase 36 CLI feature parity finished)*
+*State updated: 2026-06-14 — 37-05 COMPLETE (PyInstaller spec dual-mode update)*
