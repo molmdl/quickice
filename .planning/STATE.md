@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.6-revise-custom-panel-valid-input |
-| Plan | 9 of 9 COMPLETE |
-| Status | Phase COMPLETE — all 10 Phase 34.6 tests pass (TOP assertion fixed + 2 non-deterministic assertions) |
-| Last activity | 2026-06-14 — Completed 34.6-09-PLAN.md (fix TOP molecules assertion) |
+| Phase | 34.8-fix-performance-and-test-gaps |
+| Plan | 4 of 5 COMPLETE |
+| Status | In progress — diversity tests updated for fingerprint-based behavior |
+| Last activity | 2026-06-14 — Completed 34.8-04-PLAN.md |
 
-**Progress:** ██████████ 93% (175/188 plans across all milestones, 34.6 9/9 COMPLETE)
+**Progress:** ██████████ 93% (176/188 plans across all milestones, 34.8 4/5 COMPLETE)
 
 ---
 
@@ -437,6 +437,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TOP/ITP moleculetype name matching regression test | TEST-09: 15 tests verify [molecules] names match [moleculetype] names across all 6 export types | ✓ Shipped (34.8-02) |
 | O-O distance histogram fingerprint for diversity_score | BUG-04: Cosine similarity between O-O distance distributions replaces seed-based approach (always returned 1.0) | ✓ Shipped (34.8-03) |
 | diversity_score returns 0.5 for degenerate cases | Single candidate, no O atoms, or zero O-O distances → neutral score instead of crash | ✓ Shipped (34.8-03) |
+| diversity_score valid range is [0, 1] not (0, 1] | Score 0.0 is valid when all candidates have identical O-O distance distributions (cosine similarity = 1.0 → diversity = 0.0) | ✓ Shipped (34.8-04) |
+| Test fixtures use structural O-O differences | diversity tests use different O-O spacing (0.25-0.33nm) instead of seed differences; duplicate structures instead of duplicate seeds | ✓ Shipped (34.8-04) |
+| O-O spacing must be within 0.35nm cutoff in fixtures | Test fixtures must keep all nearest-neighbor O-O distances ≤ 0.33nm for finite energy scores | ✓ Shipped (34.8-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -537,8 +540,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-14
-**Completed:** 34.6-09-PLAN.md (fix TOP molecules assertion + 2 non-deterministic test assertions)
-**Status:** Phase 34.6 COMPLETE — 9/9 plans, all 10 Phase 34.6 tests pass
+**Completed:** 34.8-04-PLAN.md (diversity test fixtures and assertions for fingerprint-based behavior)
+**Status:** Phase 34.8 in progress — 4/5 plans, ready for 34.8-05
 
 ---
-*State updated: 2026-06-14 — 34.6-09 COMPLETE (TOP assertion fixed, 2 non-deterministic assertions fixed)*
+*State updated: 2026-06-14 — 34.8-04 COMPLETE (diversity tests updated for fingerprint-based diversity_score)*
