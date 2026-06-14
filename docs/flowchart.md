@@ -3,12 +3,12 @@
 ## High-Level Flow
 
 ```
-python quickice.py -T <T> -P <P> -N <N> -o <output_dir>
+python -m quickice -T <T> -P <P> -N <N> -o <output_dir>
         │
         ▼
 ┌───────────────────┐
-│ quickice.py       │
-│ main() entry     │
+│ quickice/__main__.py  │
+│ entry.main() router  │
 └─────────┬─────────┘
           │
           ▼
