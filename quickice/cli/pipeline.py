@@ -195,17 +195,61 @@ class CLIPipeline:
     def _run_source_step(self) -> int:
         """Generate ice candidate or hydrate structure.
 
-        The hydrate branch (when --hydrate is specified) will be added
-        by Plan 06. This implementation handles the ice candidate path
-        only (when --interface is specified without --hydrate).
+        When --hydrate is specified, generates a hydrate structure using
+        HydrateStructureGenerator. If --interface is also set, the hydrate
+        is converted to a Candidate via to_candidate() for downstream
+        interface generation.
+
+        When --interface is specified without --hydrate, generates an ice
+        candidate via generate_candidates.
 
         Returns:
             0 on success, non-zero on failure.
         """
-        # [Hydrate branch added by Plan 06 — if getattr(self.args, 'hydrate', False): ...]
+        # Hydrate branch (when --hydrate is specified)
+        if getattr(self.args, 'hydrate', False):
+            try:
+                from quickice.structure_generation.types import HydrateConfig, WATER_ATOMS_PER_MOLECULE
+                from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
+            except ImportError as e:
+                logger.error("Missing required package: %s", e)
+                report_progress(f"Source step failed: missing package — {e}")
+                return 1
+
+            try:
+                config = HydrateConfig(
+                    lattice_type=getattr(self.args, 'lattice_type', 'sI'),
+                    guest_type=getattr(self.args, 'guest', 'CH4').lower(),
+                    supercell_x=getattr(self.args, 'supercell_x', 1),
+                    supercell_y=getattr(self.args, 'supercell_y', 1),
+                    supercell_z=getattr(self.args, 'supercell_z', 1),
+                    cage_occupancy_small=getattr(self.args, 'cage_occupancy_small', 100.0),
+                    cage_occupancy_large=getattr(self.args, 'cage_occupancy_large', 100.0),
+                )
+                generator = HydrateStructureGenerator()
+                self._hydrate_result = generator.generate(config)
+
+                # IMPORTANT: Use guest_count/water_count (NOT the *_nmolecules attrs — those don't exist on HydrateStructure)
+                report_progress(
+                    f"Generated {config.lattice_type} hydrate with "
+                    f"{self._hydrate_result.guest_count} {config.guest_type} guests, "
+                    f"{self._hydrate_result.water_count} water molecules"
+                )
+
+                # If also --interface: convert hydrate to candidate for interface generation
+                if self.args.interface:
+                    self._ice_candidate = self._hydrate_result.to_candidate()
+                    report_progress("Hydrate converted to ice candidate for interface generation")
+
+            except ValueError as e:
+                logger.error("Invalid hydrate configuration: %s", e)
+                report_progress(f"Source step failed: bad config — {e}")
+                return 1
+
+            return 0  # Skip ice candidate generation below
 
         # Ice candidate branch (when --interface without --hydrate):
-        if self._ice_candidate is None:  # Not set by hydrate branch
+        if self._ice_candidate is None:
             try:
                 from quickice.phase_mapping import lookup_phase, UnknownPhaseError
                 from quickice.structure_generation import generate_candidates
