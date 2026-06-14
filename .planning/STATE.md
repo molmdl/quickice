@@ -594,8 +594,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-02-PLAN.md (__main__.py stub for python -m quickice)
+**Completed:** 37-03-PLAN.md (quickice.py delegates to entry.main)
 **Status:** Phase 37 in progress — 9/18 plans done (01-06, 12, 14)
 
 ---
-*State updated: 2026-06-15 — 37-02 COMPLETE (__main__.py stub)*
+*State updated: 2026-06-15 — 37-03 COMPLETE (quickice.py delegates to entry.main)*
