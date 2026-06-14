@@ -335,11 +335,113 @@ class CLIPipeline:
     def _run_custom_step(self) -> int:
         """Insert custom molecules into the liquid region.
 
+        Supports two placement modes:
+        - random: count from --custom-count or calculated from --custom-concentration
+        - custom: positions/rotations parsed from --custom-positions-file CSV
+
         Returns:
             0 on success, non-zero on failure.
         """
-        report_progress("Custom molecule step: not yet implemented")
-        return 1
+        try:
+            from quickice.structure_generation.custom_molecule_inserter import (
+                CustomMoleculeInserter,
+                InsertionError,
+            )
+            from quickice.structure_generation.types import CustomMoleculeConfig
+        except ImportError as e:
+            logger.error("Missing required package: %s", e)
+            report_progress(f"Custom step failed: missing package — {e}")
+            return 1
+
+        try:
+            # Validate input files
+            gro_path = Path(self.args.custom_gro)
+            itp_path = Path(self.args.custom_itp)
+
+            if not gro_path.exists():
+                raise FileNotFoundError(f"GRO file not found: {gro_path}")
+            if not itp_path.exists():
+                raise FileNotFoundError(f"ITP file not found: {itp_path}")
+
+            # Get source structure
+            source = self._interface_result
+            if source is None:
+                raise ValueError(
+                    "No interface structure available. "
+                    "Run --interface step before custom molecule insertion."
+                )
+
+            # Branch on placement mode
+            if self.args.custom_placement == "random":
+                # Determine molecule count
+                custom_count = self.args.custom_count
+                custom_concentration = getattr(
+                    self.args, 'custom_concentration', None
+                )
+
+                if custom_count is None and custom_concentration is not None:
+                    # Calculate from concentration
+                    water_nmolecules = getattr(source, 'water_nmolecules', 0)
+                    liquid_volume_nm3 = water_nmolecules * 0.0299
+                    count = int(round(
+                        custom_concentration * liquid_volume_nm3 * 1e-24
+                        * 6.02214076e23
+                    ))
+                elif custom_count is not None:
+                    count = custom_count
+                else:
+                    raise ValueError(
+                        "Specify --custom-count or --custom-concentration "
+                        "for random placement"
+                    )
+
+                config = CustomMoleculeConfig(
+                    gro_path=gro_path,
+                    itp_path=itp_path,
+                    placement_mode="random",
+                    molecule_count=count,
+                )
+                inserter = CustomMoleculeInserter(config, seed=self.args.seed)
+                self._custom_result = inserter.place_random(source, count)
+                report_progress(
+                    f"Custom molecules: placed {count} molecules (random)"
+                )
+
+            else:
+                # Custom placement — parse CSV
+                positions, rotations = self._parse_positions_csv(
+                    self.args.custom_positions_file
+                )
+                config = CustomMoleculeConfig(
+                    gro_path=gro_path,
+                    itp_path=itp_path,
+                    placement_mode="custom",
+                    positions=positions,
+                    rotations=rotations,
+                )
+                inserter = CustomMoleculeInserter(config, seed=self.args.seed)
+                self._custom_result = inserter.place_custom(
+                    source, positions, rotations
+                )
+                report_progress(
+                    f"Custom molecules: placed {len(positions)} molecules "
+                    f"(custom positions)"
+                )
+
+        except FileNotFoundError as e:
+            logger.error("File not found: %s", e)
+            report_progress(f"Custom step failed: file not found — {e}")
+            return 1
+        except ValueError as e:
+            logger.error("Invalid configuration: %s", e)
+            report_progress(f"Custom step failed: bad config — {e}")
+            return 1
+        except InsertionError as e:
+            logger.error("Insertion failed: %s", e)
+            report_progress(f"Custom step failed: insertion error — {e}")
+            return 1
+
+        return 0
 
     def _run_solute_step(self) -> int:
         """Insert solute molecules into the liquid region.
