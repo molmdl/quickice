@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12, 14-17 complete
+**Current Focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12-17 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12, 14-17 complete
+**Current focus:** Phase 37-unified-entry-point IN PROGRESS — Plans 01-10, 12-17 complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
 | Plan | 17 of 18 |
-| Status | In Progress — Plans 01-10, 12, 14-17 complete |
-| Last activity | 2026-06-15 — Completed 37-09 (test_cli_pipeline.py migration) |
+| Status | In Progress — Plans 01-10, 12-17 complete |
+| Last activity | 2026-06-15 — Completed 37-13 (CLI reference unified entry sections) |
 
-**Progress:** ████████░░ 83% (15/18 plans in Phase 37, 231+ plans across all milestones)
+**Progress:** ████████░░ 94% (16/18 plans in Phase 37, 232+ plans across all milestones)
 
 ---
 
@@ -328,6 +328,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | GRO/ITP guide tutorial-focused approach | Practical examples and three creation methods | ✓ Shipped (35-05) |
 | README GUI-focused for v4.5 | 333 lines with concise feature overview, correct tab numbering | ✓ Shipped (35-04) |
 | setup.sh help message references unified entry point | python -m quickice --help in setup.sh replaces python quickice.py --help | ✓ Shipped (37-17) |
+| CLI reference documents unified entry point | 3 new sections: Unified Entry Point (routing table), Mode Selection (--cli/--gui), Platform Invocation (source/binary table) | ✓ Shipped (37-13) |
 | Placement validation logic | Read-only bounds and overlap checking for custom molecules | ✓ Shipped (34.5-01) |
 | Semi-transparent preview rendering | Opacity 0.6 for visual distinction before insertion | ✓ Shipped (34.5-02) |
 | Validation UI integration | Validate & Preview button with signal-slot wiring | ✓ Shipped (34.5-03) |
@@ -601,8 +602,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-09-PLAN.md (test_cli_pipeline.py migration)
-**Status:** Phase 37 in progress — 15/18 plans done (01-10, 12, 14-17)
+**Completed:** 37-13-PLAN.md (CLI reference unified entry sections)
+**Status:** Phase 37 in progress — 16/18 plans done (01-10, 12-17)
 
 ---
-*State updated: 2026-06-15 — 37-09 COMPLETE (test_cli_pipeline.py migration)*
+*State updated: 2026-06-15 — 37-13 COMPLETE (CLI reference unified entry sections)*
