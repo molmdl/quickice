@@ -1,308 +1,350 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-06-12
+**Analysis Date:** 2026-06-15
 
 ## Directory Layout
 
 ```
-quickice/                              # Project root
-├── quickice.py                        # CLI entry point script
-├── quickice/                          # Main package
-│   ├── __init__.py                    # Package version (4.5.0)
-│   ├── main.py                        # CLI orchestration (synchronous pipeline)
-│   ├── cli/                           # CLI argument parsing
+quickice/                          # Project root
+├── quickice/                      # Main package
+│   ├── __init__.py                # Version (4.5.0)
+│   ├── __main__.py                # python -m quickice entry → entry.main()
+│   ├── entry.py                   # Unified router: --cli/--gui/flag detection
+│   ├── main.py                    # CLI main: argparse → CLIPipeline or ice-only workflow
+│   ├── cli/                       # CLI-specific modules (NO Qt imports)
 │   │   ├── __init__.py
-│   │   └── parser.py                  # Argparse with validators
-│   ├── gui/                           # GUI application (MVVM View + ViewModel + Workers)
-│   │   ├── __init__.py                # Exports MainWindow, run_app, panels, renderers
-│   │   ├── __main__.py                # GUI entry: python -m quickice.gui
-│   │   ├── main_window.py             # MainWindow (MVVM View, 2000+ lines)
-│   │   ├── viewmodel.py              # MainViewModel (MVVM ViewModel)
-│   │   ├── view.py                   # UI panels: InputPanel, ProgressPanel, ViewerPanel, InfoPanel
-│   │   ├── workers.py                # GenerationWorker, InterfaceGenerationWorker
-│   │   ├── hydrate_worker.py          # HydrateWorker (QThread subclass)
-│   │   ├── custom_molecule_worker.py  # CustomMoleculeWorker (QObject→QThread)
-│   │   ├── export.py                  # All GROMACS/PDB/Diagram/Viewport exporters
-│   │   ├── constants.py               # TabIndex enum
-│   │   ├── validators.py              # GUI input validators (return bool, str)
-│   │   ├── phase_diagram_widget.py     # Interactive phase diagram panel
-│   │   ├── main_window.py             # Main window assembly and tab routing
-│   │   ├── interface_panel.py          # Interface Construction tab UI
-│   │   ├── interface_viewer.py         # Interface 3D viewer
-│   │   ├── hydrate_panel.py           # Hydrate Generation tab UI
-│   │   ├── hydrate_viewer.py          # Hydrate 3D viewer
-│   │   ├── hydrate_renderer.py        # Hydrate VTK rendering functions
-│   │   ├── hydrate_export.py          # HydrateGROMACSExporter
-│   │   ├── ion_panel.py               # Ion Insertion tab UI
-│   │   ├── ion_viewer.py              # Ion 3D viewer
-│   │   ├── ion_renderer.py            # Ion VTK rendering (Na/Cl spheres)
-│   │   ├── solute_panel.py            # Solute Insertion tab UI
-│   │   ├── solute_viewer.py           # Solute 3D viewer
-│   │   ├── solute_renderer.py         # Solute VTK rendering
+│   │   ├── parser.py             # argparse definition + validate_pipeline_args()
+│   │   ├── pipeline.py           # CLIPipeline: ordered step execution
+│   │   └── itp_helpers.py        # ITP path resolution + copy_itp_files_for_structure()
+│   ├── gui/                       # PySide6 GUI modules
+│   │   ├── __init__.py
+│   │   ├── __main__.py           # python -m quickice.gui entry
+│   │   ├── main_window.py        # MainWindow (2024 lines, MVVM View + signal hub)
+│   │   ├── viewmodel.py          # MainViewModel (MVVM ViewModel + worker management)
+│   │   ├── view.py               # InputPanel, ProgressPanel, ViewerPanel, InfoPanel
+│   │   ├── constants.py          # TabIndex IntEnum
+│   │   ├── workers.py            # GenerationWorker, InterfaceGenerationWorker (QObject)
+│   │   ├── hydrate_worker.py     # HydrateWorker (QThread subclass — not migrated)
+│   │   ├── custom_molecule_worker.py  # CustomMoleculeWorker (QObject)
+│   │   ├── interface_panel.py    # Interface Construction tab UI
+│   │   ├── interface_viewer.py   # VTK viewer for interface structures
+│   │   ├── hydrate_panel.py      # Hydrate Generation tab UI
+│   │   ├── hydrate_viewer.py     # VTK viewer for hydrate structures
+│   │   ├── hydrate_renderer.py   # VTK actor creation for hydrate visualization
+│   │   ├── hydrate_export.py     # HydrateGROMACSExporter
 │   │   ├── custom_molecule_panel.py   # Custom Molecule tab UI
-│   │   ├── custom_molecule_viewer.py  # Custom molecule 3D viewer
-│   │   ├── custom_molecule_renderer.py # Custom molecule VTK rendering
-│   │   ├── molecular_viewer.py        # VTK molecular viewer widget
-│   │   ├── dual_viewer.py             # Side-by-side dual viewport
-│   │   ├── vtk_utils.py               # VTK utility functions
-│   │   └── help_dialog.py             # Quick reference help dialog
-│   ├── structure_generation/          # Core Model: structure generation
-│   │   ├── __init__.py                # Public API re-exports
-│   │   ├── types.py                   # All dataclasses (Candidate, InterfaceConfig, InterfaceStructure, etc.)
-│   │   ├── generator.py              # IceStructureGenerator wrapping GenIce2
-│   │   ├── interface_builder.py       # Interface orchestrator with validation + mode routing
-│   │   ├── mapper.py                 # QuickIce↔GenIce phase ID mapping, supercell calculation
-│   │   ├── errors.py                 # StructureGenerationError hierarchy
-│   │   ├── modes/                    # Interface assembly modes
-│   │   │   ├── __init__.py            # Re-exports assemble_slab, assemble_pocket, assemble_piece
-│   │   │   ├── slab.py               # Ice-water-ice sandwich (Z-axis)
-│   │   │   ├── pocket.py             # Water cavity in ice matrix
-│   │   │   └── piece.py              # Ice crystal in water box
-│   │   ├── water_filler.py           # TIP4P water template tiling
-│   │   ├── overlap_resolver.py       # O-O overlap detection and removal
-│   │   ├── hydrate_generator.py      # HydrateStructureGenerator (GenIce2 hydrate lattices)
-│   │   ├── ion_inserter.py           # IonInserter (NaCl concentration-based placement)
-│   │   ├── solute_inserter.py        # SoluteInserter (CH4/THF placement with rotation)
-│   │   ├── custom_molecule_inserter.py # CustomMoleculeInserter (user GRO/ITP placement)
-│   │   ├── gro_parser.py             # GRO file parser (string + file)
-│   │   ├── itp_parser.py             # ITP topology file parser
-│   │   ├── moleculetype_registry.py   # Unique GROMACS moleculetype naming
-│   │   ├── molecule_validator.py      # Molecule structure validation
-│   │   ├── cell_utils.py             # Cell orthogonality checks
-│   │   └── gromacs_ion_export.py      # Ion ITP generation utilities
-│   ├── phase_mapping/                # Ice phase identification
-│   │   ├── __init__.py                # Re-exports lookup_phase, errors, triple points
-│   │   ├── lookup.py                 # Curve-based phase lookup, PHASE_METADATA dict
-│   │   ├── melting_curves.py          # IAPWS R14-08 melting pressure curves
-│   │   ├── solid_boundaries.py        # Solid-solid boundary interpolations
-│   │   ├── triple_points.py           # Triple point data
-│   │   ├── ice_ih_density.py          # IAPWS R10-06 temperature-dependent density
-│   │   ├── water_density.py           # Liquid water density calculation
-│   │   ├── errors.py                  # PhaseMappingError, UnknownPhaseError
-│   │   └── data/                      # Phase boundary data
+│   │   ├── custom_molecule_viewer.py  # VTK viewer for custom molecule preview
+│   │   ├── custom_molecule_renderer.py # VTK actor creation for custom molecules
+│   │   ├── solute_panel.py       # Solute Insertion tab UI
+│   │   ├── solute_viewer.py      # VTK viewer for solute structures
+│   │   ├── solute_renderer.py    # VTK actor creation for solute visualization
+│   │   ├── ion_panel.py          # Ion Insertion tab UI
+│   │   ├── ion_viewer.py         # VTK viewer for ion structures
+│   │   ├── ion_renderer.py       # VTK actor creation for ion visualization
+│   │   ├── export.py             # PDB/Diagram/Viewport/GROMACS exporters
+│   │   ├── help_dialog.py        # Quick Reference dialog
+│   │   ├── validators.py         # GUI-specific validators
+│   │   ├── phase_diagram_widget.py # PhaseDiagramPanel with interactive canvas
+│   │   ├── molecular_viewer.py   # Base VTK molecular viewer
+│   │   ├── dual_viewer.py        # Side-by-side VTK dual viewport
+│   │   └── vtk_utils.py          # VTK utility functions
+│   ├── structure_generation/      # Core physics engine (shared CLI+GUI)
+│   │   ├── __init__.py           # Re-exports all key types and generators
+│   │   ├── types.py              # All dataclasses: Candidate, InterfaceStructure, HydrateStructure, IonStructure, SoluteStructure, CustomMoleculeStructure, configs
+│   │   ├── errors.py             # Exception hierarchy
+│   │   ├── generator.py          # IceStructureGenerator (GenIce2 wrapper)
+│   │   ├── hydrate_generator.py  # HydrateStructureGenerator (GenIce2 wrapper)
+│   │   ├── interface_builder.py  # generate_interface() + validate_interface_config()
+│   │   ├── modes/                # Interface assembly modes
+│   │   │   ├── __init__.py
+│   │   │   ├── slab.py           # Slab mode (ice|water|ice sandwich)
+│   │   │   ├── pocket.py         # Pocket mode (spherical/cubic cavity)
+│   │   │   └── piece.py          # Piece mode (crystal in water)
+│   │   ├── ion_inserter.py       # IonInserter + insert_ions()
+│   │   ├── solute_inserter.py    # SoluteInserter
+│   │   ├── custom_molecule_inserter.py # CustomMoleculeInserter + InsertionError
+│   │   ├── water_filler.py       # Water placement utilities
+│   │   ├── overlap_resolver.py   # Overlap detection/removal
+│   │   ├── gro_parser.py         # GRO file parser
+│   │   ├── itp_parser.py         # ITP file parser
+│   │   ├── molecule_validator.py # Molecule validation
+│   │   ├── moleculetype_registry.py # Unique GROMACS moleculetype naming
+│   │   ├── gromacs_ion_export.py # Ion ITP file generator
+│   │   ├── mapper.py             # Phase→GenIce lattice name mapping
+│   │   └── cell_utils.py        # Cell orthogonality check
+│   ├── output/                   # File output modules (shared CLI+GUI)
+│   │   ├── __init__.py           # Re-exports
+│   │   ├── types.py              # OutputResult dataclass
+│   │   ├── orchestrator.py       # output_ranked_candidates() coordinator
+│   │   ├── gromacs_writer.py     # All GROMACS .gro/.top/.itp writers (2705 lines)
+│   │   ├── pdb_writer.py         # PDB file writer with CRYST1 records
+│   │   ├── validator.py          # Space group validation, overlap checking
+│   │   └── phase_diagram.py      # Phase diagram PNG generation
+│   ├── phase_mapping/            # T/P → phase identification
+│   │   ├── __init__.py
+│   │   ├── lookup.py             # lookup_phase(), IcePhaseLookup, PHASE_METADATA
+│   │   ├── errors.py             # PhaseMappingError, UnknownPhaseError
+│   │   ├── melting_curves.py     # IAPWS R14-08 melting pressure functions
+│   │   ├── solid_boundaries.py   # Solid-solid phase boundary functions
+│   │   ├── triple_points.py      # Triple point data
+│   │   ├── ice_ih_density.py     # Ice Ih density calculations
+│   │   ├── water_density.py      # Water density calculations
+│   │   └── data/                 # Phase mapping data
 │   │       ├── __init__.py
-│   │       ├── ice_boundaries.py       # Boundary curve data
-│   │       └── ice_phases.json         # Phase metadata JSON
-│   ├── ranking/                      # Candidate scoring and ranking
-│   │   ├── __init__.py                # Re-exports rank_candidates, scoring functions
-│   │   ├── types.py                   # RankedCandidate, RankingResult, ScoringConfig
-│   │   └── scorer.py                  # Energy/density/diversity scoring + normalization
-│   ├── output/                       # File output and validation
-│   │   ├── __init__.py                # Re-exports all output functions
-│   │   ├── types.py                   # OutputResult dataclass
-│   │   ├── pdb_writer.py             # PDB file writer with CRYST1 records
-│   │   ├── gromacs_writer.py          # GRO/TOP/ITP writers (2700+ lines, all GROMACS formats)
-│   │   ├── validator.py              # Space group and atomic overlap validation
-│   │   ├── phase_diagram.py           # Matplotlib phase diagram generation
-│   │   └── orchestrator.py            # Output pipeline orchestration
-│   ├── validation/                   # Input validation (CLI and shared)
+│   │       ├── ice_phases.json   # Phase metadata
+│   │       └── ice_boundaries.py # Ice boundary coefficient data
+│   ├── ranking/                  # Candidate scoring
 │   │   ├── __init__.py
-│   │   └── validators.py             # validate_temperature, validate_pressure, validate_nmolecules
-│   ├── utils/                        # Shared utilities
+│   │   ├── types.py              # RankedCandidate, RankingResult, ScoringConfig
+│   │   └── scorer.py             # rank_candidates(), energy/density/diversity scoring
+│   ├── validation/               # Input validators
 │   │   ├── __init__.py
-│   │   └── molecule_utils.py         # count_guest_atoms and other helpers
-│   └── data/                         # Bundled molecular data files
-│       ├── tip4p-ice.itp              # TIP4P-ICE water model topology
-│       ├── tip4p.gro                  # TIP4P water template coordinates
-│       ├── ch4.itp                    # Methane topology
-│       ├── ch4_hydrate.itp            # CH4 hydrate guest topology
-│       ├── ch4_liquid.itp             # CH4 liquid solute topology
-│       ├── thf.itp                    # THF topology
-│       ├── thf_hydrate.itp            # THF hydrate guest topology
-│       ├── thf_liquid.itp             # THF liquid solute topology
-│       └── custom/                    # Custom molecule data directory
-├── tests/                            # Test suite
-│   ├── conftest.py                    # Shared test fixtures
-│   ├── test_output/                   # Output-specific tests
-│   │   ├── test_validator.py
-│   │   ├── test_pdb_writer.py
-│   │   ├── test_molecule_wrapping.py
-│   │   └── test_gromacs_export_solute.py
-│   ├── e2e_export_helpers.py          # E2E test utility functions
-│   ├── em.mdp                         # GROMACS energy minimization input
-│   ├── test_structure_generation.py   # Structure generation unit tests
-│   ├── test_ranking.py               # Ranking tests
-│   ├── test_phase_mapping.py          # Phase mapping tests
-│   ├── test_validators.py            # Validation tests
-│   ├── test_scorer_diversity.py       # Scorer diversity tests
-│   ├── test_integration_v35.py        # Integration tests
-│   ├── test_e2e_*.py                  # End-to-end test suite (12+ files)
-│   └── ...                            # 40+ additional test files
-├── docs/                             # Documentation
-├── scripts/                          # Utility scripts
-├── sample_output/                     # Example output files
-├── environment.yml                    # Conda environment specification
-├── environment-build.yml              # Build environment
-├── requirements-dev.txt               # Development dependencies
-├── setup.sh                          # Setup script
-├── quickice-gui.spec                 # PyInstaller build spec
-├── .github/workflows/                 # CI/CD
-├── .planning/                         # GSD planning documents
-└── build/                            # Build artifacts
+│   │   └── validators.py         # argparse type converters (T, P, N, box dims)
+│   ├── utils/                    # Shared utilities
+│   │   ├── __init__.py
+│   │   └── molecule_utils.py     # count_guest_atoms() and other molecule helpers
+│   └── data/                     # Bundled force-field and template data
+│       ├── tip4p-ice.itp         # TIP4P-ICE force field
+│       ├── tip4p.gro             # Water template coordinates
+│       ├── ch4_hydrate.itp       # CH4 hydrate force field
+│       ├── thf_hydrate.itp       # THF hydrate force field
+│       ├── ch4_liquid.itp        # CH4 liquid solute force field
+│       ├── thf_liquid.itp        # THF liquid solute force field
+│       ├── custom/               # Custom molecule examples
+│       │   ├── etoh.gro          # Ethanol coordinates
+│       │   ├── etoh.itp          # Ethanol topology
+│       │   ├── etoh.top          # Ethanol topology (full)
+│       │   └── etoh.chg          # Ethanol charges
+│       └── examples/
+│           └── custom_positions.csv  # Example positions CSV for custom placement
+├── tests/                        # Test suite
+│   ├── __init__.py
+│   ├── conftest.py               # Shared pytest fixtures
+│   ├── test_entry_point.py       # Entry router tests
+│   ├── test_cli_integration.py   # CLI integration tests
+│   ├── test_cli_pipeline.py      # CLIPipeline unit tests
+│   ├── test_structure_generation.py  # Ice generation tests
+│   ├── test_e2e_*.py             # End-to-end workflow chain tests
+│   ├── test_custom_molecule*.py  # Custom molecule tests
+│   ├── test_solute_*.py         # Solute insertion tests
+│   ├── test_ion_*.py             # Ion insertion tests
+│   ├── test_hydrate_*.py         # Hydrate generation tests
+│   ├── test_interface_*.py       # Interface mode tests
+│   ├── test_ranking.py          # Ranking tests
+│   ├── test_validators.py       # Validator tests
+│   ├── test_phase_mapping.py    # Phase mapping tests
+│   ├── test_output/             # Output-specific tests
+│   │   ├── conftest.py
+│   │   ├── test_gromacs_export_*.py  # Per-step GROMACS export tests
+│   │   └── test_pdb_writer.py
+│   └── test_integration_v35.py  # Cross-feature integration tests
+├── scripts/                      # Shell scripts
+│   ├── cli-examples.sh           # Reference for all CLI flag combinations
+│   ├── hydrate-interface-custom-ion.sh  # Full workflow wrapper script
+│   ├── assemble-dist.sh          # PyInstaller dist packaging
+│   ├── build-linux.sh            # Linux build script
+│   ├── clean-test-output.sh      # Clean test artifacts
+│   ├── run_gui_ssh.sh            # SSH X-forwarding GUI launch
+│   └── run_oc.sh                 # OpenCode launch
+├── docs/                         # Documentation
+│   ├── cli-reference.md          # CLI documentation
+│   ├── gui-guide.md              # GUI documentation
+│   ├── gro-itp-guide.md          # GRO/ITP format guide
+│   ├── flowchart.md              # Data flow diagrams
+│   ├── principles.md             # Design principles
+│   ├── ranking.md                 # Ranking algorithm documentation
+│   └── images/                   # Documentation images
+├── sample_output/                # Reference output samples
+│   ├── cli_ice/                  # CLI ice generation output
+│   ├── cli_interface/            # CLI interface output
+│   ├── gui_interface/            # GUI interface output
+│   └── gui_v4/                   # GUI v4 multi-step output (ch4/ice/thf × ion/pocket/slab)
+├── licenses/                     # Third-party license files
+├── .github/workflows/            # CI workflows
+│   └── build-windows.yml         # Windows build CI
+├── conftest.py                   # Project-level pytest config (custom markers)
+├── quickice.py                   # Backward-compat entry → entry.main()
+├── quickice-gui.spec             # PyInstaller spec (entry: quickice/__main__.py)
+├── environment.yml               # Conda environment (with PySide6)
+├── environment-build.yml         # Build environment
+├── requirements-dev.txt          # Dev dependencies
+├── setup.sh                      # Setup script
+└── README.md                     # Project README
 ```
 
 ## Directory Purposes
 
+**`quickice/cli/`:**
+- Purpose: CLI-only modules — argument parsing, pipeline orchestration, ITP helpers
+- Contains: Parser, pipeline class, ITP path resolution/copy functions
+- Key files: `quickice/cli/pipeline.py` (744 lines, CLIPipeline), `quickice/cli/parser.py` (533 lines, argparse), `quickice/cli/itp_helpers.py` (406 lines, ITP file management)
+- Constraint: NO Qt/PySide6/VTK imports allowed in this directory
+
 **`quickice/gui/`:**
-- Purpose: All GUI code following MVVM pattern
-- Contains: PySide6 widgets, VTK viewers, workers, exporters, validators
-- Key files: `main_window.py` (View orchestrator), `viewmodel.py` (ViewModel), `workers.py` (background workers)
+- Purpose: PySide6-based graphical interface with VTK 3D viewers
+- Contains: MainWindow (MVVM View), ViewModel, Workers, Panels, Viewers, Renderers, Exporters
+- Key files: `quickice/gui/main_window.py` (2024 lines, signal hub + cross-tab data flow), `quickice/gui/viewmodel.py` (276 lines, MVVM ViewModel)
 
 **`quickice/structure_generation/`:**
-- Purpose: Core Model layer for all structure generation and modification
-- Contains: Generators, inserters, builders, parsers, data types
-- Key files: `types.py` (all dataclasses), `generator.py` (ice generation), `interface_builder.py` (interface routing), `gromacs_writer.py` moved here from output (via `gromacs_ion_export.py`)
-
-**`quickice/phase_mapping/`:**
-- Purpose: Ice phase identification from T/P conditions
-- Contains: IAPWS curve-based lookup, triple points, density models
-- Key files: `lookup.py` (main API), `melting_curves.py` (IAPWS R14-08)
-
-**`quickice/ranking/`:**
-- Purpose: Score and rank generated ice structure candidates
-- Contains: Scoring functions (energy, density, diversity), normalization, ranking
-- Key files: `scorer.py` (main algorithm), `types.py` (dataclasses)
+- Purpose: Physics engine — all structure generation and insertion logic
+- Contains: Generator classes, builder functions, data types, error hierarchy, parsers, overlap resolver
+- Key files: `quickice/structure_generation/types.py` (722 lines, all dataclass contracts), `quickice/structure_generation/gromacs_writer.py` (moved to output), `quickice/structure_generation/interface_builder.py` (354 lines), `quickice/structure_generation/hydrate_generator.py` (600 lines)
+- Shared: Used by both CLI and GUI paths — no UI or CLI specific logic here
 
 **`quickice/output/`:**
-- Purpose: File output (PDB, GROMACS, phase diagram)
-- Contains: Writers for all export formats, validation, orchestration
-- Key files: `gromacs_writer.py` (2700+ lines, handles all GROMACS format variants), `pdb_writer.py`
+- Purpose: File output — GROMACS, PDB, phase diagram generation
+- Contains: Writer functions, orchestrator, validator
+- Key files: `quickice/output/gromacs_writer.py` (2705 lines — largest file in codebase, all GROMACS writers)
 
 **`quickice/data/`:**
-- Purpose: Bundled molecular topology and coordinate files
-- Contains: .itp files (TIP4P-ICE, CH4, THF), .gro template, custom/ subdirectory
-- Key files: `tip4p-ice.itp`, `tip4p.gro`
-
-**`tests/`:**
-- Purpose: Complete test suite with unit, integration, and E2E tests
-- Contains: 55+ test files, conftest.py, helper modules
-- Key files: `conftest.py`, `e2e_export_helpers.py`
+- Purpose: Bundled force-field ITP files, water template, custom molecule examples
+- Contains: TIP4P-ICE, CH4/THF hydrate and liquid ITPs, tip4p.gro template, etoh example
+- Key files: `quickice/data/tip4p-ice.itp`, `quickice/data/tip4p.gro`
 
 ## Key File Locations
 
 **Entry Points:**
-- `quickice.py`: CLI script entry point
-- `quickice/gui/__main__.py`: GUI entry point (`python -m quickice.gui`)
-- `quickice/main.py`: CLI main() function
-- `quickice/gui/main_window.py::run_app()`: GUI application bootstrap
+- `quickice/__main__.py`: Primary entry (`python -m quickice`) → `entry.main()`
+- `quickice/entry.py`: Unified router (201 lines)
+- `quickice/main.py`: CLI main (195 lines) — argparse → pipeline or ice-only
+- `quickice.py`: Backward compat script → `entry.main()`
+- `quickice/gui/__main__.py`: GUI-only entry (`python -m quickice.gui`)
 
 **Configuration:**
-- `quickice/gui/constants.py`: TabIndex enum for tab positions
-- `environment.yml`: Conda environment (Python 3.14, PySide6 6.10, VTK 9.5)
-- `quickice-gui.spec`: PyInstaller build configuration
+- `quickice/__init__.py`: Version string (`__version__ = "4.5.0"`)
+- `quickice-gui.spec`: PyInstaller spec (entry point: `quickice/__main__.py`)
+- `environment.yml`: Conda environment with PySide6
+- `environment-build.yml`: Build-only environment
+- `requirements-dev.txt`: Dev/test dependencies
+- `conftest.py`: Project-level pytest markers
 
 **Core Logic:**
-- `quickice/structure_generation/types.py`: All dataclasses (Candidate, InterfaceConfig, InterfaceStructure, IonConfig, IonStructure, SoluteConfig, SoluteStructure, CustomMoleculeConfig, CustomMoleculeStructure, HydrateConfig, HydrateStructure)
+- `quickice/structure_generation/types.py`: All shared dataclasses (Candidate, InterfaceStructure, HydrateStructure, IonStructure, SoluteStructure, CustomMoleculeStructure, all Config types)
+- `quickice/cli/pipeline.py`: CLIPipeline — ordered step execution with fail-fast
+- `quickice/cli/parser.py`: argparse definition with v4.5 pipeline flags
+- `quickice/cli/itp_helpers.py`: ITP file resolution and copy logic
+- `quickice/structure_generation/interface_builder.py`: generate_interface() mode router
 - `quickice/structure_generation/generator.py`: IceStructureGenerator (GenIce2 wrapper)
-- `quickice/structure_generation/interface_builder.py`: Interface generation orchestrator
-- `quickice/structure_generation/modes/slab.py`: Slab interface assembly
-- `quickice/structure_generation/modes/pocket.py`: Pocket interface assembly
-- `quickice/structure_generation/modes/piece.py`: Piece interface assembly
-- `quickice/structure_generation/hydrate_generator.py`: Hydrate lattice generation
-- `quickice/structure_generation/ion_inserter.py`: Ion insertion
-- `quickice/structure_generation/solute_inserter.py`: Solute insertion
-- `quickice/structure_generation/custom_molecule_inserter.py`: Custom molecule placement
-- `quickice/phase_mapping/lookup.py`: Phase identification API
-- `quickice/ranking/scorer.py`: Candidate scoring algorithm
-- `quickice/output/gromacs_writer.py`: GROMACS export (all formats)
+- `quickice/structure_generation/hydrate_generator.py`: HydrateStructureGenerator
+- `quickice/structure_generation/ion_inserter.py`: IonInserter + insert_ions()
+- `quickice/structure_generation/solute_inserter.py`: SoluteInserter
+- `quickice/structure_generation/custom_molecule_inserter.py`: CustomMoleculeInserter + InsertionError
+- `quickice/output/gromacs_writer.py`: All GROMACS .gro/.top/.itp writer functions
 
 **Testing:**
-- `tests/conftest.py`: Shared fixtures
-- `tests/e2e_export_helpers.py`: E2E test utilities
-- `tests/test_e2e_*.py`: End-to-end test suite
+- `tests/test_cli_pipeline.py`: CLIPipeline unit tests
+- `tests/test_cli_integration.py`: CLI integration tests
+- `tests/test_entry_point.py`: Entry router tests
+- `tests/test_e2e_workflow_chains.py`: End-to-end workflow chain tests
+- `tests/test_e2e_*.py`: Per-feature E2E tests (15+ files)
+- `tests/test_output/`: Output-specific tests with conftest.py
 
-**Data:**
-- `quickice/data/tip4p-ice.itp`: TIP4P-ICE water model
-- `quickice/data/tip4p.gro`: Water template
-- `quickice/data/ch4.itp`, `ch4_hydrate.itp`, `ch4_liquid.itp`: Methane topologies
-- `quickice/data/thf.itp`, `thf_hydrate.itp`, `thf_liquid.itp`: THF topologies
-- `quickice/data/custom/`: Custom molecule data directory
+**Scripts:**
+- `scripts/cli-examples.sh`: Reference for all CLI flag combinations
+- `scripts/hydrate-interface-custom-ion.sh`: Full F4 workflow wrapper
+- `scripts/assemble-dist.sh`: PyInstaller dist packaging
 
 ## Naming Conventions
 
 **Files:**
-- Python modules: `snake_case.py` (e.g., `interface_builder.py`, `ion_inserter.py`)
-- GUI panels: `{feature}_panel.py` (e.g., `hydrate_panel.py`, `ion_panel.py`)
-- GUI viewers: `{feature}_viewer.py` (e.g., `hydrate_viewer.py`, `ion_viewer.py`)
-- GUI renderers: `{feature}_renderer.py` (e.g., `hydrate_renderer.py`, `ion_renderer.py`)
-- Workers: `{feature}_worker.py` (e.g., `hydrate_worker.py`, `custom_molecule_worker.py`)
-- Tests: `test_{feature}.py` or `test_e2e_{feature}.py` for end-to-end tests
+- Python modules: `snake_case.py` (e.g., `hydrate_generator.py`, `ion_inserter.py`)
+- GUI panels: `*_panel.py` (e.g., `hydrate_panel.py`, `ion_panel.py`)
+- GUI viewers: `*_viewer.py` (e.g., `interface_viewer.py`, `hydrate_viewer.py`)
+- GUI renderers: `*_renderer.py` (e.g., `hydrate_renderer.py`, `ion_renderer.py`)
+- GUI workers: `*_worker.py` (e.g., `hydrate_worker.py`, `custom_molecule_worker.py`)
+- Test files: `test_*.py` or `test_e2e_*.py` (e.g., `test_cli_pipeline.py`, `test_e2e_ion_export.py`)
+- Shell scripts: `kebab-case.sh` (e.g., `cli-examples.sh`, `hydrate-interface-custom-ion.sh`)
+- Data files: `lowercase.itp`/`.gro` (e.g., `tip4p-ice.itp`, `ch4_hydrate.itp`)
 
 **Directories:**
 - Package modules: `snake_case/` (e.g., `structure_generation/`, `phase_mapping/`)
-- Sub-modules: `modes/` for interface modes, `data/` for bundled data
+- Mode subdirectories: `modes/` under `structure_generation/`
+- Data subdirectories: `data/`, `data/custom/`, `data/examples/`
+- Test subdirectories: `tests/test_output/`
 
-**Classes:**
-- Data types: PascalCase (e.g., `Candidate`, `InterfaceStructure`, `IonInserter`)
-- Workers: `{Feature}Worker` (e.g., `GenerationWorker`, `HydrateWorker`)
-- Generators: `{Feature}Generator` (e.g., `IceStructureGenerator`, `HydrateStructureGenerator`)
-- Exporters: `{Feature}Exporter` or `{Feature}GROMACSExporter` (e.g., `PDBExporter`, `IonGROMACSExporter`)
+**Dataclass types:**
+- Config dataclasses: `*Config` (e.g., `InterfaceConfig`, `HydrateConfig`, `SoluteConfig`, `IonConfig`, `CustomMoleculeConfig`)
+- Result dataclasses: `*Structure` or `*Result` (e.g., `InterfaceStructure`, `HydrateStructure`, `IonStructure`, `SoluteStructure`, `CustomMoleculeStructure`, `GenerationResult`, `RankingResult`, `OutputResult`)
+- Error classes: `*Error` (e.g., `InterfaceGenerationError`, `InsertionError`, `UnknownPhaseError`)
 
 ## Where to Add New Code
 
-**New Ice Phase Support:**
-- Phase mapping: `quickice/phase_mapping/lookup.py` (add to `PHASE_METADATA`), `quickice/phase_mapping/melting_curves.py` or `solid_boundaries.py` (add boundary curves)
-- Generation: `quickice/structure_generation/mapper.py` (add to `PHASE_TO_GENICE` and `UNIT_CELL_MOLECULES`)
-- Validation: `quickice/structure_generation/generator.py` (no changes needed if GenIce supports it)
+**New Pipeline Step (e.g., new molecule insertion type):**
+- Primary code: `quickice/structure_generation/` — new inserter module (e.g., `new_inserter.py`)
+- Type definition: `quickice/structure_generation/types.py` — add `NewConfig` and `NewStructure` dataclasses
+- Export: `quickice/__init__.py` — re-export new types
+- CLI parser: `quickice/cli/parser.py` — add argument group and validation in `validate_pipeline_args()`
+- CLI pipeline: `quickice/cli/pipeline.py` — add `self._new_result`, `_run_new_step()`, step in `execute()`, export dispatch in `_run_export_step()`
+- CLI ITP helpers: `quickice/cli/itp_helpers.py` — add ITP copy logic in `copy_itp_files_for_structure()`
+- GROMACS writer: `quickice/output/gromacs_writer.py` — add `write_new_gro_file()` and `write_new_top_file()`
+- GUI panel: `quickice/gui/new_panel.py` — UI for new step
+- GUI viewer: `quickice/gui/new_viewer.py` — VTK viewer
+- GUI renderer: `quickice/gui/new_renderer.py` — VTK actor creation
+- GUI integration: `quickice/gui/main_window.py` — add tab, connect signals, store `_current_new_result`
+- GUI export: `quickice/gui/export.py` — add exporter class
+- Tab index: `quickice/gui/constants.py` — add `TabIndex.NEW`
+- Tests: `tests/test_e2e_new.py`, `tests/test_new_insertion.py`
 
 **New Interface Mode:**
-- Implementation: `quickice/structure_generation/modes/` (new file, e.g., `cylinder.py` with `assemble_cylinder` function)
-- Routing: `quickice/structure_generation/interface_builder.py` (add import + route in `generate_interface()`)
-- Validation: `quickice/structure_generation/interface_builder.py` (add mode-specific checks in `validate_interface_config()`)
-- UI: `quickice/gui/interface_panel.py` (add mode to dropdown, add mode-specific input fields)
+- Implementation: `quickice/structure_generation/modes/new_mode.py` — add `assemble_new_mode()`
+- Registration: `quickice/structure_generation/interface_builder.py` — import and route to new mode in `generate_interface()`
+- CLI parser: `quickice/cli/parser.py` — add mode to `--mode` choices, add mode-specific args
+- GUI panel: `quickice/gui/interface_panel.py` — add mode-specific UI widgets
 
-**New Insertion Type (like ions/solutes):**
-- Model: `quickice/structure_generation/{name}_inserter.py` with `{Name}Inserter` class
-- Types: `quickice/structure_generation/types.py` (add `{Name}Config` and `{Name}Structure` dataclasses)
-- Worker: `quickice/gui/{name}_worker.py` with `{Name}Worker(QObject)` following the worker pattern
-- UI panel: `quickice/gui/{name}_panel.py` with `{Name}Panel(QWidget)`
-- UI viewer: `quickice/gui/{name}_viewer.py` with `{Name}Viewer(QWidget)`
-- UI renderer: `quickice/gui/{name}_renderer.py` with VTK rendering functions
-- Export: `quickice/gui/export.py` (add `{Name}GROMACSExporter`)
-- GROMACS writer: `quickice/output/gromacs_writer.py` (add write function, add to `MOLECULE_TO_GROMACS`)
-- Data: `quickice/data/` (add .itp files)
-- Tab: Add to `quickice/gui/constants.py` (TabIndex), `quickice/gui/main_window.py` (setup + connections)
+**New Solute/Guest Type:**
+- ITP file: `quickice/data/newtype_hydrate.itp` + `quickice/data/newtype_liquid.itp`
+- Types: `quickice/structure_generation/types.py` — add to `GUEST_MOLECULES` and `MOLECULE_TYPE_INFO`
+- Registry: `quickice/structure_generation/moleculetype_registry.py` — may need updates
+- CLI parser: `quickice/cli/parser.py` — add to `--guest` and `--solute-type` choices
 
-**New GROMACS Export Format:**
-- Writer: `quickice/output/gromacs_writer.py` (add write function)
-- Exporter: `quickice/gui/export.py` (add exporter class)
-- Menu: `quickice/gui/main_window.py` (add menu action + shortcut)
+**New CLI Flag:**
+- Parser: `quickice/cli/parser.py` — add argument to appropriate group
+- Validation: `quickice/cli/parser.py::validate_pipeline_args()` — add cross-flag validation
+- Pipeline: `quickice/cli/pipeline.py` — read flag via `getattr(self.args, 'flag_name', default)`
+- Entry router: `quickice/entry.py::_ROUTER_FLAGS` — add if it's a router-only flag, NOT if it's a pipeline flag
 
-**New Test:**
-- Unit tests: `tests/test_{feature}.py`
-- E2E tests: `tests/test_e2e_{feature}.py`
-- Output tests: `tests/test_output/test_{feature}.py`
+**New GUI Tab:**
+- Panel: `quickice/gui/new_panel.py`
+- Viewer: `quickice/gui/new_viewer.py`
+- Renderer: `quickice/gui/new_renderer.py`
+- Constants: `quickice/gui/constants.py` — add `TabIndex.NEW`
+- MainWindow: `quickice/gui/main_window.py` — add tab widget, connect signals, add handler methods
+- Signal connections: `quickice/gui/main_window.py::_setup_connections()`
+- Cross-tab data: Add `_current_new_result` attribute and propagation in downstream tabs
 
-**New Data File:**
-- Place in: `quickice/data/`
-- Reference via: `quickice/output/gromacs_writer.py::get_tip4p_itp_path()` pattern (uses `importlib.resources` or `Path(__file__).parent / "data"`)
+**Utilities:**
+- Shared helpers: `quickice/utils/molecule_utils.py` — molecule-level utility functions
+- General utilities: `quickice/utils/__init__.py` — if adding a new utility module
 
 ## Special Directories
 
-**`quickice/data/custom/`:**
-- Purpose: Custom molecule data storage (uploaded by user)
-- Generated: Partially (user-uploaded files)
-- Committed: Directory structure yes, user data no
+**`quickice/data/`:**
+- Purpose: Bundled force-field ITP files, water template, custom molecule examples
+- Generated: No (manually maintained)
+- Committed: Yes
+- Note: ITP paths resolved via `Path(quickice.__file__).parent / "data"` pattern (used in `quickice/cli/itp_helpers.py` and `quickice/output/gromacs_writer.py`)
 
-**`quickice/structure_generation/modes/`:**
-- Purpose: Interface assembly mode implementations
-- Contains: `slab.py`, `pocket.py`, `piece.py`
-- Pattern: Each module exports a single `assemble_{mode}()` function
-
-**`quickice/phase_mapping/data/`:**
-- Purpose: Phase boundary data (curves, JSON metadata)
-- Generated: No
+**`sample_output/`:**
+- Purpose: Reference output samples for visual verification
+- Generated: Partially (some outputs are generated during testing)
 - Committed: Yes
 
 **`tests/test_output/`:**
-- Purpose: Output-specific test suite (separated from main test directory)
-- Contains: Validation, PDB writer, GROMACS export tests
+- Purpose: Output-specific test artifacts (GRO/TOP files from test runs)
+- Generated: Yes (by test runs)
+- Committed: Yes (includes conftest.py for fixture setup)
 
-**`output/`:**
-- Purpose: Default output directory for generated files
-- Generated: Yes (created by CLI/GUI at runtime)
-- Committed: No (in .gitignore)
+**`scripts/`:**
+- Purpose: Shell scripts for development, CI, and demonstration workflows
+- Generated: No
+- Committed: Yes
+- Key scripts: `cli-examples.sh` (reference), `hydrate-interface-custom-ion.sh` (full workflow), `assemble-dist.sh` (packaging)
+
+**`.planning/`:**
+- Purpose: GSD planning artifacts (phases, milestones, debug scripts, codebase docs)
+- Generated: Yes (by OpenCode GSD commands)
+- Committed: Partially (debug scripts may not be committed)
 
 ---
 
-*Structure analysis: 2026-06-12*
+*Structure analysis: 2026-06-15*

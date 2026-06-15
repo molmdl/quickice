@@ -1,230 +1,189 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-06-13 (updated after scan fix round)
+**Analysis Date:** 2026-06-15
 
-**Type legend:**
-- `[bug-fix]` — Can be fixed with a targeted patch; no architectural change
-- `[tech-debt-refactor]` — Requires deep refactoring of existing architecture; high risk, high effort
-- `[feature-request]` — New capability not currently present; requires design + implementation
+## Tech Debt
 
----
+**Duck-typing attribute propagation on IonStructure:**
+- Issue: Solute and custom molecule attributes are set on `InterfaceStructure` at runtime via `interface.attr = value` (duck-typing) rather than being part of the dataclass definition. This pattern is used in both GUI (`quickice/gui/main_window.py` lines 866-903) and CLI (`quickice/cli/pipeline.py` lines 553-605). While `IonStructure` has formal fields for these attributes, the intermediate `InterfaceStructure` does not, meaning any code that receives an `InterfaceStructure` after duck-typing must use `getattr()` with defaults to access solute/custom molecule data.
+- Files: `quickice/gui/main_window.py`, `quickice/cli/pipeline.py`, `quickice/structure_generation/ion_inserter.py`, `quickice/structure_generation/solute_inserter.py`
+- Impact: Fragile — if the attribute names diverge between the duck-typing sites and the `getattr()` consumers, data is silently lost. No compile-time or test-time check catches missing attributes.
+- Fix approach: Add optional `solute_type`, `solute_positions`, `solute_atom_names`, `solute_n_molecules`, `solute_molecule_indices`, `solute_registry`, `custom_molecule_count`, `custom_molecule_atom_count`, `custom_molecule_positions`, `custom_molecule_atom_names`, `custom_molecule_moleculetype`, `custom_gro_path`, `custom_itp_path` fields to `InterfaceStructure` dataclass (with defaults of `None`/`0`/`""`). This eliminates all duck-typing on InterfaceStructure. Phase 34.7 already added these fields to `IonStructure` and `SoluteStructure`; the gap is `InterfaceStructure` itself.
 
-## Resolved (2026-06-13 scan fix round)
+**Excessive `getattr()` usage for attribute access:**
+- Issue: 100+ `getattr()` calls across `ion_inserter.py`, `solute_inserter.py`, `custom_molecule_inserter.py`, `cli/itp_helpers.py`, and `cli/pipeline.py` used to access attributes that may or may not exist on a given structure type. This is a consequence of the duck-typing pattern above.
+- Files: `quickice/structure_generation/ion_inserter.py`, `quickice/structure_generation/solute_inserter.py`, `quickice/structure_generation/custom_molecule_inserter.py`, `quickice/cli/itp_helpers.py`, `quickice/cli/pipeline.py`
+- Impact: Readability and maintainability. Each `getattr()` is a silent fallback — if a field name is misspelled or removed, the code silently uses the default instead of raising an `AttributeError`.
+- Fix approach: Once `InterfaceStructure` has formal fields for solute/custom attributes, replace `getattr()` calls with direct attribute access. Add `__post_init__` defaults. Optionally add a protocol/ABC for "structure with solutes" and "structure with custom molecules" for type checking.
 
-| Issue | Type | Resolution |
-|-------|------|------------|
-| V-11: identical custom molecule rotations | `[bug-fix]` | Fixed: `self.seed` → `self.rng.randint()` |
-| V-16: CO2 misidentified as THF | `[bug-fix]` | Fixed: reordered detect_guest_type_from_atoms |
-| SEC: path traversal via str.startswith | `[bug-fix]` | Fixed: → `Path.is_relative_to()` |
-| V-19: ion volume uses total cell | `[bug-fix]` | Fixed: water-fraction based liquid volume |
-| V-13: GRO parse silently drops lines | `[bug-fix]` | Fixed: added logger.warning calls |
-| V-03/V-03b: O(N²) cKDTree rebuild | `[tech-debt-refactor]` | Fixed: base_existing_data batch rebuild |
-| V-15: dead /√3*√3 arithmetic | `[bug-fix]` | Fixed: removed no-op arithmetic |
-| V-26: reorder_guest_atoms invalid mapping | `[bug-fix]` | Fixed: permutation validation added |
-| V-27: broad except Exception | `[bug-fix]` | Fixed: narrowed to (ValueError, OSError) |
-| V-24: assert in production | `[bug-fix]` | Fixed: replaced with raise ValueError |
-| V-08/V-09: O(N) Python loops in water_filler | `[tech-debt-refactor]` | Fixed: vectorized with numpy reshape |
-| V-01: MOLECULE_TYPE_INFO ice atoms=3 | `[bug-fix]` | Low severity — dict is dead in production |
-| V-04: charge neutrality index corruption | — | FALSE ALARM — deletion-from-end preserves correctness |
-| V-02: per-ion cKDTree rebuild | — | Low severity — ion count typically <50 |
-| DOC-*: 15 documentation issues | `[bug-fix]` | All fixed: phases, citations, formulas, CLI defaults |
+**Duplicate `_get_hydrate_guest_itp_path()` and `_get_guest_itp_path()` functions:**
+- Issue: `_get_hydrate_guest_itp_path()` is defined identically in three places: `quickice/gui/export.py` (line 799), `quickice/gui/hydrate_export.py` (line 44), and `quickice/cli/itp_helpers.py` (line 20). Similarly, `_get_guest_itp_path()` appears in both `quickice/gui/export.py` (line 772) and `quickice/gui/hydrate_export.py` (line 17). The CLI version (`itp_helpers.py`) is the canonical one with case normalization; the GUI versions lack it.
+- Files: `quickice/gui/export.py`, `quickice/gui/hydrate_export.py`, `quickice/cli/itp_helpers.py`
+- Impact: Bug divergence — if one copy is fixed (e.g., adding case normalization), the others may be missed. GUI copies don't normalize guest_type to lowercase.
+- Fix approach: Consolidate into `quickice/cli/itp_helpers.py` (already the most robust) and import from there in GUI modules. Remove duplicate definitions.
 
----
+**CLIPipeline step chain uses `getattr()` for args that are already defined in parser:**
+- Issue: `CLIPipeline._run_source_step()` uses `getattr(self.args, 'hydrate', False)` and `getattr(self.args, 'lattice_type', 'sI')` etc., even though `parser.py` defines these as explicit argparse arguments. The `getattr` pattern is unnecessary for attributes that are guaranteed to exist on the Namespace.
+- Files: `quickice/cli/pipeline.py`
+- Impact: Code smell — misleading readers into thinking these attributes might not exist. Small performance overhead from `getattr` dispatch.
+- Fix approach: Replace `getattr(self.args, 'hydrate', False)` with `self.args.hydrate`, `getattr(self.args, 'lattice_type', 'sI')` with `self.args.lattice_type`, etc. for all attributes defined in `create_parser()`.
 
-## Open Issues — `[bug-fix]` (targeted patches, no architectural change)
+## Resolved Concerns
 
-**No input sanitization on custom molecule GRO/ITP files:** `[bug-fix]`
-- Risk: Users upload arbitrary `.gro` and `.itp` files. `gro_parser.py` validates only coordinate range. `itp_parser.py` reads arbitrary text with regex. A malformed file could cause unexpected behavior.
-- Files: `quickice/structure_generation/gro_parser.py`, `quickice/structure_generation/itp_parser.py`
-- Current mitigation: 50nm range check, regex patterns
-- Fix: Add file size limits, validate atom count matches header, sanitize moleculetype names (alphanumeric + underscore only)
+**BUG-05 (HW1 Z-coordinate copy-paste):** ✅ RESOLVED (Phase 34.7-01)
+- Was: HW1 atom Z-coordinates incorrectly copied from HW2 in `write_interface_gro_file()`
+- Fix: Corrected HW1 Z computation using TIP4P alpha in `quickice/output/gromacs_writer.py`
 
-**File overwrite without confirmation in export:** `[bug-fix]`
-- Risk: GROMACS export silently overwrites existing `.top` and `.itp` files.
-- Files: `quickice/gui/export.py`
-- Current mitigation: `QFileDialog.getSaveFileName` for `.gro` only
-- Fix: Check for existing companion files and warn before overwrite
+**MW-01 (Molecule-aware wrapping):** ✅ RESOLVED (Phase 34.7-01)
+- Was: Ice GRO writer wrapped atoms individually, splitting molecules across PBC
+- Fix: Added `wrap_molecules_into_box()` using `molecule_index` for whole-molecule wrapping in `quickice/output/gromacs_writer.py`
 
-**Module-level mutable MoleculetypeRegistry:** `[bug-fix]`
-- Risk: `_registry = MoleculetypeRegistry()` at module level in `gromacs_writer.py:38` leaks state between export scenarios.
-- Files: `quickice/output/gromacs_writer.py`
-- Current mitigation: `MoleculetypeRegistry.clear()` exists but must be called manually
-- Fix: Create per-export instances or auto-reset before each export
+**DEFLT-01 (fudgeLJ/fudgeQQ defaults):** ✅ RESOLVED (Phase 34.7-01)
+- Was: Some TOP writers used wrong defaults (fudgeLJ=1.0, fudgeQQ=1.0)
+- Fix: All TOP writers now use fudgeLJ=0.5, fudgeQQ=0.8333 in `quickice/output/gromacs_writer.py`
 
-**V-07: detect_atoms_per_molecule fragile for guest-first arrays:** `[bug-fix]`
-- Risk: Function only checks `atom_names[0]=="OW"`. If guest atoms precede water (non-standard GenIce2 output), returns 3 instead of 4.
-- Files: `quickice/structure_generation/modes/slab.py:37-41`, `pocket.py:37-41`, `piece.py:44-48`
-- Current status: Works for all supported inputs (GenIce2 always outputs water first). Low priority.
-- Fix: Scan first 10 atoms for "OW" or check metadata for hydrate flag.
+**ATOM-01 (WATER_ATOMS_PER_MOLECULE constant):** ✅ RESOLVED (Phase 34.7-02)
+- Was: Hardcoded `// 4` throughout codebase
+- Fix: Replaced with `WATER_ATOMS_PER_MOLECULE` constant from `quickice/structure_generation/types.py`
 
-**V-01: MOLECULE_TYPE_INFO["ice"]["atoms"]=3 inaccurate:** `[bug-fix]`
-- Risk: Dict says TIP3P (3 atoms) but codebase uses TIP4P-ICE (4 atoms). No production code reads it, but it's misleading.
-- Files: `quickice/structure_generation/types.py:12`
-- Fix: Either fix value to 4 and update description, or remove dead dict entirely (see dead code item DC-3.1).
+**RNG-01 (Unseeded RNG in custom molecule):** ✅ RESOLVED (Phase 34.7-02)
+- Was: `CustomMoleculeInserter` used unseeded `random.Random()` and `Rotation.random()` without seed
+- Fix: Added `seed` parameter and `self.rng = random.Random(seed)` plus `Rotation.random(random_state=self.rng.randint(0, 2**31-1))`
 
----
+**TREE-01 (Conditional KDTree rebuild):** ✅ RESOLVED (Phase 34.7-03)
+- Was: Ion inserter rebuilt cKDTree on every iteration (O(N²) copy chain)
+- Fix: Added conditional rebuild using `existing_atoms_tree is not None` check
 
-## Open Issues — `[tech-debt-refactor]` (deep refactoring, high effort)
+**GUEST-01 (Dead CO2 code + guest_type param):** ✅ RESOLVED (Phase 34.7-08)
+- Was: Dead CO2 guest code paths; `count_guest_atoms()` lacked explicit `guest_type` parameter
+- Fix: Removed dead CO2 code; added `guest_type` parameter to `count_guest_atoms()` in `quickice/utils/molecule_utils.py`
 
-**gromacs_writer.py — God file at 2701 lines:** `[tech-debt-refactor]`
-- Issue: 12 `write_*` functions + 11+ utilities. Every new molecule type adds 2 more functions. Each writer duplicates atomtype emission, molecule ordering, and GRO formatting logic.
-- Files: `quickice/output/gromacs_writer.py`
-- Impact: Bug fixes must be applied to every writer independently. Adding new molecule types requires touching multiple places.
-- Fix approach: Extract shared GRO line formatting into a base writer class or composable pipeline. Each structure type provides a "molecule iterator" and the writer iterates generically. The `type('obj', (object,), {...})()` hack at 7 locations is a symptom — synthetic objects should be real `MoleculeIndex` instances.
-- Effort: HIGH (touches 12+ functions, every export path, all 130+ export tests)
+**PERF-02 (cKDTree boxsize for scorer):** ✅ RESOLVED (Phase 34.8-01)
+- Was: Scorer used brute-force O-O distance without PBC awareness
+- Fix: Added `cKDTree(boxsize=)` for orthorhombic PBC-correct distance in `quickice/ranking/scorer.py`
 
-**MainWindow — 2024-line "everything" class:** `[tech-debt-refactor]`
-- Issue: 15+ instance attributes for cross-tab state, signal connections, export handlers, tab management, generation orchestration, and menu creation all in one file.
+**BUG-04 (diversity_score always 1.0):** ✅ RESOLVED (Phase 34.8-03)
+- Was: O-O distance histogram was always identical across candidates, producing diversity_score=1.0
+- Fix: Replaced with O-O distance fingerprint histogram in `quickice/ranking/scorer.py`
+
+**TEST-09 (moleculetype name matching):** ✅ RESOLVED (Phase 34.8-02)
+- Was: TOP `[molecules]` names could mismatch ITP `[moleculetype]` names
+- Fix: Added regression tests and `parse_itp_file()` returns correct `molecule_name` in `quickice/structure_generation/itp_parser.py`
+
+## Security Considerations
+
+**np.random global state manipulation:**
+- Risk: `IceStructureGenerator._generate_single()` in `quickice/structure_generation/generator.py` (lines 103-157) saves, seeds, and restores `np.random` global state around GenIce2 calls. This is a global side effect — if any other thread or coroutine uses `np.random` concurrently, state corruption could occur.
+- Files: `quickice/structure_generation/generator.py`
+- Current mitigation: Code comments note "NOT thread-safe" and "QuickIce is designed for sequential execution." The `finally` block ensures state restoration even on exception.
+- Recommendations: (1) Document thread-safety constraint in module docstring. (2) Consider migrating to `np.random.Generator` API when GenIce2 supports it. (3) The `hydrate_generator.py` does NOT save/restore global state (relies on GenIce2 internal state) — this could be a subtle divergence if hydrate generation is ever called from a threaded context.
+
+**File path injection in CLI custom molecule paths:**
+- Risk: `--custom-gro` and `--custom-itp` accept arbitrary file paths. `CustomMoleculeInserter` reads and parses these files.
+- Files: `quickice/cli/parser.py`, `quickice/structure_generation/custom_molecule_inserter.py`
+- Current mitigation: `FileNotFoundError` is raised if file doesn't exist. No path traversal check.
+- Recommendations: Acceptable for CLI tool — user already has shell access. No action needed.
+
+## Performance Bottlenecks
+
+**SoluteInserter KDTree rebuild per molecule:**
+- Problem: `solute_inserter.py` (lines 799-804) rebuilds `cKDTree` from `base_existing_data + all_placed_positions` after each successful molecule placement. This involves `np.vstack()` of growing arrays and full tree rebuild.
+- Files: `quickice/structure_generation/solute_inserter.py`
+- Cause: O(N²) cumulative vstack cost. For large numbers of solute molecules (>100), this becomes noticeable.
+- Improvement path: Use incremental tree update or batch placement. Alternatively, use `scipy.spatial.cKDTree` with `boxsize` for PBC and rebuild only every K molecules. The current `base_existing_data` copy already avoids the prior O(N²) chain pattern (TREE-01 was resolved for ion inserter but solute inserter still uses the rebuild pattern, albeit with a cleaner base-copy strategy).
+
+**main_window.py is 2024 lines:**
+- Problem: Single file handles 6 tabs' worth of signal connections, export handlers, and generation orchestration.
 - Files: `quickice/gui/main_window.py`
-- Impact: Every new tab adds state variables and slot handlers. `_on_custom_finished` alone is ~100 lines with nested hasattr checks.
-- Fix approach: Introduce `ApplicationState` object or mediator/event-bus pattern. Extract each tab's generation logic into its own controller class.
-- Effort: VERY HIGH (touches entire GUI layer, all signal connections, all e2e GUI tests)
+- Cause: Accumulated feature additions across Phases 28-37 without refactoring.
+- Improvement path: Extract per-tab controller classes (e.g., `IceTabController`, `HydrateTabController`) that own their signal connections and export logic. `MainWindow` becomes a thin shell that instantiates controllers.
 
-**Duplicated GRO/TOP emission logic across exporters:** `[tech-debt-refactor]`
-- Issue: 8 exporter classes in `export.py` (929 lines) independently implement the same 5-step pattern.
-- Files: `quickice/gui/export.py`, `quickice/gui/hydrate_export.py`
-- Fix approach: Create `GROMACSExportBase` class with common pipeline. Subclasses override only writer function and filename.
-- Effort: MEDIUM (contained to 2 files, each subclass is ~50 lines)
+## Fragile Areas
 
-**Duplicated renderer + viewer patterns:** `[tech-debt-refactor]`
-- Issue: 4 renderers + 3 viewers all duplicate the same patterns (atom-to-VTK mapping, bond lines, unit cell rendering, stacked-widget placeholder, VTK init, lazy loading).
-- Files: 7 files in `quickice/gui/`
-- Fix approach: Extract common logic into `vtk_utils.py` (parameterized renderer) and `StructureViewerBase` (QStackedWidget subclass).
-- Effort: MEDIUM-HIGH (7 files, VTK rendering is fragile, visual regression risk)
+**Hydrate→Interface conversion in CLIPipeline:**
+- Files: `quickice/cli/pipeline.py` lines 209-282
+- Why fragile: `_run_source_step()` converts `HydrateStructure` to `Candidate` via `to_candidate()`, then the interface step treats it as an ice candidate. The `to_candidate()` method (in `quickice/structure_generation/types.py` lines 658-722) bundles water + guest atoms together into a flat `Candidate`. The interface builder must then separate guests from water framework atoms via atom-name heuristics. If GenIce2 changes its atom naming conventions, the guest detection in `slab.py` (`_detect_guest_atoms()`) would break.
+- Safe modification: Changes to `HydrateStructure.to_candidate()` should be tested with both CH4 and THF guests across all interface modes. Changes to `assemble_slab()` guest detection should be validated against `test_hydrate_guest_tiling.py`.
+- Test coverage: Good — `test_e2e_ice_interface_export.py` and `test_e2e_cross_chain_invariants.py` cover this path.
 
-**`Any` type annotations avoiding circular imports:** `[tech-debt-refactor]`
-- Issue: 7 fields in `types.py` use `Any` to avoid circular imports. Disables IDE type checking.
-- Files: `quickice/structure_generation/types.py`
-- Fix approach: Use `from __future__ import annotations` + `TYPE_CHECKING` block.
-- Effort: LOW (mechanical change, but must verify no runtime circular import)
+**IonStructure attribute propagation from SoluteStructure:**
+- Files: `quickice/cli/pipeline.py` lines 568-605, `quickice/gui/main_window.py` lines 864-876
+- Why fragile: When `--ion-source solute` is used, the CLI pipeline propagates solute attributes from `SoluteStructure` onto the `InterfaceStructure` by setting attributes directly (`interface.solute_type = source.solute_type`, etc.). The GUI does the same in `_on_insert_ions()`. Both paths must match exactly, and any new attribute added to `SoluteStructure` requires updating both propagation sites.
+- Safe modification: Add new attributes to `IonStructure` dataclass first, then update both CLI and GUI propagation code, then add test coverage in `test_e2e_ion_export.py`.
+- Test coverage: Good — `test_scancode_bugs_ion.py` and `test_e2e_ion_export.py` cover this.
 
-**Cross-tab state flow in MainWindow:** `[tech-debt-refactor]`
-- Issue: Data flows between tabs via direct attribute access and hasattr/getattr duck-typing.
-- Files: `quickice/gui/main_window.py`
-- Risk: Adding a new tab requires updating all downstream tabs' slot handlers, GROMACS writers, and molecule_index logic.
-- Fix approach: Centralized `ApplicationState` with typed signals.
-- Effort: HIGH (coupled with MainWindow refactor above)
+**Custom molecule 3→4 atom normalization at export:**
+- Files: `quickice/output/gromacs_writer.py` lines 1853-2060 (`write_custom_molecule_gro_file`)
+- Why fragile: Ice atoms from the candidate may use 3-atom format (O, H, H from GenIce) while water uses 4-atom TIP4P (OW, HW1, HW2, MW). The custom molecule GRO writer must detect and normalize ice atoms from 3→4 by inserting MW virtual sites. If the ice portion uses 4-atom hydrate ice (OW, HW1, HW2, MW), no normalization is needed. The detection logic relies on checking the first ice atom name.
+- Safe modification: Any changes to ice atom generation (e.g., switching from TIP3P to TIP4P in `IceStructureGenerator`) must be validated against the custom molecule GRO writer.
+- Test coverage: Good — `test_gromacs_export_custom.py` covers this.
 
-**`molecule_index` empty vs populated dual code paths:** `[tech-debt-refactor]`
-- Issue: GenIce2 structures have `molecule_index = []`; QuickIce-assembled structures have populated index. Every GRO/TOP writer has separate code paths.
-- Files: `quickice/output/gromacs_writer.py`, `quickice/structure_generation/ion_inserter.py`
-- Fix approach: Always populate `molecule_index` during structure generation, eliminating the empty fallback path and synthetic MoleculeIndex-like objects.
-- Effort: MEDIUM (must trace all generation paths to ensure index is populated)
+## Scaling Limits
 
-**Per-ion VTK sphere creation — O(n) actors:** `[tech-debt-refactor]`
-- Issue: One VTK actor per ion → 3N VTK objects for N ions. Slow at >1000 ions.
-- Files: `quickice/gui/ion_renderer.py`
-- Fix approach: Use `vtkGlyph3D` for batched rendering (2 actors total instead of 3N).
-- Effort: MEDIUM (VTK API change, visual regression testing needed)
+**cKDTree memory for large systems:**
+- Current capacity: Systems up to ~50,000 atoms work well. `cKDTree` construction is O(N log N) and uses ~24 bytes per atom.
+- Limit: For systems >200,000 atoms (large hydrate supercells or thick slabs), multiple `cKDTree` instances in ion/solute inserters may consume significant memory.
+- Scaling path: Consider using `scipy.spatial.cKDTree` with `boxsize` parameter (already done in scorer) and batch-based overlap checking for very large systems.
 
----
-
-## Open Issues — `[feature-request]` (new capabilities, requires design)
-
-**No undo/redo for structure modifications:** `[feature-request]`
-- Problem: Insertions are permanent. Only "undo" is clearing all results and starting over.
-- Design: Snapshot-based undo stack or command pattern. Each insertion creates a reversible operation.
-- Effort: HIGH (requires state serialization, UI changes, undo stack management)
-
-**No project save/load:** `[feature-request]`
-- Problem: All state lost on application close. No session persistence.
-- Design: Serialize generation parameters, structures, viewer state to JSON/ZIP. Load on startup.
-- Effort: HIGH (dataclass serialization, version migration, UI for save/load)
-
-**No CLI support for Tabs 3-5 (Custom, Solute, Ion):** `[feature-request]`
-- Problem: CLI only supports basic ice generation. Custom molecule, solute, and ion workflows are GUI-only.
-- Design: Extend CLI parser with `--custom-gro`, `--custom-itp`, `--solute`, `--ion` flags.
-- Effort: MEDIUM (CLI is ~200 lines, each new flag maps to existing API)
-
-**No in-app GROMACS validation:** `[feature-request]`
-- Problem: Exported files may fail `gmx grompp` without user knowing until simulation time.
-- Design: Optional post-export `gmx grompp` check (if GROMACS installed). Show pass/fail in export dialog.
-- Effort: LOW-MEDIUM (subprocess call + result parsing, conditional on gmx availability)
-
----
-
-## Fragile Areas (ongoing risk, not fixable without architecture change)
-
-**VTK display mode and atom size tuning:**
-- Files: `quickice/gui/vtk_utils.py`, `quickice/gui/hydrate_renderer.py`, `quickice/gui/molecular_viewer.py`
-- Why fragile: VTK constants hardcoded across files. Small changes cause visual regressions.
-- Mitigation: Centralize display constants in `quickice/gui/constants.py`. No programmatic VTK tests exist.
-
-**GenIce2 random state management:**
-- Files: `quickice/structure_generation/generator.py:92-157`
-- Why fragile: Uses global `np.random` state (not modern Generator API). NOT thread-safe.
-- Mitigation: Sequential execution only. Process-based parallelism if needed.
-
-**Phase diagram polygon rendering:**
-- Files: `quickice/output/phase_diagram.py` (1132 lines), `quickice/gui/phase_diagram_widget.py` (778 lines)
-- Why fragile: Matplotlib polygons with manual coordinate clipping. Boundary curve inaccuracies propagate to visual gaps.
-- Mitigation: Regenerate full diagram after any boundary curve change. Lookup logic is independent of rendering.
-
----
-
-## Scaling Limits (GROMACS format, inherent constraints)
-
-**GRO format 5-digit atom/residue number limit:**
-- Capacity: 99,999 atoms. Numbers wrap modulo 100,000 (already implemented).
-- Path: GROMACS format limitation. Functional but may confuse downstream tools.
-
-**Single-threaded generation pipeline:**
-- Capacity: ~1-5s for 96-256 molecules. Linear growth with molecule count.
-- Path: Process-based parallelism for candidate generation (not threads, due to GenIce2 global state).
-
-**VTK rendering for >10,000 atoms:**
-- Capacity: Smooth up to ~5,000 atoms. Frame rates drop above 10,000.
-- Path: `vtkGlyph3D` batched rendering (deferred from Phase 28).
-
----
+**GenIce2 generation time:**
+- Current capacity: ~1-5 seconds for 256-768 molecules per candidate.
+- Limit: For very large systems (>10,000 molecules), GenIce2 generation time grows linearly with supercell size. 10 candidates for 4096 molecules takes ~30 seconds.
+- Scaling path: GenIce2 is inherently sequential. Parallel generation of candidates with different seeds could reduce wall-clock time for multi-candidate workflows.
 
 ## Dependencies at Risk
 
-**GenIce2 (genice2==2.2.13.1):**
-- Risk: Small maintainer team, deprecated Python patterns, no recent updates. Compatibility quirks with Python 3.14.
-- Migration plan: Pre-generated GRO files from bundled data as fallback.
+**GenIce2 (genice2):**
+- Risk: GenIce2 is a research-grade package with infrequent updates. It uses the deprecated `np.random` global state API internally rather than `np.random.Generator`. Its API is not formally versioned (uses date-based versions like `2.2.13.1`).
+- Impact: If GenIce2 breaks on a future NumPy version that removes global `np.random`, all ice and hydrate generation fails.
+- Migration plan: Pin NumPy version in `environment.yml`. Monitor GenIce2 releases for `np.random.Generator` migration. The save/restore pattern in `quickice/structure_generation/generator.py` provides a partial workaround.
 
-**VTK (vtk==9.5.2):**
-- Risk: ~500MB dependency. PySide6+VTK integration fragile across platforms. SSH X11 requires Mesa GLX workaround.
-- Migration plan: py3dmol or NGLview for remote display; VTK for local desktop.
+**PySide6:**
+- Risk: PySide6 major version upgrades (6.x→7.x) may break Qt API compatibility. PySide6 is already at 6.10.2.
+- Impact: GUI would fail to launch. CLI mode is unaffected (lazy import in `entry.py`).
+- Migration plan: `quickice/entry.py` already handles PySide6 unavailability gracefully with `_is_pyside6_available()` check, routing to CLI mode when absent.
 
-**IAPWS (iapws==1.5.5):**
-- Risk: Small package, may not track Python versions. Critical for density calculations.
-- Migration plan: Hardcode IAPWS formulas (partially done in `ice_ih_density.py` and `water_density.py`).
+## Missing Critical Features
 
-**scipy (scipy==1.17.1):**
-- Risk: ~200MB, actively maintained. Critical for `cKDTree` and `Rotation`.
-- Migration plan: Simple distance matrix for small systems. Hand-rolled Euler angles (partially in `main_window.py:1337-1341`).
+**No CLI `--export` flag to trigger GROMACS export automatically:**
+- Problem: The CLI parser defines `--gromacs` / `-g` flag but `CLIPipeline._run_export_step()` always exports GROMACS files — the `--gromacs` flag is only used in the ice-only backward-compat path in `quickice/main.py`. For the pipeline path, export always happens.
+- Files: `quickice/cli/parser.py`, `quickice/cli/pipeline.py`
+- Blocks: Users who want to run the pipeline without writing files (e.g., just to validate parameters or compute structure in memory).
 
----
+**No progress reporting for long-running CLI steps:**
+- Problem: `report_progress()` prints to stderr, but there's no ETA or percentage completion for multi-step pipelines.
+- Files: `quickice/cli/pipeline.py`
+- Blocks: Users can't estimate remaining time for large systems.
 
 ## Test Coverage Gaps
 
-**GUI rendering code has no programmatic tests:**
-- Files: 4 renderer files + `vtk_utils.py` + 3 viewer files
-- Risk: Visual regressions undetected. Virtual site skip could silently drop atoms.
-- Priority: Medium
+**CLI pipeline e2e tests don't validate GROMACS file content:**
+- What's not tested: `test_cli_pipeline.py` and `test_cli_integration.py` verify exit codes and stderr output but don't parse the exported `.gro`/`.top` files to validate atom counts, molecule ordering, or ITP inclusion.
+- Files: `quickice/tests/test_cli_pipeline.py`, `quickice/tests/test_cli_integration.py`
+- Risk: A writer bug (like BUG-05 HW1 Z-coordinate) could slip through CLI tests because they don't inspect file contents.
+- Priority: Medium — API-level tests in `test_output/` directory cover the writer functions directly, but the CLI integration path is untested for file content.
 
-**MainWindow slot handlers are not unit-tested:** `[tech-debt-refactor]` prerequisite
-- Files: `quickice/gui/main_window.py`
-- Risk: Cross-tab state bugs caught only by e2e or manual testing.
-- Priority: High
-
-**Custom molecule concentration calculation:**
-- Files: `quickice/structure_generation/custom_molecule_inserter.py`
-- Risk: Incorrect molecule counts → physically invalid structures
-- Priority: Medium
-
-**Triclinic cell handling in export:**
-- Files: `quickice/output/gromacs_writer.py`
-- Risk: Wrong cell vector order → `gmx grompp` failures
-- Priority: Medium
-
-**Global random state in multi-context usage:**
+**No test for np.random state corruption:**
+- What's not tested: Whether `IceStructureGenerator._generate_single()` correctly restores `np.random` state after exceptions.
 - Files: `quickice/structure_generation/generator.py`
-- Risk: Non-reproducible results when used as library
-- Priority: Low
+- Risk: If a GenIce2 exception path skips the `finally` block (Python doesn't allow this, but a `SystemExit` or `os._exit()` could), global state would be corrupted.
+- Priority: Low — Python's `try/finally` guarantees execution, and the code is well-structured.
+
+**Duck-typing propagation not tested for attribute absence:**
+- What's not tested: What happens when an `InterfaceStructure` that has NOT been duck-typed (no solute/custom attributes set) is passed to `IonInserter.replace_water_with_ions()`.
+- Files: `quickice/structure_generation/ion_inserter.py`, `quickice/gui/main_window.py`
+- Risk: The `getattr()` fallbacks return defaults (0, None, ""), which produces an `IonStructure` with zero solutes and zero custom molecules — this is actually the correct behavior for the "interface source" path, but it's not explicitly tested.
+- Priority: Low — behavior is correct but implicit.
+
+## Deferred Items (Unchanged)
+
+**Deferred UAT testing (v3.0 phases 17-21):**
+- See `.planning/DEFERRED-UAT.md` — all Phase 17-21 GUI tests are pending execution.
+- No change from previous analysis.
+
+**Screenshots and release notes (Phase 35-06):**
+- Deferred per STATE.md line 106.
+- No change from previous analysis.
 
 ---
 
-*Concerns audit: 2026-06-13 — updated with scan fix resolutions and type labels*
+*Concerns audit: 2026-06-15*

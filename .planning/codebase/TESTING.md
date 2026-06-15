@@ -1,13 +1,14 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-06-12
+**Analysis Date:** 2026-06-15
 
 ## Test Framework
 
 **Runner:**
-- pytest 9.0.3
-- No config file (no `pytest.ini`, `pyproject.toml`, `setup.cfg`, or `conftest.ini`)
+- pytest 9.0.0+
+- Config: `conftest.py` at project root registers custom markers
 - Pytest discovers tests automatically via `test_*.py` naming convention
+- No `pytest.ini`, `pyproject.toml`, or `setup.cfg` config files
 
 **Assertion Library:**
 - Standard pytest assertions: `assert`, `assert ... == ...`
@@ -20,15 +21,22 @@ pytest                              # Run all tests
 pytest tests/test_phase_mapping.py # Run specific file
 pytest -k "test_ice_ih"           # Run tests matching name
 pytest -m slow                     # Run only slow-marked tests
+pytest -m "not slow"              # Skip slow tests (recommended for rapid iteration)
 pytest tests/test_output/          # Run output submodule tests
+pytest tests/test_cli_integration.py  # Run CLI integration tests
+pytest tests/test_cli_pipeline.py     # Run CLI pipeline E2E tests
 pytest --tb=short                   # Shorter tracebacks
 ```
 
 **Pytest Markers:**
-- `@pytest.mark.slow` — for expensive GenIce2 generation tests (high-pressure phases)
+- `@pytest.mark.slow` — for expensive GenIce2 generation tests and subprocess pipeline tests (registered in root `conftest.py`)
 - `@pytest.mark.parametrize` — for parameterized tests (pocket shapes, concentrations, phases)
 - `@pytest.mark.skip(reason="...")` — for tests requiring unavailable dependencies (e.g., `pytest-qt`)
-- Custom markers are defined inline (no `pytest.ini` registration)
+- Marker registration in `conftest.py`:
+  ```python
+  def pytest_configure(config):
+      config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
+  ```
 
 ## Test File Organization
 
@@ -40,13 +48,16 @@ pytest --tb=short                   # Shorter tracebacks
 **Naming:**
 - Unit/bridge tests: `test_<feature>.py` — e.g., `test_validators.py`, `test_ranking.py`
 - E2E tests: `test_e2e_<workflow>.py` — e.g., `test_e2e_ice_generation.py`, `test_e2e_workflow_chains.py`
+- CLI integration tests: `test_cli_integration.py` — CLI argument validation via subprocess
+- CLI pipeline tests: `test_cli_pipeline.py` — full pipeline E2E via subprocess
+- Entry point tests: `test_entry_point.py` — routing behavior via subprocess + direct function call
 - Regression tests: `test_scancode_bugs_<area>.py` — e.g., `test_scancode_bugs_gromacs.py`
 - Shared helpers (NOT auto-collected): `e2e_export_helpers.py` (no `test_` prefix)
 
 **Structure:**
 ```
 tests/
-├── conftest.py                          # Root shared fixtures (GenIce2 structure generation)
+├── conftest.py                          # Root shared fixtures + run_quickice() helper
 ├── e2e_export_helpers.py               # GRO/TOP parsing + chain-building helpers
 ├── em.mdp                              # GROMACS energy-minimization MDP file
 ├── __init__.py                         # Package marker
@@ -54,15 +65,26 @@ tests/
 ├── test_phase_mapping.py               # Phase lookup unit/integration tests
 ├── test_structure_generation.py        # Generator unit/integration tests
 ├── test_ranking.py                     # Scoring and ranking unit tests
+├── test_cli_integration.py            # CLI argument validation (subprocess)
+├── test_cli_pipeline.py               # CLI pipeline E2E (subprocess, @pytest.mark.slow)
+├── test_entry_point.py                # Entry routing: --cli, --gui, --help, no-args
+├── test_integration_v35.py            # Integration tests for v3.5 features
 ├── test_e2e_ice_generation.py          # E2E: ice generation pipeline
 ├── test_e2e_hydrate_generation.py      # E2E: hydrate generation
 ├── test_e2e_interface_generation.py    # E2E: interface construction
-├── test_e2e_ion_insertion.py           # E2E: ion insertion
+├── test_e2e_ion_insertion.py          # E2E: ion insertion
 ├── test_e2e_solute_insertion.py        # E2E: solute insertion
 ├── test_e2e_workflow_chains.py         # E2E: full chain F1–F7
 ├── test_e2e_gmx_validation.py          # E2E: gmx grompp validation
 ├── test_e2e_chain_export_1.py          # E2E: chain export part 1
 ├── test_e2e_chain_export_2.py          # E2E: chain export part 2
+├── test_e2e_cross_chain_invariants.py   # E2E: cross-chain invariant checks
+├── test_e2e_custom_molecule.py          # E2E: custom molecule insertion
+├── test_e2e_custom_export.py            # E2E: custom molecule export
+├── test_e2e_ice_interface_export.py     # E2E: ice interface export
+├── test_e2e_ion_export.py               # E2E: ion export
+├── test_e2e_solute_export.py            # E2E: solute export
+├── test_e2e_itp_baseline.py             # E2E: ITP file baseline validation
 ├── test_scancode_bugs_gromacs.py       # Regression: GROMACS writer bugs
 ├── test_scancode_bugs_ion.py           # Regression: ion insertion bugs
 ├── test_scancode_bugs_inserters.py     # Regression: inserter bugs
@@ -71,9 +93,36 @@ tests/
 ├── test_overlap_removal_invariants.py  # Invariants: overlap removal
 ├── test_pbc_hbonds.py                  # PBC hydrogen bond detection
 ├── test_triclinic_interface.py         # Triclinic cell interface tests
-├── ... (67 total test files)
+├── test_custom_molecule.py             # Custom molecule unit tests
+├── test_custom_molecule_concentration.py # Concentration calculation tests
+├── test_custom_molecule_renderer.py    # Custom molecule renderer tests
+├── test_custom_molecule_panel_34_6.py  # Panel regression test
+├── test_atom_names_filtering.py        # Atom name filtering tests
+├── test_atom_ordering_validation.py    # Atom ordering validation tests
+├── test_interface_ordering_validation.py # Interface ordering validation
+├── test_interface_modes_audit.py       # Interface modes audit tests
+├── test_ion_hydrate_fix.py             # Ion hydrate fix regression
+├── test_ion_source_dropdown.py         # Ion source dropdown tests
+├── test_itp_parser_edge_cases.py       # ITP parser edge cases
+├── test_med03_minimum_box_size.py      # Minimum box size regression
+├── test_moleculetype_registry.py       # Moleculetype registry tests
+├── test_guest_atom_counting.py         # Guest atom counting tests
+├── test_gromacs_molecule_ordering.py    # GROMACS molecule ordering
+├── test_gromacs_moleculetype_names.py  # GROMACS moleculetype name tests
+├── test_hydrate_guest_tiling.py        # Hydrate guest tiling tests
+├── test_ice_ih_density.py              # Ice Ih density validation
+├── test_water_density.py               # Water density validation
+├── test_piece_mode_validation.py       # Piece mode validation tests
+├── test_pocket_cubic_guests.py         # Pocket cubic guest tests
+├── test_scorer_diversity.py            # Scorer diversity tests
+├── test_scorer_performance.py          # Scorer performance tests
+├── test_solute_insertion.py            # Solute insertion tests
+├── test_solute_ion_molecule_index.py   # Solute-ion molecule index tests
+├── test_validators.py                  # Additional validator tests
+├── ... (67+ total test files)
 └── test_output/                        # GROMACS export tests
     ├── conftest.py                     # Export-specific fixtures (mock dialogs, synthetic structures)
+    ├── __init__.py                     # Package marker
     ├── test_gromacs_export_ice.py
     ├── test_gromacs_export_interface.py
     ├── test_gromacs_export_hydrate.py
@@ -102,7 +151,7 @@ class TestLookupPhaseIceIh:
 
 **Patterns:**
 - Each test class groups related tests by feature/bug/behavior
-- Class names use `Test` prefix + descriptive name: `TestBUG05`, `TestIceCandidateGmxValidation`
+- Class names use `Test` prefix + descriptive name: `TestBUG05`, `TestIceCandidateGmxValidation`, `TestPipelineFlagValidation`, `TestPipelineExitCodes`
 - Test method names use descriptive `snake_case`: `test_lookup_atmospheric_near_melting`, `test_gmx_grompp_succeeds`
 - Test docstrings describe expected behavior and context (especially for regression tests)
 - Descriptive assertion messages on non-obvious checks:
@@ -141,9 +190,16 @@ class TestLookupPhaseIceIh:
       workspace.mkdir(parents=True, exist_ok=True)
       yield workspace
   ```
+- Temp directory for CLI pipeline tests:
+  ```python
+  def make_temp_output_dir() -> str:
+      return tempfile.mkdtemp(prefix="test_cli_pipeline_")
+  # Always cleanup: shutil.rmtree(outdir, ignore_errors=True) in finally block
+  ```
 
 **Teardown Pattern:**
 - No explicit teardown — fixtures handle cleanup via `yield` or `tmp_path`
+- CLI pipeline tests use `try/finally` with `shutil.rmtree(outdir, ignore_errors=True)`
 - Workspace fixture yields directory (persists for debugging, no cleanup)
 
 **Assertion Pattern:**
@@ -151,6 +207,7 @@ class TestLookupPhaseIceIh:
 - NumPy array comparisons: `np.testing.assert_array_equal()`, `np.testing.assert_allclose()`
 - Approximate float comparisons: `assert abs(result["density"] - 0.9167) < 0.001`
 - Exception testing: `with pytest.raises(UnknownPhaseError) as exc_info:`
+- CLI subprocess assertions: `assert rc == 0`, `assert "[PROGRESS]" in stderr`, `assert "required" in stderr.lower()`
 
 ## Mocking
 
@@ -188,6 +245,20 @@ class TestLookupPhaseIceIh:
       return _create
   ```
 
+- Mock for entry point routing tests (direct function call, NOT subprocess):
+  ```python
+  def test_gui_missing_pyside6_error(self, capsys):
+      """--gui + PySide6 missing → error message, exit 1."""
+      from quickice.entry import main
+      with unittest.mock.patch(
+          'quickice.entry._is_pyside6_available', return_value=False
+      ):
+          rc = main(['quickice', '--gui'])
+      assert rc == 1
+      captured = capsys.readouterr()
+      assert "PySide6 is not installed" in captured.err
+  ```
+
 - Context manager pattern for mock application:
   ```python
   def test_export_creates_gro_top_itp(self, ranked_candidate, mock_save_dialog):
@@ -202,12 +273,14 @@ class TestLookupPhaseIceIh:
 - Qt dialog classes (`QFileDialog`, `QMessageBox`) — always mock in export tests
 - External processes (`gmx grompp`) — subprocess calls wrapped in helper functions
 - GUI rendering (VTK, OpenGL) — not tested in API-level tests
+- Entry routing helpers (`_is_pyside6_available`, `_has_display`) — mock for GUI mode tests
 
 **What NOT to Mock:**
 - Internal computation pipeline: test with REAL GenIce2-generated structures
 - Data structures: use actual `Candidate`, `InterfaceStructure`, `IonStructure` objects
 - GRO/TOP file writers: write to real `tmp_path` and verify file contents
 - Phase lookup: use real curve-based computation, not mocked lookups
+- CLI subprocess tests: use REAL subprocess invocation (not mocked argparse)
 
 ## Fixtures and Factories
 
@@ -252,9 +325,24 @@ class TestLookupPhaseIceIh:
       ...
   ```
 
+**Subprocess Test Helper:**
+- `run_quickice(*args, timeout=60)` in `tests/conftest.py` — the canonical subprocess CLI test helper
+- Import pattern: `from tests.conftest import run_quickice`
+- Returns `tuple[int, str, str]` — `(return_code, stdout, stderr)`
+- Default timeout: 60 seconds
+- Uses canonical invocation: `python -m quickice` (not `quickice.py`)
+  ```python
+  def run_quickice(*args: str, timeout: int = 60) -> tuple[int, str, str]:
+      import subprocess, sys
+      cmd = [sys.executable, "-m", "quickice"] + list(args)
+      result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+      return result.returncode, result.stdout, result.stderr
+  ```
+
 **Location:**
-- Root conftest: `tests/conftest.py` — expensive GenIce2 fixtures (module-scoped)
+- Root conftest: `tests/conftest.py` — expensive GenIce2 fixtures (module-scoped) + `run_quickice()` subprocess helper
 - Export conftest: `tests/test_output/conftest.py` — synthetic structures + mock dialog factories
+- Project conftest: `conftest.py` — custom marker registration
 - Inline fixtures: per-class or per-file `@pytest.fixture` for test-specific data
 - Shared helpers: `tests/e2e_export_helpers.py` — chain-building + GRO/TOP parsing
 
@@ -286,6 +374,21 @@ pytest --cov=quickice --cov-report=html
 - Files: `test_structure_generation.py` (generation tests), `test_e2e_ice_generation.py`, `test_e2e_workflow_chains.py`
 - Pattern: Use conftest fixtures for shared expensive structures, build chains inline
 
+**CLI Integration Tests (Subprocess):**
+- Test CLI argument validation and routing via subprocess
+- Verify exit codes: 0=success, 1=runtime error, 2=argument error
+- Verify stderr/stdout separation: `[PROGRESS]` on stderr, clean output on stdout
+- Files: `test_cli_integration.py`, `test_entry_point.py`
+- Pattern: `run_quickice(args...) → (rc, stdout, stderr)`, assert on return code and output
+- No `@pytest.mark.slow` needed for fast flag-validation tests
+
+**CLI Pipeline E2E Tests (Subprocess):**
+- Test full pipeline workflows with real GenIce2 computation via subprocess
+- Verify file output: GRO, TOP, ITP files exist and contain correct data
+- Files: `test_cli_pipeline.py` (marked `@pytest.mark.slow`)
+- Pattern: create temp output dir, run pipeline, assert file existence, cleanup in finally
+- Test classes: `TestPipelineFlagValidation`, `TestPipelineExitCodes`, `TestPipelineProgressReporting`, `TestPipelineBasicWorkflows`, `TestPipelineAdvancedWorkflows`, `TestPipelineExportCorrectness`
+
 **E2E Tests:**
 - Full pipeline from phase lookup through GROMACS export validation
 - Includes `gmx grompp` validation against actual GROMACS binary
@@ -303,6 +406,52 @@ pytest --cov=quickice --cov-report=html
 - Located in `tests/test_output/`
 
 ## Common Patterns
+
+**Subprocess CLI Testing:**
+```python
+from tests.conftest import run_quickice
+
+def test_valid_inputs():
+    returncode, stdout, stderr = run_quickice(
+        "--temperature", "273", "--pressure", "0.1", "--nmolecules", "100",
+        timeout=10,
+    )
+    assert returncode == 0
+    assert "Temperature: 273.0K" in stdout
+
+def test_invalid_args_exit_code_2():
+    rc, _, stderr = run_quickice(
+        "-T", "270", "-P", "0.1", "--interface", "--mode", "slab",
+        "--box-x", "3", "--box-y", "3", "--box-z", "5",
+        "--ice-thickness", "1.5",
+        # Missing --water-thickness for slab mode
+        timeout=120,
+    )
+    assert rc == 2
+```
+
+**CLI Pipeline File Output Testing:**
+```python
+@pytest.mark.slow
+def test_interface_slab(self):
+    outdir = make_temp_output_dir()
+    try:
+        rc, _, stderr = run_quickice(
+            "-T", "270", "-P", "0.1",
+            "--interface", "--mode", "slab",
+            "--box-x", "3", "--box-y", "3", "--box-z", "5",
+            "--ice-thickness", "1.5", "--water-thickness", "2.0",
+            "-o", outdir,
+            timeout=120,
+        )
+        assert rc == 0
+        outpath = Path(outdir)
+        assert (outpath / "interface.gro").exists()
+        assert (outpath / "interface.top").exists()
+        assert (outpath / "tip4p-ice.itp").exists()
+    finally:
+        shutil.rmtree(outdir, ignore_errors=True)
+```
 
 **Async/Worker Testing:**
 - Not directly tested — GUI worker threads are tested indirectly via export results
@@ -324,6 +473,11 @@ assert "500" in str(exc_info.value)
 with pytest.raises(ArgumentTypeError) as exc_info:
     validate_temperature("-1")
 assert "temperature" in str(exc_info.value).lower()
+
+# CLI subprocess error — exit code + stderr message
+rc, _, stderr = run_quickice("--temperature", "-1", "--pressure", "100", "--nmolecules", "100")
+assert rc != 0
+assert "Temperature must be between 0 and 500K" in stderr
 ```
 
 **Parameterized Testing:**
@@ -368,6 +522,30 @@ exit_code, stderr = run_gmx_grompp(workspace, gro_file="f1.gro", top_file="f1.to
 assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
 ```
 
+**Entry Routing Testing:**
+```python
+# Subprocess-based routing tests
+def test_no_args_shows_usage(self):
+    rc, stdout, stderr = run_quickice()
+    assert rc == 0
+    assert "python -m quickice" in stdout
+
+def test_cli_with_pipeline_flags(self):
+    rc, stdout, stderr = run_quickice(
+        "--cli", "-T", "250", "-P", "0.1", "-N", "96", "--no-diagram",
+        timeout=60,
+    )
+    assert rc == 0
+    assert "Temperature: 250.0K" in stdout
+
+# Mock-based routing tests (direct function call)
+def test_gui_missing_pyside6_error(self, capsys):
+    from quickice.entry import main
+    with unittest.mock.patch('quickice.entry._is_pyside6_available', return_value=False):
+        rc = main(['quickice', '--gui'])
+    assert rc == 1
+```
+
 **Test Data Paths:**
 ```python
 # Standard pattern for referencing test data files
@@ -396,13 +574,18 @@ MDP_PATH = Path(__file__).resolve().parent / "em.mdp"
 2. **Place E2E tests** in `tests/test_e2e_<workflow>.py`
 3. **Place export tests** in `tests/test_output/test_gromacs_export_<tab>.py`
 4. **Place regression tests** in `tests/test_scancode_bugs_<area>.py` with bug ID class names
-5. **Use module-scoped fixtures** for any GenIce2-dependent structure generation
-6. **Never import Qt modules** in API-level tests; mock `QFileDialog`/`QMessageBox` for export tests
-7. **Use `e2e_export_helpers.py`** for chain-building helpers; do NOT import from other test files
-8. **Add `@pytest.mark.slow`** for tests taking >5 seconds
-9. **Assert with descriptive messages** on non-obvious checks, especially for regression tests
-10. **Test GROMACS compatibility** by verifying `gmx grompp` exit code 0 for new export features
+5. **Place CLI integration tests** in `tests/test_cli_integration.py` or `tests/test_cli_pipeline.py`
+6. **Use `run_quickice(*args, timeout=N)`** from `tests.conftest` for all subprocess CLI tests
+7. **Use module-scoped fixtures** for any GenIce2-dependent structure generation
+8. **Never import Qt modules** in API-level tests; mock `QFileDialog`/`QMessageBox` for export tests
+9. **Use `e2e_export_helpers.py`** for chain-building helpers; do NOT import from other test files
+10. **Add `@pytest.mark.slow`** for tests taking >5 seconds (GenIce2 generation, subprocess pipeline)
+11. **Assert with descriptive messages** on non-obvious checks, especially for regression tests
+12. **Test GROMACS compatibility** by verifying `gmx grompp` exit code 0 for new export features
+13. **Test CLI exit codes**: 0=success, 1=runtime error, 2=argument error
+14. **Verify stderr/stdout separation** for CLI pipeline tests: `[PROGRESS]` on stderr only
+15. **Always cleanup temp directories** in CLI pipeline tests: `try/finally` with `shutil.rmtree(outdir, ignore_errors=True)`
 
 ---
 
-*Testing analysis: 2026-06-12*
+*Testing analysis: 2026-06-15*

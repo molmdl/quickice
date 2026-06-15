@@ -1,172 +1,219 @@
 # Architecture
 
-**Analysis Date:** 2026-06-12
+**Analysis Date:** 2026-06-15
 
 ## Pattern Overview
 
-**Overall:** MVVM (Model-View-ViewModel) with QThread-based background workers
+**Overall:** Dual-path application with shared core — CLI pipeline (ordered step execution) and GUI (MVVM with QThread workers), both driving the same `quickice.structure_generation` and `quickice.output` layers.
 
 **Key Characteristics:**
-- Model layer is pure computational (no Qt dependencies)
-- ViewModel (`MainViewModel`) mediates between View and Model via Qt Signal/Slot
-- View is declarative PySide6 widgets connecting to ViewModel signals
-- Background workers use QObject-moved-to-QThread pattern (NOT QThread subclassing)
-- Two entry points: CLI (`quickice.main`) and GUI (`quickice.gui.__main__`)
-- Data flows between tabs via stored results on `MainWindow` (not through ViewModel)
+- Router pattern at unified entry point: `--cli`/`--gui`/flag detection routes to CLI or GUI path
+- CLI uses fail-fast ordered pipeline (source→interface→custom→solute→ion→export)
+- GUI uses MVVM (MainWindow→ViewModel→Workers) with signal/slot cross-tab data flow
+- Shared dataclass types (`quickice/structure_generation/types.py`) as the contract between CLI and GUI
+- Duck-typing attribute propagation for IonStructure runtime attrs (both CLI and GUI paths)
+- Heavy imports are lazy (inside function bodies) to avoid PySide6/VTK in headless mode
+- No Qt imports in CLI pipeline module (`quickice/cli/pipeline.py`)
 
 ## Layers
 
-**View Layer (GUI):**
-- Purpose: UI panels, 3D viewers, user interaction
-- Location: `quickice/gui/`
-- Contains: PySide6 widgets, VTK viewers, export dialogs, input validators
-- Depends on: ViewModel (`quickice/gui/viewmodel.py`)
-- Used by: End user
-
-**ViewModel Layer:**
-- Purpose: Orchestrates workers, manages UI state, bridges View↔Model
-- Location: `quickice/gui/viewmodel.py`
-- Contains: `MainViewModel` class with Qt signals for state propagation
-- Depends on: Workers (`quickice/gui/workers.py`), Model layer (imported inside workers)
-- Used by: View layer (signal connections)
-
-**Model Layer:**
-- Purpose: Pure computational logic for ice structure generation, phase mapping, ranking, export
-- Location: `quickice/structure_generation/`, `quickice/phase_mapping/`, `quickice/ranking/`, `quickice/output/`, `quickice/validation/`, `quickice/utils/`
-- Contains: Dataclasses, generators, inserters, parsers, writers, error classes
-- Depends on: GenIce2, numpy, scipy, iapws (no Qt dependencies)
-- Used by: Workers (in background threads), CLI (synchronous)
-
-**Worker Layer:**
-- Purpose: Run Model operations in background threads to prevent UI freezing
-- Location: `quickice/gui/workers.py`, `quickice/gui/hydrate_worker.py`, `quickice/gui/custom_molecule_worker.py`
-- Contains: QObject-based workers with progress/status/error signals
-- Depends on: Model layer (imported inside `run()` for thread safety)
-- Used by: ViewModel (creates and manages workers)
+**Entry/Routing Layer:**
+- Purpose: Detect mode (CLI/GUI/help), route to correct path
+- Location: `quickice/entry.py`, `quickice/__main__.py`, `quickice.py`
+- Contains: Router logic, PySide6 availability check, display check, pipeline flag detection
+- Depends on: `quickice.cli.parser` (for help/version), `quickice.main` (for CLI), `quickice.gui.main_window` (for GUI)
+- Used by: `python -m quickice`, `python quickice.py`, PyInstaller binary
 
 **CLI Layer:**
-- Purpose: Command-line interface for headless/scripted use
-- Location: `quickice/cli/`, `quickice/main.py`
-- Contains: Argparse parser, main orchestration function
-- Depends on: Model layer (synchronous calls, same as Worker but without threading)
-- Used by: `quickice.py` entry point
+- Purpose: Argument parsing, pipeline orchestration, headless computation
+- Location: `quickice/cli/`
+- Contains: Argument parser, pipeline class, ITP helper functions
+- Depends on: `quickice.main`, `quickice.structure_generation`, `quickice.output`, `quickice.validation`
+- Used by: Entry router when `--cli` or pipeline flags detected
+- Key invariant: NO Qt/PySide6/VTK imports in any `quickice/cli/` module
+
+**GUI Layer:**
+- Purpose: Interactive visual application with 3D molecular viewers
+- Location: `quickice/gui/`
+- Contains: MainWindow (MVVM View), ViewModel, Workers, Panels, Viewers, Renderers, Exporters
+- Depends on: `quickice.structure_generation`, `quickice.output`, `quickice.phase_mapping`, PySide6, VTK
+- Used by: Entry router when `--gui` explicit or default mode with display available
+
+**Structure Generation Layer (Core):**
+- Purpose: Physics-based generation of ice, hydrate, interface, solute, ion, custom molecule structures
+- Location: `quickice/structure_generation/`
+- Contains: Generator classes, builder functions, data types, error types, GRO/ITP parsers, overlap resolver
+- Depends on: GenIce2, scipy (cKDTree), numpy
+- Used by: Both CLI and GUI paths (shared core)
+
+**Output/Export Layer:**
+- Purpose: Write GROMACS .gro/.top/.itp files, PDB files, phase diagrams
+- Location: `quickice/output/`
+- Contains: GROMACS writers (2705-line mega-module), PDB writer, phase diagram generator, validator, orchestrator
+- Depends on: `quickice.structure_generation.types`, `quickice.ranking`
+- Used by: Both CLI and GUI paths
+
+**Phase Mapping Layer:**
+- Purpose: Map temperature/pressure to ice phase via IAPWS melting curves
+- Location: `quickice/phase_mapping/`
+- Contains: Lookup engine, melting curves, solid boundaries, triple points, ice density data
+- Depends on: `iapws` (IAPWS-97 standard), bundled `ice_phases.json`
+- Used by: Structure generation layer, GUI phase diagram widget
+
+**Ranking Layer:**
+- Purpose: Score and rank generated ice candidates by energy, density, diversity
+- Location: `quickice/ranking/`
+- Contains: Scorer functions, ranking result types
+- Depends on: `quickice.structure_generation.types`
+- Used by: CLI ice-only workflow, GUI Ice Generation tab
+
+**Validation Layer:**
+- Purpose: Input validation (temperature, pressure, box dimensions) as argparse type converters
+- Location: `quickice/validation/`
+- Contains: Validator functions used by CLI parser
+- Depends on: Nothing (stdlib only)
+- Used by: `quickice/cli/parser.py`
+
+**Data Layer:**
+- Purpose: Bundled force-field ITP files, GRO templates, custom molecule examples
+- Location: `quickice/data/`
+- Contains: `tip4p-ice.itp`, `ch4_hydrate.itp`, `thf_hydrate.itp`, `ch4_liquid.itp`, `thf_liquid.itp`, `tip4p.gro`, `custom/etoh.*`
+- Depends on: Nothing
+- Used by: GROMACS writer, hydrate generator, solute inserter, CLI ITP helpers
 
 ## Data Flow
 
-**Ice Generation Flow (Tab 0):**
+**CLI Pipeline (ordered step execution, fail-fast):**
 
-1. User enters T, P, N in `InputPanel` → clicks Generate
-2. `MainWindow._on_generate_clicked()` validates inputs, calls `MainViewModel.start_generation()`
-3. ViewModel creates `GenerationWorker`, moves it to `QThread`, starts thread
-4. Worker (in background thread): `lookup_phase()` → `generate_candidates()` → `rank_candidates()`
-5. Worker emits `finished` signal → ViewModel forwards via `generation_complete` and `ranked_candidates_ready` signals
-6. `MainWindow._on_candidates_ready()` stores result, updates viewer, populates Interface tab dropdown
+1. User invokes `python -m quickice [flags]`
+2. `quickice/__main__.py` → `quickice/entry.py::main(argv)` routes to CLI or GUI
+3. CLI path: `entry.main()` → `quickice/main.py::main()` → `get_arguments()` → `CLIPipeline(args).execute()`
+4. Pipeline steps execute sequentially, each storing result in `self._*_result`:
+   - Step 1 (Source): `generate_candidates()` or `HydrateStructureGenerator.generate()` → `self._ice_candidate` or `self._hydrate_result`
+   - Step 2 (Interface): `generate_interface(candidate, config)` → `self._interface_result`
+   - Step 3 (Custom): `CustomMoleculeInserter.place_random/place_custom()` → `self._custom_result`
+   - Step 4 (Solute): `SoluteInserter.insert_solutes()` → `self._solute_result`
+   - Step 5 (Ion): `insert_ions()` with duck-typing attribute propagation → `self._ion_result`
+   - Step 6 (Export): GROMACS writer dispatch + ITP copy → output directory
+5. Each step checks `self._get_source_structure(source_name)` for cross-step data flow
+6. Any step returning non-zero stops execution (fail-fast)
 
-**Interface Generation Flow (Tab 2):**
+**GUI Cross-Tab Data Flow:**
 
-1. User configures mode (slab/pocket/piece) in `InterfacePanel`, selects candidate
-2. `MainWindow._on_interface_generate()` builds `InterfaceConfig`, calls `MainViewModel.start_interface_generation()`
-3. ViewModel creates `InterfaceGenerationWorker`, moves to QThread
-4. Worker calls `generate_interface(candidate, config)` which routes to `assemble_slab`/`assemble_pocket`/`assemble_piece`
-5. Worker emits result → ViewModel forwards → `MainWindow._on_interface_generation_complete()` stores result, renders in 3D viewer, updates Ion/Solute/Custom panels with liquid volume
+1. Ice Generation (Tab 0) → `_current_result` (RankingResult) → Interface Construction (Tab 2) via `_on_refresh_candidates()`
+2. Hydrate Generation (Tab 1) → `_current_hydrate_result` → Interface Construction (Tab 2) via `_on_interface_hydrate_generate()` using `hydrate.to_candidate()`
+3. Interface Construction (Tab 2) → `_current_interface_result` → Solute Panel (Tab 4), Custom Molecule Panel (Tab 3), Ion Panel (Tab 5) via `set_interface_available(True)`
+4. Custom Molecule (Tab 3) → `_current_custom_molecule_result` → Solute Panel (source=Custom), Ion Panel (source=Custom Molecule)
+5. Solute Insertion (Tab 4) → `_current_solute_result` → Ion Panel (Tab 5, source=Solute)
+6. Ion Insertion (Tab 5) → `_current_ion_result` → GROMACS export
 
-**Hydrate Generation Flow (Tab 1):**
-
-1. User configures lattice/guest/occupancy in `HydratePanel`
-2. `MainWindow._on_hydrate_generate_clicked()` creates `HydrateWorker(QThread)`
-3. Worker runs `HydrateStructureGenerator.generate(config)`
-4. Result stored as `_current_hydrate_result`, can be used as source for Interface Construction tab
-
-**Cross-Tab Data Flow:**
-
-1. Ice Generation (Tab 0) → Interface Construction (Tab 2): ranked candidates passed via `interface_panel.update_candidates()`
-2. Interface Construction (Tab 2) → Custom Molecule (Tab 3): `custom_molecule_panel.set_interface_structure()`
-3. Interface Construction (Tab 2) → Solute Insertion (Tab 4): `solute_panel.set_liquid_volume()`, `solute_panel.set_interface_available()`
-4. Interface Construction (Tab 2) → Ion Insertion (Tab 5): `ion_panel.set_liquid_volume()`, `ion_panel.set_interface_available()`
-5. Custom Molecule (Tab 3) → Solute (Tab 4): `solute_panel.set_custom_molecule_structure()`
-6. Custom Molecule (Tab 3) → Ion (Tab 5): `ion_panel.set_custom_molecule_structure()`
-7. Solute (Tab 4) → Ion (Tab 5): `ion_panel.set_solute_structure()`
+**Key cross-tab pattern:** MainWindow stores results as instance attributes (`_current_*_result`). Downstream tabs access these via MainWindow methods. Duck-typing sets runtime attributes on InterfaceStructure (e.g., `interface.solute_type = ...`, `interface.custom_molecule_positions = ...`).
 
 **State Management:**
-- All intermediate results stored as instance variables on `MainWindow` (e.g., `_current_result`, `_current_interface_result`, `_current_hydrate_result`, `_current_ion_result`, `_current_solute_result`, `_current_custom_molecule_result`)
-- ViewModel caches last result: `_last_ranking_result`, `_last_interface_result`
-- No global state or state management library; Qt widget state is inherently preserved
+- CLI: Pipeline stores intermediate results as `self._*_result` attributes on `CLIPipeline`
+- GUI: MainWindow stores results as `self._current_*_result`; ViewModel stores `_last_ranking_result` and `_last_interface_result`
+- Neither uses a formal state management library; state is held in object attributes
 
 ## Key Abstractions
 
 **Candidate:**
-- Purpose: A single generated ice structure with positions, atom names, cell vectors, metadata
-- Examples: `quickice/structure_generation/types.py` (line 99)
-- Pattern: Frozen dataclass with numpy arrays; created by `IceStructureGenerator._generate_single()`
+- Purpose: Single generated ice structure (positions + atom_names + cell + phase info)
+- Examples: `quickice/structure_generation/types.py` (dataclass), generated by `IceStructureGenerator`
+- Pattern: Immutable dataclass; hydrate converts via `to_candidate()`
 
 **InterfaceStructure:**
-- Purpose: Combined ice + water + guest positions with region boundaries
-- Examples: `quickice/structure_generation/types.py` (line 222)
-- Pattern: Dataclass with `ice_atom_count`/`water_atom_count`/`guest_atom_count` partition markers and `MoleculeIndex` list for variable-size molecules
+- Purpose: Combined ice + water (+guest) positions with phase boundary markers
+- Examples: `quickice/structure_generation/types.py` (dataclass), generated by `assemble_slab/assemble_pocket/assemble_piece`
+- Pattern: Mutable dataclass — downstream modules (ion/solute inserters) add runtime attributes via duck-typing (e.g., `interface.solute_type`, `interface.custom_molecule_positions`)
 
-**InterfaceConfig:**
-- Purpose: User-specified parameters for interface generation (mode, box, thickness, etc.)
-- Examples: `quickice/structure_generation/types.py` (line 152)
-- Pattern: Validated dataclass with `from_dict()` factory for UI input mapping
+**HydrateStructure:**
+- Purpose: Hydrate lattice with water framework + guest molecules
+- Examples: `quickice/structure_generation/types.py`, generated by `HydrateStructureGenerator`
+- Pattern: Immutable dataclass; converts to Candidate via `to_candidate()` for interface generation
 
-**Worker Pattern (QObject → QThread):**
-- Purpose: Run Model operations off the UI thread
-- Examples: `quickice/gui/workers.py` (`GenerationWorker`, `InterfaceGenerationWorker`), `quickice/gui/custom_molecule_worker.py` (`CustomMoleculeWorker`)
-- Pattern: QObject subclass with `run()` method, moved to QThread via `moveToThread()`. Model imports happen inside `run()` to avoid blocking main thread. Signals: progress(int), status(str), finished(object), error(str), cancelled()
+**CLIPipeline:**
+- Purpose: Ordered step orchestrator for CLI workflow
+- Examples: `quickice/cli/pipeline.py`
+- Pattern: Command pattern — each step is a method returning exit code; `_get_source_structure()` resolves cross-step data
 
-**HydrateWorker (QThread subclass):**
-- Purpose: Background hydrate generation
-- Examples: `quickice/gui/hydrate_worker.py`
-- Pattern: Subclasses QThread directly (different from the QObject→QThread pattern). Signals: progress_updated(str), generation_complete(object), generation_error(str)
+**MainWindow (MVVM View):**
+- Purpose: Top-level GUI window, signal hub, cross-tab data router
+- Examples: `quickice/gui/main_window.py` (2024 lines)
+- Pattern: MVVM View — creates ViewModel, connects signals, stores results, dispatches to exporters
 
 **MoleculetypeRegistry:**
-- Purpose: Unique GROMACS moleculetype naming to distinguish same molecule from different sources
+- Purpose: Unique GROMACS moleculetype naming (distinguish hydrate CH4_H from liquid CH4_L)
 - Examples: `quickice/structure_generation/moleculetype_registry.py`
-- Pattern: Singleton-style registry with suffix naming (_H for hydrate, _L for liquid)
+- Pattern: Singleton-like registry with `_H`/`_L` suffixes
 
 ## Entry Points
 
-**GUI Entry:**
-- Location: `quickice/gui/__main__.py` → `quickice/gui/main_window.py::run_app()`
-- Triggers: `python -m quickice.gui`
-- Responsibilities: Creates QApplication, MainWindow, starts event loop. Configures OpenGL for remote X11.
+**`python -m quickice`:**
+- Location: `quickice/__main__.py`
+- Triggers: `python -m quickice` invocation
+- Responsibilities: Delegates to `quickice/entry.py::main()`
 
-**CLI Entry:**
-- Location: `quickice/main.py::main()` via `quickice.py`
-- Triggers: `python quickice.py --temperature 300 --pressure 100 --nmolecules 100`
-- Responsibilities: Parses args, calls Model layer synchronously, prints results, writes GROMACS files
+**`python quickice.py`:**
+- Location: `quickice.py`
+- Triggers: Direct script execution (backward compat)
+- Responsibilities: Delegates to `quickice/entry.py::main()`
 
-**Package Entry:**
-- Location: `quickice/__init__.py` (defines `__version__ = "4.5.0"`)
-- Triggers: `import quickice`
-- Responsibilities: Version information only
+**`python -m quickice.gui`:**
+- Location: `quickice/gui/__main__.py`
+- Triggers: `python -m quickice.gui` invocation (rare, usually via `--gui`)
+- Responsibilities: Delegates to `run_app()` — launches PySide6 application
+
+**Entry Router (`quickice/entry.py::main()`):**
+- Routing priority:
+  1. No args → print help, return 0
+  2. `--help`/`-h` → argparse help (exits 0)
+  3. `--version`/`-V` → argparse version (exits 0)
+  4. `--gui` → check PySide6 (`importlib.util.find_spec`) + display (`_has_display()`) → launch GUI
+  5. `--cli` → strip `--cli`, delegate to `quickice/main.py::main()`
+  6. Pipeline flags detected (`_has_pipeline_flags()`) → implicit CLI mode
+  7. No flags → print help, return 0
+
+**CLI Pipeline Entry (`quickice/main.py::main()`):**
+- Detects pipeline flags (interface, hydrate, custom_gro, solute_type, ion_concentration)
+- If pipeline flags: delegates to `CLIPipeline(args).execute()`
+- If ice-only: runs candidate generation → ranking → PDB/GROMACS export (backward compat)
 
 ## Error Handling
 
-**Strategy:** Layered error hierarchy with fail-fast validation
+**Strategy:** Fail-fast with descriptive error messages + exit codes
 
 **Patterns:**
-- Custom exception hierarchy: `StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError`
-- Phase mapping errors: `PhaseMappingError` → `UnknownPhaseError`
-- Workers catch all exceptions, emit `error` signal with message string
-- ViewModel forwards errors to View which shows `QMessageBox.critical()`
-- CLI catches specific exceptions and returns non-zero exit codes
-- InterfaceConfig/CustomMoleculeConfig have `__post_init__` validation that raises `ValueError`
-- `InterfaceGenerationError` carries `mode` attribute for context
+- CLI pipeline: Each step returns `0` (success) or non-zero (failure). First failure stops execution.
+- CLI parser: `argparse.ArgumentParser.error()` raises `SystemExit(2)` for argument errors
+- GUI: `QMessageBox.critical()` for generation errors; `QMessageBox.warning()` for missing prerequisites
+- Structure generation: Custom exception hierarchy (`StructureGenerationError` → `UnsupportedPhaseError`, `InterfaceGenerationError`)
+- Entry router: Returns integer exit codes (0=success, 1=error, 2=argparse errors)
 
 ## Cross-Cutting Concerns
 
-**Logging:** Python `logging` module with `logger = logging.getLogger(__name__)` pattern throughout. MainWindow uses `logger` for debug/info. Workers emit `status` signals for UI log panel.
+**Logging:** `logging.getLogger(__name__)` pattern in all modules; CLI pipeline uses `logger.error()` + `report_progress()` to stderr
 
-**Validation:** Dual validation system:
-- CLI: `quickice/validation/validators.py` as argparse type converters (raise `ArgumentTypeError`)
-- GUI: `quickice/gui/validators.py` returns `(bool, str)` tuples for inline error display
-- Model: `__post_init__` on dataclass configs for parameter validation
+**Validation:** `quickice/validation/validators.py` provides argparse type converters for T, P, N, box dimensions; `InterfaceConfig.__post_init__()` validates overlap_threshold; `HydrateConfig.__post_init__()` validates lattice/guest types and ranges
 
-**Authentication:** Not applicable (desktop application, no auth)
+**Authentication:** Not applicable (local scientific application, no auth)
 
-**Threading:** Workers must import Model modules inside `run()` method (deferred imports) to avoid blocking the main thread during heavy GenIce2 imports. `QThread.currentThread().isInterruptionRequested()` checked at start and between steps for cancellation support. Thread cleanup: `thread.finished.connect(worker.deleteLater)` + `thread.finished.connect(thread.deleteLater)`.
+**Thread Safety:**
+- GUI GenerationWorker and InterfaceGenerationWorker: QObject + moveToThread pattern (correct)
+- GUI HydrateWorker: Subclasses QThread directly (not migrated; still functional but not recommended pattern)
+- GUI CustomMoleculeWorker: QObject + moveToThread pattern (correct)
+- CLI pipeline: Single-threaded synchronous execution (no thread concerns)
+
+**Duck-Typing Attribute Propagation:**
+- Both CLI (`quickice/cli/pipeline.py::_run_ion_step()`) and GUI (`quickice/gui/main_window.py::_on_insert_ions()`) set runtime attributes on InterfaceStructure:
+  - `interface.solute_type`, `interface.solute_positions`, `interface.solute_atom_names`, `interface.solute_n_molecules`, `interface.solute_molecule_indices`, `interface.solute_registry`
+  - `interface.custom_molecule_positions`, `interface.custom_molecule_atom_names`, `interface.custom_molecule_count`, `interface.custom_molecule_moleculetype`, `interface.custom_gro_path`, `interface.custom_itp_path`
+- These are NOT declared in the InterfaceStructure dataclass — they are set at runtime, mirroring each other across CLI and GUI paths
+
+**Lazy Import Pattern:**
+- All heavy imports (PySide6, VTK, GenIce2) are inside function bodies, never at module top level
+- `entry.py` uses `importlib.util.find_spec('PySide6')` to check availability without importing
+- Worker `run()` methods import structure generation modules inside the thread
 
 ---
 
-*Architecture analysis: 2026-06-12*
+*Architecture analysis: 2026-06-15*
