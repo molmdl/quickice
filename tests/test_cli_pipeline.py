@@ -7,6 +7,7 @@ Tests the full CLI pipeline via subprocess, covering:
 - Basic workflows (slab, pocket, piece, hydrate, solute, ion)
 - Advanced workflows (hydrate+interface+solute, custom+solute+ion, etc.)
 - Export correctness (GRO atom counts, TOP molecules, ITP files)
+- Grompp validation (CLI output passes gmx grompp)
 
 Uses the subprocess pattern from test_cli_integration.py with longer
 timeouts for pipeline steps that involve GenIce2 generation.
@@ -14,12 +15,18 @@ timeouts for pipeline steps that involve GenIce2 generation.
 
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from tests.conftest import run_quickice
+from tests.conftest import run_quickice, gmx_skipif
+
+# Add tests/ directory to sys.path for e2e_export_helpers import
+sys.path.insert(0, str(Path(__file__).parent))
+
+from e2e_export_helpers import run_gmx_grompp, MDP_PATH
 
 # Custom molecule data paths
 ETOH_GRO = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.gro")
@@ -675,5 +682,88 @@ class TestPipelineExportCorrectness:
                 timeout=120,
             )
             assert rc != 0, "--no-overwrite should cause non-zero exit code"
+        finally:
+            shutil.rmtree(outdir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Grompp validation tests (subprocess, 60-120s each)
+# ---------------------------------------------------------------------------
+
+
+@gmx_skipif
+@pytest.mark.slow
+class TestPipelineGromppValidation:
+    """Validate CLI pipeline output passes gmx grompp.
+
+    Tests the full CLI subprocess → gmx grompp path, validating
+    CLI-specific ITP staging (copy_itp_files_for_structure from
+    itp_helpers.py) which differs from API test staging.
+    """
+
+    def test_slab_interface_grompp(self):
+        """Slab interface export from CLI passes gmx grompp."""
+        outdir = make_temp_output_dir()
+        try:
+            rc, stdout, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--interface", "--mode", "slab",
+                "--box-x", "3", "--box-y", "3", "--box-z", "5",
+                "--ice-thickness", "1.5", "--water-thickness", "2.0",
+                "--gromacs", "-g", "--no-diagram",
+                "-o", outdir,
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed: {stderr[-500:]}"
+
+            # Run gmx grompp on output
+            workspace = Path(outdir)
+            gro_file = "interface.gro"
+            top_file = "interface.top"
+
+            # Verify output files exist
+            assert (workspace / gro_file).exists(), f"{gro_file} not found"
+            assert (workspace / top_file).exists(), f"{top_file} not found"
+
+            # Copy MDP file
+            shutil.copy(MDP_PATH, workspace / "em.mdp")
+
+            exit_code, gmx_stderr = run_gmx_grompp(
+                workspace, gro_file=gro_file, top_file=top_file
+            )
+            assert exit_code == 0, f"gmx grompp failed:\n{gmx_stderr[-500:]}"
+        finally:
+            shutil.rmtree(outdir, ignore_errors=True)
+
+    def test_solute_ion_chain_grompp(self):
+        """Interface→Solute→Ion chain export from CLI passes gmx grompp."""
+        outdir = make_temp_output_dir()
+        try:
+            rc, stdout, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--interface", "--mode", "slab",
+                "--box-x", "3", "--box-y", "3", "--box-z", "5",
+                "--ice-thickness", "1.5", "--water-thickness", "2.0",
+                "--solute-type", "CH4", "--solute-concentration", "0.15",
+                "--ion-concentration", "0.15",
+                "--gromacs", "-g", "--no-diagram",
+                "-o", outdir,
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed: {stderr[-500:]}"
+
+            workspace = Path(outdir)
+            # Ion is the most downstream step → ion.gro, ion.top
+            gro_file = "ion.gro"
+            top_file = "ion.top"
+
+            assert (workspace / gro_file).exists(), f"{gro_file} not found"
+            assert (workspace / top_file).exists(), f"{top_file} not found"
+
+            shutil.copy(MDP_PATH, workspace / "em.mdp")
+            exit_code, gmx_stderr = run_gmx_grompp(
+                workspace, gro_file=gro_file, top_file=top_file
+            )
+            assert exit_code == 0, f"gmx grompp failed:\n{gmx_stderr[-500:]}"
         finally:
             shutil.rmtree(outdir, ignore_errors=True)
