@@ -821,6 +821,32 @@ Ensure coordinates are numeric with 3 decimal places:
 
 ---
 
+## Workflow Example
+
+After creating your GRO and ITP files, you can test them with the QuickIce hydrate-interface-custom-ion workflow script:
+
+```bash
+# Run with your custom molecule and default settings
+./scripts/hydrate-interface-custom-ion.sh \
+  --custom-gro my_molecule.gro \
+  --custom-itp my_molecule.itp
+
+# Customize temperature, ion concentration, and hydrate type
+./scripts/hydrate-interface-custom-ion.sh \
+  --custom-gro my_molecule.gro \
+  --custom-itp my_molecule.itp \
+  --temperature 270 \
+  --ion-conc 0.3 \
+  --lattice-type sII \
+  --guest THF
+```
+
+This script generates a clathrate hydrate structure, creates an ice-water interface, inserts your custom molecules into the liquid phase, and adds NaCl ions — producing GROMACS-ready output files in a single command.
+
+See the [CLI Reference](cli-reference.md#example-scripts) for additional example scripts.
+
+---
+
 ## References
 
 ### GROMACS Documentation

@@ -282,6 +282,7 @@ GenIce2 lattice implementations are available for 8 ice polymorphs:
 - **[GUI Guide](docs/gui-guide.md)** — Complete graphical interface documentation
 - **[CLI Reference](docs/cli-reference.md)** — Command-line interface for ice generation
 - **[GRO/ITP Guide](docs/gro-itp-guide.md)** — Preparing custom molecule files
+- **[Example Scripts](scripts/)** — Ready-made CLI examples and workflow scripts
 - **[Ranking Algorithm](docs/ranking.md)** — How candidates are scored
 - **[Design Principles](docs/principles.md)** — Project architecture
 
