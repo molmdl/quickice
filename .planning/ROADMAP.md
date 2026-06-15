@@ -451,8 +451,8 @@ Plans:
 - [x] 37-16-PLAN.md — Update README_bin.md [Wave 3]
 - [x] 37-17-PLAN.md — Update setup.sh [Wave 4]
 - [x] 37-18-PLAN.md — Backward compat + full integration verification [Wave 5]
-- [ ] 37-19-PLAN.md — CLI examples script + CLI reference update [Wave 6]
-- [ ] 37-20-PLAN.md — Hydrate-interface-custom-ion workflow script + doc updates [Wave 6]
+- [x] 37-19-PLAN.md — CLI examples script + CLI reference update [Wave 6]
+- [x] 37-20-PLAN.md — Hydrate-interface-custom-ion workflow script + doc updates [Wave 6]
 
 ---
 
@@ -512,7 +512,7 @@ Plans:
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
-| 37 - Unified Entry Point | ⏳ In Progress | 18 | 20 |
+| 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
