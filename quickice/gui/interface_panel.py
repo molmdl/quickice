@@ -258,13 +258,13 @@ class InterfacePanel(QWidget):
         self.source_combo.addItems(["Ice Candidate", "Hydrate Structure"])
         self.source_combo.setToolTip(
             "Select source for interface:\n"
-            "• Ice Candidate — Use ice structure from Tab 1\n"
-            "• Hydrate Structure — Generate hydrate directly in Tab 3"
+            "• Ice Candidate — Use ice structure from Tab 0\n"
+            "• Hydrate Structure — Generate hydrate directly in Tab 1"
         )
         source_row.addWidget(source_label)
         source_row.addWidget(HelpIcon(
             "Source type for interface generation. Ice Candidate uses existing ice structures. "
-            "Hydrate Structure generates hydrate lattices (sI, sII, sH) directly without going to Tab 2."
+            "Hydrate Structure generates hydrate lattices (sI, sII, sH) directly without going to Tab 1."
         ))
         source_row.addWidget(self.source_combo)
         source_row.addStretch()
@@ -421,7 +421,7 @@ class InterfacePanel(QWidget):
         candidate_label = QLabel("Candidate:")
         self.candidate_dropdown = QComboBox()
         self.candidate_dropdown.setMinimumWidth(200)
-        self.candidate_dropdown.setToolTip("Select an ice candidate from Tab 1 for interface generation")
+        self.candidate_dropdown.setToolTip("Select an ice candidate from Tab 0 for interface generation")
         self.candidate_dropdown.addItem("No candidates - generate ice first")
         self.candidate_dropdown.setEnabled(False)
         candidate_row.addWidget(candidate_label)
@@ -433,7 +433,7 @@ class InterfacePanel(QWidget):
         
         # Refresh button row
         self.refresh_btn = QPushButton("Refresh candidates")
-        self.refresh_btn.setToolTip("Sync candidate list from Ice Generation tab.\nClick after generating new candidates in Tab 1.")
+        self.refresh_btn.setToolTip("Sync candidate list from Ice Generation tab.\nClick after generating new candidates in Tab 0.")
         left_layout.addWidget(self.refresh_btn)
         
         left_layout.addSpacing(10)
@@ -441,7 +441,7 @@ class InterfacePanel(QWidget):
         # Generate button row
         self.generate_btn = QPushButton("Generate Interface")
         self.generate_btn.setEnabled(False)
-        self.generate_btn.setToolTip("Generate ice candidates in Tab 1 first")
+        self.generate_btn.setToolTip("Generate ice candidates in Tab 0 first")
         left_layout.addWidget(self.generate_btn)
         
         left_layout.addSpacing(15)
@@ -491,7 +491,7 @@ class InterfacePanel(QWidget):
             self._viewer_stack.addWidget(self._interface_viewer)
         else:
             # Fallback: show message that 3D viewer requires local display
-            # Consistent with Tab 1 behavior
+            # Consistent with Tab 0 behavior
             fallback_label = QLabel(
                 "3D Interface Viewer requires a local display.\n\n"
                 "If running remotely, clone to your local machine\n"
@@ -558,7 +558,7 @@ class InterfacePanel(QWidget):
             if self._candidates:
                 self.generate_btn.setToolTip("Click to generate interface structure with current configuration")
             else:
-                self.generate_btn.setToolTip("Generate ice candidates in Tab 1 first")
+                self.generate_btn.setToolTip("Generate ice candidates in Tab 0 first")
 
         # Emit configuration changed signal
         self.configuration_changed.emit()
@@ -635,7 +635,7 @@ class InterfacePanel(QWidget):
             self.candidate_dropdown.addItem("No candidates - generate ice first")
             self.candidate_dropdown.setEnabled(False)
             self.generate_btn.setEnabled(False)
-            self.generate_btn.setToolTip("Generate ice candidates in Tab 1 first")
+            self.generate_btn.setToolTip("Generate ice candidates in Tab 0 first")
         else:
             # Populate dropdown with ranked candidates
             self.candidate_dropdown.setEnabled(True)
