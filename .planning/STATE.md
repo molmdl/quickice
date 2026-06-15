@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point COMPLETE — All 20 plans done
+**Current focus:** Phase 37-unified-entry-point — 19 of 20 plans done
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37-unified-entry-point |
-| Plan | 20 of 20 |
-| Status | Phase Complete — All 20 plans done |
-| Last activity | 2026-06-15 — Completed 37-20 (hydrate-workflow-script) |
+| Plan | 19 of 20 |
+| Status | In Progress — 37-19 complete |
+| Last activity | 2026-06-15 — Completed 37-19-PLAN.md (cli-examples-and-reference) |
 
-**Progress:** ██████████ 100% (20/20 plans in Phase 37, 235+ plans across all milestones)
+**Progress:** █████████░ 95% (19/20 plans in Phase 37, 235+ plans across all milestones)
 
 ---
 
@@ -503,6 +503,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | CLI pipeline output goes to stderr | [PROGRESS] messages written to stderr, not stdout; test assertions must check combined output | ✓ Shipped (37-10) |
 | No-args test updated for unified entry point | python -m quickice with no args returns exit 0 with help (like git); old behavior was exit 1 | ✓ Shipped (37-08) |
 | Backward-compat doc references acceptable | docs/cli-reference.md and README.md mention python quickice.py only in backward-compat context | ✓ Shipped (37-18) |
+| CLI examples reference script with 39 commented-out commands | All CLI flag combinations documented in scripts/cli-examples.sh; safe to execute (exits 0) | ✓ Shipped (37-19) |
+| Example Scripts section in CLI reference doc | Links both cli-examples.sh and hydrate-interface-custom-ion.sh from docs/cli-reference.md | ✓ Shipped (37-19) |
 | Hydrate workflow script for full pipeline | Bash script chaining hydrate→interface→custom→ion with CLI options, validation, summary | ✓ Shipped (37-20) |
 | while/shift flag parsing for value-taking options | for/$@ pattern breaks with shift for value flags; while/shift is the correct bash idiom | ✓ Shipped (37-20) |
 | Missing-value guards for all flag-taking options | Prevents silent empty-string assignment when flag appears without value | ✓ Shipped (37-20) |
@@ -607,8 +609,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-20-PLAN.md (hydrate-interface-custom-ion workflow script + doc updates)
-**Status:** Phase 37 COMPLETE — All 20 plans done
+**Completed:** 37-19-PLAN.md (cli-examples-and-reference)
+**Status:** Phase 37 — 19/20 plans done (37-20 remaining)
 
 ---
-*State updated: 2026-06-15 — 37-20 COMPLETE (Phase 37 unified entry point COMPLETE)*
+*State updated: 2026-06-15 — 37-19 COMPLETE*
