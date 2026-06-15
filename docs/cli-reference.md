@@ -121,6 +121,8 @@ Credit: itp file adapted from http://bbs.keinsci.com/forum.php?mod=viewthread&ti
 
 **Note:** The molecule count specifies a *minimum* number. GenIce2 creates supercells to satisfy crystal symmetry, so actual count may be higher (e.g., 2× the minimum for some phases).
 
+**Note:** In pipeline mode (when any pipeline flags like `--hydrate`, `--interface`, `--custom-gro`, `--solute-type`, or `--ion-concentration` are present), the `--gromacs` flag has no effect — GROMACS files are always generated. The `--gromacs` flag only controls GROMACS export in ice-only mode (single ice candidate generation without pipeline flags).
+
 ---
 
 ### `--candidate`, `-c`
@@ -261,9 +263,8 @@ python -m quickice -T 200 -P 2500 -N 100
 | Code | Meaning |
 |------|---------|
 | 0 | Success |
-| 1 | Invalid arguments (validation error) |
-| 2 | Phase mapping error (conditions outside known regions) |
-| 3 | Structure generation error |
+| 1 | Runtime error (phase mapping, structure generation, or general exception) |
+| 2 | Argument error (invalid or missing required flags) |
 
 ---
 

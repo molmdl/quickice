@@ -88,24 +88,24 @@ set -e
 # === Hydrate Generation ===
 
 # sI hydrate with CH4 guest (default)
-# python -m quickice --hydrate --lattice-type sI --guest CH4 -o hydrate_sI_CH4
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 -o hydrate_sI_CH4
 
 # sII hydrate with THF guest
-# python -m quickice --hydrate --lattice-type sII --guest THF -o hydrate_sII_THF
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sII --guest THF -o hydrate_sII_THF
 
 # sH hydrate with CH4
-# python -m quickice --hydrate --lattice-type sH --guest CH4 -o hydrate_sH_CH4
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sH --guest CH4 -o hydrate_sH_CH4
 
 # sI hydrate with 2x2x2 supercell
-# python -m quickice --hydrate --lattice-type sI --guest CH4 --supercell-x 2 --supercell-y 2 --supercell-z 2 -o hydrate_sI_222
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --supercell-x 2 --supercell-y 2 --supercell-z 2 -o hydrate_sI_222
 
 # sI hydrate with partial cage occupancy
-# python -m quickice --hydrate --lattice-type sI --guest CH4 --cage-occupancy-small 80.0 --cage-occupancy-large 95.0 -o hydrate_sI_partial
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --cage-occupancy-small 80.0 --cage-occupancy-large 95.0 -o hydrate_sI_partial
 
 # === Hydrate + GROMACS Export ===
 
 # sI CH4 hydrate with GROMACS export
-# python -m quickice --hydrate --lattice-type sI --guest CH4 --gromacs -g --no-diagram -o hydrate_gmx
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --gromacs -g --no-diagram -o hydrate_gmx
 
 # ==============================================================================
 # Custom Molecule Insertion
@@ -166,7 +166,7 @@ set -e
 # === Full Chain: Hydrate → Interface → Custom → Solute → Ion (F4) ===
 
 # Complete F4 chain: hydrate + interface + custom + solute + ion
-# python -m quickice --hydrate --lattice-type sI --guest CH4 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type THF --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs -g --no-diagram -o chain_F4
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type THF --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs -g --no-diagram -o chain_F4
 
 # ==============================================================================
 # Mode Flags
