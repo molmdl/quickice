@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37-unified-entry-point COMPLETE — All 20 plans done, verified
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings INSERTED — Not yet planned
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37-unified-entry-point COMPLETE — All 20 plans done, verified
+**Current focus:** Phase 37.1-fix-verified-scancode-findings INSERTED — Not yet planned
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 37-unified-entry-point |
-| Plan | 20 of 20 |
-| Status | Phase Complete — All 20 plans done, verified |
-| Last activity | 2026-06-15 — Completed 37-20-PLAN.md (hydrate-workflow-script), phase verified |
+| Phase | 37.1-fix-verified-scancode-findings |
+| Plan | 0 of TBD |
+| Status | Phase Inserted — Not yet planned |
+| Last activity | 2026-06-15 — Phase 37.1 inserted after scancode verification |
 
-**Progress:** ██████████ 100% (20/20 plans in Phase 37, 236+ plans across all milestones)
+**Progress:** ░░░░░░░░░░ 0% (0/TBD plans in Phase 37.1, 236+ plans across all milestones)
 
 ---
 
@@ -268,6 +268,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 34.8 inserted after Phase 34.7: Fix performance and test gaps — PERF-02 (cKDTree boxsize), TEST-09 (moleculetype names), BUG-04 (diversity fingerprint) — ✓ COMPLETE
 - Phase 36 added: CLI Feature Parity (CLI-01 to CLI-05, moved from v4.5.1 to v4.5 so work can proceed without GUI)
 - Phase 37 added: Unified Entry Point (router + test consistency, resolves unify-gui-cli-entry-point todo)
+- Phase 37.1 inserted after Phase 37: Fix verified scancode findings — AN-01/AN-02 (CRITICAL atom count/MW), AN-03 (PBC wrapping), CP-01 (duck-typing on InterfaceStructure), DOC issues (wrong tab numbers, missing CLI flags, THF ring, outdated principles), GROMPP test gaps (URGENT)
 
 ### v4.5 Key Decisions
 
