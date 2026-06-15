@@ -703,15 +703,16 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
             
             # Get H positions based on atoms per molecule
             if atoms_per_ice_mol == 3:
-                # Classic ice: O, H, H
+                # Classic ice: O, H, H — no existing MW, must compute
                 h1_pos = wrapped_positions[base_idx + 1]
                 h2_pos = wrapped_positions[base_idx + 2]
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
             else:
-                # Hydrate: OW, HW1, HW2, MW
+                # Hydrate: OW, HW1, HW2, MW — use existing MW
+                # (already correctly placed by molecule-aware wrapping)
                 h1_pos = wrapped_positions[base_idx + 1]
                 h2_pos = wrapped_positions[base_idx + 2]
-            
-            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                mw_pos = wrapped_positions[base_idx + 3]
 
             # Wrap residue number at 100000 (GROMACS convention for large systems)
             res_num = (mol_idx + 1) % 100000
@@ -1436,10 +1437,17 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
                 if mol.mol_type == "ice":
                     # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                    # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
                     o_pos = wrapped_positions[start]
                     h1_pos = wrapped_positions[start + 1]
                     h2_pos = wrapped_positions[start + 2]
-                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    if mol.count == 3:
+                        # Classic 3-atom ice: no existing MW, must compute
+                        mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    else:
+                        # Hydrate 4-atom ice: MW already exists at index 3
+                        # (already correctly placed by molecule-aware wrapping)
+                        mw_pos = wrapped_positions[start + 3]
 
                     # OW (oxygen)
                     atom_num += 1
@@ -1471,10 +1479,11 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
                 else:  # water
                     # Water: 4 atoms (OW, HW1, HW2, MW)
+                    # Use existing MW from wrapped_positions (already correctly placed)
                     o_pos = wrapped_positions[start]
                     h1_pos = wrapped_positions[start + 1]
                     h2_pos = wrapped_positions[start + 2]
-                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    mw_pos = wrapped_positions[start + 3]
 
                     # OW (oxygen)
                     atom_num += 1
@@ -1925,10 +1934,17 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
             
             if mol.mol_type == "ice":
                 # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
                 o_pos = wrapped_positions[mol.start_idx]
                 h1_pos = wrapped_positions[mol.start_idx + 1]
                 h2_pos = wrapped_positions[mol.start_idx + 2]
-                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                if mol.count == 3:
+                    # Classic 3-atom ice: no existing MW, must compute
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                else:
+                    # Hydrate 4-atom ice: MW already exists at index 3
+                    # (already correctly placed by molecule-aware wrapping)
+                    mw_pos = wrapped_positions[mol.start_idx + 3]
                 
                 # OW (oxygen)
                 atom_num += 1
@@ -1959,14 +1975,15 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
                              f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
                 
             else:  # water
-                # Water: 4 atoms (OW, HW1, HW2, MW) — recompute MW
+                # Water: 4 atoms (OW, HW1, HW2, MW)
+                # Use existing MW from wrapped_positions (already correctly placed)
                 mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
                 mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
                 
                 o_pos = mol_positions[0]
                 h1_pos = mol_positions[1]
                 h2_pos = mol_positions[2]
-                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                mw_pos = mol_positions[3]
                 
                 # OW
                 atom_num += 1
@@ -2337,10 +2354,17 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
 
                 if mol.mol_type == "ice":
                     # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                    # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
                     o_pos = wrapped_positions[start]
                     h1_pos = wrapped_positions[start + 1]
                     h2_pos = wrapped_positions[start + 2]
-                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    if mol.count == 3:
+                        # Classic 3-atom ice: no existing MW, must compute
+                        mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    else:
+                        # Hydrate 4-atom ice: MW already exists at index 3
+                        # (already correctly placed by molecule-aware wrapping)
+                        mw_pos = wrapped_positions[start + 3]
 
                     # OW (oxygen)
                     atom_num += 1
@@ -2371,11 +2395,12 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
                                 f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
                 else:  # water
-                    # Water: 4 atoms (OW, HW1, HW2, MW) — recompute MW
+                    # Water: 4 atoms (OW, HW1, HW2, MW)
+                    # Use existing MW from wrapped_positions (already correctly placed)
                     o_pos = wrapped_positions[start]
                     h1_pos = wrapped_positions[start + 1]
                     h2_pos = wrapped_positions[start + 2]
-                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                    mw_pos = wrapped_positions[start + 3]
 
                     # OW
                     atom_num += 1
