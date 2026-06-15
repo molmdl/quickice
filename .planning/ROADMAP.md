@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 76 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, e2e-compute-export: 11, completed: 57/76)
+**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 37.1 inserted)
+**Total Plans:** 76+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 5, e2e-compute-export: 11, completed: 57/76+)
 
 ## Overview
 
@@ -456,11 +456,61 @@ Plans:
 
 ---
 
+### Phase 37.1: Fix Verified Scancode Findings (INSERTED)
+
+**Goal:** Fix verified critical/high code bugs (AN-01, AN-02, AN-03, CP-01, UM-01), documentation issues (wrong tab numbers in tooltips, missing CLI flags in docs, THF ring description, outdated principles), and add grompp validation tests for CLI pipeline and GUI export paths
+**Depends on:** Phase 37
+**Plans:** 5 plans in 2 waves
+
+Plans:
+- [ ] 37.1-01-PLAN.md — Fix data model bugs: AN-01 (atom count), CP-01 (InterfaceStructure fields), UM-01 (AVOGADRO import)
+- [ ] 37.1-02-PLAN.md — Fix GRO coordinate bugs: AN-02 (MW recomputation), AN-03 (PBC wrapping for solute/custom)
+- [ ] 37.1-03-PLAN.md — Fix CLI documentation: DOC-C1 (hydrate flags), DOC-C2 (missing pipeline flags), DOC-C3 (exit codes), DOC-C4 (--gromacs no-op)
+- [ ] 37.1-04-PLAN.md — Fix GUI docs and tooltips: DOC-G1 (tab numbers), DOC-G2 (THF ring), DOC-G3 (overlap tooltip), DOC-G4 (principles diversity)
+- [ ] 37.1-05-PLAN.md — Add grompp validation tests: GROMPP skipif + hydrate/custom/solute standalone + CLI pipeline grompp
+
+**Details:**
+
+Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21 TRUE / 1 FALSE_ALARM / 3 MISLEADING):
+
+| ID | Severity | Category | Finding | Source |
+|----|----------|----------|---------|--------|
+| AN-01 | 🔴 CRITICAL | Code | `MOLECULE_TYPE_INFO["ice"]["atoms"] = 3` should be 4 | vulnerability_scan |
+| AN-02 | 🔴 CRITICAL | Code | MW recomputed on 4-atom hydrate ice, overwrites correct MW | vulnerability_scan |
+| AN-03 | 🟠 HIGH | Code | `write_ion_gro_file` writes solute/custom positions without PBC wrapping | vulnerability_scan |
+| CP-01 | 🟠 HIGH | Code | Duck-typing attrs on `InterfaceStructure` (solute_positions, custom_molecule_count, etc.) | vulnerability_scan |
+| DOC-C1 | 🟠 HIGH | Docs | 7 hydrate CLI examples missing required `-T`/`-P` flags | doc_crosscheck_cli |
+| DOC-C2 | 🟠 HIGH | Docs | 18 v4.5 pipeline flags missing from `docs/cli-reference.md` | doc_crosscheck_cli |
+| DOC-G1 | 🟠 HIGH | Docs | Interface tooltips use wrong tab numbers (Tab 1→0, Tab 3→1) | doc_crosscheck_gui |
+| GROMPP | 🟠 HIGH | Tests | GUI + CLI export paths have 0 grompp validation tests | grompp_test_coverage |
+| DOC-C3 | 🟡 MEDIUM | Docs | Exit codes table wrong in CLI reference | doc_crosscheck_cli |
+| DOC-C4 | 🟡 MEDIUM | Docs | `--gromacs` is no-op in pipeline mode | doc_crosscheck_cli |
+| DOC-G2 | 🟡 MEDIUM | Docs | THF tooltip says "4-membered ring" — it's 5 | doc_crosscheck_gui |
+| DOC-G3 | 🟡 MEDIUM | Docs | Custom molecule tooltip says "no overlap checking" but code does check | doc_crosscheck_gui |
+| DOC-G4 | 🟡 MEDIUM | Docs | `docs/principles.md` says "rewards unique seeds" — outdated | doc_crosscheck_gui |
+| UM-01 | 🟢 LOW | Code | AVOGADRO hardcoded in CLI pipeline instead of shared constant | vulnerability_scan |
+
+**Scope decisions:**
+- AN-01, AN-02: Must fix (wrong simulation data)
+- AN-03: Must fix (invalid GRO files for solute/custom molecules)
+- CP-01: Must fix (fragile duck-typing on dataclass, breaks if `__slots__` added)
+- DOC-C1, DOC-C2, DOC-G1: Must fix (user-facing documentation errors)
+- GROMPP: Should fix (no grompp validation for CLI or GUI export paths)
+- DOC-C3, DOC-C4, DOC-G2–G4: Should fix (accuracy and consistency)
+- UM-01: Low priority (values identical, only DRY risk)
+
+**Deferred (not in this phase):**
+- Bundle optimization (scipy collect_all, GenIce2 narrowing, CLI-only binary) → separate Phase 38
+
+**Verification reference:** `.planning/code_analysis/20260615_SCAN_VERIFICATION.md`
+
+---
+
 ## Milestone Summary
 
-**Phase Count:** 14 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
+**Phase Count:** 15 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, and 37.1 inserted)
 
-**Total Plans:** 54 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, e2e-compute-export: 11, completed: 39/54)
+**Total Plans:** 54+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 5, e2e-compute-export: 11, completed: 39/54+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -513,6 +563,7 @@ Plans:
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
+| 37.1 - Fix Verified Scancode Findings | ⏳ Not Started | 0 | 5 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
@@ -588,5 +639,5 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-14 - Phase 37 added (Unified Entry Point)*
+*Last updated: 2026-06-15 - Phase 37.1 inserted (Fix Verified Scancode Findings)*
 *For current state, see .planning/STATE.md*
