@@ -344,6 +344,462 @@ All supported ice phases except Ice II work with interface generation. Ice II (r
 
 ---
 
+## Hydrate Generation Flags
+
+QuickIce can generate clathrate hydrate structures using the `--hydrate` flag. Hydrate structures are ice-like lattices that trap guest molecules (CH4, THF) in cages. The `-T` and `-P` flags are required to set the thermodynamic conditions for hydrate stability.
+
+### `--hydrate`
+
+Enable clathrate hydrate generation mode. When this flag is set, QuickIce generates a hydrate lattice instead of an ice structure.
+
+**Required with:** `-T`, `-P` (temperature and pressure must be set for hydrate conditions)
+
+**Incompatible with:** `--nmolecules` (hydrate uses `--supercell-x/y/z` for size control)
+
+**Default:** Disabled (ice generation mode)
+
+```bash
+# sI CH4 hydrate at 250K, 0.1 MPa
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
+```
+
+---
+
+### `--lattice-type`
+
+Hydrate lattice type. Determines the cage structure and guest molecule arrangement.
+
+**Choices:** `sI`, `sII`, `sH`
+
+**Default:** `sI`
+
+| Type | Cages | Description |
+|------|-------|-------------|
+| `sI` | 2 small (5¹²) + 6 large (5¹²6²) | Most common; CH4 hydrate |
+| `sII` | 16 small (5¹²) + 8 large (5¹²6⁴) | Larger guests; THF hydrate |
+| `sH` | 3 small + 2 medium + 1 large | Rare; requires help gas |
+
+**Required with:** `--hydrate`
+
+```bash
+# Structure II hydrate with THF guest
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sII --guest THF
+
+# Structure H hydrate with CH4
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sH --guest CH4
+```
+
+---
+
+### `--guest`
+
+Guest molecule type trapped in the hydrate cages. The guest molecule determines the hydrate stability and cage occupancy.
+
+**Choices:** `CH4`, `THF`
+
+**Default:** `CH4`
+
+| Guest | Atoms | Typical Lattice | Notes |
+|-------|-------|-----------------|-------|
+| `CH4` | 5 (C + 4H) | sI, sH | Small guest; fits in small and large cages |
+| `THF` | 13 (C₄H₈O) | sII | Large guest; occupies large cages only |
+
+**Required with:** `--hydrate`
+
+```bash
+# Methane hydrate (sI)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
+
+# THF hydrate (sII)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sII --guest THF
+```
+
+---
+
+### `--supercell-x`, `--supercell-y`, `--supercell-z`
+
+Supercell repetition counts in each Cartesian direction. These control the size of the generated hydrate structure.
+
+**Type:** Integer (default: 1 for each)
+
+**Valid range:** 1 or greater
+
+**Note:** Mutually exclusive with `--nmolecules` in hydrate mode. Use these flags instead of `--nmolecules` to control hydrate size.
+
+```bash
+# 2×2×2 supercell of sI CH4 hydrate (8× unit cell)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
+  --supercell-x 2 --supercell-y 2 --supercell-z 2
+
+# 3×1×1 supercell (elongated along X)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
+  --supercell-x 3 --supercell-y 1 --supercell-z 1
+```
+
+---
+
+### `--cage-occupancy-small`
+
+Occupancy percentage for small cages (0–100%). Controls what fraction of small cages contain guest molecules.
+
+**Type:** Float (default: 100.0)
+
+**Valid range:** 0.0 to 100.0
+
+**Required with:** `--hydrate`
+
+```bash
+# Partial occupancy: 80% small cages filled, 95% large cages filled
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
+  --cage-occupancy-small 80.0 --cage-occupancy-large 95.0
+```
+
+---
+
+### `--cage-occupancy-large`
+
+Occupancy percentage for large cages (0–100%). Controls what fraction of large cages contain guest molecules.
+
+**Type:** Float (default: 100.0)
+
+**Valid range:** 0.0 to 100.0
+
+**Required with:** `--hydrate`
+
+```bash
+# Full occupancy (default)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
+
+# Partial occupancy
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
+  --cage-occupancy-small 80.0 --cage-occupancy-large 95.0
+```
+
+---
+
+## Custom Molecule Insertion Flags
+
+Custom molecule insertion allows placing user-provided molecules into the liquid region of an interface structure. This requires both a GROMACS coordinate file (`.gro`) and a topology file (`.itp`). See [GRO/ITP Guide](gro-itp-guide.md) for file preparation.
+
+### `--custom-gro`
+
+Path to a custom molecule GROMACS coordinate file (`.gro`). Required for custom molecule insertion.
+
+**Type:** String (file path)
+
+**Default:** None
+
+**Required with:** `--custom-itp`, `--interface`
+
+**Incompatible without:** `--interface` (custom molecules require an interface structure)
+
+```bash
+# Insert ethanol molecules from etoh.gro
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-count 5
+```
+
+---
+
+### `--custom-itp`
+
+Path to a custom molecule GROMACS topology file (`.itp`). Defines the force field parameters for the custom molecule. Must be provided together with `--custom-gro`.
+
+**Type:** String (file path)
+
+**Default:** None
+
+**Required with:** `--custom-gro`
+
+```bash
+# Both GRO and ITP are required together
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro my_molecule.gro \
+  --custom-itp my_molecule.itp \
+  --custom-placement random --custom-count 3
+```
+
+---
+
+### `--custom-placement`
+
+Placement mode for custom molecules in the liquid region.
+
+**Choices:** `random`, `custom`
+
+**Default:** `random`
+
+| Mode | Description | Additional Required Flags |
+|------|-------------|--------------------------|
+| `random` | Random placement with overlap checking | `--custom-count` or `--custom-concentration` |
+| `custom` | User-specified positions from CSV file | `--custom-positions-file` |
+
+```bash
+# Random placement by count
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-count 5
+
+# Custom placement from CSV
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement custom \
+  --custom-positions-file custom_positions.csv
+```
+
+---
+
+### `--custom-count`
+
+Number of custom molecules to insert. Used with `--custom-placement random` mode.
+
+**Type:** Integer
+
+**Default:** None
+
+**Mutually exclusive with:** `--custom-concentration` (use one or the other)
+
+**Required with:** `--custom-placement random` (if `--custom-concentration` not set)
+
+```bash
+# Insert 5 ethanol molecules
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-count 5
+```
+
+---
+
+### `--custom-concentration`
+
+Custom molecule concentration in mol/L. Used with `--custom-placement random` mode. The number of molecules is calculated from concentration and liquid volume.
+
+**Type:** Float (mol/L)
+
+**Default:** None
+
+**Mutually exclusive with:** `--custom-count` (use one or the other)
+
+**Required with:** `--custom-placement random` (if `--custom-count` not set)
+
+```bash
+# Insert ethanol at 0.5 mol/L concentration
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-concentration 0.5
+```
+
+---
+
+### `--custom-positions-file`
+
+Path to a CSV file specifying custom molecule positions and orientations. Required when `--custom-placement custom` is set.
+
+**Type:** String (file path)
+
+**Default:** None
+
+**Required with:** `--custom-placement custom`
+
+**CSV format:** Each row contains `x, y, z, alpha, beta, gamma` (position in nm, Euler angles in degrees)
+
+```bash
+# Place molecules at positions from CSV
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement custom \
+  --custom-positions-file quickice/data/examples/custom_positions.csv
+```
+
+---
+
+## Solute Insertion Flags
+
+Solute insertion places small predefined molecules (CH4, THF) into the liquid region of an interface structure. Unlike custom molecules, solutes use built-in force field parameters (GAFF2) and do not require separate GRO/ITP files.
+
+### `--solute-type`
+
+Solute molecule type to insert into the liquid region.
+
+**Choices:** `CH4`, `THF`
+
+**Default:** None (no solute insertion)
+
+**Required with:** `--solute-concentration`, `--interface`
+
+| Solute | Atoms | Force Field | Notes |
+|--------|-------|-------------|-------|
+| `CH4` | 5 | GAFF2 (c3, hc) | Methane — small nonpolar molecule |
+| `THF` | 13 | GAFF2 (os, c5, h1) | Tetrahydrofuran — larger cyclic ether |
+
+```bash
+# CH4 solute at 0.3 mol/L
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --solute-type CH4 --solute-concentration 0.3
+
+# THF solute at 0.5 mol/L
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --solute-type THF --solute-concentration 0.5
+```
+
+---
+
+### `--solute-concentration`
+
+Solute concentration in mol/L. Required when `--solute-type` is set.
+
+**Type:** Float (mol/L)
+
+**Default:** None
+
+**Required with:** `--solute-type`
+
+```bash
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --solute-type CH4 --solute-concentration 0.3
+```
+
+---
+
+### `--solute-source`
+
+Source structure for solute insertion. Determines which liquid region receives the solute molecules.
+
+**Choices:** `interface`, `custom`
+
+**Default:** `interface`
+
+| Source | Description | Required Flags |
+|--------|-------------|----------------|
+| `interface` | Insert solutes into the interface liquid region (default) | `--interface` |
+| `custom` | Insert solutes using custom molecule coordinates as source | `--custom-gro`, `--interface` |
+
+**Required with:** `--solute-type`
+
+**Conditional requirement:** `--solute-source custom` requires `--custom-gro`
+
+```bash
+# Solute from interface source (default)
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --solute-type CH4 --solute-concentration 0.3
+
+# Solute from custom molecule source
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-concentration 0.3 \
+  --solute-type CH4 --solute-concentration 0.15 --solute-source custom
+```
+
+---
+
+## Ion Insertion Flags
+
+Ion insertion adds Na⁺/Cl⁻ ions (Madrid2019 parameters) to the liquid region for charge screening or salt solution simulations. Ions are always added in equal numbers to maintain charge neutrality.
+
+### `--ion-concentration`
+
+Ion concentration in mol/L. Specifies the NaCl concentration; equal numbers of Na⁺ and Cl⁻ ions are inserted.
+
+**Type:** Float (mol/L)
+
+**Default:** None (no ion insertion)
+
+**Required with:** `--interface`
+
+**Note:** Madrid2019 ion model with charges ±0.85e (not ±1.0e). See [Madrid2019 reference](https://doi.org/10.1021/acs.jctc.9b00902).
+
+```bash
+# 0.15 M NaCl (physiological concentration)
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --ion-concentration 0.15
+
+# 0.5 M NaCl
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --ion-concentration 0.5
+```
+
+---
+
+### `--ion-source`
+
+Source structure for ion insertion. Determines which coordinates define the liquid region for ion placement.
+
+**Choices:** `interface`, `custom`, `solute`
+
+**Default:** `interface`
+
+| Source | Description | Required Flags |
+|--------|-------------|----------------|
+| `interface` | Insert ions into interface liquid region (default) | `--interface` |
+| `custom` | Insert ions using custom molecule coordinates as source | `--custom-gro`, `--interface` |
+| `solute` | Insert ions using solute coordinates as source | `--solute-type`, `--interface` |
+
+**Conditional requirements:**
+- `--ion-source custom` requires `--custom-gro`
+- `--ion-source solute` requires `--solute-type`
+
+```bash
+# Ions from interface source (default)
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --ion-concentration 0.15
+
+# Ions from custom molecule source
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp \
+  --custom-placement random --custom-concentration 0.3 \
+  --ion-concentration 0.15 --ion-source custom
+
+# Ions from solute source
+python -m quickice -T 250 -P 0.1 --interface --mode slab \
+  --box-x 5.0 --box-y 5.0 --box-z 10.0 \
+  --ice-thickness 3.0 --water-thickness 4.0 \
+  --solute-type CH4 --solute-concentration 0.3 \
+  --ion-concentration 0.15 --ion-source solute
+```
+
+---
+
 ## Validation Rules
 
 All inputs are validated before processing:
@@ -493,11 +949,11 @@ The `scripts/` directory includes ready-made example scripts for common workflow
 A comprehensive reference script showing example commands for **every possible CLI flag combination**, organized by feature area:
 
 - Ice generation (8 phases with realistic T/P values)
-- Interface generation (slab, pocket, piece modes)
-- Hydrate generation (sI, sII, sH with guest options)
-- Custom molecule insertion (random and custom placement)
-- Solute insertion (CH4, THF with source selection)
-- Ion insertion (3 source modes)
+- Interface generation (slab, pocket, piece modes — see [Interface Generation](#interface-generation))
+- Hydrate generation (sI, sII, sH with guest options — see [Hydrate Generation Flags](#hydrate-generation-flags))
+- Custom molecule insertion (random and custom placement — see [Custom Molecule Insertion Flags](#custom-molecule-insertion-flags))
+- Solute insertion (CH4, THF with source selection — see [Solute Insertion Flags](#solute-insertion-flags))
+- Ion insertion (3 source modes — see [Ion Insertion Flags](#ion-insertion-flags))
 - Full workflow chains (F1–F4)
 - Mode flags (--cli, --gui, --help)
 
