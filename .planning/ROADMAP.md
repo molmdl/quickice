@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8 inserted)
-**Total Plans:** 76 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 18, e2e-compute-export: 11, completed: 39/76)
+**Total Plans:** 76 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, e2e-compute-export: 11, completed: 57/76)
 
 ## Overview
 
@@ -430,7 +430,7 @@ Plans:
 - Resolves pending todo: `.planning/todos/pending/2026-05-09-unify-gui-cli-entry-point.md`
 - CLI-only PyInstaller bundle deferred (stays as pending todo)
 
-**Plans:** 18 plans
+**Plans:** 20 plans
 
 Plans:
 - [x] 37-01-PLAN.md — Create quickice/entry.py (routing logic) [Wave 1]
@@ -451,6 +451,8 @@ Plans:
 - [x] 37-16-PLAN.md — Update README_bin.md [Wave 3]
 - [x] 37-17-PLAN.md — Update setup.sh [Wave 4]
 - [x] 37-18-PLAN.md — Backward compat + full integration verification [Wave 5]
+- [ ] 37-19-PLAN.md — CLI examples script + CLI reference update [Wave 6]
+- [ ] 37-20-PLAN.md — Hydrate-interface-custom-ion workflow script + doc updates [Wave 6]
 
 ---
 
@@ -458,7 +460,7 @@ Plans:
 
 **Phase Count:** 14 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, and 34.8 inserted)
 
-**Total Plans:** 52 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, e2e-compute-export: 11, completed: 39/52)
+**Total Plans:** 54 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, e2e-compute-export: 11, completed: 39/54)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -510,7 +512,7 @@ Plans:
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
-| 37 - Unified Entry Point | ✓ Complete | 18 | 18 |
+| 37 - Unified Entry Point | ⏳ In Progress | 18 | 20 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
