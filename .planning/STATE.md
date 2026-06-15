@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings INSERTED — Not yet planned
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 1/5 plans complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37.1-fix-verified-scancode-findings INSERTED — Not yet planned
+**Current focus:** Phase 37.1-fix-verified-scancode-findings — 1/5 plans complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 0 of TBD |
-| Status | Phase Inserted — Not yet planned |
-| Last activity | 2026-06-15 — Phase 37.1 inserted after scancode verification |
+| Plan | 02 of 05 |
+| Status | In progress |
+| Last activity | 2026-06-15 — Completed 37.1-02-SUMMARY.md |
 
-**Progress:** ░░░░░░░░░░ 0% (0/TBD plans in Phase 37.1, 236+ plans across all milestones)
+**Progress:** █░░░░░░░░░ 20% (1/5 plans in Phase 37.1, 237+ plans across all milestones)
 
 ---
 
@@ -275,6 +275,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
+| Use existing MW from wrapped_positions for 4-atom molecules | MW already correctly placed by molecule-aware wrapping; recomputing from OW/HW1/HW2 may differ at PBC boundaries | ✓ Shipped (37.1-02) |
+| Simple modulo wrapping for solute/custom PBC | Single molecules don't span PBC boundaries; positions % np.diag(cell) sufficient | ✓ Shipped (37.1-02) |
 | MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_H vs CH4_L) | ✓ Shipped (32-01) |
 | ITP parser with regex parsing | Extracts molecule info from .itp files without dependencies | ✓ Shipped (32-01) |
 | Molecule validator with specific errors | GRO/ITP consistency validation with clear user feedback | ✓ Shipped (32-02) |
@@ -610,8 +612,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37-20-PLAN.md (hydrate-workflow-script), Phase 37 VERIFIED
-**Status:** Phase 37 COMPLETE — All 20 plans done, verified
+**Completed:** 37.1-02-PLAN.md (gro-coordinate-bugs), Phase 37.1 in progress
+**Status:** Phase 37.1 — 1/5 plans done (02 complete)
+**Stopped at:** Completed 37.1-02-PLAN.md
+**Resume file:** None
 
 ---
 *State updated: 2026-06-15 — Phase 37 COMPLETE (20/20, verified)*
