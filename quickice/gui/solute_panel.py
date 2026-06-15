@@ -206,7 +206,7 @@ class SolutePanel(QWidget):
         self.solute_type_combo.setToolTip(
             "Select solute type to insert into liquid water.\n"
             "\n"
-            "THF (tetrahydrofuran): 4-membered ring, commonly used in hydrate studies\n"
+            "THF (tetrahydrofuran): 5-membered ring (4C + 1O), commonly used in hydrate studies\n"
             "CH₄ (methane): Small nonpolar molecule, natural hydrate former\n"
             "\n"
             "Both use GAFF2 force field parameters for GROMACS compatibility."

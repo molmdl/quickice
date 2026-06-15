@@ -70,7 +70,7 @@ Candidates are generated using GenIce2, a combinatorial ice structure generator:
 Candidates are scored and ranked using three estimated components:
 - **Energy score:** O-O distance deviation from ideal (0.276 nm)
 - **Density score:** Deviation from expected phase density
-- **Diversity score:** Rewards unique seeds
+- **Diversity score:** Measures structural diversity via O-O distance histogram fingerprints (cosine similarity between candidates)
 
 Lower combined score = better candidate.
 
@@ -126,7 +126,7 @@ QuickIce wraps GenIce2 with condition-based selection and ranking.
 The ranking system uses simple geometric estimations:
 - O-O distances as an energy proxy
 - Density matching for phase consistency
-- Seed diversity for structural variety
+- O-O distance histogram fingerprints for structural diversity
 
 These are **not physics** - they're practical metrics for distinguishing "good" structures from "obviously wrong" ones.
 

@@ -253,7 +253,7 @@ class CustomMoleculePanel(QWidget):
             "Custom: User-specified positions and rotations\n"
             "  - Manually define center-of-mass position (nm)\n"
             "  - Manually define rotation angles (degrees)\n"
-            "  - No overlap checking (user responsibility)"
+            "  - Overlap checking with warning dialog (user can override)"
         )
         mode_row.addWidget(self.placement_mode_combo)
         mode_row.addWidget(HelpIcon(
