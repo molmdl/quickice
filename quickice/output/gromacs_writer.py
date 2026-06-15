@@ -1406,6 +1406,20 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
         ion_structure.positions, ion_structure.molecule_index, ion_structure.cell
     )
 
+    # Wrap solute positions into PBC box (AN-03 fix)
+    # Solute molecules are single molecules that don't span PBC boundaries,
+    # so simple modulo wrapping is sufficient.
+    if ion_structure.solute_positions is not None and len(ion_structure.solute_positions) > 0:
+        wrapped_solute_positions = ion_structure.solute_positions % np.diag(ion_structure.cell)
+    else:
+        wrapped_solute_positions = ion_structure.solute_positions
+    
+    # Wrap custom molecule positions into PBC box (AN-03 fix)
+    if ion_structure.custom_molecule_positions is not None and len(ion_structure.custom_molecule_positions) > 0:
+        wrapped_custom_positions = ion_structure.custom_molecule_positions % np.diag(ion_structure.cell)
+    else:
+        wrapped_custom_positions = ion_structure.custom_molecule_positions
+
     atom_num = 0
     res_num = 0
 
@@ -1567,8 +1581,8 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 else:
                     mol_atom_names = [f"C{i}" for i in range(mol.count)]  # Fallback
                 
-                if ion_structure.custom_molecule_positions is not None:
-                    mol_positions = ion_structure.custom_molecule_positions[start:start + mol.count]
+                if wrapped_custom_positions is not None:
+                    mol_positions = wrapped_custom_positions[start:start + mol.count]
                 else:
                     mol_positions = np.zeros((mol.count, 3))  # Fallback
                 
@@ -1591,7 +1605,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 
                 # Get atom names and positions for this solute molecule
                 mol_atom_names = ion_structure.solute_atom_names[start:start + count]
-                mol_positions = ion_structure.solute_positions[start:start + count]
+                mol_positions = wrapped_solute_positions[start:start + count]
                 
                 # Get residue name from registry
                 solute_type_upper = ion_structure.solute_type.upper()
