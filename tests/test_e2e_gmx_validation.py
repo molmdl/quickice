@@ -22,6 +22,8 @@ from pathlib import Path
 # Add tests/ directory to sys.path for e2e_export_helpers import
 sys.path.insert(0, str(Path(__file__).parent))
 
+from tests.conftest import gmx_skipif
+
 from quickice.output.gromacs_writer import (
     write_gro_file,
     write_top_file,
@@ -29,6 +31,10 @@ from quickice.output.gromacs_writer import (
     write_interface_top_file,
     write_ion_gro_file,
     write_ion_top_file,
+    write_custom_molecule_gro_file,
+    write_custom_molecule_top_file,
+    write_solute_gro_file,
+    write_solute_top_file,
 )
 from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 from quickice.phase_mapping.lookup import lookup_phase
@@ -72,6 +78,7 @@ def gmx_workspace(request):
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestIceCandidateGmxValidation:
     """Validate ice candidate export passes gmx grompp.
 
@@ -145,6 +152,7 @@ class TestIceCandidateGmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestInterfaceGmxValidation:
     """Validate interface export passes gmx grompp.
 
@@ -212,6 +220,7 @@ class TestInterfaceGmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF5GmxValidation:
     """Validate F5 chain (Interface→Ion) export passes gmx grompp.
 
@@ -272,6 +281,7 @@ class TestChainF5GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF6GmxValidation:
     """Validate F6 chain (Interface→Solute(CH4)→Ion) export passes gmx grompp.
 
@@ -334,6 +344,7 @@ class TestChainF6GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF7GmxValidation:
     """Validate F7 chain (Interface→Solute(THF)→Ion) export passes gmx grompp.
 
@@ -396,6 +407,7 @@ class TestChainF7GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF1GmxValidation:
     """Validate F1 chain (Interface→Custom→Solute→Ion) export passes gmx grompp.
 
@@ -462,6 +474,7 @@ class TestChainF1GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF3GmxValidation:
     """Validate F3 chain (Hydrate→Interface→Solute→Ion) export passes gmx grompp.
 
@@ -528,6 +541,7 @@ class TestChainF3GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF4GmxValidation:
     """Validate F4 chain (Hydrate→Interface→Custom→Solute→Ion) export passes gmx grompp.
 
@@ -598,6 +612,7 @@ class TestChainF4GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF2GmxValidation:
     """Validate F2 chain (Interface→Custom→Ion) export passes gmx grompp.
 
@@ -661,6 +676,7 @@ class TestChainF2GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF1ThfGmxValidation:
     """Validate F1+THF chain (Interface→Custom→Solute(THF)→Ion) export passes gmx grompp.
 
@@ -725,6 +741,7 @@ class TestChainF1ThfGmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF3ThfGmxValidation:
     """Validate F3+THF chain (Hydrate sI-CH4→Interface→Solute(THF)→Ion) export passes gmx grompp.
 
@@ -790,6 +807,7 @@ class TestChainF3ThfGmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF4Ch4GmxValidation:
     """Validate F4+CH4 chain (Hydrate sI-THF→Custom→Solute(CH4)→Ion) export passes gmx grompp.
 
@@ -859,6 +877,7 @@ class TestChainF4Ch4GmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF3SIIGmxValidation:
     """Validate F3-sII chain (Hydrate sII-CH4→Interface→Solute→Ion) passes gmx grompp.
 
@@ -924,6 +943,7 @@ class TestChainF3SIIGmxValidation:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@gmx_skipif
 class TestChainF4SIIGmxValidation:
     """Validate F4-sII chain (Hydrate sII-THF→Interface→Custom→Solute→Ion) passes gmx grompp.
 
@@ -983,3 +1003,128 @@ class TestChainF4SIIGmxValidation:
                     f"Expected residue '{key}' in .gro for F4-sII, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Hydrate-only (no interface step)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+class TestHydrateGmxValidation:
+    """Validate hydrate-only export passes gmx grompp.
+
+    Tests the hydrate-only export path used by CLI --hydrate without --interface.
+    Wraps HydrateStructure as InterfaceStructure (matching CLI pipeline.py behavior:
+    ice_atom_count=0, water_atom_count=water_count*4).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_hydrate(self, hydrate_sI_ch4_structure):
+        """Generate sI CH4 hydrate structure."""
+        self.hydrate = hydrate_sI_ch4_structure
+        # Wrap as InterfaceStructure (same as CLI pipeline.py:690-716)
+        from quickice.structure_generation.types import (
+            InterfaceStructure,
+            WATER_ATOMS_PER_MOLECULE,
+        )
+        h = self.hydrate
+        water_atom_count = h.water_count * WATER_ATOMS_PER_MOLECULE
+        guest_atom_count = len(h.positions) - water_atom_count
+        self.iface = InterfaceStructure(
+            positions=h.positions,
+            atom_names=h.atom_names,
+            cell=h.cell,
+            molecule_index=h.molecule_index,
+            ice_atom_count=0,  # No crystalline ice in hydrate
+            water_atom_count=water_atom_count,  # Hydrate water = "water" region
+            ice_nmolecules=0,
+            water_nmolecules=h.water_count,
+            mode="hydrate",
+            report=h.report,
+            guest_atom_count=guest_atom_count,
+            guest_nmolecules=h.guest_count,
+        )
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        """Export hydrate GRO/TOP, stage ITPs, run gmx grompp."""
+        gro_path = str(gmx_workspace / "hydrate.gro")
+        top_path = str(gmx_workspace / "hydrate.top")
+        write_interface_gro_file(self.iface, gro_path)
+        write_interface_top_file(self.iface, top_path)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(
+            gmx_workspace, gro_file="hydrate.gro", top_file="hydrate.top"
+        )
+        assert exit_code == 0, f"gmx grompp failed for hydrate-only:\n{stderr[-500:]}"
+        # Validate molecule type presence
+        molecules = parse_top_molecules(top_path)
+        assert "SOL" in molecules
+        residue_names = parse_gro_residue_names(gro_path)
+        assert "SOL" in set(residue_names)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Custom molecule-only (Interface→Custom, no Solute/Ion steps)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+class TestCustomMoleculeGmxValidation:
+    """Validate custom molecule-only export passes gmx grompp.
+
+    Tests Interface→Custom export (no Solute/Ion steps).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_custom(self, interface_slab):
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        self.custom = custom
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "custom.gro")
+        top_path = str(gmx_workspace / "custom.top")
+        write_custom_molecule_gro_file(self.custom, gro_path)
+        write_custom_molecule_top_file(self.custom, top_path)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(
+            gmx_workspace, gro_file="custom.gro", top_file="custom.top"
+        )
+        assert exit_code == 0, f"gmx grompp failed for custom-only:\n{stderr[-500:]}"
+        molecules = parse_top_molecules(top_path)
+        assert "SOL" in molecules
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Solute-only (Interface→Solute, no Ion step)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+class TestSoluteGmxValidation:
+    """Validate solute-only export passes gmx grompp.
+
+    Tests Interface→Solute export (no Ion step).
+    Uses CH4 solute (5 atoms, simpler than THF).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_solute(self, interface_slab):
+        solute = _insert_solutes(interface_slab, solute_type='CH4', concentration=0.3)
+        self.solute = solute
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "solute.gro")
+        top_path = str(gmx_workspace / "solute.top")
+        write_solute_gro_file(self.solute, gro_path)
+        write_solute_top_file(self.solute, top_path)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(
+            gmx_workspace, gro_file="solute.gro", top_file="solute.top"
+        )
+        assert exit_code == 0, f"gmx grompp failed for solute-only:\n{stderr[-500:]}"
+        molecules = parse_top_molecules(top_path)
+        assert "SOL" in molecules

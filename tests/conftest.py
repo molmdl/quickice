@@ -7,8 +7,24 @@ structures (not synthetic), enabling genuine end-to-end pipeline testing.
 IMPORTANT: No qtbot or QApplication fixture — these tests are API-only, no GUI.
 """
 
+import shutil
+
 import pytest
 import numpy as np
+
+
+# ── GROMACS availability marker ───────────────────────────────────────────────
+
+def _gmx_available():
+    """Check if GROMACS gmx command is available on PATH."""
+    return shutil.which("gmx") is not None
+
+
+# Pytest marker for skipping tests that require GROMACS
+gmx_skipif = pytest.mark.skipif(
+    not _gmx_available(),
+    reason="GROMACS (gmx) not found on PATH"
+)
 
 from quickice.phase_mapping.lookup import lookup_phase
 from quickice.structure_generation.generator import IceStructureGenerator
