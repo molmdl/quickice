@@ -1017,18 +1017,28 @@ class TestHydrateGmxValidation:
     Tests the hydrate-only export path used by CLI --hydrate without --interface.
     Wraps HydrateStructure as InterfaceStructure (matching CLI pipeline.py behavior:
     ice_atom_count=0, water_atom_count=water_count*4).
+
+    Uses 2×2×2 supercell for box > 2.0 nm (required for 1.0 nm grompp cutoffs).
     """
 
     @pytest.fixture(autouse=True)
-    def _build_hydrate(self, hydrate_sI_ch4_structure):
-        """Generate sI CH4 hydrate structure."""
-        self.hydrate = hydrate_sI_ch4_structure
-        # Wrap as InterfaceStructure (same as CLI pipeline.py:690-716)
+    def _build_hydrate(self):
+        """Generate sI CH4 hydrate structure with 2x2x2 supercell for grompp."""
+        from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
         from quickice.structure_generation.types import (
+            HydrateConfig,
             InterfaceStructure,
             WATER_ATOMS_PER_MOLECULE,
         )
-        h = self.hydrate
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(
+            lattice_type="sI",
+            guest_type="ch4",
+            supercell_x=2,
+            supercell_y=2,
+            supercell_z=2,
+        )
+        h = gen.generate(config)
         water_atom_count = h.water_count * WATER_ATOMS_PER_MOLECULE
         guest_atom_count = len(h.positions) - water_atom_count
         self.iface = InterfaceStructure(
