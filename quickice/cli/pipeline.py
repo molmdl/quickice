@@ -12,6 +12,8 @@ import logging
 import sys
 from pathlib import Path
 
+from quickice.structure_generation.ion_inserter import AVOGADRO
+
 logger = logging.getLogger(__name__)
 
 
@@ -385,7 +387,7 @@ class CLIPipeline:
                     liquid_volume_nm3 = water_nmolecules * 0.0299
                     count = int(round(
                         custom_concentration * liquid_volume_nm3 * 1e-24
-                        * 6.02214076e23
+                        * AVOGADRO
                     ))
                 elif custom_count is not None:
                     count = custom_count
