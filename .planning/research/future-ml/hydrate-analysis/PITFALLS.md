@@ -129,6 +129,45 @@ Mistakes that cause delays or technical debt.
 **Prevention:** Check for both attributes. Use `hasattr(lattice, 'cagepos')` vs `hasattr(lattice, 'cages')`. Parse `cages` string format for sH if needed.
 **Detection:** AttributeError when trying to access `cagepos` on sH lattice.
 
+### Pitfall 12: Unlicensed Third-Party Code Cannot Be Used as Dependency
+
+**What goes wrong:** Using code from a GitHub repository that has no LICENSE file as a dependency (importing, copying, or redistributing it). nucleation_tracker (FennellLab) is the key example — it implements H-bond ring enumeration and tetrahedral order parameters but has no license.
+**Why it happens:** Without an explicit license, all code defaults to exclusive copyright of the authors under the Berne Convention. All rights are reserved. "Public on GitHub" ≠ "public domain" or "open source."
+**Consequences:** Legal liability — using the code violates copyright. QuickIce's MIT license requires all dependencies to be license-compatible. Including unlicensed code as a dependency or vendored copy would contaminate the entire project.
+**Prevention:**
+- Never add a dependency without verifying its license
+- If a tool has no license, reimplement the algorithms from published literature (which is legally sound — the algorithms themselves are not copyrighted, only the specific code implementation)
+- For nucleation_tracker specifically: ring enumeration algorithms (Luzar-Chandler H-bond criteria, graph-based cycle detection, ring pruning strategies) and the Errington-Debenedetti tetrahedral order parameter are all published in the scientific literature. A clean reimplementation within QuickIce's MDAnalysis framework is legally sound and architecturally superior.
+**Detection:** Check for LICENSE file before adding any dependency. If missing, treat as "all rights reserved" and reimplement from published algorithms instead.
+**Phase:** Phase 5 (when considering ring distribution implementation)
+
+### Pitfall 13: PBC Artifacts in H-Bond Ring Enumeration
+
+**What goes wrong:** H-bond network at periodic boundaries may produce spurious rings or miss real rings. A ring that "exits" the box in one dimension but doesn't properly re-enter creates an invalid closed loop. Conversely, a real ring that spans the boundary might not be detected.
+**Why it happens:** Ring enumeration operates on the H-bond adjacency graph, which depends on minimum-image distances. If PBC is not correctly handled in H-bond detection, the adjacency graph has missing or spurious edges at boundaries. Even with correct H-bond detection, ring closure validation across PBC is non-trivial.
+**Consequences:** Ring counts are wrong — typically over-counting (spurious rings from PBC artifacts) or under-counting (missing boundary rings). This corrupts the ring distribution analysis and makes RSF unreliable.
+**Prevention:**
+- Use MDAnalysis HydrogenBondAnalysis with `box=u.dimensions` for PBC-correct H-bond detection
+- After ring enumeration, validate each ring: count how many times the ring path "exits" the box in each dimension; a valid ring must have even exit counts in all dimensions
+- Compare ring counts for a known hydrate structure (sI should show dominance of 5- and 6-membered rings)
+- Use MDAnalysis's built-in PBC primitives rather than implementing custom minimum image convention
+**Detection:** Ring distribution for a known sI hydrate crystal shows significant counts of 3- and 4-membered rings (spurious) or the total ring count deviates from expected values for the known cage topology.
+**Phase:** Phase 5 (ring distribution implementation)
+
+### Pitfall 14: Brute-Force Ring Enumeration Scales Poorly
+
+**What goes wrong:** Implementing ring enumeration with brute-force depth-first search (as nucleation_tracker does with 8 nested for-loops) produces O(N × k^r_max) complexity where N = number of water molecules, k = average H-bond coordination, r_max = maximum ring size. For 10K waters with 4 H-bonds each and r_max=8, this is ~10K × 4^8 = ~655M operations per frame.
+**Why it happens:** Without algorithmic pruning (short-circuit detection, visited-node tracking, ring pruning during search), the DFS explores all possible paths up to length r_max from every starting molecule.
+**Consequences:** Ring analysis becomes the slowest analysis module by far — potentially minutes per frame for 10K waters. GUI becomes unusable.
+**Prevention:**
+- Use networkx cycle detection (`nx.cycle_basis()` or `nx.simple_cycles()` for directed graphs) which implements efficient algorithms
+- Apply visited-node tracking: a node already assigned to a smaller ring should not be explored for larger rings (vertex pruning)
+- Consider ring pruning during enumeration rather than post-enumeration (prune common-angle rings as they're found)
+- Benchmark early: test with 1K, 5K, 10K waters to verify acceptable performance before building UI
+- For very large systems, consider restricting analysis to a spatial subset (e.g., near the hydrate-liquid interface)
+**Detection:** Ring enumeration takes >10 seconds per frame for 10K waters; progress bar appears stuck.
+**Phase:** Phase 5 (ring distribution implementation)
+
 ## Minor Pitfalls
 
 Mistakes that cause annoyance but are fixable.
@@ -166,6 +205,10 @@ Mistakes that cause annoyance but are fixable.
 | Residence time (P5) | Guest trajectory unwrapping across PBC | Use NoJump transformation; validate with known diffusion |
 | VTK visualization (P6) | Atoms at box boundaries | Wrap/unwrap correctly; apply same transformations as analysis |
 | Large trajectory (all) | Memory exhaustion | Never use timeseries(); iterate frame-by-frame; use stride |
+| Ring distribution (P5) | Unlicensed dependency (nucleation_tracker) | Reimplement from published algorithms; never copy/use unlicensed code |
+| Ring distribution (P5) | PBC artifacts in H-bond network | Use MDA HydrogenBondAnalysis with box=; validate ring closures across PBC |
+| Ring distribution (P5) | Brute-force enumeration too slow | Use networkx cycle detection; prune during search; benchmark early |
+| Tetrahedral order param (P5) | Neighbor selection for >4 neighbors | Use H-bond priority for selecting 4 nearest (per Errington-Debenedetti paper) |
 
 ## Sources
 
@@ -178,3 +221,8 @@ Mistakes that cause annoyance but are fixable.
 - CHILL+ false positive rate: Nguyen & Molinero (2015) JPCB (HIGH confidence)
 - H-bond criteria for hydrate: Community knowledge (MEDIUM confidence — values vary between groups)
 - Cage center drift: Inferred from MD physics (MEDIUM confidence — needs trajectory validation)
+- nucleation_tracker source code: https://github.com/FennellLab/nucleation_tracker (HIGH confidence — all source files inspected)
+- nucleation_tracker license absence: https://raw.githubusercontent.com/FennellLab/nucleation_tracker/master/LICENSE returns 404 (HIGH confidence)
+- Berne Convention default copyright: Legal standard (HIGH confidence)
+- Ring enumeration complexity: From nucleation_tracker code analysis + graph algorithm theory (HIGH confidence)
+- PBC ring closure validation: From nucleation_tracker algorithm (h-matrix dimension counting) (MEDIUM confidence — sound concept, needs validation in MDA context)

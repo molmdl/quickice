@@ -32,7 +32,9 @@
 │  │   ├── CHILLPlusClassifier (uses freud Steinhardt)         │
 │  │   ├── CageTracker (uses GenIce2 cage centers)             │
 │  │   ├── StabilityTracker                                    │
-│  │   └── ResidenceAnalyzer                                   │
+│  │   ├── ResidenceAnalyzer                                   │
+│  │   ├── HBondRingAnalysis (uses networkx, Phase 5+)        │
+│  │   └── TetrahedralOrderParameter (Phase 5+)               │
 │  └── ResultCollector                                         │
 ├─────────────────────────────────────────────────────────────┤
 │  AnalysisViewer                                              │
@@ -131,6 +133,8 @@ quickice/analysis/order_parameters.py — F3/F4 order parameters (~250 lines)
 quickice/analysis/chillplus.py      — CHILL+ classification (~250 lines)
 quickice/analysis/stability.py      — Hydrate stability tracking (~120 lines)
 quickice/analysis/residence.py      — Guest residence time (~180 lines)
+quickice/analysis/ring_distribution.py — H-bond ring enumeration (~100 lines, Phase 5+)
+quickice/analysis/tetrahedral_order.py — Errington-Debenedetti q parameter (~50 lines, Phase 5+)
 quickice/analysis/types.py          — AnalysisResult, AnalysisConfig dataclasses (~50 lines)
 quickice/analysis/trajectory.py     — MDAnalysis Universe wrapper (~60 lines)
 ```
@@ -151,6 +155,83 @@ cage_positions_frac = ice.cagepos1.copy()
 cage_types = list(ice.cagetype1)
 cell_matrix = np.array(ice.cell1.mat)
 ```
+
+### Ring Enumeration Architecture (Phase 5+)
+
+H-bond ring distribution analysis identifies closed loops (3-10 membered) in the H-bond network. This is distinct from cage detection (which identifies specific polyhedral cage types) and provides earlier nucleation detection — the appearance of 5- and 6-membered rings precedes complete cage formation.
+
+**Proposed class:**
+```python
+class HBondRingAnalysis(mda.analysis.base.AnalysisBase):
+    """Enumerate H-bonded ring distributions using MDAnalysis + networkx.
+    
+    Reimplements the analytical concept from nucleation_tracker (FennellLab)
+    using published algorithms (Luzar-Chandler H-bond criteria, graph-based
+    cycle detection). The original tool cannot be used as a dependency due
+    to absent license.
+    
+    Algorithm:
+    1. Build H-bond adjacency graph via MDAnalysis HydrogenBondAnalysis
+    2. Find all cycles of size 3-10 using networkx DFS or cycle_basis
+    3. Prune non-primitive rings (default: common angle / DCA method)
+    4. Validate ring PBC closure (exclude rings that don't properly close)
+    5. Output: per-frame ring count distribution {3: N3, 4: N4, ..., 10: N10}
+    """
+    
+    def __init__(self, universe, max_ring_size=8,
+                 hbond_cutoff=3.5, angle_cutoff=30,
+                 pruning='common_angle', directional=False):
+        ...
+    
+    def _compute_hbond_network(self):
+        """Build H-bond adjacency using MDAnalysis HydrogenBondAnalysis."""
+        ...
+    
+    def _enumerate_rings(self):
+        """Find all closed rings via DFS on H-bond adjacency graph.
+        
+        Uses networkx cycle detection or custom recursive DFS.
+        Much more efficient than nucleation_tracker's brute-force 
+        nested loops (~100 lines vs ~500 lines).
+        """
+        ...
+    
+    def _prune_rings(self, method='common_angle'):
+        """Remove short-circuited rings.
+        
+        Four pruning strategies from literature:
+        - vertex: >=1 shared member with smaller ring
+        - common_edge: >=2 shared members with H-bond edge
+        - common_angle: >=3 shared members with H-bond angle (DEFAULT, recommended)
+        - common_torsion: >=4 shared members with H-bond torsion
+        """
+        ...
+    
+    def _compute_rsf(self):
+        """Calculate Ring Summation Factor = #rings / (2 * N_molecules)."""
+        ...
+```
+
+**Proposed class:**
+```python
+class TetrahedralOrderParameter(mda.analysis.base.AnalysisBase):
+    """Errington-Debenedetti tetrahedral order parameter q.
+    
+    q = 1 - (3/8) * sum_{i<j} [cos(theta_ij) + 1/3]^2
+    
+    where theta_ij is the angle between O-O vectors to the 
+    four nearest neighbors. Uses H-bond priority for neighbor
+    selection when >4 neighbors within cutoff.
+    
+    Complements CHILL+ (continuous vs. discrete classification)
+    and F3/F4 (different geometric formula).
+    """
+    
+    def __init__(self, universe, cutoff=3.5):
+        ...
+```
+
+**cycless integration note:** cycless 0.7 (GenIce2 dependency, already installed) provides ring/cage topology utilities. If cycless exposes ring-finding as a callable API (rather than only as an internal GenIce2 stage), it could provide more efficient ring enumeration than a custom networkx implementation. This needs API inspection during Phase 5 planning.
 
 ### Existing Reusable Code
 

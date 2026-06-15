@@ -32,6 +32,9 @@ Features that set QuickIce apart. Not expected, but valued.
 | VTK-based 3D visualization of classified waters | See hydrate/liquid/ice regions in 3D with VTK — unique advantage over CLI tools | Medium | No | ~100-200 lines: color transfer function, per-molecule scalar array | CODEBASE.md |
 | Pre-simulation structure validation | Verify generated hydrate structure quality before expensive MD | Medium | No | ~100-150 lines: cage completeness check, occupancy verification against requested | CODEBASE.md |
 | Interface detection | Quantify hydrate-liquid interface location, width, roughness | Medium-High | **Yes**: `freud.interface.Interface` (one-liner) | ~100 lines with freud; ~300 lines custom density-gradient approach | ALGO-TIMESERIES.md |
+| Tetrahedral order parameter (q) | Per-molecule continuous measure of local tetrahedral distortion; complements CHILL+ (discrete classification) and F3/F4 (different geometric formula) | Low-Medium | No | ~50 lines: Errington-Debenedetti formula, nearest-4-neighbor selection via `capped_distance`, `calc_angles` | NUCLEATION-TRACKER.md |
+| H-bond ring distribution | Enumerate closed H-bonded rings (3-10 membered) — directly reveals cage topology; can detect early nucleation events before complete cages form; complementary to cage detection (ring distribution asks "how does the H-bond network topology change?" vs cage detection "how many complete cages exist?") | Medium-High | No | ~100 lines: MDAnalysis HydrogenBondAnalysis → adjacency graph → networkx DFS/cycle detection → ring pruning (common angle default) | NUCLEATION-TRACKER.md |
+| Ring Summation Factor (RSF) | System-level scalar order parameter: RSF = #rings / (2×N_molecules); tracks global ordering | Low | No | ~10 lines: derived from ring distribution output | NUCLEATION-TRACKER.md |
 
 ## Anti-Features
 
@@ -47,7 +50,7 @@ Features to explicitly NOT build. Common mistakes in this domain.
 | DFT/QM calculations | Completely different domain, massive dependency chain. | Stay firmly in classical MD territory. |
 | Machine learning-based classification | ML models need training data, validation, heavy dependencies (PyTorch). No domain-specific models exist yet. | Use physics-based order parameters (F3/F4, CHILL+) — interpretable, validated, lightweight. |
 | pytim dependency | GPL-3.0 license incompatible with QuickIce's MIT license. Cannot be required dependency. | Use freud.interface.Interface or custom density-gradient approach. Re-implement ITIM from published literature if needed (algorithm itself is not copyrighted). |
-| Topological cage detection from scratch | Very high complexity (~500-1000 lines). Graph-based ring detection is notoriously difficult in periodic systems. | Use GenIce2 coordinate-based approach (cage centers from generation time + distance check). |
+| Topological cage detection from scratch | Very high complexity (~500-1000 lines). Graph-based ring detection is notoriously difficult in periodic systems. | Use GenIce2 coordinate-based approach (cage centers from generation time + distance check). Note: H-bond ring enumeration (3-10 membered closed loops) is a DIFFERENT and simpler problem than full cage detection — it's feasible at ~100 lines using networkx + MDAnalysis, and fills a distinct analytical niche (early nucleation detection). |
 
 ## Feature Dependencies
 
@@ -69,12 +72,22 @@ MDAnalysis Trajectory Loading
   ├── RDF (built-in InterRDF)
   ├── MSD (built-in EinsteinMSD)
   ├── H-bond Analysis (built-in HydrogenBondAnalysis)
+  │    └── H-bond Ring Distribution (adjacency graph from H-bonds → networkx DFS)
+  │         ├── Ring Summation Factor (derived from ring counts)
+  │         └── Early Nucleation Detection (5/6-membered ring surge)
   ├── Density Profiles (built-in LinearDensity)
   ├── F3/F4 per-frame (custom AnalysisBase)
-  └── CHILL+ per-frame (custom AnalysisBase + freud)
+  ├── CHILL+ per-frame (custom AnalysisBase + freud)
+  └── Tetrahedral Order Parameter q (custom AnalysisBase, ~50 lines)
+
+Tetrahedral Order Parameter (q)
+  └── Complements CHILL+ (continuous vs. discrete classification)
 
 Density Profile
   └── Interface Detection (tanh fit or freud.interface)
+
+H-bond Ring Distribution
+  └── Cage type inference (pentagon/hexagon counts → sI vs sII signature)
 ```
 
 ## MVP Recommendation
@@ -97,11 +110,14 @@ For the analysis milestone MVP, prioritize:
 9. **Analysis tab GUI** — makes everything accessible to users
 
 ### Defer to post-MVP:
-- **Interface detection**: Either freud.interface (simple) or custom density-gradient (complex). Plan for Phase 4.
+- **Interface detection**: Either freud.interface (simple) or custom density-gradient (complex). Plan for Phase 6.
 - **Guest residence time**: Requires cage tracking + trajectory unwrapping. Phase 5.
 - **Unit cell parameter tracking**: Niche analysis. Phase 6+.
 - **VTK-based 3D classification visualization**: Use existing VTK infrastructure, but defer until analysis pipeline validated.
 - **Cage time evolution**: Requires both cage tracking and CHILL+. Phase 5.
+- **H-bond ring distribution**: Valuable for early nucleation detection and cage topology analysis; reimplement from published algorithms (~100 lines using networkx + MDAnalysis). Phase 5+ — lower priority than F3/F4, CHILL+, and cage occupancy.
+- **Tetrahedral order parameter (q)**: Simple implementation (~50 lines); complements CHILL+ and F3/F4. Phase 5 — could move earlier if low effort justifies it.
+- **RSF**: Trivially derived from ring distribution output; defer with ring distribution. Phase 5+.
 
 ## Tool Ecosystem Mapping
 
@@ -118,10 +134,15 @@ For the analysis milestone MVP, prioritize:
 | Cage occupancy | — | — | — | **Yes** (distance-based with GenIce2) |
 | Guest residence time | — | — | — | **Yes** |
 | Interface detection | — | — | ✓ `Interface` | Partial (freud simplifies) |
+| H-bond ring distribution | — | — | — | **Yes** (reimplement from published algorithms; nucleation_tracker unsuitable — no license, poor code quality) |
+| Tetrahedral order param (q) | — | — | — | **Yes** (~50 lines, Errington-Debenedetti formula) |
+| RSF | — | — | — | **Yes** (~10 lines, derived from ring counts) |
 
 ### The Hydrate Gap
 
-**Standard MD analysis tools cover ~40% of what hydrate researchers need.** The remaining 60% — cage occupancy, F3/F4, CHILL+, stability tracking, residence time — must be custom-implemented. This is QuickIce's opportunity: become the tool that fills the hydrate-specific gap.
+**Standard MD analysis tools cover ~40% of what hydrate researchers need.** The remaining 60% — cage occupancy, F3/F4, CHILL+, stability tracking, residence time, H-bond ring distribution, tetrahedral order parameter — must be custom-implemented. This is QuickIce's opportunity: become the tool that fills the hydrate-specific gap.
+
+**Note on nucleation_tracker:** The FennellLab/nucleation_tracker tool covers part of this gap (ring distribution, tetrahedral q, RSF) but cannot be used as a dependency due to its absent license. Its algorithms should be reimplemented within QuickIce's MDAnalysis framework, which will also enable trajectory-wide time-series analysis that nucleation_tracker cannot do.
 
 ## Sources
 

@@ -23,7 +23,7 @@
 | matplotlib | 3.10.8 | 2D plotting | RDF, density profiles, stability time series |
 | networkx | 3.6.1 | Graph operations | H-bond network analysis, cage topology (later phases) |
 | pairlist | 0.6.4 | PBC neighbor search | GenIce2 dependency; backup for neighbor search (MDAnalysis `capped_distance` preferred) |
-| cycless | 0.7 | Ring/cage topology | GenIce2 dependency; advanced topological cage detection (Phase 2+, not MVP) |
+| cycless | 0.7 | Ring/cage topology | GenIce2 dependency; may provide ring enumeration primitives for H-bond ring distribution analysis (Phase 5+) |
 
 ### New Dependencies Required
 
@@ -37,6 +37,7 @@
 |------------|---------|
 | MDTraj | Missing .tpr reader (critical for GROMACS topology), no MSD, no density profiles, no trajectory transformations, loads whole trajectory into memory. Redundant with MDAnalysis. |
 | pytim | GPL-3.0 license — **incompatible with QuickIce's MIT license**. Cannot be a required dependency. ITIM/Willard-Chandler algorithms are the best available but the license is a dealbreaker. |
+| nucleation_tracker | **No license** — defaults to exclusive copyright under Berne Convention. Cannot use as dependency, cannot copy code, cannot redistribute. Also: script-based (no pip install), incompatible architecture (manual .gro parsing, no MDAnalysis), no trajectory support (.xtc/.trr), extremely poor code quality (8 levels of nested copy-pasted for-loops, global mutable state, no classes). The **algorithms** (H-bond ring enumeration, Errington-Debenedetti tetrahedral order, RSF) are from published literature and should be **reimplemented** within QuickIce's MDAnalysis-based framework. Ring enumeration: ~100 lines using networkx cycle detection + MDAnalysis HydrogenBondAnalysis. Tetrahedral q: ~50 lines as AnalysisBase subclass. |
 | numba | Compatible with Python 3.14 (cp314 wheels), but **defer until benchmarked**. Estimated benefit is marginal for F3/F4 (C-accelerated via MDA), moderate for CHILL+ Python loops (but freud eliminates this), and none for cage occupancy (already C-accelerated). ~100MB install. JIT warmup adds latency. |
 | Custom .xtc/.trr reader | Binary XDR format — substantial effort, error-prone. MDAnalysis already solves this. |
 | h5py | Not needed for GROMACS trajectory analysis. Only useful for caching intermediate results on very large trajectories (>100K frames). Defer. |
@@ -76,6 +77,9 @@
 | Cage occupancy | No library implements clathrate cage identification | ~100-150 lines | GenIce2 cage centers (distance-based approach) |
 | Stability tracking | Downstream of F4/CHILL+ | ~100-150 lines | F4 or CHILL+ output |
 | Guest residence time | No standard tool | ~150-200 lines | Cage tracker, MDAnalysis `capped_distance` |
+| H-bond ring distribution | Reimplement from published algorithms; nucleation_tracker unsuitable (no license, poor code quality) | ~100 lines | MDAnalysis `HydrogenBondAnalysis` (H-bond network), networkx `cycle_basis` or custom DFS (ring enumeration), cycless (potential primitives) |
+| Tetrahedral order parameter (q) | Reimplement Errington-Debenedetti from published formula; nucleation_tracker unsuitable | ~50 lines | MDAnalysis `capped_distance` (nearest neighbors), `calc_angles` (O-O-O angles) |
+| Ring Summation Factor (RSF) | Trivially derived from ring counts | ~10 lines | H-bond ring distribution output |
 
 ---
 
@@ -139,3 +143,7 @@ stei.compute(system=(box, oxygen_positions))
 - pytim PyPI: https://pypi.org/project/pytim/ (HIGH confidence — GPL-3.0 verified)
 - License compatibility: FSF LGPL/GPL guidelines (HIGH confidence)
 - numba PyPI: https://pypi.org/project/numba/ (HIGH confidence — cp314 wheel exists)
+- nucleation_tracker GitHub: https://github.com/FennellLab/nucleation_tracker (HIGH confidence — all source files inspected)
+- nucleation_tracker paper: Maharjan, Williamson, & Fennell, J. Phys. Chem. B (2026), doi:10.1021/acs.jpcb.5c08791 (MEDIUM confidence — paywall blocked full paper access)
+- nucleation_tracker license: Confirmed absent at https://raw.githubusercontent.com/FennellLab/nucleation_tracker/master/LICENSE (HIGH confidence — 404 verified)
+- cycless PyPI/docs: GenIce2 dependency, ring enumeration utilities (MEDIUM confidence — needs API inspection)

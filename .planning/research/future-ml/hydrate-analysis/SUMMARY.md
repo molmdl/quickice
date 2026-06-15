@@ -18,11 +18,15 @@ QuickIce is adding hydrate-specific MD analysis capabilities — order parameter
 
 MDAnalysis 2.10.0 is the primary framework (trajectory I/O, PBC handling, built-in RDF/MSD/H-bond/density analysis). freud 3.5.0 is a strongly recommended supplement for CHILL+ (C++ Steinhardt order parameters, ~10-50x faster than Python scipy loops) and interface detection. All other analyses (F3/F4, cage occupancy, stability tracking, residence time) use MDAnalysis + numpy + scipy. No other new dependencies are needed. pytim is excluded due to GPL-3.0 license incompatibility with QuickIce's MIT license.
 
+**nucleation_tracker** (FennellLab/nucleation_tracker) was evaluated as a potential dependency for H-bond ring distribution analysis. It enumerates 3-10 membered closed H-bonded rings, computes the Errington-Debenedetti tetrahedral order parameter (q), and calculates a Ring Summation Factor (RSF). These are **complementary** to QuickIce's planned F3/F4, CHILL+, and cage analyses — they fill a gap in topological network analysis. However, the tool has **no license** (cannot be used as dependency), poor code quality (8 levels of nested copy-pasted for-loops, global mutable state), and no trajectory support. The algorithms are from published literature and should be **reimplemented** cleanly within QuickIce's MDAnalysis-based framework (~100 lines for ring enumeration, ~50 lines for tetrahedral q). networkx 3.6.1 (already installed) provides cycle detection primitives, and cycless 0.7 (GenIce2 dependency, already installed) may also provide ring enumeration capabilities.
+
 **Core technologies:**
 - **MDAnalysis 2.10.0**: Trajectory I/O, PBC handling, built-in analysis (RDF, MSD, H-bonds, density) — already installed
 - **freud 3.5.0**: CHILL+ spherical harmonics (Steinhardt q̅₆), interface detection — compatible with Python 3.14.3, ~10MB install
 - **scipy 1.17.1**: `sph_harm_y` for spherical harmonics (backup if freud unavailable) — already installed
 - **numpy 2.4.3**: Vectorized computation backbone — already installed
+- **networkx 3.6.1**: Graph cycle detection for H-bond ring enumeration — already installed
+- **cycless 0.7**: GenIce2 dependency; may provide ring enumeration primitives — already installed
 
 ### Expected Features
 
@@ -38,12 +42,15 @@ MDAnalysis 2.10.0 is the primary framework (trajectory I/O, PBC handling, built-
 - Hydrate stability/dissociation tracking — time evolution of hydrate phase fraction
 - Guest residence time — how long guests stay in cages; kinetic stability measure
 - VTK-based 3D visualization of classified water molecules — unique advantage over CLI tools
+- Tetrahedral order parameter (Errington-Debenedetti q) — per-molecule continuous tetrahedral distortion measure; complements CHILL+ (discrete classification) and F3/F4 (different geometric formula); ~50 lines as AnalysisBase subclass
+- H-bond ring distribution — enumerates closed 3-10 membered H-bonded loops; directly reveals cage topology and can detect early nucleation events before complete cages form; reimplemented from published algorithms (~100 lines) using networkx + MDAnalysis
 
 **Defer (v2+):**
 - Interface detection (ITIM/Willard-Chandler) — pytim excluded by license; custom implementation or freud's basic `Interface`
-- Topological cage detection (ring-finding) — GenIce2 coordinate approach eliminates need for MVP
 - Machine learning classification — physics-based order parameters are interpretable and lightweight
 - Full MD engine integration — out of scope for a structure generation/analysis tool
+- Ring Summation Factor (RSF) — trivially computed from ring counts; deferrable until ring distribution is implemented
+- Directional ring analysis — tracking proton directionality in rings; niche feature for H-bond network asymmetry studies
 
 ### Architecture Approach
 
@@ -63,6 +70,7 @@ Analysis integrates into QuickIce's MVVM pattern as a new Tab 6 (Analysis tab) w
 3. **Cage center drift during MD** — GenIce2 provides t=0 centers; must re-center each frame via nearest-water centroid or tracking displacements
 4. **Confusing F3/F4 with Steinhardt qₗ** — these measure fundamentally different things; F3/F4 are tetrahedral angular correlations, not spherical harmonics bond order parameters
 5. **Blocking GUI during long analysis** — CHILL+ at 0.5-2 sec/frame means minutes for full trajectories; must use QThread with progress bar and cancel button
+6. **Unlicensed code cannot be used as dependency** — nucleation_tracker has no LICENSE file; default copyright means all rights reserved. Cannot import, copy, or redistribute. Must reimplement algorithms independently from published literature (legally sound since the underlying algorithms — Luzar-Chandler H-bond criteria, Errington-Debenedetti tetrahedral order, graph-based ring enumeration — are all published)
 
 ### Key Discovery
 
@@ -103,13 +111,13 @@ Based on research, suggested phase structure:
 **Avoids:** GUI blocking pitfall (QThread); memory exhaustion (streaming frame-by-frame)
 **Research flag:** Standard patterns — follows existing MVVM/tab pattern exactly
 
-### Phase 5: Advanced Time-Series + Residence Time
-**Rationale:** Downstream consumers of CHILL+ and cage tracking; valuable for nucleation/dissociation studies
-**Delivers:** Guest residence time (continuous + intermittent correlation), cage integrity tracking, H-bond persistence
-**Uses:** Cage tracker from Phase 1, CHILL+ from Phase 3, MDAnalysis HydrogenBondAnalysis
-**Implements:** ResidenceAnalyzer, CageIntegrityTracker, HBondPersistence
-**Avoids:** Guest trajectory unwrapping across PBC (use NoJump transformation)
-**Research flag:** Needs research — guest identity persistence across frames (GROMACS atom reordering); unwrap trajectory before residence analysis
+### Phase 5: Advanced Time-Series + Residence Time + Ring Distribution
+**Rationale:** Downstream consumers of CHILL+ and cage tracking; ring distribution fills topological gap in nucleation analysis
+**Delivers:** Guest residence time (continuous + intermittent correlation), cage integrity tracking, H-bond persistence, **H-bond ring distribution analysis** (3-10 membered closed loops, reimplemented from published algorithms using networkx + MDAnalysis), **tetrahedral order parameter** (Errington-Debenedetti q, ~50-line AnalysisBase subclass)
+**Uses:** Cage tracker from Phase 1, CHILL+ from Phase 3, MDAnalysis HydrogenBondAnalysis, networkx cycle detection (or cycless ring enumeration)
+**Implements:** ResidenceAnalyzer, CageIntegrityTracker, HBondPersistence, HBondRingAnalysis (AnalysisBase subclass), TetrahedralOrderParameter (AnalysisBase subclass)
+**Avoids:** Guest trajectory unwrapping across PBC (use NoJump transformation); nucleation_tracker dependency (no license — reimplement from published algorithms); brute-force ring enumeration (use efficient DFS/networkx); PBC artifacts in H-bond network at boundaries (validate ring closures with MDAnalysis PBC primitives)
+**Research flag:** Needs research — guest identity persistence across frames (GROMACS atom reordering); unwrap trajectory before residence analysis; **whether ring distribution is sensitive for early hydrate nucleation detection** (need validation on known nucleation trajectories); cycless API for ring enumeration primitives vs. custom networkx implementation
 
 ### Phase 6: Interface Detection + Visualization Polish
 **Rationale:** Advanced feature; needs either freud.interface.Interface or custom density-gradient method
@@ -167,6 +175,9 @@ Phases with standard patterns (skip research-phase):
 - **freud Steinhardt normalization**: Need to verify that `freud.order.Steinhardt(l=3, average=True)` computes the same qₗₘ as defined in the ten Wolde/Steinhardt convention used by the CHILL+ paper. Different normalization conventions can flip the sign of c(i,j).
 - **Cage center re-centering strategy**: For MD trajectories where the hydrate lattice deforms, the recommended approach (find nearest waters to initial center, compute centroid) needs testing on a real trajectory to verify accuracy.
 - **Performance benchmarking**: CHILL+ performance estimate (0.5-2 sec/frame for 10K waters) needs validation. If >5 sec/frame, may need numba JIT or frame subsampling strategies.
+- **Ring distribution sensitivity for early nucleation**: H-bond ring distribution can theoretically detect 5- and 6-membered ring formation before complete cages, but this has not been validated on hydrate nucleation trajectories. Need test on known nucleation trajectory to verify sensitivity. Deferrable to Phase 5 implementation.
+- **cycless ring enumeration API**: cycless 0.7 (GenIce2 dependency, already installed) may provide ring enumeration primitives that could accelerate Phase 5 ring distribution implementation. Need to inspect cycless API to determine if it exposes ring-finding as a callable function or only as an internal GenIce2 stage.
+- **Ring pruning strategy selection**: nucleation_tracker provides four pruning algorithms (vertex, common edge, common angle, common torsion) with the paper recommending "common angle" as default. QuickIce implementation should start with common angle pruning but may need to validate which is most appropriate for hydrate systems.
 
 ## Sources
 
@@ -198,6 +209,7 @@ Detailed algorithm specifications and analysis preserved in:
 - `CODEBASE.md` — QuickIce data structures, VTK capability, reusable code inventory
 - `COMPARISON.md` — Detailed library comparison (MDAnalysis vs MDTraj vs freud vs pytim)
 - `MDANALYSIS-FEASIBILITY.md` — Per-method feasibility, efficiency analysis, API verification
+- `NUCLEATION-TRACKER.md` — nucleation_tracker research (ring distribution, tetrahedral q, license assessment); see also `../../hydrate-analysis/NUCLEATION-TRACKER.md`
 
 ---
 *Research completed: 2026-06-12*
