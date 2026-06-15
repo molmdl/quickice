@@ -458,9 +458,9 @@ Plans:
 
 ### Phase 37.1: Fix Verified Scancode Findings (INSERTED)
 
-**Goal:** Fix verified critical/high code bugs (AN-01, AN-02, AN-03, CP-01, UM-01), documentation issues (wrong tab numbers in tooltips, missing CLI flags in docs, THF ring description, outdated principles), and add grompp validation tests for CLI pipeline and GUI export paths
+**Goal:** Fix verified critical/high code bugs (AN-01, AN-02, AN-03, CP-01, UM-01, V-02, V-05), code quality issues (V-07 duplication, V-17 mutation), shared constants (UM-02 water volume, AVOGADRO-DRY), input validation (CP-03, SEC-02), error handling (EH-01, EH-02, EH-05), documentation accuracy (README Ice X/XV/DOI/IAPWS, gui-guide v4.5, cli-reference, help_dialog, parser), and grompp validation tests for CLI pipeline and GUI export paths
 **Depends on:** Phase 37
-**Plans:** 7 plans in 3 waves
+**Plans:** 14 plans in 4 waves
 
 Plans:
 - [x] 37.1-01-PLAN.md — Fix data model bugs: AN-01 (atom count), CP-01 (InterfaceStructure fields), UM-01 (AVOGADRO import)
@@ -470,6 +470,13 @@ Plans:
 - [x] 37.1-05-PLAN.md — Add grompp validation tests: GROMPP skipif + hydrate/custom/solute standalone + CLI pipeline grompp
 - [x] 37.1-06-PLAN.md — GAP: Add dedicated ### subsections for --no-overwrite, --pocket-shape, and interface flags (DOC-C2 closure)
 - [x] 37.1-07-PLAN.md — GAP: Add PBC wrapping integration test for write_ion_gro_file (AN-03 closure)
+- [ ] 37.1-08-PLAN.md — Fix CRITICAL code bugs: V-02 (cKDTree O(N²) rebuild), V-05 (unknown atoms silently skipped)
+- [ ] 37.1-09-PLAN.md — Fix HIGH code quality: V-07 (deduplicate detect_atoms_per_molecule), V-17 (stop input structure mutation)
+- [ ] 37.1-10-PLAN.md — Fix MEDIUM shared constants: UM-02 (WATER_VOLUME_NM3), AVOGADRO-DRY (consolidate 3 definitions)
+- [ ] 37.1-11-PLAN.md — Fix MEDIUM input validation: CP-03 (concentration/occupancy range), SEC-02 (file path extension)
+- [ ] 37.1-12-PLAN.md — Fix MEDIUM error handling: EH-01 (GRO file I/O protection), EH-02 (hydrate wrapper assertion), EH-05 (ValueError catch)
+- [ ] 37.1-13-PLAN.md — Fix documentation accuracy: README (Ice X, Ice XV, DOI, IAPWS, test path), gui-guide, cli-reference, help_dialog, parser
+- [ ] 37.1-14-PLAN.md — Gap closure: write_interface_gro_file PBC wrapping, --ion-source custom in workflow script
 
 **Details:**
 
