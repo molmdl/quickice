@@ -9,7 +9,7 @@ import numpy as np
 
 # Molecule type information: atom count, residue name, typical charge
 MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
-    "ice":   {"atoms": 3, "res_name": "SOL", "description": "Ice (TIP3P: O, H, H)"},
+    "ice":   {"atoms": 4, "res_name": "SOL", "description": "Ice (TIP4P-ICE: OW, HW1, HW2, MW)"},
     "water": {"atoms": 4, "res_name": "SOL", "description": "Water (TIP4P-ICE: OW, HW1, HW2, MW)"},
     "na":    {"atoms": 1, "res_name": "NA",  "description": "Sodium ion"},
     "cl":    {"atoms": 1, "res_name": "CL",  "description": "Chloride ion"},
@@ -28,7 +28,7 @@ class MoleculeIndex:
     
     Enables handling of variable atoms-per-molecule:
     - ions (1 atom): Na, Cl
-    - ice (3 atoms): O, H, H
+    - ice (4 atoms): OW, HW1, HW2, MW (TIP4P-ICE)
     - water (4 atoms): OW, HW1, HW2, MW (TIP4P)
     - CH4 (5 atoms): C + 4H
     - THF (13 atoms): C4H8O (4C + 8H + 1O)
@@ -243,6 +243,19 @@ class InterfaceStructure:
             types are present. For backward compatibility, existing code using
             ice_atom_count still works without using this field.
         guest_nmolecules: Number of guest molecules (0 if no guests)
+        solute_type: Solute type ("CH4" or "THF") if solutes were inserted
+        solute_positions: (N_solute_atoms, 3) solute atom positions in nm
+        solute_atom_names: Solute atom names
+        solute_n_molecules: Number of solute molecules
+        solute_molecule_indices: List of (start, end) tuples for each solute molecule
+        solute_registry: MoleculetypeRegistry with solute moleculetype registered
+        custom_molecule_count: Number of custom molecules placed
+        custom_molecule_atom_count: Number of custom molecule atoms
+        custom_molecule_positions: (N_custom_atoms, 3) custom molecule positions in nm
+        custom_molecule_atom_names: Custom molecule atom names
+        custom_molecule_moleculetype: GROMACS moleculetype name for custom molecules
+        custom_gro_path: Path to custom molecule .gro file
+        custom_itp_path: Path to custom molecule .itp file
 
     Note:
         Ice candidates from GenIce use 3 atoms per molecule (O, H, H).
@@ -271,6 +284,21 @@ class InterfaceStructure:
     guest_atom_count: int = 0
     molecule_index: list = field(default_factory=list)
     guest_nmolecules: int = 0
+    # Solute attributes (populated when solute insertion targets this interface)
+    solute_type: str = ""
+    solute_positions: np.ndarray | None = None
+    solute_atom_names: list[str] | None = None
+    solute_n_molecules: int = 0
+    solute_molecule_indices: list[tuple[int, int]] | None = None
+    solute_registry: Any = None  # MoleculetypeRegistry (avoid circular import)
+    # Custom molecule attributes (populated when custom molecule insertion targets this interface)
+    custom_molecule_count: int = 0
+    custom_molecule_atom_count: int = 0
+    custom_molecule_positions: np.ndarray | None = None
+    custom_molecule_atom_names: list[str] | None = None
+    custom_molecule_moleculetype: str = ""
+    custom_gro_path: Any = None  # Path (avoid circular import)
+    custom_itp_path: Any = None  # Path (avoid circular import)
 
 
 @dataclass
