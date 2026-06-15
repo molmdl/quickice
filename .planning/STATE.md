@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 1/5 plans complete
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 2/5 plans complete
 
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 37.1-fix-verified-scancode-findings |
 | Plan | 02 of 05 |
 | Status | In progress |
-| Last activity | 2026-06-15 — Completed 37.1-02-SUMMARY.md |
+| Last activity | 2026-06-15 — Completed 37.1-01-SUMMARY.md (re-executed), 37.1-02-SUMMARY.md |
 
-**Progress:** █░░░░░░░░░ 20% (1/5 plans in Phase 37.1, 237+ plans across all milestones)
+**Progress:** ██░░░░░░░░ 40% (2/5 plans in Phase 37.1, 237+ plans across all milestones)
 
 ---
 
@@ -481,6 +481,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | FIX #7: SoluteInserter(config, seed=args.seed) | Unseeded SoluteInserter produced non-reproducible placement; seed=args.seed fixes this | ✓ Shipped (36-08) |
 | CustomMoleculeConfig gro_path=gro_path (Path, not str) | CustomMoleculeConfig.gro_path typed as Path in types.py; no str() conversion needed | ✓ Shipped (36-08) |
 | Inline AVOGADRO for custom_concentration→count | Avoids circular dependency on solute_inserter; reuses N = C_M × V_L × NA formula | ✓ Shipped (36-08) |
+| MOLECULE_TYPE_INFO ice atoms=4 (AN-01 fix) | TIP4P-ICE has 4 atoms (OW,HW1,HW2,MW), not 3; matches WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-01) |
+| InterfaceStructure solute/custom fields (CP-01 fix) | 13 optional dataclass fields replace duck-typing; enables dataclasses.fields()/asdict() | ✓ Shipped (37.1-01) |
+| AVOGADRO imported from ion_inserter in pipeline.py (UM-01 fix) | DRY: shared constant replaces hardcoded 6.02214076e23 | ✓ Shipped (37.1-01) |
 | Source resolution via _get_source_structure for solute step | --solute-source selects interface or custom structure as source for insertion | ✓ Shipped (36-08) |
 | FIX #4: Ion step custom source offset includes guest_atom_count | offset = ice_atom_count + water_atom_count + guest_atom_count (NOT just ice+water) | ✓ Shipped (36-09) |
 | Duck-typing attribute propagation for ion step | Setting attrs on InterfaceStructure at runtime mirrors GUI MainWindow._on_insert_ions | ✓ Shipped (36-09) |
@@ -612,10 +615,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37.1-02-PLAN.md (gro-coordinate-bugs), Phase 37.1 in progress
-**Status:** Phase 37.1 — 1/5 plans done (02 complete)
-**Stopped at:** Completed 37.1-02-PLAN.md
+**Completed:** 37.1-01-PLAN.md (data-model-bugs, re-executed), 37.1-02-PLAN.md (gro-coordinate-bugs)
+**Status:** Phase 37.1 — 2/5 plans done
+**Stopped at:** Completed 37.1-01-SUMMARY.md (re-execution with fresh commits)
 **Resume file:** None
 
 ---
-*State updated: 2026-06-15 — Phase 37 COMPLETE (20/20, verified)*
+*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (2/5 plans)*
