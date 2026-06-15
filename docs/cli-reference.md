@@ -483,6 +483,53 @@ The `python quickice.py` invocation continues to work for source installations. 
 
 ---
 
+## Example Scripts
+
+The `scripts/` directory includes ready-made example scripts for common workflows:
+
+### CLI Examples (`scripts/cli-examples.sh`)
+
+A comprehensive reference script showing example commands for **every possible CLI flag combination**, organized by feature area:
+
+- Ice generation (8 phases with realistic T/P values)
+- Interface generation (slab, pocket, piece modes)
+- Hydrate generation (sI, sII, sH with guest options)
+- Custom molecule insertion (random and custom placement)
+- Solute insertion (CH4, THF with source selection)
+- Ion insertion (3 source modes)
+- Full workflow chains (F1–F4)
+- Mode flags (--cli, --gui, --help)
+
+All commands are commented out for safety — uncomment only the ones you want to run.
+
+```bash
+# View the script
+cat scripts/cli-examples.sh
+
+# Run it (just shows the reference message)
+./scripts/cli-examples.sh
+```
+
+### Hydrate-Interface-Custom-Ion Workflow (`scripts/hydrate-interface-custom-ion.sh`)
+
+A runnable workflow script that demonstrates the hydrate→interface→custom molecule→ion pipeline. See [GRO/ITP Guide](gro-itp-guide.md) for custom molecule file preparation.
+
+```bash
+# Run with default ethanol molecule and ion concentration
+./scripts/hydrate-interface-custom-ion.sh \
+  --custom-gro quickice/data/custom/etoh.gro \
+  --custom-itp quickice/data/custom/etoh.itp
+
+# Custom ion concentration and temperature
+./scripts/hydrate-interface-custom-ion.sh \
+  --custom-gro my_molecule.gro \
+  --custom-itp my_molecule.itp \
+  --ion-conc 0.5 \
+  --temperature 270
+```
+
+---
+
 ## See Also
 
 - [Ranking Methodology](./ranking.md) - How candidates are scored and ranked
