@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 37.1 inserted)
-**Total Plans:** 76+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 5, e2e-compute-export: 11, completed: 57/76+)
+**Total Plans:** 78+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 7, e2e-compute-export: 11, completed: 57/78+)
 
 ## Overview
 
@@ -460,7 +460,7 @@ Plans:
 
 **Goal:** Fix verified critical/high code bugs (AN-01, AN-02, AN-03, CP-01, UM-01), documentation issues (wrong tab numbers in tooltips, missing CLI flags in docs, THF ring description, outdated principles), and add grompp validation tests for CLI pipeline and GUI export paths
 **Depends on:** Phase 37
-**Plans:** 5 plans in 2 waves
+**Plans:** 7 plans in 3 waves
 
 Plans:
 - [ ] 37.1-01-PLAN.md — Fix data model bugs: AN-01 (atom count), CP-01 (InterfaceStructure fields), UM-01 (AVOGADRO import)
@@ -468,6 +468,8 @@ Plans:
 - [ ] 37.1-03-PLAN.md — Fix CLI documentation: DOC-C1 (hydrate flags), DOC-C2 (missing pipeline flags), DOC-C3 (exit codes), DOC-C4 (--gromacs no-op)
 - [ ] 37.1-04-PLAN.md — Fix GUI docs and tooltips: DOC-G1 (tab numbers), DOC-G2 (THF ring), DOC-G3 (overlap tooltip), DOC-G4 (principles diversity)
 - [ ] 37.1-05-PLAN.md — Add grompp validation tests: GROMPP skipif + hydrate/custom/solute standalone + CLI pipeline grompp
+- [ ] 37.1-06-PLAN.md — GAP: Add dedicated ### subsections for --no-overwrite, --pocket-shape, and interface flags (DOC-C2 closure)
+- [ ] 37.1-07-PLAN.md — GAP: Add PBC wrapping integration test for write_ion_gro_file (AN-03 closure)
 
 **Details:**
 
@@ -510,7 +512,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 **Phase Count:** 15 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, and 37.1 inserted)
 
-**Total Plans:** 54+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 5, e2e-compute-export: 11, completed: 39/54+)
+**Total Plans:** 56+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 7, e2e-compute-export: 11, completed: 39/56+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -563,7 +565,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
-| 37.1 - Fix Verified Scancode Findings | ⏳ Not Started | 0 | 5 |
+| 37.1 - Fix Verified Scancode Findings | ⏳ In Progress | 0 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
