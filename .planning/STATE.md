@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings — COMPLETE (5/5 plans)
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings — IN PROGRESS (6/7 plans)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37.1-fix-verified-scancode-findings — COMPLETE (5/5 plans)
+**Current focus:** Phase 37.1-fix-verified-scancode-findings — IN PROGRESS (6/7 plans)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 05 of 05 |
-| Status | Phase complete |
-| Last activity | 2026-06-15 — Completed 37.1-05-SUMMARY.md |
+| Plan | 06 of 07 |
+| Status | In progress |
+| Last activity | 2026-06-15 — Completed 37.1-06-SUMMARY.md |
 
-**Progress:** ██████████ 100% (5/5 plans in Phase 37.1, 238+ plans across all milestones)
+**Progress:** ████████░░ 86% (6/7 plans in Phase 37.1, 238+ plans across all milestones)
 
 ---
 
@@ -527,6 +527,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | 2x2x2 supercell for hydrate grompp test | 1x1x1 gives 1.2nm box (too small for 1.0nm cutoffs); 2x2x2 gives 2.4nm box | ✓ Shipped (37.1-05) |
 | Hydrate wrapper ice_atom_count=0 (CLI behavior) | CLI pipeline.py treats hydrate water as "water" region, not "ice" | ✓ Shipped (37.1-05) |
 | CLI grompp output naming follows most downstream step | ion.gro/ion.top for solute+ion chain (not chain.gro) | ✓ Shipped (37.1-05) |
+| CLI reference documents all 40 argparse flags with ### subsections | 36 subsections (combined for box-x/y/z, supercell-x/y/z); no prose table duplication | ✓ Shipped (37.1-06) |
+| Interface Generation Flags section replaces prose | Dedicated ### subsections for --interface, --mode, --box-x/y/z, --ice-thickness, --water-thickness, --pocket-diameter, --pocket-shape, --seed | ✓ Shipped (37.1-06) |
+| --no-overwrite documented (exit code 1 on existing files) | Boolean flag, default False; previously undocumented per VERIFICATION.md | ✓ Shipped (37.1-06) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -627,10 +630,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37.1-01-PLAN.md, 37.1-02-PLAN.md, 37.1-03-PLAN.md, 37.1-04-PLAN.md, 37.1-05-PLAN.md
-**Status:** Phase 37.1 — COMPLETE (5/5 plans)
-**Stopped at:** Completed 37.1-05-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-06-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (6/7 plans, Plan 07 gap closure pending)
+**Stopped at:** Completed 37.1-06-SUMMARY.md
 **Resume file:** None
-
 ---
-*State updated: 2026-06-15 — Phase 37.1 COMPLETE (5/5 plans)*
+*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (6/7 plans)*
