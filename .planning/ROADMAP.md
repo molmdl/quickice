@@ -359,8 +359,8 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 - [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
 - [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [ ] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (Option 1 decision from f345ca9)
-- [ ] 35-07-PLAN.md — Quick Task docs: Document Quick Task 017/018 features (concentration input, delete/overlap)
+- [x] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (Option 1 decision from f345ca9)
+- [x] 35-07-PLAN.md — Quick Task docs: Document Quick Task 017/018 features (concentration input, delete/overlap)
 
 ---
 
@@ -562,7 +562,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 9 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
-| 35 - Integration & Documentation | ⏳ In Progress | 5 | 7 |
+| 35 - Integration & Documentation | ✓ Complete | 7 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 7 | 7 |
