@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 3/5 plans complete
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 4/5 plans complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37.1-fix-verified-scancode-findings — 3/5 plans complete
+**Current focus:** Phase 37.1-fix-verified-scancode-findings — 4/5 plans complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 03 of 05 |
+| Plan | 04 of 05 |
 | Status | In progress |
-| Last activity | 2026-06-15 — Completed 37.1-03-SUMMARY.md |
+| Last activity | 2026-06-15 — Completed 37.1-04-SUMMARY.md |
 
-**Progress:** ███░░░░░░░ 60% (3/5 plans in Phase 37.1, 237+ plans across all milestones)
+**Progress:** ████░░░░░░ 80% (4/5 plans in Phase 37.1, 237+ plans across all milestones)
 
 ---
 
@@ -519,6 +519,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | while/shift flag parsing for value-taking options | for/$@ pattern breaks with shift for value flags; while/shift is the correct bash idiom | ✓ Shipped (37-20) |
 | Missing-value guards for all flag-taking options | Prevents silent empty-string assignment when flag appears without value | ✓ Shipped (37-20) |
 | All 5 phase success criteria verified | Unified routing, --cli force, PySide6 graceful fallback, test suite, quickice.py compat all pass | ✓ Shipped (37-18) |
+| Tooltip tab numbers match TabIndex enum | 0=Ice, 1=Hydrate, 2=Interface (not pre-Phase 34.3 numbering) | ✓ Shipped (37.1-04) |
+| THF is 5-membered ring (4C + 1O) | "Tetrahydro" = 4 added H atoms, not ring size; ring has 5 atoms (4C+1O) | ✓ Shipped (37.1-04) |
+| Custom mode overlap checking with warning dialog | _check_overlap_with_existing_positions() checks 0.25nm threshold + "Add anyway?" dialog | ✓ Shipped (37.1-04) |
+| O-O histogram fingerprint for diversity score description | Cosine similarity of O-O distance distributions replaces "rewards unique seeds" in docs | ✓ Shipped (37.1-04) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -619,10 +623,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37.1-01-PLAN.md, 37.1-02-PLAN.md, 37.1-03-PLAN.md
-**Status:** Phase 37.1 — 3/5 plans done
-**Stopped at:** Completed 37.1-03-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md, 37.1-02-PLAN.md, 37.1-03-PLAN.md, 37.1-04-PLAN.md
+**Status:** Phase 37.1 — 4/5 plans done
+**Stopped at:** Completed 37.1-04-SUMMARY.md
 **Resume file:** None
 
 ---
-*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (3/5 plans)*
+*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (4/5 plans)*
