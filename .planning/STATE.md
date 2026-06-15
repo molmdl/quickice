@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 2/5 plans complete
+**Current Focus:** Phase 37.1-fix-verified-scancode-findings — 3/5 plans complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37.1-fix-verified-scancode-findings — 1/5 plans complete
+**Current focus:** Phase 37.1-fix-verified-scancode-findings — 3/5 plans complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 02 of 05 |
+| Plan | 03 of 05 |
 | Status | In progress |
-| Last activity | 2026-06-15 — Completed 37.1-01-SUMMARY.md (re-executed), 37.1-02-SUMMARY.md |
+| Last activity | 2026-06-15 — Completed 37.1-03-SUMMARY.md |
 
-**Progress:** ██░░░░░░░░ 40% (2/5 plans in Phase 37.1, 237+ plans across all milestones)
+**Progress:** ███░░░░░░░ 60% (3/5 plans in Phase 37.1, 237+ plans across all milestones)
 
 ---
 
@@ -484,6 +484,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | MOLECULE_TYPE_INFO ice atoms=4 (AN-01 fix) | TIP4P-ICE has 4 atoms (OW,HW1,HW2,MW), not 3; matches WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-01) |
 | InterfaceStructure solute/custom fields (CP-01 fix) | 13 optional dataclass fields replace duck-typing; enables dataclasses.fields()/asdict() | ✓ Shipped (37.1-01) |
 | AVOGADRO imported from ion_inserter in pipeline.py (UM-01 fix) | DRY: shared constant replaces hardcoded 6.02214076e23 | ✓ Shipped (37.1-01) |
+| -T 250 -P 0.1 for all hydrate CLI examples | 250K/0.1 MPa near sI/sII CH4 hydrate stability; consistent across examples | ✓ Shipped (37.1-03) |
+| Exit codes 0/1/2 only (no code 3) | Code inspection: 0=success, 1=runtime error, 2=argparse error; exit code 3 does not exist | ✓ Shipped (37.1-03) |
+| --gromacs no-op in pipeline mode | Pipeline mode always generates GROMACS files; --gromacs only controls ice-only export | ✓ Shipped (37.1-03) |
+| Pipeline flag docs grouped by argparse argument groups | Hydrate/Custom/Solute/Ion sections mirror parser.py structure | ✓ Shipped (37.1-03) |
 | Source resolution via _get_source_structure for solute step | --solute-source selects interface or custom structure as source for insertion | ✓ Shipped (36-08) |
 | FIX #4: Ion step custom source offset includes guest_atom_count | offset = ice_atom_count + water_atom_count + guest_atom_count (NOT just ice+water) | ✓ Shipped (36-09) |
 | Duck-typing attribute propagation for ion step | Setting attrs on InterfaceStructure at runtime mirrors GUI MainWindow._on_insert_ions | ✓ Shipped (36-09) |
@@ -615,10 +619,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-15
-**Completed:** 37.1-01-PLAN.md (data-model-bugs, re-executed), 37.1-02-PLAN.md (gro-coordinate-bugs)
-**Status:** Phase 37.1 — 2/5 plans done
-**Stopped at:** Completed 37.1-01-SUMMARY.md (re-execution with fresh commits)
+**Completed:** 37.1-01-PLAN.md, 37.1-02-PLAN.md, 37.1-03-PLAN.md
+**Status:** Phase 37.1 — 3/5 plans done
+**Stopped at:** Completed 37.1-03-SUMMARY.md
 **Resume file:** None
 
 ---
-*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (2/5 plans)*
+*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (3/5 plans)*
