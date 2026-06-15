@@ -142,6 +142,21 @@ Default: Export all candidates. Use `--candidate N` to export only rank N.
 
 ---
 
+### `--no-overwrite`
+
+Do not overwrite existing output files. When this flag is set, QuickIce checks if the output directory already contains files before writing. If files exist, the pipeline exits with code 1.
+
+**Type:** Boolean flag (store_true)
+
+**Default:** False (overwriting is allowed by default)
+
+```bash
+# Safe re-run without overwriting existing results
+python -m quickice -T 260 -P 0.1 -N 100 --no-overwrite
+```
+
+---
+
 ### `--version`, `-V`
 
 Display the current QuickIce version.
@@ -341,6 +356,30 @@ Box dimensions must exceed the ice candidate dimensions.
 ### Triclinic Phase Support
 
 All supported ice phases except Ice II work with interface generation. Ice II (rhombohedral) cannot form orthogonal supercells. Ice V (monoclinic) can be transformed to orthogonal cells. Ice VI (tetragonal) and other orthogonal phases work natively.
+
+### `--pocket-shape`
+
+Pocket shape for pocket-mode interface generation. Determines whether the water cavity within the ice matrix is spherical or cubic.
+
+**Choices:** `sphere`, `cubic`
+
+**Default:** `sphere`
+
+**Required with:** `--interface --mode pocket`
+
+```bash
+# Spherical pocket (default)
+python -m quickice --temperature 253 --pressure 500 \
+  --interface --mode pocket \
+  --box-x 4.0 --box-y 4.0 --box-z 4.0 \
+  --pocket-diameter 2.0
+
+# Cubic pocket
+python -m quickice --temperature 253 --pressure 500 \
+  --interface --mode pocket \
+  --box-x 4.0 --box-y 4.0 --box-z 4.0 \
+  --pocket-diameter 2.0 --pocket-shape cubic
+```
 
 ---
 
