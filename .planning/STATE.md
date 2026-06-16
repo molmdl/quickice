@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 10 of 15 |
+| Plan | 11 of 15 |
 | Status | In progress |
-| Last activity | 2026-06-16 — Completed 37.1-10-SUMMARY.md |
+| Last activity | 2026-06-16 — Completed 37.1-11-SUMMARY.md |
 
-**Progress:** ███████░░░ 67% (10/15 plans in Phase 37.1, 239+ plans across all milestones)
+**Progress:** ███████░░░ 73% (11/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -539,6 +539,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | WATER_VOLUME_NM3 shared constant in types.py (UM-02 fix) | 0.0299 nm³/molecule replaces 9 hardcoded values across 7 files; single source of truth alongside WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-10) |
 | AVOGADRO single definition in ion_inserter.py (AVOGADRO-DRY fix) | 3 independent AVOGADRO definitions consolidated to 1; all consumers import from ion_inserter.py | ✓ Shipped (37.1-10) |
 | water_fraction heuristic replaced with molecule-count volume (UM-03 fix) | Atom-count heuristic inflated volume ~25% (MW virtual sites counted as 4/3 real atoms); water_nmolecules * WATER_VOLUME_NM3 matches pipeline.py and GUI | ✓ Shipped (37.1-10) |
+| Concentration range validation [0.0, 5.0] mol/L (CP-03 fix) | validate_concentration_range() for --solute/ion/custom-concentration; seawater ~0.6 M, saturated ~5 M; absurd values rejected at parse time | ✓ Shipped (37.1-11) |
+| Occupancy range validation [0.0, 100.0]% (CP-03 fix) | validate_occupancy_range() for --cage-occupancy-small/large; cage occupancy is a percentage; values outside [0, 100] rejected | ✓ Shipped (37.1-11) |
+| File extension validation for --custom-gro/--custom-itp (SEC-02 fix) | .gro/.itp extension check in pipeline.py (not parser); case-insensitive via .suffix.lower(); matches GUI QFileDialog filter behavior | ✓ Shipped (37.1-11) |
+| Validators in validators.py (not parser.py) | All argparse type validators consolidated in validators.py; DRY single location for input validation functions | ✓ Shipped (37.1-11) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -639,9 +643,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-10-PLAN.md
-**Status:** Phase 37.1 — IN PROGRESS (10/15 plans)
-**Stopped at:** Completed 37.1-10-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-11-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (11/15 plans)
+**Stopped at:** Completed 37.1-11-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (10/15 plans)*
+*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (11/15 plans)*
