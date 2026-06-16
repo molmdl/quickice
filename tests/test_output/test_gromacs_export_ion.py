@@ -169,6 +169,56 @@ class TestIonGROMACSExporter:
         # Guest ITP should exist
         assert (tmp_path / "ch4_hydrate.itp").exists()
 
+    def test_guest_itp_copied_when_guest_nmolecules_zero_but_molecule_index_has_guests(self, mock_save_dialog):
+        """REGRESSION: Guest ITP is copied even when guest_nmolecules=0.
+
+        Bug: When the workflow chain passes through CustomMoleculeStructure
+        (which historically lacked guest_nmolecules), the resulting IonStructure
+        may have guest_nmolecules=0 even though molecule_index has guest entries
+        and guest_atom_count > 0. The exporter should use molecule_index-based
+        detection (consistent with write_ion_top_file) so the guest ITP is copied
+        even when guest_nmolecules is 0.
+        """
+        # Create IonStructure with CH4 guests but guest_nmolecules=0
+        # (This is the bug condition from the hydrate→custom→solute→ion chain)
+        ion = IonStructure(
+            positions=np.zeros((15, 3)),  # 8 water + 2 ions + 5 CH4
+            atom_names=[
+                "OW", "HW1", "HW2", "MW",  # water mol 1
+                "OW", "HW1", "HW2", "MW",  # water mol 2
+                "NA",                       # sodium
+                "CL",                       # chloride
+                "C", "H", "H", "H", "H",   # CH4 guest
+            ],
+            cell=np.eye(3) * 3.0,
+            molecule_index=[
+                MoleculeIndex(0, 4, "water"),
+                MoleculeIndex(4, 4, "water"),
+                MoleculeIndex(8, 1, "na"),
+                MoleculeIndex(9, 1, "cl"),
+                MoleculeIndex(10, 5, "guest"),
+            ],
+            na_count=1,
+            cl_count=1,
+            report="test",
+            guest_nmolecules=0,    # BUG CONDITION: 0 but molecule_index has guest!
+            guest_atom_count=5,    # > 0, so .top file includes ch4_hydrate.itp
+        )
+
+        save_path, dialog_p, mb_p = mock_save_dialog("ions_with_guest.gro")
+        exporter = IonGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_ion_gromacs(ion)
+
+        assert result is True
+        tmp_path = Path(save_path).parent
+        # Guest ITP should exist even when guest_nmolecules=0
+        assert (tmp_path / "ch4_hydrate.itp").exists(), (
+            "ch4_hydrate.itp should be copied when molecule_index has guest entries, "
+            "even if guest_nmolecules=0 (regression from CustomMoleculeStructure chain)"
+        )
+
     def test_solute_itp_copied_when_solutes_present(self, mock_save_dialog):
         """Solute liquid ITP is copied when ion_structure has solutes.
 

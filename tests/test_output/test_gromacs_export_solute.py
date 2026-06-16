@@ -23,8 +23,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from quickice.gui.export import SoluteGROMACSExporter
-from quickice.structure_generation.types import SoluteStructure
+from quickice.gui.export import SoluteGROMACSExporter, _detect_guest_type_from_structure
+from quickice.structure_generation.types import SoluteStructure, InterfaceStructure, MoleculeIndex
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 
@@ -193,3 +193,77 @@ class TestSoluteGROMACSExporter:
             "Modified for QuickIce" in custom_itp_content
             or "; [ atomtypes ]" in custom_itp_content
         ), "Custom ITP should have atomtypes commented out"
+
+    def test_guest_itp_copied_when_guest_nmolecules_zero_but_molecule_index_has_guests(
+        self, mock_save_dialog
+    ):
+        """REGRESSION: Guest ITP is copied even when guest_nmolecules=0.
+
+        Bug: When the workflow chain passes through CustomMoleculeStructure
+        (which historically lacked guest_nmolecules), the interface_structure
+        on the SoluteStructure may have guest_nmolecules=0 even though
+        molecule_index has guest entries and guest_atom_count > 0.
+        The exporter should detect guests via molecule_index (consistent with
+        write_ion_top_file) so the guest ITP is copied.
+        """
+        # Create interface with guest_nmolecules=0 but molecule_index has guest
+        interface = InterfaceStructure(
+            positions=np.zeros((21, 3)),
+            atom_names=[
+                "OW", "HW1", "HW2", "MW",  # ice mol 1
+                "OW", "HW1", "HW2", "MW",  # ice mol 2
+                "OW", "HW1", "HW2", "MW",  # water mol 1
+                "OW", "HW1", "HW2", "MW",  # water mol 2
+                "C", "H", "H", "H", "H",   # CH4 guest
+            ],
+            cell=np.eye(3) * 3.0,
+            ice_atom_count=8,
+            water_atom_count=8,
+            ice_nmolecules=2,
+            water_nmolecules=2,
+            mode="slab",
+            report="test",
+            guest_atom_count=5,
+            guest_nmolecules=0,  # BUG CONDITION: 0 but molecule_index has guest!
+            molecule_index=[
+                MoleculeIndex(0, 4, "ice"),
+                MoleculeIndex(4, 4, "ice"),
+                MoleculeIndex(8, 4, "water"),
+                MoleculeIndex(12, 4, "water"),
+                MoleculeIndex(16, 5, "guest"),
+            ],
+        )
+
+        registry = MoleculetypeRegistry()
+        registry.register_liquid_solute("CH4")
+
+        solute = SoluteStructure(
+            positions=np.array([
+                [0.5, 0.5, 0.5],
+                [0.55, 0.5, 0.5],
+                [0.45, 0.5, 0.5],
+                [0.55, 0.45, 0.5],
+                [0.45, 0.45, 0.5],
+            ]),
+            atom_names=["C", "H", "H", "H", "H"],
+            cell=interface.cell,
+            solute_type="CH4",
+            n_molecules=1,
+            molecule_indices=[(0, 5)],
+            registry=registry,
+            interface_structure=interface,
+        )
+
+        save_path, dialog_p, mb_p = mock_save_dialog("solute_regression.gro")
+        exporter = SoluteGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_solute_gromacs(solute)
+
+        assert result is True
+        tmp_path = Path(save_path).parent
+        # Guest ITP should exist even when guest_nmolecules=0
+        assert (tmp_path / "ch4_hydrate.itp").exists(), (
+            "ch4_hydrate.itp should be copied when molecule_index has guest entries, "
+            "even if guest_nmolecules=0 (regression from CustomMoleculeStructure chain)"
+        )

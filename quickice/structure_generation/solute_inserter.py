@@ -59,6 +59,42 @@ class SoluteInserter:
         self.rng = random.Random(seed)
         self.registry = MoleculetypeRegistry()
     
+    @staticmethod
+    def _resolve_guest_nmolecules(structure) -> int:
+        """Resolve guest_nmolecules from a structure with fallback to interface_structure.
+
+        When the input structure is a CustomMoleculeStructure (which historically
+        lacked guest_nmolecules), the field may be 0 even though guests are present.
+        This helper falls back to the structure's interface_structure attribute
+        to recover the correct guest_nmolecules value.
+
+        Args:
+            structure: Any structure that may have guest_nmolecules and/or
+                       interface_structure attributes.
+
+        Returns:
+            Number of guest molecules, or 0 if none found.
+        """
+        guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+        if guest_nmolecules > 0:
+            return guest_nmolecules
+
+        # Fallback: check interface_structure (CustomMoleculeStructure pattern)
+        interface = getattr(structure, 'interface_structure', None)
+        if interface is not None:
+            guest_nmolecules = getattr(interface, 'guest_nmolecules', 0)
+            if guest_nmolecules > 0:
+                return guest_nmolecules
+
+        # Last resort: derive from molecule_index guest entries
+        molecule_index = getattr(structure, 'molecule_index', [])
+        if molecule_index:
+            guest_count = sum(1 for m in molecule_index if m.mol_type == "guest")
+            if guest_count > 0:
+                return guest_count
+
+        return 0
+    
     def calculate_molecule_count(
         self,
         concentration_molar: float,
@@ -460,7 +496,7 @@ class SoluteInserter:
                 report=report or '',
                 guest_atom_count=structure.guest_atom_count,
                 molecule_index=getattr(structure, 'molecule_index', []),
-                guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+                guest_nmolecules=self._resolve_guest_nmolecules(structure),
             )
             
             # Set custom molecule attributes on the NEW interface (not the input)
@@ -614,7 +650,7 @@ class SoluteInserter:
             report=report or '',
             guest_atom_count=structure.guest_atom_count,
             molecule_index=new_molecule_index,
-            guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+            guest_nmolecules=self._resolve_guest_nmolecules(structure),
         )
         
         # Preserve custom molecule attributes if present in input structure

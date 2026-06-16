@@ -23,6 +23,48 @@ from quickice.structure_generation.types import Candidate, InterfaceStructure, I
 logger = logging.getLogger(__name__)
 
 
+def _detect_guest_type_from_structure(structure) -> str | None:
+    """Detect guest molecule type from a structure using molecule_index.
+
+    Uses the same detection logic as write_ion_top_file() for consistency:
+    1. Check molecule_index for mol_type == "guest" entries
+    2. Detect type from atom names of first guest molecule
+    3. Fallback: heuristic based on guest_atom_count / guest_nmolecules
+
+    This function is robust even when guest_nmolecules == 0 on the structure
+    (e.g., when CustomMoleculeStructure is used as a source and the field
+    was not propagated), because it uses molecule_index as the primary source.
+
+    Args:
+        structure: Any structure with molecule_index, atom_names,
+                   guest_nmolecules, and guest_atom_count attributes.
+
+    Returns:
+        Guest type string ('ch4' or 'thf') or None if no guest detected.
+    """
+    from quickice.output.gromacs_writer import detect_guest_type_from_atoms
+
+    # Primary: check molecule_index for guest entries (consistent with write_ion_top_file)
+    guest_count = sum(1 for m in structure.molecule_index if m.mol_type == "guest")
+    guest_atom_count = getattr(structure, 'guest_atom_count', 0)
+
+    if guest_count > 0 and guest_atom_count > 0:
+        for mol in structure.molecule_index:
+            if mol.mol_type == "guest":
+                mol_atom_names = structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
+                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                if guest_type:
+                    return guest_type
+
+    # Fallback: heuristic based on atom count when guest_nmolecules is available
+    guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
+    if guest_atom_count > 0 and guest_nmolecules > 0:
+        atoms_per_guest = guest_atom_count // guest_nmolecules
+        return "thf" if atoms_per_guest >= 10 else "ch4"
+
+    return None
+
+
 class SoluteGROMACSExporter:
     """Handle GROMACS file export for solute structures.
     
@@ -95,34 +137,20 @@ class SoluteGROMACSExporter:
             
             # Copy guest .itp file if guests are present in the interface
             interface = solute_structure.interface_structure
-            if interface.guest_nmolecules > 0 and interface.guest_atom_count > 0:
-                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
-                
-                guest_type = None
-                for mol in interface.molecule_index:
-                    if mol.mol_type == "guest":
-                        mol_atom_names = interface.atom_names[mol.start_idx:mol.start_idx + mol.count]
-                        guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                        if guest_type:
-                            break
-                
-                # Fallback: use heuristic based on atom count
-                if guest_type is None and interface.guest_nmolecules > 0:
-                    atoms_per_guest = interface.guest_atom_count // interface.guest_nmolecules
-                    guest_type = "thf" if atoms_per_guest >= 10 else "ch4"
-                
-                if guest_type:
-                    try:
-                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                        shutil.copy(guest_itp_source, guest_itp_dest)
-                    except FileNotFoundError:
-                        QMessageBox.warning(
-                            self.parent, "Missing Guest ITP",
-                            f"Guest ITP file for '{guest_type}' not found.\n"
-                            f"The exported .top file will reference it, but it won't be bundled.\n"
-                            f"Add the missing .itp file manually before running GROMACS."
-                        )
+            guest_type = _detect_guest_type_from_structure(interface)
+            
+            if guest_type:
+                try:
+                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                    shutil.copy(guest_itp_source, guest_itp_dest)
+                except FileNotFoundError:
+                    QMessageBox.warning(
+                        self.parent, "Missing Guest ITP",
+                        f"Guest ITP file for '{guest_type}' not found.\n"
+                        f"The exported .top file will reference it, but it won't be bundled.\n"
+                        f"Add the missing .itp file manually before running GROMACS."
+                    )
             
             # Copy solute .itp file (liquid solutes use _liquid.itp)
             solute_type_lower = solute_type
@@ -234,25 +262,20 @@ class CustomMoleculeGROMACSExporter:
             shutil.copy(water_itp_source, water_itp_dest)
             
             # Copy guest .itp file if guests are present
-            guest_count = sum(1 for m in custom_structure.molecule_index if m.mol_type == "guest")
-            if custom_structure.guest_atom_count > 0 and guest_count > 0:
-                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
-                guest_start = custom_structure.ice_atom_count + custom_structure.water_atom_count
-                guest_atom_names = custom_structure.atom_names[guest_start:guest_start + custom_structure.guest_atom_count]
-                guest_type = detect_guest_type_from_atoms(guest_atom_names)
-                
-                if guest_type:
-                    try:
-                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                        shutil.copy(guest_itp_source, guest_itp_dest)
-                    except FileNotFoundError:
-                        QMessageBox.warning(
-                            self.parent, "Missing Guest ITP",
-                            f"Guest ITP file for '{guest_type}' not found.\n"
-                            f"The exported .top file will reference it, but it won't be bundled.\n"
-                            f"Add the missing .itp file manually before running GROMACS."
-                        )
+            guest_type = _detect_guest_type_from_structure(custom_structure)
+            
+            if guest_type:
+                try:
+                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                    shutil.copy(guest_itp_source, guest_itp_dest)
+                except FileNotFoundError:
+                    QMessageBox.warning(
+                        self.parent, "Missing Guest ITP",
+                        f"Guest ITP file for '{guest_type}' not found.\n"
+                        f"The exported .top file will reference it, but it won't be bundled.\n"
+                        f"Add the missing .itp file manually before running GROMACS."
+                    )
             
             logger.info(f"Exported custom molecule system: {path}")
             return True
@@ -337,42 +360,20 @@ class IonGROMACSExporter:
             shutil.copy(itp_source, water_itp_path)
             
             # Copy guest .itp file if guests are present in the original interface
-            if ion_structure.guest_nmolecules > 0 and ion_structure.guest_atom_count > 0:
-                # Determine guest type from ion structure atom names
-                # Use the detect_guest_type_from_atoms function for consistent detection
-                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
-                
-                guest_type = None
-                
-                # Check molecule_index for guest molecule type
-                for mol in ion_structure.molecule_index:
-                    if mol.mol_type == "guest":
-                        # Get atom names for this guest molecule
-                        mol_atom_names = ion_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
-                        guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                        if guest_type:
-                            break
-                
-                # Fallback: use heuristic based on atom count
-                if guest_type is None and ion_structure.guest_nmolecules > 0:
-                    atoms_per_guest = ion_structure.guest_atom_count // ion_structure.guest_nmolecules
-                    if atoms_per_guest >= 10:
-                        guest_type = "thf"
-                    else:
-                        guest_type = "ch4"
-                
-                if guest_type:
-                    try:
-                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                        shutil.copy(guest_itp_source, guest_itp_dest)
-                    except FileNotFoundError:
-                        QMessageBox.warning(
-                            self.parent, "Missing Guest ITP",
-                            f"Guest ITP file for '{guest_type}' not found.\n"
-                            f"The exported .top file will reference it, but it won't be bundled.\n"
-                            f"Add the missing .itp file manually before running GROMACS."
-                        )
+            guest_type = _detect_guest_type_from_structure(ion_structure)
+            
+            if guest_type:
+                try:
+                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                    shutil.copy(guest_itp_source, guest_itp_dest)
+                except FileNotFoundError:
+                    QMessageBox.warning(
+                        self.parent, "Missing Guest ITP",
+                        f"Guest ITP file for '{guest_type}' not found.\n"
+                        f"The exported .top file will reference it, but it won't be bundled.\n"
+                        f"Add the missing .itp file manually before running GROMACS."
+                    )
             
             # Copy solute .itp file if solutes are present (liquid solutes use _liquid.itp)
             if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
@@ -898,28 +899,20 @@ class InterfaceGROMACSExporter:
             shutil.copy(water_itp_source, water_itp_dest)
             
             # Copy guest .itp file if guests are present
-            if interface_structure.guest_nmolecules > 0 and interface_structure.guest_atom_count > 0:
-                # Determine guest type from atom names
-                # Guest atoms start at ice_atom_count + water_atom_count (after commit 90afe86)
-                # Use the detect_guest_type_from_atoms function for consistent detection
-                from quickice.output.gromacs_writer import detect_guest_type_from_atoms
-                
-                guest_start = interface_structure.ice_atom_count + interface_structure.water_atom_count
-                guest_atom_names = interface_structure.atom_names[guest_start:guest_start + interface_structure.guest_atom_count]
-                guest_type = detect_guest_type_from_atoms(guest_atom_names)
-                
-                if guest_type:
-                    try:
-                        guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                        guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                        shutil.copy(guest_itp_source, guest_itp_dest)
-                    except FileNotFoundError:
-                        QMessageBox.warning(
-                            self.parent, "Missing Guest ITP",
-                            f"Guest ITP file for '{guest_type}' not found.\n"
-                            f"The exported .top file will reference it, but it won't be bundled.\n"
-                            f"Add the missing .itp file manually before running GROMACS."
-                        )
+            guest_type = _detect_guest_type_from_structure(interface_structure)
+            
+            if guest_type:
+                try:
+                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
+                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
+                    shutil.copy(guest_itp_source, guest_itp_dest)
+                except FileNotFoundError:
+                    QMessageBox.warning(
+                        self.parent, "Missing Guest ITP",
+                        f"Guest ITP file for '{guest_type}' not found.\n"
+                        f"The exported .top file will reference it, but it won't be bundled.\n"
+                        f"Add the missing .itp file manually before running GROMACS."
+                    )
             
             return True
         except Exception as e:

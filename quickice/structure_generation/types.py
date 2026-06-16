@@ -587,6 +587,7 @@ class CustomMoleculeStructure:
         water_atom_count: Number of water atoms from source interface
         custom_molecule_atom_count: Number of custom molecule atoms
         guest_atom_count: Number of guest atoms (0 for pure interface)
+        guest_nmolecules: Number of guest molecules (0 for pure interface)
         config: Original CustomMoleculeConfig
         moleculetype_name: GROMACS moleculetype name (e.g., "CUSTOM_MOL_1")
         gro_path: Original .gro file path
@@ -603,6 +604,7 @@ class CustomMoleculeStructure:
     water_atom_count: int
     custom_molecule_atom_count: int
     guest_atom_count: int = 0
+    guest_nmolecules: int = 0
     config: CustomMoleculeConfig | None = None
     moleculetype_name: str = ""
     gro_path: Path | None = None
