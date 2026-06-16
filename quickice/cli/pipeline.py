@@ -713,6 +713,14 @@ class CLIPipeline:
                 hydrate = structure
                 water_atom_count = hydrate.water_count * WATER_ATOMS_PER_MOLECULE
                 guest_atom_count = len(hydrate.positions) - water_atom_count
+                # Verify atom counts are consistent before creating wrapper
+                # (catches bugs where water_count * 4 does not match actual
+                # water atoms in positions, which would silently corrupt
+                # downstream atom counting)
+                assert water_atom_count + guest_atom_count == len(hydrate.positions), \
+                    f"Atom count mismatch: water_atom_count({water_atom_count}) + " \
+                    f"guest_atom_count({guest_atom_count}) != " \
+                    f"total positions({len(hydrate.positions)})"
                 guest_nmolecules = hydrate.guest_count
                 water_nmolecules = hydrate.water_count
                 wrapper = InterfaceStructure(
