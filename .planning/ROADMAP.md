@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 37.1 inserted)
-**Total Plans:** 78+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 7, e2e-compute-export: 11, completed: 57/78+)
+**Total Plans:** 86+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 11, completed: 86/86+)
 
 ## Overview
 
@@ -460,7 +460,7 @@ Plans:
 
 **Goal:** Fix verified critical/high code bugs (AN-01, AN-02, AN-03, CP-01, UM-01, V-02, V-05), code quality issues (V-07 duplication, V-17 mutation), shared constants (UM-02 water volume, AVOGADRO-DRY), input validation (CP-03, SEC-02), error handling (EH-01, EH-02, EH-05), documentation accuracy (README Ice X/XV/DOI/IAPWS, gui-guide v4.5, cli-reference, help_dialog, parser), and grompp validation tests for CLI pipeline and GUI export paths
 **Depends on:** Phase 37
-**Plans:** 14 plans in 4 waves
+**Plans:** 15 plans in 5 waves
 
 Plans:
 - [x] 37.1-01-PLAN.md — Fix data model bugs: AN-01 (atom count), CP-01 (InterfaceStructure fields), UM-01 (AVOGADRO import)
@@ -470,13 +470,14 @@ Plans:
 - [x] 37.1-05-PLAN.md — Add grompp validation tests: GROMPP skipif + hydrate/custom/solute standalone + CLI pipeline grompp
 - [x] 37.1-06-PLAN.md — GAP: Add dedicated ### subsections for --no-overwrite, --pocket-shape, and interface flags (DOC-C2 closure)
 - [x] 37.1-07-PLAN.md — GAP: Add PBC wrapping integration test for write_ion_gro_file (AN-03 closure)
-- [ ] 37.1-08-PLAN.md — Fix CRITICAL code bugs: V-02 (cKDTree O(N²) rebuild), V-05 (unknown atoms silently skipped)
-- [ ] 37.1-09-PLAN.md — Fix HIGH code quality: V-07 (deduplicate detect_atoms_per_molecule), V-17 (stop input structure mutation)
-- [ ] 37.1-10-PLAN.md — Fix MEDIUM shared constants: UM-02 (WATER_VOLUME_NM3), AVOGADRO-DRY (consolidate 3 definitions)
-- [ ] 37.1-11-PLAN.md — Fix MEDIUM input validation: CP-03 (concentration/occupancy range), SEC-02 (file path extension)
-- [ ] 37.1-12-PLAN.md — Fix MEDIUM error handling: EH-01 (GRO file I/O protection), EH-02 (hydrate wrapper assertion), EH-05 (ValueError catch)
-- [ ] 37.1-13-PLAN.md — Fix documentation accuracy: README (Ice X, Ice XV, DOI, IAPWS, test path), gui-guide, cli-reference, help_dialog, parser
-- [ ] 37.1-14-PLAN.md — Gap closure: write_interface_gro_file PBC wrapping, --ion-source custom in workflow script
+- [x] 37.1-08-PLAN.md — Fix CRITICAL code bugs: V-02 (cKDTree O(N²) rebuild), V-05 (unknown atoms silently skipped)
+- [x] 37.1-09-PLAN.md — Fix HIGH code quality: V-07 (deduplicate detect_atoms_per_molecule), V-17 (stop input structure mutation)
+- [x] 37.1-10-PLAN.md — Fix MEDIUM shared constants: UM-02 (WATER_VOLUME_NM3), AVOGADRO-DRY (consolidate 3 definitions)
+- [x] 37.1-11-PLAN.md — Fix MEDIUM input validation: CP-03 (concentration/occupancy range), SEC-02 (file path extension)
+- [x] 37.1-12-PLAN.md — Fix MEDIUM error handling: EH-01 (GRO file I/O protection), EH-02 (hydrate wrapper assertion), EH-05 (ValueError catch)
+- [x] 37.1-13-PLAN.md — Fix documentation accuracy: README (Ice X, Ice XV, DOI, IAPWS, test path), gui-guide, cli-reference, help_dialog, parser
+- [x] 37.1-14-PLAN.md — Gap closure: write_interface_gro_file PBC wrapping, --ion-source custom in workflow script
+- [x] 37.1-15-PLAN.md — Gap closure: V-03 solute cKDTree conditional rebuild (TestTREE03)
 
 **Details:**
 
@@ -519,7 +520,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 **Phase Count:** 15 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, and 37.1 inserted)
 
-**Total Plans:** 56+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 7, e2e-compute-export: 11, completed: 46/56+)
+**Total Plans:** 64+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 11, completed: 64/64+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -572,7 +573,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 35 - Integration & Documentation | ✓ Complete | 7 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
-| 37.1 - Fix Verified Scancode Findings | ✓ Complete | 7 | 7 |
+| 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete | 11 | 11 |
