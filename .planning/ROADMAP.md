@@ -600,7 +600,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 - Tests the interface between computation pipeline output and export pipeline input
 - Focuses on the gap not covered by either e2e-export-test (uses synthetic fixtures) or e2e-api-workflow (stops before export)
 
-**Plans:** 11 plans in 7 waves
+**Plans:** 12 plans in 7 waves + 1 gap closure
 - [x] e2e-compute-export-01-PLAN.md — (Wave 1) Shared helpers module + Ice/Interface single-structure export (16 tests)
 - [x] e2e-compute-export-02-PLAN.md — (Wave 2) Custom + Solute single-structure export (21 tests + 3 bugfixes)
 - [x] e2e-compute-export-03-PLAN.md — (Wave 2) Ion single-structure export + ITP baseline (28 tests + bugfix)
@@ -612,6 +612,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 - [x] e2e-compute-export-09-PLAN.md — (Wave 6) sII hydrate grompp validation: sII helpers + F3-sII, F4-sII (2 tests)
 - [x] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
 - [x] e2e-compute-export-11-PLAN.md — (Wave 1 gap closure) Molecule-type presence assertions in grompp tests
+- [ ] e2e-compute-export-12-PLAN.md — (Gap closure) CH4-hydrate-through-Custom chain test + ITP completeness assertions
 
 ---
 
