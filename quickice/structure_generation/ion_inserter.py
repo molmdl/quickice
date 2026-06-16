@@ -18,6 +18,8 @@ from quickice.structure_generation.types import (
     IonStructure,
     MoleculeIndex,
     InterfaceStructure,  # for compatibility with interface generation
+    WATER_ATOMS_PER_MOLECULE,
+    WATER_VOLUME_NM3,
 )
 
 
@@ -569,17 +571,14 @@ def insert_ions(
     
     # Calculate ion pairs
     if liquid_volume_nm3 is None:
-        # Estimate liquid volume from water region, NOT total cell
-        cell = structure.cell
-        total_volume = np.abs(np.linalg.det(cell))
-        water_atom_count = getattr(structure, 'water_atom_count', 0)
-        total_atom_count = len(structure.positions)
-        if total_atom_count > 0 and water_atom_count > 0:
-            water_fraction = water_atom_count / total_atom_count
-            liquid_volume_nm3 = total_volume * water_fraction
-        else:
-            # Fallback: assume all is liquid (conservative for pure water)
-            liquid_volume_nm3 = total_volume
+        # Estimate liquid volume from water molecule count
+        # Use molecule count for accurate volume (avoids MW virtual site inflation)
+        water_nmolecules = getattr(structure, 'water_nmolecules', None)
+        if water_nmolecules is None:
+            # Derive from water_atom_count (TIP4P-ICE: 4 atoms per molecule including MW)
+            water_atom_count = getattr(structure, 'water_atom_count', 0)
+            water_nmolecules = water_atom_count // WATER_ATOMS_PER_MOLECULE if water_atom_count > 0 else 0
+        liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
     
     ion_pairs = inserter.calculate_ion_pairs(concentration_molar, liquid_volume_nm3)
     
