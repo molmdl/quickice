@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
-from quickice.structure_generation.types import CustomMoleculeConfig
+from quickice.structure_generation.types import CustomMoleculeConfig, WATER_VOLUME_NM3
 from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
 from quickice.gui.view import HelpIcon
 from quickice.gui.custom_molecule_viewer import CustomMoleculeViewerWidget
@@ -965,7 +965,6 @@ class CustomMoleculePanel(QWidget):
         
         # Create validation inserter
         from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
-        from quickice.structure_generation.types import CustomMoleculeConfig
         
         config = CustomMoleculeConfig(
             placement_mode="custom",
@@ -1130,7 +1129,7 @@ class CustomMoleculePanel(QWidget):
             return
         
         water_nmolecules = water_count // 4
-        liquid_volume_nm3 = water_nmolecules * 0.0299
+        liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
         
         # Calculate concentration from count
         molecule_count = int(self.molecule_count_spin.value())
@@ -1153,7 +1152,7 @@ class CustomMoleculePanel(QWidget):
             return
         
         water_nmolecules = water_count // 4
-        liquid_volume_nm3 = water_nmolecules * 0.0299
+        liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
         
         # Calculate count from concentration
         concentration = self.concentration_spin.value()
@@ -1206,7 +1205,7 @@ class CustomMoleculePanel(QWidget):
                 # Get liquid volume
                 water_count = getattr(self._interface_structure, 'water_atom_count', 0) if self._interface_structure else 0
                 water_nmolecules = water_count // 4
-                liquid_volume_nm3 = water_nmolecules * 0.0299
+                liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
                 
                 molecule_count = CustomMoleculeInserter.calculate_molecule_count(
                     concentration, liquid_volume_nm3

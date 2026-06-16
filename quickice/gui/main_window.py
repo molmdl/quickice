@@ -37,6 +37,7 @@ from quickice.gui.ion_panel import IonPanel
 from quickice.gui.ion_renderer import render_ion_structure  # Used for export if needed
 from quickice.gui.solute_renderer import create_solute_actor
 from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
+from quickice.structure_generation.types import WATER_VOLUME_NM3
 from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
 from quickice.gui.solute_panel import SolutePanel
@@ -622,8 +623,8 @@ class MainWindow(QMainWindow):
         self.interface_panel.append_log(f"\nInterface generation complete.")
 
         # Update ion panel with liquid volume for ion count calculation
-        # Volume = water_nmolecules * 0.0299 nm³ per molecule (TIP4P water volume)
-        liquid_vol = result.water_nmolecules * 0.0299
+        # Volume = water_nmolecules * WATER_VOLUME_NM3 (TIP4P-ICE water volume per molecule)
+        liquid_vol = result.water_nmolecules * WATER_VOLUME_NM3
         self.ion_panel.set_liquid_volume(liquid_vol)
         self.ion_panel.set_interface_available(True)
         
@@ -1195,13 +1196,13 @@ class MainWindow(QMainWindow):
 
             # Update solute panel with liquid volume for solute count calculation
             # Calculate from water_atom_count (TIP4P has 4 atoms per molecule)
-            # Volume = water_nmolecules * 0.0299 nm³ per molecule
+            # Volume = water_nmolecules * WATER_VOLUME_NM3 (TIP4P-ICE water volume per molecule)
             # CustomMoleculeStructure always has water_atom_count (required dataclass field)
             assert result.water_atom_count >= 0, f"Invalid water_atom_count: {result.water_atom_count}"
             
             if result.water_atom_count > 0:
                 water_nmolecules = result.water_atom_count // 4
-                liquid_vol = water_nmolecules * 0.0299
+                liquid_vol = water_nmolecules * WATER_VOLUME_NM3
                 self.solute_panel.set_liquid_volume(liquid_vol)
                 logger.info(f"Updated solute panel liquid volume: {liquid_vol:.2f} nm³ from {water_nmolecules} water molecules")
             else:

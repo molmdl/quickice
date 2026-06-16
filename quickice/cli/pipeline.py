@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from quickice.structure_generation.ion_inserter import AVOGADRO
+from quickice.structure_generation.types import WATER_VOLUME_NM3
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +385,7 @@ class CLIPipeline:
                 if custom_count is None and custom_concentration is not None:
                     # Calculate from concentration
                     water_nmolecules = getattr(source, 'water_nmolecules', 0)
-                    liquid_volume_nm3 = water_nmolecules * 0.0299
+                    liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
                     count = int(round(
                         custom_concentration * liquid_volume_nm3 * 1e-24
                         * AVOGADRO
@@ -610,7 +611,7 @@ class CLIPipeline:
                 raise ValueError(f"Unknown ion source: {ion_source!r}")
 
             # Calculate liquid volume from water molecule count
-            liquid_volume = getattr(source_for_ions, 'water_nmolecules', 0) * 0.0299
+            liquid_volume = getattr(source_for_ions, 'water_nmolecules', 0) * WATER_VOLUME_NM3
 
             # Insert ions
             self._ion_result = insert_ions(

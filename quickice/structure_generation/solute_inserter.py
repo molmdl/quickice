@@ -21,6 +21,7 @@ from quickice.structure_generation.types import (
     InterfaceStructure,
     MoleculeIndex,
     WATER_ATOMS_PER_MOLECULE,
+    WATER_VOLUME_NM3,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
@@ -674,14 +675,14 @@ class SoluteInserter:
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
         # Calculate liquid volume from water molecule count
-        # TIP4P water volume per molecule: 0.0299 nm³
+        # See WATER_VOLUME_NM3 constant in types.py (TIP4P-ICE water volume per molecule)
         # Handle both InterfaceStructure (has water_nmolecules) and CustomMoleculeStructure (doesn't)
         water_nmolecules = getattr(structure, 'water_nmolecules', None)
         if water_nmolecules is None:
             # Calculate from water_atom_count (assume TIP4P: 4 atoms per molecule)
             water_nmolecules = water_atom_count // WATER_ATOMS_PER_MOLECULE if water_atom_count > 0 else 0
         
-        liquid_volume_nm3 = water_nmolecules * 0.0299
+        liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
         
         # Calculate molecule count
         n_molecules = self.calculate_molecule_count(

@@ -21,6 +21,9 @@ MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
 # Used as fallback when molecule count is unavailable
 WATER_ATOMS_PER_MOLECULE: int = 4
 
+# Volume per TIP4P-ICE water molecule in nm³ (at ~1 bar, 300K)
+WATER_VOLUME_NM3: float = 0.0299
+
 
 def detect_atoms_per_molecule(atom_names: list[str]) -> int:
     """Detect atoms per molecule from atom names pattern.
