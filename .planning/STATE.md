@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 08 of 15 |
+| Plan | 09 of 15 |
 | Status | In progress |
-| Last activity | 2026-06-16 — Completed 37.1-08-SUMMARY.md |
+| Last activity | 2026-06-16 — Completed 37.1-09-SUMMARY.md |
 
-**Progress:** ███████░░░ 53% (8/15 plans in Phase 37.1, 239+ plans across all milestones)
+**Progress:** ███████░░░ 60% (9/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -534,6 +534,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | CLI reference documents all 40 argparse flags with ### subsections | 36 subsections (combined for box-x/y/z, supercell-x/y/z); no prose table duplication | ✓ Shipped (37.1-06) |
 | Interface Generation Flags section replaces prose | Dedicated ### subsections for --interface, --mode, --box-x/y/z, --ice-thickness, --water-thickness, --pocket-diameter, --pocket-shape, --seed | ✓ Shipped (37.1-06) |
 | --no-overwrite documented (exit code 1 on existing files) | Boolean flag, default False; previously undocumented per VERIFICATION.md | ✓ Shipped (37.1-06) |
+| detect_atoms_per_molecule in types.py (V-07 fix) | DRY: identical 20-line function duplicated in 3 modes files; single source of truth in types.py alongside WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-09) |
+| No input structure mutation in SoluteInserter (V-17 fix) | Create new InterfaceStructure instead of setting attrs on input; prevents bugs when same structure reused across multiple inserters | ✓ Shipped (37.1-09) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -634,9 +636,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-08-PLAN.md
-**Status:** Phase 37.1 — IN PROGRESS (8/15 plans)
-**Stopped at:** Completed 37.1-08-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-09-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (9/15 plans)
+**Stopped at:** Completed 37.1-09-SUMMARY.md
 **Resume file:** None
 ---
 *State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (6/7 plans)*
