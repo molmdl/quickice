@@ -6,6 +6,7 @@ wave: 1
 depends_on: []
 files_modified:
   - tests/test_e2e_gmx_param_validation.py
+  - quickice/output/gromacs_writer.py  # only if Task 2 discovers writer bugs
 autonomous: true
 
 must_haves:
@@ -34,6 +35,8 @@ must_haves:
 Add parameterized grompp validation tests covering 27 untested chain combinations.
 
 Purpose: The existing 18 class-based grompp tests (in test_e2e_gmx_validation.py) exercise the deepest chains (F1-F7 variants) which test all writer code paths, but 27 combinations of hydrate type × solute type × chain depth remain untested. A single parameterized test class can cover all 27 systematically in ~150 lines vs ~800 lines for 27 individual classes.
+
+Derivation of 27: 4 hydrate types (sI-CH4, sI-THF, sII-CH4, sII-THF) × {custom:yes/no} × {solute:none/CH4/THF} × {ion:yes/no} = 48 total minus 13 already-tested (sI-CH4 variants: F3, F3+THF, F4-CH4-H = 3; sI-THF variants: F4, F4+CH4 = 2; sII-CH4: F3-sII = 1; sII-THF: F4-sII = 1; non-hydrate: 6) minus 8 non-hydrate-interface-only combos (already in bridge tests) = 27.
 
 Output: New test file tests/test_e2e_gmx_param_validation.py with 27 parameterized test cases, each building a real GenIce2 chain, exporting GRO/TOP/ITP files, running gmx grompp, and asserting molecule-type presence.
 </objective>
@@ -171,6 +174,8 @@ Create `tests/test_e2e_gmx_param_validation.py` with the following structure:
   <files>tests/test_e2e_gmx_param_validation.py</files>
   <action>
 Run the new parameterized grompp validation tests and verify all 27 pass:
+
+**Contingency:** If all 27 tests pass on first run, Task 2 is complete with no source code changes — just verify and proceed.
 
 1. Run `python -m pytest tests/test_e2e_gmx_param_validation.py -v --timeout=300 2>&1 | tail -40` to execute all 27 parameterized test cases
 
