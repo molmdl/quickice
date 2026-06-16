@@ -22,6 +22,26 @@ MOLECULE_TYPE_INFO: dict[str, dict[str, Any]] = {
 WATER_ATOMS_PER_MOLECULE: int = 4
 
 
+def detect_atoms_per_molecule(atom_names: list[str]) -> int:
+    """Detect atoms per molecule from atom names pattern.
+
+    Handles:
+    - Ice (GenIce): 3 atoms per molecule (O, H, H)
+    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
+
+    Args:
+        atom_names: List of atom names from candidate
+
+    Returns:
+        Atoms per molecule (3 for ice, 4 for TIP4P)
+    """
+    if len(atom_names) >= 4:
+        # Check first atom for TIP4P pattern (OW at index 0)
+        if atom_names[0] == "OW":
+            return 4
+    return 3  # Default to GenIce ice (3 atoms)
+
+
 @dataclass
 class MoleculeIndex:
     """Tracks molecule position in atom array.

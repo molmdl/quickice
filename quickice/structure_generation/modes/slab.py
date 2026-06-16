@@ -21,26 +21,6 @@ from quickice.utils.molecule_utils import count_guest_atoms
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 
-def detect_atoms_per_molecule(atom_names: list[str]) -> int:
-    """Detect atoms per molecule from atom names pattern.
-
-    Handles:
-    - Ice (GenIce): 3 atoms per molecule (O, H, H)
-    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
-
-    Args:
-        atom_names: List of atom names from candidate
-
-    Returns:
-        Atoms per molecule (3 for ice, 4 for TIP4P)
-    """
-    if len(atom_names) >= 4:
-        # Check first atom for TIP4P pattern (OW at index 0)
-        if atom_names[0] == "OW":
-            return 4
-    return 3  # Default to GenIce ice (3 atoms)
-
-
 def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
@@ -125,7 +105,7 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], gues
     return count
 
 
-from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
+from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure, detect_atoms_per_molecule
 from quickice.structure_generation.water_filler import (
     tile_structure,
     fill_region_with_water,

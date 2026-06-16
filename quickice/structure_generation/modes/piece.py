@@ -13,7 +13,7 @@ This module also handles hydrate->interface conversion:
 import numpy as np
 
 from quickice.utils.molecule_utils import count_guest_atoms
-from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure
+from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure, detect_atoms_per_molecule
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.water_filler import (
     tile_structure,
@@ -26,26 +26,6 @@ from quickice.structure_generation.overlap_resolver import (
     filter_atom_names,
 )
 from quickice.phase_mapping.water_density import water_density_gcm3
-
-
-def detect_atoms_per_molecule(atom_names: list[str]) -> int:
-    """Detect atoms per molecule from atom names pattern.
-    
-    Handles:
-    - Ice (GenIce): 3 atoms per molecule (O, H, H)
-    - TIP4P/hydrate: 4 atoms per molecule (OW, HW1, HW2, MW)
-    
-    Args:
-        atom_names: List of atom names from candidate
-    
-    Returns:
-        Atoms per molecule (3 for ice, 4 for TIP4P)
-    """
-    if len(atom_names) >= 4:
-        # Check first atom for TIP4P pattern (OW at index 0)
-        if atom_names[0] == "OW":
-            return 4
-    return 3  # Default to GenIce ice (3 atoms)
 
 
 def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None) -> tuple[list[int], list[int]]:
