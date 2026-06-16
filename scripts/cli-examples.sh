@@ -40,10 +40,10 @@ set -e
 # === Ice Generation + GROMACS Export ===
 
 # Export Ice Ih with GROMACS format
-# python -m quickice -T 250 -P 0.1 -N 256 --gromacs -g -o ice_ih_gmx
+# python -m quickice -T 250 -P 0.1 -N 256 --gromacs -o ice_ih_gmx
 
 # Export Ice VII specific candidate (rank 2)
-# python -m quickice -T 300 -P 2500 -N 256 --gromacs -g --candidate 2 -o ice_vii_c2
+# python -m quickice -T 300 -P 2500 -N 256 --gromacs --candidate 2 -o ice_vii_c2
 
 # === Ice Generation + Options ===
 
@@ -63,23 +63,23 @@ set -e
 # === Interface Generation - Slab Mode ===
 
 # Slab interface: ice|water|ice layers
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --gromacs -g --no-diagram -o slab_output
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --gromacs --no-diagram -o slab_output
 
 # Slab with GROMACS export, custom seed
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 4.0 --box-y 4.0 --box-z 8.0 --ice-thickness 2.5 --water-thickness 3.0 --gromacs -g --seed 42 -o slab_seed42
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 4.0 --box-y 4.0 --box-z 8.0 --ice-thickness 2.5 --water-thickness 3.0 --gromacs --seed 42 -o slab_seed42
 
 # === Interface Generation - Pocket Mode ===
 
 # Spherical pocket in ice matrix
-# python -m quickice -T 253 -P 500 --interface --mode pocket --box-x 4.0 --box-y 4.0 --box-z 4.0 --pocket-diameter 2.0 --gromacs -g --no-diagram -o pocket_sphere
+# python -m quickice -T 253 -P 500 --interface --mode pocket --box-x 4.0 --box-y 4.0 --box-z 4.0 --pocket-diameter 2.0 --gromacs --no-diagram -o pocket_sphere
 
 # Cubic pocket in ice matrix
-# python -m quickice -T 253 -P 500 --interface --mode pocket --box-x 4.0 --box-y 4.0 --box-z 4.0 --pocket-diameter 2.0 --pocket-shape cubic --gromacs -g -o pocket_cubic
+# python -m quickice -T 253 -P 500 --interface --mode pocket --box-x 4.0 --box-y 4.0 --box-z 4.0 --pocket-diameter 2.0 --pocket-shape cubic --gromacs -o pocket_cubic
 
 # === Interface Generation - Piece Mode ===
 
 # Ice crystal embedded in water
-# python -m quickice -T 180 -P 1000 --interface --mode piece --box-x 4.0 --box-y 4.0 --box-z 4.0 --gromacs -g --no-diagram -o piece_output
+# python -m quickice -T 180 -P 1000 --interface --mode piece --box-x 4.0 --box-y 4.0 --box-z 4.0 --gromacs --no-diagram -o piece_output
 
 # ==============================================================================
 # Hydrate Generation
@@ -105,7 +105,7 @@ set -e
 # === Hydrate + GROMACS Export ===
 
 # sI CH4 hydrate with GROMACS export
-# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --gromacs -g --no-diagram -o hydrate_gmx
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --gromacs --no-diagram -o hydrate_gmx
 
 # ==============================================================================
 # Custom Molecule Insertion
@@ -114,15 +114,15 @@ set -e
 # === Interface + Custom Molecule (Random Placement) ===
 
 # Slab interface with ethanol molecules (random, by count)
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 5 --gromacs -g --no-diagram -o custom_random_count
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 5 --gromacs --no-diagram -o custom_random_count
 
 # Slab interface with ethanol (random, by concentration)
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.5 --gromacs -g --no-diagram -o custom_random_conc
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.5 --gromacs --no-diagram -o custom_random_conc
 
 # === Interface + Custom Molecule (Custom Positions) ===
 
 # Custom molecule at specified positions from CSV
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement custom --custom-positions-file quickice/data/examples/custom_positions.csv --gromacs -g --no-diagram -o custom_positions
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement custom --custom-positions-file quickice/data/examples/custom_positions.csv --gromacs --no-diagram -o custom_positions
 
 # ==============================================================================
 # Solute Insertion
@@ -131,13 +131,13 @@ set -e
 # === Interface + Solute ===
 
 # CH4 solute in liquid water
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type CH4 --solute-concentration 0.3 --gromacs -g --no-diagram -o solute_ch4
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type CH4 --solute-concentration 0.3 --gromacs --no-diagram -o solute_ch4
 
 # THF solute in liquid water
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type THF --solute-concentration 0.5 --gromacs -g --no-diagram -o solute_thf
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type THF --solute-concentration 0.5 --gromacs --no-diagram -o solute_thf
 
 # Solute from custom molecule source
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type CH4 --solute-concentration 0.15 --solute-source custom --gromacs -g --no-diagram -o solute_from_custom
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type CH4 --solute-concentration 0.15 --solute-source custom --gromacs --no-diagram -o solute_from_custom
 
 # ==============================================================================
 # Ion Insertion
@@ -146,13 +146,13 @@ set -e
 # === Interface + Ion Insertion ===
 
 # NaCl ions from interface source (default)
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --ion-concentration 0.15 --gromacs -g --no-diagram -o ion_interface
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --ion-concentration 0.15 --gromacs --no-diagram -o ion_interface
 
 # NaCl ions from custom molecule source
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --ion-concentration 0.15 --ion-source custom --gromacs -g --no-diagram -o ion_custom
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --ion-concentration 0.15 --ion-source custom --gromacs --no-diagram -o ion_custom
 
 # NaCl ions from solute source
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type CH4 --solute-concentration 0.3 --ion-concentration 0.15 --ion-source solute --gromacs -g --no-diagram -o ion_solute
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --solute-type CH4 --solute-concentration 0.3 --ion-concentration 0.15 --ion-source solute --gromacs --no-diagram -o ion_solute
 
 # ==============================================================================
 # Full Workflow Chains
@@ -161,12 +161,12 @@ set -e
 # === Full Chain: Interface → Custom → Solute → Ion (F1) ===
 
 # Complete F1 chain: interface + custom + solute + ion
-# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type CH4 --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs -g --no-diagram -o chain_F1
+# python -m quickice -T 250 -P 0.1 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type CH4 --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs --no-diagram -o chain_F1
 
 # === Full Chain: Hydrate → Interface → Custom → Solute → Ion (F4) ===
 
 # Complete F4 chain: hydrate + interface + custom + solute + ion
-# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type THF --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs -g --no-diagram -o chain_F4
+# python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-concentration 0.3 --solute-type THF --solute-concentration 0.15 --solute-source custom --ion-concentration 0.15 --ion-source solute --gromacs --no-diagram -o chain_F4
 
 # ==============================================================================
 # Mode Flags

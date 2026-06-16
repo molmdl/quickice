@@ -96,6 +96,8 @@ python -m quickice -T 260 -P 0.1 -N 100 --no-diagram
 
 Use this flag when you only need the PDB output files and want to save time.
 
+**Note:** In pipeline mode (when any pipeline flags like `--hydrate`, `--interface`, `--custom-gro`, `--solute-type`, or `--ion-concentration` are present), the `--no-diagram` flag has no effect — phase diagrams are not generated in pipeline mode by default.
+
 ---
 
 ### `--gromacs`, `-g`
@@ -1141,7 +1143,7 @@ A comprehensive reference script showing example commands for **every possible C
 - Custom molecule insertion (random and custom placement — see [Custom Molecule Insertion Flags](#custom-molecule-insertion-flags))
 - Solute insertion (CH4, THF with source selection — see [Solute Insertion Flags](#solute-insertion-flags))
 - Ion insertion (3 source modes — see [Ion Insertion Flags](#ion-insertion-flags))
-- Full workflow chains (F1–F4)
+- Full workflow chains (F1 and F4)
 - Mode flags (--cli, --gui, --help)
 
 All commands are commented out for safety — uncomment only the ones you want to run.

@@ -163,7 +163,7 @@ echo ""
 echo "=== Running QuickIce pipeline ==="
 echo ""
 
-CMD="python -m quickice --hydrate --lattice-type ${LATTICE_TYPE} --guest ${GUEST} --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro ${CUSTOM_GRO} --custom-itp ${CUSTOM_ITP} --custom-placement random --custom-count ${CUSTOM_COUNT} --ion-concentration ${ION_CONC} --gromacs --no-diagram --output ${OUTPUT_DIR} --temperature ${TEMPERATURE} --pressure ${PRESSURE}"
+CMD="python -m quickice --hydrate --lattice-type ${LATTICE_TYPE} --guest ${GUEST} --interface --mode slab --box-x 5.0 --box-y 5.0 --box-z 10.0 --ice-thickness 3.0 --water-thickness 4.0 --custom-gro ${CUSTOM_GRO} --custom-itp ${CUSTOM_ITP} --custom-placement random --custom-count ${CUSTOM_COUNT} --ion-concentration ${ION_CONC} --ion-source custom --gromacs --no-diagram --output ${OUTPUT_DIR} --temperature ${TEMPERATURE} --pressure ${PRESSURE}"
 
 echo "Command:"
 echo "  ${CMD}"

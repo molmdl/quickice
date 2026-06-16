@@ -179,7 +179,7 @@ The File menu provides multiple export formats:
 
 ### Export for GROMACS
 
-QuickIce v4.0 adds interface construction with direct GROMACS export for molecular dynamics simulations.
+QuickIce v4.0 added interface construction; v4.5 adds solute and custom molecule insertion with direct GROMACS export for molecular dynamics simulations.
 
 **Menu Path:** File → Export for GROMACS (Ctrl+G)
 
@@ -366,7 +366,7 @@ QuickIce supports three interface geometries.
 
 | Parameter | Range | Description |
 |-----------|-------|-------------|
-| Box X/Y/Z | 0.5–100 nm | Simulation box dimensions in nanometers |
+| Box X/Y/Z | 1.0–100 nm | Simulation box dimensions in nanometers |
 | Random seed | 1–999999 | Seed for reproducible water molecule placement |
 
 ### Visualization

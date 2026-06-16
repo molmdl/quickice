@@ -93,7 +93,7 @@ Examples:
         "-g",
         action="store_true",
         default=False,
-        help="Export GROMACS format (.gro, .top files)"
+        help="Export GROMACS format (.gro, .top, .itp files)"
     )
 
     parser.add_argument(
