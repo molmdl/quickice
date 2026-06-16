@@ -580,7 +580,14 @@ class HydrateStructureGenerator:
                 i += 1
                 continue
             
-            # Unknown atom type - skip but count as water for now to continue scanning
+            # Unknown atom type - track as single-atom "unknown" molecule with warning
+            logger.warning(
+                "Unknown atom type '%s' at index %d in hydrate candidate; "
+                "this may indicate an unsupported guest type. "
+                "Tracking as single-atom 'unknown' molecule.",
+                atom, i
+            )
+            molecule_index.append(MoleculeIndex(i, 1, "unknown"))
             i += 1
         
         return molecule_index
