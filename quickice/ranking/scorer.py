@@ -15,6 +15,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
+from quickice.structure_generation.ion_inserter import AVOGADRO
 from quickice.ranking.types import RankedCandidate, RankingResult, ScoringConfig
 
 
@@ -220,7 +221,6 @@ def density_score(candidate: Candidate) -> float:
     volume_nm3 = abs(np.linalg.det(candidate.cell))
     
     # Constants for density calculation
-    AVOGADRO = 6.02214076e23  # molecules/mol (CODATA 2017)
     WATER_MASS = 18.01528  # g/mol
     
     # Convert volume from nm³ to cm³ (1 nm³ = 1e-21 cm³)

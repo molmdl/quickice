@@ -24,7 +24,7 @@ from quickice.structure_generation.types import (
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.gro_parser import parse_gro_file
-from quickice.structure_generation.solute_inserter import AVOGADRO
+from quickice.structure_generation.ion_inserter import AVOGADRO
 
 
 logger = logging.getLogger(__name__)

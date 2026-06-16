@@ -25,13 +25,11 @@ from quickice.structure_generation.types import (
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
+from quickice.structure_generation.ion_inserter import AVOGADRO
 
 
 logger = logging.getLogger(__name__)
 
-
-# Physical constants
-AVOGADRO = 6.02214076e23  # mol^-1
 
 # Minimum separation distance between molecules (nm)
 MIN_SEPARATION = 0.3  # 3 Å
