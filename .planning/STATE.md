@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 15 of 15 |
-| Status | Phase complete, verified ✓ |
-| Last activity | 2026-06-16 — Phase 37.1 verified (43/43 must-haves) |
+| Phase | e2e-compute-export |
+| Plan | 12 of 12 |
+| Status | Phase complete |
+| Last activity | 2026-06-16 — Completed e2e-compute-export-12-PLAN.md |
 
-**Progress:** ██████████ 100% (15/15 plans in Phase 37.1, 240+ plans across all milestones)
+**Progress:** ██████████ 100% (12/12 plans in Phase e2e-compute-export)
 
 ---
 
@@ -176,6 +176,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags (Plan 10)
 - ✓ Molecule-type presence assertions in all 14 grompp validation tests — .top [molecules] keys + .gro residue names + flexible matching for hydrate guests (Plan 11)
 - ✓ Silent-failure gap closed: writer bug dropping molecule from both .gro and .top now detected (Plan 11)
+- ✓ ITP completeness assertions in all 16 grompp tests — assert_itp_completeness(top_path, workspace) after every _stage_itp_files call (Plan 12)
+- ✓ CH4 hydrate grompp regression test — TestChainF4Ch4HydrateGmxValidation for exact bug-triggering chain (Plan 12)
+- ✓ StagingResult namedtuple — _stage_itp_files returns StagingResult(staged, missing) instead of list[str] (Plan 12)
+- ✓ Missing ITP tracking — _stage_itp_files tracks missing ITPs instead of silently skipping them (Plan 12)
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -426,6 +430,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Clean stale .tpr backups before grompp | GROMACS 99-backup limit causes grompp failure on persistent workspaces; cleanup prevents accumulation | ✓ Shipped (e2e-compute-export-09) |
 | tmp/ cleanup utility with --dry-run | scripts/clean-test-output.sh preserves em.mdp and e2e-gmx-validation/ by default; --stale-backups-only for lightweight GROMACS backup cleanup | ✓ Shipped (e2e-compute-export-10) |
 | Molecule-type presence assertions in grompp tests | parse_top_molecules + parse_gro_residue_names assertions close silent-failure gap (molecule missing from both .gro and .top) | ✓ Shipped (e2e-compute-export-11) |
+| ITP completeness assertions after staging | assert_itp_completeness(top_path, workspace) catches missing ITP files that .top references | ✓ Shipped (e2e-compute-export-12) |
+| StagingResult namedtuple for _stage_itp_files | StagingResult(staged, missing) instead of list[str] — tracks missing ITPs instead of silently skipping | ✓ Shipped (e2e-compute-export-12) |
+| CH4 hydrate grompp regression test | TestChainF4Ch4HydrateGmxValidation — exact Hydrate sI-CH4→Interface→Custom→Solute→Ion chain that triggered commit 27332f6 | ✓ Shipped (e2e-compute-export-12) |
 | Flexible asterisk matching for hydrate guest names | CH4_H* and THF_H* keys in expected_top_keys match either base name (CH4_H) or fallback name; handles registry ambiguity | ✓ Shipped (e2e-compute-export-11) |
 | BUG-05: HW1 Z uses h1_pos[2] not h2_pos[2] | Copy-paste error in write_custom_molecule_gro_file() silently corrupted HW1 Z-coordinate | ✓ Shipped (34.7-01) |
 | MW-01: Molecule-aware wrapping for ice GRO | wrap_molecules_into_box with MoleculeIndex(count=3) prevents split molecules at PBC; MW computed from correctly wrapped O/H1/H2 | ✓ Shipped (34.7-01) |
@@ -659,9 +666,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-14-PLAN.md (plus 37.1-15)
-**Status:** Phase 37.1 — IN PROGRESS (14/15 plans, 15 already complete)
-**Stopped at:** Completed 37.1-14-SUMMARY.md
+**Completed:** e2e-compute-export-12-PLAN.md
+**Status:** Phase e2e-compute-export COMPLETE (12/12 plans)
+**Stopped at:** Completed e2e-compute-export-12-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (14/15 plans)*
+*State updated: 2026-06-16 — Phase e2e-compute-export COMPLETE (12/12 plans)*
