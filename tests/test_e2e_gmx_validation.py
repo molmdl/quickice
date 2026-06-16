@@ -55,6 +55,7 @@ from e2e_export_helpers import (
     _hydrate_sII_ch4_candidate,
     _hydrate_sII_thf_candidate,
     _stage_itp_files,
+    assert_itp_completeness,
     run_gmx_grompp,
     MDP_PATH,
 )
@@ -172,6 +173,7 @@ class TestInterfaceGmxValidation:
 
         # Stage ITPs
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
 
         # Run gmx grompp
         exit_code, stderr = run_gmx_grompp(
@@ -239,6 +241,7 @@ class TestChainF5GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f5.gro", top_file="f5.top")
         assert exit_code == 0, f"gmx grompp failed for F5:\n{stderr[-500:]}"
 
@@ -302,6 +305,7 @@ class TestChainF6GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f6.gro", top_file="f6.top")
         assert exit_code == 0, f"gmx grompp failed for F6:\n{stderr[-500:]}"
 
@@ -365,6 +369,7 @@ class TestChainF7GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f7.gro", top_file="f7.top")
         assert exit_code == 0, f"gmx grompp failed for F7:\n{stderr[-500:]}"
 
@@ -432,6 +437,7 @@ class TestChainF1GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1.gro", top_file="f1.top")
         assert exit_code == 0, f"gmx grompp failed for F1:\n{stderr[-500:]}"
 
@@ -499,6 +505,7 @@ class TestChainF3GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3.gro", top_file="f3.top")
         assert exit_code == 0, f"gmx grompp failed for F3:\n{stderr[-500:]}"
 
@@ -570,6 +577,7 @@ class TestChainF4GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4.gro", top_file="f4.top")
         assert exit_code == 0, f"gmx grompp failed for F4:\n{stderr[-500:]}"
 
@@ -634,6 +642,7 @@ class TestChainF2GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f2.gro", top_file="f2.top")
         assert exit_code == 0, f"gmx grompp failed for F2:\n{stderr[-500:]}"
 
@@ -699,6 +708,7 @@ class TestChainF1ThfGmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f1_thf.gro", top_file="f1_thf.top")
         assert exit_code == 0, f"gmx grompp failed for F1+THF:\n{stderr[-500:]}"
 
@@ -765,6 +775,7 @@ class TestChainF3ThfGmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_thf.gro", top_file="f3_thf.top")
         assert exit_code == 0, f"gmx grompp failed for F3+THF:\n{stderr[-500:]}"
 
@@ -835,6 +846,7 @@ class TestChainF4Ch4GmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_ch4.gro", top_file="f4_ch4.top")
         assert exit_code == 0, f"gmx grompp failed for F4+CH4:\n{stderr[-500:]}"
 
@@ -873,6 +885,80 @@ class TestChainF4Ch4GmxValidation:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# F4-CH4-hydrate: Hydrate sI-CH4→Interface→Custom→Solute→Ion (5 ITPs, BUG REGRESSION)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+class TestChainF4Ch4HydrateGmxValidation:
+    """Validate F4-CH4-hydrate chain (Hydrate sI-CH4→Interface→Custom→Solute→Ion) export passes gmx grompp.
+
+    5 ITPs: tip4p-ice.itp, ch4_hydrate.itp, etoh.itp, ch4_liquid.itp, ion.itp
+    This is the EXACT chain that triggered the production bug where CustomMoleculeStructure
+    was missing guest_nmolecules, causing the GUI exporter to skip copying ch4_hydrate.itp.
+    The .top writer correctly included #include "ch4_hydrate.itp" but the file was missing
+    from the export directory.
+
+    Regression test for: CustomMoleculeStructure.guest_nmolecules field (commit 27332f6).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _build_chain(self):
+        # SoluteInserter creates its own internal MoleculetypeRegistry and
+        # auto-registers the liquid solute. No external registry needed.
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        custom = _insert_custom_molecules(interface, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
+        self.ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+    def test_gmx_grompp_succeeds(self, gmx_workspace):
+        gro_path = str(gmx_workspace / "f4_ch4_hydrate.gro")
+        top_path = str(gmx_workspace / "f4_ch4_hydrate.top")
+        write_ion_gro_file(self.ion, gro_path)
+        write_ion_top_file(self.ion, top_path)
+        write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_ch4_hydrate.gro", top_file="f4_ch4_hydrate.top")
+        assert exit_code == 0, f"gmx grompp failed for F4-CH4-hydrate:\n{stderr[-500:]}"
+
+        # Assert expected molecule types in .top [molecules]
+        molecules = parse_top_molecules(top_path)
+        expected_top_keys = {"SOL", "CH4_H*", "etoh", "CH4_L", "NA", "CL"}
+        for key in expected_top_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in molecules), (
+                    f"Expected molecule type '{base}' or '{key}' in [molecules] for F4-CH4-hydrate, "
+                    f"got: {list(molecules.keys())}"
+                )
+            else:
+                assert key in molecules, (
+                    f"Expected molecule type '{key}' in [molecules] for F4-CH4-hydrate, "
+                    f"got: {list(molecules.keys())}"
+                )
+
+        # Assert expected residue names in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_residues = set(residue_names)
+        expected_gro_keys = {"SOL", "CH4_H", "MOL", "CH4_L", "NA", "CL"}
+        for key in expected_gro_keys:
+            if key.endswith("*"):
+                base = key.rstrip("*")
+                assert any(k in (base, key) for k in unique_residues), (
+                    f"Expected residue '{base}' or '{key}' in .gro for F4-CH4-hydrate, "
+                    f"got: {sorted(unique_residues)}"
+                )
+            else:
+                assert key in unique_residues, (
+                    f"Expected residue '{key}' in .gro for F4-CH4-hydrate, "
+                    f"got: {sorted(unique_residues)}"
+                )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # F3-sII: Hydrate sII-CH4→Interface→Solute(CH4)→Ion (4 ITPs)
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -901,6 +987,7 @@ class TestChainF3SIIGmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f3_sII.gro", top_file="f3_sII.top")
         assert exit_code == 0, f"gmx grompp failed for F3-sII:\n{stderr[-500:]}"
 
@@ -968,6 +1055,7 @@ class TestChainF4SIIGmxValidation:
         write_ion_itp(gmx_workspace / "ion.itp", self.ion.na_count, self.ion.cl_count)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(gmx_workspace, gro_file="f4_sII.gro", top_file="f4_sII.top")
         assert exit_code == 0, f"gmx grompp failed for F4-sII:\n{stderr[-500:]}"
 
@@ -1064,6 +1152,7 @@ class TestHydrateGmxValidation:
         write_interface_top_file(self.iface, top_path)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(
             gmx_workspace, gro_file="hydrate.gro", top_file="hydrate.top"
         )
@@ -1099,6 +1188,7 @@ class TestCustomMoleculeGmxValidation:
         write_custom_molecule_top_file(self.custom, top_path)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(
             gmx_workspace, gro_file="custom.gro", top_file="custom.top"
         )
@@ -1132,6 +1222,7 @@ class TestSoluteGmxValidation:
         write_solute_top_file(self.solute, top_path)
         shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
         _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
         exit_code, stderr = run_gmx_grompp(
             gmx_workspace, gro_file="solute.gro", top_file="solute.top"
         )
