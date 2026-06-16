@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** Phase 37.1-fix-verified-scancode-findings — VERIFIED (43/43 must-haves, all gaps closed)
+**Current Focus:** e2e-compute-export — VERIFIED (48/48 must-haves, all gaps closed)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** Phase 37.1-fix-verified-scancode-findings — VERIFIED (43/43 must-haves, all gaps closed)
+**Current focus:** e2e-compute-export — VERIFIED (48/48 must-haves, all gaps closed)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-compute-export |
 | Plan | 12 of 12 |
-| Status | Phase complete |
-| Last activity | 2026-06-16 — Completed e2e-compute-export-12-PLAN.md |
+| Status | Phase complete, verified ✓ |
+| Last activity | 2026-06-16 — Phase e2e-compute-export verified (48/48 must-haves) |
 
 **Progress:** ██████████ 100% (12/12 plans in Phase e2e-compute-export)
 
@@ -139,9 +139,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
 
-**Phases:** 11 plans (01-11)
+**Phases:** 12 plans (01-12)
 **Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
-**Progress:** 11 of 11 plans COMPLETE (116 bridge tests + 14 grompp validation tests with molecule-type presence assertions = 130 total + cleanup utility)
+**Progress:** 12 of 12 plans COMPLETE (116 bridge tests + 18 grompp validation tests with molecule-type presence + ITP completeness assertions = 134 total + cleanup utility)
 **Key deliverables:**
 - ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
 - ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
@@ -168,11 +168,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Bug 2 fix validated: moleculetype name "etoh" in [molecules] (F1 passes)
 - ✓ Bug 3 fix validated: dedup atomtypes for THF+etoh combination (F4 passes)
 - ✓ 4 Cross-combination grompp validation tests — F2 (no-solute custom), F1+THF (hc dedup), F3+THF (CH4_H+THF_L), F4+CH4 (3-source hc dedup) (Plan 08)
-- ✓ Total: 128 tests (116 bridge + 12 grompp validation)
+- ✓ Total: 128 tests (116 bridge + 12 grompp validation) + Plan 08
 - ✓ 2 sII hydrate grompp validation tests — F3-sII (CH4), F4-sII (THF) chains pass gmx grompp (Plan 09)
 - ✓ sII hydrate helper functions — _hydrate_sII_ch4_candidate(), _hydrate_sII_thf_candidate() (Plan 09)
 - ✓ Stale .tpr backup cleanup in run_gmx_grompp() — prevents 99-backup limit failure on re-runs (Plan 09)
-- ✓ Total: 130 tests (116 bridge + 14 grompp validation) — PHASE COMPLETE
+- ✓ Total: 130 tests (116 bridge + 14 grompp validation) + Plan 12 additions
 - ✓ Test output cleanup utility — scripts/clean-test-output.sh with --dry-run, --include-gmx-validation, --stale-backups-only flags (Plan 10)
 - ✓ Molecule-type presence assertions in all 14 grompp validation tests — .top [molecules] keys + .gro residue names + flexible matching for hydrate guests (Plan 11)
 - ✓ Silent-failure gap closed: writer bug dropping molecule from both .gro and .top now detected (Plan 11)
