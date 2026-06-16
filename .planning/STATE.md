@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 11 of 15 |
+| Plan | 13 of 15 |
 | Status | In progress |
-| Last activity | 2026-06-16 — Completed 37.1-11-SUMMARY.md |
+| Last activity | 2026-06-16 — Completed 37.1-13-SUMMARY.md |
 
-**Progress:** ███████░░░ 73% (11/15 plans in Phase 37.1, 239+ plans across all milestones)
+**Progress:** ████████░░ 87% (13/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -543,6 +543,17 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Occupancy range validation [0.0, 100.0]% (CP-03 fix) | validate_occupancy_range() for --cage-occupancy-small/large; cage occupancy is a percentage; values outside [0, 100] rejected | ✓ Shipped (37.1-11) |
 | File extension validation for --custom-gro/--custom-itp (SEC-02 fix) | .gro/.itp extension check in pipeline.py (not parser); case-insensitive via .suffix.lower(); matches GUI QFileDialog filter behavior | ✓ Shipped (37.1-11) |
 | Validators in validators.py (not parser.py) | All argparse type validators consolidated in validators.py; DRY single location for input validation functions | ✓ Shipped (37.1-11) |
+| README Ice X range > 30 GPa, no T constraint | Code defines Ice X boundary at 30-62 GPa depending on T; no standalone temperature constraint | ✓ Shipped (37.1-13) |
+| README Ice XV replaces Ice IV | Code detects XV, not IV; feature list and phase table updated | ✓ Shipped (37.1-13) |
+| Single Madrid2019 DOI 10.1063/1.5121394 | Both README occurrences now use correct DOI (was 5121392 in one) | ✓ Shipped (37.1-13) |
+| IAPWS URLs match code references | MeltIce.pdf (not MeltSub.html), Ice-2009.html (not Ice-2006.html) | ✓ Shipped (37.1-13) |
+| gui-guide Box X range 1.0-100 nm | interface_panel.py setRange(1.0, 100.0); was documented as 0.5-100 | ✓ Shipped (37.1-13) |
+| --ion-source custom in workflow script | hydrate-interface-custom-ion.sh was missing this flag; ions defaulted to "interface" source | ✓ Shipped (37.1-13) |
+| help_dialog Tab 3 prerequisite for Custom Molecule source | Solute step now notes: complete Tab 3 first when using Custom Molecule source | ✓ Shipped (37.1-13) |
+| help_dialog button "Insert Molecule" not "Click Generate" | Matches actual GUI button label | ✓ Shipped (37.1-13) |
+| parser --gromacs help includes .itp | GROMACS export produces .gro, .top, .itp; help string now reflects this | ✓ Shipped (37.1-13) |
+| cli-examples removed redundant -g flags | Lines had both --gromacs and -g; kept long form for doc clarity | ✓ Shipped (37.1-13) |
+| --no-diagram no-op in pipeline mode | Note added to cli-reference: diagrams not generated in pipeline mode by default | ✓ Shipped (37.1-13) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -643,9 +654,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-11-PLAN.md
-**Status:** Phase 37.1 — IN PROGRESS (11/15 plans)
-**Stopped at:** Completed 37.1-11-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-13-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (13/15 plans)
+**Stopped at:** Completed 37.1-13-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (11/15 plans)*
+*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (13/15 plans)*
