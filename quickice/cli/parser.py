@@ -15,6 +15,8 @@ from quickice.validation.validators import (
     validate_nmolecules,
     validate_positive_float,
     validate_box_dimension,
+    validate_concentration_range,
+    validate_occupancy_range,
 )
 
 
@@ -239,14 +241,14 @@ Examples:
 
     hydrate_group.add_argument(
         "--cage-occupancy-small",
-        type=float,
+        type=validate_occupancy_range,
         default=100.0,
         help="Small cage occupancy percentage (default: 100.0)"
     )
 
     hydrate_group.add_argument(
         "--cage-occupancy-large",
-        type=float,
+        type=validate_occupancy_range,
         default=100.0,
         help="Large cage occupancy percentage (default: 100.0)"
     )
@@ -288,7 +290,7 @@ Examples:
 
     custom_group.add_argument(
         "--custom-concentration",
-        type=float,
+        type=validate_concentration_range,
         default=None,
         help="Custom molecule concentration in mol/L (for random placement)"
     )
@@ -316,7 +318,7 @@ Examples:
 
     solute_group.add_argument(
         "--solute-concentration",
-        type=float,
+        type=validate_concentration_range,
         default=None,
         help="Solute concentration in mol/L"
     )
@@ -337,7 +339,7 @@ Examples:
 
     ion_group.add_argument(
         "--ion-concentration",
-        type=float,
+        type=validate_concentration_range,
         default=None,
         help="Ion concentration in mol/L"
     )

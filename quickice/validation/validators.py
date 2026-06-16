@@ -145,3 +145,62 @@ def validate_box_dimension(value: str) -> float:
         )
     
     return val
+
+
+def validate_concentration_range(value: str) -> float:
+    """Validate concentration is in reasonable range [0.0, 5.0] mol/L.
+
+    Covers practical range: seawater ~0.6 mol/L, saturated ~5 mol/L.
+
+    Args:
+        value: String input from CLI argument
+
+    Returns:
+        Validated concentration as float (0.0-5.0 mol/L)
+
+    Raises:
+        ArgumentTypeError: If value is not numeric or outside [0.0, 5.0]
+    """
+    try:
+        val = float(value)
+    except ValueError:
+        raise ArgumentTypeError(
+            f"concentration must be a number, got '{value}'"
+        )
+
+    if not (0.0 <= val <= 5.0):
+        raise ArgumentTypeError(
+            f"concentration must be between 0.0 and 5.0 mol/L, got {val}"
+        )
+
+    return val
+
+
+def validate_occupancy_range(value: str) -> float:
+    """Validate cage occupancy is in [0.0, 100.0] percent.
+
+    Cage occupancy is a percentage representing the fraction of cages
+    filled by guest molecules.
+
+    Args:
+        value: String input from CLI argument
+
+    Returns:
+        Validated occupancy as float (0.0-100.0%)
+
+    Raises:
+        ArgumentTypeError: If value is not numeric or outside [0.0, 100.0]
+    """
+    try:
+        val = float(value)
+    except ValueError:
+        raise ArgumentTypeError(
+            f"cage occupancy must be a number, got '{value}'"
+        )
+
+    if not (0.0 <= val <= 100.0):
+        raise ArgumentTypeError(
+            f"cage occupancy must be between 0.0 and 100.0%, got {val}"
+        )
+
+    return val
