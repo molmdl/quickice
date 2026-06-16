@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 12 of 15 |
+| Plan | 14 of 15 |
 | Status | In progress |
-| Last activity | 2026-06-16 — Completed 37.1-12-SUMMARY.md |
+| Last activity | 2026-06-16 — Completed 37.1-14-SUMMARY.md |
 
-**Progress:** ████████░░ 80% (12/15 plans in Phase 37.1, 239+ plans across all milestones)
+**Progress:** █████████░ 93% (14/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -553,6 +553,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | IAPWS URLs match code references | MeltIce.pdf (not MeltSub.html), Ice-2009.html (not Ice-2006.html) | ✓ Shipped (37.1-13) |
 | gui-guide Box X range 1.0-100 nm | interface_panel.py setRange(1.0, 100.0); was documented as 0.5-100 | ✓ Shipped (37.1-13) |
 | --ion-source custom in workflow script | hydrate-interface-custom-ion.sh was missing this flag; ions defaulted to "interface" source | ✓ Shipped (37.1-13) |
+| PBC wrapping for solute/custom in write_interface_gro_file | Defensive wrapping matching write_ion_gro_file pattern; hasattr + None/len guards for optional fields | ✓ Shipped (37.1-14) |
 | help_dialog Tab 3 prerequisite for Custom Molecule source | Solute step now notes: complete Tab 3 first when using Custom Molecule source | ✓ Shipped (37.1-13) |
 | help_dialog button "Insert Molecule" not "Click Generate" | Matches actual GUI button label | ✓ Shipped (37.1-13) |
 | parser --gromacs help includes .itp | GROMACS export produces .gro, .top, .itp; help string now reflects this | ✓ Shipped (37.1-13) |
@@ -658,9 +659,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-12-PLAN.md
-**Status:** Phase 37.1 — IN PROGRESS (12/15 plans)
-**Stopped at:** Completed 37.1-12-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-14-PLAN.md (plus 37.1-15)
+**Status:** Phase 37.1 — IN PROGRESS (14/15 plans, 15 already complete)
+**Stopped at:** Completed 37.1-14-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (12/15 plans)*
+*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (14/15 plans)*
