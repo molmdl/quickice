@@ -366,6 +366,20 @@ class CLIPipeline:
             if not itp_path.exists():
                 raise FileNotFoundError(f"ITP file not found: {itp_path}")
 
+            # SEC-02: Validate file extensions (case-insensitive)
+            if gro_path.suffix.lower() != '.gro':
+                report_progress(
+                    f"Error: --custom-gro file must have .gro extension, "
+                    f"got '{gro_path.suffix}'"
+                )
+                return 1
+            if itp_path.suffix.lower() != '.itp':
+                report_progress(
+                    f"Error: --custom-itp file must have .itp extension, "
+                    f"got '{itp_path.suffix}'"
+                )
+                return 1
+
             # Get source structure
             source = self._interface_result
             if source is None:
