@@ -472,53 +472,59 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
             f"nmolecules={nmol} needs {expected_atoms} (3 atoms per ice molecule)"
         )
     
-    with open(filepath, 'w') as f:
-        f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
-        f.write(f"{n_atoms:5d}\n")
+    try:
+        with open(filepath, 'w') as f:
+            f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
+            f.write(f"{n_atoms:5d}\n")
 
-        lines = []
-        atom_num = 0
-        for mol_idx in range(nmol):
-            base_idx = mol_idx * 3
+            lines = []
+            atom_num = 0
+            for mol_idx in range(nmol):
+                base_idx = mol_idx * 3
+                
+                o_pos = wrapped_positions[base_idx]
+                h1_pos = wrapped_positions[base_idx + 1]
+                h2_pos = wrapped_positions[base_idx + 2]
+                
+                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+
+                res_num = (mol_idx + 1) % 100000
+
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"   OW{atom_num_wrapped:5d}"
+                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW1{atom_num_wrapped:5d}"
+                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW2{atom_num_wrapped:5d}"
+                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"   MW{atom_num_wrapped:5d}"
+                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+            f.writelines(lines)
             
-            o_pos = wrapped_positions[base_idx]
-            h1_pos = wrapped_positions[base_idx + 1]
-            h2_pos = wrapped_positions[base_idx + 2]
-            
-            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-
-            res_num = (mol_idx + 1) % 100000
-
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   OW{atom_num_wrapped:5d}"
-                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW1{atom_num_wrapped:5d}"
-                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW2{atom_num_wrapped:5d}"
-                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   MW{atom_num_wrapped:5d}"
-                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
-
-        f.writelines(lines)
-        
-        cell = candidate.cell
-        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+            cell = candidate.cell
+            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write GRO file '{filepath}': {e}")
+        if Path(filepath).exists():
+            Path(filepath).unlink()
+        raise
 
 
 def write_top_file(candidate: Candidate, filepath: str) -> None:
@@ -672,156 +678,162 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     
     atom_num = 0
 
-    with open(filepath, 'w') as f:
-        # Title line
-        f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
+    try:
+        with open(filepath, 'w') as f:
+            # Title line
+            f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
 
-        # Number of atoms
-        f.write(f"{n_atoms:5d}\n")
+            # Number of atoms
+            f.write(f"{n_atoms:5d}\n")
 
-        # Build all atom lines in memory for better I/O performance
-        lines = []
+            # Build all atom lines in memory for better I/O performance
+            lines = []
         
-        # Define boundaries (NEW ORDER: ice → water → guests)
-        ice_end = iface.ice_atom_count
-        water_start = ice_end
-        water_end = ice_end + iface.water_atom_count
-        guest_start = water_end
+            # Define boundaries (NEW ORDER: ice → water → guests)
+            ice_end = iface.ice_atom_count
+            water_start = ice_end
+            water_end = ice_end + iface.water_atom_count
+            guest_start = water_end
         
-        # Detect atoms per ice molecule
-        # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
-        # Hydrate: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
-        ice_region_atom_names = iface.atom_names[:ice_end]
-        has_ow_in_ice = "OW" in ice_region_atom_names
-        atoms_per_ice_mol = 4 if has_ow_in_ice else 3
+            # Detect atoms per ice molecule
+            # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
+            # Hydrate: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
+            ice_region_atom_names = iface.atom_names[:ice_end]
+            has_ow_in_ice = "OW" in ice_region_atom_names
+            atoms_per_ice_mol = 4 if has_ow_in_ice else 3
 
-        # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
-        # OR: 4 atoms per molecule (OW, HW1, HW2, MW) → normalize to 4-atom
-        for mol_idx in range(iface.ice_nmolecules):
-            base_idx = mol_idx * atoms_per_ice_mol
-            o_pos = wrapped_positions[base_idx]
+            # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
+            # OR: 4 atoms per molecule (OW, HW1, HW2, MW) → normalize to 4-atom
+            for mol_idx in range(iface.ice_nmolecules):
+                base_idx = mol_idx * atoms_per_ice_mol
+                o_pos = wrapped_positions[base_idx]
             
-            # Get H positions based on atoms per molecule
-            if atoms_per_ice_mol == 3:
-                # Classic ice: O, H, H — no existing MW, must compute
-                h1_pos = wrapped_positions[base_idx + 1]
-                h2_pos = wrapped_positions[base_idx + 2]
-                mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-            else:
-                # Hydrate: OW, HW1, HW2, MW — use existing MW
-                # (already correctly placed by molecule-aware wrapping)
-                h1_pos = wrapped_positions[base_idx + 1]
-                h2_pos = wrapped_positions[base_idx + 2]
-                mw_pos = wrapped_positions[base_idx + 3]
+                # Get H positions based on atoms per molecule
+                if atoms_per_ice_mol == 3:
+                    # Classic ice: O, H, H — no existing MW, must compute
+                    h1_pos = wrapped_positions[base_idx + 1]
+                    h2_pos = wrapped_positions[base_idx + 2]
+                    mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                else:
+                    # Hydrate: OW, HW1, HW2, MW — use existing MW
+                    # (already correctly placed by molecule-aware wrapping)
+                    h1_pos = wrapped_positions[base_idx + 1]
+                    h2_pos = wrapped_positions[base_idx + 2]
+                    mw_pos = wrapped_positions[base_idx + 3]
 
-            # Wrap residue number at 100000 (GROMACS convention for large systems)
-            res_num = (mol_idx + 1) % 100000
+                # Wrap residue number at 100000 (GROMACS convention for large systems)
+                res_num = (mol_idx + 1) % 100000
 
-            # OW (oxygen)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   OW{atom_num_wrapped:5d}"
-                        f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-            # HW1 (hydrogen 1)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW1{atom_num_wrapped:5d}"
-                        f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-            # HW2 (hydrogen 2)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"  HW2{atom_num_wrapped:5d}"
-                        f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-            # MW (virtual site)
-            atom_num += 1
-            atom_num_wrapped = atom_num % 100000
-            lines.append(f"{res_num:5d}SOL  "
-                        f"   MW{atom_num_wrapped:5d}"
-                        f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
-
-        # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
-        # Write WATER BEFORE guests (new order: ice → water → guests)
-        for mol_idx in range(iface.water_nmolecules):
-            base_idx = water_start + mol_idx * 4
-            # Wrap residue number at 100000 (GROMACS convention for large systems)
-            res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
-
-            atom_names = ["OW", "HW1", "HW2", "MW"]
-            for i, atom_name in enumerate(atom_names):
+                # OW (oxygen)
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
-                pos = wrapped_positions[base_idx + i]
                 lines.append(f"{res_num:5d}SOL  "
-                            f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                            f"   OW{atom_num_wrapped:5d}"
+                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
-        # GUEST MOLECULES: pass through with native atom types
-        # Write guests AFTER water (new order: ice → water → guests)
-        
-        if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
-            guest_atom_names = iface.atom_names[guest_start:]
-            
-            # Determine guest type by analyzing all atom names
-            # GenIce2 outputs atoms in different order than .itp:
-            #   CH4: H, H, H, H, C (hydrogen first)
-            #   THF: O, C, C, C, C, H, H, H, H, H, H, C, H (oxygen first in some versions)
-            # Need to detect based on atom composition, not just first atom
-            
-            if guest_atom_names:
-                # Detect guest type using the centralized function
-                guest_type = detect_guest_type_from_atoms(guest_atom_names)
-            else:
-                guest_type = None
-            
-            # Get residue name from hydrate itp file (interface guests are hydrate cage guests)
-            if guest_type:
-                guest_res_name = get_hydrate_guest_residue_name(guest_type)
-            else:
-                guest_res_name = "UNK"
-            
-            # Group atoms by molecule and write
-            mol_start = 0
-            for mol_idx in range(iface.guest_nmolecules):
-                guest_atoms = count_guest_atoms(guest_atom_names, mol_start)
-                mol_end = mol_start + guest_atoms
-                
-                # Get this molecule's atom names and positions
-                mol_atom_names = guest_atom_names[mol_start:mol_end]
-                mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
-                
-                # Reorder to match .itp canonical order (C first for ch4, O first for thf)
-                reorder_mapping = None
-                if guest_type == "ch4" or guest_type == "thf":
-                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
-                    # Also reorder positions to match the reordered names
-                    if reorder_mapping is not None:
-                        mol_positions = [mol_positions[i] for i in reorder_mapping]
-                
-                # Wrap residue number (guests come after all SOL molecules)
-                res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
-                
-                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                # HW1 (hydrogen 1)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW1{atom_num_wrapped:5d}"
+                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                # HW2 (hydrogen 2)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"  HW2{atom_num_wrapped:5d}"
+                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                # MW (virtual site)
+                atom_num += 1
+                atom_num_wrapped = atom_num % 100000
+                lines.append(f"{res_num:5d}SOL  "
+                            f"   MW{atom_num_wrapped:5d}"
+                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+            # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
+            # Write WATER BEFORE guests (new order: ice → water → guests)
+            for mol_idx in range(iface.water_nmolecules):
+                base_idx = water_start + mol_idx * 4
+                # Wrap residue number at 100000 (GROMACS convention for large systems)
+                res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
+
+                atom_names = ["OW", "HW1", "HW2", "MW"]
+                for i, atom_name in enumerate(atom_names):
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num:5d}{guest_res_name:<5s}"
+                    pos = wrapped_positions[base_idx + i]
+                    lines.append(f"{res_num:5d}SOL  "
                                 f"{atom_name:>5s}{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-                
-                mol_start = mol_end
 
-        f.writelines(lines)
+            # GUEST MOLECULES: pass through with native atom types
+            # Write guests AFTER water (new order: ice → water → guests)
         
-        # Box vectors (triclinic format)
-        cell = iface.cell
-        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+            if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
+                guest_atom_names = iface.atom_names[guest_start:]
+            
+                # Determine guest type by analyzing all atom names
+                # GenIce2 outputs atoms in different order than .itp:
+                #   CH4: H, H, H, H, C (hydrogen first)
+                #   THF: O, C, C, C, C, H, H, H, H, H, H, C, H (oxygen first in some versions)
+                # Need to detect based on atom composition, not just first atom
+            
+                if guest_atom_names:
+                    # Detect guest type using the centralized function
+                    guest_type = detect_guest_type_from_atoms(guest_atom_names)
+                else:
+                    guest_type = None
+            
+                # Get residue name from hydrate itp file (interface guests are hydrate cage guests)
+                if guest_type:
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                else:
+                    guest_res_name = "UNK"
+            
+                # Group atoms by molecule and write
+                mol_start = 0
+                for mol_idx in range(iface.guest_nmolecules):
+                    guest_atoms = count_guest_atoms(guest_atom_names, mol_start)
+                    mol_end = mol_start + guest_atoms
+                
+                    # Get this molecule's atom names and positions
+                    mol_atom_names = guest_atom_names[mol_start:mol_end]
+                    mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
+                
+                    # Reorder to match .itp canonical order (C first for ch4, O first for thf)
+                    reorder_mapping = None
+                    if guest_type == "ch4" or guest_type == "thf":
+                        mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                        # Also reorder positions to match the reordered names
+                        if reorder_mapping is not None:
+                            mol_positions = [mol_positions[i] for i in reorder_mapping]
+                
+                    # Wrap residue number (guests come after all SOL molecules)
+                    res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
+                
+                    for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num:5d}{guest_res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                
+                    mol_start = mol_end
+
+            f.writelines(lines)
+        
+            # Box vectors (triclinic format)
+            cell = iface.cell
+            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write GRO file '{filepath}': {e}")
+        if Path(filepath).exists():
+            Path(filepath).unlink()
+        raise
 
 
 def _get_molecule_atoms(atom_names: list[str]) -> list[str]:
@@ -1423,240 +1435,246 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     atom_num = 0
     res_num = 0
 
-    with open(filepath, 'w') as f:
-        # Title line
-        na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
-        cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
-        title_parts = [f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-)"]
-        if has_custom:
-            title_parts.append(f"{ion_structure.custom_molecule_count} custom molecules")
-        if has_solutes:
-            title_parts.append(f"{ion_structure.solute_n_molecules} {ion_structure.solute_type.upper()} solutes")
-        title_parts.append("exported by QuickIce")
-        f.write(" + ".join(title_parts) + "\n")
+    try:
+        with open(filepath, 'w') as f:
+            # Title line
+            na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
+            cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
+            title_parts = [f"Ice/water + ions ({na_count} Na+, {cl_count} Cl-)"]
+            if has_custom:
+                title_parts.append(f"{ion_structure.custom_molecule_count} custom molecules")
+            if has_solutes:
+                title_parts.append(f"{ion_structure.solute_n_molecules} {ion_structure.solute_type.upper()} solutes")
+            title_parts.append("exported by QuickIce")
+            f.write(" + ".join(title_parts) + "\n")
 
-        # Number of atoms
-        f.write(f"{total_atoms:5d}\n")
+            # Number of atoms
+            f.write(f"{total_atoms:5d}\n")
 
-        # Build all atom lines in memory for better I/O performance
-        lines = []
+            # Build all atom lines in memory for better I/O performance
+            lines = []
 
-        for mol_type, mol in ordered_mols:
-            if mol_type == "sol":
-                # SOL molecule (ice or water)
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+            for mol_type, mol in ordered_mols:
+                if mol_type == "sol":
+                    # SOL molecule (ice or water)
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
 
-                start = mol.start_idx
+                    start = mol.start_idx
 
-                if mol.mol_type == "ice":
-                    # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
-                    # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
-                    o_pos = wrapped_positions[start]
-                    h1_pos = wrapped_positions[start + 1]
-                    h2_pos = wrapped_positions[start + 2]
-                    if mol.count == 3:
-                        # Classic 3-atom ice: no existing MW, must compute
-                        mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-                    else:
-                        # Hydrate 4-atom ice: MW already exists at index 3
-                        # (already correctly placed by molecule-aware wrapping)
+                    if mol.mol_type == "ice":
+                        # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                        # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
+                        o_pos = wrapped_positions[start]
+                        h1_pos = wrapped_positions[start + 1]
+                        h2_pos = wrapped_positions[start + 2]
+                        if mol.count == 3:
+                            # Classic 3-atom ice: no existing MW, must compute
+                            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                        else:
+                            # Hydrate 4-atom ice: MW already exists at index 3
+                            # (already correctly placed by molecule-aware wrapping)
+                            mw_pos = wrapped_positions[start + 3]
+
+                        # OW (oxygen)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   OW{atom_num_wrapped:5d}"
+                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                        # HW1 (hydrogen 1)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW1{atom_num_wrapped:5d}"
+                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                        # HW2 (hydrogen 2)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW2{atom_num_wrapped:5d}"
+                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                        # MW (virtual site)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   MW{atom_num_wrapped:5d}"
+                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+                    else:  # water
+                        # Water: 4 atoms (OW, HW1, HW2, MW)
+                        # Use existing MW from wrapped_positions (already correctly placed)
+                        o_pos = wrapped_positions[start]
+                        h1_pos = wrapped_positions[start + 1]
+                        h2_pos = wrapped_positions[start + 2]
                         mw_pos = wrapped_positions[start + 3]
 
-                    # OW (oxygen)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   OW{atom_num_wrapped:5d}"
-                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                        # OW (oxygen)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   OW{atom_num_wrapped:5d}"
+                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
-                    # HW1 (hydrogen 1)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW1{atom_num_wrapped:5d}"
-                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                        # HW1 (hydrogen 1)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW1{atom_num_wrapped:5d}"
+                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
-                    # HW2 (hydrogen 2)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW2{atom_num_wrapped:5d}"
-                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                        # HW2 (hydrogen 2)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW2{atom_num_wrapped:5d}"
+                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
-                    # MW (virtual site)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   MW{atom_num_wrapped:5d}"
-                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                        # MW (virtual site)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   MW{atom_num_wrapped:5d}"
+                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
-                else:  # water
-                    # Water: 4 atoms (OW, HW1, HW2, MW)
-                    # Use existing MW from wrapped_positions (already correctly placed)
-                    o_pos = wrapped_positions[start]
-                    h1_pos = wrapped_positions[start + 1]
-                    h2_pos = wrapped_positions[start + 2]
-                    mw_pos = wrapped_positions[start + 3]
+                elif mol_type == "guest":
+                    # Guest molecule (CH4, THF, etc.) - write all atoms
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
 
-                    # OW (oxygen)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   OW{atom_num_wrapped:5d}"
-                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                    start = mol.start_idx
+                    # Get atom names and positions for this molecule
+                    mol_atom_names = ion_structure.atom_names[start:start + mol.count]
+                    mol_positions = wrapped_positions[start:start + mol.count]
 
-                    # HW1 (hydrogen 1)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW1{atom_num_wrapped:5d}"
-                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                    # Detect guest type from atom names
+                    guest_type = detect_guest_type_from_atoms(mol_atom_names)
 
-                    # HW2 (hydrogen 2)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW2{atom_num_wrapped:5d}"
-                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                    # Get residue name from hydrate itp file (ion guests are hydrate cage guests)
+                    if guest_type:
+                        guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    else:
+                        guest_res_name = "GUE"  # Fallback
 
-                    # MW (virtual site)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   MW{atom_num_wrapped:5d}"
-                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                    # Reorder guest atoms to match .itp canonical order
+                    # (e.g., CH4: C first instead of H first from GenIce2)
+                    reorder_mapping = None
+                    if guest_type in ["ch4", "thf"]:
+                        mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                        # Also reorder positions to match the reordered names
+                        if reorder_mapping is not None:
+                            mol_positions = [mol_positions[i] for i in reorder_mapping]
 
-            elif mol_type == "guest":
-                # Guest molecule (CH4, THF, etc.) - write all atoms
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-
-                start = mol.start_idx
-                # Get atom names and positions for this molecule
-                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
-                mol_positions = wrapped_positions[start:start + mol.count]
-
-                # Detect guest type from atom names
-                guest_type = detect_guest_type_from_atoms(mol_atom_names)
-
-                # Get residue name from hydrate itp file (ion guests are hydrate cage guests)
-                if guest_type:
-                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
-                else:
-                    guest_res_name = "GUE"  # Fallback
-
-                # Reorder guest atoms to match .itp canonical order
-                # (e.g., CH4: C first instead of H first from GenIce2)
-                reorder_mapping = None
-                if guest_type in ["ch4", "thf"]:
-                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
-                    # Also reorder positions to match the reordered names
-                    if reorder_mapping is not None:
-                        mol_positions = [mol_positions[i] for i in reorder_mapping]
-
-                for i in range(mol.count):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    atom_name = mol_atom_names[i]
-                    pos = mol_positions[i]
-                    lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    for i in range(mol.count):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        atom_name = mol_atom_names[i]
+                        pos = mol_positions[i]
+                        lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
-            elif mol_type == "custom":
-                # Custom molecule - write all atoms from custom_molecule_positions
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+                elif mol_type == "custom":
+                    # Custom molecule - write all atoms from custom_molecule_positions
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
                 
-                # Get residue name (use moleculetype name)
-                res_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CST"
-                # Truncate to 5 chars for GRO format (GROMACS limit)
-                res_name = res_name[:5]
+                    # Get residue name (use moleculetype name)
+                    res_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CST"
+                    # Truncate to 5 chars for GRO format (GROMACS limit)
+                    res_name = res_name[:5]
                 
-                # Get atom names and positions for this molecule
-                start = mol.start_idx
-                if ion_structure.custom_molecule_atom_names:
-                    mol_atom_names = ion_structure.custom_molecule_atom_names[start:start + mol.count]
-                else:
-                    mol_atom_names = [f"C{i}" for i in range(mol.count)]  # Fallback
+                    # Get atom names and positions for this molecule
+                    start = mol.start_idx
+                    if ion_structure.custom_molecule_atom_names:
+                        mol_atom_names = ion_structure.custom_molecule_atom_names[start:start + mol.count]
+                    else:
+                        mol_atom_names = [f"C{i}" for i in range(mol.count)]  # Fallback
                 
-                if wrapped_custom_positions is not None:
-                    mol_positions = wrapped_custom_positions[start:start + mol.count]
-                else:
-                    mol_positions = np.zeros((mol.count, 3))  # Fallback
+                    if wrapped_custom_positions is not None:
+                        mol_positions = wrapped_custom_positions[start:start + mol.count]
+                    else:
+                        mol_positions = np.zeros((mol.count, 3))  # Fallback
                 
-                # Write all atoms
-                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    # Write all atoms
+                    for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
             
-            elif mol_type == "solute":
-                # Solute molecule (CH4_L or THF_L) - write all atoms
-                # Solute positions are stored separately in ion_structure.solute_positions
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+                elif mol_type == "solute":
+                    # Solute molecule (CH4_L or THF_L) - write all atoms
+                    # Solute positions are stored separately in ion_structure.solute_positions
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
                 
-                start = mol.start_idx
-                count = mol.count
+                    start = mol.start_idx
+                    count = mol.count
                 
-                # Get atom names and positions for this solute molecule
-                mol_atom_names = ion_structure.solute_atom_names[start:start + count]
-                mol_positions = wrapped_solute_positions[start:start + count]
+                    # Get atom names and positions for this solute molecule
+                    mol_atom_names = ion_structure.solute_atom_names[start:start + count]
+                    mol_positions = wrapped_solute_positions[start:start + count]
                 
-                # Get residue name from registry
-                solute_type_upper = ion_structure.solute_type.upper()
-                if ion_structure.solute_registry:
-                    solute_res_name = ion_structure.solute_registry.get_gromacs_name(f"liquid_{ion_structure.solute_type}")
-                else:
-                    # Fallback
-                    solute_res_name = f"{solute_type_upper}_L"
+                    # Get residue name from registry
+                    solute_type_upper = ion_structure.solute_type.upper()
+                    if ion_structure.solute_registry:
+                        solute_res_name = ion_structure.solute_registry.get_gromacs_name(f"liquid_{ion_structure.solute_type}")
+                    else:
+                        # Fallback
+                        solute_res_name = f"{solute_type_upper}_L"
                 
-                # Truncate to 5 chars for GRO format (GROMACS limit)
-                solute_res_name = solute_res_name[:5]
+                    # Truncate to 5 chars for GRO format (GROMACS limit)
+                    solute_res_name = solute_res_name[:5]
                 
-                for i in range(count):
+                    for i in range(count):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        atom_name = mol_atom_names[i]
+                        pos = mol_positions[i]
+                        lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+
+                elif mol_type == "na":
+                    # NA ion
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
                     atom_num += 1
                     atom_num_wrapped = atom_num % 100000
-                    atom_name = mol_atom_names[i]
-                    pos = mol_positions[i]
-                    lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                    pos = wrapped_positions[mol.start_idx]
+                    lines.append(f"{res_num_wrapped:5d}NA   "
+                                f"   NA{atom_num_wrapped:5d}"
                                 f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
+                elif mol_type == "cl":
+                    # CL ion
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
+                    atom_num += 1
+                    atom_num_wrapped = atom_num % 100000
+                    pos = wrapped_positions[mol.start_idx]
+                    lines.append(f"{res_num_wrapped:5d}CL   "
+                                f"   CL{atom_num_wrapped:5d}"
+                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
-            elif mol_type == "na":
-                # NA ion
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                pos = wrapped_positions[mol.start_idx]
-                lines.append(f"{res_num_wrapped:5d}NA   "
-                            f"   NA{atom_num_wrapped:5d}"
-                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+            f.writelines(lines)
 
-            elif mol_type == "cl":
-                # CL ion
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                pos = wrapped_positions[mol.start_idx]
-                lines.append(f"{res_num_wrapped:5d}CL   "
-                            f"   CL{atom_num_wrapped:5d}"
-                            f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-
-        f.writelines(lines)
-
-        # Box vectors (triclinic format)
-        cell = ion_structure.cell
-        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+            # Box vectors (triclinic format)
+            cell = ion_structure.cell
+            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write GRO file '{filepath}': {e}")
+        if Path(filepath).exists():
+            Path(filepath).unlink()
+        raise
 
 
 def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
@@ -2083,8 +2101,14 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
     box_line = f"{custom_structure.cell[0, 0]:10.5f}{custom_structure.cell[1, 1]:10.5f}{custom_structure.cell[2, 2]:10.5f}\n"
     lines.append(box_line)
     
-    with open(filepath, 'w') as f:
-        f.writelines(lines)
+    try:
+        with open(filepath, 'w') as f:
+            f.writelines(lines)
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write GRO file '{filepath}': {e}")
+        if Path(filepath).exists():
+            Path(filepath).unlink()
+        raise
     
     logger.info(f"Wrote GRO file for custom molecule system: {filepath}")
 
@@ -2346,200 +2370,206 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
     res_num = 0
     lines = []
 
-    with open(filepath, 'w') as f:
-        # Title line
-        title_parts = ["Ice/water interface"]
-        if has_custom:
-            title_parts.append(f"{solute_structure.custom_molecule_count} custom molecules")
-        if has_solutes:
-            title_parts.append(f"{solute_structure.n_molecules} {solute_structure.solute_type.upper()} solutes")
-        title_parts.append("exported by QuickIce")
-        f.write(" + ".join(title_parts) + "\n")
+    try:
+        with open(filepath, 'w') as f:
+            # Title line
+            title_parts = ["Ice/water interface"]
+            if has_custom:
+                title_parts.append(f"{solute_structure.custom_molecule_count} custom molecules")
+            if has_solutes:
+                title_parts.append(f"{solute_structure.n_molecules} {solute_structure.solute_type.upper()} solutes")
+            title_parts.append("exported by QuickIce")
+            f.write(" + ".join(title_parts) + "\n")
 
-        # Number of atoms
-        f.write(f"{total_atoms:5d}\n")
+            # Number of atoms
+            f.write(f"{total_atoms:5d}\n")
 
-        for mol_type, mol in ordered_mols:
-            if mol_type == "sol":
-                # SOL molecule (ice or water)
-                res_num += 1
-                res_num_wrapped = res_num % 100000
-                start = mol.start_idx
+            for mol_type, mol in ordered_mols:
+                if mol_type == "sol":
+                    # SOL molecule (ice or water)
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
+                    start = mol.start_idx
 
-                if mol.mol_type == "ice":
-                    # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
-                    # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
-                    o_pos = wrapped_positions[start]
-                    h1_pos = wrapped_positions[start + 1]
-                    h2_pos = wrapped_positions[start + 2]
-                    if mol.count == 3:
-                        # Classic 3-atom ice: no existing MW, must compute
-                        mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
-                    else:
-                        # Hydrate 4-atom ice: MW already exists at index 3
-                        # (already correctly placed by molecule-aware wrapping)
+                    if mol.mol_type == "ice":
+                        # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
+                        # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
+                        o_pos = wrapped_positions[start]
+                        h1_pos = wrapped_positions[start + 1]
+                        h2_pos = wrapped_positions[start + 2]
+                        if mol.count == 3:
+                            # Classic 3-atom ice: no existing MW, must compute
+                            mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
+                        else:
+                            # Hydrate 4-atom ice: MW already exists at index 3
+                            # (already correctly placed by molecule-aware wrapping)
+                            mw_pos = wrapped_positions[start + 3]
+
+                        # OW (oxygen)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   OW{atom_num_wrapped:5d}"
+                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+
+                        # HW1
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW1{atom_num_wrapped:5d}"
+                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+
+                        # HW2
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW2{atom_num_wrapped:5d}"
+                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+
+                        # MW (virtual site)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   MW{atom_num_wrapped:5d}"
+                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+
+                    else:  # water
+                        # Water: 4 atoms (OW, HW1, HW2, MW)
+                        # Use existing MW from wrapped_positions (already correctly placed)
+                        o_pos = wrapped_positions[start]
+                        h1_pos = wrapped_positions[start + 1]
+                        h2_pos = wrapped_positions[start + 2]
                         mw_pos = wrapped_positions[start + 3]
 
-                    # OW (oxygen)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   OW{atom_num_wrapped:5d}"
-                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                        # OW
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   OW{atom_num_wrapped:5d}"
+                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
 
-                    # HW1
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW1{atom_num_wrapped:5d}"
-                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                        # HW1
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW1{atom_num_wrapped:5d}"
+                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
 
-                    # HW2
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW2{atom_num_wrapped:5d}"
-                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                        # HW2
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"  HW2{atom_num_wrapped:5d}"
+                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
 
-                    # MW (virtual site)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   MW{atom_num_wrapped:5d}"
-                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                        # MW (virtual site)
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}SOL  "
+                                    f"   MW{atom_num_wrapped:5d}"
+                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
-                else:  # water
-                    # Water: 4 atoms (OW, HW1, HW2, MW)
-                    # Use existing MW from wrapped_positions (already correctly placed)
-                    o_pos = wrapped_positions[start]
-                    h1_pos = wrapped_positions[start + 1]
-                    h2_pos = wrapped_positions[start + 2]
-                    mw_pos = wrapped_positions[start + 3]
+                elif mol_type == "guest":
+                    # Guest molecule (CH4, THF, etc.) — hydrate cage guests
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
 
-                    # OW
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   OW{atom_num_wrapped:5d}"
-                                f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
+                    start = mol.start_idx
+                    mol_atom_names = interface.atom_names[start:start + mol.count]
+                    mol_positions = wrapped_positions[start:start + mol.count]
 
-                    # HW1
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW1{atom_num_wrapped:5d}"
-                                f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
+                    # Detect guest type and get residue name
+                    guest_type = detect_guest_type_from_atoms(mol_atom_names)
+                    if guest_type:
+                        guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    else:
+                        guest_res_name = "GUE"  # Fallback
 
-                    # HW2
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"  HW2{atom_num_wrapped:5d}"
-                                f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
+                    # Reorder guest atoms to match .itp canonical order
+                    reorder_mapping = None
+                    if guest_type in ["ch4", "thf"]:
+                        mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                        if reorder_mapping is not None:
+                            mol_positions = [mol_positions[i] for i in reorder_mapping]
 
-                    # MW (virtual site)
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}SOL  "
-                                f"   MW{atom_num_wrapped:5d}"
-                                f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                    for i in range(mol.count):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        atom_name = mol_atom_names[i]
+                        pos = mol_positions[i]
+                        lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
-            elif mol_type == "guest":
-                # Guest molecule (CH4, THF, etc.) — hydrate cage guests
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+                elif mol_type == "custom":
+                    # Custom molecule — write from solute_structure custom attributes
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
 
-                start = mol.start_idx
-                mol_atom_names = interface.atom_names[start:start + mol.count]
-                mol_positions = wrapped_positions[start:start + mol.count]
+                    res_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CST"
+                    res_name = res_name[:5]
 
-                # Detect guest type and get residue name
-                guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                if guest_type:
-                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
-                else:
-                    guest_res_name = "GUE"  # Fallback
+                    start = mol.start_idx
+                    if solute_structure.custom_molecule_atom_names:
+                        mol_atom_names = solute_structure.custom_molecule_atom_names[start:start + mol.count]
+                    else:
+                        mol_atom_names = [f"C{i}" for i in range(mol.count)]
 
-                # Reorder guest atoms to match .itp canonical order
-                reorder_mapping = None
-                if guest_type in ["ch4", "thf"]:
-                    mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
-                    if reorder_mapping is not None:
-                        mol_positions = [mol_positions[i] for i in reorder_mapping]
+                    if solute_structure.custom_molecule_positions is not None:
+                        mol_positions = solute_structure.custom_molecule_positions[start:start + mol.count]
+                    else:
+                        mol_positions = np.zeros((mol.count, 3))
 
-                for i in range(mol.count):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    atom_name = mol_atom_names[i]
-                    pos = mol_positions[i]
-                    lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
-            elif mol_type == "custom":
-                # Custom molecule — write from solute_structure custom attributes
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+                elif mol_type == "solute":
+                    # Solute molecule (CH4_L or THF_L) — write from solute_structure
+                    res_num += 1
+                    res_num_wrapped = res_num % 100000
 
-                res_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CST"
-                res_name = res_name[:5]
+                    start = mol.start_idx
+                    count = mol.count
 
-                start = mol.start_idx
-                if solute_structure.custom_molecule_atom_names:
-                    mol_atom_names = solute_structure.custom_molecule_atom_names[start:start + mol.count]
-                else:
-                    mol_atom_names = [f"C{i}" for i in range(mol.count)]
+                    # Get atom names and positions from solute_structure
+                    mol_atom_names = solute_structure.atom_names[start:start + count]
+                    mol_positions = solute_structure.positions[start:start + count]
 
-                if solute_structure.custom_molecule_positions is not None:
-                    mol_positions = solute_structure.custom_molecule_positions[start:start + mol.count]
-                else:
-                    mol_positions = np.zeros((mol.count, 3))
+                    # Get residue name from registry
+                    solute_type_upper = solute_structure.solute_type.upper()
+                    if solute_structure.registry:
+                        solute_res_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")
+                    else:
+                        solute_res_name = f"{solute_type_upper}_L"
 
-                for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    # Truncate to 5 chars for GRO format
+                    solute_res_name = solute_res_name[:5]
 
-            elif mol_type == "solute":
-                # Solute molecule (CH4_L or THF_L) — write from solute_structure
-                res_num += 1
-                res_num_wrapped = res_num % 100000
+                    for i in range(count):
+                        atom_num += 1
+                        atom_num_wrapped = atom_num % 100000
+                        atom_name = mol_atom_names[i]
+                        pos = mol_positions[i]
+                        lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
+                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
 
-                start = mol.start_idx
-                count = mol.count
+            f.writelines(lines)
 
-                # Get atom names and positions from solute_structure
-                mol_atom_names = solute_structure.atom_names[start:start + count]
-                mol_positions = solute_structure.positions[start:start + count]
-
-                # Get residue name from registry
-                solute_type_upper = solute_structure.solute_type.upper()
-                if solute_structure.registry:
-                    solute_res_name = solute_structure.registry.get_gromacs_name(f"liquid_{solute_structure.solute_type}")
-                else:
-                    solute_res_name = f"{solute_type_upper}_L"
-
-                # Truncate to 5 chars for GRO format
-                solute_res_name = solute_res_name[:5]
-
-                for i in range(count):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    atom_name = mol_atom_names[i]
-                    pos = mol_positions[i]
-                    lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-
-        f.writelines(lines)
-
-        # Box vectors (triclinic format)
-        cell = interface.cell
-        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+            # Box vectors (triclinic format)
+            cell = interface.cell
+            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
+                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
+                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write GRO file '{filepath}': {e}")
+        if Path(filepath).exists():
+            Path(filepath).unlink()
+        raise
 
     logger.info(f"Wrote GRO file for solute system: {filepath}")
 

@@ -753,7 +753,7 @@ class CLIPipeline:
                 f"Exported GROMACS: {step_name}.gro, {step_name}.top, "
                 f"{len(itp_files)} ITP files → {self._output_dir}"
             )
-        except OSError as e:
+        except (OSError, ValueError) as e:
             logger.error("Export failed: %s", e)
             report_progress(f"Export step failed: {e}")
             return 1
