@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 09 of 15 |
+| Plan | 10 of 15 |
 | Status | In progress |
-| Last activity | 2026-06-16 — Completed 37.1-09-SUMMARY.md |
+| Last activity | 2026-06-16 — Completed 37.1-10-SUMMARY.md |
 
-**Progress:** ███████░░░ 60% (9/15 plans in Phase 37.1, 239+ plans across all milestones)
+**Progress:** ███████░░░ 67% (10/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -536,6 +536,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | --no-overwrite documented (exit code 1 on existing files) | Boolean flag, default False; previously undocumented per VERIFICATION.md | ✓ Shipped (37.1-06) |
 | detect_atoms_per_molecule in types.py (V-07 fix) | DRY: identical 20-line function duplicated in 3 modes files; single source of truth in types.py alongside WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-09) |
 | No input structure mutation in SoluteInserter (V-17 fix) | Create new InterfaceStructure instead of setting attrs on input; prevents bugs when same structure reused across multiple inserters | ✓ Shipped (37.1-09) |
+| WATER_VOLUME_NM3 shared constant in types.py (UM-02 fix) | 0.0299 nm³/molecule replaces 9 hardcoded values across 7 files; single source of truth alongside WATER_ATOMS_PER_MOLECULE | ✓ Shipped (37.1-10) |
+| AVOGADRO single definition in ion_inserter.py (AVOGADRO-DRY fix) | 3 independent AVOGADRO definitions consolidated to 1; all consumers import from ion_inserter.py | ✓ Shipped (37.1-10) |
+| water_fraction heuristic replaced with molecule-count volume (UM-03 fix) | Atom-count heuristic inflated volume ~25% (MW virtual sites counted as 4/3 real atoms); water_nmolecules * WATER_VOLUME_NM3 matches pipeline.py and GUI | ✓ Shipped (37.1-10) |
 
 ### v4.0 Key Decisions (Shipped)
 
@@ -636,9 +639,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-16
-**Completed:** 37.1-01-PLAN.md through 37.1-09-PLAN.md
-**Status:** Phase 37.1 — IN PROGRESS (9/15 plans)
-**Stopped at:** Completed 37.1-09-SUMMARY.md
+**Completed:** 37.1-01-PLAN.md through 37.1-10-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (10/15 plans)
+**Stopped at:** Completed 37.1-10-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (6/7 plans)*
+*State updated: 2026-06-16 — Phase 37.1 IN PROGRESS (10/15 plans)*
