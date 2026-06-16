@@ -675,7 +675,18 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     else:
         # Fallback to atom-by-atom wrapping (may split molecules)
         wrapped_positions = wrap_positions_into_box(iface.positions, iface.cell)
-    
+
+    # PBC-wrap solute and custom molecule positions if present on InterfaceStructure
+    # (defensive: interface-level export only writes ice+water+guests, but
+    # solute/custom positions may be carried forward from upstream insertion)
+    wrapped_solute_positions = None
+    if hasattr(iface, 'solute_positions') and iface.solute_positions is not None and len(iface.solute_positions) > 0:
+        wrapped_solute_positions = iface.solute_positions % np.diag(iface.cell)
+
+    wrapped_custom_positions = None
+    if hasattr(iface, 'custom_molecule_positions') and iface.custom_molecule_positions is not None and len(iface.custom_molecule_positions) > 0:
+        wrapped_custom_positions = iface.custom_molecule_positions % np.diag(iface.cell)
+
     atom_num = 0
 
     try:
