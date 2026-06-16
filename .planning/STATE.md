@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.1-fix-verified-scancode-findings |
-| Plan | 07 of 07 |
-| Status | Phase complete, verified ✓ |
-| Last activity | 2026-06-15 — Phase 37.1 verified (16/16 must-haves) |
+| Plan | 08 of 15 |
+| Status | In progress |
+| Last activity | 2026-06-16 — Completed 37.1-08-SUMMARY.md |
 
-**Progress:** ██████████ 100% (7/7 plans in Phase 37.1, 238+ plans across all milestones)
+**Progress:** ███████░░░ 53% (8/15 plans in Phase 37.1, 239+ plans across all milestones)
 
 ---
 
@@ -279,6 +279,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Simple modulo wrapping for solute/custom PBC | Single molecules don't span PBC boundaries; positions % np.diag(cell) sufficient | ✓ Shipped (37.1-02) |
 | PBC wrapping test tolerance 0.01 nm | Molecule-aware wrapping (center-based) can place atoms ~0.01 nm outside [0, box_size); GROMACS handles gracefully; 0.01 nm tolerance catches broken wrapping | ✓ Shipped (37.1-07) |
 | Molecule-center wrapping deviation is expected | wrap_molecules_into_box unwraps split molecules then wraps center; atoms near boundary can extend slightly beyond [0, L); GROMACS simulation re-wraps anyway | ✓ Shipped (37.1-07) |
+| V-02 cKDTree conditional rebuild already in place | TREE-01 fix (34.7-03, commit f44c22c) moved rebuild inside successful placement branch; added clarifying comments in 37.1-08 | ✓ Shipped (37.1-08) |
+| Unknown atoms tracked as MoleculeIndex(i, 1, "unknown") | Hydrate generator unknown atom fallback: molecule_index entry prevents gaps in downstream export; logger.warning identifies unsupported guest types | ✓ Shipped (37.1-08) |
 | MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_H vs CH4_L) | ✓ Shipped (32-01) |
 | ITP parser with regex parsing | Extracts molecule info from .itp files without dependencies | ✓ Shipped (32-01) |
 | Molecule validator with specific errors | GRO/ITP consistency validation with clear user feedback | ✓ Shipped (32-02) |
@@ -631,10 +633,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-15
-**Completed:** 37.1-01-PLAN.md through 37.1-07-PLAN.md
-**Status:** Phase 37.1 — COMPLETE (7/7 plans)
-**Stopped at:** Completed 37.1-07-SUMMARY.md
+**Last session:** 2026-06-16
+**Completed:** 37.1-01-PLAN.md through 37.1-08-PLAN.md
+**Status:** Phase 37.1 — IN PROGRESS (8/15 plans)
+**Stopped at:** Completed 37.1-08-SUMMARY.md
 **Resume file:** None
 ---
 *State updated: 2026-06-15 — Phase 37.1 IN PROGRESS (6/7 plans)*
