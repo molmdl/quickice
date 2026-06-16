@@ -113,7 +113,7 @@ QuickIce uses `python -m quickice` as the unified entry point:
 
 Generate ice crystal structures from thermodynamic conditions:
 
-- **12 ice polymorphs** — Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X
+- **12 ice polymorphs** — Ih, Ic, II, III, V, VI, VII, VIII, IX, XV, X
 - **Interactive phase diagram** — Click to select T/P conditions
 - **10 ranked candidates** — Energy-based ranking with diversity
 - **Real-time 3D viewer** — Ball-and-stick, stick, VDW styles
@@ -254,7 +254,7 @@ The interactive phase diagram can identify 12 ice polymorphs based on temperatur
 | Ice IX | Ordered III | 200-400 MPa | < 175K |
 | Ice XI | Ordered Ih | Low pressure | < 72K |
 | Ice XV | Ordered VI | 950-2100 MPa | 50-100K |
-| Ice X | Symmetric | > 40 GPa | > 273K |
+| Ice X | Symmetric | > 30 GPa | — |
 
 **Note:** Phase boundaries depend on both T and P simultaneously. Ranges above are approximate.
 
@@ -325,11 +325,11 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 
 ### IAPWS R14-08
 - Document: "Revised Release on the Pressure along the Melting and Sublimation Curves of Ordinary Water Substance"
-- URL: https://www.iapws.org/relguide/MeltSub.html
+- URL: http://www.iapws.org/release/MeltIce.pdf
 
 ### IAPWS R10-06
 - Document: "Revised Release on the Equation of State 2006 for H₂O Ice Ih"
-- URL: https://www.iapws.org/relguide/Ice-2006.html
+- URL: https://www.iapws.org/release/Ice-2009.html
 
 ### IAPWS-95
 - "Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use"
@@ -368,7 +368,7 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 
 ### Madrid2019 Ion Parameters
 - Zeron, I. M., Abascal, J. L. F., & Vega, C. (2019). A force field of Li+, Na+, K+, Mg2+, Ca2+, Cl−, and SO42− in aqueous solution based on the TIP4P/2005 water model and scaled charges for the ions. Journal of Chemical Physics, 151, 134504.
-- DOI: https://doi.org/10.1063/1.5121392
+- DOI: https://doi.org/10.1063/1.5121394
 
 ### Madrid2019 / TIP4P-ICE Compatibility
 - The Madrid2019 ion model (±0.85e charges) was parameterized for TIP4P/2005 water. QuickIce uses these parameters with TIP4P-ICE water, which is common practice but technically a force field combination.
@@ -384,7 +384,7 @@ pytest
 pytest -v
 
 # Specific test module
-pytest tests/gui/test_solute_inserter.py
+pytest tests/ -k solute -q
 ```
 
 ## Project Structure
