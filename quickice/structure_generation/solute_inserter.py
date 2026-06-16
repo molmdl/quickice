@@ -423,27 +423,60 @@ class SoluteInserter:
             f"({removed_count * atoms_per_water} atoms) that overlapped with solutes"
         )
         
-        # If no water molecules removed, return original with custom molecule attributes set
+        # If no water molecules removed, create a NEW InterfaceStructure with custom molecule
+        # attributes set (instead of mutating the input structure, which is V-17 bug)
         if removed_count == 0:
-            # For CustomMoleculeStructure, set custom molecule positions/atom_names attributes
-            # so downstream code can access them
-            if hasattr(structure, 'custom_molecule_atom_count') and structure.custom_molecule_atom_count > 0:
-                guest_atom_count = getattr(structure, 'guest_atom_count', 0)
-                custom_start = ice_atom_count + water_atom_count + guest_atom_count
-                
-                # Set attributes on the structure (if not already set)
-                if not hasattr(structure, 'custom_molecule_positions'):
-                    structure.custom_molecule_positions = structure.positions[custom_start:]
-                if not hasattr(structure, 'custom_molecule_atom_names'):
-                    structure.custom_molecule_atom_names = list(structure.atom_names[custom_start:])
-                if hasattr(structure, 'moleculetype_name') and not hasattr(structure, 'custom_molecule_moleculetype'):
-                    structure.custom_molecule_moleculetype = structure.moleculetype_name
-                if hasattr(structure, 'gro_path') and not hasattr(structure, 'custom_gro_path'):
-                    structure.custom_gro_path = structure.gro_path
-                if hasattr(structure, 'itp_path') and not hasattr(structure, 'custom_itp_path'):
-                    structure.custom_itp_path = structure.itp_path
+            has_custom_molecules = hasattr(structure, 'custom_molecule_atom_count') and structure.custom_molecule_atom_count > 0
             
-            return structure
+            if not has_custom_molecules:
+                # No custom molecules and no water removed — safe to return original
+                return structure
+            
+            # Build a new InterfaceStructure with the same data but custom molecule attrs set
+            # This avoids mutating the input structure (V-17 fix)
+            guest_atom_count_val = getattr(structure, 'guest_atom_count', 0)
+            custom_start = ice_atom_count + water_atom_count + guest_atom_count_val
+            
+            # Custom molecule data extracted from positions/atom_names
+            custom_positions = structure.positions[custom_start:]
+            custom_atom_names = list(structure.atom_names[custom_start:])
+            
+            # For CustomMoleculeStructure, get mode and report from interface_structure
+            mode = getattr(structure, 'mode', None)
+            report = getattr(structure, 'report', None)
+            if mode is None and hasattr(structure, 'interface_structure'):
+                mode = getattr(structure.interface_structure, 'mode', 'slab')
+            if report is None and hasattr(structure, 'interface_structure'):
+                report = getattr(structure.interface_structure, 'report', '')
+            
+            new_interface = InterfaceStructure(
+                positions=structure.positions,
+                atom_names=structure.atom_names,
+                cell=structure.cell,
+                ice_atom_count=structure.ice_atom_count,
+                water_atom_count=water_atom_count,
+                ice_nmolecules=getattr(structure, 'ice_nmolecules', 0),
+                water_nmolecules=n_water_molecules,
+                mode=mode or 'slab',
+                report=report or '',
+                guest_atom_count=structure.guest_atom_count,
+                molecule_index=getattr(structure, 'molecule_index', []),
+                guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+            )
+            
+            # Set custom molecule attributes on the NEW interface (not the input)
+            new_interface.custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+            new_interface.custom_molecule_atom_count = structure.custom_molecule_atom_count
+            new_interface.custom_molecule_positions = custom_positions
+            new_interface.custom_molecule_atom_names = custom_atom_names
+            if hasattr(structure, 'moleculetype_name'):
+                new_interface.custom_molecule_moleculetype = structure.moleculetype_name
+            if hasattr(structure, 'gro_path'):
+                new_interface.custom_gro_path = structure.gro_path
+            if hasattr(structure, 'itp_path'):
+                new_interface.custom_itp_path = structure.itp_path
+            
+            return new_interface
         
         # Build new structure with water molecules removed
         # Keep ice atoms
