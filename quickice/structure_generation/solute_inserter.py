@@ -775,8 +775,11 @@ class SoluteInserter:
         min_coords = liquid_positions.min(axis=0)
         max_coords = liquid_positions.max(axis=0)
         
-        # Save base tree data before loop to avoid O(N²) per-molecule rebuild
-        base_existing_data = existing_tree.data.copy() if existing_tree is not None else None
+        # Combined tree data: base existing atoms + placed solute atoms
+        # This array grows incrementally as solutes are placed, avoiding
+        # the O(N×M) double-vstack pattern of reassembling placed_positions
+        # on every rebuild.
+        combined_tree_data = existing_tree.data.copy() if existing_tree is not None else np.zeros((0, 3))
         
         # Place molecules
         placed_positions = []
@@ -826,14 +829,13 @@ class SoluteInserter:
                 placed_count += 1
                 placed = True
                 
-                # Rebuild tree from base + all accumulated placed positions
-                # This avoids the O(N²) per-molecule vstack pattern
-                if base_existing_data is not None:
-                    all_placed = np.vstack(placed_positions) if placed_positions else np.zeros((0, 3))
-                    existing_tree = cKDTree(np.vstack([base_existing_data, all_placed]))
-                else:
-                    all_placed = np.vstack(placed_positions) if placed_positions else np.zeros((0, 3))
-                    existing_tree = cKDTree(all_placed)
+                # Conditional rebuild: only after successful placement (V-03 fix)
+                # Appends new solute positions to combined_tree_data and rebuilds tree.
+                # This avoids O(N×A) rebuilds (A = max_attempts per molecule) and
+                # reduces to O(N) rebuilds for N placed solutes, matching ion_inserter
+                # conditional rebuild pattern (TREE-01 / Plan 08).
+                combined_tree_data = np.vstack([combined_tree_data, solute_positions])
+                existing_tree = cKDTree(combined_tree_data)
                 
                 break  # Move to next molecule
             
