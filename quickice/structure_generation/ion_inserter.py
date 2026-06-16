@@ -383,8 +383,9 @@ class IonInserter:
                     # Too close to other ions - skip
                     continue
             
-            # Valid position - add ion
+            # Valid position - add ion (only reached after overlap checks pass)
             ion_positions.append(water_pos)
+            # Rebuild ion-ion KDTree only after successful placement (not on overlap rejection)
             ion_tree = cKDTree(np.array(ion_positions))
             
             if i % 2 == 0:
