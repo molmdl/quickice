@@ -143,11 +143,15 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 **Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
 **Progress:** 13 of 13 plans COMPLETE (116 bridge tests + 45 grompp validation tests [18 class-based + 27 parameterized] = 161 total + cleanup utility)
 
-### 34.9 Fix Verified Scan Issues (COMPLETE)
+### 34.9 Fix Verified Scan Issues + TIP4P-ICE LJ Bug (COMPLETE)
 
-**Phases:** 1 plan (completed via Phase 37.1)
-**Purpose:** Fix 27 verified scancode issues (P0-P3) across 18 files covering critical bugs, performance, security, and documentation accuracy
-**Progress:** All 27/27 issues verified as FIXED in actual codebase (completed by Phase 37.1 plans 01-15)
+**Phases:** 3 plans (01-03)
+**Purpose:** Fix 27 verified scancode issues (P0-P3) across 18 files covering critical bugs, performance, security, and documentation accuracy; plus fix critical TIP4P-ICE LJ parameter bug and revert comb-rule to AMBER convention
+**Progress:** All 3/3 plans complete, all gaps closed
+**Key deliverables:**
+- ✓ Plan 01: All 27/27 scancode issues verified as FIXED in actual codebase (completed by Phase 37.1 plans 01-15)
+- ✓ Plan 02: TIP4P-ICE LJ parameter bug fixed (σ 1000× too small, ε 10⁶× too small) with TIP4P_ICE_OW_SIGMA/EPSILON module constants + 15 regression tests
+- ✓ Plan 03: GAP CLOSURE — Reverted comb-rule from 1 to 2 (Lorentz-Berthelot, AMBER/GAFF2 convention) in all 6 TOP-writing functions + updated 15 regression tests
 **Key deliverables:**
 - ✓ V-11 (P0): Custom molecule rotation uses per-molecule varying seed
 - ✓ V-16 (P1): CO2 check before THF in identify_molecule_type()
@@ -312,7 +316,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
-| TIP4P-ICE comb-rule 1 (sigma/epsilon) not 2 (C6/C12) | Column headers already say sigma/epsilon; all other atomtypes already in sigma/epsilon format; self-consistent | ✓ Shipped (34.9-02) |
+| TIP4P-ICE comb-rule 2 (Lorentz-Berthelot, AMBER convention) | Both comb-rule 1 and 2 use sigma/epsilon format under nbfunc=1; the LJ bug was in VALUES not the combining rule; AMBER/GAFF2 convention uses comb-rule 2 | ✓ Shipped (34.9-03, reverting 34.9-02's comb-rule=1 change) |
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth prevents copy-paste exponent errors across 6 functions | ✓ Shipped (34.9-02) |
 | TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
 | Use existing MW from wrapped_positions for 4-atom molecules | MW already correctly placed by molecule-aware wrapping; recomputing from OW/HW1/HW2 may differ at PBC boundaries | ✓ Shipped (37.1-02) |

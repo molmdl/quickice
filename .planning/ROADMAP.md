@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1 inserted)
-**Total Plans:** 87+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 1, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 86/87+)
+**Total Plans:** 89 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 88/89)
 
 ## Overview
 
@@ -339,7 +339,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 Plans:
 - [x] 34.9-01-SUMMARY.md — All 27 scancode issues verified as fixed (completed via Phase 37.1 plans 01-15)
 - [x] 34.9-02-SUMMARY.md — Fix TIP4P-ICE LJ parameters in all 6 TOP-writing functions + regression test
-- [ ] 34.9-03-PLAN.md — Revert comb-rule from 1 to 2 (Lorentz-Berthelot, AMBER convention) + update regression tests
+- [x] 34.9-03-PLAN.md — Revert comb-rule from 1 to 2 (Lorentz-Berthelot, AMBER convention) + update regression tests
 
 **Details:**
 - Plan 01: 27 scancode issues fixed during Phase 37.1 execution. Cross-verification confirmed 27/27 resolved.
@@ -544,7 +544,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 **Phase Count:** 16 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, and 37.1 inserted)
 
-**Total Plans:** 87+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 86/87+)
+**Total Plans:** 89 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 88/89)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -594,7 +594,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 9 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
-| 34.9 - Fix Verified Scan Issues | ✓ Complete (via 37.1) | 1 | 1 |
+| 34.9 - Fix Verified Scan Issues + LJ Bug | ✓ Complete | 3 | 3 |
 | 35 - Integration & Documentation | ◆ Partial (screenshots) | 6/7 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
@@ -676,5 +676,5 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-17 - Phase 34.9 verified and closed (27/27 issues fixed via Phase 37.1)*
+*Last updated: 2026-06-17 - Phase 34.9 fully complete (3/3 plans: 27 scancode issues + LJ bugfix + comb-rule=2 revert)*
 *For current state, see .planning/STATE.md*
