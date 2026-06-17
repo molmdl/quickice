@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.9 (all phases complete) |
-| Plan | 1 of 1 |
-| Status | Phase 34.9 verified (27/27), Phase 35 screenshots still pending |
-| Last activity | 2026-06-17 — Phase 34.9 verified and closed; Phase 35 screenshots remain incomplete |
+| Phase | 34.9 (fix verified scan issues) |
+| Plan | 2 of 2 in Phase 34.9 |
+| Status | Phase 34.9 complete (both plans done) |
+| Last activity | 2026-06-17 — Completed 34.9-02-PLAN.md (TIP4P-ICE LJ bugfix) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -312,6 +312,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
+| TIP4P-ICE comb-rule 1 (sigma/epsilon) not 2 (C6/C12) | Column headers already say sigma/epsilon; all other atomtypes already in sigma/epsilon format; self-consistent | ✓ Shipped (34.9-02) |
+| TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth prevents copy-paste exponent errors across 6 functions | ✓ Shipped (34.9-02) |
 | TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Shipped (32-01) |
 | Use existing MW from wrapped_positions for 4-atom molecules | MW already correctly placed by molecule-aware wrapping; recomputing from OW/HW1/HW2 may differ at PBC boundaries | ✓ Shipped (37.1-02) |
 | Simple modulo wrapping for solute/custom PBC | Single molecules don't span PBC boundaries; positions % np.diag(cell) sufficient | ✓ Shipped (37.1-02) |
@@ -700,9 +702,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Session Continuity
 
 **Last session:** 2026-06-17
-**Completed:** e2e-compute-export-13-PLAN.md
-**Status:** Phase e2e-compute-export COMPLETE (13/13 plans, coverage extended)
-**Stopped at:** Completed e2e-compute-export-13-SUMMARY.md
+**Completed:** 34.9-02-PLAN.md
+**Status:** Phase 34.9 COMPLETE (2/2 plans: verified scan issues + TIP4P-ICE LJ bugfix)
+**Stopped at:** Completed 34.9-02-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-17 — Phase e2e-compute-export COMPLETE (13/13 plans, coverage extended)*
+*State updated: 2026-06-17 — Phase 34.9 complete: TIP4P-ICE LJ parameters fixed*
