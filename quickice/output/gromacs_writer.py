@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 TIP4P_ICE_ALPHA = 0.13458335
 
+# TIP4P-ICE LJ parameters (Abascal et al. 2005, DOI: 10.1063/1.1931662)
+# sigma_O = 3.1668 Å = 0.31668 nm; epsilon_O/k_B = 106.1 K → 106.1 × 0.00831446 = 0.88211 kJ/mol
+TIP4P_ICE_OW_SIGMA = 3.16680e-1    # nm
+TIP4P_ICE_OW_EPSILON = 8.82110e-1   # kJ/mol
+
 
 MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "ice":   {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
@@ -543,11 +548,11 @@ def write_top_file(candidate: Candidate, filepath: str) -> None:
         f.write("; Defaults compitable with the Amber forcefield\n")
         f.write("[ defaults ]\n")
         f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
         
         f.write("[ atomtypes ]\n")
-        f.write("; name  bond_type  atomic_number  mass  charge  ptype  V              W\n")
-        f.write("OW_ice      OW_ice     8           15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("; name  bond_type  atomic_number  mass  charge  ptype  sigma (nm)     epsilon (kJ/mol)\n")
+        f.write(f"OW_ice      OW_ice     8           15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
         f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n\n")
         
@@ -994,12 +999,12 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         f.write("; Defaults compitable with the Amber forcefield\n")
         f.write("[ defaults ]\n")
         f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - define custom atom types for TIP4P-ICE and guests
         f.write("[ atomtypes ]\n")
-        f.write("; name  bond_type  atomic_number  mass  charge  ptype  V              W\n")
-        f.write("OW_ice      OW_ice     8           15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write("; name  bond_type  atomic_number  mass  charge  ptype  sigma (nm)     epsilon (kJ/mol)\n")
+        f.write(f"OW_ice      OW_ice     8           15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
         f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n")
         
@@ -1270,7 +1275,7 @@ def write_multi_molecule_top_file(
         # [ defaults ] - force field defaults (TIP4P-ICE compatible)
         f.write("[ defaults ]\n")
         f.write("; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be grouped after [ defaults ] and before #include
         # GROMACS requires all atomtypes before any #include directives
@@ -1278,7 +1283,7 @@ def write_multi_molecule_top_file(
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
         
         # TIP4P-ICE water atom types
-        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
         f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
         
@@ -1773,13 +1778,13 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be before #include directives
         # TIP4P-ICE water atom types
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
         f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
         
@@ -2176,14 +2181,14 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
         
         # TIP4P-ICE water atom types
-        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
         f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
         
@@ -2686,12 +2691,12 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
         # [ defaults ] - force field defaults
         f.write("[ defaults ]\n")
         f.write("; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ\n")
-        f.write("1               2               yes             0.5     0.8333\n\n")
+        f.write("1               1               yes             0.5     0.8333\n\n")
 
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        f.write("OW_ice   OW_ice    8             15.9994  0.0     A      0.31668e-3    0.88216e-6\n")
+        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
         f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
         f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
 
