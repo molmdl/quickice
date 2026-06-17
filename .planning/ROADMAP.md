@@ -330,22 +330,21 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 ---
 
-### Phase 34.9: Fix Verified Scan Issues (INSERTED)
+### Phase 34.9: Fix Verified Scan Issues + TIP4P-ICE LJ Bug (INSERTED)
 
-**Goal:** Fix 27 verified scancode issues (P0-P3 priority) across 18 files covering critical bugs, performance, security, and documentation accuracy
+**Goal:** Fix 27 verified scancode issues (P0-P3 priority) across 18 files covering critical bugs, performance, security, and documentation accuracy; plus fix critical TIP4P-ICE LJ parameter bug (σ 1000× too small, ε 10⁶× too small)
 **Depends on:** Phase 34.8
-**Plans:** 1 plan (completed via Phase 37.1)
+**Plans:** 2 plans
 
 Plans:
-- [x] 34.9-01-SUMMARY.md — All 27 issues verified as fixed (completed via Phase 37.1 plans 01-15)
+- [x] 34.9-01-SUMMARY.md — All 27 scancode issues verified as fixed (completed via Phase 37.1 plans 01-15)
+- [x] 34.9-02-SUMMARY.md — Fix TIP4P-ICE LJ parameters in all 6 TOP-writing functions + regression test
 
 **Details:**
-- All 27 issues were fixed during Phase 37.1 execution
-- Phase 34.9 plan served as the source of truth for the issues; Phase 37.1 implemented the fixes
-- Cross-verification confirmed 27/27 issues resolved in actual codebase
-- No separate execution needed — code fixes are present and verified
+- Plan 01: 27 scancode issues fixed during Phase 37.1 execution. Cross-verification confirmed 27/27 resolved.
+- Plan 02: CRITICAL LJ parameter bug — OW_ice sigma was 0.31668e-3 nm (should be 0.317 nm), epsilon was 0.88216e-6 kJ/mol (should be 0.882 kJ/mol). Fixed with comb-rule 1 + TIP4P_ICE_OW_SIGMA/EPSILON constants + 15 regression tests. Verified compatible with GAFF2 parameters.
 
-**Issue categories:**
+**Issue categories (Plan 01):**
 - P0 (1): V-11 identical rotation bug
 - P1 (4): V-16 CO2/THF misidentification, SEC path traversal, V-19 ion volume, V-13 GRO logging
 - P2 (7): V-03b/V-03 cKDTree rebuild, DOC-3/4/10/12/15-19/1/5/8/26 documentation
