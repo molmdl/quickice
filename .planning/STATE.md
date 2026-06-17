@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix)
+**Current Focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix + comb-rule=2 revert)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix)
+**Current focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix + comb-rule=2 revert)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 34.9 (fix verified scan issues + TIP4P-ICE LJ bug) |
-| Plan | 2 of 2 in Phase 34.9 |
-| Status | Phase 34.9 complete — 27 scancode issues fixed + LJ parameter bug fixed + verified |
-| Last activity | 2026-06-17 — Completed 34.9-02 (TIP4P-ICE LJ bugfix verified, comb-rule 1 compatible with GAFF2) |
+| Plan | 3 of 3 in Phase 34.9 |
+| Status | Phase 34.9 complete — 27 scancode issues fixed + LJ parameter bug fixed + comb-rule=2 (Lorentz-Berthelot) reverted |
+| Last activity | 2026-06-17 — Completed 34.9-03 (comb-rule=2 revert, AMBER/GAFF2 convention) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -701,13 +701,14 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-| comb-rule 1 (geometric) for GROMACS [defaults] | Old comb-rule 2 was doubly broken: OW_ice LJ values were 1000×/10⁶× too small AND column format was sigma/epsilon (not C6/C12). comb-rule 1 with correct sigma/epsilon values fixes both issues. Cross-interaction differences vs comb-rule 2 are <2% for all important pairs. | ✓ Shipped (34.9-02) |
+| comb-rule 1 (geometric) for GROMACS [defaults] | Old comb-rule 2 was doubly broken: OW_ice LJ values were 1000×/10⁶× too small AND column format was sigma/epsilon (not C6/C12). comb-rule 1 with correct sigma/epsilon values fixes both issues. Cross-interaction differences vs comb-rule 2 are <2% for all important pairs. | ✓ Shipped (34.9-02) → REVERTED |
+| comb-rule 2 (Lorentz-Berthelot) for GROMACS [defaults] | Both comb-rule 1 and 2 use sigma/epsilon under nbfunc=1; LJ bug was in VALUES not combining rule. comb-rule=2 matches AMBER/GAFF2 convention and GROMACS-bundled AMBER99SB-ILDN. | ✓ Shipped (34.9-03) |
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-17
-**Completed:** 34.9-02-PLAN.md (TIP4P-ICE LJ bugfix + verification)
-**Status:** Phase 34.9 COMPLETE (2/2 plans: 27 scan issues + LJ parameter bugfix, both verified)
-**Stopped at:** Phase 34.9 fully verified; LJ parameters match ITP template; comb-rule 1 compatible with GAFF2
+**Completed:** 34.9-03-PLAN.md (comb-rule=2 revert for AMBER/GAFF2 convention)
+**Status:** Phase 34.9 COMPLETE (3/3 plans: 27 scan issues + LJ parameter bugfix + comb-rule=2 revert)
+**Stopped at:** Phase 34.9 fully verified; LJ parameters match ITP template; comb-rule=2 (Lorentz-Berthelot) for AMBER convention
 **Resume file:** None
 ---
-*State updated: 2026-06-17 — Phase 34.9 complete: TIP4P-ICE LJ parameters fixed*
+*State updated: 2026-06-17 — Phase 34.9 complete: comb-rule=2 reverted for AMBER convention*
