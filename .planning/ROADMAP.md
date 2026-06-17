@@ -334,15 +334,17 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 **Goal:** Fix 27 verified scancode issues (P0-P3 priority) across 18 files covering critical bugs, performance, security, and documentation accuracy; plus fix critical TIP4P-ICE LJ parameter bug (σ 1000× too small, ε 10⁶× too small)
 **Depends on:** Phase 34.8
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 - [x] 34.9-01-SUMMARY.md — All 27 scancode issues verified as fixed (completed via Phase 37.1 plans 01-15)
 - [x] 34.9-02-SUMMARY.md — Fix TIP4P-ICE LJ parameters in all 6 TOP-writing functions + regression test
+- [ ] 34.9-03-PLAN.md — Revert comb-rule from 1 to 2 (Lorentz-Berthelot, AMBER convention) + update regression tests
 
 **Details:**
 - Plan 01: 27 scancode issues fixed during Phase 37.1 execution. Cross-verification confirmed 27/27 resolved.
 - Plan 02: CRITICAL LJ parameter bug — OW_ice sigma was 0.31668e-3 nm (should be 0.317 nm), epsilon was 0.88216e-6 kJ/mol (should be 0.882 kJ/mol). Fixed with comb-rule 1 + TIP4P_ICE_OW_SIGMA/EPSILON constants + 15 regression tests. Verified compatible with GAFF2 parameters.
+- Plan 03: GAP CLOSURE — comb-rule=1 was incorrect change; revert to comb-rule=2 (Lorentz-Berthelot) matching AMBER/GAFF2 convention. Both comb-rule 1 and 2 use sigma/epsilon format under nbfunc=1; the LJ bug was in VALUES not the combining rule.
 
 **Issue categories (Plan 01):**
 - P0 (1): V-11 identical rotation bug
@@ -542,7 +544,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 **Phase Count:** 16 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, and 37.1 inserted)
 
-**Total Plans:** 66+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 1, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 65/66+)
+**Total Plans:** 87+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 86/87+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
