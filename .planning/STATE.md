@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | e2e-compute-export |
-| Plan | 12 of 12 |
-| Status | Phase complete, verified ✓ |
-| Last activity | 2026-06-16 — Phase e2e-compute-export verified (48/48 must-haves) |
+| Plan | 13 of 13 |
+| Status | Phase complete, coverage extended ✓ |
+| Last activity | 2026-06-17 — Completed e2e-compute-export-13 (parameterized grompp validation) |
 
-**Progress:** ██████████ 100% (12/12 plans in Phase e2e-compute-export)
+**Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
 ---
 
@@ -139,9 +139,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
 
-**Phases:** 12 plans (01-12)
+**Phases:** 13 plans (01-13)
 **Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
-**Progress:** 12 of 12 plans COMPLETE (116 bridge tests + 18 grompp validation tests with molecule-type presence + ITP completeness assertions = 134 total + cleanup utility)
+**Progress:** 13 of 13 plans COMPLETE (116 bridge tests + 45 grompp validation tests [18 class-based + 27 parameterized] = 161 total + cleanup utility)
 **Key deliverables:**
 - ✓ Shared e2e_export_helpers.py with 6 parsing functions + 9 chain-building helpers + 2 constants (Plan 01)
 - ✓ 6 Ice Candidate export tests — GRO SOL-only, atom count, TOP molecules, inline [moleculetype], ITP existence, atom conservation (Plan 01)
@@ -180,6 +180,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ CH4 hydrate grompp regression test — TestChainF4Ch4HydrateGmxValidation for exact bug-triggering chain (Plan 12)
 - ✓ StagingResult namedtuple — _stage_itp_files returns StagingResult(staged, missing) instead of list[str] (Plan 12)
 - ✓ Missing ITP tracking — _stage_itp_files tracks missing ITPs instead of silently skipping them (Plan 12)
+- ✓ 27 parameterized grompp validation tests — TestParametricGmxValidation with ChainParams NamedTuple for 27 untested hydrate→interface chain combinations (Plan 13)
+- ✓ All 45 grompp tests pass (18 class-based + 27 parameterized) — total coverage 18+27=45 across 55 possible combinations (Plan 13)
 
 ### pocket-edge-tests Pocket Mode Edge Cases (COMPLETE)
 
@@ -665,10 +667,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Session Continuity
 
-**Last session:** 2026-06-16
-**Completed:** e2e-compute-export-12-PLAN.md
-**Status:** Phase e2e-compute-export COMPLETE (12/12 plans)
-**Stopped at:** Completed e2e-compute-export-12-SUMMARY.md
+**Last session:** 2026-06-17
+**Completed:** e2e-compute-export-13-PLAN.md
+**Status:** Phase e2e-compute-export COMPLETE (13/13 plans, coverage extended)
+**Stopped at:** Completed e2e-compute-export-13-SUMMARY.md
 **Resume file:** None
 ---
-*State updated: 2026-06-16 — Phase e2e-compute-export COMPLETE (12/12 plans)*
+*State updated: 2026-06-17 — Phase e2e-compute-export COMPLETE (13/13 plans, coverage extended)*

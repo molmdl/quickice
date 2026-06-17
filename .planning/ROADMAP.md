@@ -576,7 +576,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
-| e2e-compute-export - E2E Compute→Export Bridge Testing | 🔄 In Progress (extension) | 12 | 13 |
+| e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |
 
 ---
 
@@ -613,7 +613,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 - [x] e2e-compute-export-10-PLAN.md — (Wave 7) Test output cleanup script (scripts/clean-test-output.sh)
 - [x] e2e-compute-export-11-PLAN.md — (Wave 1 gap closure) Molecule-type presence assertions in grompp tests
 - [x] e2e-compute-export-12-PLAN.md — (Gap closure) CH4-hydrate-through-Custom chain test + ITP completeness assertions
-- [ ] e2e-compute-export-13-PLAN.md — (Wave 1, coverage extension) Parameterized grompp validation for 27 untested chain combinations
+- [x] e2e-compute-export-13-PLAN.md — (Wave 1, coverage extension) Parameterized grompp validation for 27 untested chain combinations
 
 ---
 
