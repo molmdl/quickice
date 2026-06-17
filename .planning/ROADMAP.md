@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 37.1 inserted)
-**Total Plans:** 86+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 12, completed: 87/86+)
+**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1 inserted)
+**Total Plans:** 87+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 1, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 86/87+)
 
 ## Overview
 
@@ -330,6 +330,29 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 
 ---
 
+### Phase 34.9: Fix Verified Scan Issues (INSERTED)
+
+**Goal:** Fix 27 verified scancode issues (P0-P3 priority) across 18 files covering critical bugs, performance, security, and documentation accuracy
+**Depends on:** Phase 34.8
+**Plans:** 1 plan (completed via Phase 37.1)
+
+Plans:
+- [x] 34.9-01-SUMMARY.md — All 27 issues verified as fixed (completed via Phase 37.1 plans 01-15)
+
+**Details:**
+- All 27 issues were fixed during Phase 37.1 execution
+- Phase 34.9 plan served as the source of truth for the issues; Phase 37.1 implemented the fixes
+- Cross-verification confirmed 27/27 issues resolved in actual codebase
+- No separate execution needed — code fixes are present and verified
+
+**Issue categories:**
+- P0 (1): V-11 identical rotation bug
+- P1 (4): V-16 CO2/THF misidentification, SEC path traversal, V-19 ion volume, V-13 GRO logging
+- P2 (7): V-03b/V-03 cKDTree rebuild, DOC-3/4/10/12/15-19/1/5/8/26 documentation
+- P3 (8): V-08/V-09 vectorized loops, V-15 dead arithmetic, V-24/V-26/V-27 hardening, DOC-6/7/9/22 documentation
+
+---
+
 ### Phase 35: Integration & Documentation
 
 **Goal:** User has complete 6-tab workflow with reliable GROMACS export and comprehensive documentation
@@ -359,7 +382,7 @@ Remaining open issues from `.planning/codebase/CONCERNS.md`:
 - [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
 - [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [x] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (Option 1 decision from f345ca9)
+- [ ] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (PARTIAL — docs done, screenshots pending)
 - [x] 35-07-PLAN.md — Quick Task docs: Document Quick Task 017/018 features (concentration input, delete/overlap)
 
 ---
@@ -518,9 +541,9 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 ## Milestone Summary
 
-**Phase Count:** 15 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, and 37.1 inserted)
+**Phase Count:** 16 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, and 37.1 inserted)
 
-**Total Plans:** 65+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 65/65+)
+**Total Plans:** 66+ plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 1, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 65/66+)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -570,7 +593,8 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 34.6 - Revise Custom Panel for Valid Input | ✓ Complete | 9 | 9 |
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
-| 35 - Integration & Documentation | ✓ Complete | 7 | 7 |
+| 34.9 - Fix Verified Scan Issues | ✓ Complete (via 37.1) | 1 | 1 |
+| 35 - Integration & Documentation | ◆ Partial (screenshots) | 6/7 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
@@ -651,5 +675,5 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-17 - Phase e2e-compute-export Plan 13 executed and verified (52/52 must-haves)*
+*Last updated: 2026-06-17 - Phase 34.9 verified and closed (27/27 issues fixed via Phase 37.1)*
 *For current state, see .planning/STATE.md*

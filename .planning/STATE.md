@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export — VERIFIED (52/52 must-haves, all gaps closed)
+**Current Focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 verified complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — VERIFIED (52/52 must-haves, all gaps closed)
+**Current focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 verified complete
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | e2e-compute-export |
-| Plan | 13 of 13 |
-| Status | Phase complete, coverage extended ✓ |
-| Last activity | 2026-06-17 — Completed e2e-compute-export-13 (parameterized grompp validation) |
+| Phase | 34.9 (all phases complete) |
+| Plan | 1 of 1 |
+| Status | Phase 34.9 verified (27/27), Phase 35 screenshots still pending |
+| Last activity | 2026-06-17 — Phase 34.9 verified and closed; Phase 35 screenshots remain incomplete |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -53,11 +53,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Ion insertion e2e tests (14 tests) + P0 SoluteStructure→IonInserter AttributeError bug exposure + charge neutrality + attribute propagation (Plan 05)
 - ✓ Workflow chain e2e tests (12 tests) covering F1–F7 chains + structural invariants + CH4_H/CH4_L distinction (Plan 05)
 
-### v4.5 Solute & Custom Molecule Insertion (IN PROGRESS)
+### v4.5 Solute & Custom Molecule Insertion (NEARLY COMPLETE — Phase 35 screenshots pending)
 
-**Phases:** 32-35 (with 34.1-34.7 inserted)
+**Phases:** 32-37.1 (with 34.1-34.9 inserted)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
-**Progress:** Phase 32-34.7 complete, Phase 35 pending (screenshots), Phase 36 added (CLI parity), Phase 37 added (unified entry point)
+**Progress:** All phases complete except Phase 35 screenshots (Plan 06 partial — docs written, screenshots never renamed/captured)
 **Key features in progress:**
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
@@ -136,6 +136,38 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Solute insertion tests — 17 tests for Interface/Custom sources, CH4_H/CH4_L coexistence (Plan 04)
 - ✓ Ion insertion + workflow chain tests — 26 tests, P0 bug I5 exposed, F1-F7 chains (Plan 05)
 - ✓ Total: 112 e2e tests, 7/7 must-haves verified, all pass in ~13s
+
+### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
+
+**Phases:** 13 plans (01-13)
+**Purpose:** Bridge tests validating real GenIce2 computation pipeline output flows correctly through GROMACS writer functions, plus GROMACS simulation validation
+**Progress:** 13 of 13 plans COMPLETE (116 bridge tests + 45 grompp validation tests [18 class-based + 27 parameterized] = 161 total + cleanup utility)
+
+### 34.9 Fix Verified Scan Issues (COMPLETE)
+
+**Phases:** 1 plan (completed via Phase 37.1)
+**Purpose:** Fix 27 verified scancode issues (P0-P3) across 18 files covering critical bugs, performance, security, and documentation accuracy
+**Progress:** All 27/27 issues verified as FIXED in actual codebase (completed by Phase 37.1 plans 01-15)
+**Key deliverables:**
+- ✓ V-11 (P0): Custom molecule rotation uses per-molecule varying seed
+- ✓ V-16 (P1): CO2 check before THF in identify_molecule_type()
+- ✓ SEC (P1): Path.is_relative_to() replaces str.startswith()
+- ✓ V-19 (P1): Ion count uses liquid volume, not total cell volume
+- ✓ V-13 (P1): GRO parse errors logged, not silently dropped
+- ✓ V-03b/V-03 (P2): Batch cKDTree rebuild pattern in inserters
+- ✓ V-15 (P3): Dead / sqrt(3) * sqrt(3) arithmetic removed
+- ✓ V-26 (P3): reorder_guest_atoms permutation validation
+- ✓ DOC-3/4/22 (P2/P3): Help dialog source dropdowns + Validate & Preview
+- ✓ DOC-9/10/12/15-19 (P2/P3): README accuracy fixes (12 phases, 273.16K, citations)
+- ✓ DOC-1 (P2): README_bin.md v4.5.0
+- ✓ DOC-5 (P2): ranking.md O-O histogram fingerprint
+- ✓ DOC-7/8 (P3): CLI reference flag corrections
+- ✓ DOC-26 (P2): melting_curves.py Ice VII convention
+- ✓ V-08/V-09 (P3): Vectorized water_filler.py loops
+- ✓ V-24 (P3): assert → raise ValueError in slab.py/pocket.py
+- ✓ V-27 (P3): except Exception → (ValueError, OSError)
+- ✓ DOC-6 (P3): gui-guide.md molecule range 4-100000
+- ✓ DOC-8.1 (P3): triple_points.py IAPWS R14-08 pressure
 
 ### e2e-compute-export E2E Compute-Export Bridge Testing (COMPLETE)
 
