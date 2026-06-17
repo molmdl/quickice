@@ -213,13 +213,13 @@ class TestWriteTopFileLJValues:
             assert atomtypes["HW_ice"]["sigma"] == 0.0
             assert atomtypes["HW_ice"]["epsilon"] == 0.0
 
-    def test_defaults_comb_rule_1(self, simple_candidate, tmp_top):
-        """comb-rule must be 1 (sigma/epsilon format, not C6/C12)."""
+    def test_defaults_comb_rule_2(self, simple_candidate, tmp_top):
+        """comb-rule must be 2 (Lorentz-Berthelot, AMBER/GAFF2 convention)."""
         write_top_file(simple_candidate, tmp_top)
         top_text = Path(tmp_top).read_text()
         defaults = _parse_defaults(top_text)
-        assert defaults.get("comb_rule") == 1, (
-            f"comb_rule={defaults.get('comb_rule')} must be 1 for sigma/epsilon format"
+        assert defaults.get("comb_rule") == 2, (
+            f"comb_rule={defaults.get('comb_rule')} must be 2 (Lorentz-Berthelot, AMBER convention)"
         )
 
     def test_defaults_fudge_values(self, simple_candidate, tmp_top):
@@ -251,11 +251,14 @@ class TestWriteInterfaceTopFileLJValues:
         atomtypes = _parse_atomtypes(top_text)
         assert 0.001 < atomtypes["OW_ice"]["epsilon"] < 10.0
 
-    def test_comb_rule_1_in_interface_top(self, simple_interface, tmp_top):
+    def test_comb_rule_2_in_interface_top(self, simple_interface, tmp_top):
+        """comb-rule must be 2 (Lorentz-Berthelot, AMBER/GAFF2 convention)."""
         write_interface_top_file(simple_interface, tmp_top)
         top_text = Path(tmp_top).read_text()
         defaults = _parse_defaults(top_text)
-        assert defaults.get("comb_rule") == 1
+        assert defaults.get("comb_rule") == 2, (
+            f"comb_rule={defaults.get('comb_rule')} must be 2 (Lorentz-Berthelot, AMBER convention)"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -275,11 +278,11 @@ class TestNoBuggyHardcodedValues:
         source = Path("quickice/output/gromacs_writer.py").read_text()
         assert "0.88216e-6" not in source, "Buggy epsilon value 0.88216e-6 found in source"
 
-    def test_no_comb_rule_2(self):
-        """comb-rule 2 must not appear in gromacs_writer.py defaults."""
+    def test_no_comb_rule_1(self):
+        """comb-rule 1 must not appear in gromacs_writer.py defaults (must use comb-rule=2 for AMBER convention)."""
         source = Path("quickice/output/gromacs_writer.py").read_text()
-        # Check that no line has "1               2" (nbfunc=1 comb-rule=2)
-        # or "1  2" patterns in [defaults] sections
-        buggy_pattern = re.compile(r'1\s+2\s+yes\s+0\.5\s+0\.8333')
+        # Check that no line has "1               1" (nbfunc=1 comb-rule=1)
+        # or "1  1" patterns in [defaults] sections
+        buggy_pattern = re.compile(r'1\s+1\s+yes\s+0\.5\s+0\.8333')
         matches = buggy_pattern.findall(source)
-        assert len(matches) == 0, f"Found {len(matches)} lines with comb-rule=2 in defaults"
+        assert len(matches) == 0, f"Found {len(matches)} lines with comb-rule=1 in defaults"
