@@ -651,5 +651,5 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-16 - Phase e2e-compute-export extended with Plan 13 (parameterized coverage)*
+*Last updated: 2026-06-17 - Phase e2e-compute-export Plan 13 executed and verified (52/52 must-haves)*
 *For current state, see .planning/STATE.md*

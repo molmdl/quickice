@@ -1,132 +1,129 @@
 ---
 phase: e2e-compute-export
-verified: 2026-06-16T12:00:00Z
+verified: 2026-06-17T06:15:00Z
 status: passed
-score: 48/48 must-haves verified
+score: 52/52 must-haves verified
 re_verification:
   previous_status: passed
-  previous_score: 44/44
-  gaps_closed:
-    - "Plan 12: CH4 hydrate through CustomMoleculeStructure chain passes gmx grompp"
-    - "Plan 12: ITP completeness assertions after _stage_itp_files in all grompp tests"
-    - "Plan 12: _stage_itp_files reports missing ITPs via StagingResult namedtuple"
-    - "Plan 12: assert_itp_completeness function verifies #include ITP existence"
+  previous_score: 48/48
+  gaps_closed: []
   gaps_remaining: []
   regressions: []
 ---
 
-# Phase e2e-compute-export: Re-Verification Report (Post Plan 12)
+# Phase e2e-compute-export: Re-Verification Report (Post Plan 13)
 
 **Phase Goal:** Real computation pipeline output feeds into GROMACS exporters with correct atom ordering, topology format, and ITP bundling
-**Verified:** 2026-06-16T12:00:00Z
+**Verified:** 2026-06-17T06:15:00Z
 **Status:** passed
-**Re-verification:** Yes — after Plan 12 gap closure (12/12 plans complete)
+**Re-verification:** Yes — after Plan 13 coverage extension (13/13 plans complete)
 
 ## Goal Achievement
 
-### Plan 12 Must-Have Truths (NEW — Gap Closure)
+### Plan 13 Must-Have Truths (NEW — Coverage Extension)
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 45 | CH4 hydrate through CustomMoleculeStructure chain passes gmx grompp | ✓ VERIFIED | `TestChainF4Ch4HydrateGmxValidation` class at line 893, chain uses `_hydrate_sI_ch4_candidate()→_make_slab_interface()→_insert_custom_molecules()→_insert_solutes(CH4)→_insert_ions_from_solute()`, test passes with exit_code==0 |
-| 46 | Every #include in .top has a corresponding ITP file in the workspace after staging | ✓ VERIFIED | `assert_itp_completeness(top_path, gmx_workspace)` called 17 times (after every `_stage_itp_files` call in all 17 non-ice grompp tests), function at line 455 parses `#include` directives via `parse_top_includes()` and asserts each ITP file exists in workspace |
-| 47 | Missing ITP files are reported, not silently skipped | ✓ VERIFIED | `StagingResult` namedtuple at line 37 with `staged`+`missing` fields, `_stage_itp_files` returns `StagingResult(staged=staged, missing=missing)` at line 452, `missing.append(itp_name)` at lines 440+476 |
-| 48 | All 14+ existing grompp tests continue to pass | ✓ VERIFIED | 18 grompp tests pass (14 original + 2 sII from plan 09 + 1 F4-CH4 from plan 12 + TestHydrateGmxValidation + TestCustomMoleculeGmxValidation + TestSoluteGmxValidation), 134 total e2e tests pass in 32.99s |
+| 49 | Each of 27 untested chain combinations passes gmx grompp (exit code 0) | ✓ VERIFIED | 27/27 parameterized tests PASSED in 11.78s; `test_gmx_grompp_succeeds` with `assert exit_code == 0` at line 274 |
+| 50 | Each combination's .top [molecules] section contains expected molecule types | ✓ VERIFIED | `molecules = parse_top_molecules(top_path)` at line 281 + per-key assertions at lines 283-294; 27/27 PASSED |
+| 51 | Each combination's .gro file contains expected residue names | ✓ VERIFIED | `residue_names = parse_gro_residue_names(gro_path)` at line 297 + per-key assertions at lines 300-311; 27/27 PASSED |
+| 52 | All 18 existing grompp tests still pass (no regressions) | ✓ VERIFIED | 18/18 grompp tests PASSED in 7.25s; full e2e suite 273/273 PASSED in 54.46s |
 
 ### Previously Verified Truths (Regression Check)
 
-All 44 previously verified truths remain passing. Quick regression checks performed:
+All 48 previously verified truths remain passing. Quick regression checks performed:
 
 | Check | Result |
 |-------|--------|
-| All 134 e2e tests pass | ✓ 134 passed, 1 warning in 32.99s |
-| All 9 test files exist with expected sizes | ✓ 3755 total lines (344+208+400+524+151+662+522+313+1231) |
-| All 6 ITP data files exist | ✓ tip4p-ice, ch4_hydrate, thf_hydrate, ch4_liquid, thf_liquid, etoh.itp |
+| All 273 e2e tests pass | ✓ 273 passed, 5 warnings in 54.46s |
+| 27 parameterized tests pass | ✓ 27 passed in 11.78s |
+| 18 class-based grompp tests pass | ✓ 18 passed in 7.25s |
+| All 10 test files exist with expected sizes | ✓ 4883 total lines (1231+528+344+208+400+524+151+662+522+313) |
+| New test file: test_e2e_gmx_param_validation.py | ✓ 311 lines, 0 stub patterns |
+| All 6 ITP data files exist | ✓ tip4p-ice, ch4_hydrate, thf_hydrate, ch4_liquid, thf_liquid, etoh (in custom/) |
 | clean-test-output.sh exists + executable | ✓ 7177 bytes, -rwxr-xr-x |
-| gromacs_writer.py 3 bug fixes present | ✓ needs_ch4/thf_atomtypes (18 refs), parse_itp_file (4 refs), _written_atomtypes (17 refs) |
-| All 9 test files import from e2e_export_helpers | ✓ 1 import each across all 9 files |
-| _stage_itp_files uses comment_out_atomtypes_in_itp | ✓ Imported at line 418, used at line 446 |
-| No anti-patterns in modified files | ✓ 0 TODO/FIXME/PLACEHOLDER/stubs in test_e2e_gmx_validation.py and e2e_export_helpers.py |
+| gromacs_writer.py 3 bug fixes present | ✓ 33 refs (needs_ch4/thf_atomtypes + parse_itp_file + _written_atomtypes) |
+| e2e_export_helpers key functions exist | ✓ StagingResult(line 37), _stage_itp_files(line 398), assert_itp_completeness(line 455), parse_top_molecules(line 113), parse_gro_residue_names(line 50), run_gmx_grompp(line 484), MDP_PATH(line 394) |
+| gromacs_ion_export write_ion_itp exists | ✓ line 81 |
+| itp_parser parse_itp_file exists | ✓ line 34, ITPMoleculeInfo line 17 |
+| No anti-patterns in new test file | ✓ 0 TODO/FIXME/PLACEHOLDER/stubs/empty-returns |
 
 ### Phase Success Criteria
 
 | # | Criterion | Status | Evidence |
 |---|-----------|--------|----------|
-| 1 | Full chain output produces valid GROMACS .gro/.top/.itp files | ✓ SATISFIED | 18 grompp validation tests (F1-F7 + cross-combinations + sII + F4-CH4-hydrate + hydrate + custom + solute) all pass gmx grompp with exit_code==0 |
-| 2 | Molecule ordering in .gro matches GROMACS convention: SOL→guests→solutes→custom→ions | ✓ SATISFIED | assert_gro_residue_ordering tests in all chain export test classes; F1: SOL→MOL→CH4_L→NA→CL, F4: SOL→THF_H→MOL→THF_L→NA→CL, F4-CH4-hydrate: SOL→CH4_H→MOL→CH4_L→NA→CL |
-| 3 | .top [molecules] section lists all molecule types with correct counts | ✓ SATISFIED | test_top_molecules_section in all chain test classes + presence assertions in all 18 grompp tests |
-| 4 | ITP files bundled correctly for each molecule type in the chain | ✓ SATISFIED | test_top_includes + test_itp_files_valid across all chain classes + assert_itp_completeness after every _stage_itp_files call |
-| 5 | Atom counts in .gro match structure positions (no atoms lost in export) | ✓ SATISFIED | test_gro_atom_count_matches_header + test_atom_conservation_and_charge_neutrality across all test classes |
+| 1 | Full chain output produces valid GROMACS .gro/.top/.itp files | ✓ SATISFIED | 45 grompp validation tests (18 class + 27 param) all pass with exit_code==0 |
+| 2 | Molecule ordering in .gro matches GROMACS convention | ✓ SATISFIED | Residue ordering assertions in all chain test classes |
+| 3 | .top [molecules] section lists all molecule types with correct counts | ✓ SATISFIED | Presence assertions in all 45 grompp tests (class-based + parameterized) |
+| 4 | ITP files bundled correctly for each molecule type | ✓ SATISFIED | ITP completeness assertions after staging in all grompp tests |
+| 5 | Atom counts in .gro match structure positions | ✓ SATISFIED | Atom count + charge neutrality tests across all test classes |
 
-### Required Artifacts
+## New Artifact Verification (Plan 13)
 
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `tests/test_e2e_gmx_validation.py` | 18 grompp tests + molecule-type presence assertions + ITP completeness assertions | ✓ VERIFIED | 1231 lines (was 985), 18 classes, 18 test methods, 18 expected_top_keys + 18 expected_gro_keys blocks, 17 assert_itp_completeness calls, 0 stubs |
-| `tests/e2e_export_helpers.py` | GRO/TOP/ITP parsing + chain-building + grompp helpers + assert_itp_completeness + StagingResult | ✓ VERIFIED | 528 lines (was 487), 0 stubs, StagingResult at line 37, assert_itp_completeness at line 455, parse_top_molecules at line 106, parse_gro_residue_names at line 43 |
-| `tests/test_e2e_ice_interface_export.py` | Ice + Interface single-structure export tests | ✓ VERIFIED | 344 lines, unchanged |
-| `tests/test_e2e_custom_export.py` | Custom molecule single-structure export tests | ✓ VERIFIED | 208 lines, unchanged |
-| `tests/test_e2e_solute_export.py` | Solute single-structure export tests | ✓ VERIFIED | 400 lines, unchanged |
-| `tests/test_e2e_ion_export.py` | Ion single-structure export tests | ✓ VERIFIED | 524 lines, unchanged |
-| `tests/test_e2e_itp_baseline.py` | ITP file baseline validation | ✓ VERIFIED | 151 lines, unchanged |
-| `tests/test_e2e_chain_export_1.py` | Full chain export tests F1-F4 | ✓ VERIFIED | 662 lines, unchanged |
-| `tests/test_e2e_chain_export_2.py` | Simple chain export tests F5-F7 | ✓ VERIFIED | 522 lines, unchanged |
-| `tests/test_e2e_cross_chain_invariants.py` | Cross-chain invariant tests | ✓ VERIFIED | 313 lines, unchanged |
-| `quickice/output/gromacs_writer.py` | All GROMACS writer functions with 3 bug fixes | ✓ VERIFIED | 3 bug fixes verified: needs_ch4/thf_atomtypes (18 sites), parse_itp_file (4 sites), _written_atomtypes (17 sites) |
-| `quickice/structure_generation/gromacs_ion_export.py` | Ion ITP generator | ✓ VERIFIED | write_ion_itp at line 81 |
-| `quickice/structure_generation/itp_parser.py` | ITP parser (parse_itp_file) | ✓ VERIFIED | parse_itp_file at line 34, ITPMoleculeInfo class at line 17 |
-| All ITP data files (6) | TIP4P-ICE, CH4_H, THF_H, CH4_L, THF_L, etoh | ✓ VERIFIED | All exist in quickice/data/ |
-| `tests/em.mdp` | Energy minimization MDP for grompp | ✓ VERIFIED | 370 bytes |
-| `scripts/clean-test-output.sh` | Test output cleanup utility | ✓ VERIFIED | 7177 bytes, executable |
+### Artifact: `tests/test_e2e_gmx_param_validation.py`
 
-### Key Link Verification
+**Level 1 — Exists:** ✓ EXISTS (311 lines)
+
+**Level 2 — Substantive:** ✓ SUBSTANTIVE
+- Line count: 311 (min 80 required) — PASS
+- Stub patterns: 0 TODO/FIXME/PLACEHOLDER — PASS
+- Empty returns: 0 — PASS
+- Key structures: `ChainParams` NamedTuple (line 61), `CHAIN_COMBINATIONS` list (line 92, 27 entries), `TestParametricGmxValidation` class (line 226), `_build_param_chain` (line 125), `_expected_top_keys` (line 164), `_expected_gro_residues` (line 181), `_WRITERS` dict (line 200), `_HYDRATE_BUILDERS` dict (line 72), `_HYDRATE_GUEST` dict (line 82)
+
+**Level 3 — Wired:** ✓ WIRED
+- Imports from `e2e_export_helpers`: 14 symbols imported at line 40 (parse_top_molecules, parse_gro_residue_names, _insert_custom_molecules, _insert_solutes, _insert_ions, _insert_ions_from_solute, _make_slab_interface, 4 hydrate builders, _stage_itp_files, assert_itp_completeness, run_gmx_grompp, MDP_PATH) — 6+ direct usage calls in test body
+- Imports from `quickice.output.gromacs_writer`: 8 writer functions at line 28 — used in `_WRITERS` dict
+- Imports from `quickice.structure_generation.gromacs_ion_export`: `write_ion_itp` at line 38 — called at line 256
+- Imports `gmx_skipif` from `tests.conftest` at line 26 — applied to test class at line 225
+
+## Key Link Verification (Plan 13)
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `test_e2e_gmx_validation.py` | `e2e_export_helpers.py` | `from e2e_export_helpers import assert_itp_completeness` | ✓ WIRED | Import at line; 17 calls to assert_itp_completeness(top_path, gmx_workspace) |
-| `test_e2e_gmx_validation.py` | `e2e_export_helpers.py` | `import parse_top_molecules, parse_gro_residue_names` | ✓ WIRED | Import at lines; 18 uses of each function in grompp tests |
-| `test_e2e_gmx_validation.py` | `e2e_export_helpers.py` | `_stage_itp_files`, `run_gmx_grompp`, `MDP_PATH` | ✓ WIRED | All 3 imported and used in every grompp test |
-| `TestChainF4Ch4HydrateGmxValidation._build_chain` | `e2e_export_helpers.py` | `_hydrate_sI_ch4_candidate()` → full chain | ✓ WIRED | Chain at line 909: hydrate→interface→custom→solute→ion |
-| `assert_itp_completeness` | `parse_top_includes` | Parses #include directives then checks file existence | ✓ WIRED | parse_top_includes(top_path) called at line 470 in assert_itp_completeness |
-| `test_e2e_gmx_validation.py` | `gromacs_writer.py` | `write_gro_file`, `write_top_file`, `write_interface_*`, `write_ion_*` | ✓ WIRED | 6+ write_* functions imported and called |
-| `test_e2e_gmx_validation.py` | `gromacs_ion_export.py` | `write_ion_itp` | ✓ WIRED | Imported and called before grompp |
-| `gromacs_writer.py` | `itp_parser.py` | `parse_itp_file` for moleculetype name extraction | ✓ WIRED | 4 usage sites |
-| All chain test files | `e2e_export_helpers.py` | `from e2e_export_helpers import` | ✓ WIRED | All 9 test files import helpers |
-| `e2e_export_helpers.py` | `gromacs_writer.py` | `comment_out_atomtypes_in_itp` for ITP staging | ✓ WIRED | Imported at line 418, used at line 446 in _stage_itp_files |
+| `test_e2e_gmx_param_validation.py` | `e2e_export_helpers.py` | `from e2e_export_helpers import (14 symbols)` | ✓ WIRED | Line 40; 6+ direct calls: parse_top_molecules(281), parse_gro_residue_names(297), _stage_itp_files(265), assert_itp_completeness(266), run_gmx_grompp(269), _build_param_chain calls hydrate builders, interface, custom, solute, ion helpers |
+| `test_e2e_gmx_param_validation.py` | `quickice/output/gromacs_writer.py` | 8 write_*_gro/top_file functions | ✓ WIRED | Line 28; used in `_WRITERS` dict (line 200) dispatched by writer_type |
+| `test_e2e_gmx_param_validation.py` | `quickice/structure_generation/gromacs_ion_export.py` | `write_ion_itp` | ✓ WIRED | Line 38 import; called at line 256-259 when writer_type=="ion" |
+| `test_e2e_gmx_param_validation.py` | `tests/conftest.py` | `gmx_skipif` | ✓ WIRED | Line 26 import; applied as decorator at line 225 |
+| `assert_itp_completeness` | `parse_top_includes` | parses #include then checks existence | ✓ WIRED | Existing link verified in previous verification |
+| `_build_param_chain` → hydrate builders | `_HYDRATE_BUILDERS[hydrate_type]()` | dispatch by hydrate_type string | ✓ WIRED | Line 131; all 4 hydrate builders registered in dict at line 72 |
+| `_WRITERS[writer_type]` → write functions | dispatch by writer_type string | ✓ WIRED | Line 248; 4 writer types registered in dict at line 200 |
 
-### Requirements Coverage
+## Requirements Coverage
 
 | Requirement | Status | Blocking Issue |
 |------------|--------|----------------|
-| Full chain .gro/.top/.itp validity | ✓ SATISFIED | 18 grompp tests pass |
+| Full chain .gro/.top/.itp validity | ✓ SATISFIED | 45 grompp tests pass (18 class + 27 param) |
 | GROMACS molecule ordering | ✓ SATISFIED | Residue ordering assertions in all chain tests |
-| .top [molecules] completeness | ✓ SATISFIED | Presence assertions in all 18 grompp tests |
-| ITP bundling correctness | ✓ SATISFIED | ITP completeness assertions + test_top_includes + test_itp_files_valid |
+| .top [molecules] completeness | ✓ SATISFIED | 45 presence assertion sets (class-based + parameterized) |
+| ITP bundling correctness | ✓ SATISFIED | ITP completeness assertions after every staging call |
 | Atom count conservation | ✓ SATISFIED | Atom count + charge neutrality tests |
 
-### Anti-Patterns Found
+## Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
 | None | — | — | — | No anti-patterns found |
 
-No TODO/FIXME/HACK/PLACEHOLDER patterns found. No stub implementations. No placeholder content. All 134 tests PASS.
+0 TODO/FIXME/HACK/PLACEHOLDER patterns in new file. 0 empty implementations. 0 console.log-only handlers. All 273 e2e tests PASS.
 
-### Human Verification Required
+## Human Verification Required
 
-None — all must-haves are programmatically verified. The 18 grompp validation tests serve as the highest-level verification by running the actual GROMACS simulator on exported files. Plan 11's molecule-type presence assertions and Plan 12's ITP completeness assertions together provide comprehensive silent-failure detection.
+None — all 52 must-haves are programmatically verified. The 45 grompp validation tests (18 class-based + 27 parameterized) serve as the highest-level verification by running the actual GROMACS simulator on exported files. Molecule-type presence assertions and ITP completeness assertions provide comprehensive silent-failure detection.
 
-### Gaps Summary
+## Gaps Summary
 
-No gaps found. All 48 must-have truths verified through 134 passing automated tests. Plan 12 gap closure successfully:
-1. Added `TestChainF4Ch4HydrateGmxValidation` — the exact chain (CH4 hydrate→Interface→Custom→Solute→Ion) that triggered the production bug
-2. Added `assert_itp_completeness` after every `_stage_itp_files` call — catches missing ITP files that .top references
-3. Changed `_stage_itp_files` to return `StagingResult(staged, missing)` — missing ITPs are tracked, not silently skipped
-4. Added `StagingResult` namedtuple — self-documenting return type for ITP staging
+No gaps found. All 52 must-have truths verified through 273 passing automated tests (45 grompp + 228 other e2e). Plan 13 successfully:
+1. Created `tests/test_e2e_gmx_param_validation.py` with 27 parameterized grompp validation tests
+2. Used `ChainParams` NamedTuple for systematic combination definition (id, hydrate_type, has_custom, solute_type, has_ion)
+3. Used `_WRITERS` dict for clean writer-type dispatch (interface/custom/solute/ion)
+4. Used `_expected_top_keys` and `_expected_gro_residues` for per-combination assertion computation
+5. All 27 new tests pass gmx grompp with correct molecule types and residue names
+6. All 18 existing grompp tests pass (no regressions)
+7. Total grompp coverage: 45 tests (18 class-based + 27 parameterized)
 
-Phase COMPLETE: 12/12 plans executed, 134 total tests all passing.
+Phase COMPLETE: 13/13 plans executed, 273 total e2e tests all passing.
 
 ---
 
-_Verified: 2026-06-16T12:00:00Z_
+_Verified: 2026-06-17T06:15:00Z_
 _Verifier: OpenCode (gsd-verifier)_

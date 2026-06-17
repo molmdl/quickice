@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** e2e-compute-export — VERIFIED (48/48 must-haves, all gaps closed)
+**Current Focus:** e2e-compute-export — VERIFIED (52/52 must-haves, all gaps closed)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** e2e-compute-export — VERIFIED (48/48 must-haves, all gaps closed)
+**Current focus:** e2e-compute-export — VERIFIED (52/52 must-haves, all gaps closed)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
