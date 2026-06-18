@@ -408,7 +408,10 @@ class CustomMoleculeInserter:
         
         # Batch overlap check: reshape water positions to (n_molecules, atoms_per_water, 3)
         # and query all atoms at once, then check per-molecule overlap
-        water_positions_all = structure.positions[water_start:water_end]
+        # Use only the first n_water_molecules * atoms_per_water atoms to ensure
+        # reshape works even when water_atom_count isn't exactly divisible
+        n_check_atoms = n_water_molecules * atoms_per_water
+        water_positions_all = structure.positions[water_start:water_start + n_check_atoms]
         water_reshaped = water_positions_all.reshape(n_water_molecules, atoms_per_water, 3)
 
         # Query minimum distance from ALL water atoms to custom tree at once
