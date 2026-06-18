@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 inserted (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping gap, overlap tree gap, OPLS warning, doc gaps)
+**Current Focus:** v4.5 — Phase 37.2 COMPLETE (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping, overlap tree, doc accuracy)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 inserted (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping gap, overlap tree gap, OPLS warning, doc gaps)
+**Current focus:** v4.5 — Phase 37.2 COMPLETE (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping, overlap tree, doc accuracy)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
 | Plan | 4 of 4 |
-| Status | Phase complete — All 4 plans done: DOIs, PBC wrapping, overlap tree, doc accuracy |
-| Last activity | 2026-06-18 — Completed 37.2-03 (CLI doc accuracy + OPLS-AA warning) |
+| Status | Phase 37.2 COMPLETE ✓ — All 4 plans done, verified 12/12 must-haves |
+| Last activity | 2026-06-18 — Phase 37.2 complete (DOIs, PBC wrapping, overlap tree, doc accuracy) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -55,10 +55,16 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### v4.5 Solute & Custom Molecule Insertion (NEARLY COMPLETE — Phase 35 screenshots pending)
 
-**Phases:** 32-37.1 (with 34.1-34.9 inserted)
+**Phases:** 32-37.2 (with 34.1-34.9 inserted)
 **Requirements:** 39 total (ARCH: 7, SOLUTE: 9, CUSTOM: 12, VIS: 3, GROMACS: 3, DOCS: 5)
 **Progress:** All phases complete except Phase 35 screenshots (Plan 06 partial — docs written, screenshots never renamed/captured)
 **Key features in progress:**
+- ✓ Phase 37.2: Madrid2019 DOIs corrected (10.1063/1.5121392)
+- ✓ Phase 37.2: PBC wrapping for custom_molecule_positions in write_solute_gro_file
+- ✓ Phase 37.2: Overlap tree includes custom molecule atoms (solute + custom inserters)
+- ✓ Phase 37.2: CLI doc accuracy (ranges, validation rules, extension docs, pipeline comparison)
+- ✓ Phase 37.2: OPLS-AA incompatibility warning in gro-itp-guide
+- ✓ Phase 37.2: GUI doc accuracy (button label, screenshot paths)
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
 - ✓ TabIndex refactoring complete

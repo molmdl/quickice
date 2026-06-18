@@ -547,10 +547,10 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 **Plans:** 4 plans
 
 Plans:
-- [ ] 37.2-01-PLAN.md — Fix CRITICAL DOIs + PBC wrapping in write_solute_gro_file
-- [ ] 37.2-02-PLAN.md — Fix overlap tree gap: custom molecule atoms invisible to solute/custom inserters
-- [ ] 37.2-03-PLAN.md — Fix CLI documentation accuracy (concentration ranges, validation rules, extension docs, OPLS warning, pipeline comparison, box range)
-- [ ] 37.2-04-PLAN.md — Fix GUI documentation accuracy (button label mismatch, screenshot paths)
+- [x] 37.2-01-PLAN.md — Fix CRITICAL DOIs + PBC wrapping in write_solute_gro_file
+- [x] 37.2-02-PLAN.md — Fix overlap tree gap: custom molecule atoms invisible to solute/custom inserters
+- [x] 37.2-03-PLAN.md — Fix CLI documentation accuracy (concentration ranges, validation rules, extension docs, OPLS warning, pipeline comparison, box range)
+- [x] 37.2-04-PLAN.md — Fix GUI documentation accuracy (button label mismatch, screenshot paths)
 
 **Details:**
 
@@ -657,7 +657,7 @@ Plus 16 LOW issues and 4 informational packaging findings.
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
-| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ○ Not started | 0 | 4 |
+| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ✓ Complete | 4 | 4 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |
@@ -735,5 +735,5 @@ Plus 16 LOW issues and 4 informational packaging findings.
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-17 - Phase 34.9 fully complete (3/3 plans: 27 scancode issues + LJ bugfix + comb-rule=2 revert)*
+*Last updated: 2026-06-18 - Phase 37.2 complete (4/4 plans: DOI fix, PBC wrapping, overlap tree, docs)*
 *For current state, see .planning/STATE.md*
