@@ -573,7 +573,7 @@ The Custom Molecule tab supports two workflow paths:
 6. Choose placement mode (Random or Custom)
 7. If Custom: Enter position and rotation angles
 8. (Optional) Click "Validate & Preview" to check placement
-9. Click "Insert Molecule"
+9. Click "Generate Custom Molecules"
 10. View molecule in 3D viewer (distinct colors: purple, cyan, yellow)
 11. Export for GROMACS (Ctrl+S)
 

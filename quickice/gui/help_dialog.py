@@ -112,7 +112,7 @@ class QuickReferenceDialog(QDialog):
             "18. Choose placement mode (Random or Custom)\n"
             "19. Set position/rotation (Custom mode) or count/concentration (Random mode)\n"
             "20. Click Validate & Preview to check placement validity (Custom mode)\n"
-            "21. Click Insert Molecule to insert custom molecules\n"
+            "21. Click Generate Custom Molecules to insert custom molecules\n"
             "22. Export custom molecules for GROMACS (Ctrl+M)\n"
             "\n"
             "Tab 4 — Solute Insertion:\n"
