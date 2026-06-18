@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 5/12 plans done)
+**Current Focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 6/12 plans done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 5/12 plans done)
+**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 6/12 plans done)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 5 of 12 |
+| Plan | 6 of 12 |
 | Status | In progress — Gap closure plans 05-12 executing |
-| Last activity | 2026-06-18 — Completed 37.2-05-PLAN.md (solute PBC wrapping) |
+| Last activity | 2026-06-18 — Completed 37.2-08-PLAN.md (vectorize inserter loops) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -718,9 +718,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-18
-**Completed:** 37.2-05-PLAN.md (solute PBC wrapping in write_solute_gro_file)
-**Status:** Phase 37.2 in progress (5/12 plans: DOI fix + PBC wrapping + overlap tree gap + doc accuracy + solute PBC wrapping)
-**Stopped at:** Completed 37.2-05, next is 37.2-06
+**Completed:** 37.2-08-PLAN.md (vectorize inserter loops: numpy masks, batch cKDTree, incremental tree)
+**Status:** Phase 37.2 in progress (6/12 plans)
+**Stopped at:** Completed 37.2-08, next is 37.2-09
 **Resume file:** None
 ---
-*State updated: 2026-06-18 — Phase 37.2 plan 05 executed: solute PBC wrapping*
+*State updated: 2026-06-18 — Phase 37.2 plan 08 executed: vectorize inserter loops*
