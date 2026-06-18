@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37.2 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, 37.2 inserted)
-**Total Plans:** 89 + 37.2 TBD (completed: 88/89)
+**Total Plans:** 95 (completed: 92/95)
 
 ## Overview
 
@@ -544,13 +544,16 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 **Goal:** Fix verified issues from 2026-06-18 scancode scan (A–D + DOI audit): wrong Madrid2019 DOIs, missing PBC wrapping in write_solute_gro_file, custom molecule atoms invisible to overlap tree, documentation gaps, OPLS-AA incompatibility warning, portable distribution fixes
 **Depends on:** Phase 37.1
-**Plans:** 4 plans
+**Plans:** 7 plans (4 original + 3 gap closure)
 
 Plans:
 - [x] 37.2-01-PLAN.md — Fix CRITICAL DOIs + PBC wrapping in write_solute_gro_file
 - [x] 37.2-02-PLAN.md — Fix overlap tree gap: custom molecule atoms invisible to solute/custom inserters
 - [x] 37.2-03-PLAN.md — Fix CLI documentation accuracy (concentration ranges, validation rules, extension docs, OPLS warning, pipeline comparison, box range)
 - [x] 37.2-04-PLAN.md — Fix GUI documentation accuracy (button label mismatch, screenshot paths)
+- [ ] 37.2-05-PLAN.md — GAP: Fix solute position PBC wrapping in write_solute_gro_file + regression test
+- [ ] 37.2-06-PLAN.md — GAP: Fix CLI doc accuracy (CLI caveat, --cli+--gui, --seed) + test hardening (0.0299→WATER_VOLUME_NM3)
+- [ ] 37.2-07-PLAN.md — GAP: Fix GUI doc accuracy (citations, ion tooltip, README polymorphs, ranking wording)
 
 **Details:**
 
@@ -602,7 +605,7 @@ Plus 16 LOW issues and 4 informational packaging findings.
 
 **Phase Count:** 17 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, and 37.2 inserted)
 
-**Total Plans:** 93 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, Phase 37.2: 4, e2e-compute-export: 13, completed: 88/92)
+**Total Plans:** 96 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, Phase 37.2: 7, e2e-compute-export: 13, completed: 92/96)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -657,7 +660,7 @@ Plus 16 LOW issues and 4 informational packaging findings.
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
-| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ✓ Complete | 4 | 4 |
+| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ◆ Gap closure | 4/7 | 7 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |
@@ -735,5 +738,5 @@ Plus 16 LOW issues and 4 informational packaging findings.
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-18 - Phase 37.2 complete (4/4 plans: DOI fix, PBC wrapping, overlap tree, docs)*
+*Last updated: 2026-06-18 - Phase 37.2 gap closure plans 05-07 (solute PBC wrapping, doc accuracy, test hardening)*
 *For current state, see .planning/STATE.md*
