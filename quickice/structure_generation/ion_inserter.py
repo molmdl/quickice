@@ -338,23 +338,20 @@ class IonInserter:
         # They have mass=0 and are used for electrostatic calculations only.
         # Including them in overlap checking causes false positives because MW atoms are
         # placed very close (~0.015 nm) to oxygen atoms by design.
-        remain_positions = []
+        # Vectorized MW filtering: build boolean mask from molecule_index
+        slices = []
         for mol in structure.molecule_index:
-            # Only check ice and guest molecules (not water!)
             if mol.mol_type in ("ice", "guest"):
                 start = mol.start_idx
                 end = start + mol.count
-                # Filter out MW atoms (virtual sites) before adding to overlap check
-                for atom_idx in range(start, end):
-                    atom_name = structure.atom_names[atom_idx] if atom_idx < len(structure.atom_names) else ""
-                    if atom_name != "MW":  # Exclude massless virtual sites
-                        remain_positions.append(structure.positions[atom_idx])
-
-        if remain_positions:
-            remain_positions = np.array(remain_positions)
+                names = np.array(structure.atom_names[start:end])
+                mask = names != "MW"
+                slices.append(structure.positions[start:end][mask])
+        
+        if slices:
+            remain_positions = np.vstack(slices)
             existing_atoms_tree = cKDTree(remain_positions)
         else:
-            # No existing molecules - no overlap to check
             existing_atoms_tree = None
         
         # Now add ions alternating Na+, Cl- with overlap checking

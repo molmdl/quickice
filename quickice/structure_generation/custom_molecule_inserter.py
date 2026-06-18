@@ -293,45 +293,47 @@ class CustomMoleculeInserter:
             MW atoms are massless virtual sites in TIP4P water models,
             placed very close (~0.015 nm) to oxygen atoms.
         """
-        existing_positions = []
-        
         # Get region boundaries
         ice_atom_count = getattr(structure, 'ice_atom_count', 0)
         water_atom_count = getattr(structure, 'water_atom_count', 0)
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         
-        # Add ice atoms
+        # Vectorized MW filtering: build boolean mask for each region, then concatenate
+        # Note: water atoms are NOT included (see docstring)
+        slices = []
+        
+        # Ice atoms
         if ice_atom_count > 0:
-            for i in range(ice_atom_count):
-                atom_name = structure.atom_names[i] if i < len(structure.atom_names) else ""
-                if atom_name != "MW":  # Exclude virtual sites
-                    existing_positions.append(structure.positions[i])
+            names = np.array(structure.atom_names[:ice_atom_count])
+            mask = names != "MW"
+            slices.append(structure.positions[:ice_atom_count][mask])
         
         # DO NOT add water atoms - they will be removed if they overlap
         # with custom molecules during insertion
         
-        # Add guest atoms
+        # Guest atoms
         if guest_atom_count > 0:
             guest_start = ice_atom_count + water_atom_count
             guest_end = guest_start + guest_atom_count
-            for i in range(guest_start, guest_end):
-                atom_name = structure.atom_names[i] if i < len(structure.atom_names) else ""
-                if atom_name != "MW":  # Exclude virtual sites
-                    existing_positions.append(structure.positions[i])
+            names = np.array(structure.atom_names[guest_start:guest_end])
+            mask = names != "MW"
+            slices.append(structure.positions[guest_start:guest_end][mask])
         
-        # Add custom molecule atoms (from prior pipeline steps)
+        # Custom molecule atoms (from prior pipeline steps)
         custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
         if custom_molecule_positions is not None and len(custom_molecule_positions) > 0:
             custom_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
-            for i, pos in enumerate(custom_molecule_positions):
-                if custom_atom_names is not None and i < len(custom_atom_names):
-                    if custom_atom_names[i] != "MW":
-                        existing_positions.append(pos)
-                else:
-                    existing_positions.append(pos)
+            if custom_atom_names is not None and len(custom_atom_names) == len(custom_molecule_positions):
+                names = np.array(custom_atom_names)
+                mask = names != "MW"
+                slices.append(np.array(custom_molecule_positions)[mask])
+            else:
+                # No atom names available — include all positions
+                slices.append(np.array(custom_molecule_positions))
         
-        if existing_positions:
-            return cKDTree(np.array(existing_positions))
+        if slices:
+            existing_positions = np.vstack(slices)
+            return cKDTree(existing_positions)
         return None
     
     def _check_overlap(
