@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 0 of TBD |
-| Status | Phase 37.2 inserted — not yet planned |
-| Last activity | 2026-06-18 — Phase 37.2 inserted after scancode A–D verification (30 CONFIRMED, 3 FALSE ALARM, 9 PARTIAL) |
+| Plan | 0 of 4 |
+| Status | Phase 37.2 planned — 4 plans in 1 wave, ready for execution |
+| Last activity | 2026-06-18 — Phase 37.2 planned (4 plans: DOI fix, PBC wrapping, overlap tree, docs) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
