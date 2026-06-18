@@ -1,6 +1,6 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-06-15
+**Analysis Date:** 2026-06-18
 
 ## Directory Layout
 
@@ -19,7 +19,7 @@ quickice/                          # Project root
 │   ├── gui/                       # PySide6 GUI modules
 │   │   ├── __init__.py
 │   │   ├── __main__.py           # python -m quickice.gui entry
-│   │   ├── main_window.py        # MainWindow (2024 lines, MVVM View + signal hub)
+│   │   ├── main_window.py        # MainWindow (2025 lines, MVVM View + signal hub)
 │   │   ├── viewmodel.py          # MainViewModel (MVVM ViewModel + worker management)
 │   │   ├── view.py               # InputPanel, ProgressPanel, ViewerPanel, InfoPanel
 │   │   ├── constants.py          # TabIndex IntEnum
@@ -50,7 +50,7 @@ quickice/                          # Project root
 │   │   └── vtk_utils.py          # VTK utility functions
 │   ├── structure_generation/      # Core physics engine (shared CLI+GUI)
 │   │   ├── __init__.py           # Re-exports all key types and generators
-│   │   ├── types.py              # All dataclasses: Candidate, InterfaceStructure, HydrateStructure, IonStructure, SoluteStructure, CustomMoleculeStructure, configs
+│   │   ├── types.py              # All dataclasses + detect_atoms_per_molecule() (~775 lines)
 │   │   ├── errors.py             # Exception hierarchy
 │   │   ├── generator.py          # IceStructureGenerator (GenIce2 wrapper)
 │   │   ├── hydrate_generator.py  # HydrateStructureGenerator (GenIce2 wrapper)
@@ -60,8 +60,8 @@ quickice/                          # Project root
 │   │   │   ├── slab.py           # Slab mode (ice|water|ice sandwich)
 │   │   │   ├── pocket.py         # Pocket mode (spherical/cubic cavity)
 │   │   │   └── piece.py          # Piece mode (crystal in water)
-│   │   ├── ion_inserter.py       # IonInserter + insert_ions()
-│   │   ├── solute_inserter.py    # SoluteInserter
+│   │   ├── ion_inserter.py       # IonInserter + insert_ions() (conditional cKDTree rebuild, V-02)
+│   │   ├── solute_inserter.py    # SoluteInserter (~961 lines, no input mutation V-17, conditional cKDTree V-03)
 │   │   ├── custom_molecule_inserter.py # CustomMoleculeInserter + InsertionError
 │   │   ├── water_filler.py       # Water placement utilities
 │   │   ├── overlap_resolver.py   # Overlap detection/removal
@@ -76,7 +76,7 @@ quickice/                          # Project root
 │   │   ├── __init__.py           # Re-exports
 │   │   ├── types.py              # OutputResult dataclass
 │   │   ├── orchestrator.py       # output_ranked_candidates() coordinator
-│   │   ├── gromacs_writer.py     # All GROMACS .gro/.top/.itp writers (2705 lines)
+│   │   ├── gromacs_writer.py     # All GROMACS .gro/.top/.itp writers (~2802 lines)
 │   │   ├── pdb_writer.py         # PDB file writer with CRYST1 records
 │   │   ├── validator.py          # Space group validation, overlap checking
 │   │   └── phase_diagram.py      # Phase diagram PNG generation
@@ -99,7 +99,7 @@ quickice/                          # Project root
 │   │   └── scorer.py             # rank_candidates(), energy/density/diversity scoring
 │   ├── validation/               # Input validators
 │   │   ├── __init__.py
-│   │   └── validators.py         # argparse type converters (T, P, N, box dims)
+│   │   └── validators.py         # argparse type converters (206 lines): T, P, N, box dims, concentration, occupancy
 │   ├── utils/                    # Shared utilities
 │   │   ├── __init__.py
 │   │   └── molecule_utils.py     # count_guest_atoms() and other molecule helpers
@@ -125,6 +125,11 @@ quickice/                          # Project root
 │   ├── test_cli_pipeline.py      # CLIPipeline unit tests
 │   ├── test_structure_generation.py  # Ice generation tests
 │   ├── test_e2e_*.py             # End-to-end workflow chain tests
+│   ├── test_tip4p_ice_lj_values.py   # TIP4P-ICE LJ constant verification (288 lines)
+│   ├── test_pbc_wrapping.py      # PBC wrapping tests (224 lines, AN-03)
+│   ├── test_scancode_bugs_solute.py   # Solute inserter bug fix tests (174 lines, V-17)
+│   ├── test_e2e_gmx_param_validation.py # GROMACS param validation E2E (311 lines)
+│   ├── test_e2e_gmx_validation.py      # GROMACS validation E2E (1231 lines)
 │   ├── test_custom_molecule*.py  # Custom molecule tests
 │   ├── test_solute_*.py         # Solute insertion tests
 │   ├── test_ion_*.py             # Ion insertion tests
@@ -177,24 +182,29 @@ quickice/                          # Project root
 **`quickice/cli/`:**
 - Purpose: CLI-only modules — argument parsing, pipeline orchestration, ITP helpers
 - Contains: Parser, pipeline class, ITP path resolution/copy functions
-- Key files: `quickice/cli/pipeline.py` (744 lines, CLIPipeline), `quickice/cli/parser.py` (533 lines, argparse), `quickice/cli/itp_helpers.py` (406 lines, ITP file management)
+- Key files: `quickice/cli/pipeline.py` (769 lines, CLIPipeline), `quickice/cli/parser.py` (535 lines, argparse), `quickice/cli/itp_helpers.py` (406 lines, ITP file management)
 - Constraint: NO Qt/PySide6/VTK imports allowed in this directory
 
 **`quickice/gui/`:**
 - Purpose: PySide6-based graphical interface with VTK 3D viewers
 - Contains: MainWindow (MVVM View), ViewModel, Workers, Panels, Viewers, Renderers, Exporters
-- Key files: `quickice/gui/main_window.py` (2024 lines, signal hub + cross-tab data flow), `quickice/gui/viewmodel.py` (276 lines, MVVM ViewModel)
+- Key files: `quickice/gui/main_window.py` (2025 lines, signal hub + cross-tab data flow), `quickice/gui/viewmodel.py` (276 lines, MVVM ViewModel)
 
 **`quickice/structure_generation/`:**
 - Purpose: Physics engine — all structure generation and insertion logic
 - Contains: Generator classes, builder functions, data types, error hierarchy, parsers, overlap resolver
-- Key files: `quickice/structure_generation/types.py` (722 lines, all dataclass contracts), `quickice/structure_generation/gromacs_writer.py` (moved to output), `quickice/structure_generation/interface_builder.py` (354 lines), `quickice/structure_generation/hydrate_generator.py` (600 lines)
+- Key files: `quickice/structure_generation/types.py` (~775 lines, all dataclass contracts + `detect_atoms_per_molecule()`), `quickice/structure_generation/interface_builder.py` (354 lines), `quickice/structure_generation/hydrate_generator.py` (600 lines), `quickice/structure_generation/solute_inserter.py` (~961 lines), `quickice/structure_generation/ion_inserter.py` (584 lines)
 - Shared: Used by both CLI and GUI paths — no UI or CLI specific logic here
 
 **`quickice/output/`:**
 - Purpose: File output — GROMACS, PDB, phase diagram generation
 - Contains: Writer functions, orchestrator, validator
-- Key files: `quickice/output/gromacs_writer.py` (2705 lines — largest file in codebase, all GROMACS writers)
+- Key files: `quickice/output/gromacs_writer.py` (~2802 lines — largest file in codebase, all GROMACS writers, TIP4P_ICE_OW_SIGMA/EPSILON constants, PBC wrapping)
+
+**`quickice/validation/`:**
+- Purpose: Input validators as argparse type converters
+- Contains: Temperature, pressure, molecule count, box dimension, concentration range, occupancy range validators
+- Key files: `quickice/validation/validators.py` (206 lines)
 
 **`quickice/data/`:**
 - Purpose: Bundled force-field ITP files, water template, custom molecule examples
@@ -219,17 +229,20 @@ quickice/                          # Project root
 - `conftest.py`: Project-level pytest markers
 
 **Core Logic:**
-- `quickice/structure_generation/types.py`: All shared dataclasses (Candidate, InterfaceStructure, HydrateStructure, IonStructure, SoluteStructure, CustomMoleculeStructure, all Config types)
-- `quickice/cli/pipeline.py`: CLIPipeline — ordered step execution with fail-fast
-- `quickice/cli/parser.py`: argparse definition with v4.5 pipeline flags
+- `quickice/structure_generation/types.py`: All shared dataclasses (Candidate, InterfaceStructure, HydrateStructure, IonStructure, SoluteStructure, CustomMoleculeStructure, all Config types) + `detect_atoms_per_molecule()`
+- `quickice/cli/pipeline.py`: CLIPipeline — ordered step execution with fail-fast; catches `(OSError, ValueError)` in export; atom count assertion for hydrate wrapper (EH-02)
+- `quickice/cli/parser.py`: argparse definition with v4.5 pipeline flags; `validate_pipeline_args()` cross-flag validation
 - `quickice/cli/itp_helpers.py`: ITP file resolution and copy logic
 - `quickice/structure_generation/interface_builder.py`: generate_interface() mode router
 - `quickice/structure_generation/generator.py`: IceStructureGenerator (GenIce2 wrapper)
 - `quickice/structure_generation/hydrate_generator.py`: HydrateStructureGenerator
-- `quickice/structure_generation/ion_inserter.py`: IonInserter + insert_ions()
-- `quickice/structure_generation/solute_inserter.py`: SoluteInserter
+- `quickice/structure_generation/ion_inserter.py`: IonInserter + insert_ions() (conditional cKDTree rebuild V-02)
+- `quickice/structure_generation/solute_inserter.py`: SoluteInserter (~961 lines, no input structure mutation V-17, conditional cKDTree rebuild V-03)
 - `quickice/structure_generation/custom_molecule_inserter.py`: CustomMoleculeInserter + InsertionError
-- `quickice/output/gromacs_writer.py`: All GROMACS .gro/.top/.itp writer functions
+- `quickice/output/gromacs_writer.py`: All GROMACS .gro/.top/.itp writer functions (~2802 lines); `TIP4P_ICE_OW_SIGMA`/`TIP4P_ICE_OW_EPSILON` constants (single source of truth for LJ params); PBC wrapping for solute/custom positions (AN-03)
+
+**Validation:**
+- `quickice/validation/validators.py`: Argparse type converters — `validate_temperature()`, `validate_pressure()`, `validate_nmolecules()`, `validate_positive_float()`, `validate_box_dimension()`, `validate_concentration_range()` [0.0, 5.0], `validate_occupancy_range()` [0.0, 100.0]
 
 **Testing:**
 - `tests/test_cli_pipeline.py`: CLIPipeline unit tests
@@ -237,6 +250,11 @@ quickice/                          # Project root
 - `tests/test_entry_point.py`: Entry router tests
 - `tests/test_e2e_workflow_chains.py`: End-to-end workflow chain tests
 - `tests/test_e2e_*.py`: Per-feature E2E tests (15+ files)
+- `tests/test_tip4p_ice_lj_values.py`: TIP4P-ICE LJ constant verification (288 lines)
+- `tests/test_pbc_wrapping.py`: PBC wrapping tests (224 lines, AN-03 fix)
+- `tests/test_scancode_bugs_solute.py`: Solute inserter bug fix tests (174 lines, V-17)
+- `tests/test_e2e_gmx_param_validation.py`: GROMACS parameter validation E2E (311 lines)
+- `tests/test_e2e_gmx_validation.py`: GROMACS validation E2E (1231 lines)
 - `tests/test_output/`: Output-specific tests with conftest.py
 
 **Scripts:**
@@ -267,6 +285,10 @@ quickice/                          # Project root
 - Result dataclasses: `*Structure` or `*Result` (e.g., `InterfaceStructure`, `HydrateStructure`, `IonStructure`, `SoluteStructure`, `CustomMoleculeStructure`, `GenerationResult`, `RankingResult`, `OutputResult`)
 - Error classes: `*Error` (e.g., `InterfaceGenerationError`, `InsertionError`, `UnknownPhaseError`)
 
+**Shared Constants:**
+- Module-level constants in UPPERCASE_SNAKE_CASE (e.g., `TIP4P_ICE_OW_SIGMA`, `TIP4P_ICE_OW_EPSILON`, `WATER_ATOMS_PER_MOLECULE`, `WATER_VOLUME_NM3`)
+- Defined at module top level and referenced by all consumers (single source of truth pattern)
+
 ## Where to Add New Code
 
 **New Pipeline Step (e.g., new molecule insertion type):**
@@ -276,7 +298,7 @@ quickice/                          # Project root
 - CLI parser: `quickice/cli/parser.py` — add argument group and validation in `validate_pipeline_args()`
 - CLI pipeline: `quickice/cli/pipeline.py` — add `self._new_result`, `_run_new_step()`, step in `execute()`, export dispatch in `_run_export_step()`
 - CLI ITP helpers: `quickice/cli/itp_helpers.py` — add ITP copy logic in `copy_itp_files_for_structure()`
-- GROMACS writer: `quickice/output/gromacs_writer.py` — add `write_new_gro_file()` and `write_new_top_file()`
+- GROMACS writer: `quickice/output/gromacs_writer.py` — add `write_new_gro_file()` and `write_new_top_file()` (use `TIP4P_ICE_OW_SIGMA`/`TIP4P_ICE_OW_EPSILON` constants for OW atomtypes; comb-rule=2)
 - GUI panel: `quickice/gui/new_panel.py` — UI for new step
 - GUI viewer: `quickice/gui/new_viewer.py` — VTK viewer
 - GUI renderer: `quickice/gui/new_renderer.py` — VTK actor creation
@@ -299,7 +321,7 @@ quickice/                          # Project root
 
 **New CLI Flag:**
 - Parser: `quickice/cli/parser.py` — add argument to appropriate group
-- Validation: `quickice/cli/parser.py::validate_pipeline_args()` — add cross-flag validation
+- Validation: `quickice/cli/parser.py::validate_pipeline_args()` — add cross-flag validation; for range-constrained values, add a `validate_*` function in `quickice/validation/validators.py`
 - Pipeline: `quickice/cli/pipeline.py` — read flag via `getattr(self.args, 'flag_name', default)`
 - Entry router: `quickice/entry.py::_ROUTER_FLAGS` — add if it's a router-only flag, NOT if it's a pipeline flag
 
@@ -315,6 +337,11 @@ quickice/                          # Project root
 **Utilities:**
 - Shared helpers: `quickice/utils/molecule_utils.py` — molecule-level utility functions
 - General utilities: `quickice/utils/__init__.py` — if adding a new utility module
+
+**New Shared Constants:**
+- Define at module top level in UPPERCASE_SNAKE_CASE in the appropriate module (e.g., force-field params in `quickice/output/gromacs_writer.py`)
+- Reference from all consumer functions — single source of truth pattern
+- Add verification tests (see `tests/test_tip4p_ice_lj_values.py` as example)
 
 ## Special Directories
 
@@ -347,4 +374,4 @@ quickice/                          # Project root
 
 ---
 
-*Structure analysis: 2026-06-15*
+*Structure analysis: 2026-06-18*

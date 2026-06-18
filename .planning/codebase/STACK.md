@@ -1,6 +1,6 @@
 # Technology Stack
 
-**Analysis Date:** 2026-06-15
+**Analysis Date:** 2026-06-18
 
 ## Languages
 
@@ -80,6 +80,63 @@
 - `methodtools` 0.4.7 - Method decorators (lru_cache for methods)
 - `deprecated` 1.3.1 / `deprecation` 2.1.0 - Deprecation warning decorators
 
+## Force Field Constants (Single Source of Truth)
+
+**TIP4P-ICE LJ Parameters:**
+- `TIP4P_ICE_OW_SIGMA = 3.16680e-1` nm — defined in `quickice/output/gromacs_writer.py` (lines 27-28)
+- `TIP4P_ICE_OW_EPSILON = 8.82110e-1` kJ/mol — defined in `quickice/output/gromacs_writer.py` (lines 27-28)
+- Reference: Abascal et al. 2005, DOI: 10.1063/1.1931662
+- These module-level constants replace all inline LJ parameter values in the 6 TOP-writing functions
+- `write_top_file()`, `write_interface_top_file()`, `write_multi_molecule_top_file()`, `write_ion_top_file()`, `write_custom_molecule_top_file()`, `write_solute_top_file()` all reference `TIP4P_ICE_OW_SIGMA` and `TIP4P_ICE_OW_EPSILON` via f-strings with `:.5e` formatting
+
+**Combination Rule:**
+- `comb-rule=2` (Lorentz-Berthelot) in all 6 TOP-writing functions
+- `sigma_ij = (sigma_i + sigma_j) / 2`, `epsilon_ij = sqrt(eps_i * eps_j)`
+- Matches AMBER/GAFF2 convention used by GROMACS-bundled AMBER force fields
+- `[ defaults ]` line: `1  2  yes  0.5  0.8333`
+- Present in: `write_top_file()` (line 553), `write_interface_top_file()` (line 1006), `write_multi_molecule_top_file()` (line 1284), `write_ion_top_file()` (line 1789), `write_custom_molecule_top_file()` (line 2194), `write_solute_top_file()` (line 2706)
+
+**Physical Constants:**
+- `AVOGADRO = 6.02214076e23` mol⁻¹ (CODATA 2017) — single definition in `quickice/structure_generation/ion_inserter.py` (line 29)
+- Previously duplicated in `pipeline.py`; now imported from `ion_inserter.py` in: `quickice/cli/pipeline.py`, `quickice/structure_generation/solute_inserter.py`, `quickice/structure_generation/custom_molecule_inserter.py`, `quickice/ranking/scorer.py`
+- `WATER_VOLUME_NM3 = 0.0299` — defined in `quickice/structure_generation/types.py` (line 25)
+- Previously hardcoded as `0.0299` in multiple locations; now the single source of truth
+- `WATER_ATOMS_PER_MOLECULE = 4` — defined in `quickice/structure_generation/types.py` (line 22)
+- `TIP4P_ICE_ALPHA = 0.13458335` — defined in `quickice/output/gromacs_writer.py` (line 23, also line 143)
+
+## Input Validation
+
+**CLI Validators (in `quickice/validation/validators.py`, 206 lines):**
+- `validate_temperature(value)` → float in [0, 500] K (CP-01)
+- `validate_pressure(value)` → float in [0, 10000] MPa (CP-02)
+- `validate_nmolecules(value)` → int in [4, 100000] (CP-02)
+- `validate_positive_float(value)` → float > 0 (CP-02)
+- `validate_box_dimension(value)` → float >= 1.0 nm (CP-02)
+- `validate_concentration_range(value)` → float in [0.0, 5.0] mol/L (CP-03) — covers seawater ~0.6 to saturated ~5 mol/L
+- `validate_occupancy_range(value)` → float in [0.0, 100.0] % (CP-03) — cage occupancy percentage
+
+**File Extension Validation (SEC-02):**
+- `--custom-gro` file must have `.gro` extension (case-insensitive) — enforced in `quickice/cli/pipeline.py:370-375`
+- `--custom-itp` file must have `.itp` extension (case-insensitive) — enforced in `quickice/cli/pipeline.py:376-381`
+
+**Cross-Flag Validation (in `quickice/cli/parser.py:validate_pipeline_args()`):**
+- `--hydrate + --nmolecules` mutually exclusive
+- `--custom-gro` requires `--custom-itp` and vice versa
+- `--custom-gro` requires `--interface`
+- `--custom-placement custom` requires `--custom-positions-file`
+- `--custom-placement random` requires `--custom-count` or `--custom-concentration` (not both)
+- `--solute-type` requires `--solute-concentration` and `--interface`
+- `--ion-concentration` requires `--interface`
+
+## Test Infrastructure
+
+**Key Regression Test Files (added in Phases 34.9 / 37.1):**
+- `tests/test_tip4p_ice_lj_values.py` (288 lines) — Prevents P16 regression: sigma/epsilon magnitude errors in TOP [atomtypes]
+- `tests/test_pbc_wrapping.py` (224 lines) — Verifies all atom coordinates in exported GRO files fall within [0, box_size)
+- `tests/test_scancode_bugs_solute.py` (174 lines) — Prevents V-03 regression: solute inserter cKDTree rebuild optimization
+- `tests/test_e2e_gmx_param_validation.py` (311 lines) — Parameterized grompp validation for 27 untested chain combinations
+- `tests/test_e2e_gmx_validation.py` (1231 lines) — 18 class-based grompp tests covering deepest chains F1-F7 + sII + hydrate/custom/solute standalone
+
 ## Configuration
 
 **Environment:**
@@ -122,6 +179,7 @@
 - Python 3.14.3 (bleeding edge; requires conda-forge build)
 - X11 display or Wayland for GUI testing (PySide6 + VTK rendering)
 - `PYTHONPATH` must include project root (set via `setup.sh`)
+- GROMACS `gmx` binary on PATH for e2e grompp validation tests (skipped via `gmx_skipif` if absent)
 
 **Production:**
 - Cross-platform desktop: Windows (primary target, has PyInstaller build + GitHub Actions)
@@ -132,4 +190,4 @@
 
 ---
 
-*Stack analysis: 2026-06-15*
+*Stack analysis: 2026-06-18*
