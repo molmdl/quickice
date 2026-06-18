@@ -238,7 +238,7 @@ Hydrate Generation allows you to:
 
 ### Hydrate Panel Interface
 
-![Hydrate Panel](images/hydrate-panel.png)
+![Hydrate Panel](images/tab2-hydrate-panel.png)
 
 *Screenshot of Hydrate Generation tab showing configuration controls and 3D viewer*
 
@@ -341,7 +341,7 @@ QuickIce supports three interface geometries.
 
 #### Slab Interface
 
-<img src="images/slab-interface.png" width="90%">
+<img src="images/tab2-slab-interface.png" width="90%">
 
 - **Ice thickness** (0.5–50 nm): Thickness of the ice layer along the Z-axis
 - **Water thickness** (0.5–50 nm): Thickness of the liquid water layer
@@ -349,14 +349,14 @@ QuickIce supports three interface geometries.
 
 #### Pocket Interface
 
-<img src="images/pocket-interface.png" width="90%">
+<img src="images/tab2-pocket-interface.png" width="90%">
 
 - **Pocket diameter** (0.5–50 nm): Diameter of the spherical/cubic water cavity
 - **Pocket shape**: Sphere or cubic (other shapes planned for future release.
 
 #### Piece Interface
 
-<img src="images/piece-interface.png" width="90%">
+<img src="images/tab2-piece-interface.png" width="90%">
 
 - No additional parameters — piece dimensions are derived from the 
   selected ice candidate
@@ -423,6 +423,7 @@ Generate an interface structure in Tab 2 first. Custom molecule insertion requir
 
 ### Custom Molecule Panel Interface
 
+<!-- TODO: Capture custom-molecule-panel.png screenshot -->
 ![Custom Molecule Panel](images/custom-molecule-panel.png)
 
 *Screenshot of Custom Molecule Upload tab showing file upload controls and 3D viewer*
@@ -618,6 +619,7 @@ Generate an interface structure in Tab 2 first. Solute insertion requires:
 
 ### Solute Panel Interface
 
+<!-- TODO: Capture solute-panel.png screenshot -->
 ![Solute Panel](images/solute-panel.png)
 
 *Screenshot of Solute Insertion tab showing configuration controls and 3D viewer*
@@ -738,7 +740,7 @@ This enables the full **Custom → Solute → Ion** workflow chain. When you sel
 
 ### Ion Panel Interface
 
-![Ion Panel](images/ion-panel.png)
+![Ion Panel](images/tab4-ion-panel.png)
 
 *Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
 
