@@ -2392,6 +2392,12 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
             interface.positions, interface.cell
         )
 
+    # Wrap custom molecule positions into PBC box (same as AN-03 fix in write_ion_gro_file)
+    if solute_structure.custom_molecule_positions is not None and len(solute_structure.custom_molecule_positions) > 0:
+        wrapped_custom_mol_positions = solute_structure.custom_molecule_positions % np.diag(solute_structure.cell)
+    else:
+        wrapped_custom_mol_positions = solute_structure.custom_molecule_positions
+
     atom_num = 0
     res_num = 0
     lines = []
@@ -2541,8 +2547,8 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
                     else:
                         mol_atom_names = [f"C{i}" for i in range(mol.count)]
 
-                    if solute_structure.custom_molecule_positions is not None:
-                        mol_positions = solute_structure.custom_molecule_positions[start:start + mol.count]
+                    if wrapped_custom_mol_positions is not None:
+                        mol_positions = wrapped_custom_mol_positions[start:start + mol.count]
                     else:
                         mol_positions = np.zeros((mol.count, 3))
 
