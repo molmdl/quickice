@@ -438,31 +438,22 @@ class SoluteInserter:
         # Use water_nmolecules calculated earlier (handles both InterfaceStructure and CustomMoleculeStructure)
         n_water_molecules = water_nmolecules
         
-        # Track which water molecules to keep
-        water_molecules_to_keep = []
-        removed_count = 0
-        
-        # Check each water molecule
-        for mol_idx in range(n_water_molecules):
-            atom_start = water_start + mol_idx * atoms_per_water
-            atom_end = atom_start + atoms_per_water
-            
-            # Get positions for this water molecule
-            water_mol_positions = structure.positions[atom_start:atom_end]
-            
-            # Check if any atom in this water molecule overlaps with solutes
-            overlaps = False
-            for atom_pos in water_mol_positions:
-                min_dist = solute_tree.query(atom_pos, k=1)[0]
-                if min_dist < min_separation:
-                    overlaps = True
-                    break
-            
-            if not overlaps:
-                # Keep this water molecule
-                water_molecules_to_keep.append(mol_idx)
-            else:
-                removed_count += 1
+        # Batch overlap check: reshape water positions to (n_molecules, atoms_per_water, 3)
+        # and query all atoms at once, then check per-molecule overlap
+        water_positions_all = structure.positions[water_start:water_end]
+        water_reshaped = water_positions_all.reshape(n_water_molecules, atoms_per_water, 3)
+
+        # Query minimum distance from ALL water atoms to solute tree at once
+        dists, _ = solute_tree.query(water_positions_all, k=1)  # (n_atoms,)
+
+        # Reshape distances to (n_molecules, atoms_per_water) and check per-molecule
+        dists_reshaped = dists.reshape(n_water_molecules, atoms_per_water)
+        # A molecule overlaps if ANY of its atoms is closer than min_separation
+        mol_overlaps = np.any(dists_reshaped < min_separation, axis=1)
+
+        # Build keep list from boolean mask
+        water_molecules_to_keep = np.where(~mol_overlaps)[0].tolist()
+        removed_count = int(np.sum(mol_overlaps))
         
         logger.info(
             f"Water replacement: Removed {removed_count} water molecules "

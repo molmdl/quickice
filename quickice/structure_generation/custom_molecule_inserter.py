@@ -406,31 +406,22 @@ class CustomMoleculeInserter:
         water_end = ice_atom_count + water_atom_count
         n_water_molecules = structure.water_nmolecules
         
-        # Track which water molecules to keep
-        water_molecules_to_keep = []
-        removed_count = 0
-        
-        # Check each water molecule
-        for mol_idx in range(n_water_molecules):
-            atom_start = water_start + mol_idx * atoms_per_water
-            atom_end = atom_start + atoms_per_water
-            
-            # Get positions for this water molecule
-            water_mol_positions = structure.positions[atom_start:atom_end]
-            
-            # Check if any atom in this water molecule overlaps with custom molecules
-            overlaps = False
-            for atom_pos in water_mol_positions:
-                min_dist = custom_tree.query(atom_pos, k=1)[0]
-                if min_dist < min_separation:
-                    overlaps = True
-                    break
-            
-            if not overlaps:
-                # Keep this water molecule
-                water_molecules_to_keep.append(mol_idx)
-            else:
-                removed_count += 1
+        # Batch overlap check: reshape water positions to (n_molecules, atoms_per_water, 3)
+        # and query all atoms at once, then check per-molecule overlap
+        water_positions_all = structure.positions[water_start:water_end]
+        water_reshaped = water_positions_all.reshape(n_water_molecules, atoms_per_water, 3)
+
+        # Query minimum distance from ALL water atoms to custom tree at once
+        dists, _ = custom_tree.query(water_positions_all, k=1)  # (n_atoms,)
+
+        # Reshape distances to (n_molecules, atoms_per_water) and check per-molecule
+        dists_reshaped = dists.reshape(n_water_molecules, atoms_per_water)
+        # A molecule overlaps if ANY of its atoms is closer than min_separation
+        mol_overlaps = np.any(dists_reshaped < min_separation, axis=1)
+
+        # Build keep list from boolean mask
+        water_molecules_to_keep = np.where(~mol_overlaps)[0].tolist()
+        removed_count = int(np.sum(mol_overlaps))
         
         logger.info(
             f"Water replacement: Removed {removed_count} water molecules "
@@ -583,8 +574,9 @@ class CustomMoleculeInserter:
         # Build tree from existing atoms
         existing_tree = self._build_existing_atoms_tree(structure)
         
-        # Save base existing tree data to avoid O(N²) copy chain on rebuild
-        base_existing_data = existing_tree.data.copy() if existing_tree is not None else None
+        # Incremental tree data: grows by appending new positions on each successful placement
+        # instead of O(N²) vstack-and-rebuild from base + all placed positions
+        combined_tree_data = existing_tree.data.copy() if existing_tree is not None else np.zeros((0, 3))
         
         # Get liquid region bounds
         liquid_start = ice_atom_count
@@ -650,16 +642,9 @@ class CustomMoleculeInserter:
                 current_idx += len(self.template_atom_names)
                 placed = True
                 
-                # Update tree for next molecule (rebuild from base + all placed
-                # molecules to avoid O(N²) copy chain from prior tree.data)
-                if base_existing_data is not None and len(placed_positions) > 0:
-                    all_data = np.vstack([base_existing_data, np.vstack(placed_positions)])
-                    existing_tree = cKDTree(all_data)
-                elif len(placed_positions) > 0:
-                    existing_tree = cKDTree(np.vstack(placed_positions))
-                else:
-                    # First molecule placed but no base tree existed
-                    existing_tree = cKDTree(placed_mol)
+                # Incremental rebuild: append new molecule's positions to combined data
+                combined_tree_data = np.vstack([combined_tree_data, placed_mol])
+                existing_tree = cKDTree(combined_tree_data)
                 
                 break  # Move to next molecule
             
