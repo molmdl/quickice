@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
 | Plan | 4 of 4 |
 | Status | Phase complete — All 4 plans done: DOIs, PBC wrapping, overlap tree, doc accuracy |
-| Last activity | 2026-06-18 — Completed 37.2-04 (GUI doc accuracy fixes) |
+| Last activity | 2026-06-18 — Completed 37.2-03 (CLI doc accuracy + OPLS-AA warning) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -712,9 +712,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-18
-**Completed:** 37.2-01-PLAN.md (re-executed: Madrid2019 DOI fix + PBC wrapping for solute GRO writer)
+**Completed:** 37.2-03-PLAN.md (CLI doc accuracy: concentration ranges, validation rules, extension docs, box range, pipeline comparison, OPLS-AA warning)
 **Status:** Phase 37.2 COMPLETE (4/4 plans: DOI fix + PBC wrapping + overlap tree gap + doc accuracy)
 **Stopped at:** All Phase 37.2 verified scancode findings resolved
 **Resume file:** None
 ---
-*State updated: 2026-06-18 — Phase 37.2 complete: all 4 plans executed (DOIs, PBC wrapping, overlap tree, doc accuracy)*
+*State updated: 2026-06-18 — Phase 37.2 plan 03 executed: CLI doc accuracy + OPLS-AA warning*
