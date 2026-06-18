@@ -204,6 +204,47 @@ class TestSoluteFromInterface:
             f"(ice*4 + water*4 + solute*5), got {header_count}"
         )
 
+    def test_solute_positions_pbc_wrapped(self, tmp_path):
+        """Solute atom positions must be within PBC box in GRO output.
+
+        Regression test for B NEW-01/11: write_solute_gro_file did not
+        PBC-wrap solute_structure.positions, producing invalid GRO files.
+        Solute positions are a SEPARATE array from interface.positions,
+        so wrap_molecules_into_box does NOT cover them.
+        """
+        gro_path = str(tmp_path / "solute_pbc_test.gro")
+        write_solute_gro_file(self.solute, gro_path)
+
+        # Parse GRO file for solute atom positions
+        with open(gro_path) as f:
+            lines = f.readlines()
+
+        # Skip title (line 0), atom count (line 1), and box (last line)
+        atom_lines = lines[2:-1]
+
+        # Extract box dimensions from last line
+        box_line = lines[-1].strip().split()
+        box_x, box_y, box_z = float(box_line[0]), float(box_line[1]), float(box_line[2])
+
+        # Find solute atoms (CH4_L or THF_L residue)
+        solute_positions = []
+        for line in atom_lines:
+            res_name = line[5:10].strip()
+            if res_name in ("CH4_L", "THF_L", "CH4_P"):
+                x = float(line[20:28])
+                y = float(line[28:36])
+                z = float(line[36:44])
+                solute_positions.append((x, y, z))
+
+        assert len(solute_positions) > 0, "No solute atoms found in GRO output"
+
+        # All solute positions must be within [0, box_dim + 0.01)
+        tolerance = 0.01  # nm — float precision tolerance at boundaries
+        for x, y, z in solute_positions:
+            assert -tolerance <= x < box_x + tolerance, f"Solute x={x} outside PBC [0, {box_x})"
+            assert -tolerance <= y < box_y + tolerance, f"Solute y={y} outside PBC [0, {box_y})"
+            assert -tolerance <= z < box_z + tolerance, f"Solute z={z} outside PBC [0, {box_z})"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Scenario 6: Solute from Custom Export
