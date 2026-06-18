@@ -712,7 +712,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-18
-**Completed:** 37.2-04-PLAN.md (GUI documentation accuracy fixes)
+**Completed:** 37.2-01-PLAN.md (re-executed: Madrid2019 DOI fix + PBC wrapping for solute GRO writer)
 **Status:** Phase 37.2 COMPLETE (4/4 plans: DOI fix + PBC wrapping + overlap tree gap + doc accuracy)
 **Stopped at:** All Phase 37.2 verified scancode findings resolved
 **Resume file:** None
