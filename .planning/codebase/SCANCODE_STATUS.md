@@ -89,7 +89,7 @@
 - 8 additional MEDIUM/LOW findings (see report)
 
 ### Documentation Cross-Check (Item C - CLI)
-- **NEW-C01** (CRITICAL): `docs/cli-reference.md:930` has wrong Madrid2019 DOI (`10.1021/acs.jctc.9b00902` → should be `10.1063/1.5121394`)
+- **NEW-C01** (CRITICAL): `docs/cli-reference.md:930` has wrong Madrid2019 DOI (`10.1021/acs.jctc.9b00902` → 404, doesn't exist). **AND** `README.md:371,375` also have wrong DOI (`10.1063/1.5121394` → points to wrong paper about misinformation on networks). Correct DOI verified: `10.1063/1.5121392` (resolves to Zeron et al. 2019, J. Chem. Phys. 151, 134504).
 - **NEW-C02** (MEDIUM): `--occupancy` range documentation inconsistent (code says 0-100%, docs say 0-1)
 - 6 additional MEDIUM/LOW findings (see report)
 
