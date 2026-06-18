@@ -478,6 +478,8 @@ For expert users with force field knowledge:
 | GAFF | AMBER | Via ACPYPE | Open source |
 | SwissParam | CHARMM/MMTB | https://www.swissparam.ch/ | Free |
 
+> **⚠️ Combining Rule Incompatibility:** OPLS-AA uses geometric combining rules (`comb-rule 3` in GROMACS), while TIP4P-ICE water uses Lorentz-Berthelot combining rules (`comb-rule 2`). Using OPLS-AA parameters with TIP4P-ICE produces incorrect LJ cross-interactions. If you use LigParGen/OPLS-AA, you must manually set `[comb-rule 3]` in your `.top` file and ensure all atom pairs use geometric combining. For easiest compatibility with QuickIce's default settings, prefer GAFF (AMBER) or CHARMM parameters instead.
+
 ---
 
 ## Validation
@@ -764,7 +766,7 @@ If present but malformed, verify format:
 
 1. **Verify force field compatibility:**
    - QuickIce uses TIP4P-ICE water model
-   - Custom molecule parameters should be from compatible force field (GAFF, CHARMM, OPLS)
+   - Custom molecule parameters should be from a compatible force field. **GAFF (AMBER) and CHARMM** use Lorentz-Berthelot combining rules compatible with TIP4P-ICE. **OPLS-AA** uses geometric combining rules and is NOT compatible with QuickIce's default `comb-rule 2` — using OPLS-AA without adjusting `[comb-rule]` in the .top file will produce incorrect LJ cross-interactions.
 
 2. **Check bonded parameters:**
    ```bash
