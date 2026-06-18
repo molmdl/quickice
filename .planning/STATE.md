@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 0 of 4 |
-| Status | Phase 37.2 planned — 4 plans in 1 wave, ready for execution |
-| Last activity | 2026-06-18 — Phase 37.2 planned (4 plans: DOI fix, PBC wrapping, overlap tree, docs) |
+| Plan | 2 of 4 |
+| Status | In progress — Plans 01-02 complete, overlap tree gap fixed |
+| Last activity | 2026-06-18 — Completed 37.2-02 (overlap tree gap fix) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -710,10 +710,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | comb-rule 2 (Lorentz-Berthelot) for GROMACS [defaults] | Both comb-rule 1 and 2 use sigma/epsilon under nbfunc=1; LJ bug was in VALUES not combining rule. comb-rule=2 matches AMBER/GAFF2 convention and GROMACS-bundled AMBER99SB-ILDN. | ✓ Shipped (34.9-03) |
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
-**Last session:** 2026-06-17
-**Completed:** 34.9-03-PLAN.md (comb-rule=2 revert for AMBER/GAFF2 convention)
-**Status:** Phase 34.9 COMPLETE (3/3 plans: 27 scan issues + LJ parameter bugfix + comb-rule=2 revert)
-**Stopped at:** Phase 34.9 fully verified; LJ parameters match ITP template; comb-rule=2 (Lorentz-Berthelot) for AMBER convention
+**Last session:** 2026-06-18
+**Completed:** 37.2-02-PLAN.md (overlap tree gap fix for custom molecule atoms)
+**Status:** Phase 37.2 in progress (2/4 plans: DOI fix + PBC wrapping + overlap tree gap fix)
+**Stopped at:** Overlap tree gap fixed in both solute_inserter and custom_molecule_inserter
 **Resume file:** None
 ---
-*State updated: 2026-06-17 — Phase 34.9 complete: comb-rule=2 reverted for AMBER convention*
+*State updated: 2026-06-18 — Phase 37.2 plan 02 complete: custom_molecule_positions in overlap trees*
