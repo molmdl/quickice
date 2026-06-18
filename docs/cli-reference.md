@@ -927,7 +927,7 @@ Ion concentration in mol/L. Specifies the NaCl concentration; equal numbers of N
 
 **Required with:** `--interface`
 
-**Note:** Madrid2019 ion model with charges ±0.85e (not ±1.0e). See [Madrid2019 reference](https://doi.org/10.1021/acs.jctc.9b00902).
+**Note:** Madrid2019 ion model with charges ±0.85e (not ±1.0e). See [Madrid2019 reference](https://doi.org/10.1063/1.5121392).
 
 ```bash
 # 0.15 M NaCl (physiological concentration)

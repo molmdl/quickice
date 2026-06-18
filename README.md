@@ -368,11 +368,11 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 
 ### Madrid2019 Ion Parameters
 - Zeron, I. M., Abascal, J. L. F., & Vega, C. (2019). A force field of Li+, Na+, K+, Mg2+, Ca2+, Cl−, and SO42− in aqueous solution based on the TIP4P/2005 water model and scaled charges for the ions. Journal of Chemical Physics, 151, 134504.
-- DOI: https://doi.org/10.1063/1.5121394
+- DOI: https://doi.org/10.1063/1.5121392
 
 ### Madrid2019 / TIP4P-ICE Compatibility
 - The Madrid2019 ion model (±0.85e charges) was parameterized for TIP4P/2005 water. QuickIce uses these parameters with TIP4P-ICE water, which is common practice but technically a force field combination.
-- Zeron et al. (2019). J. Chem. Phys. 151, 134504. DOI: 10.1063/1.5121394
+- Zeron et al. (2019). J. Chem. Phys. 151, 134504. DOI: 10.1063/1.5121392
 
 ## Testing
 
