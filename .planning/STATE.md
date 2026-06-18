@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix + comb-rule=2 revert)
+**Current Focus:** v4.5 — Phase 37.2 inserted (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping gap, overlap tree gap, OPLS warning, doc gaps)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 35 screenshots incomplete, Phase 34.9 complete (27 issues + LJ bugfix + comb-rule=2 revert)
+**Current focus:** v4.5 — Phase 37.2 inserted (verified scancode fixes 2026-06-18: wrong DOIs, PBC wrapping gap, overlap tree gap, OPLS warning, doc gaps)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
-| Phase | 34.9 (fix verified scan issues + TIP4P-ICE LJ bug) |
-| Plan | 3 of 3 in Phase 34.9 |
-| Status | Phase 34.9 complete — 27 scancode issues fixed + LJ parameter bug fixed + comb-rule=2 (Lorentz-Berthelot) reverted |
-| Last activity | 2026-06-17 — Completed 34.9-03 (comb-rule=2 revert, AMBER/GAFF2 convention) |
+| Phase | 37.2 (fix verified scancode findings 2026-06-18) |
+| Plan | 0 of TBD |
+| Status | Phase 37.2 inserted — not yet planned |
+| Last activity | 2026-06-18 — Phase 37.2 inserted after scancode A–D verification (30 CONFIRMED, 3 FALSE ALARM, 9 PARTIAL) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -311,6 +311,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - Phase 36 added: CLI Feature Parity (CLI-01 to CLI-05, moved from v4.5.1 to v4.5 so work can proceed without GUI)
 - Phase 37 added: Unified Entry Point (router + test consistency, resolves unify-gui-cli-entry-point todo)
 - Phase 37.1 inserted after Phase 37: Fix verified scancode findings — AN-01/AN-02 (CRITICAL atom count/MW), AN-03 (PBC wrapping), CP-01 (duck-typing on InterfaceStructure), DOC issues (wrong tab numbers, missing CLI flags, THF ring, outdated principles), GROMPP test gaps (URGENT)
+- Phase 37.2 inserted after Phase 37.1: Fix verified scancode findings 2026-06-18 — wrong Madrid2019 DOIs (CRITICAL), write_solute_gro_file PBC wrapping gap (HIGH), custom molecule overlap tree gap, OPLS-AA incompatibility warning, documentation gaps (URGENT)
 
 ### v4.5 Key Decisions
 

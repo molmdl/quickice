@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
 **Status:** 🔄 IN PROGRESS
-**Phases:** 32-37 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1 inserted)
-**Total Plans:** 89 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 88/89)
+**Phases:** 32-37.2 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, 37.2 inserted)
+**Total Plans:** 89 + 37.2 TBD (completed: 88/89)
 
 ## Overview
 
@@ -540,11 +540,66 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 
 ---
 
+### Phase 37.2: Fix Verified Scancode Findings 2026-06-18 (INSERTED)
+
+**Goal:** Fix verified issues from 2026-06-18 scancode scan (A–D + DOI audit): wrong Madrid2019 DOIs, missing PBC wrapping in write_solute_gro_file, custom molecule atoms invisible to overlap tree, documentation gaps, OPLS-AA incompatibility warning, portable distribution fixes
+**Depends on:** Phase 37.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 37.2 to break down)
+
+**Details:**
+
+Verified issues from `.planning/code_analysis/20260618_SCANDLE_VERIFICATION.md` (30 CONFIRMED, 3 FALSE ALARM, 9 PARTIAL):
+
+| ID | Severity | Category | Finding | Files |
+|----|----------|----------|---------|-------|
+| DOI-D1 | 🔴 CRITICAL | Docs | Madrid2019 DOI `10.1063/1.5121394` in README resolves to WRONG paper (misinformation on networks, not Zeron et al.) — correct DOI is `10.1063/1.5121392` | `README.md:371,375` |
+| N-01 | 🔴 CRITICAL | Docs | Madrid2019 DOI `10.1021/acs.jctc.9b00902` in cli-reference returns 404 (nonexistent) | `docs/cli-reference.md:930` |
+| NEW-01/11 | 🟠 HIGH | Code | `write_solute_gro_file` solute and custom molecule positions NOT PBC-wrapped (same bug class as AN-03, fixed only for ion writer) | `quickice/output/gromacs_writer.py:2384–2566` |
+| PERF-01 | 🟠 HIGH | Perf | `wrap_molecules_into_box` triple-nested Python loop — 1.2M iterations for 100K water | `quickice/output/gromacs_writer.py:67–140` |
+| N-02 | 🟠 HIGH | Docs | Concentration valid range (0.0–5.0 mol/L) not documented for 3 CLI flags | `docs/cli-reference.md` |
+| N-03 | 🟠 HIGH | Docs | Validation Rules section missing 5 of 8 constraints | `docs/cli-reference.md:992–1000` |
+| NEW-03/EH-07 | 🟡 MEDIUM | Code | `write_custom_molecule_gro_file` no try/except around file I/O | `quickice/output/gromacs_writer.py:1918–2140` |
+| NEW-06/PERF-03 | 🟡 MEDIUM | Perf | O(N) Python loop in `_build_existing_atoms_tree` | `solute_inserter.py:318–351`, `ion_inserter.py:341–351` |
+| NEW-07/PERF-04 | 🟡 MEDIUM | Perf | Per-molecule cKDTree query in `_remove_overlapping_water` | `solute_inserter.py:435–454`, `custom_molecule_inserter.py:401–420` |
+| NEW-16 | 🟡 MEDIUM | Code | Custom molecule atoms excluded from solute inserter overlap tree — can place solutes overlapping custom molecules | `quickice/structure_generation/solute_inserter.py:318–352` |
+| N-04 | 🟡 MEDIUM | Docs | `--custom-gro`/`--custom-itp` extension validation not documented | `docs/cli-reference.md:673–715` |
+| N-05 | 🟡 MEDIUM | Docs | OPLS-AA incompatibility with Lorentz-Berthelot combining rule not warned (guide recommends LigParGen which outputs OPLS-AA — incompatible!) | `docs/gro-itp-guide.md:476,767` |
+| N-06 | 🟡 MEDIUM | Docs | No consolidated pipeline vs ice-only output differences section | `docs/cli-reference.md` |
+| R-01 | 🟡 MEDIUM | Docs | Box dimension range "1.0–100 nm" wrong — code has no upper bound | `docs/cli-reference.md:351` |
+| NEW-1 | 🟡 MEDIUM | Docs | Button label mismatch — docs say "Insert Molecule" but button text is "Generate Custom Molecules" (37.1-13 fix was incorrect) | `help_dialog.py:115`, `gui-guide.md:576`, `custom_molecule_panel.py:112` |
+| DOC-G5 | 🟡 MEDIUM | Docs | 5 screenshot paths wrong + 2 missing screenshots in gui-guide | `docs/gui-guide.md` |
+| D | 🟡 MEDIUM | Bundle | 27.2 MB test data leaking into PyInstaller bundle | `quickice-gui.spec` |
+
+Plus 16 LOW issues and 4 informational packaging findings.
+
+**Scope decisions:**
+- DOI-D1, N-01: MUST fix (scientifically wrong citations)
+- NEW-01/11: MUST fix (invalid GRO files — same bug as AN-03 which was already fixed for ion writer)
+- NEW-16: SHOULD fix (silently wrong simulation — solutes overlapping custom molecules)
+- N-05: SHOULD fix (guide leads users to incompatible force field — silently wrong LJ cross-interactions)
+- NEW-1: SHOULD fix (docs contradict actual UI)
+- N-02, N-03: SHOULD fix (users can't discover valid input ranges)
+- PERF-01: DEFERRED (performance, not correctness — large refactor)
+- LOW issues: DEFERRED unless trivial to bundle with related fixes
+- Bundle issues: DEFERRED to Phase 38
+
+**False alarms (skip):**
+- B NEW-18: `"O" in atom_names_list` is exact match, NOT substring — code is correct
+- D genice2 hiddenimports: `collect_all` auto-discovers sI/sII — no manual entry needed
+- D genice2 size: actual is 7.3 MB not 5.1 MB
+
+**Verification reference:** `.planning/code_analysis/20260618_SCANDLE_VERIFICATION.md`
+
+---
+
 ## Milestone Summary
 
-**Phase Count:** 16 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, and 37.1 inserted)
+**Phase Count:** 17 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, and 37.2 inserted)
 
-**Total Plans:** 89 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, e2e-compute-export: 13, completed: 88/89)
+**Total Plans:** 89 plans + 37.2 TBD (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, Phase 37.2: TBD, e2e-compute-export: 13, completed: 88/89)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -599,6 +654,7 @@ Verified issues from `.planning/code_analysis/20260615_SCAN_VERIFICATION.md` (21
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
+| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ○ Not started | 0 | TBD |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |
