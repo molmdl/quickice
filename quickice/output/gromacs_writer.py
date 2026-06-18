@@ -2398,6 +2398,16 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
     else:
         wrapped_custom_mol_positions = solute_structure.custom_molecule_positions
 
+    # Wrap solute positions into PBC box (same as AN-03 fix in write_ion_gro_file)
+    # Solute positions are a SEPARATE array from interface.positions, so
+    # wrap_molecules_into_box does NOT cover them. Simple modulo wrapping
+    # is sufficient — solute molecules (CH4, THF) are single small molecules
+    # that don't span PBC boundaries.
+    if solute_structure.positions is not None and len(solute_structure.positions) > 0:
+        wrapped_solute_positions = solute_structure.positions % np.diag(solute_structure.cell)
+    else:
+        wrapped_solute_positions = solute_structure.positions
+
     atom_num = 0
     res_num = 0
     lines = []
@@ -2569,7 +2579,7 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
 
                     # Get atom names and positions from solute_structure
                     mol_atom_names = solute_structure.atom_names[start:start + count]
-                    mol_positions = solute_structure.positions[start:start + count]
+                    mol_positions = wrapped_solute_positions[start:start + count]
 
                     # Get residue name from registry
                     solute_type_upper = solute_structure.solute_type.upper()
