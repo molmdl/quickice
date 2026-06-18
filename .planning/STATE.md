@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 2 of 4 |
-| Status | In progress — Plans 01-02 complete, overlap tree gap fixed |
-| Last activity | 2026-06-18 — Completed 37.2-02 (overlap tree gap fix) |
+| Plan | 4 of 4 |
+| Status | Phase complete — All 4 plans done: DOIs, PBC wrapping, overlap tree, doc accuracy |
+| Last activity | 2026-06-18 — Completed 37.2-04 (GUI doc accuracy fixes) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -603,7 +603,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | --ion-source custom in workflow script | hydrate-interface-custom-ion.sh was missing this flag; ions defaulted to "interface" source | ✓ Shipped (37.1-13) |
 | PBC wrapping for solute/custom in write_interface_gro_file | Defensive wrapping matching write_ion_gro_file pattern; hasattr + None/len guards for optional fields | ✓ Shipped (37.1-14) |
 | help_dialog Tab 3 prerequisite for Custom Molecule source | Solute step now notes: complete Tab 3 first when using Custom Molecule source | ✓ Shipped (37.1-13) |
-| help_dialog button "Insert Molecule" not "Click Generate" | Matches actual GUI button label | ✓ Shipped (37.1-13) |
+| help_dialog button "Generate Custom Molecules" | Matches actual QPushButton text in custom_molecule_panel.py:112; corrected from "Insert Molecule" (37.2-04) | ✓ Shipped (37.2-04) |
+| GUI guide screenshot paths corrected to tab-prefixed filenames | 5 paths fixed (tab2-/tab4- prefix); 2 missing screenshots (custom-molecule-panel.png, solute-panel.png) marked with HTML TODO comments | ✓ Shipped (37.2-04) |
 | parser --gromacs help includes .itp | GROMACS export produces .gro, .top, .itp; help string now reflects this | ✓ Shipped (37.1-13) |
 | cli-examples removed redundant -g flags | Lines had both --gromacs and -g; kept long form for doc clarity | ✓ Shipped (37.1-13) |
 | --no-diagram no-op in pipeline mode | Note added to cli-reference: diagrams not generated in pipeline mode by default | ✓ Shipped (37.1-13) |
@@ -711,9 +712,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-18
-**Completed:** 37.2-02-PLAN.md (overlap tree gap fix for custom molecule atoms)
-**Status:** Phase 37.2 in progress (2/4 plans: DOI fix + PBC wrapping + overlap tree gap fix)
-**Stopped at:** Overlap tree gap fixed in both solute_inserter and custom_molecule_inserter
+**Completed:** 37.2-04-PLAN.md (GUI documentation accuracy fixes)
+**Status:** Phase 37.2 COMPLETE (4/4 plans: DOI fix + PBC wrapping + overlap tree gap + doc accuracy)
+**Stopped at:** All Phase 37.2 verified scancode findings resolved
 **Resume file:** None
 ---
-*State updated: 2026-06-18 — Phase 37.2 plan 02 complete: custom_molecule_positions in overlap trees*
+*State updated: 2026-06-18 — Phase 37.2 complete: all 4 plans executed (DOIs, PBC wrapping, overlap tree, doc accuracy)*
