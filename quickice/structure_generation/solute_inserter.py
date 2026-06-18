@@ -347,6 +347,18 @@ class SoluteInserter:
                 if atom_name != "MW":  # Exclude virtual sites
                     existing_positions.append(structure.positions[i])
         
+        # Add custom molecule atoms (from prior pipeline steps)
+        custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+        if custom_molecule_positions is not None and len(custom_molecule_positions) > 0:
+            custom_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+            for i, pos in enumerate(custom_molecule_positions):
+                # Custom molecules don't have MW virtual sites, but check anyway
+                if custom_atom_names is not None and i < len(custom_atom_names):
+                    if custom_atom_names[i] != "MW":
+                        existing_positions.append(pos)
+                else:
+                    existing_positions.append(pos)
+        
         if existing_positions:
             return cKDTree(np.array(existing_positions))
         return None
