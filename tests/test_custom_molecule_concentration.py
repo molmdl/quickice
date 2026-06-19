@@ -6,6 +6,7 @@ to ensure correct conversion between molecule count and concentration.
 
 import pytest
 from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
+from quickice.structure_generation.types import WATER_VOLUME_NM3
 
 
 class TestConcentrationCalculations:
@@ -114,7 +115,7 @@ class TestConcentrationCalculations:
         """Test with realistic liquid region volume."""
         # Typical liquid region: ~1000 water molecules = ~30 nm³
         # At 0.1 M, expect ~2 molecules
-        volume = 1000 * 0.0299  # nm³
+        volume = 1000 * WATER_VOLUME_NM3  # nm³
         count = CustomMoleculeInserter.calculate_molecule_count(0.1, volume)
         assert 1 <= count <= 3  # Allow for rounding
         

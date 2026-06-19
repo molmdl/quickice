@@ -31,6 +31,7 @@ from quickice.structure_generation.types import (
     CustomMoleculeConfig,
     CustomMoleculeStructure,
     MoleculeIndex,
+    WATER_VOLUME_NM3,
 )
 
 
@@ -44,12 +45,12 @@ ETOH_ITP = DATA_DIR / "etoh.itp"
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _liquid_volume_nm3(structure) -> float:
-    """Estimate liquid volume from water molecule count (TIP4P: 0.0299 nm³/mol)."""
+    """Estimate liquid volume from water molecule count (TIP4P: WATER_VOLUME_NM3 nm³/mol)."""
     water_nmolecules = getattr(structure, 'water_nmolecules', 0)
     if water_nmolecules == 0:
         water_atom_count = getattr(structure, 'water_atom_count', 0)
         water_nmolecules = water_atom_count // 4 if water_atom_count > 0 else 0
-    return water_nmolecules * 0.0299
+    return water_nmolecules * WATER_VOLUME_NM3
 
 
 def _insert_custom_molecules(interface, n_molecules=3):

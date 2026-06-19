@@ -30,6 +30,7 @@ from quickice.structure_generation.types import (
     CustomMoleculeConfig,
     CustomMoleculeStructure,
     PlacementValidationResult,
+    WATER_VOLUME_NM3,
 )
 
 
@@ -379,10 +380,10 @@ class TestRandomPlacement:
         """calculate_molecule_count(C, V) should return a positive integer.
 
         Uses the interface slab's water molecules to estimate liquid volume
-        (water_nmolecules × 0.0299 nm³ per molecule).
+        (water_nmolecules × WATER_VOLUME_NM3 nm³ per molecule).
         """
         # Estimate liquid volume: N_water × V_per_molecule
-        liquid_volume_nm3 = interface_slab.water_nmolecules * 0.0299
+        liquid_volume_nm3 = interface_slab.water_nmolecules * WATER_VOLUME_NM3
 
         count = CustomMoleculeInserter.calculate_molecule_count(1.0, liquid_volume_nm3)
 
@@ -395,7 +396,7 @@ class TestRandomPlacement:
         Verifies that calculate_molecule_count and calculate_concentration
         are inverse operations within rounding tolerance.
         """
-        liquid_volume_nm3 = interface_slab.water_nmolecules * 0.0299
+        liquid_volume_nm3 = interface_slab.water_nmolecules * WATER_VOLUME_NM3
         C = 0.5  # mol/L
 
         count = CustomMoleculeInserter.calculate_molecule_count(C, liquid_volume_nm3)

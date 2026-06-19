@@ -25,6 +25,7 @@ from quickice.structure_generation.types import (
     InterfaceConfig,
     InterfaceStructure,
     HydrateConfig,
+    WATER_VOLUME_NM3,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
@@ -354,7 +355,7 @@ class TestSoluteMoleculeCount:
         For a reasonable concentration (1.0 M) and liquid volume, the
         molecule count should be a positive integer.
         """
-        liquid_volume_nm3 = interface_slab.water_nmolecules * 0.0299
+        liquid_volume_nm3 = interface_slab.water_nmolecules * WATER_VOLUME_NM3
         inserter = SoluteInserter(seed=42)
 
         count = inserter.calculate_molecule_count(1.0, liquid_volume_nm3)
@@ -371,7 +372,7 @@ class TestSoluteMoleculeCount:
         value from the formula N = C_M × V_L × NA, where V_L = V_nm3 × 1e-24.
         """
         concentration = 0.5  # mol/L
-        liquid_volume_nm3 = interface_slab.water_nmolecules * 0.0299
+        liquid_volume_nm3 = interface_slab.water_nmolecules * WATER_VOLUME_NM3
         volume_liters = liquid_volume_nm3 * 1e-24
         expected_count = int(round(concentration * volume_liters * AVOGADRO))
 
