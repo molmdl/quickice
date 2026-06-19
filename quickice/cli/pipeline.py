@@ -17,6 +17,8 @@ from quickice.structure_generation.types import WATER_VOLUME_NM3
 
 logger = logging.getLogger(__name__)
 
+MAX_CSV_ROWS = 10000  # Safety limit for positions CSV files
+
 
 def report_progress(message: str) -> None:
     """Print a progress message to stderr for CLI feedback.
@@ -162,6 +164,15 @@ class CLIPipeline:
         if not path.exists():
             raise FileNotFoundError(f"Positions CSV file not found: {filepath}")
 
+        # SEC-04: Reject directory traversal outside working directory
+        resolved_path = path.resolve()
+        cwd = Path.cwd().resolve()
+        if not resolved_path.is_relative_to(cwd):
+            raise ValueError(
+                f"Positions CSV path resolves outside working directory: "
+                f"{resolved_path} is not under {cwd}"
+            )
+
         positions: list[tuple] = []
         rotations: list[tuple] = []
 
@@ -188,6 +199,14 @@ class CLIPipeline:
 
                 positions.append(tuple(values[:3]))   # (x, y, z)
                 rotations.append(tuple(values[3:]))    # (alpha, beta, gamma)
+
+                # SEC-05: Reject excessively large CSV files
+                if len(positions) > MAX_CSV_ROWS:
+                    raise ValueError(
+                        f"CSV file exceeds maximum row limit of {MAX_CSV_ROWS}. "
+                        f"File has {len(positions)} data rows. "
+                        f"Reduce the number of molecules or split the file."
+                    )
 
         return positions, rotations
 
@@ -377,6 +396,23 @@ class CLIPipeline:
                 report_progress(
                     f"Error: --custom-itp file must have .itp extension, "
                     f"got '{itp_path.suffix}'"
+                )
+                return 1
+
+            # SEC-04: Reject directory traversal outside working directory
+            resolved_gro = gro_path.resolve()
+            resolved_itp = itp_path.resolve()
+            cwd = Path.cwd().resolve()
+            if not resolved_gro.is_relative_to(cwd):
+                report_progress(
+                    f"Error: --custom-gro path resolves outside working directory: "
+                    f"{resolved_gro} is not under {cwd}"
+                )
+                return 1
+            if not resolved_itp.is_relative_to(cwd):
+                report_progress(
+                    f"Error: --custom-itp path resolves outside working directory: "
+                    f"{resolved_itp} is not under {cwd}"
                 )
                 return 1
 
