@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 6/12 plans done)
+**Current Focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 7/12 plans done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 6/12 plans done)
+**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 7/12 plans done)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 6 of 12 |
+| Plan | 7 of 12 |
 | Status | In progress — Gap closure plans 05-12 executing |
-| Last activity | 2026-06-18 — Completed 37.2-08-PLAN.md (vectorize inserter loops) |
+| Last activity | 2026-06-19 — Completed 37.2-07-PLAN.md (GUI doc & code accuracy gaps) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -717,10 +717,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | comb-rule 2 (Lorentz-Berthelot) for GROMACS [defaults] | Both comb-rule 1 and 2 use sigma/epsilon under nbfunc=1; LJ bug was in VALUES not combining rule. comb-rule=2 matches AMBER/GAFF2 convention and GROMACS-bundled AMBER99SB-ILDN. | ✓ Shipped (34.9-03) |
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
-**Last session:** 2026-06-18
-**Completed:** 37.2-08-PLAN.md (vectorize inserter loops: numpy masks, batch cKDTree, incremental tree)
-**Status:** Phase 37.2 in progress (6/12 plans)
-**Stopped at:** Completed 37.2-08, next is 37.2-09
+**Last session:** 2026-06-19
+**Completed:** 37.2-07-PLAN.md (GUI doc & code accuracy gaps: citations, tooltip, polymorph count, ranking wording)
+**Status:** Phase 37.2 in progress (7/12 plans)
+**Stopped at:** Completed 37.2-07, next is 37.2-09
 **Resume file:** None
 ---
-*State updated: 2026-06-18 — Phase 37.2 plan 08 executed: vectorize inserter loops*
+*State updated: 2026-06-19 — Phase 37.2 plan 07 executed: GUI doc & code accuracy gaps*
