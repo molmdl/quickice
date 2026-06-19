@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 7/12 plans done)
+**Current Focus:** v4.5 — Phase 37.2 nearly complete (11/12 plans done, 24/26 must-haves verified, 2 screenshots pending)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 11/12 plans done)
+**Current focus:** v4.5 — Phase 37.2 nearly complete (11/12 plans done, 24/26 must-haves verified, 2 screenshots pending)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 11 of 12 |
-| Status | In progress — Gap closure plan 11 done, plan 12 remaining |
-| Last activity | 2026-06-19 — Completed 37.2-11-PLAN.md (GRO writer comment + citations + shortcut clarification) |
+| Plan | 12 of 12 (Task 1 done, screenshots checkpoint pending) |
+| Status | 24/26 must-haves verified — 2 GUI screenshots pending human action |
+| Last activity | 2026-06-19 — Gap closure 05-11 complete, 24/26 must-haves verified |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -65,6 +65,15 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Phase 37.2: CLI doc accuracy (ranges, validation rules, extension docs, pipeline comparison)
 - ✓ Phase 37.2: OPLS-AA incompatibility warning in gro-itp-guide
 - ✓ Phase 37.2: GUI doc accuracy (button label, screenshot paths)
+- ✓ Phase 37.2: Solute PBC wrapping in write_solute_gro_file (37.2-05)
+- ✓ Phase 37.2: CLI doc accuracy (caveat, --cli+--gui, --seed) + test WATER_VOLUME_NM3 (37.2-06)
+- ✓ Phase 37.2: GUI doc accuracy (TIP4P-ICE citation, Ice V/VII, ion tooltip, polymorphs, ranking) (37.2-07)
+- ✓ Phase 37.2: Vectorized inserter loops (numpy mask, batch cKDTree, incremental tree) (37.2-08)
+- ✓ Phase 37.2: Vectorized PBC wrapping loops (wrap_molecules_into_box, hydrate_generator) (37.2-09)
+- ✓ Phase 37.2: Error handling + security (narrowed except, path traversal, CSV limit) (37.2-10)
+- ✓ Phase 37.2: Code clarity (PERF-06 comment, WATER_VOLUME_NM3 citation, Ctrl+S/M) (37.2-11)
+- ✓ Phase 37.2: PyInstaller targeted imports (37.2-12 Task 1)
+- ⏳ Phase 37.2: 2 GUI screenshots pending (37.2-12 Task 2)
 - ✓ Tab index constants and MoleculetypeRegistry
 - ✓ ITP parser and molecule validator
 - ✓ TabIndex refactoring complete

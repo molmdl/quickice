@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37.2 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, 37.2 inserted)
-**Total Plans:** 101 (completed: 92/101)
+**Total Plans:** 101 (completed: 99/101)
 
 ## Overview
 
@@ -551,14 +551,14 @@ Plans:
 - [x] 37.2-02-PLAN.md — Fix overlap tree gap: custom molecule atoms invisible to solute/custom inserters
 - [x] 37.2-03-PLAN.md — Fix CLI documentation accuracy (concentration ranges, validation rules, extension docs, OPLS warning, pipeline comparison, box range)
 - [x] 37.2-04-PLAN.md — Fix GUI documentation accuracy (button label mismatch, screenshot paths)
-- [ ] 37.2-05-PLAN.md — GAP: Fix solute position PBC wrapping in write_solute_gro_file + regression test
-- [ ] 37.2-06-PLAN.md — GAP: Fix CLI doc accuracy (CLI caveat, --cli+--gui, --seed) + test hardening (0.0299→WATER_VOLUME_NM3)
-- [ ] 37.2-07-PLAN.md — GAP: Fix GUI doc accuracy (citations, ion tooltip, README polymorphs, ranking wording)
-- [ ] 37.2-08-PLAN.md — Vectorize inserter Python loops (MW mask, batch cKDTree, incremental tree)
-- [ ] 37.2-09-PLAN.md — Vectorize PBC wrapping loops (gromacs_writer + hydrate_generator)
-- [ ] 37.2-10-PLAN.md — Error handling + security hardening (narrow except, path traversal, CSV limit)
-- [ ] 37.2-11-PLAN.md — Remaining small fixes (I/O comment, WATER_VOLUME_NM3 citation, Ctrl+S/M)
-- [ ] 37.2-12-PLAN.md — PyInstaller targeted imports + missing screenshots checkpoint
+- [x] 37.2-05-PLAN.md — GAP: Fix solute position PBC wrapping in write_solute_gro_file + regression test
+- [x] 37.2-06-PLAN.md — GAP: Fix CLI doc accuracy (CLI caveat, --cli+--gui, --seed) + test hardening (0.0299→WATER_VOLUME_NM3)
+- [x] 37.2-07-PLAN.md — GAP: Fix GUI doc accuracy (citations, ion tooltip, README polymorphs, ranking wording)
+- [x] 37.2-08-PLAN.md — Vectorize inserter Python loops (MW mask, batch cKDTree, incremental tree)
+- [x] 37.2-09-PLAN.md — Vectorize PBC wrapping loops (gromacs_writer + hydrate_generator)
+- [x] 37.2-10-PLAN.md — Error handling + security hardening (narrow except, path traversal, CSV limit)
+- [x] 37.2-11-PLAN.md — Remaining small fixes (I/O comment, WATER_VOLUME_NM3 citation, Ctrl+S/M)
+- [ ] 37.2-12-PLAN.md — PyInstaller targeted imports + missing screenshots checkpoint (Task 1 done, screenshots pending)
 
 **Details:**
 
@@ -665,7 +665,7 @@ Plus 16 LOW issues and 4 informational packaging findings.
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
-| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ◆ Gap closure | 4/12 | 12 |
+| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ◆ Screenshots pending | 11/12 | 12 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |

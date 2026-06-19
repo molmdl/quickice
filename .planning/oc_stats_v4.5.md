@@ -1,23 +1,23 @@
 Actual cost is lower with as we use the synthetic coding plan instead of API pricing
-Large dataset detected (1658 sessions). This may take a while...
+Large dataset detected (1665 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          1,658 │
-│Messages                                         48,880 │
-│Days                                                 85 │
+│Sessions                                          1,665 │
+│Messages                                         49,147 │
+│Days                                                 86 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                     $1738.03 │
-│Avg Cost/Day                                     $20.45 │
+│Total Cost                                     $1762.30 │
+│Avg Cost/Day                                     $20.49 │
 │Avg Tokens/Session                                 1.6M │
 │Median Tokens/Session                              1.0M │
-│Input                                            337.6M │
+│Input                                            338.3M │
 │Output                                            18.5M │
-│Cache Read                                      2241.9M │
+│Cache Read                                      2265.3M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -33,12 +33,12 @@ Large dataset detected (1658 sessions). This may take a while...
 │  Cost                                        $315.4364 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5.1                           │
-│  Messages                                       11,750 │
-│  Input Tokens                                    38.9M │
+│  Messages                                       12,009 │
+│  Input Tokens                                    39.6M │
 │  Output Tokens                                    5.1M │
-│  Cache Read                                     755.4M │
+│  Cache Read                                     778.8M │
 │  Cache Write                                         0 │
-│  Cost                                        $809.4639 │
+│  Cost                                        $833.7303 │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5                             │
 │  Messages                                       10,133 │
@@ -109,15 +109,15 @@ Large dataset detected (1658 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 26931 (41.6%)  │
-│ read               █████████████        18591 (28.7%)  │
-│ edit               █████                7551 (11.7%)   │
-│ grep               ██                   3656 ( 5.7%)   │
-│ glob               █                    2562 ( 4.0%)   │
-│ write              █                    2150 ( 3.3%)   │
-│ task               █                    1396 ( 2.2%)   │
+│ bash               ████████████████████ 27147 (41.7%)  │
+│ read               █████████████        18647 (28.7%)  │
+│ edit               █████                7622 (11.7%)   │
+│ grep               ██                   3659 ( 5.6%)   │
+│ glob               █                    2562 ( 3.9%)   │
+│ write              █                    2155 ( 3.3%)   │
+│ task               █                    1403 ( 2.2%)   │
 │ webfetch           █                    789 ( 1.2%)    │
-│ question           █                    744 ( 1.2%)    │
+│ question           █                    744 ( 1.1%)    │
 │ todowrite          █                    171 ( 0.3%)    │
 │ invalid            █                    112 ( 0.2%)    │
 │ websearch          █                     15 ( 0.0%)    │
