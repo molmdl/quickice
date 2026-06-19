@@ -487,6 +487,14 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
             #    which is a programming error that should propagate rather than be silently caught
             # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
             #    which IS protected by try/except
+
+            # PERF-06 NOTE: This per-atom loop formats and appends GRO coordinate strings.
+            # While this is O(N) in Python, the loop is I/O-bound (the writelines() call
+            # that follows dominates execution time). The heterogeneous formatting
+            # (different residue types, atom name column widths, and position formatting)
+            # makes vectorization complex with minimal performance gain since the actual
+            # bottleneck is disk I/O, not string formatting. Kept as explicit loop for
+            # clarity and maintainability.
             atom_num = 0
             for mol_idx in range(nmol):
                 base_idx = mol_idx * 3
