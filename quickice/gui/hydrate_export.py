@@ -157,7 +157,8 @@ class HydrateGROMACSExporter:
                 structure.cell,
                 str(path),
                 f"Hydrate structure ({lattice} + {guest}) exported by QuickIce",
-                atom_names=structure.atom_names
+                atom_names=structure.atom_names,
+                registry=registry,
              )
 
             # Build itp_files mapping for .top file

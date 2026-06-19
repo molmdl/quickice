@@ -1114,7 +1114,8 @@ def write_multi_molecule_gro_file(
     cell: np.ndarray,
     filepath: str,
     title: str = "Multi-molecule system exported by QuickIce",
-    atom_names: list[str] | None = None
+    atom_names: list[str] | None = None,
+    registry: 'MoleculetypeRegistry | None' = None,
 ) -> None:
     """Write multi-molecule system to GROMACS .gro format.
     
@@ -1128,6 +1129,9 @@ def write_multi_molecule_gro_file(
         title: Title line for .gro file
         atom_names: Optional list of atom names. If provided, uses actual names.
                    If None, uses generic "XX" placeholder.
+        registry: Optional MoleculetypeRegistry for context-specific residue naming.
+                  When provided, uses registry to determine residue names for guest
+                  molecules (e.g. "CH4_H" for hydrate guests vs "CH4" for default).
     
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
@@ -1156,12 +1160,27 @@ def write_multi_molecule_gro_file(
         lines = []
         atom_num = 0
         for res_idx, mol in enumerate(molecule_index):
-            # Get residue name from itp file for guest molecules
-            if mol.mol_type in ["ch4", "thf", "co2", "h2"]:
-                res_name = get_guest_residue_name(mol.mol_type)
-            else:
-                gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
-                res_name = gromacs_info["res_name"]
+            # Get residue name — check registry first for context-specific naming
+            # (e.g. "CH4_H" for hydrate guests, "CH4_L" for liquid solutes),
+            # then fall back to standard naming
+            res_name = None
+            if registry and mol.mol_type in ["ch4", "thf", "co2", "h2"]:
+                # Check hydrate guest registration (key format: "hydrate_CH4")
+                hydrate_key = f"hydrate_{mol.mol_type.upper()}"
+                if hydrate_key in registry._registered:
+                    res_name = registry.get_gromacs_name(hydrate_key)
+                # Check liquid solute registration (key format: "liquid_CH4")
+                else:
+                    liquid_key = f"liquid_{mol.mol_type.upper()}"
+                    if liquid_key in registry._registered:
+                        res_name = registry.get_gromacs_name(liquid_key)
+            
+            if res_name is None:
+                if mol.mol_type in ["ch4", "thf", "co2", "h2"]:
+                    res_name = get_guest_residue_name(mol.mol_type)
+                else:
+                    gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
+                    res_name = gromacs_info["res_name"]
             
             # Residue number wraps at 100000
             res_num = (res_idx + 1) % 100000

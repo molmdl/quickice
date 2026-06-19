@@ -162,3 +162,46 @@ class TestHydrateGROMACSExporter:
             f"Expected 'SOL' with count {water_count} in [ molecules ] section. "
             f"Content:\n{content}"
         )
+
+    def test_gro_file_guest_residue_name_has_h_suffix(
+        self, simple_hydrate_structure, simple_hydrate_config, mock_hydrate_save_dialog
+    ):
+        """.gro file uses CH4_H residue name for hydrate cage guests.
+
+        The .gro file residue names MUST match the .top [ molecules ] section
+        and the guest .itp [ moleculetype ] name. For hydrate guests, this
+        means the _H suffix (e.g. "CH4_H", not "CH4").
+
+        This is critical because GROMACS matches .gro residue names against
+        .top [ molecules ] entries — a mismatch causes a fatal error.
+        """
+        save_path, dialog_p, mb_p = mock_hydrate_save_dialog("hydrate_test.gro")
+        exporter = HydrateGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_hydrate(
+                simple_hydrate_structure, simple_hydrate_config
+            )
+
+        assert result is True
+        gro_path = Path(save_path)
+        content = gro_path.read_text()
+
+        # The .gro must have CH4_H as residue name for hydrate cage guests
+        # (NOT plain "CH4" which would mismatch the .top [ molecules ] entry)
+        assert "CH4_H" in content, (
+            f"Expected 'CH4_H' residue name in .gro file for hydrate guest. "
+            f"Content:\n{content}"
+        )
+
+        # Verify the plain "CH4" residue name (without _H) does NOT appear
+        # in residue name columns (5-char field at positions 5-10 in each line)
+        # Check that no line has "  CH4" as residue name (5-char padded)
+        for line in content.splitlines()[2:]:  # Skip title and atom count
+            if line and not line.startswith("#") and len(line) >= 10:
+                res_name_field = line[5:10].strip()
+                if res_name_field == "CH4":
+                    pytest.fail(
+                        f"Found plain 'CH4' residue name in .gro file (should be 'CH4_H'). "
+                        f"Line: {line!r}"
+                    )
