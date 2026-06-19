@@ -240,6 +240,8 @@ class IonInserter:
                     na_count=0,
                     cl_count=0,
                     report=f"Ion insertion: no water molecules found in structure\n",
+                    guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+                    guest_atom_count=getattr(structure, 'guest_atom_count', 0),
                     solute_type=solute_type,
                     solute_positions=solute_positions,
                     solute_atom_names=solute_atom_names,
