@@ -576,7 +576,7 @@ The Custom Molecule tab supports two workflow paths:
 8. (Optional) Click "Validate & Preview" to check placement
 9. Click "Generate Custom Molecules"
 10. View molecule in 3D viewer (distinct colors: purple, cyan, yellow)
-11. Export for GROMACS (Ctrl+S)
+11. Export for GROMACS (Ctrl+M or Ctrl+S with Tab 3 active)
 
 ### 3D Viewer
 
@@ -587,7 +587,9 @@ The custom molecule viewer displays:
 
 ### GROMACS Export
 
-**File → Export Custom Molecules for GROMACS (Ctrl+S)**
+**File → Export Custom Molecules for GROMACS (Ctrl+M)**
+
+*(Both Ctrl+S and Ctrl+M export from Tab 3 — Ctrl+S is the unified shortcut that exports from the currently active tab, Ctrl+M is the Tab 3-specific shortcut. They produce identical output when Tab 3 is active.)*
 
 Exported files:
 - `interface_with_custom.gro` — Coordinates with custom molecules
