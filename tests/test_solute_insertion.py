@@ -13,7 +13,9 @@ import pytest
 import numpy as np
 from pathlib import Path
 
-from quickice.structure_generation.types import SoluteConfig, SoluteStructure, InterfaceStructure
+from quickice.structure_generation.types import (
+    SoluteConfig, SoluteStructure, InterfaceStructure, CustomMoleculeStructure
+)
 from quickice.structure_generation.solute_inserter import SoluteInserter
 from quickice.gui.solute_renderer import create_solute_actor
 
@@ -263,6 +265,78 @@ class TestSolutePanel:
         # Check preview updated
         preview_text = panel.preview_label.text()
         assert "molecules" in preview_text.lower()
+
+
+    def test_ice_nmolecules_preserved_from_custom_molecule_structure(self):
+        """Regression test: ice_nmolecules must be preserved when solute inserter
+        receives a CustomMoleculeStructure (which lacks ice_nmolecules field).
+
+        Bug: getattr(structure, 'ice_nmolecules', 0) returned 0 for
+        CustomMoleculeStructure because it doesn't have the field.
+        Fix: _resolve_ice_nmolecules falls back to structure.interface_structure.
+        """
+        n_ice = 20
+        n_water = 200
+        n_custom = 3
+        ice_atom_count = n_ice * 4  # TIP4P-ICE: 4 atoms per molecule
+        water_atom_count = n_water * 4
+        custom_atom_count = n_custom * 9  # e.g. ethanol-like: 9 atoms per molecule
+
+        total_atoms = ice_atom_count + water_atom_count + custom_atom_count
+        atom_names = (["OW", "HW1", "HW2", "MW"] * (n_ice + n_water) +
+                     ["C", "H", "H", "H", "O", "H", "C", "H", "H"] * n_custom)
+        np.random.seed(42)
+        positions = np.random.uniform(0, 10, (total_atoms, 3))
+
+        interface = InterfaceStructure(
+            positions=positions,
+            atom_names=atom_names,
+            cell=np.diag([10.0, 10.0, 10.0]),
+            ice_atom_count=ice_atom_count,
+            water_atom_count=water_atom_count,
+            ice_nmolecules=n_ice,
+            water_nmolecules=n_water,
+            mode='slab',
+            report='test',
+        )
+
+        # Create a CustomMoleculeStructure (no ice_nmolecules field)
+        # Mimics the real workflow: ice → slab → custom molecules → solute
+        custom = CustomMoleculeStructure(
+            positions=positions,
+            atom_names=atom_names,
+            cell=interface.cell,
+            molecule_index=[],
+            ice_atom_count=ice_atom_count,
+            water_atom_count=water_atom_count,
+            custom_molecule_atom_count=custom_atom_count,
+            guest_atom_count=0,
+            guest_nmolecules=0,
+            custom_molecule_count=n_custom,
+            interface_structure=interface,
+        )
+
+        # Verify CustomMoleculeStructure indeed lacks ice_nmolecules
+        assert not hasattr(custom, 'ice_nmolecules'), \
+            "CustomMoleculeStructure should not have ice_nmolecules field"
+
+        # Insert solutes via CustomMoleculeStructure
+        config = SoluteConfig(
+            concentration_molar=0.5,
+            solute_type='CH4',
+            min_separation=0.3,
+            max_attempts=1000,
+        )
+        inserter = SoluteInserter(config=config, seed=42)
+        result = inserter.insert_solutes(custom, config)
+
+        # The bug: interface.ice_nmolecules would be 0
+        # After fix: it should match the original interface
+        modified_interface = result.interface_structure
+        assert modified_interface.ice_nmolecules == n_ice, (
+            f"ice_nmolecules should be {n_ice} (from original interface), "
+            f"got {modified_interface.ice_nmolecules}"
+        )
 
 
 if __name__ == "__main__":

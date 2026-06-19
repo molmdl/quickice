@@ -60,6 +60,35 @@ class SoluteInserter:
         self.registry = MoleculetypeRegistry()
     
     @staticmethod
+    def _resolve_ice_nmolecules(structure) -> int:
+        """Resolve ice_nmolecules from a structure with fallback to interface_structure.
+
+        When the input structure is a CustomMoleculeStructure (which lacks
+        ice_nmolecules), getattr returns 0 even though ice is present.
+        This helper falls back to the structure's interface_structure attribute
+        to recover the correct ice_nmolecules value.
+
+        Args:
+            structure: Any structure that may have ice_nmolecules and/or
+                       interface_structure attributes.
+
+        Returns:
+            Number of ice molecules, or 0 if none found.
+        """
+        ice_nmolecules = getattr(structure, 'ice_nmolecules', None)
+        if ice_nmolecules is not None and ice_nmolecules > 0:
+            return ice_nmolecules
+
+        # Fallback: check interface_structure (CustomMoleculeStructure pattern)
+        interface = getattr(structure, 'interface_structure', None)
+        if interface is not None:
+            ice_nmolecules = getattr(interface, 'ice_nmolecules', 0)
+            if ice_nmolecules > 0:
+                return ice_nmolecules
+
+        return 0
+
+    @staticmethod
     def _resolve_guest_nmolecules(structure) -> int:
         """Resolve guest_nmolecules from a structure with fallback to interface_structure.
 
@@ -495,7 +524,7 @@ class SoluteInserter:
                 cell=structure.cell,
                 ice_atom_count=structure.ice_atom_count,
                 water_atom_count=water_atom_count,
-                ice_nmolecules=getattr(structure, 'ice_nmolecules', 0),
+                ice_nmolecules=self._resolve_ice_nmolecules(structure),
                 water_nmolecules=n_water_molecules,
                 mode=mode or 'slab',
                 report=report or '',
@@ -649,7 +678,7 @@ class SoluteInserter:
             cell=structure.cell,
             ice_atom_count=structure.ice_atom_count,
             water_atom_count=len(kept_water_atom_names),
-            ice_nmolecules=getattr(structure, 'ice_nmolecules', 0),
+            ice_nmolecules=self._resolve_ice_nmolecules(structure),
             water_nmolecules=len(water_molecules_to_keep),
             mode=mode or 'slab',
             report=report or '',

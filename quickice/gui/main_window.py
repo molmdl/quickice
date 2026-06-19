@@ -1746,8 +1746,10 @@ class MainWindow(QMainWindow):
         if success:
             # Count water molecules from interface
             interface = solute_structure.interface_structure
-            water_count = interface.water_nmolecules if interface else 0
-            ice_count = interface.ice_nmolecules if interface else 0
+            # Use getattr for robustness: when source is CustomMoleculeStructure
+            # (n_molecules==0 path), interface may lack ice_nmolecules/water_nmolecules
+            water_count = getattr(interface, 'water_nmolecules', 0) if interface else 0
+            ice_count = getattr(interface, 'ice_nmolecules', 0) if interface else 0
             
             QMessageBox.information(
                 self,

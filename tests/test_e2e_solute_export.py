@@ -267,8 +267,9 @@ class TestSoluteFromCustom:
 
     NOTE: When the source is a CustomMoleculeStructure, the SoluteInserter
     modifies the interface and molecule_index is populated (from CustomMoleculeInserter).
-    However, ice_nmolecules/water_nmolecules may be unreliable in this case.
-    We compute expected counts from molecule_index when available.
+    ice_nmolecules is now correctly preserved via _resolve_ice_nmolecules fallback
+    to the original InterfaceStructure. We compute expected counts from molecule_index
+    when available for extra validation.
     """
 
     @pytest.fixture(autouse=True)
