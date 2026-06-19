@@ -782,6 +782,8 @@ class SoluteInserter:
                 molecule_indices=[],
                 registry=self.registry,
                 interface_structure=structure,
+                ice_nmolecules=self._resolve_ice_nmolecules(structure),
+                water_nmolecules=water_nmolecules,
                 custom_molecule_count=custom_molecule_count,
                 custom_molecule_atom_count=custom_molecule_atom_count,
                 custom_molecule_positions=custom_molecule_positions,
@@ -790,8 +792,6 @@ class SoluteInserter:
                 custom_gro_path=custom_gro_path,
                 custom_itp_path=custom_itp_path,
             )
-        
-        # Load solute template
         template_positions, template_atom_names, template_atom_types = \
             self._load_solute_template(config.solute_type)
         
@@ -829,6 +829,8 @@ class SoluteInserter:
                 molecule_indices=[],
                 registry=self.registry,
                 interface_structure=structure,
+                ice_nmolecules=self._resolve_ice_nmolecules(structure),
+                water_nmolecules=water_nmolecules,
                 custom_molecule_count=custom_molecule_count,
                 custom_molecule_atom_count=custom_molecule_atom_count,
                 custom_molecule_positions=custom_molecule_positions,
@@ -957,6 +959,8 @@ class SoluteInserter:
             molecule_indices=molecule_indices,
             registry=self.registry,
             interface_structure=modified_interface,
+            ice_nmolecules=modified_interface.ice_nmolecules,
+            water_nmolecules=modified_interface.water_nmolecules,
             custom_molecule_count=custom_molecule_count,
             custom_molecule_atom_count=custom_molecule_atom_count,
             custom_molecule_positions=custom_molecule_positions,

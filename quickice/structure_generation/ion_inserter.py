@@ -90,6 +90,25 @@ class IonInserter:
         guest_atom_count = getattr(structure, 'guest_atom_count', 0)
         water_atom_count = getattr(structure, 'water_atom_count', 0)
 
+        # Fallback: compute molecule counts from atom counts when fields are missing
+        # (CustomMoleculeStructure historically lacked ice_nmolecules/water_nmolecules)
+        if ice_mols == 0 and ice_atom_count > 0:
+            # Try interface_structure fallback first (CustomMoleculeStructure pattern)
+            interface = getattr(structure, 'interface_structure', None)
+            if interface is not None:
+                ice_mols = getattr(interface, 'ice_nmolecules', 0)
+            if ice_mols == 0:
+                # Compute from atom count (TIP4P: 4 atoms per molecule, GenIce: 3 atoms)
+                # Use ice_atom_count / first ice molecule count from molecule_index if available
+                ice_mols = ice_atom_count // WATER_ATOMS_PER_MOLECULE  # Conservative estimate
+        if water_mols == 0 and water_atom_count > 0:
+            # Try interface_structure fallback first
+            interface = getattr(structure, 'interface_structure', None)
+            if interface is not None:
+                water_mols = getattr(interface, 'water_nmolecules', 0)
+            if water_mols == 0:
+                water_mols = water_atom_count // WATER_ATOMS_PER_MOLECULE
+
         if ice_mols == 0 and water_mols == 0 and guest_mols == 0:
             return None
 

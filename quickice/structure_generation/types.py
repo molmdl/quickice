@@ -502,6 +502,8 @@ class SoluteStructure:
         molecule_indices: List of (start, end) tuples for each molecule in positions array
         registry: MoleculetypeRegistry with CH4_L/THF_L registered
         interface_structure: Original InterfaceStructure (ice + water) that solutes were inserted into
+        ice_nmolecules: Number of ice molecules (from source interface structure)
+        water_nmolecules: Number of water molecules (from source interface structure, after overlap removal)
         custom_molecule_count: Number of custom molecules (from input interface)
         custom_molecule_atom_count: Number of custom molecule atoms
         custom_molecule_positions: (N_custom_atoms, 3) custom molecule atom positions in nm
@@ -518,6 +520,9 @@ class SoluteStructure:
     molecule_indices: list[tuple[int, int]]
     registry: Any  # MoleculetypeRegistry (avoid circular import)
     interface_structure: Any = None  # InterfaceStructure (avoid circular import)
+    # Ice/water molecule counts (from source interface structure)
+    ice_nmolecules: int = 0
+    water_nmolecules: int = 0
     # Custom molecule attributes (populated when source had custom molecules)
     custom_molecule_count: int = 0
     custom_molecule_atom_count: int = 0
@@ -602,6 +607,8 @@ class CustomMoleculeStructure:
         custom_molecule_atom_count: Number of custom molecule atoms
         guest_atom_count: Number of guest atoms (0 for pure interface)
         guest_nmolecules: Number of guest molecules (0 for pure interface)
+        ice_nmolecules: Number of ice molecules (from source interface structure)
+        water_nmolecules: Number of water molecules (from source interface structure, after overlap removal)
         config: Original CustomMoleculeConfig
         moleculetype_name: GROMACS moleculetype name (e.g., "CUSTOM_MOL_1")
         gro_path: Original .gro file path
@@ -619,6 +626,8 @@ class CustomMoleculeStructure:
     custom_molecule_atom_count: int
     guest_atom_count: int = 0
     guest_nmolecules: int = 0
+    ice_nmolecules: int = 0
+    water_nmolecules: int = 0
     config: CustomMoleculeConfig | None = None
     moleculetype_name: str = ""
     gro_path: Path | None = None

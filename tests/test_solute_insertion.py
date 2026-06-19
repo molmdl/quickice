@@ -269,11 +269,13 @@ class TestSolutePanel:
 
     def test_ice_nmolecules_preserved_from_custom_molecule_structure(self):
         """Regression test: ice_nmolecules must be preserved when solute inserter
-        receives a CustomMoleculeStructure (which lacks ice_nmolecules field).
+        receives a CustomMoleculeStructure.
 
-        Bug: getattr(structure, 'ice_nmolecules', 0) returned 0 for
-        CustomMoleculeStructure because it doesn't have the field.
-        Fix: _resolve_ice_nmolecules falls back to structure.interface_structure.
+        Bug (now fixed): CustomMoleculeStructure lacked ice_nmolecules/water_nmolecules
+        fields, so getattr(structure, 'ice_nmolecules', 0) returned 0.
+        Fix: CustomMoleculeStructure now has ice_nmolecules and water_nmolecules fields
+        populated from the source interface structure, and SoluteInserter's
+        _resolve_ice_nmolecules falls back to structure.interface_structure.
         """
         n_ice = 20
         n_water = 200
@@ -300,7 +302,7 @@ class TestSolutePanel:
             report='test',
         )
 
-        # Create a CustomMoleculeStructure (no ice_nmolecules field)
+        # Create a CustomMoleculeStructure with ice_nmolecules/water_nmolecules populated
         # Mimics the real workflow: ice → slab → custom molecules → solute
         custom = CustomMoleculeStructure(
             positions=positions,
@@ -312,13 +314,18 @@ class TestSolutePanel:
             custom_molecule_atom_count=custom_atom_count,
             guest_atom_count=0,
             guest_nmolecules=0,
+            ice_nmolecules=n_ice,
+            water_nmolecules=n_water,
             custom_molecule_count=n_custom,
             interface_structure=interface,
         )
 
-        # Verify CustomMoleculeStructure indeed lacks ice_nmolecules
-        assert not hasattr(custom, 'ice_nmolecules'), \
-            "CustomMoleculeStructure should not have ice_nmolecules field"
+        # Verify CustomMoleculeStructure now HAS ice_nmolecules (root fix)
+        assert hasattr(custom, 'ice_nmolecules'), \
+            "CustomMoleculeStructure should now have ice_nmolecules field"
+        assert custom.ice_nmolecules == n_ice, (
+            f"ice_nmolecules should be {n_ice}, got {custom.ice_nmolecules}"
+        )
 
         # Insert solutes via CustomMoleculeStructure
         config = SoluteConfig(
@@ -330,8 +337,7 @@ class TestSolutePanel:
         inserter = SoluteInserter(config=config, seed=42)
         result = inserter.insert_solutes(custom, config)
 
-        # The bug: interface.ice_nmolecules would be 0
-        # After fix: it should match the original interface
+        # Verify ice_nmolecules is preserved through the solute insertion
         modified_interface = result.interface_structure
         assert modified_interface.ice_nmolecules == n_ice, (
             f"ice_nmolecules should be {n_ice} (from original interface), "
