@@ -37,7 +37,7 @@ The main window is divided into six tabs:
 
 ![QuickIce GUI](images/quickice-v4-gui.png)
 *QuickIce GUI v4.5 — Six-tab workflow: Ice Generation, Hydrate, Interface, Custom Molecule, Solute, and Ion tabs*
-**Note:** v4.5 adds Custom Molecule (Tab 3) and Solute Insertion (Tab 4), moving Ion to Tab 5. Screenshot update pending.
+**Note:** v4.5 adds Custom Molecule (Tab 3) and Solute Insertion (Tab 4), moving Ion to Tab 5.
 
 1. Enter temperature (K), pressure (MPa), and molecule count
 2. Click on the phase diagram OR type values directly
@@ -423,12 +423,9 @@ Generate an interface structure in Tab 2 first. Custom molecule insertion requir
 
 ### Custom Molecule Panel Interface
 
-<!-- TODO: Capture custom-molecule-panel.png screenshot -->
 ![Custom Molecule Panel](images/custom-molecule-panel.png)
 
 *Screenshot of Custom Molecule Upload tab showing file upload controls and 3D viewer*
-
-**Note:** Screenshot update pending for v4.5.
 
 ### GRO File Requirements
 
@@ -621,12 +618,9 @@ Generate an interface structure in Tab 2 first. Solute insertion requires:
 
 ### Solute Panel Interface
 
-<!-- TODO: Capture solute-panel.png screenshot -->
 ![Solute Panel](images/solute-panel.png)
 
 *Screenshot of Solute Insertion tab showing configuration controls and 3D viewer*
-
-**Note:** Screenshot update pending for v4.5.
 
 ### Solute Types
 
@@ -745,8 +739,6 @@ This enables the full **Custom → Solute → Ion** workflow chain. When you sel
 ![Ion Panel](images/tab4-ion-panel.png)
 
 *Screenshot of Ion Insertion tab showing configuration controls and 3D viewer*
-
-**Note:** Screenshot update pending for v4.5.
 
 ### Concentration Input
 
