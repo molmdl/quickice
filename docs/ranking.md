@@ -8,7 +8,7 @@ QuickIce generates multiple candidate structures for given thermodynamic conditi
 
 1. **Energy Score** - Based on O-O distance deviation from ideal
 2. **Density Score** - Comparison to expected phase density
-3. **Diversity Score** - Rewards structural uniqueness via O-O distance fingerprint
+3. **Diversity Score** - Penalizes structural similarity via O-O distance fingerprint
 
 These scores are combined into a single ranking score, with lower values indicating better candidates.
 

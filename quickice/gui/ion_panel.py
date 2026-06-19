@@ -180,7 +180,10 @@ class IonPanel(QWidget):
         conc_row.addWidget(HelpIcon(
             "Target NaCl concentration in mol/L (M).\n"
             "Typical seawater: ~0.6 M.\n"
-            "For drinking water: <0.05 M."
+            "For drinking water: <0.05 M.\n"
+            "\n"
+            "Ion model: Madrid2019 (Na⁺/Cl⁻ charges ±0.85e).\n"
+            "Ref: Zeron et al., J. Chem. Phys. 151, 134504 (2019)."
         ))
         conc_row.addStretch()
 

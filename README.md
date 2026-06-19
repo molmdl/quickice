@@ -13,7 +13,7 @@ A portable GUI application for generating ice structures, ice-water interfaces, 
 
 QuickIce v4.5 provides a 6-tab GUI workflow for generating molecular dynamics starting structures:
 
-- **Ice Generation** — 12 ice polymorphs from thermodynamic conditions
+- **Ice Generation** — 11 ice polymorphs from thermodynamic conditions
 - **Hydrate Generation** — Clathrate structures (sI, sII, sH) with guest molecules
 - **Interface Construction** — Ice-water boundaries for surface studies
 - **Custom Molecule Upload** — User-provided molecules in liquid phase
@@ -23,7 +23,7 @@ QuickIce v4.5 provides a 6-tab GUI workflow for generating molecular dynamics st
 All exports are GROMACS-ready with TIP4P-ICE water model and bundled force field parameters.
 
 **Key Features:**
-- Interactive phase diagram with 12 ice polymorphs
+- Interactive phase diagram with 11 ice polymorphs
 - Real-time 3D molecular visualization (VTK)
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, GROMACS .gro/.top/.itp, PNG, SVG)
@@ -113,7 +113,7 @@ QuickIce uses `python -m quickice` as the unified entry point:
 
 Generate ice crystal structures from thermodynamic conditions:
 
-- **12 ice polymorphs** — Ih, Ic, II, III, V, VI, VII, VIII, IX, XV, X
+- **11 ice polymorphs** — Ih, Ic, II, III, V, VI, VII, VIII, IX, XV, X
 - **Interactive phase diagram** — Click to select T/P conditions
 - **10 ranked candidates** — Energy-based ranking with diversity
 - **Real-time 3D viewer** — Ball-and-stick, stick, VDW styles
@@ -239,7 +239,7 @@ QuickIce distinguishes between phase detection and structure generation capabili
 
 ### Phase Detection (12 phases)
 
-The interactive phase diagram can identify 12 ice polymorphs based on temperature and pressure conditions:
+The interactive phase diagram can identify 11 ice polymorphs based on temperature and pressure conditions:
 
 | Phase | Crystal System | Pressure Range | Temperature Range |
 |-------|----------------|----------------|-------------------|
