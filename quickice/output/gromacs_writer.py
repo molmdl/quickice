@@ -384,7 +384,7 @@ def get_guest_residue_name(guest_type: str) -> str:
             res_name = parse_itp_residue_name(itp_path)
             if res_name:
                 return res_name
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.warning(f"Could not read guest residue name from ITP file: {e}")
     
     FALLBACK_RESIDUE_NAMES = {
@@ -417,7 +417,7 @@ def get_hydrate_guest_residue_name(guest_type: str) -> str:
             res_name = parse_itp_residue_name(itp_path)
             if res_name:
                 return res_name
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.warning(f"Could not read hydrate guest residue name from ITP file: {e}")
     
     FALLBACK_HYDRATE_NAMES = {
@@ -480,6 +480,13 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
             f.write(f"{n_atoms:5d}\n")
 
             lines = []
+            # Note: The lines.append() calls below are NOT wrapped in try/except because:
+            # 1. String formatting of float values cannot fail unless the input array is malformed
+            #    (which would be a programming bug, not a runtime error)
+            # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
+            #    which is a programming error that should propagate rather than be silently caught
+            # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
+            #    which IS protected by try/except
             atom_num = 0
             for mol_idx in range(nmol):
                 base_idx = mol_idx * 3
@@ -703,6 +710,13 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
 
             # Build all atom lines in memory for better I/O performance
             lines = []
+            # Note: The lines.append() calls below are NOT wrapped in try/except because:
+            # 1. String formatting of float values cannot fail unless the input array is malformed
+            #    (which would be a programming bug, not a runtime error)
+            # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
+            #    which is a programming error that should propagate rather than be silently caught
+            # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
+            #    which IS protected by try/except
         
             # Define boundaries (NEW ORDER: ice → water → guests)
             ice_end = iface.ice_atom_count
@@ -1472,6 +1486,13 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
 
             # Build all atom lines in memory for better I/O performance
             lines = []
+            # Note: The lines.append() calls below are NOT wrapped in try/except because:
+            # 1. String formatting of float values cannot fail unless the input array is malformed
+            #    (which would be a programming bug, not a runtime error)
+            # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
+            #    which is a programming error that should propagate rather than be silently caught
+            # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
+            #    which IS protected by try/except
 
             for mol_type, mol in ordered_mols:
                 if mol_type == "sol":
@@ -1748,7 +1769,7 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
             try:
                 itp_info = parse_itp_file(custom_itp_path)
                 custom_mol_name = itp_info.molecule_name
-            except Exception:
+            except (OSError, ValueError):
                 if ion_structure.custom_molecule_moleculetype:
                     custom_mol_name = ion_structure.custom_molecule_moleculetype
         elif ion_structure.custom_molecule_moleculetype:
@@ -1970,6 +1991,13 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
     atom_num = 0
     res_num = 0
     lines = []
+    # Note: The lines.append() calls below are NOT wrapped in try/except because:
+    # 1. String formatting of float values cannot fail unless the input array is malformed
+    #    (which would be a programming bug, not a runtime error)
+    # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
+    #    which is a programming error that should propagate rather than be silently caught
+    # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
+    #    which IS protected by try/except
     
     # Title line
     custom_count = custom_structure.custom_molecule_count
@@ -2171,7 +2199,7 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         try:
             itp_info = parse_itp_file(custom_structure.itp_path)
             custom_mol_name = itp_info.molecule_name
-        except Exception:
+        except (OSError, ValueError):
             pass  # Keep moleculetype_name as fallback
 
     # Determine which GAFF2 atomtype sets are needed for deduplication
@@ -2408,6 +2436,13 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
     atom_num = 0
     res_num = 0
     lines = []
+    # Note: The lines.append() calls below are NOT wrapped in try/except because:
+    # 1. String formatting of float values cannot fail unless the input array is malformed
+    #    (which would be a programming bug, not a runtime error)
+    # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
+    #    which is a programming error that should propagate rather than be silently caught
+    # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
+    #    which IS protected by try/except
 
     try:
         with open(filepath, 'w') as f:
@@ -2679,7 +2714,7 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
             try:
                 itp_info = parse_itp_file(custom_itp_path)
                 custom_mol_name = itp_info.molecule_name
-            except Exception:
+            except (OSError, ValueError):
                 if solute_structure.custom_molecule_moleculetype:
                     custom_mol_name = solute_structure.custom_molecule_moleculetype
         elif solute_structure.custom_molecule_moleculetype:
