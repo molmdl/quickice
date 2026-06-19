@@ -97,39 +97,36 @@ def wrap_molecules_into_box(
         # Get positions for this molecule
         mol_positions = wrapped[start:start + count].copy()
         
-        # Step 1: Unwrap atoms that are split across PBC
-        # Use first atom as reference
+        # Step 1: Unwrap atoms that are split across PBC (vectorized)
         ref_pos = mol_positions[0]
         
-        # For each other atom, check if it's split across PBC
-        for i in range(1, len(mol_positions)):
-            delta = mol_positions[i] - ref_pos
-            
-            # Check each dimension
-            for dim in range(3):
-                box_size = cell[dim, dim]
-                if box_size > 0:
-                    # If distance is > box_size/2, the atom is on the other side of the box
-                    if delta[dim] > box_size / 2:
-                        # Atom is "ahead" - shift it back
-                        mol_positions[i, dim] -= box_size
-                    elif delta[dim] < -box_size / 2:
-                        # Atom is "behind" - shift it forward
-                        mol_positions[i, dim] += box_size
+        # Compute delta from reference for all atoms at once
+        delta = mol_positions[1:] - ref_pos
         
-        # Step 2: Now wrap the whole molecule into [0, box_size)
-        # Use center of molecule as reference
+        # Get box sizes for all 3 dimensions
+        box_sizes = np.array([cell[d, d] for d in range(3)])
+        
+        # Compute unwrapping shifts: vectorized across all atoms and dimensions
+        shifts = np.zeros_like(delta)
+        half_box = box_sizes / 2
+        
+        # Atoms "ahead" (delta > box/2) → shift back
+        mask_ahead = delta > half_box
+        shifts[mask_ahead] -= box_sizes[np.where(mask_ahead)[1] % 3]
+        
+        # Atoms "behind" (delta < -box/2) → shift forward
+        mask_behind = delta < -half_box
+        shifts[mask_behind] += box_sizes[np.where(mask_behind)[1] % 3]
+        
+        # Apply shifts to unwrap all atoms at once
+        mol_positions[1:] += shifts
+        
+        # Step 2: Wrap the whole molecule into [0, box_size) using center
         center = np.mean(mol_positions, axis=0)
         
-        # Calculate shift to wrap center into [0, box_size)
-        shift = np.zeros(3)
-        for dim in range(3):
-            box_size = cell[dim, dim]
-            if box_size > 0:
-                # Wrap center into [0, box_size)
-                center_wrapped = np.mod(center[dim], box_size)
-                # Calculate shift needed
-                shift[dim] = center_wrapped - center[dim]
+        # Vectorized center wrapping
+        center_wrapped = np.mod(center, box_sizes)
+        shift = center_wrapped - center
         
         # Apply shift to all atoms in molecule
         mol_positions += shift
