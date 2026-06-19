@@ -56,7 +56,7 @@ result: [pending]
 
 ### 10. Tab order verification
 expected: Six tabs appear in order: Ice (0), Hydrate (1), Interface (2), Solute (3), Custom (4), Ion (5). Ion tab has moved from position 3 to position 5. All tabs clickable and functional.
-result: [pending]
+result: ✅ passed (2026-06-19, WF1 — 6 tabs verified: Ice(0) Hydrate(1) Interface(2) Custom(3) Solute(4) Ion(5))
 
 ### 11. Invalid file type rejection
 expected: Attempt to upload a non-GRO file (e.g., .txt) via "Upload GRO" button. Error message shows "Invalid file type. Please select a .gro file." Attempt to upload non-ITP file via "Upload ITP" button. Similar error appears.
@@ -69,9 +69,9 @@ result: [pending]
 ## Summary
 
 total: 12
-passed: 0
+passed: 1
 issues: 0
-pending: 12
+pending: 11
 skipped: 0
 
 ## Gaps
