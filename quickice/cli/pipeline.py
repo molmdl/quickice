@@ -613,6 +613,7 @@ class CLIPipeline:
                 interface.custom_molecule_positions = source.positions[offset:]
                 interface.custom_molecule_atom_names = source.atom_names[offset:]
                 interface.custom_molecule_count = source.custom_molecule_count
+                interface.custom_molecule_atom_count = source.custom_molecule_atom_count
                 interface.custom_molecule_moleculetype = source.moleculetype_name
                 interface.custom_gro_path = source.gro_path
                 interface.custom_itp_path = source.itp_path

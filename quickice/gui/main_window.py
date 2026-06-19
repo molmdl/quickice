@@ -899,6 +899,7 @@ class MainWindow(QMainWindow):
             interface.custom_molecule_positions = custom_structure.positions[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
             interface.custom_molecule_atom_names = custom_structure.atom_names[interface.ice_atom_count + interface.water_atom_count + interface.guest_atom_count:]
             interface.custom_molecule_count = custom_structure.custom_molecule_count
+            interface.custom_molecule_atom_count = custom_structure.custom_molecule_atom_count
             interface.custom_molecule_moleculetype = custom_structure.moleculetype_name
             interface.custom_gro_path = custom_structure.gro_path
             interface.custom_itp_path = custom_structure.itp_path

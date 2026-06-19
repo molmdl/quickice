@@ -223,6 +223,14 @@ class IonInserter:
                 solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
                 solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
                 solute_registry = getattr(structure, 'solute_registry', None)
+                # Preserve custom molecule information from input structure
+                custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+                custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+                custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+                custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+                custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+                custom_gro_path = getattr(structure, 'custom_gro_path', None)
+                custom_itp_path = getattr(structure, 'custom_itp_path', None)
                 
                 return IonStructure(
                     positions=structure.positions,
@@ -238,6 +246,13 @@ class IonInserter:
                     solute_n_molecules=solute_n_molecules,
                     solute_molecule_indices=solute_molecule_indices,
                     solute_registry=solute_registry,
+                    custom_molecule_count=custom_molecule_count,
+                    custom_molecule_atom_count=custom_molecule_atom_count,
+                    custom_molecule_positions=custom_molecule_positions,
+                    custom_molecule_atom_names=custom_molecule_atom_names,
+                    custom_molecule_moleculetype=custom_molecule_moleculetype,
+                    custom_gro_path=custom_gro_path,
+                    custom_itp_path=custom_itp_path,
                 )
             structure.molecule_index = mol_index
 
@@ -250,6 +265,14 @@ class IonInserter:
             solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
             solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
             solute_registry = getattr(structure, 'solute_registry', None)
+            # Preserve custom molecule information from input structure
+            custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+            custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+            custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+            custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+            custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+            custom_gro_path = getattr(structure, 'custom_gro_path', None)
+            custom_itp_path = getattr(structure, 'custom_itp_path', None)
             
             return IonStructure(
                 positions=structure.positions,
@@ -259,12 +282,21 @@ class IonInserter:
                 na_count=0,
                 cl_count=0,
                 report=f"Ion insertion: requested 0 ion pairs (concentration too low or volume too small)\n",
+                guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+                guest_atom_count=getattr(structure, 'guest_atom_count', 0),
                 solute_type=solute_type,
                 solute_positions=solute_positions,
                 solute_atom_names=solute_atom_names,
                 solute_n_molecules=solute_n_molecules,
                 solute_molecule_indices=solute_molecule_indices,
                 solute_registry=solute_registry,
+                custom_molecule_count=custom_molecule_count,
+                custom_molecule_atom_count=custom_molecule_atom_count,
+                custom_molecule_positions=custom_molecule_positions,
+                custom_molecule_atom_names=custom_molecule_atom_names,
+                custom_molecule_moleculetype=custom_molecule_moleculetype,
+                custom_gro_path=custom_gro_path,
+                custom_itp_path=custom_itp_path,
             )
 
         # Extract water molecules from molecule_index
@@ -285,6 +317,14 @@ class IonInserter:
                 solute_n_molecules = getattr(structure, 'solute_n_molecules', 0)
                 solute_molecule_indices = getattr(structure, 'solute_molecule_indices', None)
                 solute_registry = getattr(structure, 'solute_registry', None)
+                # Preserve custom molecule information from input structure
+                custom_molecule_count = getattr(structure, 'custom_molecule_count', 0)
+                custom_molecule_atom_count = getattr(structure, 'custom_molecule_atom_count', 0)
+                custom_molecule_positions = getattr(structure, 'custom_molecule_positions', None)
+                custom_molecule_atom_names = getattr(structure, 'custom_molecule_atom_names', None)
+                custom_molecule_moleculetype = getattr(structure, 'custom_molecule_moleculetype', "")
+                custom_gro_path = getattr(structure, 'custom_gro_path', None)
+                custom_itp_path = getattr(structure, 'custom_itp_path', None)
                 
                 return IonStructure(
                     positions=structure.positions,
@@ -302,6 +342,13 @@ class IonInserter:
                     solute_n_molecules=solute_n_molecules,
                     solute_molecule_indices=solute_molecule_indices,
                     solute_registry=solute_registry,
+                    custom_molecule_count=custom_molecule_count,
+                    custom_molecule_atom_count=custom_molecule_atom_count,
+                    custom_molecule_positions=custom_molecule_positions,
+                    custom_molecule_atom_names=custom_molecule_atom_names,
+                    custom_molecule_moleculetype=custom_molecule_moleculetype,
+                    custom_gro_path=custom_gro_path,
+                    custom_itp_path=custom_itp_path,
                 )
         
         # Randomly select water molecules to replace
