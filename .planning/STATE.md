@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 8/12 plans done)
+**Current focus:** v4.5 — Phase 37.2 in progress (verified scancode fixes 2026-06-18: 9/12 plans done)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 8 of 12 |
+| Plan | 9 of 12 |
 | Status | In progress — Gap closure plans 06-12 executing |
-| Last activity | 2026-06-19 — Completed 37.2-06-PLAN.md (CLI doc accuracy & test constant dedup) |
+| Last activity | 2026-06-19 — Completed 37.2-09-PLAN.md (Vectorize PBC wrapping loops) |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -718,9 +718,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-19
-**Completed:** 37.2-06-PLAN.md (CLI doc accuracy & test constant dedup)
-**Status:** Phase 37.2 in progress (8/12 plans)
-**Stopped at:** Completed 37.2-06, next is 37.2-09
+**Completed:** 37.2-09-PLAN.md (Vectorize PBC wrapping loops)
+**Status:** Phase 37.2 in progress (9/12 plans)
+**Stopped at:** Completed 37.2-09, next is 37.2-10
 **Resume file:** None
 ---
-*State updated: 2026-06-19 — Phase 37.2 plan 06 executed: CLI doc accuracy & test constant dedup*
+*State updated: 2026-06-19 — Phase 37.2 plan 09 executed: Vectorize PBC wrapping loops*
