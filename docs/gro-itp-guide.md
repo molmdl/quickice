@@ -626,7 +626,7 @@ Ethanol molecule
 
 **Key points:**
 - 9 atoms in both GRO and ITP
-- Residue name "ETHAN" in GRO, moleculetype "ETHANOL" in ITP (QuickIce allows mismatch with user dialog)
+- Residue name "ETHAN" in GRO, moleculetype "ETHANOL" in ITP (QuickIce allows mismatch with user dialog in GUI mode; in CLI mode, the mismatch is accepted silently)
 - GAFF atom types (CT, HC, OH, HO)
 - Charge sum = -0.18 - 0.10 - 0.60 + 0.40 + 0.06×3 + 0.04×2 = 0.00 (neutral)
 

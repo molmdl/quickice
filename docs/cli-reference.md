@@ -466,6 +466,8 @@ Random seed for reproducible water placement. Using the same seed produces ident
 
 **Default:** 42
 
+**Note:** The default seed is 42 for reproducibility. Specifying `--seed 42` is redundant and produces the same result as omitting the flag entirely.
+
 ```bash
 # Reproducible interface with specific seed
 python -m quickice --temperature 250 --pressure 0.1 \
@@ -1119,8 +1121,9 @@ The backward-compatible `python quickice.py` invocation also works.
 | `--cli` + computation flags | CLI | Explicit CLI mode, skip PySide6 import |
 | `--cli` alone | CLI (error) | Missing required `--temperature` |
 | `--gui` | GUI | Launch GUI (error if no display or PySide6) |
+| `--cli` + `--gui` | GUI | `--gui` takes priority over `--cli` |
 
-**Priority:** `--gui` > computation flags (→CLI) > no arguments (→help)
+**Priority:** `--gui` > `--cli` > computation flags (→CLI) > no arguments (→help). When both `--cli` and `--gui` are specified, `--gui` takes priority and the GUI is launched.
 
 ---
 
