@@ -399,10 +399,9 @@ class HydrateStructureGenerator:
                     else:
                         mode_index = np.array(mode_candidates[0])
                     
-                    # Calculate shift for EACH atom individually
-                    for i, atom_idx in enumerate(cell_indices):
-                        shift = (mode_index - atom_idx) * L
-                        wrapped[start + i] = mol_positions[i] + shift
+                    # Vectorized: compute shifts for all atoms at once
+                    shifts = (mode_index - cell_indices) * L
+                    wrapped[start:start + mol.count] = mol_positions + shifts
         else:
             # Triclinic cell - use fractional coordinates
             cell_inv = np.linalg.inv(cell)
@@ -425,11 +424,10 @@ class HydrateStructureGenerator:
                     # All atoms in same cell - wrap to primary cell (0, 0, 0)
                     current_cell = np.array(list(unique_cells)[0])
                     shift_frac = -current_cell
-                    for i in range(len(mol_positions)):
-                        frac_wrapped = frac[i] + shift_frac
-                        # Wrap to [0, 1)
-                        frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
-                        wrapped[start + i] = frac_wrapped @ cell
+                    # Vectorized: apply shift to all atoms at once
+                    frac_wrapped = frac + shift_frac
+                    frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
+                    wrapped[start:start + mol.count] = frac_wrapped @ cell
                 else:
                     # Atoms span multiple cells - wrap to mode cell
                     cell_tuples = [tuple(idx) for idx in cell_indices]
@@ -443,13 +441,11 @@ class HydrateStructureGenerator:
                     else:
                         mode_index = np.array(mode_candidates[0])
                     
-                    # Calculate shift for EACH atom individually, then wrap to [0, 1)
-                    for i, atom_idx in enumerate(cell_indices):
-                        shift_frac = mode_index - atom_idx
-                        frac_wrapped = frac[i] + shift_frac
-                        # Wrap to [0, 1)
-                        frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
-                        wrapped[start + i] = frac_wrapped @ cell
+                    # Vectorized: compute shifts for all atoms at once
+                    shifts_frac = mode_index - cell_indices
+                    frac_wrapped = frac + shifts_frac
+                    frac_wrapped = frac_wrapped - np.floor(frac_wrapped)
+                    wrapped[start:start + mol.count] = frac_wrapped @ cell
         
         return wrapped
     
