@@ -863,4 +863,6 @@ In some cases, it is possible to use `QUICKICE_FORCE_VTK=true` to override the c
 - **[Ranking Algorithm](ranking.md)** - How candidates are scored
 - **[GenIce2](https://github.com/genice-dev/GenIce2)** - Structure generation library
 - **[IAPWS](https://www.iapws.org)** - Water/ice thermodynamic standards
-- **[TIP4P-ice Reference](https://doi.org/10.1063/1.1931662)** - TIP4P-ice reference
+- **[TIP4P-ice](https://doi.org/10.1063/1.1931662)** - Abascal, J. L. F., Sanz, E., García Fernández, R., & Vega, C. (2005). A potential model for the study of ices and amorphous water: TIP4P/Ice. *J. Chem. Phys.* 122, 234511. DOI: 10.1063/1.1931662
+- **[Ice V](https://doi.org/10.1107/S0108768198001090)** - Lobban, C., Finney, J. L., & Kuhs, W. F. (1998). The structure of a new phase of ice V by neutron powder diffraction. *Acta Cryst.* B54, 419–428. DOI: 10.1107/S0108768198001090
+- **[Ice VII](https://doi.org/10.1038/330737a0)** - Hemley, R. J., Jephcoat, A. P., Mao, H. K., Zha, C. S., Finger, L. W., & Cox, D. E. (1987). Static compression of H₂O-ice to 128 GPa. *Nature* 330, 737–740. DOI: 10.1038/330737a0
