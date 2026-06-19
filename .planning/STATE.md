@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 nearly complete (11/12 plans done, 24/26 must-haves verified, 2 screenshots pending)
+**Current Focus:** v4.5 — Phase 37.2 COMPLETE (12/12 plans done, all must-haves verified, screenshots committed)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 nearly complete (11/12 plans done, 24/26 must-haves verified, 2 screenshots pending)
+**Current focus:** v4.5 — Phase 37.2 COMPLETE (12/12 plans done, all must-haves verified, screenshots committed)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 |-------|-------|
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
-| Plan | 12 of 12 (Task 1 done, screenshots checkpoint pending) |
-| Status | 24/26 must-haves verified — 2 GUI screenshots pending human action |
-| Last activity | 2026-06-19 — Gap closure 05-11 complete, 24/26 must-haves verified |
+| Plan | 12 of 12 (COMPLETE) |
+| Status | All 101/101 must-haves verified — milestone complete |
+| Last activity | 2026-06-19 — Phase 37.2 complete, screenshots committed, 35-06 finalized |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
@@ -656,7 +656,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ 35-03 (help dialog) complete with correct tab numbering (Tab 0-5)
 - ✓ 35-04 (README update) complete
 - ✓ 35-05 (GUI guide & user guides) complete
-- ⏳ 35-06 partial (Phase 34.5/34.6 feature docs complete, screenshots deferred)
+- ✓ 35-06 COMPLETE (screenshots committed, 5 renames, pending notes removed)
 
 **Phase 34.5 status:**
 - ✓ 34.5-01 (validation logic) complete
@@ -667,11 +667,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 - ✓ Complete! All 8 plans executed successfully
 
 **Remaining Phase 35 work:**
-- Screenshots recapture (35-06 checkpoint pending)
-  - **Decision:** Option 1 (Rename existing + recapture new) — confirmed from commit f345ca9
-  - Rename 5 existing files (remove tabX prefix)
-  - Capture 6 new screenshots (Tabs 3-4, Phase 34.5/34.6 features)
-  - See 35-06-SUMMARY.md for detailed steps
+- Optional screenshots still not captured (NICE-TO-HAVE, not blocking):
+  - validation-preview.png (Phase 34.5 feature)
+  - solute-source-dropdown.png (Phase 34.6 feature)
+  - custom-molecule-complete-system.png (optional, Phase 34.6)
 - Release notes preparation (pending)
 
 ### Quick Tasks Completed
@@ -727,9 +726,9 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth replacing 6 hardcoded f-strings; prevents copy-paste exponent errors | ✓ Shipped (34.9-02) |
 
 **Last session:** 2026-06-19
-**Completed:** 37.2-11-PLAN.md (GRO writer comment + citations + shortcut clarification)
-**Status:** Phase 37.2 in progress (11/12 plans)
-**Stopped at:** Completed 37.2-11, next is 37.2-12
+**Completed:** 37.2-12-PLAN.md + 35-06 screenshot work (screenshots committed, renames, pending notes removed)
+**Status:** Phase 37.2 COMPLETE (12/12 plans) — Milestone v4.5 COMPLETE (101/101 plans)
+**Stopped at:** All plans complete
 **Resume file:** None
 ---
 *State updated: 2026-06-19 — Phase 37.2 plan 11 executed: GRO writer comment + citations + shortcut clarification*

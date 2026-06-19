@@ -2,7 +2,7 @@
 
 **Status:** 🔄 IN PROGRESS
 **Phases:** 32-37.2 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, 37.2 inserted)
-**Total Plans:** 101 (completed: 99/101)
+**Total Plans:** 101 (completed: 101/101)
 
 ## Overview
 
@@ -33,9 +33,9 @@ The 4-phase structure delivers: architecture foundation (tab constants, Molecule
 - Cross-tab data flow verification (current flows work correctly)
 
 **Plans:**
-- [ ] 32-01-PLAN.md — Foundation: TabIndex enum, MoleculetypeRegistry, ITP parser
-- [ ] 32-02-PLAN.md — Validation & refactoring: Molecule validator, TabIndex usage, GROMACS registry
-- [ ] 32-03-PLAN.md — Verification: Cross-tab data flow, documentation, integration tests
+- [x] 32-01-PLAN.md — Foundation: TabIndex enum, MoleculetypeRegistry, ITP parser
+- [x] 32-02-PLAN.md — Validation & refactoring: Molecule validator, TabIndex usage, GROMACS registry
+- [x] 32-03-PLAN.md — Verification: Cross-tab data flow, documentation, integration tests
 
 ---
 
@@ -383,7 +383,7 @@ Plans:
 - [x] 35-03-PLAN.md — Help dialog update: Correct tab numbering, Tab 3/4 workflows, keyboard shortcuts
 - [x] 35-04-PLAN.md — README update: v4.5 GUI focus, correct tab numbers, unified export
 - [x] 35-05-PLAN.md — GUI guide & user guides: Tab 3/4 sections, .gro/.itp creation guide
-- [ ] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (PARTIAL — docs done, screenshots pending)
+- [x] 35-06-PLAN.md — Screenshots checkpoint: Rename existing + recapture new (COMPLETE — 2 new screenshots, 5 renames, pending notes removed)
 - [x] 35-07-PLAN.md — Quick Task docs: Document Quick Task 017/018 features (concentration input, delete/overlap)
 
 ---
@@ -558,7 +558,7 @@ Plans:
 - [x] 37.2-09-PLAN.md — Vectorize PBC wrapping loops (gromacs_writer + hydrate_generator)
 - [x] 37.2-10-PLAN.md — Error handling + security hardening (narrow except, path traversal, CSV limit)
 - [x] 37.2-11-PLAN.md — Remaining small fixes (I/O comment, WATER_VOLUME_NM3 citation, Ctrl+S/M)
-- [ ] 37.2-12-PLAN.md — PyInstaller targeted imports + missing screenshots checkpoint (Task 1 done, screenshots pending)
+- [x] 37.2-12-PLAN.md — PyInstaller targeted imports + missing screenshots checkpoint (COMPLETE — both tasks done)
 
 **Details:**
 
