@@ -482,6 +482,80 @@ def assert_itp_completeness(top_path: str, workspace: Path) -> None:
     )
 
 
+def assert_gro_top_consistent(gro_path: str, top_path: str) -> None:
+    """Assert that .gro and .top files are consistent with each other.
+
+    Cross-validates the GROMACS output files to catch bugs where the
+    .gro residue names don't match the .top [molecules] entries, or
+    where the .gro atom count header doesn't match the actual atom lines.
+
+    This invariant catches two classes of bugs at once:
+    - Bug 1 (_H suffix): .gro has "CH4" residues but .top lists "CH4_H"
+    - Bug 2 (custom mol missing): .top says N custom molecules but .gro
+      has 0 custom molecule atoms (custom_molecule_atom_count was 0)
+
+    Checks performed:
+    1. .gro header atom count == actual number of atom lines
+    2. Every molecule name in .top [molecules] appears as a residue
+       name in .gro (with known exceptions for ITP-vs-GRO naming)
+
+    Known naming exceptions:
+    - SOL in .gro ↔ SOL in .top (always matches)
+    - NA/CL in .gro ↔ NA/CL in .top (always matches)
+    - Custom molecules: .gro uses moleculetype_name (e.g. "ETOH"),
+      .top uses ITP [moleculetype] name (e.g. "etoh") — these may
+      differ in case but the residue MUST appear in .gro
+    - Guest/solute molecules: .gro uses registry name (e.g. "CH4_H",
+      "CH4_L"), .top uses the same name — must match exactly
+
+    Args:
+        gro_path: Path to .gro file
+        top_path: Path to .top file
+
+    Raises:
+        AssertionError: If any consistency check fails
+    """
+    # Check 1: .gro header atom count matches actual atom lines
+    header_count = parse_gro_atom_count(gro_path)
+    residue_names = parse_gro_residue_names(gro_path)
+    actual_atom_lines = len(residue_names)
+
+    assert header_count == actual_atom_lines, (
+        f"GRO/.TOP consistency: .gro header says {header_count} atoms "
+        f"but found {actual_atom_lines} atom lines. "
+        f"This indicates a bug in the GRO writer's atom counting."
+    )
+
+    # Check 2: Every molecule in .top [molecules] must appear as a
+    # residue name in .gro. GROMACS fatal-errors on mismatch.
+    top_molecules = parse_top_molecules(top_path)
+    gro_residue_set = set(residue_names)
+
+    for mol_name, mol_count in top_molecules.items():
+        # Direct match: molecule name appears in .gro residues
+        if mol_name in gro_residue_set:
+            continue
+
+        # Case-insensitive match (custom molecules: ITP uses lowercase
+        # "etoh", .gro uses "ETOH" from moleculetype_name)
+        case_matched = False
+        for gro_res in gro_residue_set:
+            if gro_res.upper() == mol_name.upper():
+                case_matched = True
+                break
+        if case_matched:
+            continue
+
+        # No match found — this is the bug condition
+        assert False, (
+            f"GRO/.TOP consistency: molecule '{mol_name}' (count={mol_count}) "
+            f"appears in .top [molecules] but no matching residue name found "
+            f"in .gro file. .gro residues: {sorted(gro_residue_set)}. "
+            f"This is a FATAL GROMACS error — residue names must match "
+            f"[molecules] entries."
+        )
+
+
 def run_gmx_grompp(workspace: Path, gro_file: str = "struct.gro",
                     top_file: str = "struct.top",
                     mdp_file: str = "em.mdp",

@@ -26,6 +26,10 @@ Test methods:
     2. test_interface_to_solute_chain
     3. test_full_chain_interface_custom_solute_ion
     4. test_chain_minimal_no_guests_no_solute_no_custom
+    5. test_ion_export_gro_residue_names_match_top_molecules
+    6. test_ion_export_gro_atom_count_matches_header
+    7. test_ion_export_gro_top_cross_validation
+    8. test_gui_propagation_custom_molecule_atom_count_preserved
 
 Fixtures from conftest.py:
     - simple_interface: 2 ice + 2 water, no guests
@@ -33,10 +37,14 @@ Fixtures from conftest.py:
     - mock_save_dialog: factory -> (save_path, dialog_patch, mb_patch)
 """
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+
+# Add tests/ directory to sys.path for e2e_export_helpers import
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.gui.export import (
     InterfaceGROMACSExporter,
@@ -52,6 +60,15 @@ from quickice.structure_generation.types import (
     MoleculeIndex,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
+from quickice.structure_generation.ion_inserter import IonInserter
+from quickice.structure_generation.types import IonConfig
+
+from e2e_export_helpers import (
+    parse_gro_residue_names,
+    parse_gro_atom_count,
+    parse_top_molecules,
+    assert_gro_top_consistent,
+)
 
 
 class TestFullExportChain:
@@ -566,3 +583,336 @@ class TestFullExportChain:
         assert "ch4_hydrate" not in top_content
         assert "ch4_liquid" not in top_content
         assert "etoh" not in top_content
+
+    # ------------------------------------------------------------------
+    # Test 5: .gro residue names match .top [molecules] entries
+    # ------------------------------------------------------------------
+
+    def test_ion_export_gro_residue_names_match_top_molecules(
+        self, interface_with_ch4_guests, mock_save_dialog
+    ):
+        """GRO residue names must match TOP [molecules] entries.
+
+        GROMACS fatal-errors if .gro residue names don't match .top
+        [molecules] entries. This test catches the _H suffix bug where
+        .gro uses "CH4" but .top lists "CH4_H" (from the hydrate ITP
+        moleculetype name).
+
+        After full chain export, the .gro file must contain residue
+        names that are consistent with the .top [molecules] section.
+        """
+        # Build the full chain IonStructure (same as test 3)
+        ion = self._build_full_chain_ion(interface_with_ch4_guests)
+
+        # Export
+        ion_save, ion_dialog, ion_mb = mock_save_dialog("chain_ion_resnames.gro")
+        ion_exporter = IonGROMACSExporter(parent_widget=None)
+
+        with ion_dialog, ion_mb:
+            result = ion_exporter.export_ion_gromacs(ion)
+
+        assert result is True
+        ion_dir = Path(ion_save).parent
+        gro_path = str(ion_dir / "chain_ion_resnames.gro")
+        top_path = str(ion_dir / "chain_ion_resnames.top")
+
+        # Parse .gro residue names
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_resnames = set(residue_names)
+
+        # Parse .top [molecules]
+        top_molecules = parse_top_molecules(top_path)
+
+        # Every molecule in .top [molecules] must appear in .gro residues
+        for mol_name in top_molecules:
+            if mol_name in unique_resnames:
+                continue
+            # Case-insensitive match (custom molecules: ITP name "etoh"
+            # vs GRO residue name "ETOH")
+            found_case_insensitive = any(
+                r.upper() == mol_name.upper() for r in unique_resnames
+            )
+            assert found_case_insensitive, (
+                f"Molecule '{mol_name}' in .top [molecules] not found as "
+                f"residue name in .gro. .gro residues: {sorted(unique_resnames)}. "
+                f"This is a FATAL GROMACS error."
+            )
+
+    # ------------------------------------------------------------------
+    # Test 6: .gro atom count header matches actual atom lines
+    # ------------------------------------------------------------------
+
+    def test_ion_export_gro_atom_count_matches_header(
+        self, interface_with_ch4_guests, mock_save_dialog
+    ):
+        """GRO header atom count must equal actual atom lines.
+
+        Catches the missing custom molecule atoms bug: if
+        custom_molecule_atom_count is 0 (due to propagation failure),
+        atoms_per_custom = 0 and no custom atoms are written to .gro,
+        but the header still claims more atoms.
+        """
+        ion = self._build_full_chain_ion(interface_with_ch4_guests)
+
+        # Export
+        ion_save, ion_dialog, ion_mb = mock_save_dialog("chain_ion_atomcnt.gro")
+        ion_exporter = IonGROMACSExporter(parent_widget=None)
+
+        with ion_dialog, ion_mb:
+            result = ion_exporter.export_ion_gromacs(ion)
+
+        assert result is True
+        ion_dir = Path(ion_save).parent
+        gro_path = str(ion_dir / "chain_ion_atomcnt.gro")
+
+        header_count = parse_gro_atom_count(gro_path)
+        residue_names = parse_gro_residue_names(gro_path)
+        actual_atom_lines = len(residue_names)
+
+        assert header_count == actual_atom_lines, (
+            f"GRO header says {header_count} atoms but found "
+            f"{actual_atom_lines} atom lines. This indicates a bug in "
+            f"the GRO writer's atom counting (likely missing custom molecule atoms)."
+        )
+
+        # Also verify custom molecule residues are present
+        unique_resnames = set(residue_names)
+        assert "ETOH" in unique_resnames, (
+            f"Expected 'ETOH' residue name in .gro (custom molecules). "
+            f"Found: {sorted(unique_resnames)}"
+        )
+
+    # ------------------------------------------------------------------
+    # Test 7: Cross-validate .gro and .top (the general invariant)
+    # ------------------------------------------------------------------
+
+    def test_ion_export_gro_top_cross_validation(
+        self, interface_with_ch4_guests, mock_save_dialog
+    ):
+        """Cross-validate .gro and .top consistency (catches both bugs at once).
+
+        Uses assert_gro_top_consistent() which checks:
+        1. GRO header atom count == actual atom lines
+        2. Every molecule in .top [molecules] appears in .gro residues
+
+        This is the GENERAL invariant that catches:
+        - _H suffix bug: .gro has "CH4" but .top lists "CH4_H"
+        - Custom molecule missing: .top says ETOH but .gro has 0 ETOH atoms
+        """
+        ion = self._build_full_chain_ion(interface_with_ch4_guests)
+
+        # Export
+        ion_save, ion_dialog, ion_mb = mock_save_dialog("chain_ion_xval.gro")
+        ion_exporter = IonGROMACSExporter(parent_widget=None)
+
+        with ion_dialog, ion_mb:
+            result = ion_exporter.export_ion_gromacs(ion)
+
+        assert result is True
+        ion_dir = Path(ion_save).parent
+        gro_path = str(ion_dir / "chain_ion_xval.gro")
+        top_path = str(ion_dir / "chain_ion_xval.top")
+
+        # Run cross-validation
+        assert_gro_top_consistent(gro_path, top_path)
+
+    # ------------------------------------------------------------------
+    # Test 8: GUI/CLI propagation pattern (custom_molecule_atom_count)
+    # ------------------------------------------------------------------
+
+    def test_gui_propagation_custom_molecule_atom_count_preserved(
+        self, interface_with_ch4_guests, mock_save_dialog
+    ):
+        """GUI/CLI propagation pattern: custom molecule attrs copied to InterfaceStructure.
+
+        The REAL data flow in the GUI/CLI is:
+        1. CustomMoleculeInserter produces CustomMoleculeStructure
+        2. GUI/CLI code COPIES custom molecule attrs from
+           CustomMoleculeStructure to InterfaceStructure
+        3. IonInserter receives InterfaceStructure (not CustomMoleculeStructure)
+        4. IonInserter reads custom_molecule_atom_count via getattr()
+
+        The existing chain tests bypass step 2 by either:
+        - Manually constructing IonStructure with all fields (test 3)
+        - Passing CustomMoleculeStructure directly to IonInserter (F2 test)
+
+        This test exercises the EXACT propagation pattern, catching the
+        bug where step 2 forgot to copy custom_molecule_atom_count.
+        """
+        iface = interface_with_ch4_guests
+
+        # Step 1: Build CustomMoleculeStructure (from test 3)
+        custom_positions = np.zeros((9, 3))
+        for i in range(9):
+            custom_positions[i] = [1.8 + 0.02 * i, 1.0, 2.5]
+
+        positions_custom = np.vstack([iface.positions, custom_positions])
+        atom_names_custom = (
+            iface.atom_names
+            + ["H", "C", "H", "H", "C", "H", "H", "O", "H"]
+        )
+        molecule_index_custom = iface.molecule_index + [
+            MoleculeIndex(19, 9, "custom"),
+        ]
+
+        custom = CustomMoleculeStructure(
+            positions=positions_custom,
+            atom_names=atom_names_custom,
+            cell=iface.cell.copy(),
+            molecule_index=molecule_index_custom,
+            ice_atom_count=iface.ice_atom_count,
+            water_atom_count=iface.water_atom_count,
+            custom_molecule_atom_count=9,
+            guest_atom_count=iface.guest_atom_count,
+            moleculetype_name="ETOH",
+            itp_path=Path("quickice/data/custom/etoh.itp"),
+            custom_molecule_count=1,
+            interface_structure=iface,
+        )
+
+        # Step 2: MIMIC the GUI/CLI propagation pattern
+        # This is EXACTLY what main_window.py lines 898-905 does:
+        #   interface.custom_molecule_positions = custom.positions[offset:]
+        #   interface.custom_molecule_atom_names = custom.atom_names[offset:]
+        #   interface.custom_molecule_count = custom.custom_molecule_count
+        #   interface.custom_molecule_atom_count = custom.custom_molecule_atom_count  # THE BUG WAS HERE
+        #   interface.custom_molecule_moleculetype = custom.moleculetype_name
+        #   interface.custom_gro_path = custom.gro_path
+        #   interface.custom_itp_path = custom.itp_path
+        interface_for_ions = custom.interface_structure
+
+        offset = (
+            interface_for_ions.ice_atom_count
+            + interface_for_ions.water_atom_count
+            + interface_for_ions.guest_atom_count
+        )
+        interface_for_ions.custom_molecule_positions = custom.positions[offset:]
+        interface_for_ions.custom_molecule_atom_names = custom.atom_names[offset:]
+        interface_for_ions.custom_molecule_count = custom.custom_molecule_count
+        interface_for_ions.custom_molecule_atom_count = custom.custom_molecule_atom_count
+        interface_for_ions.custom_molecule_moleculetype = custom.moleculetype_name
+        interface_for_ions.custom_gro_path = custom.gro_path
+        interface_for_ions.custom_itp_path = custom.itp_path
+
+        # CRITICAL ASSERTION: custom_molecule_atom_count must be > 0
+        # after propagation. This was the bug: the GUI/CLI code
+        # forgot this line, so IonInserter's getattr() returned 0.
+        assert interface_for_ions.custom_molecule_atom_count > 0, (
+            f"custom_molecule_atom_count should be > 0 after GUI propagation, "
+            f"got {interface_for_ions.custom_molecule_atom_count}. "
+            f"This means the propagation pattern is broken."
+        )
+
+        # Step 3: Build IonStructure via IonInserter from the
+        # InterfaceStructure (not from CustomMoleculeStructure!)
+        ion_config = IonConfig(concentration_molar=0.15)
+        ion_inserter = IonInserter(config=ion_config, seed=42)
+
+        # IonInserter uses getattr to read custom_molecule_atom_count
+        # from the source structure (InterfaceStructure in this case)
+        ion = ion_inserter.replace_water_with_ions(
+            interface_for_ions,
+            ion_inserter.calculate_ion_pairs(0.15, 0.001),
+        )
+
+        # Step 4: Verify the custom molecule atom count survived
+        assert ion.custom_molecule_atom_count > 0, (
+            f"custom_molecule_atom_count should be > 0 after IonInserter, "
+            f"got {ion.custom_molecule_atom_count}. "
+            f"The propagation from InterfaceStructure to IonStructure failed."
+        )
+
+        # Step 5: Export and verify .gro/.top consistency
+        ion_save, ion_dialog, ion_mb = mock_save_dialog("chain_ion_propagation.gro")
+        ion_exporter = IonGROMACSExporter(parent_widget=None)
+
+        with ion_dialog, ion_mb:
+            result = ion_exporter.export_ion_gromacs(ion)
+
+        assert result is True
+        ion_dir = Path(ion_save).parent
+        gro_path = str(ion_dir / "chain_ion_propagation.gro")
+        top_path = str(ion_dir / "chain_ion_propagation.top")
+
+        # Cross-validate .gro and .top
+        assert_gro_top_consistent(gro_path, top_path)
+
+        # Verify custom molecule residue appears in .gro
+        residue_names = parse_gro_residue_names(gro_path)
+        unique_resnames = set(residue_names)
+        assert "ETOH" in unique_resnames, (
+            f"Expected 'ETOH' residue in .gro after propagation-pattern export. "
+            f"Found: {sorted(unique_resnames)}"
+        )
+
+    # ------------------------------------------------------------------
+    # Helper: build full-chain IonStructure (shared by tests 5-7)
+    # ------------------------------------------------------------------
+
+    def _build_full_chain_ion(self, interface_with_ch4_guests):
+        """Build the full chain IonStructure with guests + solutes + custom.
+
+        Reuses the same construction logic from test 3 but returns the
+        IonStructure without exporting, so that tests 5-7 can verify
+        different aspects of the export output.
+        """
+        iface = interface_with_ch4_guests
+        registry = MoleculetypeRegistry()
+        registry.register_liquid_solute("CH4")
+
+        ion_positions = np.zeros((15, 3))
+        ion_positions[0:4] = np.array([
+            [0.5, 0.5, 2.0], [0.55, 0.52, 2.0],
+            [0.48, 0.52, 2.0], [0.50, 0.51, 2.0],
+        ])
+        ion_positions[4:8] = np.array([
+            [1.0, 0.5, 2.0], [1.05, 0.52, 2.0],
+            [0.98, 0.52, 2.0], [1.00, 0.51, 2.0],
+        ])
+        ion_positions[8] = [1.5, 1.0, 2.5]
+        ion_positions[9] = [1.5, 1.0, 2.0]
+        ion_positions[10:15] = np.array([
+            [1.6, 1.0, 2.5],
+            [1.65, 1.02, 2.5],
+            [1.58, 1.02, 2.5],
+            [1.60, 1.05, 2.5],
+            [1.60, 0.98, 2.5],
+        ])
+
+        ion_atom_names = [
+            "OW", "HW1", "HW2", "MW",
+            "OW", "HW1", "HW2", "MW",
+            "NA",
+            "CL",
+            "C", "H", "H", "H", "H",
+        ]
+
+        return IonStructure(
+            positions=ion_positions,
+            atom_names=ion_atom_names,
+            cell=iface.cell.copy(),
+            molecule_index=[
+                MoleculeIndex(0, 4, "water"),
+                MoleculeIndex(4, 4, "water"),
+                MoleculeIndex(8, 1, "na"),
+                MoleculeIndex(9, 1, "cl"),
+                MoleculeIndex(10, 5, "guest"),
+            ],
+            na_count=1,
+            cl_count=1,
+            report="test",
+            guest_nmolecules=1,
+            guest_atom_count=5,
+            solute_type="CH4",
+            solute_positions=np.zeros((5, 3)),
+            solute_atom_names=["C", "H", "H", "H", "H"],
+            solute_n_molecules=1,
+            solute_molecule_indices=[(0, 5)],
+            solute_registry=registry,
+            custom_molecule_count=1,
+            custom_molecule_atom_count=9,
+            custom_molecule_positions=np.zeros((9, 3)),
+            custom_molecule_atom_names=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
+            custom_molecule_moleculetype="ETOH",
+            custom_itp_path=Path("quickice/data/custom/etoh.itp"),
+        )

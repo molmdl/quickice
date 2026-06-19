@@ -21,11 +21,22 @@ Fixtures from conftest.py:
     - mock_cancel_dialog: factory → (dialog_patch, mb_patch)
 """
 
+import sys
 from pathlib import Path
 
 import pytest
 
+# Add tests/ directory to sys.path for e2e_export_helpers import
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
+
+from e2e_export_helpers import (
+    parse_gro_residue_names,
+    parse_gro_atom_count,
+    parse_top_molecules,
+    assert_gro_top_consistent,
+)
 
 
 class TestHydrateGROMACSExporter:
@@ -205,3 +216,30 @@ class TestHydrateGROMACSExporter:
                         f"Found plain 'CH4' residue name in .gro file (should be 'CH4_H'). "
                         f"Line: {line!r}"
                     )
+
+    def test_gro_top_cross_validation(
+        self, simple_hydrate_structure, simple_hydrate_config, mock_hydrate_save_dialog
+    ):
+        """Cross-validate .gro and .top consistency for hydrate export.
+
+        Uses assert_gro_top_consistent() which checks:
+        1. GRO header atom count == actual atom lines
+        2. Every molecule in .top [molecules] appears in .gro residues
+
+        This catches the _H suffix bug: if .gro uses "CH4" but .top
+        lists "CH4_H", GROMACS fatal-errors on the mismatch.
+        """
+        save_path, dialog_p, mb_p = mock_hydrate_save_dialog("hydrate_xval.gro")
+        exporter = HydrateGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_hydrate(
+                simple_hydrate_structure, simple_hydrate_config
+            )
+
+        assert result is True
+        gro_path = save_path
+        top_path = str(Path(save_path).with_suffix(".top"))
+
+        # Run cross-validation
+        assert_gro_top_consistent(gro_path, top_path)
