@@ -243,3 +243,40 @@ class TestHydrateGROMACSExporter:
 
         # Run cross-validation
         assert_gro_top_consistent(gro_path, top_path)
+
+    def test_top_sol_count_matches_water_count(
+        self, simple_hydrate_structure, simple_hydrate_config, mock_hydrate_save_dialog
+    ):
+        """SOL count in .top must equal water_count from the structure.
+
+        Regression test for the THF=12 subtraction bug:
+        If water_nmolecules were computed as (total_atoms - guest_nmolecules * 12) / 4
+        instead of using structure.water_count, THF hydrates would get 2 extra SOL
+        molecules (e.g., 138 instead of 136 for SII 1x1x1).
+
+        The .top SOL count MUST match the structure's water_count, which comes
+        from molecule_index counting (NOT subtraction).
+        """
+        save_path, dialog_p, mb_p = mock_hydrate_save_dialog("hydrate_sol_count.gro")
+        exporter = HydrateGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_hydrate(
+                simple_hydrate_structure, simple_hydrate_config
+            )
+
+        assert result is True
+        top_path = Path(save_path).with_suffix(".top")
+        top_molecules = parse_top_molecules(str(top_path))
+
+        expected_sol = simple_hydrate_structure.water_count
+        actual_sol = top_molecules.get("SOL", 0)
+
+        assert actual_sol == expected_sol, (
+            f".top SOL count ({actual_sol}) does not match "
+            f"structure.water_count ({expected_sol}). "
+            f"This indicates water_nmolecules was computed by subtraction "
+            f"using incorrect guest atom count instead of molecule_index. "
+            f"For THF hydrate SII: (648 - 8*12)/4 = 138 (WRONG), "
+            f"should be (648 - 8*13)/4 = 136 or use water_count directly."
+        )

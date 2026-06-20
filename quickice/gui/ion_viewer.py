@@ -355,7 +355,7 @@ class IonViewerWidget(QWidget):
 
         return bonds
 
-    def _create_guest_ball_and_stick_actor(self, structure, guest_mol) -> vtkActor:
+    def _create_guest_ball_and_stick_actor(self, structure, guest_mol):
         """Create a ball-and-stick actor for guest molecules.
         
         Uses vtkMoleculeMapper with ball-and-stick settings for CPK coloring
