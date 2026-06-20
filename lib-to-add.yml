@@ -1,0 +1,84 @@
+# Packages installed without permission into quickice env by opencode agents
+# Source: opencode session DB cross-referenced with environment.yml + environment-build.yml
+#
+# Grouped by the pip install command that introduced them.
+# "direct" = the package the agent explicitly installed
+# "dep" = transitive dependency pulled in automatically
+
+# ──────────────────────────────────────────────
+# Group 1: pip install MDAnalysis
+# Session: ses_1457c0e1affeXGyOYEt7jTtANz (Jun 12 ~14:35)
+# Agent: gsd-project-researcher (hydrate analysis research)
+# ──────────────────────────────────────────────
+mdanalysis:      # direct  — MD trajectory analysis library
+  version: "2.10.0"
+  type: direct
+  source: "pip install MDAnalysis by research agent (ses_1457c0e1affeXGyOYEt7jTtANz)"
+  deps:
+    mda-xdrlib:    "0.2.0"    # dep — XDR format reader
+    griddataformats: "1.2.0" # dep — grid data handling
+    mmtf-python:   "1.1.3"   # dep — Macromolecular Transmission Format
+    joblib:        "1.5.3"   # dep — lightweight pipelining
+    filelock:      "3.29.3"  # dep — file locking (MDAnalysis core dep)
+    mrcfile:       "1.5.4"   # dep — MRC file format I/O
+    msgpack:       "1.2.0"   # dep — binary serialization
+    threadpoolctl: "3.6.0"   # dep — thread pool control
+    tqdm:          "4.68.2"  # dep — progress bars
+
+# ──────────────────────────────────────────────
+# Group 2: pip install genice2-cif
+# Session: ses_1454ee3abffeN0XTD7700PO0Pf (Jun 12 ~15:18)
+# Agent: gsd-project-researcher (flexible interface research)
+# ──────────────────────────────────────────────
+genice2-cif:     # direct  — CIF file plugin for GenIce2
+  version: "2.2.1"
+  type: direct
+  source: "pip install genice2-cif by research agent (ses_1454ee3abffeN0XTD7700PO0Pf)"
+  deps:
+    cif2ice:       "0.4.1"   # dep — CIF to ICE format converter
+    pycifrw:       "5.0.1"   # dep — CIF file reader/writer
+    ply:           "3.11"    # dep — parser for pycifrw
+    jinja2:        "3.1.6"   # dep — template engine for cif2ice
+    markupsafe:    "3.0.3"   # dep — HTML escaping for jinja2
+    requests:      "2.34.2"  # dep — HTTP client for genice2-cif
+    certifi:       "2026.5.20" # dep — CA bundle for requests
+    charset-normalizer: "3.4.7" # dep — charset detection for requests
+    idna:          "3.18"    # dep — internationalized domain names for requests
+    urllib3:       "2.7.0"   # dep — HTTP connection pooling for requests
+    toml:          "0.10.2"  # dep — TOML parser for cif2ice
+    validators:    "0.35.0"  # dep — data validation for genice2-cif
+    wcwidth:       "0.8.1"   # dep — width calculation for prettytable
+    prettytable:   "3.17.0"  # dep — ASCII tables for genice2-cif
+
+# ──────────────────────────────────────────────
+# Group 3: pip install gsw
+# Session: ses_28238b74 (Apr 12)
+# Agent: gsd-project-researcher (density calculation research)
+# ──────────────────────────────────────────────
+gsw:             # direct  — TEOS-10 Gibbs SeaWater library
+  version: "3.6.21"
+  type: direct
+  source: "pip install gsw by research agent (ses_28238b74)"
+  deps: {}
+
+# ──────────────────────────────────────────────
+# Group 4: pip install pytest-timeout
+# Session: ses_13962d438ffeqIR0JG7HHCrVro (Jun 14)
+# Agent: gsd-executor (phase execution)
+# ──────────────────────────────────────────────
+pytest-timeout:  # direct  — pytest plugin for test timeouts
+  version: "2.4.0"
+  type: direct
+  source: "pip install pytest-timeout by executor agent (ses_13962d438ffeqIR0JG7HHCrVro)"
+  deps: {}
+
+# ──────────────────────────────────────────────
+# Group 5: pip install git-filter-repo
+# Session: unknown (not found in DB search)
+# Agent: unknown
+# ──────────────────────────────────────────────
+git-filter-repo: # direct  — git history rewriting tool
+  version: "2.47.0"
+  type: direct
+  source: "pip install by agent (session not identified)"
+  deps: {}
