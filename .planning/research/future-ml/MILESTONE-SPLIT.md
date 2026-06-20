@@ -152,6 +152,34 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 
 ---
 
+## UI Architecture Decision: Builder / Analyzer Layout
+
+**Decision: Tabs.**
+
+When v6.0 (analysis) lands, the app will have two fundamentally different workflows — Build and Analyze — that need distinct controls, distinct output, and a distinct mental model. Three layout options were considered:
+
+| Option | Pros | Cons |
+|--------|------|------|
+| **Separate windows** | Clean separation; can have both open simultaneously (build → run → analyze loop) | Window management burden; harder to share state; lost windows |
+| **Tabs** | Simple switch; one window; familiar pattern; shared sidebar/context; each tab IS the mode | Can't see both at once |
+| **Mode toggle button** | One UI; feels lightweight; fast switch | Hardest to implement well — same widgets serve two masters; crowded or oversimplified; confusing what's visible when |
+
+**Why tabs:**
+
+1. **Builder and Analyzer are separate apps that happen to live in one binary.** You don't analyze while building. Tabs encode this naturally: "I'm done building, let me switch to analysis."
+
+2. **Shared context is easy.** Build tab can have a "Send to Analysis" button that switches tabs and pre-fills the trajectory path. Tabs share the same window state.
+
+3. **No window management.** No "which window has focus," no lost windows behind the terminal.
+
+4. **Each tab owns its layout.** No hide/show widget juggling based on mode — the tab IS the mode. Build tab has parameter controls + Build button + file output. Analyze tab has trajectory loader + metric selector + plot viewer.
+
+5. **Future-proof.** v7.0 advanced building = sub-tab under Build. v5.5 molecule library = tab or panel within Build. Hydrate analysis tiers = sub-tabs under Analyze. The pattern scales.
+
+**Pattern:** `Build tab | Analyze tab` with a shared status bar showing system name + file paths.
+
+---
+
 ## Open Questions Requiring User Input
 
 1. **P16 verification** — CONFIRMED REAL BUG. Fix before any milestone work.
