@@ -106,10 +106,7 @@ All 6 TOP-writing functions now emit correct TIP4P-ICE LJ parameters via constan
 ## Dependency Graph
 
 ```
-P16 Investigation (URGENT hotfix)
-     │
-     ▼
-v4.5 completion
+v4.5 completion (P16 already fixed)
      │
      ├──────────────────────────────┐
      ▼                              ▼
@@ -182,7 +179,7 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 ## Open Questions Requiring User Input
 
-1. **P16 verification** — CONFIRMED REAL BUG. Fix before any milestone work.
+1. ~~**P16 verification**~~ — ✅ FIXED. Comb-rule 2 kept with correct sigma/epsilon values.
 
 2. **v4.6 vs v5.0 sequencing** — Should "free wins" and "asymmetric slab" ship together as one v5.0, or separately as v4.6 + v5.0?
 
@@ -194,7 +191,7 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 6. **Crystal face default** — Should QuickIce switch default from `1h` (likely prismatic) to `one[hh]` (basal) for scientific correctness? Breaking change for existing users.
 
-7. **Comb-rule convention** — P16 fix: switch to comb-rule 1 (human-readable sigma/epsilon) or keep comb-rule 2 with correct C6/C12? See P16 bug report for analysis.
+7. ~~**Comb-rule convention**~~ — ✅ RESOLVED. Kept comb-rule 2 (Lorentz-Berthelot) with correct sigma/epsilon format — consistent with tip4p-ice.itp template and existing guest atomtypes.
 
 ---
 
