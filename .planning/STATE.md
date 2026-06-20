@@ -696,6 +696,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ### Pending Todos
 
+- [2026-06-20] Decide disposition of 26 rogue pip packages in quickice env (tooling) — `.planning/todos/pending/2026-06-20-decide-rogue-pip-packages-disposition.md`
 - [2026-05-24] Pre-built small molecules for custom mol with GROMACS format (feature) — `.planning/todos/pending/2026-05-24-pre-built-small-molecules-gromacs.md`
 - [2026-05-16] Install UPX for bundle compression (tooling) — `.planning/todos/pending/2026-05-16-install-upx-for-bundle-compression.md`
 - [2026-05-07] Capture screenshots per Phase 35 suggestions (docs) — `.planning/todos/pending/2026-05-07-capture-screenshots-per-phase-35-suggestions.md`
