@@ -50,6 +50,7 @@ MainWindow stores results as `_current_*_result` attributes. Duck-typing sets ru
 - **All inserters return NEW structure objects.** Never mutate input structures (V-17 fix).
 - **cKDTree conditional rebuild:** Initialize tree as `None`, rebuild ONLY after successful placement (not on rejection). See `ion_inserter.py` and `solute_inserter.py`.
 - **Moleculetype naming:** Hydrate guests use `_H` suffix, liquid solutes use `_L` suffix. `MoleculetypeRegistry` in `quickice/structure_generation/moleculetype_registry.py` manages this. Never hardcode moleculetype names.
+- **Atomic commits only.** Never `git add .` or `git add -A`. Stage only intended files with `git add <path>`. Each commit should represent one logical change.
 
 ## Testing
 
