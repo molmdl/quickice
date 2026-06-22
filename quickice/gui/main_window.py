@@ -1643,19 +1643,43 @@ class MainWindow(QMainWindow):
         success = self._interface_gromacs_exporter.export_interface_gromacs(iface)
         
         if success:
+            # Build molecule breakdown — interface may contain guest molecules from hydrate
+            lines = [
+                f"GROMACS files exported successfully.",
+                f"",
+                f"Water model: TIP4P-ICE",
+                f"(Abascal et al. 2005, DOI: 10.1063/1.1931662)",
+                f"",
+                f"Ice molecules: {iface.ice_nmolecules}",
+                f"Water molecules: {iface.water_nmolecules}",
+            ]
+            
+            # Guest molecules (from hydrate cages)
+            if iface.guest_nmolecules > 0:
+                from quickice.gui.export import _detect_guest_type_from_structure
+                guest_type = _detect_guest_type_from_structure(iface)
+                guest_label = guest_type.upper() if guest_type else "Guest"
+                lines.append(f"Guest {guest_label}: {iface.guest_nmolecules} molecules")
+            
+            # Custom molecules (if solute/custom tab already placed them on interface)
+            if iface.custom_molecule_count > 0:
+                custom_type = getattr(iface, 'custom_molecule_moleculetype', '') or "Custom"
+                lines.append(f"Custom {custom_type}: {iface.custom_molecule_count} molecules")
+            
+            total = iface.ice_nmolecules + iface.water_nmolecules + iface.guest_nmolecules
+            if iface.custom_molecule_count > 0:
+                total += iface.custom_molecule_count
+            lines.append(f"Total: {total} molecules")
+            lines.append(f"")
+            lines.append(f"Files generated:")
+            lines.append(f"• interface_{iface.mode}.gro")
+            lines.append(f"• interface_{iface.mode}.top")
+            lines.append(f"• interface_{iface.mode}.itp")
+            
             QMessageBox.information(
                 self,
                 "Export Complete",
-                f"GROMACS files exported successfully.\n\n"
-                f"Water model: TIP4P-ICE\n"
-                f"(Abascal et al. 2005, DOI: 10.1063/1.1931662)\n\n"
-                f"Ice molecules: {iface.ice_nmolecules}\n"
-                f"Water molecules: {iface.water_nmolecules}\n"
-                f"Total: {iface.ice_nmolecules + iface.water_nmolecules}\n\n"
-                f"Files generated:\n"
-                f"• interface_{iface.mode}.gro\n"
-                f"• interface_{iface.mode}.top\n"
-                f"• interface_{iface.mode}.itp"
+                "\n".join(lines)
             )
     
     @Slot()
@@ -1714,16 +1738,46 @@ class MainWindow(QMainWindow):
         success = self._ion_gromacs_exporter.export_ion_gromacs(ion_structure)
         
         if success:
-            # Count water molecules
+            # Count water and ice molecules from molecule_index
             water_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "water")
+            ice_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "ice")
+            
+            # Build complete molecule breakdown matching .gro file contents
+            # Order: SOL (ice+water), guest, custom, solute, ions
+            lines = [
+                f"Ion structure exported successfully.",
+                f"",
+                f"Files: ions_{ion_structure.na_count}na_{ion_structure.cl_count}cl.gro/.top",
+            ]
+            if ice_count > 0:
+                lines.append(f"Ice: {ice_count} molecules")
+            lines.append(f"Water: {water_count} molecules")
+            
+            # Guest molecules (from hydrate cages)
+            guest_count = ion_structure.guest_nmolecules
+            if guest_count > 0:
+                from quickice.gui.export import _detect_guest_type_from_structure
+                guest_type = _detect_guest_type_from_structure(ion_structure)
+                guest_label = guest_type.upper() if guest_type else "Guest"
+                lines.append(f"Guest {guest_label}: {guest_count} molecules")
+            
+            # Solute molecules (if present from prior solute step)
+            if ion_structure.solute_n_molecules > 0:
+                solute_type = ion_structure.solute_type or "Solute"
+                lines.append(f"Solute {solute_type}: {ion_structure.solute_n_molecules} molecules")
+            
+            # Custom molecules (if present from prior custom step)
+            if ion_structure.custom_molecule_count > 0:
+                custom_type = ion_structure.custom_molecule_moleculetype or "Custom"
+                lines.append(f"Custom {custom_type}: {ion_structure.custom_molecule_count} molecules")
+            
+            lines.append(f"Na+: {ion_structure.na_count} ions")
+            lines.append(f"Cl-: {ion_structure.cl_count} ions")
+            
             QMessageBox.information(
                 self,
                 "Export Complete",
-                f"Ion structure exported successfully.\n\n"
-                f"Files: ions_{ion_structure.na_count}na_{ion_structure.cl_count}cl.gro/.top\n"
-                f"Water: {water_count} molecules\n"
-                f"Na+: {ion_structure.na_count} ions\n"
-                f"Cl-: {ion_structure.cl_count} ions"
+                "\n".join(lines)
             )
     
     @Slot()
@@ -1752,14 +1806,36 @@ class MainWindow(QMainWindow):
             water_count = getattr(interface, 'water_nmolecules', 0) if interface else 0
             ice_count = getattr(interface, 'ice_nmolecules', 0) if interface else 0
             
+            # Build complete molecule breakdown matching .gro file contents
+            # Order: SOL (ice+water), guest, custom, solute
+            lines = [
+                f"Solute structure exported successfully.",
+                f"",
+                f"Files: solute_{solute_structure.solute_type.lower()}_{solute_structure.n_molecules}molecules.gro/.top",
+                f"Ice: {ice_count} molecules",
+                f"Water: {water_count} molecules",
+            ]
+            
+            # Guest molecules (from hydrate cages) — distinguish from solute
+            guest_count = getattr(interface, 'guest_nmolecules', 0) if interface else 0
+            if guest_count > 0:
+                from quickice.gui.export import _detect_guest_type_from_structure
+                guest_type = _detect_guest_type_from_structure(interface) if interface else None
+                guest_label = guest_type.upper() if guest_type else "Guest"
+                lines.append(f"Guest {guest_label}: {guest_count} molecules")
+            
+            # Custom molecules (propagated from custom molecule tab)
+            if solute_structure.custom_molecule_count > 0:
+                custom_type = solute_structure.custom_molecule_moleculetype or "Custom"
+                lines.append(f"Custom {custom_type}: {solute_structure.custom_molecule_count} molecules")
+            
+            # Solute molecules — label clearly to avoid confusion with guest molecules
+            lines.append(f"Solute {solute_structure.solute_type}: {solute_structure.n_molecules} molecules")
+            
             QMessageBox.information(
                 self,
                 "Export Complete",
-                f"Solute structure exported successfully.\n\n"
-                f"Files: solute_{solute_structure.solute_type.lower()}_{solute_structure.n_molecules}molecules.gro/.top\n"
-                f"Ice: {ice_count} molecules\n"
-                f"Water: {water_count} molecules\n"
-                f"{solute_structure.solute_type}: {solute_structure.n_molecules} molecules"
+                "\n".join(lines)
             )
     
     def _on_export_custom_molecule_gromacs(self):
@@ -1780,14 +1856,36 @@ class MainWindow(QMainWindow):
         success = self._custom_molecule_gromacs_exporter.export_custom_molecule_gromacs(custom_structure)
         
         if success:
+            # Build complete molecule breakdown matching .gro file contents
+            # Order: SOL (ice+water), guest, custom
+            lines = [
+                f"Custom molecule structure exported successfully.",
+                f"",
+                f"Files: custom_{custom_structure.moleculetype_name}_{custom_structure.custom_molecule_count}molecules.gro/.top",
+                f"Molecule type: {custom_structure.moleculetype_name}",
+            ]
+            
+            # Ice and water molecules
+            if custom_structure.ice_nmolecules > 0:
+                lines.append(f"Ice: {custom_structure.ice_nmolecules} molecules")
+            lines.append(f"Water: {custom_structure.water_nmolecules} molecules")
+            
+            # Guest molecules (from hydrate cages)
+            guest_count = custom_structure.guest_nmolecules
+            if guest_count > 0:
+                from quickice.gui.export import _detect_guest_type_from_structure
+                guest_type = _detect_guest_type_from_structure(custom_structure)
+                guest_label = guest_type.upper() if guest_type else "Guest"
+                lines.append(f"Guest {guest_label}: {guest_count} molecules")
+            
+            # Custom molecules
+            lines.append(f"Custom {custom_structure.moleculetype_name}: {custom_structure.custom_molecule_count} molecules")
+            lines.append(f"ITP bundled: {custom_structure.itp_path.name}")
+            
             QMessageBox.information(
                 self,
                 "Export Complete",
-                f"Custom molecule structure exported successfully.\n\n"
-                f"Files: custom_{custom_structure.moleculetype_name}_{custom_structure.custom_molecule_count}molecules.gro/.top\n"
-                f"Molecule type: {custom_structure.moleculetype_name}\n"
-                f"Molecules: {custom_structure.custom_molecule_count}\n"
-                f"ITP bundled: {custom_structure.itp_path.name}"
+                "\n".join(lines)
             )
     
     @Slot()
