@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "small_model": "synthetic/syn:small:text",
+  "small_model": "synthetic/hf:zai-org/GLM-4.7-Flash",
   "agent": {
     "gsd-planner": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-plan-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
@@ -13,9 +13,9 @@
     "gsd-debugger": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-verifier": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "gsd-integration-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
-    "gsd-set-profile": { "model": "synthetic/syn:small:text" },
-    "gsd-settings": { "model": "synthetic/syn:small:text" },
-    "gsd-set-model": { "model": "synthetic/syn:small:text" },
+    "gsd-set-profile": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" },
+    "gsd-settings": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" },
+    "gsd-set-model": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" },
     "cp-gsd-planner": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-plan-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-phase-researcher": { "model": "synthetic/hf:zai-org/GLM-5.1" },
@@ -27,9 +27,9 @@
     "cp-gsd-debugger": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-verifier": { "model": "synthetic/hf:zai-org/GLM-5.1" },
     "cp-gsd-integration-checker": { "model": "synthetic/hf:zai-org/GLM-5.1" },
-    "cp-gsd-set-profile": { "model": "synthetic/syn:small:text" },
-    "cp-gsd-settings": { "model": "synthetic/syn:small:text" },
-    "cp-gsd-set-model": { "model": "synthetic/syn:small:text" }
+    "cp-gsd-set-profile": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" },
+    "cp-gsd-settings": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" },
+    "cp-gsd-set-model": { "model": "synthetic/hf:zai-org/GLM-4.7-Flash" }
   },
   "permission": {
     "external_directory": {
