@@ -1,9 +1,9 @@
 ---
-status: testing
+status: complete
 phase: 32-architecture-preparation
 source: 32-01-SUMMARY.md, 32-02-SUMMARY.md, 32-03-SUMMARY.md
 started: 2026-05-05T00:00:00Z
-updated: 2026-06-19T00:00:00Z
+updated: 2026-06-22T00:00:00Z
 stale_warnings:
   - "Tests 1-4 reference 4 tabs and Ion at Tab 3 — superseded by 6-tab layout (Phases 33-34.3). Current layout: Ice(0) Hydrate(1) Interface(2) Custom(3) Solute(4) Ion(5). See 34.3-UAT for current tab order tests."
   - "Test 5 references CH4_HYD/THF_HYD naming — superseded by CH4_H/THF_H (Quick Task 028) and CH4_L/THF_L for liquid solutes (Phase 34.2). See v4.5 batch checklist Workflow 9 for current naming verification."
@@ -11,11 +11,7 @@ stale_warnings:
 
 ## Current Test
 
-number: 5
-name: GROMACS Export with Hydrate Guests
-expected: |
-  Generate hydrate structure with CH4 or THF guests, export to GROMACS format. Check the .top file - guests should have unique moleculetype names (CH4_H or THF_H), not generic names.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -38,7 +34,7 @@ result: ✅ passed (2026-06-19, WF4 — interface→ion flow works)
 
 ### 5. GROMACS Export with Hydrate Guests
 expected: Generate hydrate structure with CH4 or THF guests, export to GROMACS format. Check the .top file - guests should have unique moleculetype names (CH4_H or THF_H), not generic names.
-result: pending
+result: ✅ passed (2026-06-22, WF3 — CH4_H/THF_H in .top [molecules], ch4_hydrate.itp/thf_hydrate.itp in #include, no _liquid suffix)
 
 ### 6. Integration Tests Pass
 expected: Run integration tests with: pytest tests/test_integration_v35.py -v. All 11 integration tests should pass without errors.
@@ -47,11 +43,10 @@ result: ✅ passed (2026-06-19, 41.16s, 11/11 tests)
 ## Summary
 
 total: 6
-passed: 4
+passed: 6
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
-stale: 2 (Tests 1 and 5 reference pre-v4.5 state — see stale_warnings in frontmatter)
 
 ## Gaps
 
