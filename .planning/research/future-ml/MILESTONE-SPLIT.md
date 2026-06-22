@@ -1,7 +1,7 @@
 # Future Milestone Split Suggestion
 
-**Synthesized from:** 4 research areas in `.planning/research/future-ml/`
-**Date:** 2026-06-17
+**Synthesized from:** 5 research areas in `.planning/research/future-ml/`
+**Date:** 2026-06-17 (updated 2026-06-22)
 **Based on:** STATE.md, ROADMAP.md, PROJECT.md, all SUMMARY.md + SYNTHESIS.md in future-ml subdirs
 
 ---
@@ -30,6 +30,35 @@ All 6 TOP-writing functions now emit correct TIP4P-ICE LJ parameters via constan
 **Dependencies:** v4.5 complete (InterfaceConfig + MoleculetypeRegistry stable)
 
 **Can overlap with:** v5.0 Phase 1 (asymmetric slab + crystal face) — no shared files
+
+---
+
+### v4.7: Custom Guest Molecule in Hydrate
+
+| Source | Phase | What | LOC (est.) | Risk | Value |
+|--------|-------|------|-----------|------|-------|
+| custom-guest-hydrate | Phase 1: GRO/ITP → GenIce2 Molecule Bridge | `gro_itp_to_genice2_molecule()` + `register_genice2_molecule()`, GRO position centering, ITP atom name extraction, 5-char name truncation, `audit_name` sanitization | ~100-150 | LOW | CRITICAL |
+| custom-guest-hydrate | Phase 2: HydrateGenerator Integration | Wire custom guest into `HydrateStructureGenerator._run_via_api()`, `sys.modules` injection before `generate_ice()`, cage occupancy passthrough, cleanup after generation | ~100-150 | LOW | HIGH |
+| custom-guest-hydrate | Phase 3: GROMACS Export Pipeline | ITP validation checklist (moleculetype rename `_H`, atomtypes comment-out, residue name rewrite, comb-rule=2 format detection), `parse_itp_atomtypes()` merging with dedup, `.top` `[atomtypes]` + `[molecules]` section generation | ~150-200 | LOW | HIGH |
+| custom-guest-hydrate | Phase 4: GUI/CLI Integration | Hydrate tab custom guest upload panel (.gro + .itp file pair), cage occupancy selector, CLI `--custom-guest` + `--custom-guest-itp` flags, thread-safe `sys.modules` injection in `HydrateWorker` | ~200-300 | MEDIUM | HIGH |
+| custom-guest-hydrate | Phase 5: Cage-Guest Size Validation | `guest_effective_diameter()` (max COM distance × 2), cage cavity diameter lookup table (`5¹²`/`5¹²6²`/`5¹²6⁴`/`5¹²6⁸`/`4³5⁶6³`), guest-too-large-for-cage warning | ~50-80 | LOW | MEDIUM-HIGH |
+
+**Why here:** Natural extension of v4.6 hydrate generation. Uses the same `_H` suffix convention (MoleculetypeRegistry), same ITP handling patterns (`comment_out_atomtypes_in_itp()`, `parse_itp_atomtypes()` dedup), same export infrastructure. Zero new dependencies. Does NOT depend on v5.0 (interface) or v5.5 (molecule library). Can ship before or alongside v5.0.
+
+**User theme:** *"I can place my own .gro/.itp molecule (ethanol, propane, cyclopentane) in GenIce2 hydrate cages"*
+
+**Key technical findings:**
+1. **`sys.modules` injection works** — Register `types.ModuleType("genice2.molecules.<name>")` with a `Molecule` subclass; GenIce2's `safe_import` finds it. End-to-end verified with CS1 + ethanol guest.
+2. **Fallback available** — `ice.repcagepos` and `ice.repcagetype` survive full `generate_ice()` pipeline. Approach B (cage center extraction + manual placement) is fully feasible if injection fails.
+3. **GRO 5-char residue name limit** — With `_H` suffix (2 chars), base names must be ≤3 chars. GenIce2 doesn't enforce this; QuickIce must validate and reject non-conforming names.
+4. **ITP transformation required** — `_H` suffix on `[moleculetype]`, residue name rewrite in `[atoms]`, `[atomtypes]` commented out (moved to main `.top`), comb-rule=2 sigma/epsilon format validation (reject A/B format).
+5. **No new libraries** — Everything uses existing `environment.yml` stack (GenIce2, numpy, PySide6).
+
+**Dependencies:** v4.6 (MoleculetypeRegistry `_H` suffix, ITP handling functions stable)
+
+**Can overlap with:** v5.0 Phase 1 (asymmetric slab) — no shared files; v5.5 (pre-built molecules) — complementary but independent
+
+**Critical pitfall:** `sys.modules` injection in QThread context — concurrent hydrate generations with different custom guests sharing the same plugin name need a lock or unique per-run naming (e.g., `qice_<uuid>_<name>`).
 
 ---
 
@@ -113,7 +142,15 @@ v4.5 completion (P16 already fixed)
 v4.6: Free Wins + P3 Fix     v5.0 Phase 1: Asymmetric Slab + Crystal Face
      │                         (PARALLEL — no shared files)
      │                              │
-     │◄─────────────────────────────┘
+     ├─────────────┐               │
+     ▼             ▼               │
+v4.7: Custom   v5.0 Phase 1      │
+ Guest in       (can overlap       │
+ Hydrate        with v4.7)        │
+(depends on                       │
+ v4.6 only)                       │
+     │                             │
+     │◄────────────────────────────┘
      ▼
 v5.0 Phase 3: Ice+Hydrate Triple Interface
 (depends on v4.6 P3 fix + v5.0 layer_assembly.py)
@@ -146,6 +183,9 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 | RDKit/ParmEd/ACPYPE as converter deps | pre-built-molecules | Pure Python converter works; no chemistry toolkits needed |
 | ML-based classification | hydrate-analysis | F3/F4 + CHILL+ are interpretable, lightweight, sufficient |
 | Packmol integration | complex-hydrate | GenIce2 -g/-G flags cover most guest placement needs |
+| Auto-convert A/B → sigma/epsilon atomtypes | custom-guest-hydrate | Risk of rounding errors; REJECT and ask user to regenerate ITP with correct comb-rule |
+| Random guest orientation in cages | custom-guest-hydrate | GenIce2 Stage7 uses identity rotation — would require monkey-patching or post-processing |
+| Silent GRO residue name truncation | custom-guest-hydrate | Must REJECT with clear error (e.g., "ETOH_H" is 6 chars → user must choose ≤3-char base name) |
 
 ---
 
@@ -187,11 +227,15 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 4. **Analysis vs molecules priority** — v6.0 (analysis) has higher scientific value; v5.5 (molecules) is more immediately usable. Which first?
 
-5. **Freud dependency** — Is adding freud-analysis 3.5.0 acceptable? Only new external dependency across all 4 research areas.
+5. **Freud dependency** — Is adding freud-analysis 3.5.0 acceptable? Only new external dependency across all 5 research areas.
 
 6. **Crystal face default** — Should QuickIce switch default from `1h` (likely prismatic) to `one[hh]` (basal) for scientific correctness? Breaking change for existing users.
 
-7. ~~**Comb-rule convention**~~ — ✅ RESOLVED. Kept comb-rule 2 (Lorentz-Berthelot) with correct sigma/epsilon format — consistent with tip4p-ice.itp template and existing guest atomtypes.
+7. **Custom guest thread safety** — `sys.modules` injection in `HydrateWorker` (QThread) may race if two hydrate generations run concurrently with different custom guests sharing a plugin name. Options: (a) per-run UUID-prefixed names (`qice_<uuid>_<name>`), (b) QMutex lock around registration+generation, (c) enforce serial generation. Which approach?
+
+8. **Custom guest + v5.5 molecule library overlap** — v4.7 (custom guest from user files) and v5.5 (pre-built molecule library) both place guest molecules in hydrate cages. Should v5.5's curated molecules feed into v4.7's bridge, or should they use a separate code path?
+
+9. ~~**Comb-rule convention**~~ — ✅ RESOLVED. Kept comb-rule 2 (Lorentz-Berthelot) with correct sigma/epsilon format — consistent with tip4p-ice.itp template and existing guest atomtypes.
 
 ---
 
@@ -201,6 +245,11 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 |------|-----------|---------|
 | Free Wins (v4.6) | HIGH | All GenIce2 APIs verified by hands-on testing |
 | P3 Export Fix (v4.6) | HIGH | Contained change, well-understood |
+| GRO/ITP Bridge (v4.7) | HIGH | sys.modules injection end-to-end verified with CS1 + ethanol |
+| HydrateGenerator Integration (v4.7) | HIGH | GenIce2 API stable, injection verified |
+| GROMACS Export (v4.7) | HIGH | All building blocks exist (comment_out_atomtypes, parse_itp_atomtypes dedup) |
+| GUI/CLI Integration (v4.7) | MEDIUM | QThread + sys.modules thread safety not yet tested |
+| Cage-Guest Size Validation (v4.7) | MEDIUM | Cage diameters from training data (cross-verified but not primary-sourced) |
 | Asymmetric Slab (v5.0) | HIGH | ~2 lines of assembly change |
 | Crystal Face (v5.0) | MEDIUM | Must verify `one[hh]` orthogonality with diagonal reshape |
 | Ice+Hydrate (v5.0) | MEDIUM | P3 fix prerequisite; LCM dimension algorithm needs testing |
@@ -214,5 +263,5 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 ---
 
-*Synthesized: 2026-06-17*
+*Synthesized: 2026-06-17 | Updated: 2026-06-22 (added v4.7 custom guest hydrate from R1-R4 research)*
 *For milestone planning: use as input when starting next milestone after v4.5*
