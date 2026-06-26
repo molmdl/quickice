@@ -44,6 +44,7 @@ from quickice.structure_generation.types import (
 from e2e_export_helpers import (
     _insert_custom_molecules,
     _insert_ions,
+    _insert_ions_from_solute,
     _insert_solutes,
     _solute_to_ion_source,
     ETOH_GRO,
@@ -437,3 +438,215 @@ def _parse_defaults_section(top_path: str) -> tuple[float, float]:
                         pass
 
     raise ValueError(f"Could not parse [ defaults ] section from {top_path}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DEDUP-01: Duplicate atomtype names in [ atomtypes ] section
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _parse_atomtype_names(top_path: str) -> list[str]:
+    """Parse atomtype names from [ atomtypes ] section of a TOP file.
+
+    Returns:
+        List of atomtype names in the order they appear.
+    """
+    in_atomtypes = False
+    names = []
+
+    with open(top_path, 'r') as f:
+        for line in f:
+            stripped = line.strip()
+
+            # Detect section headers
+            if stripped.startswith('['):
+                section = stripped.strip('[] \t').lower()
+                in_atomtypes = (section == 'atomtypes')
+                continue
+
+            # Skip comments and blank lines
+            if not stripped or stripped.startswith(';') or stripped.startswith('#'):
+                continue
+
+            # Parse atomtype lines
+            if in_atomtypes:
+                parts = stripped.split()
+                if len(parts) >= 7:
+                    names.append(parts[0])
+
+    return names
+
+
+class TestDEDUP01:
+    """Regression tests for DEDUP-01: duplicate atomtype names in [ atomtypes ].
+
+    Before the fix, the CH4 and THF atomtype blocks in gromacs_writer.py wrote
+    their atomtype lines independently without checking for duplicates. When both
+    CH4 and THF were present (e.g., hydrate sI-CH4 guest + THF solute), the
+    shared atomtype "hc" would appear twice in the [ atomtypes ] section.
+
+    The fix centralizes GAFF2 atomtype definitions in a module-level dict and
+    uses a _written_atomtypes tracking dict initialized BEFORE the CH4/THF
+    blocks, skipping atomtype names that have already been written.
+
+    For custom molecule atomtypes, the fix also checks parameter compatibility:
+    if a custom atomtype name matches an existing one with different LJ params,
+    a ValueError is raised.
+    """
+
+    def test_ion_top_no_duplicate_atomtypes_with_ch4_guest_and_thf_solute(
+        self, interface_slab, tmp_path
+    ):
+        """write_ion_top_file: CH4 hydrate guest + THF solute → no duplicate 'hc'.
+
+        This is the core scenario: sI-CH4 hydrate guest provides c3/hc,
+        THF solute provides os/c5/hc/h1. The atomtype "hc" must appear
+        exactly once in the [ atomtypes ] section.
+        """
+        from e2e_export_helpers import (
+            _hydrate_sI_ch4_candidate,
+            _make_slab_interface,
+        )
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='THF', concentration=0.3)
+        ion = _insert_ions_from_solute(solute, concentration=0.15)
+
+        top_path = str(tmp_path / "ion.top")
+        write_ion_top_file(ion, top_path)
+
+        names = _parse_atomtype_names(top_path)
+        name_counts = {}
+        for n in names:
+            name_counts[n] = name_counts.get(n, 0) + 1
+
+        duplicates = {k: v for k, v in name_counts.items() if v > 1}
+        assert len(duplicates) == 0, (
+            f"DEDUP-01 regression: duplicate atomtype names in ion .top file: "
+            f"{duplicates}. Each atomtype name must appear exactly once."
+        )
+
+        # Also verify the shared "hc" is actually present (not accidentally removed)
+        assert "hc" in name_counts, (
+            "DEDUP-01: atomtype 'hc' is missing from [ atomtypes ]. "
+            "It should appear once (deduplicated from CH4+THF)."
+        )
+
+    def test_solute_top_no_duplicate_atomtypes_with_ch4_guest_and_thf_solute(
+        self, interface_slab, tmp_path
+    ):
+        """write_solute_top_file: CH4 hydrate guest + THF solute → no duplicate 'hc'."""
+        from e2e_export_helpers import (
+            _hydrate_sI_ch4_candidate,
+            _make_slab_interface,
+        )
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        solute = _insert_solutes(interface, solute_type='THF', concentration=0.3)
+
+        top_path = str(tmp_path / "solute.top")
+        write_solute_top_file(solute, top_path)
+
+        names = _parse_atomtype_names(top_path)
+        name_counts = {}
+        for n in names:
+            name_counts[n] = name_counts.get(n, 0) + 1
+
+        duplicates = {k: v for k, v in name_counts.items() if v > 1}
+        assert len(duplicates) == 0, (
+            f"DEDUP-01 regression: duplicate atomtype names in solute .top file: "
+            f"{duplicates}. Each atomtype name must appear exactly once."
+        )
+
+    def test_custom_top_no_duplicate_atomtypes_with_ch4_guest(
+        self, interface_slab, tmp_path
+    ):
+        """write_custom_molecule_top_file: CH4 guest → no duplicate atomtypes.
+
+        The custom molecule top writer also writes CH4 guest atomtypes, and
+        the custom molecule (etoh) may share atomtype names (like "hc").
+        Verify no duplicates even in this simpler case.
+        """
+        from e2e_export_helpers import (
+            _hydrate_sI_ch4_candidate,
+            _make_slab_interface,
+        )
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface = _make_slab_interface(hydrate)
+        custom = _insert_custom_molecules(interface, n_molecules=3)
+
+        top_path = str(tmp_path / "custom.top")
+        write_custom_molecule_top_file(custom, top_path)
+
+        names = _parse_atomtype_names(top_path)
+        name_counts = {}
+        for n in names:
+            name_counts[n] = name_counts.get(n, 0) + 1
+
+        duplicates = {k: v for k, v in name_counts.items() if v > 1}
+        assert len(duplicates) == 0, (
+            f"DEDUP-01 regression: duplicate atomtype names in custom .top file: "
+            f"{duplicates}. Each atomtype name must appear exactly once."
+        )
+
+    def test_conflicting_custom_atomtype_raises_error(self, tmp_path):
+        """A custom molecule atomtype with same name but different params raises ValueError.
+
+        If a custom molecule defines an atomtype that already exists with
+        different sigma/epsilon, the writer should raise ValueError rather
+        than silently accepting conflicting definitions.
+        """
+        from quickice.output.gromacs_writer import _check_custom_atomtype_conflict
+
+        # Simulate existing written atomtype "hc" with GAFF2 params
+        written = {
+            "hc": ("hc", 1, 1.0079, 0.0, "A", 2.60018e-1, 8.70272e-2),
+        }
+
+        # Custom atomtype with SAME params → no error
+        same_params = ("hc", "hc", "1", "1.0079", "0.0", "A", "2.60018e-1", "8.70272e-2")
+        _check_custom_atomtype_conflict("hc", same_params, written)  # should not raise
+
+        # Custom atomtype with DIFFERENT sigma → ValueError
+        diff_sigma = ("hc", "hc", "1", "1.0079", "0.0", "A", "9.99999e-1", "8.70272e-2")
+        with pytest.raises(ValueError, match="different LJ parameters"):
+            _check_custom_atomtype_conflict("hc", diff_sigma, written)
+
+        # Custom atomtype with DIFFERENT epsilon → ValueError
+        diff_epsilon = ("hc", "hc", "1", "1.0079", "0.0", "A", "2.60018e-1", "9.99999e-1")
+        with pytest.raises(ValueError, match="different LJ parameters"):
+            _check_custom_atomtype_conflict("hc", diff_epsilon, written)
+
+        # Custom atomtype with NEW name → no error
+        new_name = ("oh", "oh", "8", "15.9994", "0.0", "A", "3.24287e-1", "3.89112e-1")
+        _check_custom_atomtype_conflict("oh", new_name, written)  # should not raise
+
+    def test_multi_molecule_top_no_duplicate_atomtypes_ch4_thf(self, tmp_path):
+        """write_multi_molecule_top_file: CH4 + THF → no duplicate 'hc'."""
+        from quickice.structure_generation.types import MoleculeIndex as MI
+
+        # Build a molecule_index with both ch4 and thf types
+        mol_idx = [
+            MI(start_idx=0, count=4, mol_type="water"),
+            MI(start_idx=4, count=5, mol_type="ch4"),
+            MI(start_idx=9, count=13, mol_type="thf"),
+        ]
+
+        top_path = str(tmp_path / "multi.top")
+        write_multi_molecule_top_file(mol_idx, top_path, system_name="Test")
+
+        names = _parse_atomtype_names(top_path)
+        name_counts = {}
+        for n in names:
+            name_counts[n] = name_counts.get(n, 0) + 1
+
+        duplicates = {k: v for k, v in name_counts.items() if v > 1}
+        assert len(duplicates) == 0, (
+            f"DEDUP-01 regression: duplicate atomtype names in multi .top file: "
+            f"{duplicates}. Each atomtype name must appear exactly once."
+        )
+
+        # Verify hc is present
+        assert "hc" in name_counts, (
+            "DEDUP-01: atomtype 'hc' missing from multi .top [ atomtypes ]."
+        )

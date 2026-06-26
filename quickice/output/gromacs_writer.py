@@ -28,6 +28,186 @@ TIP4P_ICE_OW_SIGMA = 3.16680e-1    # nm
 TIP4P_ICE_OW_EPSILON = 8.82110e-1   # kJ/mol
 
 
+# ---------------------------------------------------------------------------
+# GAFF2 atomtype definitions for standard guest/solute molecules
+# ---------------------------------------------------------------------------
+# Each entry: (bond_type, atomic_number, mass, charge, ptype, sigma_nm, epsilon_kjmol)
+# Format matches the 8-column GROMACS [ atomtypes ] section.
+# Centralizing these eliminates scattered hardcoded atomtype lines and makes
+# deduplication between molecule types (e.g., CH4 and THF sharing "hc") trivial.
+# ---------------------------------------------------------------------------
+GAFF2_ATOMTYPES: dict[str, tuple[str, int, float, float, str, float, float]] = {
+    # CH4 atom types
+    "c3":  ("c3",  6, 12.0107, 0.0, "A", 3.39771e-1, 4.51035e-1),
+    "hc":  ("hc",  1,  1.0079, 0.0, "A", 2.60018e-1, 8.70272e-2),
+    # THF atom types
+    "os":  ("os",  8, 15.9994, 0.0, "A", 3.15610e-1, 3.03758e-1),
+    "c5":  ("c5",  6, 12.0107, 0.0, "A", 3.39771e-1, 4.51035e-1),
+    "h1":  ("h1",  1,  1.0079, 0.0, "A", 2.42200e-1, 8.70272e-2),
+    # CO2 atom types
+    "c_2": ("c_2", 6, 12.0107, 0.0, "A", 3.39955e-1, 4.39089e-1),
+    "o_2": ("o_2", 8, 15.9994, 0.0, "A", 3.02714e-1, 8.80314e-1),
+    # H2 atom types
+    "hn":  ("hn",  1,  1.0080, 0.0, "A", 0.0,         0.0),
+}
+
+# Atomtype names required per molecule type (order matches ITP file convention)
+CH4_ATOMTYPE_NAMES  = ["c3", "hc"]
+THF_ATOMTYPE_NAMES  = ["os", "c5", "hc", "h1"]
+CO2_ATOMTYPE_NAMES  = ["c_2", "o_2"]
+H2_ATOMTYPE_NAMES   = ["hn"]
+
+# Madrid2019 ion atomtype parameters (name → tuple)
+ION_ATOMTYPES: dict[str, tuple[str, int, float, float, str, float, float]] = {
+    "NA": ("NA", 11, 22.9898, 0.0, "A", 2.21737e-1, 1.47236e0),
+    "CL": ("CL", 17, 35.453,  0.0, "A", 4.69906e-1, 7.69231e-2),
+}
+
+# TIP4P-ICE water atomtype parameters (name → tuple)
+WATER_ATOMTYPES: dict[str, tuple[str, int, float, float, str, float, float]] = {
+    "OW_ice": ("OW_ice", 8, 15.9994, 0.0, "A", TIP4P_ICE_OW_SIGMA, TIP4P_ICE_OW_EPSILON),
+    "HW_ice": ("HW_ice", 1,  1.0080, 0.0, "A", 0.0, 0.0),
+    "MW":     ("MW",     0,  0.0000, 0.0, "V", 0.0, 0.0),
+}
+
+
+def _format_atomtype_line(name: str, params: tuple[str, ...]) -> str:
+    """Format a GAFF2/ion atomtype tuple as a GROMACS [ atomtypes ] line.
+
+    Args:
+        name: Atomtype name (also used as bond_type for GAFF2 convention)
+        params: (bond_type, atomic_number, mass, charge, ptype, sigma, epsilon)
+
+    Returns:
+        Formatted line string with newline.
+    """
+    bond_type, anum, mass, charge, ptype, sigma, epsilon = params
+    return (f"{name:<8s} {bond_type:<8s} {anum:>6d} "
+            f"{mass:>12.4f} {charge:>6.1f} {ptype:<4s} "
+            f"{sigma:>12.5e} {epsilon:>12.5e}\n")
+
+
+def _format_custom_atomtype_line(fields: tuple[str, ...]) -> str:
+    """Format a custom-molecule atomtype tuple as a GROMACS [ atomtypes ] line.
+
+    Custom atomtypes come from parse_itp_atomtypes() as string tuples.
+    Uses string formatting to preserve the original ITP file's numeric format.
+
+    Args:
+        fields: 8-element string tuple (name, bond_type, at.num, mass, charge,
+                ptype, sigma, epsilon)
+
+    Returns:
+        Formatted line string with newline.
+    """
+    return (f"{fields[0]:<8s} {fields[1]:<8s} {fields[2]:>6s} "
+            f"{fields[3]:>12s} {fields[4]:>6s} {fields[5]:<4s} "
+            f"{fields[6]:>12s} {fields[7]:>12s}\n")
+
+
+def _write_atomtypes_block(
+    f, names: list[str], source_label: str,
+    written: dict[str, tuple[str, int, float, float, str, float, float]],
+) -> None:
+    """Write a GAFF2 atomtypes block with deduplication.
+
+    For each atomtype name in *names*, checks if it has already been written
+    (present in *written*).  If not, writes the atomtype line and records it.
+    If the name was already written, skips it silently (built-in GAFF2 types
+    from the same GAFF2_ATOMTYPES dict are guaranteed to have identical
+    parameters).
+
+    Args:
+        f: Open file handle for the .top file.
+        names: Atomtype names to write (e.g., CH4_ATOMTYPE_NAMES).
+        source_label: Comment label for the block (e.g., "CH4 atom types (GAFF2)").
+        written: Mutable dict of already-written atomtypes
+                 (name → params tuple).  Updated in place.
+    """
+    f.write(f"; {source_label}\n")
+    for name in names:
+        if name in written:
+            continue  # Already written — identical params guaranteed for GAFF2
+        params = GAFF2_ATOMTYPES[name]
+        f.write(_format_atomtype_line(name, params))
+        written[name] = params
+
+
+def _check_custom_atomtype_conflict(
+    name: str,
+    custom_fields: tuple[str, ...],
+    written: dict[str, tuple[str, int, float, float, str, float, float]],
+) -> None:
+    """Check whether a custom-molecule atomtype conflicts with an existing one.
+
+    If *name* is already in *written*, compares the key LJ parameters
+    (sigma, epsilon).  If they differ, raises ValueError — the user must
+    rename the atomtype in their custom molecule to avoid the clash.
+    If they match, the duplicate is silently skipped (already defined above).
+
+    Args:
+        name: Atomtype name from the custom ITP file.
+        custom_fields: 8-element string tuple from parse_itp_atomtypes().
+        written: Dict of already-written atomtypes (name → params tuple).
+
+    Raises:
+        ValueError: If atomtype name already exists with different parameters.
+    """
+    if name not in written:
+        return  # No conflict — name is new
+
+    # Compare LJ parameters numerically (strings may use different formatting)
+    try:
+        custom_sigma = float(custom_fields[6])
+        custom_epsilon = float(custom_fields[7])
+    except (ValueError, IndexError):
+        # If we can't parse, be conservative and raise
+        raise ValueError(
+            f"Custom molecule atomtype '{name}' could not be parsed for "
+            f"parameter comparison.  Existing atomtypes with this name have "
+            f"already been written.  Please rename the atomtype in your "
+            f"custom molecule ITP file to avoid the collision."
+        )
+
+    existing_params = written[name]
+    existing_sigma = existing_params[5]  # index 5 in (bond_type, anum, mass, charge, ptype, sigma, epsilon)
+    existing_epsilon = existing_params[6]
+
+    # Use relative tolerance for floating-point comparison
+    if not _lj_params_match(existing_sigma, existing_epsilon,
+                            custom_sigma, custom_epsilon):
+        raise ValueError(
+            f"Atomtype '{name}' is already defined with different LJ "
+            f"parameters.  Existing: sigma={existing_sigma:.5e} nm, "
+            f"epsilon={existing_epsilon:.5e} kJ/mol.  Custom molecule "
+            f"defines: sigma={custom_sigma:.5e} nm, "
+            f"epsilon={custom_epsilon:.5e} kJ/mol.  "
+            f"Please rename the atomtype in your custom molecule ITP file "
+            f"to avoid the conflict."
+        )
+    # Parameters match — duplicate is harmless, already written above
+
+
+def _lj_params_match(
+    sigma1: float, eps1: float, sigma2: float, eps2: float,
+    rtol: float = 1e-4,
+) -> bool:
+    """Compare two LJ parameter sets with relative tolerance.
+
+    Returns True if both sigma and epsilon values are close enough to be
+    considered identical (accounting for rounding in different formats).
+    """
+    import math
+    if sigma1 == 0.0 and sigma2 == 0.0 and eps1 == 0.0 and eps2 == 0.0:
+        return True
+    if sigma1 == 0.0 or sigma2 == 0.0:
+        return sigma1 == sigma2  # Both should be zero
+    if eps1 == 0.0 or eps2 == 0.0:
+        return eps1 == eps2
+    return (math.isclose(sigma1, sigma2, rel_tol=rtol) and
+            math.isclose(eps1, eps2, rel_tol=rtol))
+
+
 MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "ice":   {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
     "water": {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
@@ -1027,9 +1207,14 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         # [ atomtypes ] - define custom atom types for TIP4P-ICE and guests
         f.write("[ atomtypes ]\n")
         f.write("; name  bond_type  atomic_number  mass  charge  ptype  sigma (nm)     epsilon (kJ/mol)\n")
-        f.write(f"OW_ice      OW_ice     8           15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
-        f.write("HW_ice      HW_ice     1            1.0080  0.0     A      0.0          0.0\n")
-        f.write("MW          MW          0            0.0000  0.0     V      0.0          0.0\n")
+
+        # Initialize dedup tracking
+        _written_atomtypes: dict[str, tuple] = {}
+
+        # TIP4P-ICE water atom types
+        for name, params in WATER_ATOMTYPES.items():
+            f.write(_format_atomtype_line(name, params))
+            _written_atomtypes[name] = params
         
         # Guest atom types if guests are present
         # Detect guest type from atom names (similar to write_ion_top_file)
@@ -1045,31 +1230,22 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         
         if iface.guest_atom_count > 0 and guest_type:
             if guest_type == "ch4":
-                # CH4 atom types (GAFF2)
-                f.write("; CH4 atom types (GAFF2)\n")
-                f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+                _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                       "CH4 atom types (GAFF2)", _written_atomtypes)
             elif guest_type == "thf":
-                # THF atom types (GAFF2)
-                f.write("; THF atom types (GAFF2)\n")
-                f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
-                f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-                f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-                f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
+                _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
+                                       "THF atom types (GAFF2)", _written_atomtypes)
             elif guest_type == "co2":
-                # CO2 atom types (GAFF2)
-                f.write("; CO2 atom types (GAFF2)\n")
-                f.write("c_2       c_2       6             12.0107  0.0     A      3.39955e-1    4.39089e-1\n")
-                f.write("o_2       o_2       8             15.9994  0.0     A      3.02714e-1    8.80314e-1\n")
+                _write_atomtypes_block(f, CO2_ATOMTYPE_NAMES,
+                                       "CO2 atom types (GAFF2)", _written_atomtypes)
             elif guest_type == "h2":
-                # H2 atom types (GAFF2)
-                f.write("; H2 atom types (GAFF2)\n")
-                f.write("hn        hn        1              1.0080  0.0     A      0.0           0.0\n")
+                _write_atomtypes_block(f, H2_ATOMTYPE_NAMES,
+                                       "H2 atom types (GAFF2)", _written_atomtypes)
         elif iface.guest_atom_count > 0:
             # Fallback: unknown guest type, write CH4 atomtypes as default
-            f.write("; CH4 atom types (GAFF2) - default for unknown guest\n")
-            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                   "CH4 atom types (GAFF2) - default for unknown guest",
+                                   _written_atomtypes)
         
         f.write("\n")
         
@@ -1325,44 +1501,44 @@ def write_multi_molecule_top_file(
         # GROMACS requires all atomtypes before any #include directives
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        
+
+        # Initialize dedup tracking BEFORE writing any atomtype blocks
+        _written_atomtypes: dict[str, tuple] = {}
+
         # TIP4P-ICE water atom types
-        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
-        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
-        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
-        
+        for name, params in WATER_ATOMTYPES.items():
+            f.write(_format_atomtype_line(name, params))
+            _written_atomtypes[name] = params
+
         # Madrid2019 ion atom types (if ions present)
         if "na" in unique_types or "cl" in unique_types:
             f.write("; Ion atom types (Madrid2019)\n")
             if "na" in unique_types:
-                f.write("NA        NA        11            22.9898  0.0     A      2.21737e-1    1.47236e0\n")
+                params = ION_ATOMTYPES["NA"]
+                f.write(_format_atomtype_line("NA", params))
+                _written_atomtypes["NA"] = params
             if "cl" in unique_types:
-                f.write("CL        CL        17            35.453   0.0     A      4.69906e-1    7.69231e-2\n")
-        
-        # GAFF2 atom types for CH4 (if present)
+                params = ION_ATOMTYPES["CL"]
+                f.write(_format_atomtype_line("CL", params))
+                _written_atomtypes["CL"] = params
+
+        # GAFF2 atom types for each molecule type — with deduplication
+        # Shared atomtypes (e.g., "hc" in both CH4 and THF) are written only once.
         if "ch4" in unique_types:
-            f.write("; CH4 atom types (GAFF2)\n")
-            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-        
-        # GAFF2 atom types for THF (if present)
+            _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                   "CH4 atom types (GAFF2)", _written_atomtypes)
+
         if "thf" in unique_types:
-            f.write("; THF atom types (GAFF2)\n")
-            f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
-            f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-            f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
-        
-        # GAFF2 atom types for CO2 (if present)
+            _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
+                                   "THF atom types (GAFF2)", _written_atomtypes)
+
         if "co2" in unique_types:
-            f.write("; CO2 atom types (GAFF2)\n")
-            f.write("c_2       c_2       6             12.0107  0.0     A      3.39955e-1    4.39089e-1\n")
-            f.write("o_2       o_2       8             15.9994  0.0     A      3.02714e-1    8.80314e-1\n")
-        
-        # GAFF2 atom types for H2 (if present)
+            _write_atomtypes_block(f, CO2_ATOMTYPE_NAMES,
+                                   "CO2 atom types (GAFF2)", _written_atomtypes)
+
         if "h2" in unique_types:
-            f.write("; H2 atom types (GAFF2)\n")
-            f.write("hn        hn        1              1.0080  0.0     A      0.0           0.0\n")
+            _write_atomtypes_block(f, H2_ATOMTYPE_NAMES,
+                                   "H2 atom types (GAFF2)", _written_atomtypes)
         
         f.write("\n")
         
@@ -1834,44 +2010,46 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         f.write("1               2               yes             0.5     0.8333\n\n")
         
         # [ atomtypes ] - MUST be before #include directives
-        # TIP4P-ICE water atom types
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
-        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
-        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
-        
+
+        # Initialize dedup tracking BEFORE writing any atomtype blocks
+        # Maps atomtype name → params tuple for conflict detection
+        _written_atomtypes: dict[str, tuple] = {}
+
+        # TIP4P-ICE water atom types
+        for name, params in WATER_ATOMTYPES.items():
+            f.write(_format_atomtype_line(name, params))
+            _written_atomtypes[name] = params
+
         # Madrid2019 ion atom types (if ions present)
         if na_count > 0 or cl_count > 0:
             f.write("; Ion atom types (Madrid2019)\n")
             if na_count > 0:
-                f.write("NA        NA        11            22.9898  0.0     A      2.21737e-1    1.47236e0\n")
+                params = ION_ATOMTYPES["NA"]
+                f.write(_format_atomtype_line("NA", params))
+                _written_atomtypes["NA"] = params
             if cl_count > 0:
-                f.write("CL        CL        17            35.453   0.0     A      4.69906e-1    7.69231e-2\n")
-        
+                params = ION_ATOMTYPES["CL"]
+                f.write(_format_atomtype_line("CL", params))
+                _written_atomtypes["CL"] = params
+
         # Combined GAFF2 atom types for guests AND solutes (Bug 1 fix)
         # Solute ITP files have [atomtypes] pre-commented, so parse_itp_atomtypes
-        # returns empty. Use hardcoded GAFF2 atomtypes instead.
+        # returns empty. Use centralized GAFF2_ATOMTYPES dict instead.
+        # _write_atomtypes_block skips names already in _written_atomtypes,
+        # preventing duplicates (e.g., "hc" shared by CH4 and THF).
         if needs_ch4_atomtypes:
-            f.write("; CH4 atom types (GAFF2)\n")
-            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                   "CH4 atom types (GAFF2)", _written_atomtypes)
 
         if needs_thf_atomtypes:
-            f.write("; THF atom types (GAFF2)\n")
-            f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
-            f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-            f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
-        
-        # Track written atomtype names for deduplication (Bug 3 fix)
-        _written_atomtypes = {"OW_ice", "HW_ice", "MW"}
-        if na_count > 0: _written_atomtypes.add("NA")
-        if cl_count > 0: _written_atomtypes.add("CL")
-        if needs_ch4_atomtypes: _written_atomtypes.update({"c3", "hc"})
-        if needs_thf_atomtypes: _written_atomtypes.update({"os", "c5", "hc", "h1"})
-        
+            _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
+                                   "THF atom types (GAFF2)", _written_atomtypes)
+
         # Custom molecule atom types (if present) — with deduplication (Bug 3 fix)
+        # Checks parameter compatibility: raises ValueError if a custom atomtype
+        # name matches an existing one with different LJ parameters.
         if has_custom and ion_structure.custom_itp_path:
             custom_itp_path = Path(ion_structure.custom_itp_path)
             if custom_itp_path.exists():
@@ -1879,9 +2057,21 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
                 if custom_atomtypes:
                     f.write(f"; {custom_mol_name} custom molecule atom types\n")
                     for atomtype in custom_atomtypes:
-                        if len(atomtype) >= 8 and atomtype[0] not in _written_atomtypes:
-                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
-                            _written_atomtypes.add(atomtype[0])
+                        if len(atomtype) >= 8:
+                            at_name = atomtype[0]
+                            _check_custom_atomtype_conflict(
+                                at_name, atomtype, _written_atomtypes)
+                            if at_name not in _written_atomtypes:
+                                f.write(_format_custom_atomtype_line(atomtype))
+                                # Record params for future conflict checks
+                                try:
+                                    _written_atomtypes[at_name] = (
+                                        atomtype[1], int(atomtype[2]),
+                                        float(atomtype[3]), float(atomtype[4]),
+                                        atomtype[5], float(atomtype[6]),
+                                        float(atomtype[7]))
+                                except (ValueError, IndexError):
+                                    pass  # Best-effort recording
         
         f.write("\n")
         
@@ -2248,38 +2438,46 @@ def write_custom_molecule_top_file(custom_structure: "CustomMoleculeStructure", 
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        
+
+        # Initialize dedup tracking BEFORE writing any atomtype blocks
+        _written_atomtypes: dict[str, tuple] = {}
+
         # TIP4P-ICE water atom types
-        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
-        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
-        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
+        for name, params in WATER_ATOMTYPES.items():
+            f.write(_format_atomtype_line(name, params))
+            _written_atomtypes[name] = params
         
-        # GAFF2 atom types for guests (if present)
+        # GAFF2 atom types for guests (if present) — with deduplication
         if needs_ch4_atomtypes:
-            f.write("; CH4 atom types (GAFF2)\n")
-            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                   "CH4 atom types (GAFF2)", _written_atomtypes)
         if needs_thf_atomtypes:
-            f.write("; THF atom types (GAFF2)\n")
-            f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
-            f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-            f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
-        
-        # Track written atomtype names for deduplication (Bug 3 fix)
-        _written_atomtypes = {"OW_ice", "HW_ice", "MW"}
-        if needs_ch4_atomtypes: _written_atomtypes.update({"c3", "hc"})
-        if needs_thf_atomtypes: _written_atomtypes.update({"os", "c5", "hc", "h1"})
+            _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
+                                   "THF atom types (GAFF2)", _written_atomtypes)
         
         # Custom molecule atom types - parse from ITP file, with dedup (Bug 3 fix)
+        # Checks parameter compatibility: raises ValueError if a custom atomtype
+        # name matches an existing one with different LJ parameters.
         if custom_structure.itp_path and custom_structure.itp_path.exists():
             custom_atomtypes = parse_itp_atomtypes(custom_structure.itp_path)
             if custom_atomtypes:
                 f.write(f"; {custom_mol_name} custom molecule atom types\n")
                 for atomtype in custom_atomtypes:
-                    if len(atomtype) >= 8 and atomtype[0] not in _written_atomtypes:
-                        f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
-                        _written_atomtypes.add(atomtype[0])
+                    if len(atomtype) >= 8:
+                        at_name = atomtype[0]
+                        _check_custom_atomtype_conflict(
+                            at_name, atomtype, _written_atomtypes)
+                        if at_name not in _written_atomtypes:
+                            f.write(_format_custom_atomtype_line(atomtype))
+                            # Record params for future conflict checks
+                            try:
+                                _written_atomtypes[at_name] = (
+                                    atomtype[1], int(atomtype[2]),
+                                    float(atomtype[3]), float(atomtype[4]),
+                                    atomtype[5], float(atomtype[6]),
+                                    float(atomtype[7]))
+                            except (ValueError, IndexError):
+                                pass  # Best-effort recording
         
         f.write("\n")
         
@@ -2783,31 +2981,31 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
         # [ atomtypes ] - MUST be before #include directives
         f.write("[ atomtypes ]\n")
         f.write("; name   bond_type  atomic_number  mass     charge  ptype  sigma (nm)    epsilon (kJ/mol)\n")
-        f.write(f"OW_ice   OW_ice    8             15.9994  0.0     A      {TIP4P_ICE_OW_SIGMA:.5e}    {TIP4P_ICE_OW_EPSILON:.5e}\n")
-        f.write("HW_ice   HW_ice    1              1.0080  0.0     A      0.0           0.0\n")
-        f.write("MW       MW        0              0.0000  0.0     V      0.0           0.0\n")
+
+        # Initialize dedup tracking BEFORE writing any atomtype blocks
+        _written_atomtypes: dict[str, tuple] = {}
+
+        # TIP4P-ICE water atom types
+        for name, params in WATER_ATOMTYPES.items():
+            f.write(_format_atomtype_line(name, params))
+            _written_atomtypes[name] = params
 
         # Combined GAFF2 atom types for guests AND solutes (Bug 1 fix)
         # Solute ITP files have [atomtypes] pre-commented, so parse_itp_atomtypes
-        # returns empty. Use hardcoded GAFF2 atomtypes instead.
+        # returns empty. Use centralized GAFF2_ATOMTYPES dict instead.
+        # _write_atomtypes_block skips names already in _written_atomtypes,
+        # preventing duplicates (e.g., "hc" shared by CH4 and THF).
         if needs_ch4_atomtypes:
-            f.write("; CH4 atom types (GAFF2)\n")
-            f.write("c3        c3        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
+            _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
+                                   "CH4 atom types (GAFF2)", _written_atomtypes)
 
         if needs_thf_atomtypes:
-            f.write("; THF atom types (GAFF2)\n")
-            f.write("os        os        8             15.9994  0.0     A      3.15610e-1    3.03758e-1\n")
-            f.write("c5        c5        6             12.0107  0.0     A      3.39771e-1    4.51035e-1\n")
-            f.write("hc        hc        1              1.0079  0.0     A      2.60018e-1    8.70272e-2\n")
-            f.write("h1        h1        1              1.0079  0.0     A      2.42200e-1    8.70272e-2\n")
-        
-        # Track written atomtype names for deduplication (Bug 3 fix)
-        _written_atomtypes = {"OW_ice", "HW_ice", "MW"}
-        if needs_ch4_atomtypes: _written_atomtypes.update({"c3", "hc"})
-        if needs_thf_atomtypes: _written_atomtypes.update({"os", "c5", "hc", "h1"})
-        
+            _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
+                                   "THF atom types (GAFF2)", _written_atomtypes)
+
         # Custom molecule atom types (if present) — with deduplication (Bug 3 fix)
+        # Checks parameter compatibility: raises ValueError if a custom atomtype
+        # name matches an existing one with different LJ parameters.
         if has_custom and solute_structure.custom_itp_path:
             custom_itp_path = Path(solute_structure.custom_itp_path)
             if custom_itp_path.exists():
@@ -2815,9 +3013,21 @@ def write_solute_top_file(solute_structure: "SoluteStructure", filepath: str) ->
                 if custom_atomtypes:
                     f.write(f"; {custom_mol_name} custom molecule atom types\n")
                     for atomtype in custom_atomtypes:
-                        if len(atomtype) >= 8 and atomtype[0] not in _written_atomtypes:
-                            f.write(f"{atomtype[0]:<8s} {atomtype[1]:<8s} {atomtype[2]:>6s} {atomtype[3]:>12s} {atomtype[4]:>6s} {atomtype[5]:<4s} {atomtype[6]:>12s} {atomtype[7]:>12s}\n")
-                            _written_atomtypes.add(atomtype[0])
+                        if len(atomtype) >= 8:
+                            at_name = atomtype[0]
+                            _check_custom_atomtype_conflict(
+                                at_name, atomtype, _written_atomtypes)
+                            if at_name not in _written_atomtypes:
+                                f.write(_format_custom_atomtype_line(atomtype))
+                                # Record params for future conflict checks
+                                try:
+                                    _written_atomtypes[at_name] = (
+                                        atomtype[1], int(atomtype[2]),
+                                        float(atomtype[3]), float(atomtype[4]),
+                                        atomtype[5], float(atomtype[6]),
+                                        float(atomtype[7]))
+                                except (ValueError, IndexError):
+                                    pass  # Best-effort recording
 
         f.write("\n")
 
