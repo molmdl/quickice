@@ -277,6 +277,8 @@ class TestCanonicalITP:
         assert info.atom_count == 5
         assert info.atom_types == ["c3", "hc", "hc", "hc", "hc"]
         assert info.atom_names == ["C", "H", "H", "H", "H"]
+        assert info.charges == [-0.46, 0.11, 0.11, 0.11, 0.11]
+        assert abs(sum(info.charges)) < 0.1  # Approximately neutral (GAFF charges)
         assert info.has_atomtypes_section is False
 
     def test_real_ch4_itp_file(self):
