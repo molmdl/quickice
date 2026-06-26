@@ -22,12 +22,14 @@ class ITPMoleculeInfo:
         atom_count: Number of atoms in the molecule
         atom_types: List of atom types (second column in [ atoms ] section)
         atom_names: List of atom names (fifth column in [ atoms ] section)
+        charges: List of atom charges (seventh column in [ atoms ] section)
         has_atomtypes_section: Whether [ atomtypes ] section exists in file
     """
     molecule_name: str
     atom_count: int
     atom_types: List[str]
     atom_names: List[str]
+    charges: List[float]
     has_atomtypes_section: bool
 
 
@@ -109,6 +111,7 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
     
     atom_types = []
     atom_names = []
+    charges = []
     for line in atom_lines:
         fields = line.split()
         if len(fields) >= 5:
@@ -117,6 +120,14 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
             # Format: Index type residue resname atom cgnr charge mass
             atom_types.append(fields[1])
             atom_names.append(fields[4])
+            # Charge is seventh column (index 6) if present
+            if len(fields) >= 7:
+                try:
+                    charges.append(float(fields[6]))
+                except ValueError:
+                    charges.append(0.0)
+            else:
+                charges.append(0.0)
     
     atom_count = len(atom_types)
     
@@ -137,5 +148,6 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         atom_count=atom_count,
         atom_types=atom_types,
         atom_names=atom_names,
+        charges=charges,
         has_atomtypes_section=has_atomtypes
     )

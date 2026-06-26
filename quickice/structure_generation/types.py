@@ -615,6 +615,7 @@ class CustomMoleculeStructure:
         itp_path: Original .itp file path
         residue_name: Final residue name (from ITP if override accepted, else from GRO)
         custom_molecule_count: Number of molecules placed
+        molecule_charge: Total charge of one molecule (sum of ITP atom charges)
         interface_structure: Original InterfaceStructure (ice + water) for downstream use
     """
     positions: np.ndarray
@@ -634,6 +635,7 @@ class CustomMoleculeStructure:
     itp_path: Path | None = None
     residue_name: str = ""
     custom_molecule_count: int = 0
+    molecule_charge: float = 0.0  # Total charge of one molecule (sum of ITP atom charges)
     interface_structure: Any = None  # InterfaceStructure (avoid circular import)
 
 

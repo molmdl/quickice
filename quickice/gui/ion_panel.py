@@ -367,6 +367,9 @@ class IonPanel(QWidget):
         if self._current_source == "Custom Molecule":
             self._update_insert_button_state()
         
+        # Update charge warning when custom molecule structure changes
+        self._update_charge_warning()
+        
         logger.info(f"Custom Molecule structure set: {structure.custom_molecule_count} molecules")
     
     def set_interface_structure(self, structure: "InterfaceStructure"):
@@ -443,36 +446,26 @@ class IonPanel(QWidget):
             self.charge_warning_label.setVisible(False)
     
     def get_total_charge(self) -> float:
-        """Calculate total charge from ion configuration.
+        """Calculate total charge from source structure.
         
-        Gets current ion configuration and calculates total charge based on
-        Na+ and Cl- counts multiplied by their charges (±0.85 from Madrid2019).
-        
-        Note: This calculation is based on ion configuration charges only.
-        Custom molecule charge is NOT included in this phase (deferred to future).
+        For Custom Molecule source: total charge = molecule_charge × molecule_count.
+        For Interface and Solute sources: always 0.0 (neutral systems).
         
         Returns:
             Total charge (positive = excess positive, negative = excess negative)
         """
-        # Get ion configuration
-        config = self.get_configuration()
-        
-        # Calculate ion pairs from concentration and volume
-        if self._liquid_volume_nm3 <= 0:
+        # Custom Molecule source: compute charge from molecule_charge × count
+        if self._current_source == "Custom Molecule":
+            if self._custom_molecule_structure is not None:
+                molecule_charge = getattr(
+                    self._custom_molecule_structure, 'molecule_charge', 0.0
+                )
+                molecule_count = self._custom_molecule_structure.custom_molecule_count
+                return molecule_charge * molecule_count
             return 0.0
         
-        inserter = IonInserter(config)
-        pair_count = inserter.calculate_ion_pairs(
-            config.concentration_molar,
-            self._liquid_volume_nm3
-        )
-        
-        # Madrid2019 ion charges: Na+ = +0.85, Cl- = -0.85
-        # Each pair contributes: +0.85 + (-0.85) = 0 (neutral)
-        # For now, ion configuration is always neutral (equal Na+ and Cl-)
-        # Future: Support custom ion ratios for non-neutral systems
-        
-        return 0.0  # Ion configuration is always charge-neutral
+        # Interface and Solute sources: neutral systems by design
+        return 0.0
     
     def _update_ion_count(self):
         """Update ion count display based on current concentration and volume.

@@ -24,6 +24,7 @@ from quickice.structure_generation.types import (
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.gro_parser import parse_gro_file
+from quickice.structure_generation.itp_parser import parse_itp_file
 from quickice.structure_generation.ion_inserter import AVOGADRO
 
 
@@ -85,6 +86,15 @@ class CustomMoleculeInserter:
         self.template_positions, self.template_atom_names, cell = parse_gro_file(
             config.gro_path
         )
+        
+        # Parse ITP file to get molecule charge (for charge warning in Ion tab)
+        self.molecule_charge = 0.0
+        try:
+            itp_info = parse_itp_file(config.itp_path)
+            self.molecule_charge = sum(itp_info.charges)
+        except (ValueError, FileNotFoundError, OSError):
+            # If ITP parsing fails, default to 0.0 charge (neutral)
+            logger.warning(f"Could not parse ITP file for charge: {config.itp_path}")
         
         # Residue name will be determined during placement
         # (from ITP if override accepted, else from GRO)
@@ -779,6 +789,7 @@ class CustomMoleculeInserter:
             itp_path=self.config.itp_path,
             residue_name=moleculetype_name,
             custom_molecule_count=n_molecules,
+            molecule_charge=self.molecule_charge,
             interface_structure=modified_structure
         )
     
@@ -952,5 +963,6 @@ class CustomMoleculeInserter:
             itp_path=self.config.itp_path,
             residue_name=moleculetype_name,
             custom_molecule_count=n_molecules,
+            molecule_charge=self.molecule_charge,
             interface_structure=modified_structure
         )
