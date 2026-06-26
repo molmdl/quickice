@@ -1,0 +1,14 @@
+; Single Na+ ion (non-neutral, charge +0.85) — Madrid2019 parameters
+; WARNING: This molecule is intentionally non-neutral for testing purposes.
+
+[ atomtypes ]
+; name   at.num      mass       charge   ptype     sigma (nm)    epsilon (kJ/mol)
+NA          11    22.989800    0.850000    A      2.21736680E-01    1.47235577E+00
+
+[ moleculetype ]
+; name          nrexcl
+NA            1
+
+[ atoms ]
+;  nr  type  resi  res  atom  cgnr  charge  mass
+    1    NA      1    NA    NA     1      0.85   22.9898
