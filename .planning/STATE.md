@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 38 of 48 (Internal Pipeline Refactor) |
-| Plan | — |
-| Status | Ready to plan |
-| Last activity | 2026-06-27 — Roadmap created |
+| Plan | 01 of 04 complete |
+| Status | In progress |
+| Last activity | 2026-06-27 — Completed 38-01-PLAN.md |
 
-**Progress:** [░░░░░░░░░░] 0%
+**Progress:** [█░░░░░░░░░] ~10%
 
 ---
 
@@ -66,6 +66,9 @@ Recent decisions affecting v4.7 work:
 - sT' = water-only generation in v4.7 (no cagepos in GenIce2)
 - Built-in CO₂/H₂/ethane guests deferred to v4.8+ (force field verification needed)
 - Water model selector deferred to v4.8+ (downstream impact)
+- **[38-01]** Built-in guest types auto-populate metadata in __post_init__; custom types (Phase 40) must provide explicitly
+- **[38-01]** guest_itp_path is NOT auto-populated (only relevant for custom guests)
+- **[38-01]** atom_labels uses list copy from GUEST_MOLECULES to avoid shared mutable state
 
 ### Pending Todos
 
@@ -77,13 +80,13 @@ Recent decisions affecting v4.7 work:
 ### Blockers/Concerns
 
 - GRO `:<5s` overflow (NOT truncation) — must validate at every write entry point
-- `_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model
+- `_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model (addressed in Plan 02)
 - Thread safety gap: `sys.modules` injection must happen outside existing `_genice_lock` scope
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-06-27
-Stopped at: Roadmap created, Phase 38 ready to plan
+Last session: 2026-06-27T14:26:50Z
+Stopped at: Completed 38-01-PLAN.md
 Resume file: None
