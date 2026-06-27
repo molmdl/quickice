@@ -8,7 +8,7 @@ updated: 2026-06-27T12:30:00Z
 
 ## Current Test
 
-[testing complete]
+[testing complete — 13/15 passed, help text verified]
 
 ## Tests
 
