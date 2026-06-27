@@ -31,6 +31,7 @@ jobs:
         run: |
           mkdir -p dist/package
           cp -r dist/quickice-gui dist/package/
+          cp -r QuickIce.bat dist/package/
           cp README.md README_bin.md dist/package/
           cp LICENSE dist/package/
           mkdir -p dist/package/docs
@@ -41,11 +42,11 @@ jobs:
         shell: bash
         run: |
           cd dist
-          7z a -tzip quickice-v4.0.0-windows-x86_64.zip package/
-          mv quickice-v4.0.0-windows-x86_64.zip ../
+          7z a -tzip quickice-v4.5.0-windows-x86_64.zip package/
+          mv quickice-v4.5.0-windows-x86_64.zip ../
       
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: windows-executable
-          path: quickice-v4.0.0-windows-x86_64.zip
+          path: quickice-v4.5.0-windows-x86_64.zip
