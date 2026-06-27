@@ -44,8 +44,8 @@ verified: exit code 2, error message "the following arguments are required: --te
 
 ### 7. --gui flag with display available
 expected: Running `python -m quickice --gui` on a machine with display launches the QuickIce GUI window
-result: skipped
-reason: Headless environment — GUI launch requires physical display; verified via QT_QPA_PLATFORM=offscreen timeout (GUI loaded successfully, no crash)
+result: pass
+verified: User confirmed GUI window launches successfully on local machine
 
 ### 8. --gui graceful failure without display
 expected: Running `python -m quickice --gui` on a headless machine (no display) exits with code 1 and shows a clear error message about no display available
@@ -115,10 +115,10 @@ verified: 96 passed (integration+v35+phase_mapping) + 30 passed (pipeline) = 126
 ## Summary
 
 total: 20
-passed: 19
+passed: 20
 issues: 0
 pending: 0
-skipped: 1
+skipped: 0
 
 ## Gaps
 
