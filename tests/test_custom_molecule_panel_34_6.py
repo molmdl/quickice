@@ -58,15 +58,18 @@ class TestCustomMoleculePanelPhase34_6:
         self.etoh_itp = self.data_dir / "etoh.itp"
     
     def test_generic_residue_suppression(self):
-        """Test that MOL residue name doesn't trigger false positive warning.
+        """Test that MOL residue name triggers a dialog choice (not auto-suppressed).
         
         The etoh.gro file uses generic residue name "MOL" (common in computational
         chemistry workflows), while etoh.itp defines moleculetype "etoh".
         
-        This should NOT trigger a residue_name_mismatch warning, as "MOL" is
-        a recognized generic residue name that should be ignored.
+        Since "MOL" is a known generic placeholder, the validator should:
+        - Set residue_name_mismatch = True (so dialog is offered to user)
+        - Set is_generic_residue_name = True (so dialog shows appropriate message)
+        - NOT auto-suppress the mismatch without user input
         
-        Context: Phase 34.6-01 fixed false positive warnings for generic residue names.
+        Context: Phase 34.6-01 initially auto-suppressed generic names.
+        Fix: Changed to offer dialog choice instead of auto-suppressing.
         """
         # Parse ITP file
         itp_info = parse_itp_file(self.etoh_itp)
@@ -74,13 +77,17 @@ class TestCustomMoleculePanelPhase34_6:
         # Validate with GRO file
         result = validate_custom_molecule(self.etoh_gro, itp_info)
         
-        # Validation should pass
+        # Validation should pass (no blocking errors)
         assert result.is_valid, \
             f"Validation should pass for valid etoh files: {result.errors}"
         
-        # Should NOT flag residue name mismatch
-        assert not result.residue_name_mismatch, \
-            "MOL residue name should not trigger mismatch warning"
+        # Should flag residue name mismatch so dialog can be offered
+        assert result.residue_name_mismatch, \
+            "MOL vs etoh should trigger mismatch dialog (not auto-suppressed)"
+        
+        # Should indicate it's a generic residue name
+        assert result.is_generic_residue_name, \
+            "MOL should be flagged as a generic residue name"
         
         # Verify residue names extracted correctly
         assert result.gro_residue_name == "MOL", \
@@ -264,8 +271,10 @@ class TestCustomMoleculePanelPhase34_6:
         # Verify validation succeeded with generic residue name
         assert panel.validation_result.is_valid, \
             f"Validation should pass: {panel.validation_result.errors}"
-        assert not panel.validation_result.residue_name_mismatch, \
-            "MOL should not trigger mismatch warning"
+        assert panel.validation_result.residue_name_mismatch, \
+            "MOL vs etoh should trigger mismatch dialog (not auto-suppressed)"
+        assert panel.validation_result.is_generic_residue_name, \
+            "MOL should be flagged as generic residue name"
         
         # Step 4: Set interface structure
         mock_structure = self._create_mock_interface()
@@ -648,6 +657,148 @@ class TestCustomMoleculePanelPhase34_6:
             mode="slab",
             report="Mock interface for testing"
         )
+
+
+class TestCustomMoleculeValidationGaps:
+    """Tests for validation gaps fix: generic residue name dialog and missing atomtypes warning.
+    
+    These tests verify the fix for two bugs:
+    1. GRO resname "MOL" ≠ ITP moleculetype "etoh" should offer a dialog choice
+       (previously auto-suppressed without dialog)
+    2. ITP file missing [ atomtypes ] section should produce a visible warning
+       (previously passed validation silently)
+    """
+    
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Setup QApplication and test data paths."""
+        if not QApplication.instance():
+            self.app = QApplication(sys.argv)
+        else:
+            self.app = QApplication.instance()
+        
+        self.data_dir = Path("quickice/data/custom")
+        self.etoh_gro = self.data_dir / "etoh.gro"
+        self.etoh_itp = self.data_dir / "etoh.itp"
+        self.etoh_no_atomtypes_itp = self.data_dir / "test_invalid" / "etoh_no_atomtypes.itp"
+    
+    def test_generic_residue_name_triggers_mismatch_flag(self):
+        """Test that MOL (generic) vs etoh triggers residue_name_mismatch.
+        
+        Bug: Phase 34.6-01 auto-suppressed generic names, preventing dialog.
+        Fix: Set residue_name_mismatch=True so dialog is offered to user.
+        """
+        itp_info = parse_itp_file(self.etoh_itp)
+        result = validate_custom_molecule(self.etoh_gro, itp_info)
+        
+        assert result.is_valid, f"Should pass validation: {result.errors}"
+        assert result.residue_name_mismatch, \
+            "MOL vs etoh should flag mismatch for dialog"
+        assert result.is_generic_residue_name, \
+            "Should flag as generic residue name"
+        assert result.gro_residue_name == "MOL"
+        assert result.itp_residue_name == "etoh"
+    
+    def test_non_generic_residue_mismatch_still_works(self):
+        """Test that non-generic name mismatches still work correctly.
+        
+        If GRO uses 'ETH' and ITP uses 'ETHANOL', it should flag mismatch
+        but NOT flag as generic.
+        """
+        import tempfile
+        
+        # Create GRO with residue name "ETH" (not in GENERIC_RESIDUE_NAMES)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.gro', delete=False) as f:
+            f.write("Test GRO\n")
+            f.write("    9\n")
+            for i in range(1, 10):
+                f.write(f"    1ETH      A    {i}   0.000   0.000   0.000\n")
+            f.write("   2.0  2.0  2.0\n")
+            gro_path = Path(f.name)
+        
+        try:
+            itp_info = parse_itp_file(self.etoh_itp)
+            result = validate_custom_molecule(gro_path, itp_info)
+            
+            assert result.residue_name_mismatch, \
+                "ETH vs etoh should flag mismatch"
+            assert not result.is_generic_residue_name, \
+                "ETH should NOT be flagged as generic residue name"
+        finally:
+            gro_path.unlink(missing_ok=True)
+    
+    def test_missing_atomtypes_produces_warning(self):
+        """Test that ITP without [ atomtypes ] section adds a warning.
+        
+        Bug: Warnings were generated by validator but never displayed by GUI.
+        Fix: Validator already generates warning; GUI now displays them.
+        This test verifies the validator produces the warning.
+        """
+        itp_info = parse_itp_file(self.etoh_no_atomtypes_itp)
+        result = validate_custom_molecule(self.etoh_gro, itp_info)
+        
+        assert result.is_valid, f"Should pass validation (non-blocking): {result.errors}"
+        assert len(result.warnings) > 0, \
+            "Missing atomtypes should produce at least one warning"
+        assert any("atomtypes" in w.lower() for w in result.warnings), \
+            f"Should warn about missing atomtypes, got: {result.warnings}"
+    
+    def test_valid_atomtypes_no_warning(self):
+        """Test that ITP WITH [ atomtypes ] section produces no atomtypes warning."""
+        itp_info = parse_itp_file(self.etoh_itp)
+        result = validate_custom_molecule(self.etoh_gro, itp_info)
+        
+        # Warnings should be about residue name only (generic mismatch), not atomtypes
+        atomtypes_warnings = [w for w in result.warnings if "atomtypes" in w.lower()]
+        assert len(atomtypes_warnings) == 0, \
+            f"Should not warn about atomtypes when section exists, got: {atomtypes_warnings}"
+    
+    def test_panel_displays_warnings_for_missing_atomtypes(self):
+        """Test that CustomMoleculePanel displays warnings (e.g., missing atomtypes).
+        
+        Bug: GUI never checked/itered validation_result.warnings.
+        Fix: _validate_files() now calls _show_validation_warnings() when warnings exist.
+        """
+        from quickice.gui.custom_molecule_panel import CustomMoleculePanel
+        
+        panel = CustomMoleculePanel()
+        panel.gro_path = self.etoh_gro
+        panel.itp_path = self.etoh_no_atomtypes_itp
+        panel.itp_info = parse_itp_file(self.etoh_no_atomtypes_itp)
+        
+        # Validate files — should have warnings about missing atomtypes
+        panel._validate_files()
+        
+        assert panel.validation_result is not None
+        assert panel.validation_result.is_valid
+        assert len(panel.validation_result.warnings) > 0, \
+            "Should have warnings for missing atomtypes"
+        assert any("atomtypes" in w.lower() for w in panel.validation_result.warnings), \
+            "Should warn about missing atomtypes"
+        
+        # Generate button should still be enabled (warnings are non-blocking)
+        assert panel.generate_button.isEnabled(), \
+            "Generate button should be enabled despite non-blocking warnings"
+    
+    def test_panel_generic_residue_dialog_is_offered(self):
+        """Test that CustomMoleculePanel offers dialog for generic residue name.
+        
+        Bug: GUI never showed dialog for MOL vs etoh because
+        residue_name_mismatch was False.
+        Fix: Now residue_name_mismatch=True, triggering dialog.
+        """
+        from quickice.gui.custom_molecule_panel import CustomMoleculePanel
+        
+        panel = CustomMoleculePanel()
+        panel.gro_path = self.etoh_gro
+        panel.itp_path = self.etoh_itp
+        panel.itp_info = parse_itp_file(self.etoh_itp)
+        
+        panel._validate_files()
+        
+        assert panel.validation_result is not None
+        assert panel.validation_result.residue_name_mismatch, \
+            "Should flag mismatch so dialog is offered"
 
 
 if __name__ == "__main__":

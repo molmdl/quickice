@@ -144,11 +144,14 @@ class TestCustomMoleculeValidation:
             f"Expected 'atom count mismatch' in errors, got: {result.errors}"
         )
 
-    def test_validate_generic_residue_name_no_mismatch(self, tmp_path):
-        """Generic residue names (MOL, UNK, etc.) should NOT trigger mismatch warning.
+    def test_validate_generic_residue_name_triggers_dialog(self, tmp_path):
+        """Generic residue names (MOL, UNK, etc.) should trigger a dialog choice.
 
         These are placeholder names commonly used in computational chemistry
         and are expected to differ from the ITP moleculetype name.
+        The validator should flag the mismatch so a dialog can be offered,
+        but also set is_generic_residue_name=True to indicate the appropriate
+        dialog message.
         """
         # Create GRO with generic residue name "MOL"
         generic_gro = tmp_path / "generic.gro"
@@ -157,10 +160,13 @@ class TestCustomMoleculeValidation:
         itp_info = parse_itp_file(ETOH_ITP)
         result = validate_custom_molecule(generic_gro, itp_info)
 
-        # "MOL" is in GENERIC_RESIDUE_NAMES, so mismatch should NOT be flagged
-        assert result.residue_name_mismatch is False, (
-            f"Generic residue name 'MOL' should not trigger mismatch warning. "
+        # "MOL" is in GENERIC_RESIDUE_NAMES, so mismatch IS flagged (to offer dialog)
+        assert result.residue_name_mismatch is True, (
+            f"Generic residue name 'MOL' should trigger mismatch flag for dialog. "
             f"GRO: '{result.gro_residue_name}', ITP: '{result.itp_residue_name}'"
+        )
+        assert result.is_generic_residue_name is True, (
+            f"'MOL' should be flagged as a generic residue name"
         )
 
     def test_validate_real_residue_name_mismatch(self, tmp_path):
