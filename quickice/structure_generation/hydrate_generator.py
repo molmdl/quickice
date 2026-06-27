@@ -126,6 +126,10 @@ class HydrateStructureGenerator:
             report=report,
             guest_count=guest_count,
             water_count=water_count,
+            guest_name=config.guest_name,
+            guest_atom_labels=config.guest_atom_labels,
+            guest_atom_count=config.guest_atom_count,
+            guest_itp_path=config.guest_itp_path,
         )
     
     def _run_via_api(self, lattice_name: str, config: HydrateConfig) -> tuple:

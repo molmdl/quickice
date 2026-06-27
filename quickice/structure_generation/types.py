@@ -749,6 +749,10 @@ class HydrateStructure:
         report: Generation report string
         guest_count: Number of guest molecules placed
         water_count: Number of water molecules in framework
+        guest_name: Display name of guest molecule (propagated from HydrateConfig)
+        guest_atom_labels: Atom name sequence for one guest molecule (for identification)
+        guest_atom_count: Number of atoms per guest molecule (propagated from HydrateConfig)
+        guest_itp_path: Path to guest ITP file (for custom guests, Phase 40)
     """
     positions: np.ndarray
     atom_names: list[str]
@@ -759,6 +763,10 @@ class HydrateStructure:
     report: str
     guest_count: int
     water_count: int
+    guest_name: str = ""
+    guest_atom_labels: list[str] = field(default_factory=list)
+    guest_atom_count: int = 0
+    guest_itp_path: str = ""
 
     def to_candidate(self) -> Candidate:
         """Convert hydrate structure to ice Candidate for interface generation.

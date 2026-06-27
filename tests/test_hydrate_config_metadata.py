@@ -8,11 +8,15 @@ Validates:
 - HydrateStructure carries guest metadata from config (added in Task 2)
 """
 
+import numpy as np
 import pytest
 
 from quickice.structure_generation.types import (
     GUEST_MOLECULES,
     HydrateConfig,
+    HydrateStructure,
+    HydrateLatticeInfo,
+    MoleculeIndex,
 )
 
 
@@ -152,3 +156,95 @@ class TestHydrateConfigFromDict:
         config = HydrateConfig.from_dict(d)
         assert config.guest_name == "Tetrahydrofuran"
         assert config.guest_atom_count == 13
+
+
+# ── HydrateStructure guest metadata propagation ──────────────────────────
+
+class TestHydrateStructureMetadata:
+    """Tests for HydrateStructure carrying guest metadata from HydrateConfig."""
+
+    def _make_config(self, **kwargs) -> HydrateConfig:
+        """Create a HydrateConfig with defaults for testing."""
+        defaults = {"lattice_type": "sI", "guest_type": "ch4"}
+        defaults.update(kwargs)
+        return HydrateConfig(**defaults)
+
+    def _make_structure(self, config: HydrateConfig, **overrides) -> HydrateStructure:
+        """Create a minimal HydrateStructure for testing (no GenIce2 needed)."""
+        n_atoms = 10
+        defaults = dict(
+            positions=np.zeros((n_atoms, 3)),
+            atom_names=["OW", "HW1", "HW2", "MW"] * 2 + ["C", "H"],
+            cell=np.eye(3) * 3.0,
+            molecule_index=[MoleculeIndex(0, 4, "water"), MoleculeIndex(4, 4, "water")],
+            config=config,
+            lattice_info=HydrateLatticeInfo.from_lattice_type(config.lattice_type),
+            report="Test report",
+            guest_count=0,
+            water_count=2,
+        )
+        defaults.update(overrides)
+        # Add guest metadata from config
+        defaults.setdefault("guest_name", config.guest_name)
+        defaults.setdefault("guest_atom_labels", config.guest_atom_labels)
+        defaults.setdefault("guest_atom_count", config.guest_atom_count)
+        defaults.setdefault("guest_itp_path", config.guest_itp_path)
+        return HydrateStructure(**defaults)
+
+    def test_hydrate_structure_has_guest_name(self):
+        config = self._make_config(guest_type="ch4")
+        structure = self._make_structure(config)
+        assert structure.guest_name == "Methane"
+
+    def test_hydrate_structure_has_guest_atom_labels(self):
+        config = self._make_config(guest_type="ch4")
+        structure = self._make_structure(config)
+        assert structure.guest_atom_labels == ["C", "H", "H", "H", "H"]
+
+    def test_hydrate_structure_has_guest_atom_count(self):
+        config = self._make_config(guest_type="thf")
+        structure = self._make_structure(config)
+        assert structure.guest_atom_count == 13
+
+    def test_hydrate_structure_has_guest_itp_path_default(self):
+        config = self._make_config(guest_type="ch4")
+        structure = self._make_structure(config)
+        assert structure.guest_itp_path == ""
+
+    def test_hydrate_structure_custom_itp_path(self):
+        config = self._make_config(guest_type="ch4", guest_itp_path="/custom/guest.itp")
+        structure = self._make_structure(config)
+        assert structure.guest_itp_path == "/custom/guest.itp"
+
+    def test_metadata_round_trip_ch4(self):
+        """Config metadata propagates through to structure unchanged (ch4)."""
+        config = self._make_config(guest_type="ch4")
+        structure = self._make_structure(config)
+        assert structure.guest_name == config.guest_name
+        assert structure.guest_atom_labels == config.guest_atom_labels
+        assert structure.guest_atom_count == config.guest_atom_count
+        assert structure.guest_itp_path == config.guest_itp_path
+
+    def test_metadata_round_trip_thf(self):
+        """Config metadata propagates through to structure unchanged (thf)."""
+        config = self._make_config(guest_type="thf")
+        structure = self._make_structure(config)
+        assert structure.guest_name == config.guest_name
+        assert structure.guest_atom_labels == config.guest_atom_labels
+        assert structure.guest_atom_count == config.guest_atom_count
+        assert structure.guest_itp_path == config.guest_itp_path
+
+    def test_metadata_round_trip_custom(self):
+        """Config with explicit overrides propagates through to structure."""
+        config = self._make_config(
+            guest_type="ch4",
+            guest_name="Custom",
+            guest_atom_labels=["C", "H1", "H2", "H3", "H4"],
+            guest_atom_count=5,
+            guest_itp_path="/path/to/custom.itp",
+        )
+        structure = self._make_structure(config)
+        assert structure.guest_name == "Custom"
+        assert structure.guest_atom_labels == ["C", "H1", "H2", "H3", "H4"]
+        assert structure.guest_atom_count == 5
+        assert structure.guest_itp_path == "/path/to/custom.itp"
