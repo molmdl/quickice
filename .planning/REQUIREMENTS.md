@@ -135,12 +135,72 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (Populated during roadmap creation) | | |
+| PIPE-01 | Phase 38 | Pending |
+| PIPE-02 | Phase 38 | Pending |
+| PIPE-03 | Phase 38 | Pending |
+| PIPE-04 | Phase 38 | Pending |
+| LATTICE-01 | Phase 39 | Pending |
+| LATTICE-02 | Phase 39 | Pending |
+| LATTICE-03 | Phase 39 | Pending |
+| LATTICE-04 | Phase 39 | Pending |
+| LATTICE-05 | Phase 39 | Pending |
+| LATTICE-06 | Phase 39 | Pending |
+| LATTICE-07 | Phase 39 | Pending |
+| LATTICE-08 | Phase 39 | Pending |
+| LATTICE-09 | Phase 39 | Pending |
+| GUEST-01 | Phase 40 | Pending |
+| GUEST-02 | Phase 40 | Pending |
+| GUEST-03 | Phase 40 | Pending |
+| GUEST-04 | Phase 40 | Pending |
+| GUEST-05 | Phase 40 | Pending |
+| GUEST-06 | Phase 40 | Pending |
+| GUEST-07 | Phase 40 | Pending |
+| GUEST-08 | Phase 40 | Pending |
+| GUEST-09 | Phase 40 | Pending |
+| GUEST-10 | Phase 40 | Pending |
+| EXPORT-01 | Phase 41 | Pending |
+| EXPORT-02 | Phase 41 | Pending |
+| EXPORT-03 | Phase 41 | Pending |
+| EXPORT-04 | Phase 41 | Pending |
+| EXPORT-05 | Phase 41 | Pending |
+| EXPORT-06 | Phase 41 | Pending |
+| MIXED-01 | Phase 42 | Pending |
+| MIXED-02 | Phase 42 | Pending |
+| MIXED-03 | Phase 42 | Pending |
+| MIXED-04 | Phase 42 | Pending |
+| MIXED-05 | Phase 42 | Pending |
+| DEPOL-01 | Phase 43 | Pending |
+| DEPOL-02 | Phase 43 | Pending |
+| DEPOL-03 | Phase 43 | Pending |
+| GUI-01 | Phase 44 | Pending |
+| GUI-02 | Phase 44 | Pending |
+| GUI-03 | Phase 44 | Pending |
+| GUI-04 | Phase 44 | Pending |
+| GUI-05 | Phase 44 | Pending |
+| GUI-06 | Phase 44 | Pending |
+| CLI-01 | Phase 45 | Pending |
+| CLI-02 | Phase 45 | Pending |
+| CLI-03 | Phase 45 | Pending |
+| CLI-04 | Phase 45 | Pending |
+| VTK-01 | Phase 46 | Pending |
+| VTK-02 | Phase 46 | Pending |
+| TEST-01 | Phase 47 | Pending |
+| TEST-02 | Phase 47 | Pending |
+| TEST-03 | Phase 47 | Pending |
+| TEST-04 | Phase 47 | Pending |
+| TEST-05 | Phase 47 | Pending |
+| TEST-06 | Phase 47 | Pending |
+| TEST-07 | Phase 47 | Pending |
+| TEST-08 | Phase 47 | Pending |
+| DOCS-01 | Phase 48 | Pending |
+| DOCS-02 | Phase 48 | Pending |
+| DOCS-03 | Phase 48 | Pending |
+| DOCS-04 | Phase 48 | Pending |
 
 **Coverage:**
 - v4.7 requirements: 45 total
-- Mapped to phases: (pending roadmap)
-- Unmapped: (pending roadmap)
+- Mapped to phases: 45/45 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-27*
