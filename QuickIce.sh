@@ -4,4 +4,4 @@
 # On Linux: chmod +x first, then double-click or right-click → Run.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "${SCRIPT_DIR}/dist/quickice-gui/quickice-gui" --gui
+exec "${SCRIPT_DIR}/quickice-gui/quickice-gui" --gui
