@@ -502,6 +502,11 @@ class CLIPipeline:
         Source structure is selected via --solute-source (default: interface).
         FIX #7: SoluteInserter(config, seed=args.seed) — NOT SoluteInserter(config).
 
+        Auto-chaining: When --solute-source is the default ('interface') and
+        custom molecules were placed in a previous step, the source is
+        automatically upgraded to 'custom' so that custom molecule attributes
+        are preserved through the solute→ion workflow.
+
         Returns:
             0 on success, non-zero on failure.
         """
@@ -516,6 +521,18 @@ class CLIPipeline:
         try:
             # Resolve source structure
             source_name = getattr(self.args, 'solute_source', 'interface')
+
+            # Auto-chain: upgrade 'interface' to 'custom' when custom molecules
+            # were placed in a previous pipeline step.  This ensures custom
+            # molecule attributes are carried forward into SoluteStructure so
+            # that the ion step can propagate them further.
+            if source_name == 'interface' and self._custom_result is not None:
+                source_name = 'custom'
+                logger.info(
+                    "Auto-chaining: --solute-source upgraded from "
+                    "'interface' to 'custom' (custom molecules detected)"
+                )
+
             source = self._get_source_structure(source_name)
 
             if source is None:
@@ -561,6 +578,13 @@ class CLIPipeline:
         - solute: use SoluteStructure, propagate solute attributes to the
           interface structure, plus custom molecule attributes if present
 
+        Auto-chaining: When --ion-source is the default ('interface') and
+        upstream steps produced more downstream results, the source is
+        automatically upgraded to the most downstream available result
+        (solute > custom > interface).  This prevents silent data loss
+        where custom molecules and solutes are dropped from the output
+        because the raw InterfaceStructure lacks those attributes.
+
         Attribute propagation uses duck-typing (setting attributes on
         InterfaceStructure at runtime), mirroring GUI MainWindow._on_insert_ions.
 
@@ -578,6 +602,25 @@ class CLIPipeline:
         try:
             # Resolve source mode
             ion_source = getattr(self.args, 'ion_source', 'interface')
+
+            # Auto-chain: upgrade 'interface' to the most downstream result
+            # available.  When the user runs the full chain
+            # (interface→custom→solute→ion) without explicitly setting
+            # --ion-source, the default 'interface' would drop ALL upstream
+            # custom/solute data.  Auto-chaining prevents this silent data loss.
+            if ion_source == 'interface':
+                if self._solute_result is not None:
+                    ion_source = 'solute'
+                    logger.info(
+                        "Auto-chaining: --ion-source upgraded from "
+                        "'interface' to 'solute' (solute step detected)"
+                    )
+                elif self._custom_result is not None:
+                    ion_source = 'custom'
+                    logger.info(
+                        "Auto-chaining: --ion-source upgraded from "
+                        "'interface' to 'custom' (custom molecules detected)"
+                    )
 
             if ion_source == "interface":
                 source_for_ions = self._interface_result
