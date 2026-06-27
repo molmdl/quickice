@@ -125,6 +125,21 @@ class TestValidateGroResidueName:
         with pytest.raises(ValueError):
             validate_gro_residue_name("ETHA_H")  # 6 chars
 
+    # -- _L suffix convention for liquid solutes --
+
+    def test_ch4_l_suffix_passes(self):
+        """CH4 (3 chars) + _L suffix = CH4_L (5 chars) passes."""
+        validate_gro_residue_name("CH4_L")
+
+    def test_thf_l_suffix_passes(self):
+        """THF (3 chars) + _L suffix = THF_L (5 chars) passes."""
+        validate_gro_residue_name("THF_L")
+
+    def test_overlong_base_name_l_suffix_fails(self):
+        """A 4-char base + _L = 6 chars would fail — base names must be ≤3."""
+        with pytest.raises(ValueError):
+            validate_gro_residue_name("ETHA_L")  # 6 chars
+
 
 # ---------------------------------------------------------------------------
 # Integration test: GRO writer rejects overlong residue names

@@ -29,6 +29,19 @@ from quickice.structure_generation.types import IonStructure, MoleculeIndex
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 
+def _make_registry_with_liquid_solute(molecule: str) -> MoleculetypeRegistry:
+    """Create a registry with a properly registered liquid solute.
+
+    The GRO format requires residue names ≤5 chars. A properly registered
+    liquid solute uses the _L suffix (e.g., "CH4_L" = 5 chars), which
+    passes validation. An empty/unused registry returns the key uppercased
+    (e.g., "LIQUID_CH4" = 10 chars), which overflows the GRO format.
+    """
+    registry = MoleculetypeRegistry()
+    registry.register_liquid_solute(molecule)
+    return registry
+
+
 class TestIonGROMACSExporter:
     """End-to-end tests for ion GROMACS export (Tab 5)."""
 
@@ -252,7 +265,7 @@ class TestIonGROMACSExporter:
             solute_atom_names=["C", "H", "H", "H", "H"],
             solute_n_molecules=1,
             solute_molecule_indices=[(0, 5)],
-            solute_registry=MoleculetypeRegistry(),
+            solute_registry=_make_registry_with_liquid_solute("CH4"),
         )
 
         save_path, dialog_p, mb_p = mock_save_dialog("ions_with_solute.gro")
