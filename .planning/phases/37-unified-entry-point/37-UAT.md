@@ -54,8 +54,8 @@ verified: "Error: --gui requested but no display is available.", exit code 1
 
 ### 9. PySide6 not installed graceful fallback
 expected: When PySide6 is not installed, running `python -m quickice --gui` shows an informative message about how to install PySide6 (not a raw traceback or import error)
-result: skipped
-reason: PySide6 IS installed in this environment; cannot uninstall to test. Verified via test_entry_point.py mock test (test_gui_missing_pyside6_error PASSED)
+result: pass
+verified: "Error: --gui requested but PySide6 is not installed. See environment.yml for GUI dependencies.", exit code 1 (tested in conda base env without PySide6)
 
 ### 10. Backward compat: python quickice.py
 expected: Running `python quickice.py --help` still works and routes through the unified entry point, exits with code 0
@@ -115,10 +115,10 @@ verified: 96 passed (integration+v35+phase_mapping) + 30 passed (pipeline) = 126
 ## Summary
 
 total: 20
-passed: 18
+passed: 19
 issues: 0
 pending: 0
-skipped: 2
+skipped: 1
 
 ## Gaps
 
