@@ -1,16 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_binaries
+from PyInstaller.utils.hooks import collect_all
 
-# Collect submodules, data files, and binaries from packages (targeted, not collect_all)
+# Collect all data files, binaries, and hidden imports from packages
 datas = [('quickice/data', 'quickice/data')]
 binaries = []
 hiddenimports = []
 
 for pkg in ['iapws', 'genice2', 'genice_core', 'matplotlib', 'scipy', 'numpy', 'shapely', 'networkx', 'spglib']:
     try:
-        hiddenimports += collect_submodules(pkg)
-        datas += collect_data_files(pkg)
-        binaries += collect_binaries(pkg)
+        tmp_ret = collect_all(pkg)
+        datas += tmp_ret[0]
+        binaries += tmp_ret[1]
+        hiddenimports += tmp_ret[2]
     except Exception as e:
         print(f"Warning: Could not collect {pkg}: {e}")
 
