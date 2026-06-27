@@ -648,9 +648,20 @@ class CustomMoleculePanel(QWidget):
                 self.residue_name_label.setText(self.validation_result.itp_residue_name or self.validation_result.gro_residue_name)
                 self.molecule_info_widget.setVisible(True)
                 
-                # Check for residue name mismatch
+                # Check for residue name mismatch (offers dialog)
                 if self.validation_result.residue_name_mismatch:
                     self._show_residue_mismatch_dialog()
+                    # After mismatch dialog resolves, also show any non-mismatch warnings
+                    remaining_warnings = [
+                        w for w in self.validation_result.warnings
+                        if not w.startswith("Generic residue name") 
+                        and not w.startswith("Residue name mismatch")
+                    ]
+                    if remaining_warnings:
+                        self._show_remaining_warnings(remaining_warnings)
+                # Display any warnings (e.g., missing [ atomtypes ])
+                elif self.validation_result.warnings:
+                    self._show_validation_warnings()
                 else:
                     self.validation_label.setText("✓ Files validated successfully")
                     self.validation_label.setStyleSheet("color: green;")
@@ -682,15 +693,35 @@ class CustomMoleculePanel(QWidget):
             self.log_message(f"Validation error: {e}")
     
     def _show_residue_mismatch_dialog(self):
-        """Show dialog asking if ITP residue name should override."""
-        reply = QMessageBox.question(
-            self,
-            "Residue Name Mismatch",
-            f"GRO file uses residue name '{self.validation_result.gro_residue_name}'\n"
-            f"ITP file uses residue name '{self.validation_result.itp_residue_name}'\n\n"
-            f"Use ITP residue name? (Select 'No' to re-upload files)",
-            QMessageBox.Yes | QMessageBox.No
-        )
+        """Show dialog asking if ITP residue name should override.
+        
+        For generic residue names (MOL, UNK, etc.), the dialog explains that
+        the GRO name is a placeholder and offers to use the ITP name instead.
+        For real mismatches, the dialog warns about the name difference.
+        """
+        is_generic = getattr(self.validation_result, 'is_generic_residue_name', False)
+        
+        if is_generic:
+            # Generic residue name — offer to use ITP name
+            reply = QMessageBox.question(
+                self,
+                "Generic Residue Name",
+                f"GRO file uses generic residue name '{self.validation_result.gro_residue_name}' "
+                f"(a common placeholder in computational chemistry).\n"
+                f"ITP file defines moleculetype as '{self.validation_result.itp_residue_name}'.\n\n"
+                f"Use ITP moleculetype name '{self.validation_result.itp_residue_name}' instead of '{self.validation_result.gro_residue_name}'?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+        else:
+            # Real mismatch — warn about difference
+            reply = QMessageBox.question(
+                self,
+                "Residue Name Mismatch",
+                f"GRO file uses residue name '{self.validation_result.gro_residue_name}'\n"
+                f"ITP file uses residue name '{self.validation_result.itp_residue_name}'\n\n"
+                f"Use ITP residue name? (Select 'No' to re-upload files)",
+                QMessageBox.Yes | QMessageBox.No
+            )
         
         if reply == QMessageBox.Yes:
             # Accept ITP residue name, proceed
@@ -709,6 +740,64 @@ class CustomMoleculePanel(QWidget):
             self.generate_button.setEnabled(False)
             self.files_uploaded.emit(False)
             self.log_message("User rejected residue name mismatch")
+    
+    def _show_validation_warnings(self):
+        """Display non-blocking validation warnings to the user.
+        
+        Shows a warning dialog for issues like missing [ atomtypes ] section.
+        Warnings do not block progress — the user can still proceed.
+        """
+        warning_messages = []
+        for w in self.validation_result.warnings:
+            # Clean up warning text — strip trailing newlines for dialog display
+            warning_messages.append(w.strip())
+        
+        warning_text = "\n\n".join(warning_messages)
+        
+        QMessageBox.warning(
+            self,
+            "Validation Warnings",
+            f"The following issues were detected:\n\n{warning_text}\n\n"
+            f"You can still proceed, but simulation may fail without these parameters.",
+            QMessageBox.Ok
+        )
+        
+        # Mark validation as successful with warnings
+        self.validation_label.setText(
+            "✓ Files validated (with warnings — see log)"
+        )
+        self.validation_label.setStyleSheet("color: #B8860B;")  # Dark goldenrod
+        self.generate_button.setEnabled(True)
+        self.validate_button.setEnabled(
+            self.validation_result is not None 
+            and self.placement_mode == "Custom"
+        )
+        self.files_uploaded.emit(True)
+        for w in self.validation_result.warnings:
+            self.log_message(f"Warning: {w.strip()}")
+    
+    def _show_remaining_warnings(self, warnings: list[str]):
+        """Display remaining non-mismatch warnings after mismatch dialog.
+        
+        Shows warnings like missing [ atomtypes ] that are separate from
+        the residue name mismatch. These are non-blocking.
+        
+        Args:
+            warnings: List of warning messages to display
+        """
+        warning_messages = [w.strip() for w in warnings]
+        warning_text = "\n\n".join(warning_messages)
+        
+        QMessageBox.warning(
+            self,
+            "Additional Warnings",
+            f"Additional issues detected:\n\n{warning_text}\n\n"
+            f"You can still proceed, but simulation may fail without these parameters.",
+            QMessageBox.Ok
+        )
+        
+        for w in warnings:
+            self.log_message(f"Warning: {w.strip()}")
     
     def _on_placement_mode_changed(self, mode: str):
         """Handle placement mode switching.
