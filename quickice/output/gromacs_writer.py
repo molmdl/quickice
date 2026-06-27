@@ -20,6 +20,33 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+def validate_gro_residue_name(res_name: str, context: str = "") -> None:
+    """Validate that a GRO residue name fits in the 5-char fixed-width format.
+    
+    GRO format uses `%<5s` for residue names, which silently overflows if the
+    name exceeds 5 characters, corrupting the fixed-width column alignment.
+    This validation catches the problem at write time with a clear error.
+    
+    Args:
+        res_name: Residue name to validate
+        context: Optional context string for error message (e.g., "custom molecule 'ETHanol'")
+        
+    Raises:
+        ValueError: If res_name exceeds 5 characters
+    """
+    if len(res_name) > 5:
+        msg = (
+            f"GRO residue name '{res_name}' ({len(res_name)} chars) exceeds "
+            f"the 5-character GRO format limit. "
+            f"Use a shorter residue name (≤3 chars recommended for hydrate guests "
+            f"to allow for _H suffix: e.g., 'CH4' → 'CH4_H')."
+        )
+        if context:
+            msg = f"{context}: {msg}"
+        raise ValueError(msg)
+
+
 TIP4P_ICE_ALPHA = 0.13458335
 
 # TIP4P-ICE LJ parameters (Abascal et al. 2005, DOI: 10.1063/1.1931662)
@@ -1008,6 +1035,8 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
                     guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 else:
                     guest_res_name = "UNK"
+                
+                validate_gro_residue_name(guest_res_name, context="Interface guest residue name")
             
                 # Group atoms by molecule and write
                 mol_start = 0
@@ -1357,6 +1386,8 @@ def write_multi_molecule_gro_file(
                 else:
                     gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
                     res_name = gromacs_info["res_name"]
+            
+            validate_gro_residue_name(res_name, context=f"Molecule type '{mol.mol_type}' residue name")
             
             # Residue number wraps at 100000
             res_num = (res_idx + 1) % 100000
@@ -1801,6 +1832,8 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                         guest_res_name = get_hydrate_guest_residue_name(guest_type)
                     else:
                         guest_res_name = "GUE"  # Fallback
+                    
+                    validate_gro_residue_name(guest_res_name, context="Ion guest residue name")
 
                     # Reorder guest atoms to match .itp canonical order
                     # (e.g., CH4: C first instead of H first from GenIce2)
@@ -1827,8 +1860,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                 
                     # Get residue name (use moleculetype name)
                     res_name = ion_structure.custom_molecule_moleculetype if ion_structure.custom_molecule_moleculetype else "CST"
-                    # Truncate to 5 chars for GRO format (GROMACS limit)
-                    res_name = res_name[:5]
+                    validate_gro_residue_name(res_name, context="Custom molecule residue name")
                 
                     # Get atom names and positions for this molecule
                     start = mol.start_idx
@@ -1871,8 +1903,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                         # Fallback
                         solute_res_name = f"{solute_type_upper}_L"
                 
-                    # Truncate to 5 chars for GRO format (GROMACS limit)
-                    solute_res_name = solute_res_name[:5]
+                    validate_gro_residue_name(solute_res_name, context="Solute residue name")
                 
                     for i in range(count):
                         atom_num += 1
@@ -2323,6 +2354,7 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
             guest_type = detect_guest_type_from_atoms(mol_atom_names)
             if guest_type:
                 guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                validate_gro_residue_name(guest_res_name, context="Custom molecule system guest residue name")
                 # Reorder guest atoms to match .itp canonical order
                 reorder_mapping = None
                 if guest_type in ["ch4", "thf"]:
@@ -2350,8 +2382,9 @@ def write_custom_molecule_gro_file(custom_structure: "CustomMoleculeStructure", 
             mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
             mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
             
-            # Use moleculetype_name as residue name (truncate to 5 chars for GRO format)
-            res_name = custom_structure.moleculetype_name[:5]
+            # Use moleculetype_name as residue name (validate for GRO 5-char limit)
+            res_name = custom_structure.moleculetype_name
+            validate_gro_residue_name(res_name, context="Custom molecule residue name")
             
             for i in range(mol.count):
                 atom_num += 1
@@ -2783,6 +2816,8 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
                         guest_res_name = get_hydrate_guest_residue_name(guest_type)
                     else:
                         guest_res_name = "GUE"  # Fallback
+                    
+                    validate_gro_residue_name(guest_res_name, context="Solute system guest residue name")
 
                     # Reorder guest atoms to match .itp canonical order
                     reorder_mapping = None
@@ -2806,7 +2841,7 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
                     res_num_wrapped = res_num % 100000
 
                     res_name = solute_structure.custom_molecule_moleculetype if solute_structure.custom_molecule_moleculetype else "CST"
-                    res_name = res_name[:5]
+                    validate_gro_residue_name(res_name, context="Custom molecule residue name")
 
                     start = mol.start_idx
                     if solute_structure.custom_molecule_atom_names:
@@ -2845,8 +2880,7 @@ def write_solute_gro_file(solute_structure: "SoluteStructure", filepath: str) ->
                     else:
                         solute_res_name = f"{solute_type_upper}_L"
 
-                    # Truncate to 5 chars for GRO format
-                    solute_res_name = solute_res_name[:5]
+                    validate_gro_residue_name(solute_res_name, context="Solute residue name")
 
                     for i in range(count):
                         atom_num += 1
