@@ -119,6 +119,7 @@ GUEST_MOLECULES: dict[str, dict[str, Any]] = {
         "name": "Methane",
         "formula": "CH₄",
         "atoms": 5,
+        "atom_labels": ["C", "H", "H", "H", "H"],  # All-atom methane from GenIce2
         "description": "Methane guest molecule",
         "force_field": "GAFF/GAFF2",
     },
@@ -126,6 +127,7 @@ GUEST_MOLECULES: dict[str, dict[str, Any]] = {
         "name": "Tetrahydrofuran",
         "formula": "C₄H₈O",
         "atoms": 13,
+        "atom_labels": ["O", "CA", "CA", "CB", "CB", "H", "H", "H", "H", "H", "H", "H", "H"],  # THF from GenIce2 (13 atoms)
         "description": "THF guest molecule (structure stabilizer)",
         "force_field": "GAFF/GAFF2",
     },
@@ -352,6 +354,10 @@ class HydrateConfig:
         supercell_x: Supercell repetition in X direction
         supercell_y: Supercell repetition in Y direction
         supercell_z: Supercell repetition in Z direction
+        guest_name: Display name of guest molecule (auto-populated from GUEST_MOLECULES for built-in types)
+        guest_atom_labels: Atom name sequence for one molecule (for metadata-driven identification)
+        guest_atom_count: Number of atoms per guest molecule (auto-populated from GUEST_MOLECULES for built-in types)
+        guest_itp_path: Path to guest ITP file (for custom guests, Phase 40)
     """
     lattice_type: str = "sI"
     guest_type: str = "ch4"
@@ -360,9 +366,13 @@ class HydrateConfig:
     supercell_x: int = 1
     supercell_y: int = 1
     supercell_z: int = 1
+    guest_name: str = ""
+    guest_atom_labels: list[str] = field(default_factory=list)
+    guest_atom_count: int = 0
+    guest_itp_path: str = ""
     
     def __post_init__(self):
-        """Validate configuration parameters."""
+        """Validate configuration parameters and auto-populate guest metadata."""
         if self.lattice_type not in HYDRATE_LATTICES:
             raise ValueError(f"Unknown lattice type: {self.lattice_type}")
         if self.guest_type not in GUEST_MOLECULES:
@@ -373,10 +383,23 @@ class HydrateConfig:
             raise ValueError(f"cage_occupancy_large must be 0-100, got {self.cage_occupancy_large}")
         if self.supercell_x < 1 or self.supercell_y < 1 or self.supercell_z < 1:
             raise ValueError("Supercell dimensions must be >= 1")
+        
+        # Auto-populate guest metadata for built-in types (only if not explicitly set)
+        guest_info = GUEST_MOLECULES[self.guest_type]
+        if not self.guest_name:
+            self.guest_name = guest_info["name"]
+        if not self.guest_atom_labels:
+            self.guest_atom_labels = list(guest_info["atom_labels"])
+        if not self.guest_atom_count:
+            self.guest_atom_count = guest_info["atoms"]
     
     @classmethod
     def from_dict(cls, d: dict) -> "HydrateConfig":
-        """Create HydrateConfig from dictionary (UI input)."""
+        """Create HydrateConfig from dictionary (UI input).
+        
+        New guest metadata fields are passed through if present,
+        with defaults for backward compatibility.
+        """
         return cls(
             lattice_type=d.get("lattice_type", "sI"),
             guest_type=d.get("guest_type", "ch4"),
@@ -385,6 +408,10 @@ class HydrateConfig:
             supercell_x=d.get("supercell_x", 1),
             supercell_y=d.get("supercell_y", 1),
             supercell_z=d.get("supercell_z", 1),
+            guest_name=d.get("guest_name", ""),
+            guest_atom_labels=d.get("guest_atom_labels", []),
+            guest_atom_count=d.get("guest_atom_count", 0),
+            guest_itp_path=d.get("guest_itp_path", ""),
         )
     
     def get_genice_lattice_name(self) -> str:
