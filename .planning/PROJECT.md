@@ -111,7 +111,21 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 
 ### Active
 
-(Awaiting next milestone definition via `/gsd-new-milestone`)
+**v4.7 Extended Hydrate Generation:**
+
+- [ ] Filled ice structures (c0te, c1te, c2te, ice1hte, sTprime) via GenIce2
+- [ ] New guest molecules in hydrate (CO₂, H₂, ethane)
+- [ ] Mixed cage occupancy / binary clathrates (e.g., CO₂+CH₄)
+- [ ] Water model selector (TIP4P-ICE, SPC/E, TIP3P) for hydrate generation
+- [ ] Depol mode (hydrate without guests)
+- [ ] P3 export fix (per-molecule mol_type MW detection in GROMACS export)
+- [ ] Custom guest molecule in hydrate (user-provided .gro/.itp → GenIce2 bridge)
+- [ ] sys.modules injection for custom guest registration with GenIce2
+- [ ] ITP transformation pipeline (_H suffix, atomtypes comment-out, residue rewrite, comb-rule validation)
+- [ ] Custom guest upload panel in Hydrate tab (GUI)
+- [ ] CLI --custom-guest + --custom-guest-itp flags
+- [ ] Cage-guest size validation (effective diameter vs cage cavity)
+- [ ] Thread-safe custom guest registration (QThread context)
 
 ### Out of Scope
 
@@ -125,9 +139,27 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 - Additional ice phases beyond GenIce2 support
 - Automated interface geometry optimization
 - Multiple salt types (KCl, MgCl2)
-- Multiple solute types simultaneously (defer to v5.0)
-- Multiple custom molecule types in single session
+- Multiple solute types simultaneously (defer to v5.0+)
+- Multiple custom molecule types in single session (beyond v4.7 scope)
 - VTK rendering correctness (headless environment limitation)
+- CIF crystal import (defer to v7.0)
+- Polycrystal builder (defer to v7.0)
+- Hydrate analysis (F3/F4, CHILL+, RDF — defer to v6.0)
+- GenIce3 migration (blocked: Python 3.14 compat, genice-core version conflict)
+- Auto-convert A/B → sigma/epsilon atomtypes (risk of rounding errors; reject and ask user to regenerate)
+- Slab orientation flip (PBC no-op — identical structure shifted by half box)
+- Random guest orientation in cages (GenIce2 Stage7 uses identity rotation)
+
+## Current Milestone: v4.7 Extended Hydrate Generation
+
+**Goal:** Extend hydrate generation with filled ices, new guests, custom cage occupancy, water model selection, and user-provided custom guest molecules via GenIce2 bridge
+
+**Target features:**
+- Filled ice structures (c0te, c1te, c2te, ice1hte, sTprime) — zero new architecture, GenIce2 supports all
+- New guest molecules (CO₂, H₂, ethane) + mixed cage occupancy (binary clathrates)
+- Water model selector for hydrate generation (TIP4P-ICE, SPC/E, TIP3P)
+- Custom guest molecule bridge (.gro/.itp → GenIce2 molecule via sys.modules injection)
+- GROMACS export hardening (P3 fix, ITP transformation pipeline)
 
 ## Current State
 
@@ -176,6 +208,10 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 | AVOGADRO single definition in ion_inserter.py | DRY: 3 definitions consolidated to 1 | ✓ Confirmed — v4.5 |
 | Concentration range validation [0.0, 5.0] mol/L | Seawater ~0.6 M, saturated ~5 M; absurd values rejected | ✓ Confirmed — v4.5 |
 | SoluteStructure.molecule_indices naming (tuple) | Uses tuple[int,int] instead of MoleculeIndex; working workaround exists | ⚠️ Revisit |
+| sys.modules injection for custom guests | GenIce2 safe_import finds registered ModuleType objects; verified end-to-end with CS1+ethanol | — v4.7 |
+| _H suffix for hydrate guests (MoleculetypeRegistry) | Consistent with v4.5 guest naming; distinguishes hydrate guests from liquid solutes (_L) | — v4.7 |
+| Reject A/B → sigma/epsilon auto-conversion | Risk of rounding errors in LJ parameters; force user to provide correct comb-rule=2 ITP | — v4.7 |
+| GRO 5-char residue name limit with _H suffix | Base names ≤3 chars; reject non-conforming names with clear error | — v4.7 |
 
 ## Context
 
@@ -209,4 +245,4 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-06-27 after v4.5 milestone completion*
+*Last updated: 2026-06-27 after v4.7 milestone initialization*
