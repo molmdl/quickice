@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 38 of 48 (Internal Pipeline Refactor) |
-| Plan | 01 of 04 complete |
+| Plan | 03 of 04 complete |
 | Status | In progress |
-| Last activity | 2026-06-27 — Completed 38-01-PLAN.md |
+| Last activity | 2026-06-27 — Completed 38-03-PLAN.md |
 
-**Progress:** [█░░░░░░░░░] ~10%
+**Progress:** [███░░░░░░░] ~30%
 
 ---
 
@@ -69,6 +69,9 @@ Recent decisions affecting v4.7 work:
 - **[38-01]** Built-in guest types auto-populate metadata in __post_init__; custom types (Phase 40) must provide explicitly
 - **[38-01]** guest_itp_path is NOT auto-populated (only relevant for custom guests)
 - **[38-01]** atom_labels uses list copy from GUEST_MOLECULES to avoid shared mutable state
+- **[38-03]** GRO residue name validation rejects >5 chars with ValueError (no silent truncation)
+- **[38-03]** Validation checks only length, not content; callers must fix names upstream
+- **[38-03]** Empty MoleculetypeRegistry fallback (source.upper()) can produce >5 char names — must be caught by validation
 
 ### Pending Todos
 
@@ -79,7 +82,7 @@ Recent decisions affecting v4.7 work:
 
 ### Blockers/Concerns
 
-- GRO `:<5s` overflow (NOT truncation) — must validate at every write entry point
+- ~~GRO `:<5s` overflow (NOT truncation) — must validate at every write entry point~~ **[RESOLVED in 38-03]** validate_gro_residue_name() now called at all 10 GRO write entry points
 - `_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model (addressed in Plan 02)
 - Thread safety gap: `sys.modules` injection must happen outside existing `_genice_lock` scope
 
@@ -87,6 +90,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-27T14:26:50Z
-Stopped at: Completed 38-01-PLAN.md
+Last session: 2026-06-27T14:51:07Z
+Stopped at: Completed 38-03-PLAN.md
 Resume file: None
