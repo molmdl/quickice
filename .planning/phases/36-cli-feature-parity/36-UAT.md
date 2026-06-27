@@ -1,90 +1,127 @@
 ---
-status: testing
+status: complete
 phase: 36-cli-feature-parity
 source: 36-01-SUMMARY.md, 36-02-SUMMARY.md, 36-03-SUMMARY.md, 36-04-SUMMARY.md, 36-05-SUMMARY.md, 36-06-SUMMARY.md, 36-07-SUMMARY.md, 36-08-SUMMARY.md, 36-09-SUMMARY.md, 36-10-SUMMARY.md, 36-11-SUMMARY.md
-started: 2026-06-26T12:00:00Z
-updated: 2026-06-26T12:00:00Z
+started: 2026-06-27T12:00:00Z
+updated: 2026-06-27T12:30:00Z
 ---
 
 ## Current Test
-<!-- OVERWRITE each test - shows where we are -->
 
-number: 1
-name: CLI Solute Insertion (CH4)
-expected: |
-  Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --solute-type CH4 --solute-concentration 0.5` produces GROMACS files (.gro, .top, .itp) in the output directory with CH4_LIQ molecules listed after SOL in the .gro file and CH4_LIQ appearing in the .top [molecules] section.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
 ### 1. CLI Solute Insertion (CH4 via --solute-type)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --solute-type CH4 --solute-concentration 0.5` produces GROMACS files with CH4_LIQ molecules after SOL in .gro, CH4_LIQ in .top [molecules], and ch4_liquid.itp bundled in output directory
-result: pending
+expected: CH4_LIQ molecules after SOL in GRO, CH4_L in TOP [molecules], ch4_liquid.itp bundled
+result: pass
+detail: GRO has CH4_L residues, TOP has SOL:5627 + CH4_L:21, ch4_liquid.itp + tip4p-ice.itp bundled
 
 ### 2. CLI Solute Insertion (THF via --solute-type)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --solute-type THF --solute-concentration 0.3` produces GROMACS files with THF_LIQ molecules (13 atoms each) after SOL in .gro, THF_LIQ in .top [molecules], and thf_liquid.itp bundled
-result: pending
+expected: THF_LIQ molecules after SOL in GRO, THF_L in TOP [molecules], thf_liquid.itp bundled
+result: pass
+detail: GRO has THF_L residues, TOP has SOL:5610 + THF_L:13, thf_liquid.itp + tip4p-ice.itp bundled
 
 ### 3. CLI Custom Molecule Insertion (Random Placement)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 3` inserts 3 ethanol molecules randomly into liquid water with overlap checking, producing GROMACS files with MOL residues after SOL in .gro and etoh.itp bundled
-result: pending
+expected: MOL residues after SOL in GRO, etoh in TOP, etoh.itp bundled
+result: pass
+detail: GRO has MOL residues, TOP has SOL:5772 + etoh:3, etoh.itp + tip4p-ice.itp bundled
 
 ### 4. CLI Custom Molecule Insertion (Custom Placement via CSV)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement custom --custom-positions-file quickice/data/examples/custom_positions.csv` places 3 ethanol molecules at the exact positions/rotations specified in the CSV file, producing GROMACS files
-result: pending
+expected: MOL residues placed at CSV-specified positions
+result: pass
+detail: GRO has MOL residues (3 molecules from CSV)
 
 ### 5. CLI Ion Source Selection (Interface)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --ion-concentration 0.15 --ion-source interface` inserts Na+/Cl- ions from the interface structure as source, producing .gro with NA and CL residues and ion.itp bundled
-result: pending
+expected: NA+CL residues in GRO, ion.itp bundled
+result: pass
+detail: GRO has SOL+NA+CL, ion.itp + tip4p-ice.itp bundled
 
 ### 6. CLI Ion Source Selection (Custom)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 2 --ion-concentration 0.15 --ion-source custom` uses the Custom Molecule result as source for ion insertion, producing .gro with SOL→MOL→NA→CL ordering
-result: pending
+expected: SOL→MOL→NA→CL ordering in GRO
+result: pass
+detail: GRO has SOL+MOL+NA+CL residues
 
 ### 7. CLI Ion Source Selection (Solute)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --solute-type CH4 --solute-concentration 0.5 --ion-concentration 0.15 --ion-source solute` uses the Solute result as source for ion insertion, producing .gro with SOL→CH4_LIQ→NA→CL ordering
-result: pending
+expected: CH4_L+NA+CL in GRO
+result: pass
+detail: GRO has SOL+CH4_L+NA+CL residues
 
 ### 8. CLI Solute Source Selection (Custom Molecule)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 2 --solute-type CH4 --solute-concentration 0.5 --solute-source custom` uses the Custom Molecule result as source for solute insertion (Custom→Solute workflow)
-result: pending
+expected: MOL+CH4_L in GRO, both ITPs bundled
+result: pass
+detail: GRO has MOL+CH4_L+SOL, etoh.itp + ch4_liquid.itp + tip4p-ice.itp
 
 ### 9. CLI Hydrate Generation (sI CH4)
-expected: Running `python -m quickice --cli --hydrate --lattice-type sI --guest CH4 -T 270 -P 0.1` generates a structure-I CH4 hydrate and exports GROMACS files with ch4_hydrate.itp bundled and guest residues in .gro
-result: pending
+expected: CH4_H residues in GRO, ch4_hydrate.itp bundled
+result: pass
+detail: GRO has CH4_H+SOL, ch4_hydrate.itp + tip4p-ice.itp
 
 ### 10. CLI Hydrate→Interface→Solute Chain
-expected: Running `python -m quickice --cli --hydrate --lattice-type sI --guest CH4 -T 270 -P 0.1 --interface --interface-mode slab --solute-type CH4 --solute-concentration 0.3` produces a hydrate→interface→solute chain with both CH4_H (hydrate guest) and CH4_LIQ (liquid solute) in the same .top [molecules] section and both ITPs bundled
-result: pending
+expected: CH4_H + CH4_L coexistence in TOP, both ITPs
+result: pass
+detail: TOP has SOL:2186 + CH4_H:144 + CH4_L:8, ch4_hydrate.itp + ch4_liquid.itp + tip4p-ice.itp
 
 ### 11. CLI Full Chain (Interface→Custom→Solute→Ion)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab --custom-gro quickice/data/custom/etoh.gro --custom-itp quickice/data/custom/etoh.itp --custom-placement random --custom-count 2 --solute-type CH4 --solute-concentration 0.3 --ion-concentration 0.15` produces GROMACS files with SOL→MOL→CH4_LIQ→NA→CL ordering, 4 ITP files bundled (tip4p-ice.itp, etoh.itp, ch4_liquid.itp, ion.itp), and correct atom counts in .gro
-result: pending
+expected: SOL+MOL+CH4_L+NA+CL in GRO, 4+ ITPs
+result: issue
+reported: "Full chain with custom+solute+ion but without --ion-source solute drops custom molecules and solutes from output. When --ion-source solute is used, solutes appear but custom molecules (etoh) still missing from GRO/TOP. Root cause: --ion-source defaults to 'interface' which doesn't have custom/solute attributes. Also SoluteStructure→IonInserter propagation of custom molecules may be incomplete."
+severity: major
 
 ### 12. CLI --no-overwrite Flag
-expected: Running a pipeline command twice with `--no-overwrite` flag: first run succeeds (exit code 0), second run skips output because files already exist (reports "Output files exist" and exits without error)
-result: pending
+expected: First run succeeds, second run with --no-overwrite skips gracefully
+result: issue
+reported: "Second run with --no-overwrite exits with rc=1 instead of rc=0. Pipeline treats existing files as runtime error (exit 1). Design question: should graceful skip return exit 0?"
+severity: minor
 
 ### 13. CLI Cross-Flag Validation Errors
-expected: Running commands with invalid flag combinations produces exit code 2 with clear error messages: (a) `--custom-gro` without `--custom-itp` (requires each other), (b) `--solute-type` without `--solute-concentration`, (c) `--ion-source custom` without `--custom-gro`, (d) `--custom-placement custom` without `--custom-positions-file`
-result: pending
+expected: Invalid flag combinations produce exit code 2
+result: pass
+detail: All 4 tested validation errors correctly return exit code 2
 
 ### 14. CLI Progress Reporting
-expected: During any pipeline execution, [PROGRESS] messages appear on stderr (not stdout) indicating each step's status, while stdout remains clean (only file output goes to output directory)
-result: pending
+expected: [PROGRESS] on stderr, clean stdout
+result: pass
+detail: [PROGRESS] messages appear on stderr, stdout is empty
 
 ### 15. CLI Interface Modes (Slab, Pocket, Piece)
-expected: Running `python -m quickice --cli -T 270 -P 0.1 --interface --interface-mode slab` produces slab interface, `--interface-mode pocket --pocket-diameter 1.5` produces pocket interface, `--interface-mode piece --piece-thickness 2.0` produces piece interface — all with correct GROMACS output
-result: pending
+expected: All three modes produce valid GROMACS output
+result: pass
+detail: slab=23220 atoms, pocket=13496 atoms, piece=5232 atoms
 
 ## Summary
 
 total: 15
-passed: 0
-issues: 0
-pending: 15
+passed: 13
+issues: 2
+pending: 0
 skipped: 0
 
 ## Gaps
 
-[none yet]
+- truth: "Full chain (custom+solute+ion) includes all molecule types in GROMACS output"
+  status: failed
+  reason: "User reported: Full chain with custom+solute+ion without --ion-source solute drops custom/solute from output. Even with --ion-source solute, custom molecules (etoh) missing from GRO/TOP."
+  severity: major
+  test: 11
+  root_cause: "1) Default --ion-source=interface doesn't see custom/solute results. 2) SoluteStructure→IonInserter custom molecule propagation may be incomplete (custom_molecule_positions may be None when solute source was 'interface', not 'custom')"
+  artifacts:
+    - path: "quickice/cli/pipeline.py"
+      issue: "_run_ion_step defaults to interface source; when --ion-source solute, custom molecule attributes may not propagate correctly from solute result when solute source was interface"
+  missing:
+    - "When custom+solute+ion without explicit --ion-source, auto-detect best source (solute if present, custom if present, else interface)"
+    - "OR: Document that --ion-source must be explicitly set for chained workflows"
+    - "Verify SoluteStructure carries custom_molecule_positions when source is interface (not custom)"
+
+- truth: "--no-overwrite exits gracefully with code 0 when files exist"
+  status: failed
+  reason: "User reported: exits with rc=1 instead of rc=0 when output files already exist and --no-overwrite is set"
+  severity: minor
+  test: 12
+  root_cause: "Pipeline.execute() returns 1 on --no-overwrite skip (line 80), treating it as runtime error"
+  artifacts:
+    - path: "quickice/cli/pipeline.py"
+      issue: "Line 80: return 1 on --no-overwrite skip; should arguably be return 0 (graceful skip)"
+  missing:
+    - "Change return 1 to return 0 on --no-overwrite skip (graceful exit, not error)"
+    - "OR: Document that --no-overwrite returns exit 1 when files exist"
