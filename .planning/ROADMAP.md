@@ -1,8 +1,8 @@
 # Milestone v4.5: Solute & Custom Molecule Insertion
 
-**Status:** 🔄 IN PROGRESS
+**Status:** ✓ COMPLETE
 **Phases:** 32-37.2 (with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, 37.2 inserted)
-**Total Plans:** 101 (completed: 101/101)
+**Total Plans:** 101 (completed: 101/101) ✅
 
 ## Overview
 
@@ -610,7 +610,7 @@ Plus 16 LOW issues and 4 informational packaging findings.
 
 **Phase Count:** 17 (Phases 32-37, with 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 34.7, 34.8, 34.9, 37.1, and 37.2 inserted)
 
-**Total Plans:** 101 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, Phase 37.2: 12, e2e-compute-export: 13, completed: 92/101)
+**Total Plans:** 101 plans (Phase 32: 3, Phase 33: 4, Phase 34: 5, Phase 34.1: 3, Phase 34.2: 2, Phase 34.3: 1, Phase 34.4: 2, Phase 34.5: 3, Phase 34.6: 9, Phase 34.7: 3, Phase 34.8: 5, Phase 34.9: 3, Phase 35: 7, Phase 36: 11, Phase 37: 20, Phase 37.1: 15, Phase 37.2: 12, e2e-compute-export: 13, completed: 101/101)
 
 **Key Decisions:**
 - TabIndex enum for tab position constants (prevents hardcoded index bugs)
@@ -661,11 +661,11 @@ Plus 16 LOW issues and 4 informational packaging findings.
 | 34.7 - Fix Verified Scancode Bugs | ✓ Complete | 3 | 3 |
 | 34.8 - Fix Performance Issues and Test Gaps | ✓ Complete | 5 | 5 |
 | 34.9 - Fix Verified Scan Issues + LJ Bug | ✓ Complete | 3 | 3 |
-| 35 - Integration & Documentation | ◆ Partial (screenshots) | 6/7 | 7 |
+| 35 - Integration & Documentation | ✓ Complete | 7 | 7 |
 | 36 - CLI Feature Parity | ✓ Complete | 11 | 11 |
 | 37 - Unified Entry Point | ✓ Complete | 20 | 20 |
 | 37.1 - Fix Verified Scancode Findings | ✓ Complete | 15 | 15 |
-| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ◆ Screenshots pending | 11/12 | 12 |
+| 37.2 - Fix Verified Scancode Findings 2026-06-18 | ✓ Complete | 12 | 12 |
 | e2e-export-test - E2E GROMACS Export Testing | ✓ Complete | 8 | 8 |
 | e2e-api-workflow - E2E API Workflow Testing | ✓ Complete | 5 | 5 |
 | e2e-compute-export - E2E Compute→Export Bridge Testing | ✓ Complete (extended) | 13 | 13 |
@@ -743,5 +743,5 @@ Plus 16 LOW issues and 4 informational packaging findings.
 ---
 
 *Roadmap created: 2026-05-05*
-*Last updated: 2026-06-18 - Phase 37.2 gap closure plans 05-07 (solute PBC wrapping, doc accuracy, test hardening)*
+*Last updated: 2026-06-27 - Milestone v4.5 complete (101/101 plans, all phases done)*
 *For current state, see .planning/STATE.md*

@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
-**Current Focus:** v4.5 — Phase 37.2 COMPLETE (12/12 plans done, all must-haves verified, screenshots committed)
+**Current Focus:** v4.5 — MILESTONE COMPLETE (101/101 plans done, all phases done, ready for archival)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Generate plausible ice structure candidates, interfaces, and hydrates quickly with an intuitive visual interface
 
-**Current focus:** v4.5 — Phase 37.2 COMPLETE (12/12 plans done, all must-haves verified, screenshots committed)
+**Current focus:** v4.5 — MILESTONE COMPLETE (101/101 plans done, all phases done, ready for archival)
 
 **Tech stack:**
 - PySide6 6.10.2 (LGPL, MIT-compatible)
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 | Milestone | v4.5 Solute & Custom Molecule Insertion |
 | Phase | 37.2 (fix verified scancode findings 2026-06-18) |
 | Plan | 12 of 12 (COMPLETE) |
-| Status | All 101/101 must-haves verified — milestone complete |
-| Last activity | 2026-06-19 — Phase 37.2 complete, screenshots committed, 35-06 finalized |
+| Status | All 101/101 plans done — milestone complete, ready for `/gsd-complete-milestone` |
+| Last activity | 2026-06-27 — ROADMAP status labels corrected, milestone marked complete |
 
 **Progress:** ██████████ 100% (13/13 plans in Phase e2e-compute-export)
 
