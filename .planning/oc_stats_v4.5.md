@@ -1,23 +1,23 @@
 Actual cost is lower with as we use the synthetic coding plan instead of API pricing
-Large dataset detected (1717 sessions). This may take a while...
+Large dataset detected (1719 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          1,717 │
-│Messages                                         51,570 │
+│Sessions                                          1,719 │
+│Messages                                         51,628 │
 │Days                                                 94 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                     $1933.59 │
-│Avg Cost/Day                                     $20.57 │
+│Total Cost                                     $1934.94 │
+│Avg Cost/Day                                     $20.58 │
 │Avg Tokens/Session                                 1.6M │
 │Median Tokens/Session                              1.0M │
 │Input                                            345.4M │
 │Output                                            19.3M │
-│Cache Read                                      2427.2M │
+│Cache Read                                      2428.5M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -25,12 +25,12 @@ Large dataset detected (1717 sessions). This may take a while...
 │                      MODEL USAGE                       │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5.1                           │
-│  Messages                                       14,236 │
+│  Messages                                       14,286 │
 │  Input Tokens                                    46.7M │
 │  Output Tokens                                    5.9M │
-│  Cache Read                                     940.7M │
+│  Cache Read                                     941.9M │
 │  Cache Write                                         0 │
-│  Cost                                       $1005.0230 │
+│  Cost                                       $1006.3678 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5                                  │
 │  Messages                                       12,689 │
@@ -109,13 +109,13 @@ Large dataset detected (1717 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 28348 (41.8%)  │
-│ read               █████████████        19433 (28.6%)  │
-│ edit               █████                7893 (11.6%)   │
-│ grep               ██                   3868 ( 5.7%)   │
-│ glob               █                    2652 ( 3.9%)   │
-│ write              █                    2235 ( 3.3%)   │
-│ task               █                    1438 ( 2.1%)   │
+│ bash               ████████████████████ 28358 (41.7%)  │
+│ read               █████████████        19463 (28.7%)  │
+│ edit               █████                7907 (11.6%)   │
+│ grep               ██                   3869 ( 5.7%)   │
+│ glob               █                    2665 ( 3.9%)   │
+│ write              █                    2240 ( 3.3%)   │
+│ task               █                    1439 ( 2.1%)   │
 │ webfetch           █                    893 ( 1.3%)    │
 │ question           █                    751 ( 1.1%)    │
 │ todowrite          █                    205 ( 0.3%)    │

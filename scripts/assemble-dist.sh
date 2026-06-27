@@ -8,6 +8,7 @@ rm quickice-${version}-linux-x86_64.tar.gz
 
 mkdir -p package
 cp -r quickice-gui package/
+cp ../QuickIce.sh package/
 cp ../README.md ../README_bin.md package/
 cp ../LICENSE package/
 mkdir -p package/docs
