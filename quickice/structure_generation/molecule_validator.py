@@ -35,6 +35,7 @@ class ValidationResult:
     errors: List[str]
     warnings: List[str]
     residue_name_mismatch: bool = False
+    is_generic_residue_name: bool = False
     gro_residue_name: str | None = None
     itp_residue_name: str | None = None
     gro_atom_count: int | None = None
@@ -152,23 +153,33 @@ def validate_custom_molecule(
     # Check residue name consistency (NON-BLOCKING)
     itp_residue_name = itp_info.molecule_name
     residue_name_mismatch = False
+    is_generic_residue_name = False
     
     if gro_residue_name and itp_residue_name:
-        if gro_residue_name in GENERIC_RESIDUE_NAMES:
-            # Generic residue name - skip mismatch warning (expected behavior)
-            logger.info(
-                f"GRO uses generic residue name '{gro_residue_name}', "
-                f"ITP uses '{itp_residue_name}' - this is expected"
-            )
-        elif gro_residue_name != itp_residue_name:
-            # Real mismatch - show warning
+        if gro_residue_name != itp_residue_name:
             residue_name_mismatch = True
-            warnings.append(
-                f"Residue name mismatch:\n"
-                f"  GRO file uses '{gro_residue_name}'\n"
-                f"  ITP file uses '{itp_residue_name}'\n"
-                f"User must choose to proceed or re-select files."
-            )
+            
+            if gro_residue_name in GENERIC_RESIDUE_NAMES:
+                # Generic residue name mismatch - offer dialog to use ITP name
+                is_generic_residue_name = True
+                logger.info(
+                    f"GRO uses generic residue name '{gro_residue_name}', "
+                    f"ITP uses '{itp_residue_name}' - offering dialog choice"
+                )
+                warnings.append(
+                    f"Generic residue name in GRO file:\n"
+                    f"  GRO file uses '{gro_residue_name}' (generic placeholder)\n"
+                    f"  ITP file uses '{itp_residue_name}'\n"
+                    f"Use ITP residue name instead?"
+                )
+            else:
+                # Real mismatch - show warning
+                warnings.append(
+                    f"Residue name mismatch:\n"
+                    f"  GRO file uses '{gro_residue_name}'\n"
+                    f"  ITP file uses '{itp_residue_name}'\n"
+                    f"User must choose to proceed or re-select files."
+                )
     
     # Check for [ atomtypes ] section (warning)
     if not itp_info.has_atomtypes_section:
@@ -188,6 +199,7 @@ def validate_custom_molecule(
         errors=errors,
         warnings=warnings,
         residue_name_mismatch=residue_name_mismatch,
+        is_generic_residue_name=is_generic_residue_name,
         gro_residue_name=gro_residue_name,
         itp_residue_name=itp_residue_name,
         gro_atom_count=gro_atom_count
