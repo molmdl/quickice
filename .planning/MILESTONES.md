@@ -1,27 +1,36 @@
 # Project Milestones: QuickIce
 
-## v4.5 Solute & Custom Molecule Insertion (In Progress: 2026-05-05)
+## v4.5 Solute & Custom Molecule Insertion (Shipped: 2026-06-27)
 
-**Goal:** Add solute insertion (THF/CH₄ concentration) and custom molecule upload with 6-tab workflow
+**Delivered:** Six-tab GUI workflow with solute insertion, custom molecule upload, CLI pipeline, unified entry point, and 45 GROMACS grompp-validated export paths
 
-**Phases planned:** 32-35 (4 phases)
+**Phases completed:** 32-37.2 + e2e-export/api/compute (20 phases, 131 plans total)
 
-**Target features:**
-- Tab 4: Solute insertion (THF/CH₄ concentration-based placement in liquid)
-- Tab 5: Custom molecule upload (.gro/.itp with random or custom placement)
-- Tab 6: Ion (moved from Tab 4)
-- Moleculetype naming convention (CH4_HYD vs CH4_LIQ)
-- Multi-atom overlap detection with rotation matrices
-- Cross-tab data flow and GROMACS export polish
+**Key accomplishments:**
+- Six-tab workflow (Ice, Hydrate, Interface, Custom, Solute, Ion) with complete cross-tab data flow and source dropdowns
+- Multi-atom molecule placement with all-atom overlap checking, rotation matrices, concentration-based count, and seeded RNG
+- CLI feature parity — full pipeline supporting all v4.5 features (solute, custom, ion/solute source selection)
+- Unified entry point — `python -m quickice` auto-routes CLI/GUI with graceful PySide6 fallback
+- 45 GROMACS grompp validation tests (27 parameterized + 18 class-based) confirming export integrity across all chain combinations
+- Critical bug fixes: TIP4P-ICE LJ parameters (σ 1000×/ε 10⁶× error), HW1 Z-coordinate copy-paste, comb-rule convention revert, PBC wrapping across all writers, Madrid2019 DOI correction
 
 **Stats:**
-- 39 requirements across 6 categories
-- 4 phases, TBD plans
-- Research: v4.5-SUMMARY.md
+- ~33,558 lines of Python (quickice package), ~27,838 lines (tests)
+- 20 phases, 131 plans, ~300+ tasks
+- 57 days (2026-05-01 → 2026-06-27)
+- 866 commits since v4.0
+- 1,032 tests passing (422 E2E)
 
-**What's next:** v4.5.1 (CLI support for v4.5 features, linked to quicktasks 013-015) → v4.6 (multi-guest hydrate support) → v5 (remaining major genice2 feature support) -> v6 (complicated ice/hydrate building using e.g. [atomsk](https://github.com/pierrehirel/atomsk/) as submodule or methods adapted from atomsk)
+**Tech debt:**
+- 2 missing low-priority screenshots (validation-preview.png, solute-source-dropdown.png)
+- SoluteStructure.molecule_indices naming inconsistency (working workaround exists)
+- Liquid volume TODO (uses total box volume instead of liquid region volume)
 
-**Archive:** [.planning/ROADMAP.md](./ROADMAP.md) (active) | [.planning/v4.5_prompt.md](./v4.5_prompt.md) (initial prompt)
+**Git range:** `v4.0` tag → `HEAD`
+
+**What's next:** Planning next milestone
+
+**Archive:** [.planning/milestones/v4.5-ROADMAP.md](./milestones/v4.5-ROADMAP.md)
 
 ---
 

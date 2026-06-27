@@ -1,25 +1,12 @@
 # QuickIce
 
-## Current Milestone: v4.5 Solute & Custom Molecule Insertion
-
-**Goal:** Add solute molecule insertion (THF/CH₄ concentration) and custom molecule upload to liquid phase with 6-tab workflow
-
-**Target features:**
-- Solute insertion tab (Tab 4) — THF/CH₄ concentration-based placement in liquid
-- Custom molecule tab (Tab 5) — Random or user-specified COM/rotation
-- Ion tab moves to Tab 6
-- CLI support for v4.5 features (v4.5.1 follow-up, linked to quicktasks 013-015)
-- Moleculetype naming convention for GROMACS export analysis
-
 ## What This Is
 
-A portable, cross-platform GUI application for generating plausible ice structures, ice-water interfaces, and hydrate systems. QuickIce provides a minimal GUI of basic GenIce2 functions with extended capabilities including hydrate generation with guest molecules (CH4, THF), NaCl ion insertion, and multi-molecule GROMACS export. Using the simple but powerful genice2 to provide ice and hydrate model support, we focus more on preparing ready-to-use gromacs input for molecular modelling studiws.
-
-Orignial aim of QuickIce is to allow users select thermodynamic conditions via interactive phase diagram or text input, generate ranked PDB structure candidates with 3D visualization, and build interface structures with GROMACS-ready outputs.
+A portable, cross-platform GUI and CLI application for generating plausible ice structures, ice-water interfaces, hydrate systems, and molecular solutions. QuickIce provides a 6-tab GUI with interactive 3D visualization, plus a full-featured CLI pipeline — both producing GROMACS-ready simulation inputs (.gro/.top/.itp). Using GenIce2 for ice and hydrate model support, QuickIce focuses on preparing ready-to-use initial models and topologies for molecular dynamics simulations.
 
 ## Core Value
 
-Generate ready-to-use inirial models and topologiea for GROMACS for the simulation of ice and hydrates, originally designed as an educational tool for generating plausible ice structure candidates from the phase diagram.
+Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water.
 
 ## Requirements
 
@@ -101,14 +88,30 @@ Generate ready-to-use inirial models and topologiea for GROMACS for the simulati
 - ✓ Hydrate→Interface workflow via Tab 3 source dropdown — v4.0
 - ✓ Four-tab workflow (Ice, Hydrate, Interface, Ion) — v4.0
 
+**v4.5 Solute & Custom Molecule Insertion:**
+- ✓ TabIndex enum for tab position constants — v4.5
+- ✓ MoleculetypeRegistry for unique GROMACS naming — v4.5
+- ✓ ITP parser for .itp topology file parsing — v4.5
+- ✓ GRO/ITP molecule validator with specific errors — v4.5
+- ✓ Solute insertion (THF/CH₄) with concentration-based placement — v4.5
+- ✓ All-atom overlap checking with rotation matrices — v4.5
+- ✓ Custom molecule upload (.gro/.itp) with validation — v4.5
+- ✓ Random and custom placement modes — v4.5
+- ✓ Placement validation with preview — v4.5
+- ✓ Six-tab workflow (Ice, Hydrate, Interface, Custom, Solute, Ion) — v4.5
+- ✓ Source dropdowns (Ion, Solute) for cross-tab data flow — v4.5
+- ✓ Custom Molecule as source for Solute and Ion — v4.5
+- ✓ CLI feature parity (full pipeline with all v4.5 features) — v4.5
+- ✓ Unified entry point (`python -m quickice`) — v4.5
+- ✓ Ctrl+S unified export from active tab — v4.5
+- ✓ GROMACS export with correct molecule ordering (SOL→guests→solutes→custom→ions) — v4.5
+- ✓ 45 grompp validation tests confirming export integrity — v4.5
+- ✓ Comprehensive documentation (README, GUI guide, GRO/ITP guide, CLI reference) — v4.5
+- ✓ Critical bug fixes (TIP4P-ICE LJ parameters, PBC wrapping, comb-rule, DOIs) — v4.5
+
 ### Active
 
-**v4.5 Solute & Custom Molecule Insertion:**
-- [ ] Solute insertion tab (THF/CH₄ concentration in liquid phase)
-- [ ] Custom molecule tab (random + user-specified position/orientation)
-- [ ] Six-tab workflow (reorder Ion to Tab 6)
-- [ ] Moleculetype naming for GROMACS export (guest vs solute distinction)
-- [ ] Custom molecule validation (atomtypes, GROMACS compatibility)
+(Awaiting next milestone definition via `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -118,27 +121,32 @@ Generate ready-to-use inirial models and topologiea for GROMACS for the simulati
 - Non-water systems
 - Training new ML models
 - Web-based viewer
-- Real-time preview while typing
 - Cloud sync/collaboration
 - Additional ice phases beyond GenIce2 support
 - Automated interface geometry optimization
 - Multiple salt types (KCl, MgCl2)
+- Multiple solute types simultaneously (defer to v5.0)
+- Multiple custom molecule types in single session
+- VTK rendering correctness (headless environment limitation)
 
 ## Current State
 
-**Version:** v4.0 (shipped 2026-05-01)
-**Tech Stack:** Python 3.11, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib, iapws
-**Code:** ~21,370 lines of Python (quickice package)
-**Test Coverage:** 307+ tests passing
+**Version:** v4.5 (shipped 2026-06-27)
+**Tech Stack:** Python 3.14, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib, iapws
+**Code:** ~33,558 lines of Python (quickice package), ~27,838 lines (tests)
+**Test Coverage:** 1,032 tests passing (422 E2E, 45 grompp validation)
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
 **Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
 **Hydrate Structures:** sI, sII, sH with CH4/THF guests
 **Ion Types:** NaCl (Madrid2019 parameters)
+**Solute Types:** CH4, THF (GAFF2 parameters)
+**Custom Molecules:** User-provided .gro/.itp with validation
 **Interface Modes:** Slab, Pocket (sphere/cubic), Piece
-**CLI Interface Generation:** Full support for all modes with parameter control
-**Triclinic Support:** Ice V, Ice VI work natively; Ice II blocked
-**Distribution:** Standalone executable
+**CLI Pipeline:** Full 6-step pipeline (source→interface→custom→solute→ion→export)
+**Entry Point:** `python -m quickice` (auto-routes CLI/GUI)
+**Distribution:** Standalone executable (PyInstaller)
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
+**Combining Rule:** Lorentz-Berthelot (comb-rule=2, AMBER/GAFF2 convention)
 **Thermodynamic Data:** IAPWS R14-08(2011), Journaux et al. (2019, 2020)
 **Density Calculations:** IAPWS R10-06(2009) for Ice Ih, IAPWS-95 for water
 
@@ -146,42 +154,28 @@ Generate ready-to-use inirial models and topologiea for GROMACS for the simulati
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| CLI-only interface | Keep it simple, fast to use | ✓ Confirmed — works well |
-| PDB output format | Standard, universal compatibility | ✓ Confirmed — universal |
-| Ranking approach | Knowledge-based (energy, density, diversity) | ✓ Confirmed — simple and effective |
-| Pre-trained model | Minimal resources, no training needed | ✓ Confirmed — vibe-based ranking works |
-| Curve-based phase lookup | Avoid polygon overlap errors | ✓ Confirmed — clean boundaries |
-| Extended to 12 phases | Comprehensive coverage | ✓ Confirmed — user value |
+| CLI-only interface | Keep it simple, fast to use | ✓ Confirmed |
+| PDB output format | Standard, universal compatibility | ✓ Confirmed |
+| Ranking approach | Knowledge-based (energy, density, diversity) | ✓ Confirmed |
 | KDTree for neighbor search | O(n log n) performance | ✓ Confirmed — 50x faster for large structures |
-| Save/restore numpy state | GenIce compatibility | ✓ Confirmed — preserves reproducibility |
 | MVVM architecture for GUI | Separation of concerns, testability | ✓ Confirmed — clean signal/slot wiring |
-| VTK for 3D viewer | Industry standard, MIT-compatible | ✓ Confirmed — full 3D interactivity |
-| PyInstaller bundling | Standalone distribution | ✓ Confirmed — Linux executable complete |
-| Exact version pinning | Reproducibility, security | ✓ Confirmed — all deps =x.y.z |
-| TIP4P-ICE water model | GROMACS compatibility | ✓ Confirmed — 4-point coordinates |
-| Single export action | Simplified workflow | ✓ Confirmed — .gro/.top/.itp together |
-| IAPWS/Journaux data sources | Scientific accuracy | ✓ Confirmed — all triple points verified |
-| Ice Ic lower boundary at 72K | Avoid Ice XI overlap | ✓ Confirmed — zero polygon overlaps |
-| Ice Ic upper pressure ~204 MPa | Ih-II curve boundary | ✓ Confirmed — scientifically accurate |
-| Ice Ih bounded at T=150K | Avoid Ice Ic overlap | ✓ Confirmed — clean phase regions |
-| Metastability documentation | Scientific transparency | ✓ Confirmed — literature citations added |
-| QTabWidget multi-tab workflow | Separate ice/hydrate/interface/ion | ✓ Confirmed — v4.0 |
-| QStackedWidget mode switching | Mode-specific controls | ✓ Confirmed — clean UI |
-| scipy cKDTree for PBC | Automatic periodic boundaries | ✓ Confirmed — robust overlap detection |
-| Line-based bonds (Tab 2) | Performance for large systems | ✓ Confirmed — smooth rendering |
-| Multi-molecule GROMACS export | [molecules] counts per type | ✓ Confirmed — v4.0 |
-| Ctrl+I for interface export | No conflict with Ctrl+G | ✓ Confirmed — intuitive shortcut |
-| IAPWS library for density | Already in environment, scientifically accurate | ✓ Confirmed — v3.5 |
-| Native triclinic handling | Transformation creates gaps during tiling | ✓ Confirmed — v3.5 |
-| Ice II blocked for interfaces | Rhombohedral crystal incompatible | ✓ Confirmed — v3.5 |
-| GROMACS atom wrapping at 100k | Standard convention for large systems | ✓ Confirmed — v3.5 |
-| MoleculeIndex dataclass | Variable atoms-per-molecule tracking | ✓ Confirmed — v4.0 |
-| Madrid2019 ion parameters | Scientifically validated charges (±0.85) | ✓ Confirmed — v4.0 |
-| GAFF2 guest parameters | CH4/THF topology for GROMACS | ✓ Confirmed — v4.0 |
-| Dual-style hydrate rendering | Water lines + guest ball-and-stick | ✓ Confirmed — v4.0 |
-| Concentration-based ion placement | mol/L → ion count calculation | ✓ Confirmed — v4.0 |
-| Per-type VTK actors | Multi-molecule visualization | ✓ Confirmed — v4.0 |
-| Tab order: Ice→Hydrate→Interface→Ion | User-approved deviation from spec | ✓ Confirmed — v4.0 |
+| VTK for 3D viewer | Industry standard, MIT-compatible | ✓ Confirmed |
+| PyInstaller bundling | Standalone distribution | ✓ Confirmed |
+| TIP4P-ICE water model | GROMACS compatibility | ✓ Confirmed |
+| Single export action | Simplified workflow | ✓ Confirmed |
+| QTabWidget multi-tab workflow | Separate ice/hydrate/interface/custom/solute/ion | ✓ Confirmed — v4.5 (6 tabs) |
+| MoleculetypeRegistry for molecule tracking | Unique GROMACS naming (CH4_H vs CH4_L) | ✓ Confirmed — v4.5 |
+| TabIndex enum for tab positions | Prevents hardcoded index bugs after reordering | ✓ Confirmed — v4.5 |
+| All-atom overlap checking | Multi-atom molecules need full overlap check (not COM) | ✓ Confirmed — v4.5 |
+| GAFF2 parameters for solutes | Consistent with hydrate guest parameters | ✓ Confirmed — v4.5 |
+| TIP4P-ICE comb-rule 2 (Lorentz-Berthelot) | AMBER/GAFF2 convention; LJ bug was in VALUES not rule | ✓ Confirmed — v4.5 |
+| TIP4P_ICE_OW_SIGMA/EPSILON module constants | Single source of truth prevents copy-paste exponent errors | ✓ Confirmed — v4.5 |
+| Unified entry point via `python -m quickice` | Auto-routes CLI/GUI with graceful fallback | ✓ Confirmed — v4.5 |
+| CustomMoleculeStructure complete system export | Follows IonStructure pattern for chain workflow | ✓ Confirmed — v4.5 |
+| WATER_VOLUME_NM3 shared constant | Single source of truth replaces 9 hardcoded values | ✓ Confirmed — v4.5 |
+| AVOGADRO single definition in ion_inserter.py | DRY: 3 definitions consolidated to 1 | ✓ Confirmed — v4.5 |
+| Concentration range validation [0.0, 5.0] mol/L | Seawater ~0.6 M, saturated ~5 M; absurd values rejected | ✓ Confirmed — v4.5 |
+| SoluteStructure.molecule_indices naming (tuple) | Uses tuple[int,int] instead of MoleculeIndex; working workaround exists | ⚠️ Revisit |
 
 ## Context
 
@@ -193,6 +187,17 @@ Generate ready-to-use inirial models and topologiea for GROMACS for the simulati
 - v3.0 adds two-tab interface with ice-water interface generation and GROMACS export
 - v3.5 adds IAPWS density calculations, triclinic support, and CLI interface generation
 - v4.0 adds four-tab workflow with hydrate generation, ion insertion, and multi-molecule export
+- v4.5 adds six-tab workflow with solute insertion, custom molecule upload, CLI pipeline, unified entry point
+
+**Shipped v4.5 with ~61,396 LOC Python (33,558 package + 27,838 tests).**
+**Test suite: 1,032 tests (422 E2E, 45 grompp validation, 51 CLI pipeline).**
+**User testing showed demand for custom molecule workflows (Phase 34).**
+
+**Known tech debt:**
+- SoluteStructure.molecule_indices naming inconsistency (working workaround)
+- Liquid volume TODO (uses total box volume instead of liquid region)
+- 2 missing low-priority screenshots (validation-preview, solute-source-dropdown)
+- Stale code comments in main_window.py ("Future data flows" now current)
 
 ## Constraints
 
@@ -204,4 +209,4 @@ Generate ready-to-use inirial models and topologiea for GROMACS for the simulati
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-05-05 after v4.5 milestone started*
+*Last updated: 2026-06-27 after v4.5 milestone completion*
