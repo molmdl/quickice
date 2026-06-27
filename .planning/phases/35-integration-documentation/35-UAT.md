@@ -1,30 +1,26 @@
 ---
-status: testing
+status: complete
 phase: 35-integration-documentation
 source: [35-01-SUMMARY.md, 35-02-SUMMARY.md, 35-03-SUMMARY.md, 35-04-SUMMARY.md, 35-05-SUMMARY.md, 35-06-SUMMARY.md, 35-07-SUMMARY.md]
 started: 2026-06-26T15:37:54Z
-updated: 2026-06-26T15:42:00Z
+updated: 2026-06-26T15:45:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: Ctrl+S Unified Export Shortcut (GUI manual verification needed)
-expected: |
-  In the running GUI, pressing Ctrl+S while any tab is active triggers GROMACS export for that tab's content. A file save dialog appears appropriate to the active tab.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
 ### 1. Ctrl+S Unified Export Shortcut
 expected: In the running GUI, pressing Ctrl+S while any tab is active triggers GROMACS export for that tab's content. A file save dialog appears appropriate to the active tab (e.g., ice candidate, hydrate, interface, custom molecule, solute, or ion export).
-result: pending
-note: "Code verified: Ctrl+S wired to _on_export_current_tab in main_window.py. GUI interaction test pending."
+result: pass
+method: "GUI verified — user confirmed Ctrl+S triggers export for active tab"
 
 ### 2. Ctrl+H Hydrate Export Shortcut
 expected: Pressing Ctrl+H in the GUI triggers hydrate GROMACS export (same as clicking the hydrate export button). This replaces the old Ctrl+E shortcut.
-result: pending
-note: "Code verified: Ctrl+H wired to hydrate export in main_window.py. GUI interaction test pending."
+result: pass
+method: "GUI verified — user confirmed Ctrl+H triggers hydrate export"
 
 ### 3. Export As... Submenu
 expected: The File menu has an "Export As..." submenu listing all tab-specific exports (Ice, Hydrate, Interface, Custom Molecule, Solute, Ion). Clicking an entry triggers the corresponding export.
@@ -79,9 +75,9 @@ method: "CLI grep — 'By Concentration' mode at L503, formula N = C_M × V_L ×
 ## Summary
 
 total: 12
-passed: 10
+passed: 12
 issues: 0
-pending: 2
+pending: 0
 skipped: 0
 
 ## Gaps
