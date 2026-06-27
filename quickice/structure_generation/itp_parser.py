@@ -132,9 +132,16 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
     atom_count = len(atom_types)
     
     # Check for [ atomtypes ] section
+    # Strip comment lines (starting with ;) before checking to avoid
+    # false positives from comments mentioning [ atomtypes ]
+    non_comment_lines = [
+        line for line in content.split('\n')
+        if line.strip() and not line.strip().startswith(';')
+    ]
+    non_comment_content = '\n'.join(non_comment_lines)
     has_atomtypes = bool(re.search(
         r'\[\s*atomtypes\s*\]',
-        content,
+        non_comment_content,
         re.IGNORECASE
     ))
     
