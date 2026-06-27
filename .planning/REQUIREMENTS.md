@@ -14,9 +14,9 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 - [x] **ARCH-03**: ITP parser module extracts molecule name, atom types, atom count from .itp files
 - [x] **ARCH-04**: Molecule validator module checks GRO/ITP consistency (atom count, residue name)
 - [x] **ARCH-05a**: TabIndex enum defines constants for current tab positions (Phase 32, Ion at position 3)
-- [ ] **ARCH-05b**: Tab reordering when new tabs added (Ion moves from position 3 to position 5 in Phase 35)
+- [x] **ARCH-05b**: Tab reordering when new tabs added (Ion moves from position 3 to position 5 in Phase 35)
 - [x] **ARCH-06**: Data transfer mechanism between tabs (exact flow to be determined during implementation)
-- [ ] **ARCH-07**: Keyboard shortcut Ctrl+S (or Ctrl+E) for GROMACS export from active tab
+- [x] **ARCH-07**: Keyboard shortcut Ctrl+S (or Ctrl+E) for GROMACS export from active tab
 
 ### Tab 4 — Solute Insertion
 
@@ -53,17 +53,17 @@ Requirements for solute insertion and custom molecule upload. Each maps to roadm
 
 ### GROMACS Export
 
-- [ ] **GROMACS-01**: Export order enforced: SOL (ice + water) → hydrate guests → liquid solutes → custom molecules → ions
+- [x] **GROMACS-01**: Export order enforced: SOL (ice + water) → hydrate guests → liquid solutes → custom molecules → ions
 - [x] **GROMACS-02**: Moleculetype naming distinguishes hydrate guests (CH4_HYD) from liquid solutes (CH4_LIQ)
-- [ ] **GROMACS-03**: All .itp files bundled correctly (tip4p-ice.itp, ch4.itp, thf.itp, ion.itp, custom .itp)
+- [x] **GROMACS-03**: All .itp files bundled correctly (tip4p-ice.itp, ch4.itp, thf.itp, ion.itp, custom .itp)
 
 ### Documentation
 
-- [ ] **DOCS-01**: README.md updated with v4.5 features and usage examples
-- [ ] **DOCS-02**: In-app tooltips added for Tab 4 and Tab 5 controls
-- [ ] **DOCS-03**: In-app help text updated with solute/custom molecule workflows
-- [ ] **DOCS-04**: Screenshot placeholders added to documentation for critical UI states
-- [ ] **DOCS-05**: User guide created for creating valid .gro/.itp files for custom molecules
+- [x] **DOCS-01**: README.md updated with v4.5 features and usage examples
+- [x] **DOCS-02**: In-app tooltips added for Tab 4 and Tab 5 controls
+- [x] **DOCS-03**: In-app help text updated with solute/custom molecule workflows
+- [x] **DOCS-04**: Screenshot placeholders added to documentation for critical UI states
+- [x] **DOCS-05**: User guide created for creating valid .gro/.itp files for custom molecules
 
 ## v4.5.1 Requirements (CLI Extensions)
 
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ARCH-03 | Phase 32 | Complete |
 | ARCH-04 | Phase 32 | Complete |
 | ARCH-05a | Phase 32 | Complete |
-| ARCH-05b | Phase 35 | Pending |
+| ARCH-05b | Phase 34.3 | Complete |
 | ARCH-06 | Phase 32 | Complete |
-| ARCH-07 | Phase 35 | Pending |
+| ARCH-07 | Phase 35 | Complete |
 | SOLUTE-01 | Phase 33 | Complete |
 | SOLUTE-02 | Phase 33 | Complete |
 | SOLUTE-03 | Phase 33 | Complete |
@@ -130,14 +130,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-01 | Phase 33 | Complete |
 | VIS-02 | Phase 34 | Complete |
 | VIS-03 | Phase 33 | Complete |
-| GROMACS-01 | Phase 35 | Pending |
+| GROMACS-01 | Phase 35 | Complete |
 | GROMACS-02 | Phase 32 | Complete |
-| GROMACS-03 | Phase 35 | Pending |
-| DOCS-01 | Phase 35 | Pending |
-| DOCS-02 | Phase 35 | Pending |
-| DOCS-03 | Phase 35 | Pending |
-| DOCS-04 | Phase 35 | Pending |
-| DOCS-05 | Phase 35 | Pending |
+| GROMACS-03 | Phase 35 | Complete |
+| DOCS-01 | Phase 35 | Complete |
+| DOCS-02 | Phase 35 | Complete |
+| DOCS-03 | Phase 35 | Complete |
+| DOCS-04 | Phase 35 | Complete |
+| DOCS-05 | Phase 35 | Complete |
 | CLI-01 | Phase 36 | Complete |
 | CLI-02 | Phase 36 | Complete |
 | CLI-03 | Phase 36 | Complete |
@@ -152,4 +152,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-06-14 — Phase 36 complete (CLI-01 to CLI-05)*
+*Last updated: 2026-06-27 — All 44 requirements verified satisfied (milestone audit)*
