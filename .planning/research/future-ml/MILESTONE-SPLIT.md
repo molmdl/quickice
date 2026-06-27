@@ -1,7 +1,7 @@
 # Future Milestone Split Suggestion
 
-**Synthesized from:** 5 research areas in `.planning/research/future-ml/`
-**Date:** 2026-06-17 (updated 2026-06-22)
+**Synthesized from:** 5 research areas in `.planning/research/future-ml/` + genice3-upgrade
+**Date:** 2026-06-17 (updated 2026-06-27)
 **Based on:** STATE.md, ROADMAP.md, PROJECT.md, all SUMMARY.md + SYNTHESIS.md in future-ml subdirs
 
 ---
@@ -168,6 +168,65 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 
 ---
 
+### v5.GenIce3: GenIce3 Migration (Future Milestone)
+
+**Source:** `.planning/research/future-ml/genice3-upgrade/` (5 research files + SUMMARY.md)
+**Date:** 2026-06-27
+
+| Phase | What | LOC (est.) | Risk | Value |
+|-------|------|-----------|------|-------|
+| Phase 0: Upstream Engagement | File Python 3.14 issue + PR on GenIce3 GitHub; file fastapi/uvicorn packaging bug | ~0 (issues only) | LOW | CRITICAL (resolves blockers) |
+| Phase 1: Proof of Concept | Patched GenIce3 on Python 3.14; validate API; verify GRO output; verify sH cage naming | ~50-100 (prototype branch) | MEDIUM | HIGH |
+| Phase 2: Core Migration | Rewrite generator.py + hydrate_generator.py for GenIce3 API; update environment.yml; adapt gromacs_writer.py for `water_model="ice"` | ~130-200 | MEDIUM | CRITICAL |
+| Phase 3: Test & Validation | Update all test fixtures; verify GRO round-trips; PyInstaller verification | ~100-200 (test changes) | MEDIUM | HIGH |
+| Phase 4: Cleanup & Feature Adoption | Remove 3→4 normalization; update GUI URLs/citations; add cage survey; add CIF input support | ~150-250 | LOW | MEDIUM-HIGH |
+
+**User theme:** *"QuickIce uses the latest GenIce3 engine with direct TIP4P-ICE generation, CIF crystal import, and spot ion placement"*
+
+**Verdict: GO LATER** — Upgrade is the right long-term direction but two hard blockers prevent immediate action:
+1. **Python 3.14 incompatibility** — GenIce3 requires `<3.14`, QuickIce runs 3.14.3 (bound is conservative, one-line patch resolves)
+2. **genice-core version conflict** — GenIce2 pins `<1.3`, GenIce3 requires `≥1.5.4` (mutually exclusive, full migration required)
+3. **Beta status** — GenIce3 is 3.0b3/3.0b4, no stable 3.0.0 release, no timeline announced
+
+**Key benefits of upgrading:**
+- `water_model="ice"` eliminates 3→4 atom TIP4P-ICE normalization hack
+- CIF input enables arbitrary crystal structures (could replace hardcoded 8-phase limit)
+- Spot ions (`-A`/`-C`) allow per-molecule ion replacement (better than unit-cell-only)
+- Cage survey JSON for structured cage data in hydrate UI
+- Ice XXI (newly discovered 2025 phase) extends phase diagram
+- Cleaner API: `Exporter("gromacs").dumps(genice, water_model="ice")` vs `safe_import`+`GenIce`+`generate_ice()`
+
+**Key risks:**
+- Beta API may change before stable release
+- Fork maintenance if Python 3.14 patch needed long-term
+- Complete GenIce2 removal required (no coexistence possible due to genice-core conflict)
+- New dependencies: pyyaml, jinja2, cif2ice (pip-only)
+- fastapi/uvicorn are in core deps due to packaging bug (should be optional)
+
+**Estimated effort:** 6-11 days total (2-3 days critical path for Phase 2-3)
+
+**Dependencies:** Can be done at any time after blockers resolved. Does NOT depend on v4.6/v4.7/v5.0/v5.5/v6.0.
+
+**Can overlap with:** Nothing — this is a library swap that affects the core generation engine. Should NOT overlap with other milestone work that touches generator.py or hydrate_generator.py.
+
+**Critical research files:**
+
+| File | Purpose |
+|------|---------|
+| `genice3-upgrade/SUMMARY.md` | Executive summary with phase structure |
+| `genice3-upgrade/01-API-MIGRATION-MAP.md` | Complete GenIce2→GenIce3 API mapping (13 calls, HIGH confidence) |
+| `genice3-upgrade/02-DEPENDENCY-COMPATIBILITY.md` | Dependency conflicts, Python 3.14 investigation, packaging bug |
+| `genice3-upgrade/03-MIGRATION-IMPACT.md` | File-by-file migration checklist, effort estimate, risk register |
+| `genice3-upgrade/04-NEW-FEATURES.md` | New feature inventory with QuickIce relevance ratings |
+| `genice3-upgrade/05-UPGRADE-RECOMMENDATION.md` | Go/no-go decision matrix, scenario analysis, upstream action items |
+
+**Upstream action items (30 min effort, HIGH ROI):**
+1. File issue on genice-dev/GenIce3: Request Python 3.14 support (point out genice-core has no upper bound)
+2. File issue/PR: Move fastapi/uvicorn from core deps to [web] optional extras
+3. File issue: sH hydrate cage naming documentation (A12/A20 vs 12/16)
+
+---
+
 ## Anti-Features (explicitly NOT building)
 
 | Anti-Feature | Source | Why Not |
@@ -263,5 +322,5 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 ---
 
-*Synthesized: 2026-06-17 | Updated: 2026-06-22 (added v4.7 custom guest hydrate from R1-R4 research)*
+*Synthesized: 2026-06-17 | Updated: 2026-06-27 (added v5.GenIce3 migration milestone from genice3-upgrade research)*
 *For milestone planning: use as input when starting next milestone after v4.5*
