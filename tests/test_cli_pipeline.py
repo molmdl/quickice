@@ -667,7 +667,7 @@ class TestPipelineExportCorrectness:
             shutil.rmtree(outdir, ignore_errors=True)
 
     def test_no_overwrite_flag(self):
-        """--no-overwrite in non-empty directory → exit code != 0."""
+        """--no-overwrite in non-empty directory → graceful skip with exit code 0."""
         outdir = make_temp_output_dir()
         try:
             # Create a pre-existing file
@@ -681,7 +681,12 @@ class TestPipelineExportCorrectness:
                 "-o", outdir,
                 timeout=120,
             )
-            assert rc != 0, "--no-overwrite should cause non-zero exit code"
+            assert rc == 0, (
+                f"--no-overwrite skip should exit 0 (graceful), got {rc}"
+            )
+            assert "--no-overwrite" in stderr, (
+                "stderr should mention --no-overwrite"
+            )
         finally:
             shutil.rmtree(outdir, ignore_errors=True)
 

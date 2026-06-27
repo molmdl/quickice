@@ -71,13 +71,13 @@ class CLIPipeline:
             # Check if output files already exist
             existing_files = list(self._output_dir.glob("*"))
             if existing_files:
-                logger.error(
+                logger.info(
                     "Output directory %s already contains files and "
-                    "--no-overwrite was specified",
+                    "--no-overwrite was specified; skipping",
                     self._output_dir,
                 )
                 report_progress("Output directory not empty; --no-overwrite set")
-                return 1
+                return 0
 
         # Step 1: Source step (hydrate or ice generation)
         if self.args.interface or getattr(self.args, 'hydrate', False):
