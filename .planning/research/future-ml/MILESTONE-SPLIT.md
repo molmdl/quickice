@@ -128,7 +128,72 @@ All 6 TOP-writing functions now emit correct TIP4P-ICE LJ parameters via constan
 
 **User theme:** *"I can import any hydrate CIF, build polycrystalline hydrates, and create custom lattice plugins"*
 
-**Why deferred:** Niche features. CIF import needs validation layer. Polycrystal is ~300 LOC of non-trivial geometry. TBAB may need ICSD (commercial). Python polycrystal is superior to atomsk (multi-phase, native GRO, no GPL).
+**Why deferred:** Niche features. CIF import needs validation layer. TBAB may need ICSD (commercial). Python polycrystal is superior to atomsk (multi-phase, native GRO, no GPL). **Note:** The polycrystal portion is now superseded by the expanded v8.0 Interactive Polycrystalline Builder research below — that research covers the full interactive GUI + multi-phase engine, whereas v7.0 Phase 3 was algorithmic-only (Voronoi + tiling). CIF Import and Custom Lattice Plugins remain v7.0.
+
+---
+
+### v8.0: Interactive Polycrystalline Builder
+
+**Source:** `.planning/research/future-ml/polycrystalline-builder/` (5 research agents, 20 files)
+**Date:** 2026-06-28
+
+**User theme:** *"I can draw regions of ice, hydrate, and liquid in a box, assign phases, and generate a polycrystalline MD starting structure"*
+
+**Research verdict:** **V1 FEASIBLE with existing libraries — NO new dependencies needed.** Full 3D arbitrary shapes would require trimesh (BSD-3, ~15MB), but 2.5D prism model (shapely Polygon + Z-range) covers ~90% of scientifically interesting cases (columnar grains, layered slabs, Voronoi tessellations).
+
+| Phase | What | LOC (est.) | Risk | Value |
+|-------|------|-----------|------|-------|
+| Phase 1: Data Model + Shape Primitives | PhaseRegion dataclass (shapely Polygon + Z-range + phase type), WKT+JSON serialization, shape factory (rectangle, ellipse, polygon), overlap detection (shapely) | ~200-300 | LOW | CRITICAL |
+| Phase 2: QGraphicsView 2D Shape Editor | 2D canvas with shape creation/selection/move/resize/delete, QUndoStack, Qt→shapely coordinate mapping, phase assignment combo box | ~400-600 | LOW-MEDIUM | HIGH |
+| Phase 3: VTK 3D Region Preview | Translucent region actors (extruded prisms), box wireframe, phase color legend, region labels | ~150-250 | MEDIUM | MEDIUM-HIGH |
+| Phase 4: Single-Phase Region Filling | Generate-Clip-Resolve: GenIce2 supercell → clip by molecule COM → fill region. Extends water_filler.py + overlap_resolver.py | ~300-500 | MEDIUM | CRITICAL |
+| Phase 5: Crystal Rotation + Multi-Grain Assembly | Rotation matrices for orthogonal phases (Ih, Ic, III, VI), grain boundary buffer zones (1nm water), multi-region overlap resolution | ~300-450 | MEDIUM-HIGH | HIGH |
+| Phase 6: Voronoi Auto-Generation | scipy.spatial.Voronoi with mirror-point technique, convert Voronoi cells → shapely Polygons, auto-assign random orientations, seed count control | ~200-300 | MEDIUM | MEDIUM-HIGH |
+| Phase 7: Hydrate-Containing Polycrystal | Buffer zone insertion for incompatible lattices (hydrate↔ice), guest molecule handling at boundaries, multi-phase GROMACS export | ~300-500 | HIGH | HIGH |
+| Phase 8: GUI Integration + GROMACS Export | New Tab 6 "Polycrystal Builder", PolycrystalWorker (QThread), PolycrystalStructure dataclass, multi-phase GROMACS .gro/.top, phase-specific colors | ~500-700 | MEDIUM | HIGH |
+
+**Key technical findings:**
+
+1. **QGraphicsView is the clear winner for 2D shape editing** — built into PySide6, provides selection/move/resize/undo out of the box. VTK Actor2D overlays and matplotlib are both unsuitable for interactive shape creation. (HIGH confidence)
+
+2. **2.5D data model (shapely Polygon + Z-range)** covers columnar ice, layered slabs, and Voronoi polycrystals — ~90% of scientifically interesting cases. Full 3D CSG (spherical inclusions, tapered pores) requires trimesh — flagged for future, NOT V1. (HIGH confidence, benchmarked)
+
+3. **Generate-Clip-Resolve algorithm is viable** — GenIce2 generates supercells in <0.1s/molecule; clipping by molecule COM membership preserves molecular integrity; existing `tile_structure()` + `overlap_resolver.py` cover most needs. (MEDIUM-HIGH confidence)
+
+4. **Crystal rotation safe for orthogonal phases (Ih, Ic, III, VI, VII) but blocked for triclinic (Ice II, Ice V)** — Ice II already excluded from interfaces. Ice V rotation requires triclinic box output — defer. (HIGH confidence from existing codebase constraints)
+
+5. **Three-tier boundary strategy required** — (1) Same-phase GBs: Voronoi + overlap-removal; (2) Ice-water/hydrate-water: overlap-removal (existing QuickIce pattern); (3) Incompatible lattices (Ice↔hydrate, Ice Ih↔Ice II): mandatory 1–2 nm disordered water buffer zone. (MEDIUM confidence — buffer width 0.5-1.0nm is reasonable but needs MD validation)
+
+6. **No lattice matching exists between ice and clathrate hydrates** — Nguyen et al. 2015 proved definitively. Ice-clathrate interface always contains ~1 nm disordered interfacial layer rich in 5-membered rings. (MEDIUM-HIGH confidence)
+
+7. **Performance benchmarks (actual hardware):** cKDTree overlap detection: 0.17s for 100k atoms, 0.42s for 200k. shapely contains_xy: 0.005s for 100k points. NumPy rotation: 0.003s for 100k atoms. GenIce2: ~0.3μs/molecule. All acceptable for interactive use. (HIGH confidence, benchmarked)
+
+8. **New Tab 6 "Polycrystal Builder"** recommended over sub-mode under Interface tab — different UX interaction model (draw→assign→preview→generate vs select→configure→generate), different component needs (QGraphicsView, QUndoStack, 2D/3D split view). (HIGH confidence from codebase analysis)
+
+9. **VTK offscreen rendering segfaults in headless** — known issue; 3D preview must handle with try/except + fallback.
+
+**Critical pitfall:** 2D↔3D coordinate synchronization — Qt (Y-down) vs VTK (Y-up). A well-tested SceneCoordinateMapper is essential.
+
+**Dependencies:** v4.6 (P3 fix for GROMACS export), v5.0 (interface infrastructure). Phase 1-3 (GUI) can overlap with v6.0/v7.0. Phase 4-7 (core engine) need stable overlap_resolver + water_filler from v5.0.
+
+**Can overlap with:** v6.0 Hydrate Analysis (no shared files), v7.0 CIF Import (no shared files). Cannot overlap with v5.0 Interface (shares overlap_resolver, water_filler).
+
+**Additional dependency for future (NOT V1):** trimesh (BSD-3, ~15MB) for full 3D CSG arbitrary shape definition. Flagged for V2 or v8.5.
+
+**Critical research files:**
+
+| File | Purpose |
+|------|---------|
+| `polycrystalline-builder/shape-gui/SUMMARY.md` | QGraphicsView + 2.5D model recommendation (HIGH confidence) |
+| `polycrystalline-builder/shape-gui/ARCHITECTURE.md` | Two-panel layout, coordinate mapping, QUndoStack patterns |
+| `polycrystalline-builder/poly-gen/SUMMARY.md` | Generate-Clip-Resolve algorithm (MEDIUM-HIGH confidence) |
+| `polycrystalline-builder/poly-gen/ARCHITECTURE.md` | Pipeline design, rotation matrices, buffer zones |
+| `polycrystalline-builder/phase-boundary/SUMMARY.md` | Three-tier boundary strategy (MEDIUM confidence) |
+| `polycrystalline-builder/phase-boundary/PITFALLS.md` | 13 pitfalls (6 critical: density mismatch, PBC shapes, buffer composition) |
+| `polycrystalline-builder/tech-feasibility/SUMMARY.md` | Feasibility verdict: YES for 2.5D V1 (HIGH confidence, benchmarked) |
+| `polycrystalline-builder/tech-feasibility/STACK.md` | Performance benchmarks, API gotchas, no-new-deps proof |
+| `polycrystalline-builder/arch-integration/SUMMARY.md` | Tab 6 placement, PolycrystalStructure dataclass, worker threading |
+| `polycrystalline-builder/arch-integration/ARCHITECTURE.md` | Component diagram, GROMACS multi-phase export, VTK rendering |
 
 ---
 
@@ -163,7 +228,18 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
      └──────────────────────────────┘
                     ▼
               v7.0: Advanced Building
-              (CIF, polycrystal, custom lattices)
+              (CIF import, custom lattice plugins)
+                    │
+                    ├──────────────────────────────┐
+                    ▼                              ▼
+              v8.0 Phase 1-3:               v8.0 Phase 4-7:
+              Polycrystal GUI               Polycrystal Core Engine
+              (shape editor, preview)        (depends on v5.0 overlap_resolver,
+              (PARALLEL with v6.0/v7.0)       water_filler stable)
+                    │                              │
+                    └──────────────────────────────┘
+                                   ▼
+                         v8.0 Phase 8: Full Integration + Export
 ```
 
 ---
@@ -245,6 +321,12 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 | Auto-convert A/B → sigma/epsilon atomtypes | custom-guest-hydrate | Risk of rounding errors; REJECT and ask user to regenerate ITP with correct comb-rule |
 | Random guest orientation in cages | custom-guest-hydrate | GenIce2 Stage7 uses identity rotation — would require monkey-patching or post-processing |
 | Silent GRO residue name truncation | custom-guest-hydrate | Must REJECT with clear error (e.g., "ETOH_H" is 6 chars → user must choose ≤3-char base name) |
+| Full 3D CSG shape definition | polycrystalline-builder | Requires trimesh (not in env); 2.5D prism model covers 90% of cases for V1 |
+| 3D VTK widget-based shape editing | polycrystalline-builder | VTK widgets are for clipping/selection, not shape creation workflows; QGraphicsView is superior |
+| PBC-wrapping shapes in V1 | polycrystalline-builder | Complex geometric splitting; constrain shapes to box boundaries in v8.0, add PBC-wrap in v8.5 |
+| Ice II / Ice V rotation in polycrystal | polycrystalline-builder | Triclinic cell rotation creates invalid structures; block like existing interface mode |
+| Atomsk subprocess for polycrystal | complex-hydrate | Python implementation superior (multi-phase, GRO, no GPL) |
+| Direct crystal-crystal overlap stitching | polycrystalline-builder | No lattice matching between incompatible phases; buffer zone is mandatory |
 
 ---
 
@@ -296,6 +378,14 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 9. ~~**Comb-rule convention**~~ — ✅ RESOLVED. Kept comb-rule 2 (Lorentz-Berthelot) with correct sigma/epsilon format — consistent with tip4p-ice.itp template and existing guest atomtypes.
 
+10. **Polycrystal V1 scope** — 2.5D prism model (draw on XY plane, extrude along Z) or start with 3D primitives? Research recommends 2.5D for V1 (90% coverage, no new deps); trimesh for V2 if spherical/tapered shapes needed.
+
+11. **Polycrystal boundary buffer width** — Default 0.5-1.0 nm for incompatible crystal-crystal boundaries. Needs MD validation to confirm. Should this be user-adjustable?
+
+12. **Polycrystal + existing Interface coexistence** — Keep slab/pocket/piece as "quick modes" under Interface tab; polycrystal as new Tab 6 for multi-grain/multi-phase. No replacement planned. Is this acceptable?
+
+13. **PolycrystalStructure vs InterfaceStructure** — Recommended: separate dataclass with `.to_interface_structure()` conversion method for downstream Solute→Ion→Export compatibility. Accept duck-typing pattern (CP-01) or clean conversion?
+
 ---
 
 ## Research Confidence Matrix
@@ -319,8 +409,14 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 | CHILL+ (v6.0) | MEDIUM | freud convention vs paper convention needs verification |
 | CIF Import (v7.0) | MEDIUM | CIF quality varies; validation layer essential |
 | Polycrystal (v7.0) | MEDIUM | Periodic Voronoi edge cases need testing |
+| Shape GUI (v8.0) | HIGH | QGraphicsView + shapely 2.5D model verified; no new deps |
+| Generate-Clip-Resolve (v8.0) | MEDIUM-HIGH | Algorithm sound; boundary artifacts need MD validation |
+| Crystal Rotation (v8.0) | HIGH | Orthogonal phases straightforward; triclinic correctly blocked |
+| Phase Boundaries (v8.0) | MEDIUM | Three-tier strategy; buffer width needs MD calibration |
+| Tech Feasibility (v8.0) | HIGH | All benchmarks pass; V1 no new deps; V2 may need trimesh |
+| Architecture Integration (v8.0) | HIGH | Tab 6 placement; PolycrystalStructure dataclass; worker pattern |
 
 ---
 
-*Synthesized: 2026-06-17 | Updated: 2026-06-27 (added v5.GenIce3 migration milestone from genice3-upgrade research)*
+*Synthesized: 2026-06-17 | Updated: 2026-06-28 (added v8.0 Interactive Polycrystalline Builder from 5-agent research; updated v7.0 note, dependency graph, anti-features, confidence matrix, open questions)*
 *For milestone planning: use as input when starting next milestone after v4.5*
