@@ -240,6 +240,17 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
                     └──────────────────────────────┘
                                    ▼
                          v8.0 Phase 8: Full Integration + Export
+                                   │
+                    ┌──────────────┤
+                    ▼              ▼
+              v9.0 Phase 0-1:  v9.0 Phase 0-1:
+              PipelineSession   (can start INDEPENDENTLY
+              + Decomposition    of v8.0 — no shared files)
+                    │
+                    ▼
+              v9.0 Phase 2-6:
+              UnifiedViewer → Docks → Pipeline Nav → Tool Modes → Polish
+              (enables polycrystal builder v8.0 as natural tool mode)
 ```
 
 ---
@@ -303,6 +314,79 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 
 ---
 
+### v9.0: Integrated VTK-Centric GUI Redesign
+
+**Source:** `.planning/research/future-ml/integrated-vtk-gui/` (5 research agents + SYNTHESIS.md, 23 files)
+**Date:** 2026-06-28
+**Verdict:** GO WITH CONDITIONS
+
+**User theme:** *"One 3D viewport showing all my structures, with tool panels that switch based on what I'm doing — generate ice, build interface, draw regions, place molecules — all visible simultaneously"*
+
+**Research verdict:** Feasible with existing libraries — NO new dependencies. Replace 6-tab QTabWidget with single VTK viewport + QDockWidget panels + toolbar-driven tool modes. 27-41 days estimated effort.
+
+**Conditions for GO:**
+1. PipelineSession extraction MUST happen first (prerequisite for all decomposition)
+2. GUI integration tests must exist before MainWindow decomposition
+3. `--layout tabs` vs `--layout integrated` coexistence flag for 1 release cycle
+
+| Phase | What | LOC (est.) | Risk | Value | Effort |
+|-------|------|-----------|------|-------|--------|
+| Phase 0: PipelineSession | Centralized state model replacing 9 `_current_*` attributes; OVITO-style linear modifier stack (Source→Interface→Custom→Solute→Ion→Export); NO GUI change | ~230 | LOW | CRITICAL | 2-3 days |
+| Phase 1: MainWindow Decomposition | 4 concern-managers (PipelineManager, ViewerManager, ExportManager, DockManager); MainWindow 2126→~200 lines; NO visible change | ~1100 | MEDIUM | HIGH | 5-8 days |
+| Phase 2: UnifiedViewerWidget | Single VTK viewport with vtkAssembly groups, consolidated StructureActorBuilder, visibility toggling, smart camera; VISIBLE viewport change | ~500 | MEDIUM | HIGH | 5-7 days |
+| Phase 3: QDockWidget Migration | Replace QTabWidget with docks; tabified left-dock params (Ice, Hydrate, Interface, Modifiers), right-dock results, bottom-dock log, floating Phase Diagram; `--layout` flag | ~400 | MEDIUM | HIGH | 5-8 days |
+| Phase 4: Pipeline Navigator | OVITO-style modifier stack visualization; step toggle checkboxes; per-step export; contextual properties panel | ~350 | LOW | MEDIUM-HIGH | 3-5 days |
+| Phase 5: Tool Mode System | ToolModeManager with 6 modes (Navigate, Select, Measure, Place Molecule, Pick, Draw Region); VTK interactor style switching; VTK 3D widgets | ~500 | MEDIUM-HIGH | HIGH | 5-7 days |
+| Phase 6: Overlay + Polish | 2D HUD renderer (vtkTextActor labels, status annotations), opacity animation, measurement annotations | ~200 | LOW | MEDIUM | 2-3 days |
+
+**Key technical findings:**
+
+1. **vtkAssembly is the right pattern** for phase grouping — `SetVisibility(0)` hides all parts during rendering; tested against VTK 9.5.2. Caveat: `child.GetVisibility()` returns own flag, not effective visibility — need `ActorGroup` wrapper. (HIGH confidence, tested)
+
+2. **OVITO linear modifier stack, NOT ParaView DAG** — QuickIce's pipeline is physically constrained to strict linear order. A DAG engine would be catastrophic over-engineering. Modifier stack provides step toggling (disable ion insertion, re-enable) — the key UX benefit. (HIGH confidence)
+
+3. **ChimeraX-style QDockWidget panels** — tabified left-dock parameter panels switched by toolbar via `raise_()`, floating Phase Diagram, `saveState()`/`restoreState()` for layout persistence. `objectName` required on every QDockWidget. (HIGH confidence, API tested)
+
+4. **Interactor style switching works cleanly** — `iren.SetInteractorStyle(new_style)` at runtime; old style retained by Python refcount; VTK widgets coexist with styles via `SetEnabled()` priority. (HIGH confidence, tested)
+
+5. **PipelineSession is the critical prerequisite** — without it, decomposing MainWindow just distributes the god-object across 4 files. With PipelineSession, decomposition is clean and managers interact through centralized state. CP-01 duck-typing is a non-issue (all 13 runtime attributes are dataclass fields with defaults). (HIGH confidence, verified programmatically)
+
+6. **3D region drawing + 2D shape editor both needed** — `vtkContourWidget` + `vtkBoundedPlanePointPlacer` for simple single-plane drawing in 3D viewport; QGraphicsView dock panel for complex multi-region editing with undo/redo (polycrystal builder). Both approaches validated. (MEDIUM-HIGH confidence)
+
+7. **No new dependencies** — PySide6 6.10.2 + VTK 9.5.2 + numpy + shapely covers everything. PyVista/trame/vedo all rejected (fight custom interactors, web-first, or no Qt story). (HIGH confidence, all agents independently confirmed)
+
+8. **VTK headless segfaults** remain a known limitation — preserve `_VTK_AVAILABLE` detection, mock in tests.
+
+**Key design decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Actor grouping | vtkAssembly | O(1) visibility toggling, hierarchical nesting, VTK rendering skips invisible assemblies |
+| Pipeline model | Linear modifier stack (OVITO) | Physical constraints prevent reordering; DAG is over-engineering |
+| Panel system | ChimeraX-style QDockWidget | Dockable, tabifiable, state-persistent, contextual switching |
+| Interactor strategy | One style per mode, swapped at runtime | SRP, testable, VTK's intended pattern |
+| State model | PipelineSession dataclass | Centralized typed state enables clean decomposition |
+| Coexistence | Feature flag `--layout`, 1 release | Rollback safety; managers are layout-agnostic |
+| VTK framework | Raw VTK + QVTKRenderWindowInteractor | Custom interactors, full actor control; PyVista/vedo/trame rejected |
+| Solute/Ion/Custom | Merged "Modifiers" tabified dock | Shared workflow pattern; 4 meaningful docks > 6 crowded tabs |
+
+**Dependencies:** v5.0 (stable interface infrastructure). Phase 0-1 can start independently of v6.0/v7.0. Phase 2+ requires no concurrent work on viewer files.
+
+**Can overlap with:** v6.0 Hydrate Analysis (no shared GUI files), v7.0 CIF Import (no shared files). Cannot overlap with v8.0 polycrystal builder (GUI-dependent).
+
+**Critical research files:**
+
+| File | Purpose |
+|------|---------|
+| `integrated-vtk-gui/SYNTHESIS.md` | Unified architecture, migration plan, risk register, go/no-go verdict |
+| `integrated-vtk-gui/single-viewport-arch/SUMMARY.md` | vtkAssembly + single viewport feasibility (HIGH confidence) |
+| `integrated-vtk-gui/dock-panel-system/SUMMARY.md` | QDockWidget layout + contextual switching (HIGH confidence) |
+| `integrated-vtk-gui/tool-mode-system/SUMMARY.md` | Interactor style switching + ToolModeManager (HIGH confidence) |
+| `integrated-vtk-gui/comparative-analysis/SUMMARY.md` | OVITO + ChimeraX hybrid model recommendation (MEDIUM-HIGH confidence) |
+| `integrated-vtk-gui/data-flow-migration/SUMMARY.md` | PipelineSession + migration strategy (HIGH confidence) |
+
+---
+
 ## Anti-Features (explicitly NOT building)
 
 | Anti-Feature | Source | Why Not |
@@ -327,6 +411,13 @@ v5.5: Pre-built Molecules     v6.0: Hydrate Analysis
 | Ice II / Ice V rotation in polycrystal | polycrystalline-builder | Triclinic cell rotation creates invalid structures; block like existing interface mode |
 | Atomsk subprocess for polycrystal | complex-hydrate | Python implementation superior (multi-phase, GRO, no GPL) |
 | Direct crystal-crystal overlap stitching | polycrystalline-builder | No lattice matching between incompatible phases; buffer zone is mandatory |
+| ParaView DAG pipeline engine | integrated-vtk-gui | Catastrophic over-engineering for QuickIce's fixed linear flow; use OVITO modifier stack |
+| PyVista/vedo/trame VTK wrappers | integrated-vtk-gui | Fight custom interactors, web-first, or no Qt story; raw VTK is correct |
+| Per-tab VTK renderers in integrated GUI | integrated-vtk-gui | Defeats single-viewport goal; 8 OpenGL contexts = 8× memory |
+| PyMOL dual-GUI (internal+external) | integrated-vtk-gui | Anti-pattern; one window is simpler |
+| VMD floating extension windows | integrated-vtk-gui | Window management burden; QDockWidget tabification is better |
+| Premature plugin/extension API | integrated-vtk-gui | Over-engineering; register tools internally first |
+| Big-bang GUI rewrite (no coexistence) | integrated-vtk-gui | Risk of irrecoverable regressions; use feature flag for 1 release cycle |
 
 ---
 
@@ -386,6 +477,14 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 
 13. **PolycrystalStructure vs InterfaceStructure** — Recommended: separate dataclass with `.to_interface_structure()` conversion method for downstream Solute→Ion→Export compatibility. Accept duck-typing pattern (CP-01) or clean conversion?
 
+14. **v9.0 GUI test strategy** — Zero GUI integration tests exist currently. Need pytest-qt? Mock-based for VTK? Skip strategy for headless CI? Must be resolved before Phase 1 (decomposition).
+
+15. **v9.0 ↔ v8.0 sequencing** — Should the GUI redesign (v9.0) come before the polycrystal builder (v8.0), or after? v9.0 Phase 0-1 (PipelineSession + Decomposition) can start independently. v9.0 Phase 2+ directly enables v8.0 polycrystal builder. But building the full GUI before the feature that needs it may be premature.
+
+16. **SetViewport mouse interaction** — Does QVTKRenderWindowInteractor route mouse events to the correct renderer in split-view? Needs prototype test. Fallback: QSplitter with 2 VTK widgets.
+
+17. **Coexistence period length** — Feature flag `--layout tabs` vs `--layout integrated` for 1 release cycle, then remove. Is 1 cycle enough? Too long?
+
 ---
 
 ## Research Confidence Matrix
@@ -415,8 +514,14 @@ When v6.0 (analysis) lands, the app will have two fundamentally different workfl
 | Phase Boundaries (v8.0) | MEDIUM | Three-tier strategy; buffer width needs MD calibration |
 | Tech Feasibility (v8.0) | HIGH | All benchmarks pass; V1 no new deps; V2 may need trimesh |
 | Architecture Integration (v8.0) | HIGH | Tab 6 placement; PolycrystalStructure dataclass; worker pattern |
+| Single Viewport Arch (v9.0) | HIGH | vtkAssembly tested VTK 9.5.2; performance benchmarked; pattern proven in IonViewerWidget |
+| Dock Panel System (v9.0) | HIGH | All PySide6 6.10.2 APIs verified by live testing; saveState/restoreState confirmed |
+| Tool Mode System (v9.0) | HIGH | Interactor style switching tested; widget lifecycle documented; custom style pattern validated |
+| Comparative Analysis (v9.0) | MEDIUM-HIGH | OVITO+ChimeraX model recommended; 5 tools agree on universal pattern |
+| Data Flow Migration (v9.0) | HIGH | PipelineSession 1:1 mapping from existing attributes; CP-01 verified as non-issue |
+| Overall v9.0 Architecture | MEDIUM-HIGH | Well-proven by 5 scientific tools; zero GUI tests is main gap; migration phase ordering sound |
 
 ---
 
-*Synthesized: 2026-06-17 | Updated: 2026-06-28 (added v8.0 Interactive Polycrystalline Builder from 5-agent research; updated v7.0 note, dependency graph, anti-features, confidence matrix, open questions)*
+*Synthesized: 2026-06-17 | Updated: 2026-06-28 (added v8.0 polycrystalline builder + v9.0 integrated VTK GUI; 10 research agents, 42 files; updated dependency graph, anti-features, confidence matrix, open questions Q10-Q17)*
 *For milestone planning: use as input when starting next milestone after v4.5*
