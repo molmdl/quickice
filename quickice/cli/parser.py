@@ -36,9 +36,10 @@ Examples:
     python -m quickice --temperature 300 --pressure 100 --nmolecules 100
     python -m quickice --temperature 250 --pressure 0.1 --nmolecules 256
 
-  Hydrate generation:
-    python -m quickice -T 270 -P 0.1 --hydrate --lattice-type sI --guest CH4
-    python -m quickice -T 260 -P 10 --hydrate --lattice-type sII --guest THF --supercell-x 2
+   Hydrate generation:
+     python -m quickice -T 270 -P 0.1 --hydrate --lattice-type sI --guest CH4
+     python -m quickice -T 260 -P 10 --hydrate --lattice-type sII --guest THF --supercell-x 2
+     python -m quickice -T 250 -P 50 --hydrate --lattice-type c0te --guest CH4
 
   Interface + custom molecule:
     python -m quickice -T 270 -P 0.1 --interface --mode slab --box-x 3 --box-y 3 --box-z 5 --ice-thickness 1.5 --water-thickness 2.0 --custom-gro mol.gro --custom-itp mol.itp --custom-placement random --custom-count 5
@@ -205,7 +206,7 @@ Examples:
     hydrate_group.add_argument(
         "--lattice-type",
         type=str,
-        choices=["sI", "sII", "sH"],
+        choices=["sI", "sII", "sH", "c0te", "c1te", "c2te", "ice1hte", "sTprime", "16", "17"],
         default="sI",
         help="Hydrate lattice type (default: sI)"
     )
@@ -215,7 +216,7 @@ Examples:
         type=str,
         choices=["CH4", "THF"],
         default="CH4",
-        help="Guest molecule type (default: CH4)"
+        help="Guest molecule type (default: CH4). Ignored for water-only lattices (sTprime, 17)."
     )
 
     hydrate_group.add_argument(
@@ -509,7 +510,7 @@ def get_arguments(args: Optional[list] = None) -> argparse.Namespace:
             - pocket_diameter: Optional[float] (pocket mode parameter)
             - pocket_shape: str (pocket shape, default: "sphere")
             - hydrate: bool (if True, generate clathrate hydrate)
-            - lattice_type: str (hydrate lattice: sI, sII, sH; default: sI)
+            - lattice_type: str (hydrate lattice: sI, sII, sH, c0te, c1te, c2te, ice1hte, sTprime, 16, 17; default: sI)
             - guest: str (guest molecule: CH4, THF; default: CH4)
             - supercell_x, supercell_y, supercell_z: int (supercell repeats; default: 1)
             - cage_occupancy_small: float (small cage occupancy %; default: 100.0)
