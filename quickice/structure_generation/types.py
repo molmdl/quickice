@@ -90,6 +90,9 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
             "large": {"name": "5¹²6²", "count_per_unit_cell": 6, "guest_fits": ["ch4", "thf"]},
         },
         "unit_cell_molecules": 46,  # Water molecules in unit cell
+        "cage_type_map": {"small": "12", "large": "14"},
+        "is_triclinic": False,
+        "is_water_only": False,
     },
     "sII": {
         "genice_name": "CS2",
@@ -99,6 +102,9 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
             "large": {"name": "5¹²6⁴", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf"]},
         },
         "unit_cell_molecules": 136,
+        "cage_type_map": {"small": "12", "large": "16"},
+        "is_triclinic": False,
+        "is_water_only": False,
     },
     "sH": {
         "genice_name": "sH",
@@ -109,6 +115,86 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
             "large": {"name": "5¹²6⁸", "count_per_unit_cell": 1, "guest_fits": ["thf"]},
         },
         "unit_cell_molecules": 34,
+        "cage_type_map": {"small": "12", "large": "16"},
+        "is_triclinic": True,
+        "is_water_only": False,
+    },
+    # ── Filled ice types (Teeratchanan 2015) ──
+    "c0te": {
+        "genice_name": "c0te",
+        "description": "Filled ice C0 (Teeratchanan 2015)",
+        "cages": {
+            "guest": {"name": "Ne1", "count_per_unit_cell": 3, "guest_fits": ["ch4", "thf"]},
+        },
+        "unit_cell_molecules": 6,
+        "cage_type_map": {"small": "Ne1"},
+        "is_triclinic": True,
+        "is_water_only": False,
+    },
+    "c1te": {
+        "genice_name": "c1te",
+        "description": "Filled ice C1 (Teeratchanan 2015)",
+        "cages": {
+            "guest": {"name": "Ne1", "count_per_unit_cell": 6, "guest_fits": ["ch4", "thf"]},
+        },
+        "unit_cell_molecules": 36,
+        "cage_type_map": {"small": "Ne1"},
+        "is_triclinic": True,
+        "is_water_only": False,
+    },
+    "c2te": {
+        "genice_name": "c2te",
+        "description": "Filled ice C2 (Teeratchanan 2015)",
+        "cages": {
+            "guest": {"name": "Ne1", "count_per_unit_cell": 32, "guest_fits": ["ch4", "thf"]},
+        },
+        "unit_cell_molecules": 32,
+        "cage_type_map": {"small": "Ne1"},
+        "is_triclinic": False,
+        "is_water_only": False,
+    },
+    "ice1hte": {
+        "genice_name": "ice1hte",
+        "description": "Filled ice Ih (Teeratchanan 2015)",
+        "cages": {
+            "guest": {"name": "Ne1", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf"]},
+        },
+        "unit_cell_molecules": 16,
+        "cage_type_map": {"small": "Ne1"},
+        "is_triclinic": False,
+        "is_water_only": False,
+    },
+    # ── Water-only lattices ──
+    "sTprime": {
+        "genice_name": "sTprime",
+        "description": "Filled ice sT\u2032 (Smirnov 2013)",
+        "cages": {},
+        "unit_cell_molecules": 24,
+        "cage_type_map": {},
+        "is_triclinic": False,
+        "is_water_only": True,
+    },
+    # ── Empty framework / ultralow density ──
+    "16": {
+        "genice_name": "16",
+        "description": "Ice XVI (empty sII framework)",
+        "cages": {
+            "small": {"name": "5¹²", "count_per_unit_cell": 16, "guest_fits": ["ch4"]},
+            "large": {"name": "5¹²6⁴", "count_per_unit_cell": 8, "guest_fits": ["ch4", "thf"]},
+        },
+        "unit_cell_molecules": 136,
+        "cage_type_map": {"small": "12", "large": "16"},
+        "is_triclinic": False,
+        "is_water_only": False,
+    },
+    "17": {
+        "genice_name": "17",
+        "description": "Ice XVII (ultralow density)",
+        "cages": {},
+        "unit_cell_molecules": 12,
+        "cage_type_map": {},
+        "is_triclinic": False,
+        "is_water_only": True,
     },
 }
 
