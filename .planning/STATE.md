@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 38 — Internal Pipeline Refactor
+**Current Focus:** Phase 39 — Extended Lattice Types
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 38 COMPLETE, ready for Phase 39
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 39 in progress
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 38 of 48 (Internal Pipeline Refactor) ✓ |
-| Plan | 4/4 complete |
-| Status | Phase complete, verified |
-| Last activity | 2026-06-29 — Phase 38 verified (12/12 must-haves) |
+| Phase | 39 of 48 (Extended Lattice Types) |
+| Plan | 1/5 complete |
+| Status | In progress |
+| Last activity | 2026-06-29 — Completed 39-01-PLAN.md |
 
-**Progress:** [████░░░░░░] ~36%
+**Progress:** [████░░░░░░] ~38%
 
 ---
 
@@ -78,6 +78,10 @@ Recent decisions affecting v4.7 work:
 - **[38-02]** Guest identification checked BEFORE water in metadata-driven _build_molecule_index (prevents THF "O" misidentification)
 - **[38-02]** Residue grouping is preferred path for GenIce2 output; atom-label sequence matching is the fallback
 - **[38-02]** config=None preserves full backward-compatible pattern matching (two separate code paths, not unified)
+- **[39-01]** sH is_triclinic=True for data accuracy but NOT blocked in interface_builder (phase_id-based blocking, not is_triclinic flag)
+- **[39-01]** Filled ices use "guest" cage key (not small/large) with single-entry cage_type_map to prevent double-placement
+- **[39-01]** is_triclinic is forward-looking metadata with no current consumer (future GUI tooltips/docs)
+- **[39-01]** No water-only validation in HydrateConfig; generator handles guest skipping for empty-cage lattices
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-29T17:00:00Z
-Stopped at: Phase 38 complete and verified (12/12 must-haves)
+Last session: 2026-06-29T13:42:43Z
+Stopped at: Completed 39-01-PLAN.md (Extended Lattice Data Model)
 Resume file: None
