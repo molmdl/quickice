@@ -433,7 +433,8 @@ class HydrateConfig:
     Captures all parameters for hydrate lattice generation.
     
     Attributes:
-        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH')
+        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH', 'c0te', 'c1te',
+            'c2te', 'ice1hte', 'sTprime', '16', '17')
         guest_type: Guest molecule type ('ch4', 'thf')
         cage_occupancy_small: Occupancy percentage for small cages (0-100)
         cage_occupancy_large: Occupancy percentage for large cages (0-100)
