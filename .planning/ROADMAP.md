@@ -47,15 +47,16 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can select any of C0 (c0te), C1 (c1te), C2 (c2te), Ih (ice1hte), sT' (sTprime), Ice XVI (16), Ice XVII (17) as a hydrate lattice type
   2. Attempting interface generation with triclinic filled ices (C0, C1) produces a clear error message (same pattern as Ice II blocking)
-  3. Filled ice lattices place guests via the `spot_guests` code path (not `parse_guest`)
-  4. sT' generates a water-only structure with no guest placement UI
-**Plans**: TBD
+  3. Filled ice lattices place guests via the `parse_guest` code path (NOT spot_guests — crashes with IndexError per RESEARCH.md)
+  4. sT' and Ice XVII generate water-only structures with guest UI disabled
+**Plans:** 5 plans
 
 Plans:
-- [ ] 39-01: Add new lattice type entries to config/dicts
-- [ ] 39-02: Implement filled ice spot_guests code path in generator
-- [ ] 39-03: Block triclinic filled ices for interface generation
-- [ ] 39-04: sT' water-only generation path
+- [ ] 39-01-PLAN.md — Extend HYDRATE_LATTICES data model with 7 new entries + cage_type_map/is_triclinic/is_water_only
+- [ ] 39-02-PLAN.md — Rewrite generator cage routing with cage_type_map-driven parse_guest
+- [ ] 39-03-PLAN.md — Triclinic C0/C1 blocking for interface + CLI lattice type choices
+- [ ] 39-04-PLAN.md — GUI hydrate panel water-only guest toggling + info display
+- [ ] 39-05-PLAN.md — Unit tests for extended lattice types
 
 #### Phase 40: Custom Guest Bridge Core
 **Goal**: Users can upload a custom guest molecule and have it placed in hydrate cage positions via GenIce2
@@ -212,7 +213,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
-| 39. Extended Lattice Types | v4.7 | 0/4 | Not started | - |
+| 39. Extended Lattice Types | v4.7 | 0/5 | Not started | - |
 | 40. Custom Guest Bridge Core | v4.7 | 0/4 | Not started | - |
 | 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |
 | 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
