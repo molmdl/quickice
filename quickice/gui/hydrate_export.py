@@ -134,6 +134,7 @@ class HydrateGROMACSExporter:
                 write_multi_molecule_gro_file,
                 write_multi_molecule_top_file,
                 get_tip4p_itp_path,
+                transform_guest_itp,
             )
             
             # Get TIP4P-ICE itp path for water
@@ -178,9 +179,12 @@ class HydrateGROMACSExporter:
             water_itp_path = path.with_name("tip4p-ice.itp")
             shutil.copy(tip4p_itp_path, water_itp_path)
             
-            # Copy guest .itp file to export directory
+            # Copy guest .itp file to export directory with ITP transformation
+            # (_H suffix, atomtypes comment-out; no-op for pre-transformed built-in ITPs)
+            guest_itp_content = guest_itp_path.read_text()
+            transformed_content = transform_guest_itp(guest_itp_content, guest_upper, suffix="_H")
             guest_dest_path = path.with_name(guest_itp_path.name)
-            shutil.copy(guest_itp_path, guest_dest_path)
+            guest_dest_path.write_text(transformed_content)
             
             return True
             

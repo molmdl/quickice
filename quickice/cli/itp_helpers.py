@@ -165,7 +165,12 @@ def _copy_itp_with_atomtypes_commented(source: Path, dest: Path) -> str | None:
 
 
 def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
-    """Copy hydrate guest ITP file to output directory.
+    """Copy hydrate guest ITP file to output directory with transformation.
+
+    Applies transform_guest_itp to add _H suffix and comment out atomtypes.
+    For built-in guests (ch4, thf), this is a no-op since the source ITPs
+    are already pre-transformed. The transformation pipeline is scaffolding
+    for Phase 40 custom guest ITP files.
 
     Args:
         output_dir: Destination directory.
@@ -174,11 +179,16 @@ def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
     Returns:
         ITP filename if copied successfully, None on failure.
     """
+    from quickice.output.gromacs_writer import transform_guest_itp
+
     try:
         source = get_hydrate_guest_itp_path(guest_type)
         dest = output_dir / f"{guest_type}_hydrate.itp"
-        shutil.copy(source, dest)
-        logger.info(f"Hydrate guest ITP copied: {dest}")
+        guest_name = guest_type.upper()
+        content = source.read_text()
+        transformed = transform_guest_itp(content, guest_name, suffix="_H")
+        dest.write_text(transformed)
+        logger.info(f"Hydrate guest ITP copied with transformation: {dest}")
         return dest.name
     except FileNotFoundError:
         logger.warning(f"Hydrate guest ITP file not found for guest_type={guest_type!r}")
