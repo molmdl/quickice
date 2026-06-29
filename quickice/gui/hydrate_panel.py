@@ -398,28 +398,36 @@ class HydratePanel(QWidget):
             self.info_text.setText("Invalid lattice type")
             return
         
+        lattice_entry = HYDRATE_LATTICES.get(lattice_id, {})
+        is_water_only = lattice_entry.get("is_water_only", False)
+        
         lines = [
             f"Lattice: {info.description}",
             f"Water molecules per unit cell: {info.unit_cell_molecules}",
-            f"Total cages per unit cell: {info.total_cages}",
-            "",
-            "Cage types:",
         ]
         
-        for cage_name, count in info.cage_counts.items():
-            # Check if guest fits
-            fits = ""
-            if guest_id and guest_id in GUEST_MOLECULES:
-                # Check if guest fits in this cage (from HYDRATE_LATTICES)
-                lattice = HYDRATE_LATTICES[lattice_id]
-                for cage_size, cage_info in lattice["cages"].items():
-                    if cage_info["name"] == cage_name:
-                        if guest_id in cage_info.get("guest_fits", []):
-                            fits = " ✓"
-                        else:
-                            fits = " ✗ (too large)"
-                        break
-            lines.append(f"  {cage_name}: {count}{fits}")
+        if is_water_only or info.total_cages == 0:
+            lines.append("")
+            lines.append("No cages — water-only structure")
+            lines.append("Guest molecule placement is not applicable.")
+        else:
+            lines.append(f"Total cages per unit cell: {info.total_cages}")
+            lines.append("")
+            lines.append("Cage types:")
+
+            for cage_name, count in info.cage_counts.items():
+                # Check if guest fits
+                fits = ""
+                if guest_id and guest_id in GUEST_MOLECULES:
+                    lattice = HYDRATE_LATTICES[lattice_id]
+                    for cage_size, cage_info in lattice["cages"].items():
+                        if cage_info["name"] == cage_name:
+                            if guest_id in cage_info.get("guest_fits", []):
+                                fits = " ✓"
+                            else:
+                                fits = " ✗ (too large)"
+                            break
+                lines.append(f"  {cage_name}: {count}{fits}")
         
         self.info_text.setText("\n".join(lines))
     
