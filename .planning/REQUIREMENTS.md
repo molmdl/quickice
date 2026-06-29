@@ -57,10 +57,10 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### Internal Pipeline (prerequisite engineering)
 
-- [ ] **PIPE-01**: _build_molecule_index uses metadata-driven molecule identification (not pattern matching on atom names)
-- [ ] **PIPE-02**: HydrateConfig carries guest metadata (name, atom labels, atom count) through generation→export pipeline
-- [ ] **PIPE-03**: GRO residue name overflow is validated at write time (names >5 chars rejected, not silently corrupting format)
-- [ ] **PIPE-04**: ITP transformation pipeline handles _H suffix, atomtypes comment-out, residue name rewrite for custom guests
+- [x] **PIPE-01**: _build_molecule_index uses metadata-driven molecule identification (not pattern matching on atom names)
+- [x] **PIPE-02**: HydrateConfig carries guest metadata (name, atom labels, atom count) through generation→export pipeline
+- [x] **PIPE-03**: GRO residue name overflow is validated at write time (names >5 chars rejected, not silently corrupting format)
+- [x] **PIPE-04**: ITP transformation pipeline handles _H suffix, atomtypes comment-out, residue name rewrite for custom guests
 
 ### GUI Integration
 
@@ -135,10 +135,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | Phase 38 | Pending |
-| PIPE-02 | Phase 38 | Pending |
-| PIPE-03 | Phase 38 | Pending |
-| PIPE-04 | Phase 38 | Pending |
+| PIPE-01 | Phase 38 | Complete |
+| PIPE-02 | Phase 38 | Complete |
+| PIPE-03 | Phase 38 | Complete |
+| PIPE-04 | Phase 38 | Complete |
 | LATTICE-01 | Phase 39 | Pending |
 | LATTICE-02 | Phase 39 | Pending |
 | LATTICE-03 | Phase 39 | Pending |

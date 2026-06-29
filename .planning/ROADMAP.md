@@ -35,10 +35,10 @@ v4.7 extends QuickIce's hydrate generation from 3 lattices with 2 guest types (s
 **Plans:** 4 plans
 
 Plans:
-- [ ] 38-01: Extend GUEST_MOLECULES + HydrateConfig/HydrateStructure with guest metadata (PIPE-02)
-- [ ] 38-02: Refactor _build_molecule_index for metadata-driven identification (PIPE-01)
-- [ ] 38-03: Add GRO residue name validation at all write points (PIPE-03)
-- [ ] 38-04: Build ITP transformation pipeline (_H suffix, atomtypes, residue rewrite) (PIPE-04)
+- [x] 38-01: Extend GUEST_MOLECULES + HydrateConfig/HydrateStructure with guest metadata (PIPE-02)
+- [x] 38-02: Refactor _build_molecule_index for metadata-driven identification (PIPE-01)
+- [x] 38-03: Add GRO residue name validation at all write points (PIPE-03)
+- [x] 38-04: Build ITP transformation pipeline (_H suffix, atomtypes, residue rewrite) (PIPE-04)
 
 #### Phase 39: Extended Lattice Types
 **Goal**: Users can generate structures for all new lattice types, and triclinic filled ices are blocked for interface generation
@@ -211,7 +211,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 38. Internal Pipeline Refactor | v4.7 | 4/4 | Planned | - |
+| 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
 | 39. Extended Lattice Types | v4.7 | 0/4 | Not started | - |
 | 40. Custom Guest Bridge Core | v4.7 | 0/4 | Not started | - |
 | 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |

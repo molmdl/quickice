@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 38 Internal Pipeline Refactor
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 38 COMPLETE, ready for Phase 39
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 38 of 48 (Internal Pipeline Refactor) |
-| Plan | 02 of 04 complete |
-| Status | In progress |
-| Last activity | 2026-06-29 — Completed 38-02-PLAN.md |
+| Phase | 38 of 48 (Internal Pipeline Refactor) ✓ |
+| Plan | 4/4 complete |
+| Status | Phase complete, verified |
+| Last activity | 2026-06-29 — Phase 38 verified (12/12 must-haves) |
 
-**Progress:** [███░░░░░░░] ~30%
+**Progress:** [████░░░░░░] ~36%
 
 ---
 
@@ -96,6 +96,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-29T16:40:00Z
-Stopped at: Completed 38-02-PLAN.md (metadata-driven _build_molecule_index)
+Last session: 2026-06-29T17:00:00Z
+Stopped at: Phase 38 complete and verified (12/12 must-haves)
 Resume file: None
