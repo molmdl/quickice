@@ -779,12 +779,16 @@ class HydrateLatticeInfo:
     Used to show lattice info in UI when user selects lattice type.
     
     Attributes:
-        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH')
+        lattice_type: Hydrate lattice type ('sI', 'sII', 'sH', 'c0te', 'c1te',
+            'c2te', 'ice1hte', 'sTprime', '16', '17')
         description: Human-readable description
         cage_types: List of cage type names (e.g., ["5¹²", "5¹²6⁴"])
         cage_counts: Dict mapping cage type to count per unit cell
         unit_cell_molecules: Water molecules in unit cell
         total_cages: Total number of cages per unit cell
+        is_water_only: True if lattice has no cages (water-only generation)
+        is_triclinic: True if lattice has triclinic symmetry
+        cage_type_map: Mapping from cage size category to cage type identifier
     """
     lattice_type: str
     description: str
@@ -792,10 +796,29 @@ class HydrateLatticeInfo:
     cage_counts: dict[str, int]
     unit_cell_molecules: int
     total_cages: int
+    is_water_only: bool = False
+    is_triclinic: bool = False
+    cage_type_map: dict[str, str] = field(default_factory=dict)
     
     @classmethod
     def from_lattice_type(cls, lattice_type: str) -> "HydrateLatticeInfo":
-        """Create HydrateLatticeInfo from lattice type string."""
+        """Create HydrateLatticeInfo from lattice type string.
+        
+        Handles three cage dict structures:
+        1. Standard cages (sI, sII, sH, 16): "small"/"large"/"medium" keys
+        2. Filled ice cages (c0te, c1te, c2te, ice1hte): "guest" key
+        3. Water-only lattices (sTprime, 17): empty cages dict
+        
+        Args:
+            lattice_type: One of 'sI', 'sII', 'sH', 'c0te', 'c1te', 'c2te',
+                'ice1hte', 'sTprime', '16', '17'
+        
+        Returns:
+            HydrateLatticeInfo instance
+        
+        Raises:
+            ValueError: If lattice_type is not in HYDRATE_LATTICES
+        """
         if lattice_type not in HYDRATE_LATTICES:
             raise ValueError(f"Unknown lattice type: {lattice_type}")
         
@@ -816,6 +839,9 @@ class HydrateLatticeInfo:
             cage_counts=cage_counts,
             unit_cell_molecules=lattice["unit_cell_molecules"],
             total_cages=total_cages,
+            is_water_only=lattice.get("is_water_only", False),
+            is_triclinic=lattice.get("is_triclinic", False),
+            cage_type_map=lattice.get("cage_type_map", {}),
         )
 
 
