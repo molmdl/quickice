@@ -567,6 +567,81 @@ def comment_out_atomtypes_in_itp(itp_content: str) -> str:
     return '\n'.join(result_lines)
 
 
+def transform_guest_itp(itp_content: str, guest_name: str, suffix: str = "_H") -> str:
+    """Transform a guest molecule ITP file for hydrate export.
+    
+    Applies three transformations:
+    1. Comments out [ atomtypes ] section (types defined in main .top)
+    2. Appends suffix to moleculetype name (e.g., "CH4" → "CH4_H")
+    3. Rewrites residue name in [ moleculetype ] section to match
+    
+    Args:
+        itp_content: Original ITP file content as string
+        guest_name: Original guest molecule name (e.g., "CH4", "THF", or custom name)
+        suffix: Suffix to append (default "_H" for hydrate guests)
+        
+    Returns:
+        Transformed ITP content
+        
+    Raises:
+        ValueError: If transformed residue name exceeds 5 chars (GRO format limit)
+    """
+    # Step 1: Comment out atomtypes (existing behavior)
+    content = comment_out_atomtypes_in_itp(itp_content)
+    
+    # Step 2: Rewrite moleculetype name with suffix
+    # Pattern: [ moleculetype ] header line followed by name line
+    # ITP format:
+    #   [ moleculetype ]
+    #   ; Name        nrexcl
+    #   CH4           3
+    # We need to change "CH4" → "CH4_H" on the name line
+    lines = content.split('\n')
+    result_lines = []
+    in_moleculetype = False
+    new_name = f"{guest_name}{suffix}"
+    
+    # Validate the new name fits GRO format
+    validate_gro_residue_name(new_name, context=f"Transformed guest ITP moleculetype name '{new_name}'")
+    # (validate_gro_residue_name raises ValueError with clear message if >5 chars)
+    # Note: For built-in guests (CH4_H, THF_H), the name is exactly 5 chars — passes.
+    # For custom guests with base names >3 chars, this will raise — intentionally.
+    
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        if stripped.startswith('[') and 'moleculetype' in stripped.lower():
+            in_moleculetype = True
+            result_lines.append(line)
+            continue
+        
+        if in_moleculetype:
+            # Check if this is the name line (not a comment, not empty)
+            if stripped and not stripped.startswith(';') and not stripped.startswith('#'):
+                # This is the moleculetype name line
+                # Replace the old name with new name
+                parts = stripped.split()
+                old_name = parts[0]
+                # Replace old_name with new_name, preserving the rest of the line
+                # (e.g., "CH4           3" → "CH4_H         3")
+                new_line = line.replace(old_name, new_name, 1)
+                result_lines.append(new_line)
+                in_moleculetype = False
+                continue
+            elif not stripped:
+                # Empty line after moleculetype header — still in section
+                result_lines.append(line)
+                continue
+            else:
+                # Comment line — still in section
+                result_lines.append(line)
+                continue
+        
+        result_lines.append(line)
+    
+    return '\n'.join(result_lines)
+
+
 def get_guest_residue_name(guest_type: str) -> str:
     """Get the residue name for a guest molecule type from its itp file.
     
