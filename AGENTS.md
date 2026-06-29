@@ -4,7 +4,6 @@
 
 - **Conda only.** Never `sudo`, `apt`, `pip install` system-wide, or modify anything outside user-space. All deps live in the `quickice` conda env. Check env before calling python
 - To add a dependency: edit `environment.yml`, then ask user to run `conda env update`. Do NOT auto-install.
-- Python 3.14.3 (conda-forge). Activate env: `conda activate quickice`.
 - `PYTHONPATH` must include project root (handled by `setup.sh`).
 
 ## Run Commands
