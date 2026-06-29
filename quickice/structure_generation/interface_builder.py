@@ -115,6 +115,27 @@ def validate_interface_config(config: InterfaceConfig, candidate: Candidate) -> 
             mode=config.mode
         )
 
+    # Check for triclinic hydrate lattices (C0, C1) — cannot have orthogonal supercell
+    # These filled ice structures have triclinic cells with off-diagonal elements
+    # that create gaps when forced into an orthogonal simulation box.
+    TRICLINIC_HYDRATE_PHASES = {"hydrate_c0te", "hydrate_c1te"}
+    if candidate.phase_id in TRICLINIC_HYDRATE_PHASES:
+        lattice_name = candidate.phase_id.replace("hydrate_", "")
+        raise InterfaceGenerationError(
+            f"[{config.mode}] {lattice_name.upper()} filled ice (triclinic) is not supported for interface generation. "
+            f"\n\nFilled ice C0 and C1 have triclinic crystal structures that cannot be transformed "
+            f"to an orthogonal supercell (this is a fundamental crystallographic constraint). "
+            f"When forced into an orthogonal simulation box, these lattices develop gaps at the corners, "
+            f"leaving significant empty regions. "
+            f"\n\nSupported hydrate lattices for interfaces:\n"
+            f"  • C2 (orthorhombic filled ice): Works correctly\n"
+            f"  • Filled ice Ih (orthorhombic): Works correctly\n"
+            f"  • Ice XVI (cubic): Works correctly\n"
+            f"  • All standard hydrates (sI, sII): Work correctly\n"
+            f"\nFor triclinic hydrate interfaces, consider using C2 or filled ice Ih instead.",
+            mode=config.mode
+        )
+
     # Mode-specific checks
     if config.mode == "slab":
         # Validate box_z matches ice + water thicknesses
