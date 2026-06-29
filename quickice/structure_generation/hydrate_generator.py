@@ -192,7 +192,7 @@ class HydrateStructureGenerator:
             formatter = safe_import('format', 'gromacs').Format()
             
             # Build guests dictionary from config
-            # Format: {"12": {"ch4": 0.5}, "14": {"ch4": 1.0}}
+            # Format: {"12": {"ch4": 0.5}, "Ne1": {"ch4": 1.0}}
             guests = defaultdict(dict)
             
             guest_type = config.guest_type
@@ -207,27 +207,30 @@ class HydrateStructureGenerator:
             else:
                 guest_name = guest_type
             
-            # Small cages (12 = 5^12 cages)
-            if small_occ > 0:
-                guest_spec = f"12={guest_name}"
-                if small_occ < 1.0:
-                    guest_spec = f"12={guest_name}*{small_occ}"
-                parse_guest(guests, guest_spec)
+            # Use cage_type_map from HYDRATE_LATTICES for dynamic cage routing
+            lattice_entry = HYDRATE_LATTICES[config.lattice_type]
+            cage_type_map = lattice_entry.get("cage_type_map", {})
+            is_water_only = lattice_entry.get("is_water_only", False)
             
-            # Large cages
-            if large_occ > 0:
-                # Determine large cage type based on lattice
-                if config.lattice_type == "sI":
-                    large_cage = "14"  # 5^12 6^2 for sI
-                elif config.lattice_type == "sII":
-                    large_cage = "16"  # 5^12 6^4 for sII
-                else:
-                    large_cage = "16"  # Default for sH
+            if is_water_only:
+                # Water-only lattices (sT', Ice XVII) — no guest placement
+                pass
+            else:
+                # Small cages
+                if small_occ > 0 and "small" in cage_type_map:
+                    small_cage = cage_type_map["small"]
+                    guest_spec = f"{small_cage}={guest_name}"
+                    if small_occ < 1.0:
+                        guest_spec = f"{small_cage}={guest_name}*{small_occ}"
+                    parse_guest(guests, guest_spec)
                 
-                guest_spec = f"{large_cage}={guest_name}"
-                if large_occ < 1.0:
-                    guest_spec = f"{large_cage}={guest_name}*{large_occ}"
-                parse_guest(guests, guest_spec)
+                # Large cages (only if the lattice has a distinct large cage type)
+                if large_occ > 0 and "large" in cage_type_map:
+                    large_cage = cage_type_map["large"]
+                    guest_spec = f"{large_cage}={guest_name}"
+                    if large_occ < 1.0:
+                        guest_spec = f"{large_cage}={guest_name}*{large_occ}"
+                    parse_guest(guests, guest_spec)
             
             # Generate hydrate structure using GenIce API
             gro_string = ice.generate_ice(
@@ -700,14 +703,29 @@ class HydrateStructureGenerator:
     
     def _generate_report(self, config: HydrateConfig, water_count: int, guest_count: int) -> str:
         """Generate human-readable report."""
+        lattice_entry = HYDRATE_LATTICES[config.lattice_type]
+        is_water_only = lattice_entry.get("is_water_only", False)
+
         lines = [
             f"Generated {config.lattice_type} hydrate structure",
             f"  Lattice: {config.lattice_type} ({config.get_genice_lattice_name()})",
-            f"  Guest: {GUEST_MOLECULES[config.guest_type]['name']}",
-            f"  Small cage occupancy: {config.cage_occupancy_small}%",
-            f"  Large cage occupancy: {config.cage_occupancy_large}%",
+        ]
+
+        if is_water_only:
+            lines.append(f"  Water-only lattice — no guest placement")
+        else:
+            lines.extend([
+                f"  Guest: {GUEST_MOLECULES[config.guest_type]['name']}",
+                f"  Small cage occupancy: {config.cage_occupancy_small}%",
+                f"  Large cage occupancy: {config.cage_occupancy_large}%",
+            ])
+
+        lines.extend([
             f"  Supercell: {config.supercell_x} × {config.supercell_y} × {config.supercell_z}",
             f"  Water molecules: {water_count}",
-            f"  Guest molecules: {guest_count}",
-        ]
+        ])
+
+        if not is_water_only:
+            lines.append(f"  Guest molecules: {guest_count}")
+
         return "\n".join(lines)
