@@ -1,11 +1,11 @@
-"""Hydrate configuration panel for QuickIce GUI v4.0.
+"""Hydrate configuration panel for QuickIce GUI v4.7.
 
 This module provides the HydratePanel class for hydrate configuration:
-- Lattice type selection (sI, sII, sH)
+- Lattice type selection (sI, sII, sH, c0te, c1te, c2te, ice1hte, sTprime, 16, 17)
 - Guest molecule selection (CH4, THF, CO2, H2)
-- Cage occupancy controls
+- Cage occupancy controls (disabled for water-only lattices)
 - Supercell dimensions
-- Lattice info display
+- Lattice info display (handles water-only and filled-ice structures)
 """
 
 from PySide6.QtWidgets import (
@@ -159,6 +159,9 @@ class HydratePanel(QWidget):
         # Add columns to top-level layout (left gets 2/5, right gets 3/5)
         main_layout.addLayout(left_layout, stretch=2)
         main_layout.addLayout(right_layout, stretch=3)
+        
+        # Set initial UI state for guest/occupancy controls based on default lattice
+        self._update_guest_ui_for_lattice()
     
     def _create_lattice_group(self) -> QGroupBox:
         """Create lattice type selection group."""
@@ -177,7 +180,14 @@ class HydratePanel(QWidget):
             "Hydrate lattice structure type.\n"
             "• sI — Structure I (CH₄, CO₂ hydrates)\n"
             "• sII — Structure II (THF hydrates)\n"
-            "• sH — Structure H (requires helper molecule)"
+            "• sH — Structure H (requires helper molecule)\n"
+            "• c0te — Filled ice C0 (triclinic)\n"
+            "• c1te — Filled ice C1 (triclinic)\n"
+            "• c2te — Filled ice C2 (orthorhombic)\n"
+            "• ice1hte — Filled ice Ih (orthorhombic)\n"
+            "• sTprime — Filled ice sT′ (water-only)\n"
+            "• 16 — Ice XVI (empty sII framework)\n"
+            "• 17 — Ice XVII (water-only)"
         ))
         lattice_row.addStretch()
         
@@ -202,6 +212,7 @@ class HydratePanel(QWidget):
             "Guest molecule type for hydrate cages.\n"
             "• CH₄ — Methane (fits in small cages)\n"
             "• THF — Tetrahydrofuran (fits in large cages)\n"
+            "Disabled for water-only lattices (sT′, Ice XVII).\n"
             "Force field: GAFF parameters bundled in export."
         ))
         guest_row.addStretch()
@@ -332,6 +343,7 @@ class HydratePanel(QWidget):
     def _on_lattice_changed(self):
         """Handle lattice type change."""
         self._update_info_display()
+        self._update_guest_ui_for_lattice()
         self.configuration_changed.emit()
     
     def _on_guest_changed(self):
@@ -339,6 +351,31 @@ class HydratePanel(QWidget):
         self._update_ff_label()
         self._update_info_display()  # Update guest fit info
         self.configuration_changed.emit()
+    
+    def _update_guest_ui_for_lattice(self):
+        """Enable/disable guest and occupancy controls based on lattice type.
+        
+        Water-only lattices (sTprime, Ice XVII) have no cages, so guest
+        selection and occupancy controls are disabled.
+        """
+        lattice_id = self.lattice_combo.currentData()
+        if not lattice_id:
+            return
+
+        lattice_entry = HYDRATE_LATTICES.get(lattice_id, {})
+        is_water_only = lattice_entry.get("is_water_only", False)
+        cage_type_map = lattice_entry.get("cage_type_map", {})
+
+        # Disable guest combo for water-only lattices
+        self.guest_combo.setEnabled(not is_water_only)
+
+        # Disable occupancy controls for water-only lattices
+        self.occupancy_small.setEnabled(not is_water_only)
+
+        # For single-cage-type lattices (filled ices), disable large occupancy
+        # since both map to the same cage type
+        has_large_cage = "large" in cage_type_map
+        self.occupancy_large.setEnabled(not is_water_only and has_large_cage)
     
     def _update_ff_label(self):
         """Update force field label based on selected guest."""
