@@ -104,7 +104,7 @@ class HydrateStructureGenerator:
         # by cell index causes molecules to be split when atoms span multiple periodic
         # images. VTK's vtkMoleculeMapper handles positions outside [0,L) correctly
         # using the lattice setting. This matches genice2 CLI behavior.
-        molecule_index = self._build_molecule_index(atom_names, positions, residue_names, residue_seq_nums)
+        molecule_index = self._build_molecule_index(atom_names, positions, residue_names, residue_seq_nums, config=config)
         
         # Get lattice info
         lattice_info = HydrateLatticeInfo.from_lattice_type(config.lattice_type)
@@ -485,17 +485,26 @@ class HydrateStructureGenerator:
             # Convert back to Cartesian
             return frac @ cell
     
-    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray, residue_names: list[str] = None, residue_seq_nums: list[int] = None) -> list[MoleculeIndex]:
+    def _build_molecule_index(self, atom_names: list[str], positions: np.ndarray, residue_names: list[str] = None, residue_seq_nums: list[int] = None, config: HydrateConfig | None = None) -> list[MoleculeIndex]:
         """Build molecule index from atom names.
         
         Groups atoms by molecule type based on atom naming patterns and residue names.
+        When a HydrateConfig is provided, uses metadata-driven guest identification
+        (guest_atom_labels, guest_atom_count, guest_type) instead of hardcoded patterns.
+        
+        Metadata-driven path (config provided):
+        - Guest residue grouping: residue_name == guest_type.upper() → group by seq num
+        - Guest atom-label matching: atom_names[i:i+count] == guest_atom_labels → guest
+        - Guest is checked BEFORE water to prevent misidentification (e.g., THF "O" as water)
+        - Water, ions, unknown handled as usual
+        
+        Pattern-matching path (config=None):
+        - Backward-compatible hardcoded pattern matching (unchanged)
         
         Handles:
         - TIP4P water: OW, HW1, HW2, MW (4 atoms)
-        - 3-site water: O, H, H (3 atoms) 
-        - United-atom methane: Me (1 atom)
-        - All-atom methane: C, H, H, H, H (5 atoms)
-        - THF: residue "THF" with O, CA, CA, CB, CB, H... (13 atoms)
+        - 3-site water: O, H, H (3 atoms)
+        - Guest molecules: via metadata (config) or hardcoded patterns (config=None)
         - Ions: Na, Cl (1 atom each)
         
         Args:
@@ -503,6 +512,7 @@ class HydrateStructureGenerator:
             positions: Array of positions (for length reference)
             residue_names: List of residue names from GRO file (for guest identification)
             residue_seq_nums: List of residue sequence numbers (for grouping molecules)
+            config: Optional HydrateConfig with guest metadata for metadata-driven identification
         """
         molecule_index = []
         i = 0
@@ -515,6 +525,81 @@ class HydrateStructureGenerator:
         if residue_seq_nums is None:
             residue_seq_nums = list(range(len(atom_names)))
         
+        # ── Metadata-driven path ──────────────────────────────────────
+        if config is not None:
+            guest_atom_labels = config.guest_atom_labels
+            guest_atom_count = config.guest_atom_count
+            guest_type = config.guest_type
+            guest_res_name = guest_type.upper()
+            guest_signature = guest_atom_labels[0] if guest_atom_labels else None
+            
+            while i < len(atom_names):
+                atom = atom_names[i]
+                residue = residue_names[i] if i < len(residue_names) else ""
+                
+                # 1. Check guest by residue grouping (preferred for GenIce2 output)
+                if residue == guest_res_name and residue_seq_nums is not None:
+                    guest_seq = residue_seq_nums[i]
+                    guest_start = i
+                    guest_count = 0
+                    j = i
+                    while j < len(residue_seq_nums) and residue_seq_nums[j] == guest_seq:
+                        guest_count += 1
+                        j += 1
+                    molecule_index.append(MoleculeIndex(guest_start, guest_count, guest_type))
+                    i = j
+                    continue
+                
+                # 2. Check guest by atom-label sequence matching
+                if (guest_signature is not None
+                        and atom == guest_signature
+                        and i + guest_atom_count <= len(atom_names)
+                        and atom_names[i:i + guest_atom_count] == guest_atom_labels):
+                    molecule_index.append(MoleculeIndex(i, guest_atom_count, guest_type))
+                    i += guest_atom_count
+                    continue
+                
+                # 3. Check for water (TIP4P: OW, HW1, HW2, MW)
+                if atom == "OW" and i + 3 < len(atom_names):
+                    next_atoms = atom_names[i:i+4]
+                    if next_atoms[1] == "HW1" and next_atoms[2] == "HW2" and next_atoms[3] == "MW":
+                        molecule_index.append(MoleculeIndex(i, 4, "water"))
+                        i += 4
+                        continue
+                
+                # 4. Check for 3-site water (O, H, H)
+                #    Safe now because guest was already checked above —
+                #    guest "O" (e.g., THF oxygen) won't reach here
+                if atom == "O" and i + 2 < len(atom_names):
+                    if atom_names[i+1] == "H" and atom_names[i+2] == "H":
+                        molecule_index.append(MoleculeIndex(i, 3, "water"))
+                        i += 3
+                        continue
+                
+                # 5. Check for ions
+                if atom in ["NA", "Na"]:
+                    molecule_index.append(MoleculeIndex(i, 1, "na"))
+                    i += 1
+                    continue
+                
+                if atom in ["CL", "Cl"]:
+                    molecule_index.append(MoleculeIndex(i, 1, "cl"))
+                    i += 1
+                    continue
+                
+                # 6. Unknown atom type
+                logger.warning(
+                    "Unknown atom type '%s' at index %d in hydrate candidate; "
+                    "this may indicate an unsupported guest type. "
+                    "Tracking as single-atom 'unknown' molecule.",
+                    atom, i
+                )
+                molecule_index.append(MoleculeIndex(i, 1, "unknown"))
+                i += 1
+            
+            return molecule_index
+        
+        # ── Pattern-matching path (config=None, backward compat) ──────
         while i < len(atom_names):
             atom = atom_names[i]
             residue = residue_names[i] if i < len(residue_names) else ""
