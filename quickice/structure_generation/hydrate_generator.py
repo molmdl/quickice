@@ -25,6 +25,13 @@ _LATTICE_MODULES = {
     "sI": "sI",
     "sII": "sII",
     "sH": "sH",
+    "c0te": "c0te",
+    "c1te": "c1te",
+    "c2te": "c2te",
+    "ice1hte": "ice1hte",
+    "sTprime": "sTprime",
+    "16": "16",
+    "17": "17",
 }
 
 # Thread-safe lock for GenIce2 lazy loading (loaded in _ensure_genice_import)
@@ -34,8 +41,16 @@ _genice_lock = threading.Lock()
 class HydrateStructureGenerator:
     """Generator for hydrate structures using GenIce2.
 
-    Supports sI, sII, sH hydrate lattices with configurable guest molecules
-    (CH4, THF) and cage occupancy.
+    Supports 10 hydrate lattice types with configurable guest molecules
+    (CH4, THF) and cage occupancy:
+    - sI, sII, sH: Standard clathrate hydrates
+    - c0te, c1te, c2te, ice1hte: Filled ice structures (Teeratchanan 2015)
+    - sTprime: Filled ice sT' (Smirnov 2013) — water-only
+    - 16: Ice XVI (empty sII framework)
+    - 17: Ice XVII (ultralow density) — water-only
+
+    Numeric module names (16, 17) are loaded via safe_import at generation
+    time, not pre-imported, since Python syntax forbids `from X import 16`.
 
     Note: GenIce2 supports additional guest types (CO2, H2), but these are not
     exposed in QuickIce's GUEST_MOLECULES configuration.
@@ -61,7 +76,7 @@ class HydrateStructureGenerator:
             try:
                 import genice2.genice as genice_lib
                 from genice2.formats import gromacs
-                from genice2.lattices import sI, sII, sH
+                from genice2.lattices import sI, sII, sH, c0te, c1te, c2te, ice1hte, sTprime
                 from genice2.molecules.tip4p import Molecule as TIP4P
                 
                 self._genice_lib = genice_lib
@@ -70,6 +85,12 @@ class HydrateStructureGenerator:
                     "sI": sI,
                     "sII": sII,
                     "sH": sH,
+                    "c0te": c0te,
+                    "c1te": c1te,
+                    "c2te": c2te,
+                    "ice1hte": ice1hte,
+                    "sTprime": sTprime,
+                    # "16" and "17" loaded via safe_import at runtime (numeric names can't be imported)
                 }
                 self._water_molecule = TIP4P()
             except ImportError as e:
