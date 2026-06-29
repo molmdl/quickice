@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 38 of 48 (Internal Pipeline Refactor) |
-| Plan | 03 of 04 complete |
-| Status | In progress |
-| Last activity | 2026-06-27 — Completed 38-03-PLAN.md |
+| Plan | 04 of 04 complete |
+| Status | Phase complete |
+| Last activity | 2026-06-29 — Completed 38-04-PLAN.md |
 
-**Progress:** [███░░░░░░░] ~30%
+**Progress:** [████░░░░░░] ~40%
 
 ---
 
@@ -72,6 +72,9 @@ Recent decisions affecting v4.7 work:
 - **[38-03]** GRO residue name validation rejects >5 chars with ValueError (no silent truncation)
 - **[38-03]** Validation checks only length, not content; callers must fix names upstream
 - **[38-03]** Empty MoleculetypeRegistry fallback (source.upper()) can produce >5 char names — must be caught by validation
+- **[38-04]** transform_guest_itp() is unified ITP transformation entry point (atomtypes comment-out + _H suffix + GRO name validation)
+- **[38-04]** No [ atoms ] residue name rewriting in transform_guest_itp — deferred to Phase 40 custom guests
+- **[38-04]** Hydrate export (GUI+CLI) uses read-transform-write instead of shutil.copy for guest ITPs
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-27T14:51:07Z
-Stopped at: Completed 38-03-PLAN.md
+Last session: 2026-06-29T14:54:40Z
+Stopped at: Completed 38-04-PLAN.md (Phase 38 complete)
 Resume file: None
