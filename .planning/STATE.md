@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 38 of 48 (Internal Pipeline Refactor) |
-| Plan | 04 of 04 complete |
-| Status | Phase complete |
-| Last activity | 2026-06-29 — Completed 38-04-PLAN.md |
+| Plan | 02 of 04 complete |
+| Status | In progress |
+| Last activity | 2026-06-29 — Completed 38-02-PLAN.md |
 
-**Progress:** [████░░░░░░] ~40%
+**Progress:** [███░░░░░░░] ~30%
 
 ---
 
@@ -75,6 +75,9 @@ Recent decisions affecting v4.7 work:
 - **[38-04]** transform_guest_itp() is unified ITP transformation entry point (atomtypes comment-out + _H suffix + GRO name validation)
 - **[38-04]** No [ atoms ] residue name rewriting in transform_guest_itp — deferred to Phase 40 custom guests
 - **[38-04]** Hydrate export (GUI+CLI) uses read-transform-write instead of shutil.copy for guest ITPs
+- **[38-02]** Guest identification checked BEFORE water in metadata-driven _build_molecule_index (prevents THF "O" misidentification)
+- **[38-02]** Residue grouping is preferred path for GenIce2 output; atom-label sequence matching is the fallback
+- **[38-02]** config=None preserves full backward-compatible pattern matching (two separate code paths, not unified)
 
 ### Pending Todos
 
@@ -86,13 +89,13 @@ Recent decisions affecting v4.7 work:
 ### Blockers/Concerns
 
 - ~~GRO `:<5s` overflow (NOT truncation) — must validate at every write entry point~~ **[RESOLVED in 38-03]** validate_gro_residue_name() now called at all 10 GRO write entry points
-- `_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model (addressed in Plan 02)
+- ~~`_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model~~ **[RESOLVED in 38-02]** metadata-driven identification replaces hardcoded patterns
 - Thread safety gap: `sys.modules` injection must happen outside existing `_genice_lock` scope
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-06-29T14:54:40Z
-Stopped at: Completed 38-04-PLAN.md (Phase 38 complete)
+Last session: 2026-06-29T16:40:00Z
+Stopped at: Completed 38-02-PLAN.md (metadata-driven _build_molecule_index)
 Resume file: None
