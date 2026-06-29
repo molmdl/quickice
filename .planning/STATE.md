@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 39 of 48 (Extended Lattice Types) |
-| Plan | 1/5 complete |
+| Plan | 2/5 complete |
 | Status | In progress |
-| Last activity | 2026-06-29 — Completed 39-01-PLAN.md |
+| Last activity | 2026-06-29 — Completed 39-04-PLAN.md |
 
-**Progress:** [████░░░░░░] ~38%
+**Progress:** [█████░░░░░] ~40%
 
 ---
 
@@ -82,6 +82,9 @@ Recent decisions affecting v4.7 work:
 - **[39-01]** Filled ices use "guest" cage key (not small/large) with single-entry cage_type_map to prevent double-placement
 - **[39-01]** is_triclinic is forward-looking metadata with no current consumer (future GUI tooltips/docs)
 - **[39-01]** No water-only validation in HydrateConfig; generator handles guest skipping for empty-cage lattices
+- **[39-04]** Water-only lattices disable ALL guest controls (combo + both occupancy spinners) in GUI
+- **[39-04]** Filled ices (single cage_type_map key) disable only large occupancy spinner; small remains enabled
+- **[39-04]** get_configuration unchanged — returns valid HydrateConfig with default ch4 even when guest controls disabled
 
 ### Pending Todos
 
@@ -100,6 +103,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-29T13:42:43Z
-Stopped at: Completed 39-01-PLAN.md (Extended Lattice Data Model)
+Last session: 2026-06-29T14:16:00Z
+Stopped at: Completed 39-04-PLAN.md (GUI Hydrate Panel Water-Only Toggling)
 Resume file: None
