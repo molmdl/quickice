@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 39 of 48 (Extended Lattice Types) |
-| Plan | 4/5 complete |
-| Status | In progress |
-| Last activity | 2026-06-29 — Completed 39-02-PLAN.md |
+| Plan | 5/5 complete |
+| Status | Phase complete |
+| Last activity | 2026-06-30 — Completed 39-05-PLAN.md |
 
-**Progress:** [█████░░░░░] ~40%
+**Progress:** [██████░░░░] ~50%
 
 ---
 
@@ -90,6 +90,7 @@ Recent decisions affecting v4.7 work:
 - **[39-04]** Water-only lattices disable ALL guest controls (combo + both occupancy spinners) in GUI
 - **[39-04]** Filled ices (single cage_type_map key) disable only large occupancy spinner; small remains enabled
 - **[39-04]** get_configuration unchanged — returns valid HydrateConfig with default ch4 even when guest controls disabled
+- **[39-05]** 157 parametrized structural validation tests + 6 triclinic blocking regression tests for all 10 HYDRATE_LATTICES entries
 
 ### Pending Todos
 
@@ -108,6 +109,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-29T14:41:16Z
-Stopped at: Completed 39-02-PLAN.md (Hydrate Generator Rewrite)
+Last session: 2026-06-30T07:41:48Z
+Stopped at: Completed 39-05-PLAN.md (Extended Lattice Type Tests)
 Resume file: None
