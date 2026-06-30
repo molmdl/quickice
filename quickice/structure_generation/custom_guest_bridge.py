@@ -36,6 +36,10 @@ from quickice.structure_generation.gro_parser import (
     extract_residue_name_from_gro,
     parse_gro_file,
 )
+from quickice.structure_generation.itp_parser import (
+    parse_itp_defaults_comb_rule,
+    parse_itp_file,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -167,3 +171,142 @@ def build_custom_guest_module(
 
     # 5. Return the module (caller registers it in sys.modules).
     return mod
+
+
+def validate_custom_guest_files(
+    gro_path: Path | str,
+    itp_path: Path | str,
+    guest_type: str,
+) -> CustomGuestValidation:
+    """Validate a custom guest GRO+ITP pair for hydrate generation.
+
+    Runs the full validation checklist (validate BEFORE injection, per the
+    research checklist) and returns a :class:`CustomGuestValidation` with
+    specific, user-facing error/warning messages. Blocking errors set
+    ``is_valid=False``; warnings (e.g. missing ``[ atomtypes ]``) do not.
+
+    Validation order (each step appends to ``errors``/``warnings``):
+
+    1. GRO parseable (reuses :func:`parse_gro_file`, rejects >50 nm Å-mixup).
+    2. ITP parseable (reuses :func:`parse_itp_file`).
+    3. Atom count matches between GRO and ITP ``[ atoms ]``.
+    4. Residue name <=3 chars (base name, before the ``_H`` suffix).
+    5. comb-rule == 2 when ``[ defaults ]`` is present in the ITP (absent is
+       accepted — QuickIce's main ``.top`` supplies comb-rule=2).
+    6. ``[ atomtypes ]`` section present (warning, not error).
+    7. ``guest_type`` passes GenIce2 :func:`audit_name`.
+
+    Args:
+        gro_path: Path to the custom guest ``.gro`` file.
+        itp_path: Path to the custom guest ``.itp`` file.
+        guest_type: Slugified plugin name (must match ``^[A-Za-z0-9-_]+$``).
+
+    Returns:
+        :class:`CustomGuestValidation` with ``is_valid``, ``errors``,
+        ``warnings``, atom counts, residue name, and comb-rule. When GRO or
+        ITP parsing fails, an early invalid result is returned with the
+        parse error and zeroed counts.
+
+    Example:
+        >>> r = validate_custom_guest_files('etoh.gro', 'etoh.itp', 'etoh_x')
+        >>> r.is_valid, r.gro_atom_count, r.comb_rule
+        (True, 9, None)
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # 1. GRO parseable. IndexError covers truncated/malformed GRO files with
+    #    too few lines (e.g. a plain-text file), which parse_gro_file surfaces
+    #    when indexing lines[]. ValueError covers float-conversion and the
+    #    >50 nm Å-mixup guard; OSError covers missing/unreadable files.
+    try:
+        positions, _, _ = parse_gro_file(gro_path)
+    except (ValueError, OSError, IndexError) as exc:
+        errors.append(f"Failed to parse GRO file {gro_path}: {exc}")
+        return CustomGuestValidation(
+            is_valid=False,
+            errors=errors,
+            warnings=warnings,
+        )
+
+    # 2. ITP parseable.
+    try:
+        itp_info = parse_itp_file(Path(itp_path))
+    except (ValueError, OSError, IndexError) as exc:
+        errors.append(f"Failed to parse ITP file {itp_path}: {exc}")
+        return CustomGuestValidation(
+            is_valid=False,
+            errors=errors,
+            warnings=warnings,
+            gro_atom_count=len(positions),
+        )
+
+    # 3. Atom count match between GRO and ITP.
+    if len(positions) != itp_info.atom_count:
+        errors.append(
+            f"Atom count mismatch: GRO={len(positions)}, "
+            f"ITP={itp_info.atom_count}"
+        )
+
+    # 4. Residue name <=3 chars (base name; the _H suffix adds 2 chars, and GRO
+    #    allows 5-char residue names). Exact message per success criteria #2.
+    resname = extract_residue_name_from_gro(gro_path)
+    if resname and len(resname) > 3:
+        errors.append(
+            f"Custom guest residue name '{resname}' ({len(resname)} chars) "
+            f"exceeds 3 chars. GRO format allows 5-char residue names; "
+            f"QuickIce reserves 2 chars for the '_H' hydrate suffix. "
+            f"Use a residue name of 3 chars or fewer (e.g. 'MOL')."
+        )
+
+    # 5. comb-rule == 2 when [ defaults ] is present. Absent is accepted
+    #    (the main .top supplies comb-rule=2). Exact message per success
+    #    criteria #3.
+    comb: int | None = None
+    try:
+        comb = parse_itp_defaults_comb_rule(Path(itp_path).read_text())
+    except OSError as exc:
+        # Extremely unlikely (parse_itp_file already read the file), but be
+        # defensive: treat as absent rather than crashing validation.
+        logger.warning(
+            "Could not re-read ITP %s for comb-rule: %s", itp_path, exc
+        )
+        comb = None
+    if comb is not None and comb != 2:
+        errors.append(
+            f"ITP comb-rule must be 2 (Lorentz-Berthelot / AMBER-GAFF2); "
+            f"got comb-rule={comb}. QuickIce does not auto-convert A/B rules. "
+            f"Please regenerate the ITP with comb-rule=2."
+        )
+
+    # 6. [ atomtypes ] present (warning, not error — the main .top may
+    #    define them).
+    if not itp_info.has_atomtypes_section:
+        warnings.append(
+            "No [ atomtypes ] in ITP; ensure types are defined in the "
+            "main .top"
+        )
+        logger.warning(
+            "Custom guest ITP %s has no [ atomtypes ] section; types must "
+            "be defined in the main .top.",
+            itp_path,
+        )
+
+    # 7. audit_name(guest_type). Lazy import per AGENTS.md.
+    from genice2.plugin import audit_name
+
+    if not audit_name(guest_type):
+        errors.append(
+            f"Invalid guest type name '{guest_type}'; "
+            f"allowed chars: A-Z a-z 0-9 _ -"
+        )
+
+    return CustomGuestValidation(
+        is_valid=len(errors) == 0,
+        errors=errors,
+        warnings=warnings,
+        gro_atom_count=len(positions),
+        itp_atom_count=itp_info.atom_count,
+        residue_name=resname or "",
+        comb_rule=comb,
+    )
