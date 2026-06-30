@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 39 COMPLETE — Ready for Phase 40
+**Current Focus:** Phase 40 IN PROGRESS — Plan 40-01 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 39 COMPLETE, ready for Phase 40
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01 complete)
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 39 of 48 (Extended Lattice Types) ✓ |
-| Plan | 5/5 complete |
-| Status | Phase complete, verified (4/4 must-haves) |
-| Last activity | 2026-06-30 — Phase 39 verified |
+| Phase | 40 of 48 (Custom Guest Bridge Core) |
+| Plan | 1/5 complete |
+| Status | In progress |
+| Last activity | 2026-06-30 — Completed 40-01-PLAN.md (ITP comb-rule parser + fixtures) |
 
 **Progress:** [██████░░░░] ~50%
 
@@ -91,6 +91,8 @@ Recent decisions affecting v4.7 work:
 - **[39-04]** Filled ices (single cage_type_map key) disable only large occupancy spinner; small remains enabled
 - **[39-04]** get_configuration unchanged — returns valid HydrateConfig with default ch4 even when guest controls disabled
 - **[39-05]** 157 parametrized structural validation tests + 6 triclinic blocking regression tests for all 10 HYDRATE_LATTICES entries
+- **[40-01]** parse_itp_defaults_comb_rule returns None when [ defaults ] absent (valid: main .top supplies comb-rule=2); reject only when non-None and != 2
+- **[40-01]** Malformed/non-integer comb-rule returns None (not raise) — parser is a pure extraction primitive; callers decide rejection
 
 ### Pending Todos
 
@@ -109,6 +111,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-30T07:41:48Z
-Stopped at: Completed 39-05-PLAN.md (Extended Lattice Type Tests)
+Last session: 2026-06-30T08:38:14Z
+Stopped at: Completed 40-01-PLAN.md (ITP comb-rule parser + test fixtures)
 Resume file: None
