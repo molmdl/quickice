@@ -26,6 +26,7 @@ No new dependencies: stdlib + numpy + existing quickice parsers + genice2
 import logging
 import sys
 import types
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
@@ -310,3 +311,84 @@ def validate_custom_guest_files(
         residue_name=resname or "",
         comb_rule=comb,
     )
+
+
+@contextmanager
+def custom_guest_module(guest_type: str, module: types.ModuleType):
+    """Context manager that registers a custom guest module in ``sys.modules``.
+
+    Registers ``module`` under ``genice2.molecules.<guest_type>`` so GenIce2's
+    ``safe_import('molecule', <guest_type>)`` finds it, then ALWAYS removes it
+    on exit (try/finally) — even if an exception propagates out of the block.
+    Call this on the main thread (thread-safe per v4.7 decision): register
+    before generation, cleanup after.
+
+    Args:
+        guest_type: Slugified plugin name (must match ``^[A-Za-z0-9-_]+$``).
+        module: The synthetic module built by
+            :func:`build_custom_guest_module`.
+
+    Yields:
+        The ``sys.modules`` key (``genice2.molecules.<guest_type>``).
+
+    Raises:
+        AssertionError: If the key is already present in ``sys.modules``
+            (stale state from a previous un-cleaned-up registration).
+
+    Example:
+        >>> mod = build_custom_guest_module('etoh.gro', 'etoh_cm', 'MOL')
+        >>> with custom_guest_module('etoh_cm', mod) as key:
+        ...     loaded = safe_import('molecule', 'etoh_cm')
+        ...     assert loaded is mod
+        >>> # key removed from sys.modules here
+    """
+    key = f"genice2.molecules.{guest_type}"
+    assert key not in sys.modules, f"{key} already registered (stale state?)"
+    sys.modules[key] = module
+    logger.debug("Registered custom guest module '%s' in sys.modules.", key)
+    try:
+        yield key
+    finally:
+        sys.modules.pop(key, None)
+        logger.debug("Cleaned up custom guest module '%s' from sys.modules.", key)
+
+
+def register_custom_guest(guest_type: str, module: types.ModuleType) -> str:
+    """Register a custom guest module in ``sys.modules`` (GUI async path).
+
+    For use with QThread-based generation: call this on the main thread BEFORE
+    ``HydrateWorker.start()`` so the module is visible when the worker thread
+    runs ``safe_import``. Pair with :func:`unregister_custom_guest` in the
+    QThread ``finished`` signal to guarantee cleanup.
+
+    Unlike :func:`custom_guest_module` (context manager), this does NOT assert
+    the key is absent — it unconditionally overwrites, which is intentional for
+    the GUI async flow where the register/unregister pair is the lifecycle
+    owner. Use the context manager for synchronous/CLI flows.
+
+    Args:
+        guest_type: Slugified plugin name (must match ``^[A-Za-z0-9-_]+$``).
+        module: The synthetic module built by :func:`build_custom_guest_module`.
+
+    Returns:
+        The ``sys.modules`` key (``genice2.molecules.<guest_type>``).
+    """
+    key = f"genice2.molecules.{guest_type}"
+    sys.modules[key] = module
+    logger.debug("Registered custom guest module '%s' (async pair).", key)
+    return key
+
+
+def unregister_custom_guest(guest_type: str) -> None:
+    """Remove a custom guest module from ``sys.modules`` (GUI async path).
+
+    Safe to call when the key is absent (uses ``pop(..., None)``). Call this in
+    the QThread ``finished`` signal to clean up after generation, preventing
+    stale module pollution that could shadow built-in guests on the next run.
+
+    Args:
+        guest_type: Slugified plugin name (must match ``^[A-Za-z0-9-_]+$``).
+    """
+    key = f"genice2.molecules.{guest_type}"
+    sys.modules.pop(key, None)
+    logger.debug("Unregistered custom guest module '%s' (async pair).", key)
