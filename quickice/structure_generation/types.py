@@ -435,16 +435,35 @@ class HydrateConfig:
     Attributes:
         lattice_type: Hydrate lattice type ('sI', 'sII', 'sH', 'c0te', 'c1te',
             'c2te', 'ice1hte', 'sTprime', '16', '17')
-        guest_type: Guest molecule type ('ch4', 'thf')
+        guest_type: Guest molecule type. For built-in types ('ch4', 'thf'),
+            metadata is auto-populated from GUEST_MOLECULES. For custom types
+            (any string not in GUEST_MOLECULES, Phase 40), explicit metadata
+            must be provided (guest_residue_name, guest_atom_labels,
+            guest_atom_count, guest_gro_path).
         cage_occupancy_small: Occupancy percentage for small cages (0-100)
         cage_occupancy_large: Occupancy percentage for large cages (0-100)
         supercell_x: Supercell repetition in X direction
         supercell_y: Supercell repetition in Y direction
         supercell_z: Supercell repetition in Z direction
-        guest_name: Display name of guest molecule (auto-populated from GUEST_MOLECULES for built-in types)
-        guest_atom_labels: Atom name sequence for one molecule (for metadata-driven identification)
-        guest_atom_count: Number of atoms per guest molecule (auto-populated from GUEST_MOLECULES for built-in types)
+        guest_name: Display name of guest molecule (auto-populated from
+            GUEST_MOLECULES for built-in types; defaults to guest_residue_name
+            for custom guests if not set explicitly)
+        guest_atom_labels: Atom name sequence for one molecule (for
+            metadata-driven identification; auto-populated from GUEST_MOLECULES
+            for built-in types, required for custom guests)
+        guest_atom_count: Number of atoms per guest molecule (auto-populated
+            from GUEST_MOLECULES for built-in types, required for custom guests)
         guest_itp_path: Path to guest ITP file (for custom guests, Phase 40)
+        guest_residue_name: GRO residue name for the guest (required for custom
+            guests; base name <=3 chars so the '_H' suffix yields <=5 chars
+            per the GRO fixed-width format limit). Empty for built-in guests.
+        guest_gro_path: Path to the custom guest .gro file for GenIce2 Molecule
+            module building (required for custom guests, Phase 40). Empty for
+            built-in guests.
+    
+    Properties:
+        is_custom_guest: True if guest_type is not in GUEST_MOLECULES (i.e., a
+            custom guest requiring explicit metadata). False for built-in guests.
     """
     lattice_type: str = "sI"
     guest_type: str = "ch4"
@@ -457,13 +476,23 @@ class HydrateConfig:
     guest_atom_labels: list[str] = field(default_factory=list)
     guest_atom_count: int = 0
     guest_itp_path: str = ""
+    guest_residue_name: str = ""
+    guest_gro_path: str = ""
     
     def __post_init__(self):
-        """Validate configuration parameters and auto-populate guest metadata."""
+        """Validate configuration parameters and auto-populate guest metadata.
+        
+        For built-in guest types (in GUEST_MOLECULES), metadata (guest_name,
+        guest_atom_labels, guest_atom_count) is auto-populated from the dict
+        when not explicitly set (backward-compatible behavior).
+        
+        For custom guest types (Phase 40, not in GUEST_MOLECULES), explicit
+        metadata is REQUIRED (no auto-populate per decision [38-01]):
+        guest_residue_name, guest_atom_labels, guest_atom_count, guest_gro_path.
+        guest_name defaults to guest_residue_name when not set explicitly.
+        """
         if self.lattice_type not in HYDRATE_LATTICES:
             raise ValueError(f"Unknown lattice type: {self.lattice_type}")
-        if self.guest_type not in GUEST_MOLECULES:
-            raise ValueError(f"Unknown guest type: {self.guest_type}")
         if not (0.0 <= self.cage_occupancy_small <= 100.0):
             raise ValueError(f"cage_occupancy_small must be 0-100, got {self.cage_occupancy_small}")
         if not (0.0 <= self.cage_occupancy_large <= 100.0):
@@ -471,20 +500,49 @@ class HydrateConfig:
         if self.supercell_x < 1 or self.supercell_y < 1 or self.supercell_z < 1:
             raise ValueError("Supercell dimensions must be >= 1")
         
-        # Auto-populate guest metadata for built-in types (only if not explicitly set)
-        guest_info = GUEST_MOLECULES[self.guest_type]
-        if not self.guest_name:
-            self.guest_name = guest_info["name"]
-        if not self.guest_atom_labels:
-            self.guest_atom_labels = list(guest_info["atom_labels"])
-        if not self.guest_atom_count:
-            self.guest_atom_count = guest_info["atoms"]
+        if self.guest_type not in GUEST_MOLECULES:
+            # Custom guest (Phase 40): require explicit metadata, do NOT auto-populate
+            if not self.guest_residue_name:
+                raise ValueError(
+                    f"Custom guest_type '{self.guest_type}' requires guest_residue_name "
+                    f"(the GRO residue name, <=3 chars base for _H suffix). "
+                    f"Set guest_residue_name explicitly."
+                )
+            if not self.guest_atom_labels:
+                raise ValueError(
+                    f"Custom guest_type '{self.guest_type}' requires guest_atom_labels "
+                    f"(atom name sequence for one molecule, for metadata-driven identification). "
+                    f"Set guest_atom_labels explicitly."
+                )
+            if not self.guest_atom_count:
+                raise ValueError(
+                    f"Custom guest_type '{self.guest_type}' requires guest_atom_count "
+                    f"(number of atoms per guest molecule). Set guest_atom_count explicitly."
+                )
+            if not self.guest_gro_path:
+                raise ValueError(
+                    f"Custom guest_type '{self.guest_type}' requires guest_gro_path "
+                    f"(path to the custom guest .gro file for GenIce2 Molecule module building). "
+                    f"Set guest_gro_path explicitly."
+                )
+            # Custom guest: guest_name defaults to guest_residue_name if not set
+            if not self.guest_name:
+                self.guest_name = self.guest_residue_name
+        else:
+            # Built-in guest: auto-populate metadata from GUEST_MOLECULES (existing behavior)
+            guest_info = GUEST_MOLECULES[self.guest_type]
+            if not self.guest_name:
+                self.guest_name = guest_info["name"]
+            if not self.guest_atom_labels:
+                self.guest_atom_labels = list(guest_info["atom_labels"])
+            if not self.guest_atom_count:
+                self.guest_atom_count = guest_info["atoms"]
     
     @classmethod
     def from_dict(cls, d: dict) -> "HydrateConfig":
         """Create HydrateConfig from dictionary (UI input).
         
-        New guest metadata fields are passed through if present,
+        Guest metadata fields are passed through if present,
         with defaults for backward compatibility.
         """
         return cls(
@@ -499,7 +557,14 @@ class HydrateConfig:
             guest_atom_labels=d.get("guest_atom_labels", []),
             guest_atom_count=d.get("guest_atom_count", 0),
             guest_itp_path=d.get("guest_itp_path", ""),
+            guest_residue_name=d.get("guest_residue_name", ""),
+            guest_gro_path=d.get("guest_gro_path", ""),
         )
+    
+    @property
+    def is_custom_guest(self) -> bool:
+        """True if guest_type is a custom guest (not in GUEST_MOLECULES)."""
+        return self.guest_type not in GUEST_MOLECULES
     
     def get_genice_lattice_name(self) -> str:
         """Get GenIce2 lattice name for this configuration."""
