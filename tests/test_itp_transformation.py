@@ -8,6 +8,8 @@ Validates that transform_guest_itp() correctly:
 5. Works with custom suffixes (_L for liquid solutes)
 """
 
+import re
+
 import pytest
 
 from quickice.output.gromacs_writer import (
@@ -132,11 +134,30 @@ class TestTransformGuestItpCH4:
                         break
                 break
 
-    def test_atoms_section_unchanged(self):
-        """[ atoms ] section residue names should NOT be modified."""
+    def test_atoms_section_resname_rewritten(self):
+        """[ atoms ] section resname column is rewritten to {guest}_H (Phase 40-02).
+
+        Previously (Phase 38-04) the [ atoms ] resname was deliberately left
+        unchanged — that rewrite was deferred to Phase 40.  Phase 40-02
+        implements the deferred rewrite, so each [ atoms ] data line now has
+        ``CH4_H`` in the resname column (field index 3) instead of bare ``CH4``.
+        """
         result = transform_guest_itp(UNTRANSFORMED_ITP, "CH4")
-        # The [ atoms ] section should still have "CH4" as residue name
-        assert "1      CH4    C" in result
+        m = re.search(r'\[\s*atoms\s*\](.*?)(?=\[\s*\w+\s*\]|$)', result,
+                      re.DOTALL | re.IGNORECASE)
+        assert m is not None, "[ atoms ] section not found in transformed output"
+        body = m.group(1)
+        data_lines = [
+            l for l in body.split('\n')
+            if l.strip() and not l.strip().startswith(';') and not l.strip().startswith('#')
+        ]
+        # UNTRANSFORMED_ITP has 5 atom data lines; all must carry CH4_H resname
+        assert len(data_lines) == 5, f"Expected 5 atom lines, got {len(data_lines)}"
+        for line in data_lines:
+            fields = line.split()
+            assert fields[3] == "CH4_H", (
+                f"Expected resname 'CH4_H' but got '{fields[3]}' in line: {line!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -257,12 +278,20 @@ class TestTransformGuestItpEdgeCases:
     """Edge case tests for transform_guest_itp."""
 
     def test_no_moleculetype_section(self):
-        """ITP with no [ moleculetype ] section returns atomtypes-commented content."""
+        """ITP with no [ moleculetype ] section: atomtypes commented, no moleculetype rename.
+
+        The [ atoms ] resname is still rewritten to {guest}_H — Step 3 applies
+        independently of moleculetype presence (Phase 40-02).  Previously this
+        test asserted ``CH4_H`` was absent; that held only when the [ atoms ]
+        rewrite was deferred (Phase 38-04).
+        """
         result = transform_guest_itp(ITP_NO_MOLECULETYPE, "CH4")
         # atomtypes should be commented out
         assert "; [ atomtypes ]" in result
-        # No CH4_H should appear (no moleculetype section to transform)
-        assert "CH4_H" not in result
+        # No [ moleculetype ] section exists, so Step 2 cannot rename anything
+        assert "[ moleculetype ]" not in result
+        # Step 3 still applies: [ atoms ] resname rewritten to CH4_H
+        assert "CH4_H" in result
 
     def test_no_atomtypes_section(self):
         """ITP with no [ atomtypes ] section still transforms moleculetype name."""

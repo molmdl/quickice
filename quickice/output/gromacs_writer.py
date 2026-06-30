@@ -5,6 +5,7 @@ from generated ice structure candidates using the TIP4P-ICE water model.
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -567,13 +568,84 @@ def comment_out_atomtypes_in_itp(itp_content: str) -> str:
     return '\n'.join(result_lines)
 
 
+def _rewrite_atoms_section_resname(content: str, new_name: str) -> str:
+    """Rewrite the resname column in the [ atoms ] section to ``new_name``.
+
+    GROMACS ``[ atoms ]`` section format::
+
+        [ atoms ]
+        ;  Index   type   residue  resname   atom         cgnr     charge       mass
+             1     hc         1      MOL     H              1    0.05772791    1.007941
+
+    The resname is the 4th column (0-based index 3) on each data line.  Columns
+    are whitespace-separated.
+
+    Comment lines (starting with ``;`` or ``#``) and blank lines are preserved
+    unchanged.  Only data lines with at least 4 whitespace-separated fields have
+    their resname column replaced.  Leading whitespace on each data line is
+    preserved; internal spacing is normalized to single spaces (GROMACS is
+    whitespace-flexible in ITP files).
+
+    This step is scoped to the ``[ atoms ]`` section only — it does not touch
+    ``[ moleculetype ]``, ``[ atomtypes ]``, ``[ bonds ]`` or any other section
+    (those are handled by Steps 1-2 or must remain untouched).
+
+    Args:
+        content: ITP content (after Steps 1-2 of ``transform_guest_itp``).
+        new_name: New residue name to write into the resname column
+            (e.g., ``"MOL_H"``).
+
+    Returns:
+        Content with the ``[ atoms ]`` resname column rewritten.  If no
+        ``[ atoms ]`` section is found, ``content`` is returned unchanged
+        (graceful no-op — some ITPs may lack an ``[ atoms ]`` section).
+    """
+    # Match the [ atoms ] header and capture the body up to the next
+    # [ section ] header or end of string.  re.IGNORECASE so "[ ATOMS ]" is
+    # also handled; re.DOTALL so '.' spans newlines.
+    match = re.search(
+        r'\[\s*atoms\s*\](.*?)(?=\[\s*\w+\s*\]|$)',
+        content,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        # No [ atoms ] section — graceful no-op
+        return content
+
+    body_start = match.start(1)
+    body_end = match.end(1)
+    body = match.group(1)
+
+    new_lines = []
+    for line in body.split('\n'):
+        stripped = line.strip()
+        # Preserve blank lines and comment lines unchanged
+        if not stripped or stripped.startswith(';') or stripped.startswith('#'):
+            new_lines.append(line)
+            continue
+        # Data line: replace resname (field index 3) with new_name
+        leading_ws = line[:len(line) - len(line.lstrip())]
+        fields = stripped.split()
+        if len(fields) >= 4:
+            fields[3] = new_name
+            new_lines.append(leading_ws + ' '.join(fields))
+        else:
+            # Not enough fields to contain a resname column — preserve as-is
+            new_lines.append(line)
+
+    new_body = '\n'.join(new_lines)
+    return content[:body_start] + new_body + content[body_end:]
+
+
 def transform_guest_itp(itp_content: str, guest_name: str, suffix: str = "_H") -> str:
     """Transform a guest molecule ITP file for hydrate export.
     
     Applies three transformations:
     1. Comments out [ atomtypes ] section (types defined in main .top)
     2. Appends suffix to moleculetype name (e.g., "CH4" → "CH4_H")
-    3. Rewrites residue name in [ moleculetype ] section to match
+    3. Rewrites the resname column in the [ atoms ] section to match the new
+       moleculetype name (e.g., "MOL" → "MOL_H"), so the ITP is internally
+       consistent.  Deferred from Phase 38-04.
     
     Args:
         itp_content: Original ITP file content as string
@@ -639,7 +711,17 @@ def transform_guest_itp(itp_content: str, guest_name: str, suffix: str = "_H") -
         
         result_lines.append(line)
     
-    return '\n'.join(result_lines)
+    content = '\n'.join(result_lines)
+    
+    # Step 3: Rewrite the resname column in the [ atoms ] section to new_name
+    # (the same "{guest_name}{suffix}" value used for the moleculetype rename).
+    # This makes a custom guest ITP internally consistent:
+    #   [ moleculetype ] etoh_custom_H  ...  [ atoms ] ... MOL_H ...
+    # Graceful no-op if no [ atoms ] section is present (deferred Phase 38-04
+    # item, completed in Phase 40-02).
+    content = _rewrite_atoms_section_resname(content, new_name)
+    
+    return content
 
 
 def get_guest_residue_name(guest_type: str) -> str:
