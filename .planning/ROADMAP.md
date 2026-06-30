@@ -73,7 +73,7 @@ Plans:
 Plans:
 - [x] 40-01-PLAN.md — ITP comb-rule parser + test fixtures (GUEST-07 foundation)
 - [x] 40-02-PLAN.md — [ atoms ] resname rewrite in transform_guest_itp (deferred 38-04)
-- [ ] 40-03-PLAN.md — HydrateConfig extension for custom guests (guest_residue_name, guest_gro_path, is_custom_guest)
+- [x] 40-03-PLAN.md — HydrateConfig extension for custom guests (guest_residue_name, guest_gro_path, is_custom_guest)
 - [ ] 40-04-PLAN.md — Custom guest bridge: build + validate + inject + cleanup (custom_guest_bridge.py)
 - [ ] 40-05-PLAN.md — Integrate bridge into hydrate generator + E2E test
 
@@ -215,7 +215,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 |-------|-----------|----------------|--------|-----------|
 | 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
 | 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
-| 40. Custom Guest Bridge Core | v4.7 | 2/5 | In progress | - |
+| 40. Custom Guest Bridge Core | v4.7 | 3/5 | In progress | - |
 | 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |
 | 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
 | 43. Depol Mode | v4.7 | 0/2 | Not started | - |

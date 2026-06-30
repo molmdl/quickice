@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 40 IN PROGRESS — Plans 40-01, 40-02 complete
+**Current Focus:** Phase 40 IN PROGRESS — Plans 40-01, 40-02, 40-03 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01, 40-02 complete)
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01, 40-02, 40-03 complete)
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 40 of 48 (Custom Guest Bridge Core) |
-| Plan | 2/5 complete |
+| Plan | 3/5 complete |
 | Status | In progress |
-| Last activity | 2026-06-30 — Completed 40-02-PLAN.md ([ atoms ] resname rewrite in transform_guest_itp) |
+| Last activity | 2026-06-30 — Completed 40-03-PLAN.md (HydrateConfig extension for custom guests) |
 
-**Progress:** [██████░░░░] ~52%
+**Progress:** [███░░░░░░░] ~29% (12/42 v4.7 plans complete)
 
 ---
 
@@ -96,6 +96,9 @@ Recent decisions affecting v4.7 work:
 - **[40-02]** transform_guest_itp Step 3 rewrites [ atoms ] resname (field index 3) to {guest_name}{suffix}; completes the deferred Phase 38-04 item so custom guest ITPs are internally consistent
 - **[40-02]** Step 3 applies independently of [ moleculetype ] section presence — resname is rewritten whenever an [ atoms ] section is found
 - **[40-02]** [ atoms ] comment/blank lines preserved verbatim; leading whitespace kept, internal spacing normalized to single spaces (GROMACS whitespace-flexible); graceful no-op when no [ atoms ] section
+- **[40-03]** HydrateConfig gains guest_residue_name + guest_gro_path fields (default ""); is_custom_guest property returns guest_type not in GUEST_MOLECULES
+- **[40-03]** Custom guests require ALL of guest_residue_name, guest_atom_labels, guest_atom_count, guest_gro_path (no auto-populate per [38-01]); built-in guests auto-populate unchanged (backward compat)
+- **[40-03]** guest_name defaults to guest_residue_name (not guest_type) for custom guests; new fields default empty so old callers/dicts still work
 
 ### Pending Todos
 
@@ -114,6 +117,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-30T08:56:47Z
-Stopped at: Completed 40-02-PLAN.md ([ atoms ] resname rewrite in transform_guest_itp)
+Last session: 2026-06-30T09:35:40Z
+Stopped at: Completed 40-03-PLAN.md (HydrateConfig extension for custom guests)
 Resume file: None
