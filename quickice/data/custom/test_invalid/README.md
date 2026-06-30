@@ -14,3 +14,4 @@ For valid examples, see parent directory: `quickice/data/custom/etoh.gro` and `e
 | `etoh_no_atomtypes.itp` | Missing `[ atomtypes ]` section | Test missing atomtypes warning |
 | `na_single.gro` | Single Na+ ion (charge +0.85) | Test non-neutral charge warning |
 | `na_single.itp` | Paired ITP for na_single.gro | Paired with na_single.gro |
+| `etoh_combrule1.itp` | ITP with [ defaults ] comb-rule=1 (should be rejected) | Test comb-rule=1 rejection (GUEST-07) |
