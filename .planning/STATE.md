@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 40 IN PROGRESS — Plans 40-01, 40-02, 40-03 complete
+**Current Focus:** Phase 40 IN PROGRESS — Plans 40-01, 40-02, 40-03, 40-04 complete
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01, 40-02, 40-03 complete)
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01, 40-02, 40-03, 40-04 complete)
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 40 of 48 (Custom Guest Bridge Core) |
-| Plan | 3/5 complete |
+| Plan | 4/5 complete |
 | Status | In progress |
-| Last activity | 2026-06-30 — Completed 40-03-PLAN.md (HydrateConfig extension for custom guests) |
+| Last activity | 2026-06-30 — Completed 40-04-PLAN.md (custom guest bridge: build/validate/inject/cleanup) |
 
-**Progress:** [███░░░░░░░] ~29% (12/42 v4.7 plans complete)
+**Progress:** [███░░░░░░░] ~31% (13/42 v4.7 plans complete)
 
 ---
 
@@ -99,6 +99,10 @@ Recent decisions affecting v4.7 work:
 - **[40-03]** HydrateConfig gains guest_residue_name + guest_gro_path fields (default ""); is_custom_guest property returns guest_type not in GUEST_MOLECULES
 - **[40-03]** Custom guests require ALL of guest_residue_name, guest_atom_labels, guest_atom_count, guest_gro_path (no auto-populate per [38-01]); built-in guests auto-populate unchanged (backward compat)
 - **[40-03]** guest_name defaults to guest_residue_name (not guest_type) for custom guests; new fields default empty so old callers/dicts still work
+- **[40-04]** build_custom_guest_module builds a synthetic genice2.molecules.<guest_type> ModuleType (centered sites_, labels_, name_); does NOT register in sys.modules (caller owns injection/cleanup)
+- **[40-04]** validate_custom_guest_files runs the full checklist (parseable, atom count, name<=3, comb-rule=2, audit_name) with exact messages; accepts absent [ defaults ] (comb_rule=None — main .top supplies comb-rule=2)
+- **[40-04]** custom_guest_module context manager + register/unregister pair provide thread-safe sys.modules injection with try/finally cleanup (main-thread registration per v4.7); [ atomtypes ] absence is a WARNING not an error
+- **[40-04]** Added IndexError to GRO/ITP parse catch tuple — not_a_gro.txt raises IndexError (truncated file); plan's (ValueError,OSError) was insufficient (Rule 1 auto-fix)
 
 ### Pending Todos
 
@@ -117,6 +121,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-06-30T09:35:40Z
-Stopped at: Completed 40-03-PLAN.md (HydrateConfig extension for custom guests)
+Last session: 2026-06-30T10:53:35Z
+Stopped at: Completed 40-04-PLAN.md (custom guest bridge: build/validate/inject/cleanup)
 Resume file: None
