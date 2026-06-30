@@ -68,13 +68,14 @@ Plans:
   3. QuickIce rejects ITP files with comb-rule=1 with a specific error message (must be Lorentz-Berthelot)
   4. Custom guest is registered in sys.modules on the main thread before HydrateWorker starts (thread-safe)
   5. sys.modules injection is cleaned up after generation completes (no stale module pollution)
-**Plans**: TBD
+**Plans:** 5 plans
 
 Plans:
-- [ ] 40-01: Build custom_guest_bridge.py (GRO→Molecule conversion, centering, Å→nm)
-- [ ] 40-02: Implement sys.modules injection and cleanup (main-thread registration)
-- [ ] 40-03: Custom guest GRO/ITP validation (parseable, name length, comb-rule)
-- [ ] 40-04: Integrate custom guest bridge into hydrate generator
+- [ ] 40-01-PLAN.md — ITP comb-rule parser + test fixtures (GUEST-07 foundation)
+- [ ] 40-02-PLAN.md — [ atoms ] resname rewrite in transform_guest_itp (deferred 38-04)
+- [ ] 40-03-PLAN.md — HydrateConfig extension for custom guests (guest_residue_name, guest_gro_path, is_custom_guest)
+- [ ] 40-04-PLAN.md — Custom guest bridge: build + validate + inject + cleanup (custom_guest_bridge.py)
+- [ ] 40-05-PLAN.md — Integrate bridge into hydrate generator + E2E test
 
 #### Phase 41: GROMACS Export for Custom Guests
 **Goal**: Custom guest hydrate structures export to valid GROMACS input files that pass grompp
@@ -214,7 +215,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 |-------|-----------|----------------|--------|-----------|
 | 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
 | 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
-| 40. Custom Guest Bridge Core | v4.7 | 0/4 | Not started | - |
+| 40. Custom Guest Bridge Core | v4.7 | 0/5 | Not started | - |
 | 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |
 | 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
 | 43. Depol Mode | v4.7 | 0/2 | Not started | - |
