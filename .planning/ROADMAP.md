@@ -52,11 +52,11 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 39-01-PLAN.md — Extend HYDRATE_LATTICES data model with 7 new entries + cage_type_map/is_triclinic/is_water_only
-- [ ] 39-02-PLAN.md — Rewrite generator cage routing with cage_type_map-driven parse_guest
-- [ ] 39-03-PLAN.md — Triclinic C0/C1 blocking for interface + CLI lattice type choices
-- [ ] 39-04-PLAN.md — GUI hydrate panel water-only guest toggling + info display
-- [ ] 39-05-PLAN.md — Unit tests for extended lattice types
+- [x] 39-01-PLAN.md — Extend HYDRATE_LATTICES data model with 7 new entries + cage_type_map/is_triclinic/is_water_only
+- [x] 39-02-PLAN.md — Rewrite generator cage routing with cage_type_map-driven parse_guest
+- [x] 39-03-PLAN.md — Triclinic C0/C1 blocking for interface + CLI lattice type choices
+- [x] 39-04-PLAN.md — GUI hydrate panel water-only guest toggling + info display
+- [x] 39-05-PLAN.md — Unit tests for extended lattice types
 
 #### Phase 40: Custom Guest Bridge Core
 **Goal**: Users can upload a custom guest molecule and have it placed in hydrate cage positions via GenIce2
@@ -213,7 +213,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
-| 39. Extended Lattice Types | v4.7 | 0/5 | Not started | - |
+| 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
 | 40. Custom Guest Bridge Core | v4.7 | 0/4 | Not started | - |
 | 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |
 | 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
