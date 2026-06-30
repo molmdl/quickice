@@ -31,15 +31,15 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### Extended Lattice Types
 
-- [ ] **LATTICE-01**: User can select filled ice C0 (c0te) as hydrate lattice type
-- [ ] **LATTICE-02**: User can select filled ice C1 (c1te) as hydrate lattice type
-- [ ] **LATTICE-03**: User can select filled ice C2 (c2te) as hydrate lattice type
-- [ ] **LATTICE-04**: User can select filled ice Ih (ice1hte) as hydrate lattice type
-- [ ] **LATTICE-05**: User can select sT' (sTprime) as hydrate lattice type (water-only, no guest support)
-- [ ] **LATTICE-06**: User can select Ice XVI (empty sII framework) as hydrate lattice type
-- [ ] **LATTICE-07**: User can select Ice XVII (empty C0 framework) as hydrate lattice type
-- [ ] **LATTICE-08**: Triclinic filled ices (C0, C1) are blocked for interface generation with clear error message (like Ice II)
-- [ ] **LATTICE-09**: Filled ice lattices use spot_guests code path for guest placement (not parse_guest)
+- [x] **LATTICE-01**: User can select filled ice C0 (c0te) as hydrate lattice type
+- [x] **LATTICE-02**: User can select filled ice C1 (c1te) as hydrate lattice type
+- [x] **LATTICE-03**: User can select filled ice C2 (c2te) as hydrate lattice type
+- [x] **LATTICE-04**: User can select filled ice Ih (ice1hte) as hydrate lattice type
+- [x] **LATTICE-05**: User can select sT' (sTprime) as hydrate lattice type (water-only, no guest support)
+- [x] **LATTICE-06**: User can select Ice XVI (empty sII framework) as hydrate lattice type
+- [x] **LATTICE-07**: User can select Ice XVII (empty C0 framework) as hydrate lattice type
+- [x] **LATTICE-08**: Triclinic filled ices (C0, C1) are blocked for interface generation with clear error message (like Ice II)
+- [x] **LATTICE-09**: Filled ice lattices place guests via parse_guest code path (spot_guests crashes with IndexError — corrected from original requirement)
 
 ### Mixed Cage Occupancy
 
@@ -139,15 +139,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-02 | Phase 38 | Complete |
 | PIPE-03 | Phase 38 | Complete |
 | PIPE-04 | Phase 38 | Complete |
-| LATTICE-01 | Phase 39 | Pending |
-| LATTICE-02 | Phase 39 | Pending |
-| LATTICE-03 | Phase 39 | Pending |
-| LATTICE-04 | Phase 39 | Pending |
-| LATTICE-05 | Phase 39 | Pending |
-| LATTICE-06 | Phase 39 | Pending |
-| LATTICE-07 | Phase 39 | Pending |
-| LATTICE-08 | Phase 39 | Pending |
-| LATTICE-09 | Phase 39 | Pending |
+| LATTICE-01 | Phase 39 | Complete |
+| LATTICE-02 | Phase 39 | Complete |
+| LATTICE-03 | Phase 39 | Complete |
+| LATTICE-04 | Phase 39 | Complete |
+| LATTICE-05 | Phase 39 | Complete |
+| LATTICE-06 | Phase 39 | Complete |
+| LATTICE-07 | Phase 39 | Complete |
+| LATTICE-08 | Phase 39 | Complete |
+| LATTICE-09 | Phase 39 | Complete |
 | GUEST-01 | Phase 40 | Pending |
 | GUEST-02 | Phase 40 | Pending |
 | GUEST-03 | Phase 40 | Pending |

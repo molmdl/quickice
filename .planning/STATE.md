@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 39 — Extended Lattice Types
+**Current Focus:** Phase 39 COMPLETE — Ready for Phase 40
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 39 in progress
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 39 COMPLETE, ready for Phase 40
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 39 of 48 (Extended Lattice Types) |
+| Phase | 39 of 48 (Extended Lattice Types) ✓ |
 | Plan | 5/5 complete |
-| Status | Phase complete |
-| Last activity | 2026-06-30 — Completed 39-05-PLAN.md |
+| Status | Phase complete, verified (4/4 must-haves) |
+| Last activity | 2026-06-30 — Phase 39 verified |
 
 **Progress:** [██████░░░░] ~50%
 
