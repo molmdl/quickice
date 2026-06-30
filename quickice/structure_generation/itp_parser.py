@@ -158,3 +158,50 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         charges=charges,
         has_atomtypes_section=has_atomtypes
     )
+
+
+def parse_itp_defaults_comb_rule(content: str) -> int | None:
+    """Return the comb-rule from a GROMACS ITP/TOP ``[ defaults ]`` section.
+
+    The GROMACS ``[ defaults ]`` section has the form::
+
+        [ defaults ]
+        ; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ
+             1        2         yes       0.5     0.8333
+
+    The comb-rule is the 2nd field (index 1) on the first non-comment,
+    non-blank data line after the ``[ defaults ]`` header.
+
+    Args:
+        content: Full text of an ITP or TOP file.
+
+    Returns:
+        The comb-rule integer (typically 1 or 2) when a ``[ defaults ]``
+        section is present and the comb-rule parses as an int, otherwise
+        ``None``.
+
+    Validation rule:
+        Reject comb-rule != 2 ONLY when this returns a non-None value;
+        accept when None (the main ``.top`` supplies comb-rule=2). This
+        means an ITP with no ``[ defaults ]`` section (e.g. ``etoh.itp``)
+        is valid by design — the comb-rule comes from QuickIce's generated
+        main ``.top`` (always comb-rule=2, Lorentz-Berthelot / AMBER-GAFF2).
+    """
+    match = re.search(
+        r'\[\s*defaults\s*\](.*?)(?=\[\s*\w+\s*\]|$)',
+        content,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return None
+    for line in match.group(1).splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(';') or stripped.startswith('#'):
+            continue
+        fields = stripped.split()
+        if len(fields) >= 2:
+            try:
+                return int(fields[1])
+            except (ValueError, IndexError):
+                return None
+    return None
