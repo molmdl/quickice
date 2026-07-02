@@ -598,7 +598,15 @@ class HydrateStructureGenerator:
             guest_atom_labels = config.guest_atom_labels
             guest_atom_count = config.guest_atom_count
             guest_type = config.guest_type
-            guest_res_name = guest_type.upper()
+            # Prefer explicit guest_residue_name for custom guests (the actual
+            # GRO residue name written by GenIce2 as Molecule.name_); fall back
+            # to guest_type.upper() for built-ins (ch4 -> "CH4"). For a custom
+            # guest with guest_type="etoh_e2e" and guest_residue_name="MOL",
+            # GenIce2 outputs residue "MOL", so guest_res_name must be "MOL"
+            # (not "ETOH_E2E") for residue grouping to work. Built-in guests
+            # have guest_residue_name="" (default) -> "" or guest_type.upper()
+            # -> guest_type.upper() (same as before, backward compatible).
+            guest_res_name = getattr(config, "guest_residue_name", "") or guest_type.upper()
             guest_signature = guest_atom_labels[0] if guest_atom_labels else None
             
             while i < len(atom_names):
