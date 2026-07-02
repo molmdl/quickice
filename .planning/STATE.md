@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 40 IN PROGRESS — Plans 40-01, 40-02, 40-03, 40-04 complete
+**Current Focus:** Phase 40 COMPLETE (5/5 plans) — Ready for Phase 41 (GROMACS Export for Custom Guests)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 IN PROGRESS (40-01, 40-02, 40-03, 40-04 complete)
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 COMPLETE (40-01..40-05 done). Ready for Phase 41.
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 40 of 48 (Custom Guest Bridge Core) |
-| Plan | 4/5 complete |
-| Status | In progress |
-| Last activity | 2026-06-30 — Completed 40-04-PLAN.md (custom guest bridge: build/validate/inject/cleanup) |
+| Phase | 40 of 48 (Custom Guest Bridge Core) — COMPLETE |
+| Plan | 5/5 complete |
+| Status | Phase 40 complete, ready for Phase 41 |
+| Last activity | 2026-07-02 — Completed 40-05-PLAN.md (hydrate generator custom guest integration) |
 
-**Progress:** [███░░░░░░░] ~31% (13/42 v4.7 plans complete)
+**Progress:** [███░░░░░░░] ~33% (14/42 v4.7 plans complete)
 
 ---
 
@@ -103,6 +103,10 @@ Recent decisions affecting v4.7 work:
 - **[40-04]** validate_custom_guest_files runs the full checklist (parseable, atom count, name<=3, comb-rule=2, audit_name) with exact messages; accepts absent [ defaults ] (comb_rule=None — main .top supplies comb-rule=2)
 - **[40-04]** custom_guest_module context manager + register/unregister pair provide thread-safe sys.modules injection with try/finally cleanup (main-thread registration per v4.7); [ atomtypes ] absence is a WARNING not an error
 - **[40-04]** Added IndexError to GRO/ITP parse catch tuple — not_a_gro.txt raises IndexError (truncated file); plan's (ValueError,OSError) was insufficient (Rule 1 auto-fix)
+- **[40-05]** generate() branches on config.is_custom_guest: custom path lazy-imports build_custom_guest_module/custom_guest_module, builds the synthetic Molecule module on the MAIN thread, wraps _run_via_api in the custom_guest_module context manager (try/finally sys.modules.pop); built-in path unchanged (no bridge import, no sys.modules injection)
+- **[40-05]** _build_molecule_index uses guest_residue_name (fallback guest_type.upper()) for residue grouping — backward compatible (built-ins have guest_residue_name="" -> guest_type.upper()); preferred path for custom guests; atom-label matching is fragile fallback
+- **[40-05]** _generate_report branches on config.is_custom_guest to use config.guest_name + guest_residue_name instead of GUEST_MOLECULES[guest_type]['name'] (avoids KeyError); mol_type for custom guests is config.guest_type (e.g. "etoh_e2e"), NOT guest_residue_name ("MOL")
+- **[40-05]** Existing except Exception in _run_via_api left as-is per plan (pre-existing GUI-adjacent code; minimize regression risk)
 
 ### Pending Todos
 
@@ -115,12 +119,12 @@ Recent decisions affecting v4.7 work:
 
 - ~~GRO `:<5s` overflow (NOT truncation) — must validate at every write entry point~~ **[RESOLVED in 38-03]** validate_gro_residue_name() now called at all 10 GRO write entry points
 - ~~`_build_molecule_index` is single-point bottleneck — must refactor before any new guest/water model~~ **[RESOLVED in 38-02]** metadata-driven identification replaces hardcoded patterns
-- Thread safety gap: `sys.modules` injection must happen outside existing `_genice_lock` scope
+- ~~Thread safety gap: `sys.modules` injection must happen outside existing `_genice_lock` scope~~ **[RESOLVED in 40-05]** generate() registers the custom guest module in sys.modules between _ensure_genice_import() and _run_via_api (outside _genice_lock); custom_guest_module context manager wraps _run_via_api with try/finally cleanup
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-06-30T10:53:35Z
-Stopped at: Completed 40-04-PLAN.md (custom guest bridge: build/validate/inject/cleanup)
+Last session: 2026-07-02T07:31:28Z
+Stopped at: Completed 40-05-PLAN.md (hydrate generator custom guest integration)
 Resume file: None
