@@ -227,8 +227,16 @@ class TestHydrateInvalidConfig:
             HydrateConfig(lattice_type="invalid", guest_type="ch4")
 
     def test_hydrate_invalid_guest_raises_error(self):
-        """Invalid guest type should raise ValueError."""
-        with pytest.raises(ValueError, match="Unknown guest type"):
+        """Invalid guest type should raise ValueError.
+
+        Since 40-03, a guest_type not in GUEST_MOLECULES is treated as a
+        custom guest that requires explicit metadata (guest_residue_name,
+        guest_atom_labels, guest_atom_count, guest_gro_path). Constructing
+        HydrateConfig with a bare 'invalid_guest' (no required metadata)
+        therefore raises a ValueError naming the first missing field
+        (guest_residue_name) rather than the legacy 'Unknown guest type'.
+        """
+        with pytest.raises(ValueError, match="Custom guest_type 'invalid_guest' requires guest_residue_name"):
             HydrateConfig(lattice_type="sI", guest_type="invalid_guest")
 
     def test_hydrate_negative_occupancy_raises_error(self):

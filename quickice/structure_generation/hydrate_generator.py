@@ -101,24 +101,68 @@ class HydrateStructureGenerator:
     
     def generate(self, config: HydrateConfig) -> HydrateStructure:
         """Generate hydrate structure with given configuration.
-        
+
+        For custom guests (``config.is_custom_guest`` is True), builds a
+        synthetic GenIce2 ``Molecule`` plugin module on the main thread,
+        registers it in ``sys.modules`` for the duration of the
+        ``_run_via_api`` call (so GenIce2's ``safe_import('molecule',
+        <guest_type>)`` finds it), and cleans up afterward via the
+        ``custom_guest_module`` context manager (try/finally). Built-in
+        guests (ch4, thf) skip the injection and use the existing path.
+
         Args:
             config: HydrateConfig with lattice, guest, occupancy, supercell
-            
+
         Returns:
             HydrateStructure with positions, cell, and molecule_index
-            
+
         Raises:
             ImportError: If GenIce2 is not available
             ValueError: If configuration is invalid
         """
         self._ensure_genice_import()
-        
+
         # Get GenIce2 lattice name from config
         lattice_name = config.get_genice_lattice_name()
-        
-        # Generate structure using GenIce2 Python API (not CLI)
-        positions, cell, atom_names, residue_names, residue_seq_nums = self._run_via_api(lattice_name, config)
+
+        # Generate structure using GenIce2 Python API (not CLI).
+        # For custom guests, the synthetic Molecule module must be registered
+        # in sys.modules BEFORE ice.generate_ice(...) runs (Stage7 calls
+        # safe_import('molecule', guest_type) which returns the cached entry).
+        # _build_molecule_index and HydrateStructure construction happen AFTER
+        # the context manager exits — they don't need the module, only
+        # generate_ice does. Cleanup always runs (try/finally) to prevent
+        # stale module pollution (success criteria #5).
+        if config.is_custom_guest:
+            # Lazy import per AGENTS.md (GenIce2/bridge stay lazy; no
+            # top-level import of custom_guest_bridge). This branch only runs
+            # for custom guests, so built-in generation is unaffected.
+            from quickice.structure_generation.custom_guest_bridge import (
+                build_custom_guest_module,
+                custom_guest_module,
+            )
+
+            # Build the synthetic Molecule module on the MAIN thread (the
+            # caller's thread). Thread-safe per v4.7 decision: register
+            # before any HydrateWorker exists, cleanup after it joins.
+            # _run_via_api already passes guest_type through to parse_guest
+            # via the else branch (guest_name = guest_type), so the only
+            # requirement is that sys.modules["genice2.molecules.<guest_type>"]
+            # is populated before ice.generate_ice(...) runs — which the
+            # context manager guarantees.
+            module = build_custom_guest_module(
+                config.guest_gro_path,
+                config.guest_type,
+                config.guest_residue_name,
+            )
+            with custom_guest_module(config.guest_type, module):
+                positions, cell, atom_names, residue_names, residue_seq_nums = (
+                    self._run_via_api(lattice_name, config)
+                )
+        else:
+            positions, cell, atom_names, residue_names, residue_seq_nums = (
+                self._run_via_api(lattice_name, config)
+            )
         
         # Build molecule index (positions from genice2 are already complete molecules)
         # NOTE: Do NOT wrap positions. GenIce2 outputs complete molecules, and wrapping
@@ -713,6 +757,16 @@ class HydrateStructureGenerator:
 
         if is_water_only:
             lines.append(f"  Water-only lattice — no guest placement")
+        elif config.is_custom_guest:
+            # Custom guests are not in GUEST_MOLECULES; use guest_name
+            # (which defaults to guest_residue_name per 40-03) and include
+            # the residue name for traceability. Avoids KeyError on
+            # GUEST_MOLECULES[config.guest_type].
+            lines.extend([
+                f"  Guest: {config.guest_name} (custom, residue={config.guest_residue_name})",
+                f"  Small cage occupancy: {config.cage_occupancy_small}%",
+                f"  Large cage occupancy: {config.cage_occupancy_large}%",
+            ])
         else:
             lines.extend([
                 f"  Guest: {GUEST_MOLECULES[config.guest_type]['name']}",
