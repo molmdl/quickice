@@ -25,8 +25,9 @@ from quickice.output.gromacs_writer import (
 )
 
 
-# Real fixture (cwd-independent absolute path).
-_ETOH_ITP = Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.itp"
+# Real fixture (cwd-independent absolute path).  This file lives in
+# tests/test_output/, so three .parent levels reach the project root.
+_ETOH_ITP = Path(__file__).parent.parent.parent / "quickice" / "data" / "custom" / "etoh.itp"
 
 
 def _write_temp_itp(path: Path, body: str) -> Path:

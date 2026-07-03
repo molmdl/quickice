@@ -236,6 +236,42 @@ def _lj_params_match(
             math.isclose(eps1, eps2, rel_tol=rtol))
 
 
+def _merge_custom_atomtypes(f, itp_path, written, label):
+    """Parse [ atomtypes ] from a custom molecule ITP and merge into the main .top.
+
+    For each parsed atomtype: conflict-check against *written* (raises ValueError
+    on LJ-param mismatch), then write the line only if the name is new (dedup) and
+    record its params in *written* for future conflict checks. No-op when the ITP
+    has no [ atomtypes ] section.
+
+    Args:
+        f: Open file handle for the .top [ atomtypes ] block.
+        itp_path: Path to the custom molecule .itp file.
+        written: Mutable dict name -> params tuple, pre-seeded with water/ion/GAFF2
+                 atomtypes. Updated in place.
+        label: Comment label for the block (e.g. "custom guest etoh_e2e atom types").
+    """
+    custom_atomtypes = parse_itp_atomtypes(itp_path)
+    if not custom_atomtypes:
+        return
+    f.write(f"; {label}\n")
+    for atomtype in custom_atomtypes:
+        if len(atomtype) >= 8:
+            at_name = atomtype[0]
+            _check_custom_atomtype_conflict(at_name, atomtype, written)
+            if at_name not in written:
+                f.write(_format_custom_atomtype_line(atomtype))
+                try:
+                    written[at_name] = (
+                        atomtype[1], int(atomtype[2]),
+                        float(atomtype[3]), float(atomtype[4]),
+                        atomtype[5], float(atomtype[6]),
+                        float(atomtype[7]),
+                    )
+                except (ValueError, IndexError):
+                    pass  # Best-effort recording
+
+
 MOLECULE_TO_GROMACS: dict[str, dict[str, str]] = {
     "ice":   {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
     "water": {"res_name": "SOL", "itp_file": "tip4p-ice.itp", "mol_name": "SOL"},
