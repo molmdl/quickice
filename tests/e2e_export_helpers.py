@@ -453,6 +453,38 @@ def _stage_itp_files(top_path: str, workspace: Path) -> StagingResult:
     return StagingResult(staged=staged, missing=missing)
 
 
+def _stage_custom_guest_itp(workspace: Path, itp_path: Path, residue_name: str) -> str:
+    """Stage a custom guest ITP to workspace with the FULL _H transformation.
+
+    Unlike _stage_itp_files (which only comments out [ atomtypes ]), this applies
+    transform_guest_itp(content, residue_name, '_H') — so the staged ITP has
+    [ moleculetype ] name '{residue_name}_H' and [ atoms ] resname '{residue_name}_H',
+    matching the .top [ molecules ] entry.  Required for custom-guest grompp tests.
+
+    Call AFTER _stage_itp_files (which stages tip4p-ice.itp and other built-ins);
+    this overwrites the under-transformed custom ITP copy with the renamed one.
+
+    Args:
+        workspace: Directory to write the transformed ITP into.
+        itp_path: Source custom guest .itp path.
+        residue_name: Base residue name (<=3 chars, e.g. 'MOL').
+
+    Returns:
+        The staged filename (itp_path.name).
+
+    Raises:
+        ValueError: If '{residue_name}_H' exceeds 5 chars (from transform_guest_itp).
+        FileNotFoundError: If itp_path does not exist.
+    """
+    from quickice.output.gromacs_writer import transform_guest_itp
+    src = Path(itp_path)
+    content = src.read_text()
+    transformed = transform_guest_itp(content, residue_name, suffix="_H")
+    dest = workspace / src.name
+    dest.write_text(transformed)
+    return dest.name
+
+
 def assert_itp_completeness(top_path: str, workspace: Path) -> None:
     """Assert every #include'd ITP file (except ion.itp) exists in workspace.
 
