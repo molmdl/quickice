@@ -86,13 +86,20 @@ Plans:
   2. Custom guest atomtypes are commented out in the bundled .itp and merged into main .top [atomtypes] with deduplication
   3. GRO export writes correct ≤5-char residue name for custom guest (with _H suffix)
   4. GROMACS grompp validates successfully on exported custom guest hydrate structures
-**Plans**: TBD
+**Plans**: 11 plans
 
 Plans:
-- [ ] 41-01: P3 fix — use mol_type from molecule_index instead of re-detecting from atom names
-- [ ] 41-02: Custom guest atomtypes merging with deduplication
-- [ ] 41-03: GRO residue name enforcement with _H suffix for custom guests
-- [ ] 41-04: grompp validation for custom guest exports
+- [ ] 41-01-PLAN.md — Extract `_merge_custom_atomtypes` shared helper (TDD, EXPORT-03 primitive)
+- [ ] 41-02-PLAN.md — `write_multi_molecule_gro_file` custom guest residue name `_H` (GUI GRO, EXPORT-04)
+- [ ] 41-03-PLAN.md — `write_multi_molecule_top_file` custom residue name + atomtypes merge (GUI TOP, EXPORT-01/03)
+- [ ] 41-04-PLAN.md — `write_interface_gro_file` P3 fix — metadata-driven custom guest (CLI GRO, EXPORT-04/05)
+- [ ] 41-05-PLAN.md — `write_interface_top_file` P3 fix — merge + #include + [molecules] (CLI TOP, EXPORT-01/03/05)
+- [ ] 41-06-PLAN.md — GUI `export_hydrate` is_custom_guest branch (guest_itp_path, guest_residue_name, custom_guest_info) + content e2e test (EXPORT-01/02/04)
+- [ ] 41-07-PLAN.md — CLI `copy_custom_guest_itp` + custom routing in itp_helpers (EXPORT-02, CLI ITP provisioning)
+- [ ] 41-08-PLAN.md — CLI `_run_export_step` threads `custom_guest_info` + content e2e test (EXPORT-01/04/05)
+- [ ] 41-09-PLAN.md — `_stage_custom_guest_itp` transformed-ITP staging test helper (EXPORT-06 enablement)
+- [ ] 41-10-PLAN.md — GUI grompp e2e validation (EXPORT-06, GUI path)
+- [ ] 41-11-PLAN.md — CLI grompp e2e validation (EXPORT-06, CLI path)
 
 #### Phase 42: Mixed Cage Occupancy
 **Goal**: Users can assign different guest types to different cage types with independent occupancy percentages
