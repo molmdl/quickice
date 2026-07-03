@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 40 COMPLETE (5/5 plans) — Ready for Phase 41 (GROMACS Export for Custom Guests)
+**Current Focus:** Phase 41 IN PROGRESS (1/11 plans) — GROMACS Export for Custom Guests (41-09 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 40 COMPLETE (40-01..40-05 done). Ready for Phase 41.
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09 done; 41-01..41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 40 of 48 (Custom Guest Bridge Core) — COMPLETE |
-| Plan | 5/5 complete |
-| Status | Phase 40 complete, ready for Phase 41 |
-| Last activity | 2026-07-02 — Completed 40-05-PLAN.md (hydrate generator custom guest integration) |
+| Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
+| Plan | 1/11 complete (41-09 done) |
+| Status | Phase 41 in progress; 41-09 (_stage_custom_guest_itp test helper) complete |
+| Last activity | 2026-07-03 — Completed 41-09-PLAN.md (custom guest ITP staging helper) |
 
-**Progress:** [███░░░░░░░] ~33% (14/42 v4.7 plans complete)
+**Progress:** [████░░░░░░] ~36% (15/42 v4.7 plans complete)
 
 ---
 
@@ -107,6 +107,9 @@ Recent decisions affecting v4.7 work:
 - **[40-05]** _build_molecule_index uses guest_residue_name (fallback guest_type.upper()) for residue grouping — backward compatible (built-ins have guest_residue_name="" -> guest_type.upper()); preferred path for custom guests; atom-label matching is fragile fallback
 - **[40-05]** _generate_report branches on config.is_custom_guest to use config.guest_name + guest_residue_name instead of GUEST_MOLECULES[guest_type]['name'] (avoids KeyError); mol_type for custom guests is config.guest_type (e.g. "etoh_e2e"), NOT guest_residue_name ("MOL")
 - **[40-05]** Existing except Exception in _run_via_api left as-is per plan (pre-existing GUI-adjacent code; minimize regression risk)
+- **[41-09]** _stage_custom_guest_itp(workspace, itp_path, residue_name) test helper applies the FULL transform_guest_itp (comment atomtypes + _H moleculetype rename + [atoms] resname rewrite), unlike _stage_itp_files (comment-only); staged ITP is internally consistent with .top [molecules] '{name}_H'
+- **[41-09]** Call ordering for custom-guest grompp tests: _stage_itp_files first (stages tip4p-ice.itp + comments custom etoh.itp atomtypes but keeps moleculetype 'etoh'), then _stage_custom_guest_itp overwrites etoh.itp with moleculetype 'MOL_H'; purely additive (built-in staging unchanged, 18/18 existing grompp tests unaffected)
+- **[41-09]** Tests use the ETOH_ITP absolute path constant (e2e_export_helpers) instead of cwd-relative paths for cwd-independence; identical fixture, no behavioral change
 
 ### Pending Todos
 
@@ -125,6 +128,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-02T07:31:28Z
-Stopped at: Completed 40-05-PLAN.md (hydrate generator custom guest integration)
+Last session: 2026-07-03T13:38:03Z
+Stopped at: Completed 41-09-PLAN.md (custom guest ITP staging helper)
 Resume file: None
