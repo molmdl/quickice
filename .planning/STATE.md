@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (1/11 plans) — GROMACS Export for Custom Guests (41-09 done)
+**Current Focus:** Phase 41 IN PROGRESS (2/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09 done; 41-01..41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01 done; 41-02..41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 1/11 complete (41-09 done) |
-| Status | Phase 41 in progress; 41-09 (_stage_custom_guest_itp test helper) complete |
-| Last activity | 2026-07-03 — Completed 41-09-PLAN.md (custom guest ITP staging helper) |
+| Plan | 2/11 complete (41-09, 41-01 done) |
+| Status | Phase 41 in progress; 41-01 (_merge_custom_atomtypes helper) complete |
+| Last activity | 2026-07-03 — Completed 41-01-PLAN.md (_merge_custom_atomtypes tested helper) |
 
-**Progress:** [████░░░░░░] ~36% (15/42 v4.7 plans complete)
+**Progress:** [████░░░░░░] ~38% (16/42 v4.7 plans complete)
 
 ---
 
@@ -110,6 +110,9 @@ Recent decisions affecting v4.7 work:
 - **[41-09]** _stage_custom_guest_itp(workspace, itp_path, residue_name) test helper applies the FULL transform_guest_itp (comment atomtypes + _H moleculetype rename + [atoms] resname rewrite), unlike _stage_itp_files (comment-only); staged ITP is internally consistent with .top [molecules] '{name}_H'
 - **[41-09]** Call ordering for custom-guest grompp tests: _stage_itp_files first (stages tip4p-ice.itp + comments custom etoh.itp atomtypes but keeps moleculetype 'etoh'), then _stage_custom_guest_itp overwrites etoh.itp with moleculetype 'MOL_H'; purely additive (built-in staging unchanged, 18/18 existing grompp tests unaffected)
 - **[41-09]** Tests use the ETOH_ITP absolute path constant (e2e_export_helpers) instead of cwd-relative paths for cwd-independence; identical fixture, no behavioral change
+- **[41-01]** _merge_custom_atomtypes(f, itp_path, written, label) added as a shared tested merge+dedup primitive (parse → conflict-check → write-new-only → record); existing inline merge code in write_custom_molecule_top_file / write_ion_top_file is intentionally NOT refactored (zero regression risk; consumer phases EXPORT-03 / write_multi_molecule_top_file / write_interface_top_file will adopt it later)
+- **[41-01]** No-op returns BEFORE writing the '; label' comment header — header is written only when parse_itp_atomtypes returns non-empty (so a no-section ITP yields a truly empty file)
+- **[41-01]** Tests pre-seed *written* from GAFF2_ATOMTYPES (importable source of truth) rather than hardcoded values, guaranteeing exact LJ-param match with etoh.itp hc/c3/h1 for deterministic dedup
 
 ### Pending Todos
 
@@ -128,6 +131,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-03T13:38:03Z
-Stopped at: Completed 41-09-PLAN.md (custom guest ITP staging helper)
+Last session: 2026-07-03T13:47:29Z
+Stopped at: Completed 41-01-PLAN.md (_merge_custom_atomtypes tested helper)
 Resume file: None
