@@ -1,23 +1,23 @@
 Actual cost is lower with the synthetic coding plan
-Large dataset detected (1759 sessions). This may take a while...
+Large dataset detected (1785 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          1,759 │
-│Messages                                         52,704 │
-│Days                                                 95 │
+│Sessions                                          1,785 │
+│Messages                                         53,580 │
+│Days                                                100 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                     $2002.06 │
-│Avg Cost/Day                                     $21.07 │
+│Total Cost                                     $2085.30 │
+│Avg Cost/Day                                     $20.85 │
 │Avg Tokens/Session                                 1.6M │
-│Median Tokens/Session                              1.0M │
-│Input                                            348.3M │
-│Output                                            19.8M │
-│Cache Read                                      2491.2M │
+│Median Tokens/Session                              1.1M │
+│Input                                            351.7M │
+│Output                                            20.3M │
+│Cache Read                                      2555.4M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -25,12 +25,12 @@ Large dataset detected (1759 sessions). This may take a while...
 │                      MODEL USAGE                       │
 ├────────────────────────────────────────────────────────┤
 │ synthetic/hf:zai-org/GLM-5.1                           │
-│  Messages                                       15,308 │
-│  Input Tokens                                    49.6M │
-│  Output Tokens                                    6.4M │
-│  Cache Read                                    1004.6M │
+│  Messages                                       15,821 │
+│  Input Tokens                                    51.0M │
+│  Output Tokens                                    6.6M │
+│  Cache Read                                    1036.8M │
 │  Cache Write                                         0 │
-│  Cost                                       $1073.4932 │
+│  Cost                                       $1107.6439 │
 ├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5                                  │
 │  Messages                                       12,689 │
@@ -72,6 +72,14 @@ Large dataset detected (1759 sessions). This may take a while...
 │  Cache Write                                         0 │
 │  Cost                                         $28.2611 │
 ├────────────────────────────────────────────────────────┤
+│ synthetic/hf:zai-org/GLM-5.2                           │
+│  Messages                                          331 │
+│  Input Tokens                                     2.0M │
+│  Output Tokens                                  316.0K │
+│  Cache Read                                      32.1M │
+│  Cache Write                                         0 │
+│  Cost                                         $49.0893 │
+├────────────────────────────────────────────────────────┤
 │ opencode/minimax-m2.5-free                             │
 │  Messages                                          221 │
 │  Input Tokens                                   639.5K │
@@ -109,15 +117,15 @@ Large dataset detected (1759 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 28940 (41.6%)  │
-│ read               █████████████        20035 (28.8%)  │
-│ edit               █████                7975 (11.5%)   │
-│ grep               ██                   3925 ( 5.6%)   │
-│ glob               █                    2787 ( 4.0%)   │
-│ write              █                    2300 ( 3.3%)   │
-│ task               █                    1472 ( 2.1%)   │
+│ bash               ████████████████████ 29557 (41.8%)  │
+│ read               █████████████        20302 (28.7%)  │
+│ edit               █████                8115 (11.5%)   │
+│ grep               ██                   3974 ( 5.6%)   │
+│ glob               █                    2805 ( 4.0%)   │
+│ write              █                    2335 ( 3.3%)   │
+│ task               █                    1496 ( 2.1%)   │
 │ webfetch           █                    989 ( 1.4%)    │
-│ question           █                    767 ( 1.1%)    │
+│ question           █                    768 ( 1.1%)    │
 │ todowrite          █                    224 ( 0.3%)    │
 │ invalid            █                    114 ( 0.2%)    │
 │ websearch          █                     15 ( 0.0%)    │
