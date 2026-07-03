@@ -198,6 +198,46 @@ def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
         return None
 
 
+def copy_custom_guest_itp(output_dir: Path, itp_path: Path, residue_name: str) -> str | None:
+    """Copy a CUSTOM guest ITP to output_dir, transformed with the _H suffix.
+
+    Applies ``transform_guest_itp(content, residue_name, '_H')`` — comments out
+    ``[ atomtypes ]``, renames ``[ moleculetype ]`` to ``'{residue_name}_H'``
+    (<=5 chars), and rewrites the ``[ atoms ]`` resname column.  Used by the
+    CLI hydrate export for custom guests where ``_copy_hydrate_guest_itp``
+    would raise ``FileNotFoundError`` (no bundled ``{guest_type}_hydrate.itp``
+    exists for custom guests).
+
+    Args:
+        output_dir: Destination directory.
+        itp_path: Path to the custom guest ``.itp`` (``config.guest_itp_path``).
+        residue_name: Base GRO residue name (<=3 chars, e.g. ``'MOL'``).
+
+    Returns:
+        Destination filename on success, ``None`` on failure (logs the error —
+        does NOT silently swallow ``FileNotFoundError`` for a misconfigured path;
+        only returns ``None`` for genuine I/O/parse failures).
+    """
+    from quickice.output.gromacs_writer import transform_guest_itp
+
+    src = Path(itp_path)
+    try:
+        if not src.exists():
+            logger.error(f"Custom guest ITP not found: {src}")
+            return None
+        content = src.read_text()
+        transformed = transform_guest_itp(content, residue_name, suffix="_H")
+        dest = output_dir / src.name
+        dest.write_text(transformed)
+        logger.info(f"Custom guest ITP copied+transformed: {dest}")
+        return dest.name
+    except (OSError, ValueError) as e:
+        # ValueError: transform residue name >5 chars (config bug); OSError: I/O.
+        # Do NOT broadly swallow — surface to the caller via the log + None.
+        logger.error(f"Failed to copy/transform custom guest ITP ({src}): {e}")
+        return None
+
+
 def _resolve_guest_type_for_hydrate_step(structure: Any, args_ref: Any = None) -> str | None:
     """Resolve guest type for hydrate step with multiple fallback strategies.
 
@@ -275,14 +315,22 @@ def copy_itp_files_for_structure(
         pass
 
     elif step_name == "hydrate":
-        # Hydrate step: tip4p-ice.itp + hydrate guest ITP
-        guest_type = _resolve_guest_type_for_hydrate_step(structure, args_ref)
-        if guest_type is not None:
-            itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
+        # Custom guest: use the explicit guest_itp_path + guest_residue_name
+        config = getattr(structure, "config", None)
+        if config is not None and getattr(config, "is_custom_guest", False):
+            itp_name = copy_custom_guest_itp(
+                output_dir, Path(config.guest_itp_path), config.guest_residue_name
+            )
             if itp_name:
                 copied.append(itp_name)
         else:
-            logger.warning("Hydrate step but no guest type detected — skipping guest ITP")
+            guest_type = _resolve_guest_type_for_hydrate_step(structure, args_ref)
+            if guest_type is not None:
+                itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
+                if itp_name:
+                    copied.append(itp_name)
+            else:
+                logger.warning("Hydrate step but no guest type detected — skipping guest ITP")
 
     elif step_name == "interface":
         # Interface step: tip4p-ice.itp + guest ITP if guests present
