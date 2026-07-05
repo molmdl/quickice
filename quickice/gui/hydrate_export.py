@@ -140,16 +140,39 @@ class HydrateGROMACSExporter:
             # Get TIP4P-ICE itp path for water
             tip4p_itp_path = get_tip4p_itp_path()
             
-            # Get guest itp path (hydrate-specific)
-            guest_itp_path = _get_hydrate_guest_itp_path(config.guest_type)
-            
-            # Create registry for unique moleculetype naming
+            # Create registry for unique moleculetype naming.
+            # Built-in guests register into it (CH4 -> "CH4_H", THF -> "THF_H");
+            # custom guests leave it empty (writers use custom_guest_info instead).
             registry = MoleculetypeRegistry()
             
-            # Register guest molecule as hydrate guest
-            # This ensures CH4 gets registered as "CH4_H", THF as "THF_H"
-            guest_upper = config.guest_type.upper()
-            registry.register_hydrate_guest(guest_upper)
+            # Branch on custom vs built-in guest.
+            # Custom guests use config.guest_itp_path + config.guest_residue_name
+            # (so "MOL_H" = 5 chars passes validate_gro_residue_name and the
+            # ITP transform does not ValueError on a long guest_type like
+            # "etoh_e2e" -> "ETOH_E2E_H" = 8 chars). Built-in guests keep the
+            # _get_hydrate_guest_itp_path + guest_type.upper() convention.
+            if config.is_custom_guest:
+                guest_itp_path = Path(config.guest_itp_path)
+                if not guest_itp_path.exists():
+                    raise FileNotFoundError(
+                        f"Custom guest ITP not found: {guest_itp_path}"
+                    )
+                # <=3 chars base -> "MOL_H" (5) passes GRO fixed-width limit
+                guest_name_for_transform = config.guest_residue_name
+                residue_name_h = f"{config.guest_residue_name}_H"
+                custom_guest_info = {
+                    "mol_type": config.guest_type,
+                    "residue_name": residue_name_h,
+                    "itp_path": guest_itp_path,
+                }
+                itp_files = {config.guest_type: guest_itp_path.name}
+                # registry intentionally left empty for custom guests
+            else:
+                guest_itp_path = _get_hydrate_guest_itp_path(config.guest_type)
+                registry.register_hydrate_guest(config.guest_type.upper())
+                guest_name_for_transform = config.guest_type.upper()
+                custom_guest_info = None
+                itp_files = {config.guest_type: guest_itp_path.name}
             
             # Write .gro file
             write_multi_molecule_gro_file(
@@ -160,11 +183,8 @@ class HydrateGROMACSExporter:
                 f"Hydrate structure ({lattice} + {guest}) exported by QuickIce",
                 atom_names=structure.atom_names,
                 registry=registry,
-             )
-
-            # Build itp_files mapping for .top file
-            # Maps internal guest type to itp filename (not full path - use relative path in #include)
-            itp_files = {config.guest_type: guest_itp_path.name}
+                custom_guest_info=custom_guest_info,
+            )
             
             # Write .top file with #include for guest .itp
             write_multi_molecule_top_file(
@@ -173,6 +193,7 @@ class HydrateGROMACSExporter:
                 f"Hydrate ({lattice} + {guest})",
                 itp_files=itp_files,
                 registry=registry,
+                custom_guest_info=custom_guest_info,
             )
             
             # Copy TIP4P-ICE .itp file to export directory
@@ -180,9 +201,14 @@ class HydrateGROMACSExporter:
             shutil.copy(tip4p_itp_path, water_itp_path)
             
             # Copy guest .itp file to export directory with ITP transformation
-            # (_H suffix, atomtypes comment-out; no-op for pre-transformed built-in ITPs)
+            # (_H suffix + atomtypes comment-out + [atoms] resname rewrite).
+            # Built-in guest ITPs are already pre-transformed so this is a no-op
+            # for them; for custom guests it produces the MOL_H-renamed ITP that
+            # matches the .gro/.top residue names.
             guest_itp_content = guest_itp_path.read_text()
-            transformed_content = transform_guest_itp(guest_itp_content, guest_upper, suffix="_H")
+            transformed_content = transform_guest_itp(
+                guest_itp_content, guest_name_for_transform, suffix="_H"
+            )
             guest_dest_path = path.with_name(guest_itp_path.name)
             guest_dest_path.write_text(transformed_content)
             
