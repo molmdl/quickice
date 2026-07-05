@@ -22,12 +22,12 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### GROMACS Export for Custom Guests
 
-- [ ] **EXPORT-01**: Custom guest appears in GROMACS .top with correct _H suffix moleculetype name
-- [ ] **EXPORT-02**: Custom guest atomtypes are commented out in bundled .itp (moved to main .top [atomtypes] section)
-- [ ] **EXPORT-03**: Custom guest ITP atomtypes are merged into main .top with deduplication (no duplicate atomtype entries)
-- [ ] **EXPORT-04**: GRO export writes correct residue name for custom guest (≤5 chars with _H suffix)
-- [ ] **EXPORT-05**: GROMACS export uses mol_type identity from pipeline (not re-detection from atom names) — P3 fix
-- [ ] **EXPORT-06**: GROMACS grompp validates successfully on exported custom guest hydrate structures
+- [x] **EXPORT-01**: Custom guest appears in GROMACS .top with correct _H suffix moleculetype name
+- [x] **EXPORT-02**: Custom guest atomtypes are commented out in bundled .itp (moved to main .top [atomtypes] section)
+- [x] **EXPORT-03**: Custom guest ITP atomtypes are merged into main .top with deduplication (no duplicate atomtype entries)
+- [x] **EXPORT-04**: GRO export writes correct residue name for custom guest (≤5 chars with _H suffix)
+- [x] **EXPORT-05**: GROMACS export uses mol_type identity from pipeline (not re-detection from atom names) — P3 fix
+- [x] **EXPORT-06**: GROMACS grompp validates successfully on exported custom guest hydrate structures
 
 ### Extended Lattice Types
 
@@ -158,12 +158,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUEST-08 | Phase 40 | Pending |
 | GUEST-09 | Phase 40 | Pending |
 | GUEST-10 | Phase 40 | Pending |
-| EXPORT-01 | Phase 41 | Pending |
-| EXPORT-02 | Phase 41 | Pending |
-| EXPORT-03 | Phase 41 | Pending |
-| EXPORT-04 | Phase 41 | Pending |
-| EXPORT-05 | Phase 41 | Pending |
-| EXPORT-06 | Phase 41 | Pending |
+| EXPORT-01 | Phase 41 | Complete |
+| EXPORT-02 | Phase 41 | Complete |
+| EXPORT-03 | Phase 41 | Complete |
+| EXPORT-04 | Phase 41 | Complete |
+| EXPORT-05 | Phase 41 | Complete |
+| EXPORT-06 | Phase 41 | Complete |
 | MIXED-01 | Phase 42 | Pending |
 | MIXED-02 | Phase 42 | Pending |
 | MIXED-03 | Phase 42 | Pending |

@@ -89,17 +89,17 @@ Plans:
 **Plans**: 11 plans
 
 Plans:
-- [ ] 41-01-PLAN.md — Extract `_merge_custom_atomtypes` shared helper (TDD, EXPORT-03 primitive)
-- [ ] 41-02-PLAN.md — `write_multi_molecule_gro_file` custom guest residue name `_H` (GUI GRO, EXPORT-04)
-- [ ] 41-03-PLAN.md — `write_multi_molecule_top_file` custom residue name + atomtypes merge (GUI TOP, EXPORT-01/03)
-- [ ] 41-04-PLAN.md — `write_interface_gro_file` P3 fix — metadata-driven custom guest (CLI GRO, EXPORT-04/05)
-- [ ] 41-05-PLAN.md — `write_interface_top_file` P3 fix — merge + #include + [molecules] (CLI TOP, EXPORT-01/03/05)
-- [ ] 41-06-PLAN.md — GUI `export_hydrate` is_custom_guest branch (guest_itp_path, guest_residue_name, custom_guest_info) + content e2e test (EXPORT-01/02/04)
-- [ ] 41-07-PLAN.md — CLI `copy_custom_guest_itp` + custom routing in itp_helpers (EXPORT-02, CLI ITP provisioning)
-- [ ] 41-08-PLAN.md — CLI `_run_export_step` threads `custom_guest_info` + content e2e test (EXPORT-01/04/05)
-- [ ] 41-09-PLAN.md — `_stage_custom_guest_itp` transformed-ITP staging test helper (EXPORT-06 enablement)
-- [ ] 41-10-PLAN.md — GUI grompp e2e validation (EXPORT-06, GUI path)
-- [ ] 41-11-PLAN.md — CLI grompp e2e validation (EXPORT-06, CLI path)
+- [x] 41-01-PLAN.md — Extract `_merge_custom_atomtypes` shared helper (TDD, EXPORT-03 primitive)
+- [x] 41-02-PLAN.md — `write_multi_molecule_gro_file` custom guest residue name `_H` (GUI GRO, EXPORT-04)
+- [x] 41-03-PLAN.md — `write_multi_molecule_top_file` custom residue name + atomtypes merge (GUI TOP, EXPORT-01/03)
+- [x] 41-04-PLAN.md — `write_interface_gro_file` P3 fix — metadata-driven custom guest (CLI GRO, EXPORT-04/05)
+- [x] 41-05-PLAN.md — `write_interface_top_file` P3 fix — merge + #include + [molecules] (CLI TOP, EXPORT-01/03/05)
+- [x] 41-06-PLAN.md — GUI `export_hydrate` is_custom_guest branch (guest_itp_path, guest_residue_name, custom_guest_info) + content e2e test (EXPORT-01/02/04)
+- [x] 41-07-PLAN.md — CLI `copy_custom_guest_itp` + custom routing in itp_helpers (EXPORT-02, CLI ITP provisioning)
+- [x] 41-08-PLAN.md — CLI `_run_export_step` threads `custom_guest_info` + content e2e test (EXPORT-01/04/05)
+- [x] 41-09-PLAN.md — `_stage_custom_guest_itp` transformed-ITP staging test helper (EXPORT-06 enablement)
+- [x] 41-10-PLAN.md — GUI grompp e2e validation (EXPORT-06, GUI path)
+- [x] 41-11-PLAN.md — CLI grompp e2e validation (EXPORT-06, CLI path)
 
 #### Phase 42: Mixed Cage Occupancy
 **Goal**: Users can assign different guest types to different cage types with independent occupancy percentages
@@ -223,7 +223,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 38. Internal Pipeline Refactor | v4.7 | 4/4 | ✓ Complete | 2026-06-29 |
 | 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
 | 40. Custom Guest Bridge Core | v4.7 | 5/5 | ✓ Complete | 2026-07-02 |
-| 41. GROMACS Export for Custom Guests | v4.7 | 0/4 | Not started | - |
+| 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
 | 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
 | 43. Depol Mode | v4.7 | 0/2 | Not started | - |
 | 44. GUI Integration | v4.7 | 0/4 | Not started | - |

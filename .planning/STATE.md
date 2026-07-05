@@ -164,6 +164,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T06:42Z
-Stopped at: Completed 41-08-PLAN.md (CLI custom_guest_info threading — final plan of phase 41; phase 41 now COMPLETE 11/11)
+Last session: 2026-07-05T07:00Z
+Stopped at: Phase 41 VERIFIED (passed, 4/4 must-haves). Ready for Phase 42 (Mixed Cage Occupancy).
 Resume file: None
