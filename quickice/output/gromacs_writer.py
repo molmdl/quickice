@@ -1040,7 +1040,11 @@ def compute_mw_position(o_pos: np.ndarray, h1_pos: np.ndarray, h2_pos: np.ndarra
     return o_pos + TIP4P_ICE_ALPHA * (h1_pos - o_pos) + TIP4P_ICE_ALPHA * (h2_pos - o_pos)
 
 
-def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
+def write_interface_gro_file(
+    iface: InterfaceStructure,
+    filepath: str,
+    custom_guest_info: dict | None = None,
+) -> None:
     """Write interface structure to GROMACS .gro format.
     
     Ice molecules (3-atom: O, H, H) are normalized to 4-atom TIP4P-ICE format
@@ -1056,6 +1060,19 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
     Args:
         iface: InterfaceStructure object with combined ice + water + guests positions
         filepath: Output file path for .gro file
+        custom_guest_info: Opt-in dict for metadata-driven custom guest writing
+            (P3 / EXPORT-05). When provided, the guest residue name is taken from
+            ``custom_guest_info['residue_name']`` (e.g. 'MOL_H') instead of being
+            detected via ``detect_guest_type_from_atoms`` (which returns ``None``
+            for unknown guests and falls through to 'UNK'). Guest atoms are chunked
+            by the matching ``molecule_index`` entry's ``count`` instead of the
+            ``count_guest_atoms`` heuristic (which miscounts non-ch4/thf guests like
+            ethanol as 5 atoms). Dict shape: ``{'mol_type': str, 'residue_name': str,
+            'itp_path': Path}`` — ``itp_path`` is unused by the GRO writer (consumed
+            by the TOP writers) but kept for a single consistent API across plans
+            41-02..41-05. When ``None`` (default), the built-in path
+            (``detect_guest_type_from_atoms`` + ``count_guest_atoms`` + ch4/thf
+            reordering) is used byte-identically to before this param was added.
     
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
@@ -1210,56 +1227,78 @@ def write_interface_gro_file(iface: InterfaceStructure, filepath: str) -> None:
         
             if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
                 guest_atom_names = iface.atom_names[guest_start:]
-            
-                # Determine guest type by analyzing all atom names
-                # GenIce2 outputs atoms in different order than .itp:
-                #   CH4: H, H, H, H, C (hydrogen first)
-                #   THF: O, C, C, C, C, H, H, H, H, H, H, C, H (oxygen first in some versions)
-                # Need to detect based on atom composition, not just first atom
-            
-                if guest_atom_names:
-                    # Detect guest type using the centralized function
-                    guest_type = detect_guest_type_from_atoms(guest_atom_names)
+                if custom_guest_info is not None:
+                    # ---- P3 / EXPORT-05: metadata-driven custom guest (no detect_guest_type_from_atoms,
+                    # no count_guest_atoms heuristic — those misfire for custom guests like ethanol) ----
+                    guest_res_name = custom_guest_info["residue_name"]
+                    validate_gro_residue_name(guest_res_name, context="Custom guest GRO residue name")
+                    guest_entry = next((m for m in iface.molecule_index
+                                        if m.mol_type == custom_guest_info["mol_type"]), None)
+                    atoms_per_mol = (guest_entry.count if guest_entry is not None
+                                     else iface.guest_atom_count // max(iface.guest_nmolecules, 1))
+                    for mol_idx in range(iface.guest_nmolecules):
+                        mol_start = mol_idx * atoms_per_mol
+                        mol_end = mol_start + atoms_per_mol
+                        mol_atom_names = guest_atom_names[mol_start:mol_end]
+                        mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
+                        res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
+                        for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                            atom_num += 1
+                            atom_num_wrapped = atom_num % 100000
+                            lines.append(f"{res_num:5d}{guest_res_name:<5s}"
+                                         f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                         f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
                 else:
-                    guest_type = None
-            
-                # Get residue name from hydrate itp file (interface guests are hydrate cage guests)
-                if guest_type:
-                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
-                else:
-                    guest_res_name = "UNK"
-                
-                validate_gro_residue_name(guest_res_name, context="Interface guest residue name")
-            
-                # Group atoms by molecule and write
-                mol_start = 0
-                for mol_idx in range(iface.guest_nmolecules):
-                    guest_atoms = count_guest_atoms(guest_atom_names, mol_start)
-                    mol_end = mol_start + guest_atoms
-                
-                    # Get this molecule's atom names and positions
-                    mol_atom_names = guest_atom_names[mol_start:mol_end]
-                    mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
-                
-                    # Reorder to match .itp canonical order (C first for ch4, O first for thf)
-                    reorder_mapping = None
-                    if guest_type == "ch4" or guest_type == "thf":
-                        mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
-                        # Also reorder positions to match the reordered names
-                        if reorder_mapping is not None:
-                            mol_positions = [mol_positions[i] for i in reorder_mapping]
-                
-                    # Wrap residue number (guests come after all SOL molecules)
-                    res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
-                
-                    for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num:5d}{guest_res_name:<5s}"
-                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
-                
-                    mol_start = mol_end
+                    # ---- existing path: built-in hydrate / real interface structures (UNCHANGED) ----
+                    # Determine guest type by analyzing all atom names
+                    # GenIce2 outputs atoms in different order than .itp:
+                    #   CH4: H, H, H, H, C (hydrogen first)
+                    #   THF: O, C, C, C, C, H, H, H, H, H, H, C, H (oxygen first in some versions)
+                    # Need to detect based on atom composition, not just first atom
+
+                    if guest_atom_names:
+                        # Detect guest type using the centralized function
+                        guest_type = detect_guest_type_from_atoms(guest_atom_names)
+                    else:
+                        guest_type = None
+
+                    # Get residue name from hydrate itp file (interface guests are hydrate cage guests)
+                    if guest_type:
+                        guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    else:
+                        guest_res_name = "UNK"
+
+                    validate_gro_residue_name(guest_res_name, context="Interface guest residue name")
+
+                    # Group atoms by molecule and write
+                    mol_start = 0
+                    for mol_idx in range(iface.guest_nmolecules):
+                        guest_atoms = count_guest_atoms(guest_atom_names, mol_start)
+                        mol_end = mol_start + guest_atoms
+
+                        # Get this molecule's atom names and positions
+                        mol_atom_names = guest_atom_names[mol_start:mol_end]
+                        mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
+
+                        # Reorder to match .itp canonical order (C first for ch4, O first for thf)
+                        reorder_mapping = None
+                        if guest_type == "ch4" or guest_type == "thf":
+                            mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                            # Also reorder positions to match the reordered names
+                            if reorder_mapping is not None:
+                                mol_positions = [mol_positions[i] for i in reorder_mapping]
+
+                        # Wrap residue number (guests come after all SOL molecules)
+                        res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
+
+                        for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
+                            atom_num += 1
+                            atom_num_wrapped = atom_num % 100000
+                            lines.append(f"{res_num:5d}{guest_res_name:<5s}"
+                                        f"{atom_name:>5s}{atom_num_wrapped:5d}"
+                                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+
+                        mol_start = mol_end
 
             f.writelines(lines)
         
