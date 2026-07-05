@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (4/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02 done)
+**Current Focus:** Phase 41 IN PROGRESS (5/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02 done; 41-03..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03 done; 41-04..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 4/11 complete (41-09, 41-01, 41-07, 41-02 done) |
-| Status | Phase 41 in progress; 41-02 (custom_guest_info param on write_multi_molecule_gro_file) complete |
-| Last activity | 2026-07-05 — Completed 41-02-PLAN.md (custom guest GRO residue name) |
+| Plan | 5/11 complete (41-09, 41-01, 41-07, 41-02, 41-03 done) |
+| Status | Phase 41 in progress; 41-03 (custom_guest_info + atomtypes merge on write_multi_molecule_top_file) complete |
+| Last activity | 2026-07-05 — Completed 41-03-PLAN.md (custom guest TOP molecules + atomtypes merge) |
 
-**Progress:** [████░░░░░░] ~43% (18/42 v4.7 plans complete)
+**Progress:** [█████░░░░░] ~45% (19/42 v4.7 plans complete)
 
 ---
 
@@ -119,6 +119,9 @@ Recent decisions affecting v4.7 work:
 - **[41-02]** write_multi_molecule_gro_file gains custom_guest_info: dict | None = None as the LAST keyword param (after registry); dict shape {mol_type, residue_name, itp_path} — itp_path unused by GRO writer (consumed by TOP writers 41-03/41-04/41-05 for atomtypes merge) but kept for a single consistent API
 - **[41-02]** Custom-guest branch inserted INSIDE the existing 'if res_name is None:' chain (custom_guest_info -> elif built-in ch4/thf/co2/h2 -> else UNK) so the registry path still wins when present and the built-in guest path still wins for known guest mol_types; validate_gro_residue_name still enforced unconditionally ('MOL_H' = 5 chars passes)
 - **[41-02]** quickice/output/gromacs_writer.py matches .gitignore 'output/' pattern but is already tracked — plain `git add` refuses with "paths are ignored"; use `git add -f` to stage (pre-existing repo gitignore interaction, not introduced by this plan; affects 41-03..41-05 edits to the same file)
+- **[41-03]** write_multi_molecule_top_file gains custom_guest_info: dict | None = None as the LAST keyword param (after registry); dict shape {mol_type, residue_name, itp_path} — first writer-side consumer of _merge_custom_atomtypes (41-01)
+- **[41-03]** [molecules] custom-guest branch inserted INSIDE the existing 'if res_name is None:' chain (custom_guest_info -> elif built-in ch4/thf/co2/h2 -> else UNK); [atomtypes] merge placed AFTER built-in GAFF2 blocks and BEFORE the #include block (GROMACS ordering invariant: all [atomtypes] precede molecule definitions)
+- **[41-03]** #include for the custom .itp produced by the EXISTING itp_files mechanism (unchanged) — plan does NOT add a second #include; custom_guest_info.get('itp_path') guard makes the merge a no-op when itp_path is falsy
 
 ### Pending Todos
 
@@ -137,6 +140,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T05:30Z
-Stopped at: Completed 41-02-PLAN.md (custom_guest_info param on write_multi_molecule_gro_file)
+Last session: 2026-07-05T05:36Z
+Stopped at: Completed 41-03-PLAN.md (custom guest TOP molecules + atomtypes merge)
 Resume file: None
