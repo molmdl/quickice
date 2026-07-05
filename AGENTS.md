@@ -2,8 +2,8 @@
 
 ## Environment
 
-- **Conda only.** Never `sudo`, `apt`, `pip install` system-wide, or modify anything outside user-space. All deps live in the `quickice` conda env. Check env before calling python
-- To add a dependency: edit `environment.yml`, then ask user to run `conda env update`. Do NOT auto-install.
+- **Conda only.** Never `sudo`, `apt`, `pip install` system-wide, or modify anything outside user-space. All deps live in the `quickice` conda env. If a function failed to import due to 'no module', check env before calling python
+- To add a dependency: seek user approval, then edit `environment.yml`, then ask user to run `conda env update`. Do NOT auto-install.
 - `PYTHONPATH` must include project root (handled by `setup.sh`).
 
 ## Run Commands
