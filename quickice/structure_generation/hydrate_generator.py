@@ -628,26 +628,35 @@ class HydrateStructureGenerator:
         
         # ── Metadata-driven path ──────────────────────────────────────
         if config is not None:
+            # Build residue_name -> mol_type map from ALL cage assignments
+            # (multi-guest). Built-ins: residue == guest_type.upper()
+            # (ch4 -> "CH4"). Custom: residue == guest_residue_name (the
+            # Molecule.name_ GenIce2 writes, e.g. "MOL").
+            resname_to_moltype: dict[str, str] = {}
+            # Keep the single-guest atom-label fallback path working: track
+            # the PRIMARY (first) assignment's labels/count/guest_type for the
+            # atom-signature fallback (backward compat for configs with a
+            # single guest). For multi-guest the residue-grouping path is
+            # authoritative (GenIce2 writes per-guest residue names).
             guest_atom_labels = config.guest_atom_labels
             guest_atom_count = config.guest_atom_count
-            guest_type = config.guest_type
-            # Prefer explicit guest_residue_name for custom guests (the actual
-            # GRO residue name written by GenIce2 as Molecule.name_); fall back
-            # to guest_type.upper() for built-ins (ch4 -> "CH4"). For a custom
-            # guest with guest_type="etoh_e2e" and guest_residue_name="MOL",
-            # GenIce2 outputs residue "MOL", so guest_res_name must be "MOL"
-            # (not "ETOH_E2E") for residue grouping to work. Built-in guests
-            # have guest_residue_name="" (default) -> "" or guest_type.upper()
-            # -> guest_type.upper() (same as before, backward compatible).
-            guest_res_name = getattr(config, "guest_residue_name", "") or guest_type.upper()
+            guest_type = config.guest_type  # primary (first assignment) for fallback
             guest_signature = guest_atom_labels[0] if guest_atom_labels else None
+            for _cage_key, _assignment in config.cage_guest_assignments.items():
+                if _assignment.guest_type in GUEST_MOLECULES:
+                    _res_name = _assignment.guest_type.upper()  # ch4 -> "CH4"
+                else:
+                    _res_name = _assignment.guest_residue_name or _assignment.guest_type.upper()
+                resname_to_moltype[_res_name] = _assignment.guest_type
             
             while i < len(atom_names):
                 atom = atom_names[i]
                 residue = residue_names[i] if i < len(residue_names) else ""
                 
-                # 1. Check guest by residue grouping (preferred for GenIce2 output)
-                if residue == guest_res_name and residue_seq_nums is not None:
+                # 1. Check guest by residue grouping (preferred for GenIce2 output).
+                # Multi-guest: look up the residue name in resname_to_moltype
+                # (built from ALL cage assignments) to get the per-type mol_type.
+                if residue in resname_to_moltype and residue_seq_nums is not None:
                     guest_seq = residue_seq_nums[i]
                     guest_start = i
                     guest_count = 0
@@ -655,7 +664,8 @@ class HydrateStructureGenerator:
                     while j < len(residue_seq_nums) and residue_seq_nums[j] == guest_seq:
                         guest_count += 1
                         j += 1
-                    molecule_index.append(MoleculeIndex(guest_start, guest_count, guest_type))
+                    mol_type = resname_to_moltype[residue]
+                    molecule_index.append(MoleculeIndex(guest_start, guest_count, mol_type))
                     i = j
                     continue
                 
