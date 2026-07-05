@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 42 IN PROGRESS (1/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map bug fix prerequisite). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 42 IN PROGRESS (2/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 42 of 48 (Mixed Cage Occupancy) — IN PROGRESS |
-| Plan | 1/8 complete (42-00 done; 42-01..42-07 pending) |
-| Status | Phase 42 in progress. 42-00 (sH cage_type_map bug fix prerequisite) complete: large id 16→20, medium key 12_1 added, silent-zero large-cage placement fixed + regression-guarded. Ready for 42-01 (CageGuestAssignment data model). |
-| Last activity | 2026-07-05 — Completed 42-00-PLAN.md (sH cage_type_map fix) |
+| Plan | 2/8 complete (42-00 done, 42-01 done; 42-02..42-07 pending) |
+| Status | Phase 42 in progress. 42-01 (CageGuestAssignment data model) complete: central Phase 42 data model in place — CageGuestAssignment + HydrateConfig.cage_guest_assignments + __post_init__ legacy shim + per-assignment built-in auto-populate + Pitfall 6 duplicate-residue rejection + GuestDescriptor + HydrateStructure.guest_descriptors. Ready for 42-02 (hydrate_generator). |
+| Last activity | 2026-07-05 — Completed 42-01-PLAN.md (CageGuestAssignment + cage_guest_assignments data model) |
 
-**Progress:** [█████░░░░░] ~54% (26/48 v4.7 plans complete across phases 38-47; Phase 42: 1/8)
+**Progress:** [██████░░░░] ~56% (27/48 v4.7 plans complete across phases 38-47; Phase 42: 2/8)
 
 ---
 
@@ -149,6 +149,12 @@ Recent decisions affecting v4.7 work:
 - **[42-00]** sH cage_type_map corrected: large id 16→20 (the "16" was an sII id nonexistent in sH — parse_guest silently placed 0 large guests); medium key 12_1 added (was missing — sH medium cages were unreachable). Latent Phase 39 oversight. sH cages dict (small/medium/large) intentionally NOT touched (HydrateLatticeInfo.from_lattice_type already iterates it correctly)
 - **[42-00]** valid_keys structural test relaxed to {small, large, medium, guest} so sH medium and filled-ice guest aliases are permitted; dedicated test_sh_cage_type_map_values asserts the exact corrected sH map
 - **[42-00]** Regression test uses empirically-verified GenIce2 counts (2 large / 6 small / 8 total for sH 1×1×1) NOT the plan's research estimates (10/30/40) — research assumed 1 crystallographic unit cell, but GenIce2's sH cell = 2 unit cells (68 waters → 6 small + 4 medium + 2 large). Downstream 42-01+ tests must use empirical counts, not single-cell estimates
+- **[42-01]** CageGuestAssignment dataclass (guest_type, occupancy, guest_residue_name, guest_gro_path, guest_itp_path, guest_atom_labels, guest_atom_count) + is_custom_guest property added before HydrateConfig; HydrateConfig.cage_guest_assignments: dict[str, CageGuestAssignment] field added
+- **[42-01]** __post_init__ legacy-shim: empty cage_guest_assignments + non-empty guest_type → synthesize small/large from cage_type_map keys + legacy occupancy fields (backward compat — GUI/CLI/tests need no change); medium/guest cage keys only via explicit Phase 42 API (no legacy field)
+- **[42-01]** __post_init__ explicit-API (single source of truth): per-assignment built-in metadata auto-populate from GUEST_MOLECULES (count key "atoms") when guest_atom_labels empty — NOT deferred to GUI get_configuration; per-assignment custom-guest metadata validation (mirror legacy lines 503-527); Pitfall 6 duplicate guest_residue_name across custom assignments rejected with ValueError naming colliding name + both cage keys (no auto-disambiguate — _H path does not disambiguate)
+- **[42-01]** has_custom_assignment property (any(a.is_custom_guest ...)) for generator ExitStack/custom_guest_module decision (42-02); legacy is_custom_guest property preserved (reflects PRIMARY guest_type, not renamed — Pitfall 4)
+- **[42-01]** from_dict rebuilds CageGuestAssignment per entry (accepts dict via CageGuestAssignment(**entry) or existing instance; non-dict/non-instance skipped silently → shim handles empty dict)
+- **[42-01]** GuestDescriptor dataclass (mol_type, cage_key, guest_name, guest_residue_name, is_custom, atom_labels, atom_count) + HydrateStructure.guest_descriptors: list[GuestDescriptor] field (default empty, populated by 42-02); legacy single-guest fields (guest_name, guest_atom_labels, guest_atom_count, guest_itp_path) kept as primary guest (Pitfall 7); to_candidate() unchanged (already multi-guest-aware via guest_types accumulation)
 
 ### Pending Todos
 
@@ -167,6 +173,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T08:12Z
-Stopped at: Completed 42-00-PLAN.md (sH cage_type_map bug fix prerequisite for Phase 42 Mixed Cage Occupancy)
+Last session: 2026-07-05T08:19Z
+Stopped at: Completed 42-01-PLAN.md (CageGuestAssignment + cage_guest_assignments + legacy shim + GuestDescriptor data model)
 Resume file: None
