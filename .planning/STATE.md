@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (7/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done)
+**Current Focus:** Phase 41 IN PROGRESS (9/11 plans) — GROMACS Export for Custom Guests (41-01..41-07, 41-09, 41-10 done; 41-08, 41-11 pending)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done; 41-05, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-01..41-07, 41-09, 41-10 done; 41-08, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 7/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done) |
-| Status | Phase 41 in progress; 41-04 (P3 metadata-driven custom guest in write_interface_gro_file) complete |
-| Last activity | 2026-07-05 — Completed 41-04-PLAN.md (P3 custom guest interface GRO) |
+| Plan | 8/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04, 41-05 done) |
+| Status | Phase 41 in progress; 41-05 (P3 metadata-driven custom guest in write_interface_top_file) complete |
+| Last activity | 2026-07-05 — Completed 41-05-PLAN.md (P3 custom guest interface TOP) |
 
-**Progress:** [██████░░░░] ~50% (21/42 v4.7 plans complete)
+**Progress:** [██████░░░░] ~52% (22/42 v4.7 plans complete)
 
 ---
 
@@ -131,6 +131,11 @@ Recent decisions affecting v4.7 work:
 - **[41-04]** Custom branch chunks guest atoms by the matching molecule_index entry's .count (NOT count_guest_atoms heuristic) — fixes the 9-atom ethanol being miscounted as 5 (EXPORT-05 / P3); fallback atoms_per_mol = guest_atom_count // max(guest_nmolecules, 1) when no index entry matches
 - **[41-04]** Custom branch uses custom_guest_info['residue_name'] directly (e.g. 'MOL_H') — does NOT call detect_guest_type_from_atoms, which returns None for unknown guests and falls through to 'UNK' (EXPORT-04); validate_gro_residue_name still enforced
 - **[41-04]** Built-in path (ch4/thf via detect + count_guest_atoms + reorder) indented verbatim under else: — byte-identical for built-in guests (no regression: 8/8 interface_gro/interface_top + 96/96 tests/test_output pass); custom_guest_info path is purely additive
+- **[41-05]** write_interface_top_file gains custom_guest_info: dict | None = None as the LAST keyword param (after filepath); dict shape {mol_type, residue_name, itp_path} identical to 41-02/41-03/41-04 — fourth and final writer-side consumer of the API
+- **[41-05]** Custom branch (custom_active = custom_guest_info is not None AND guest_atom_count>0 AND guest_nmolecules>0) calls _merge_custom_atomtypes(f, Path(itp_path), _written_atomtypes, label) INSTEAD of the built-in ch4/thf/co2/h2 atomtype blocks or the CH4 fallback — oh/ho written, hc/c3/h1 deduped against the pre-seeded water/GAFF2 atomtypes (EXPORT-03)
+- **[41-05]** Custom branch #includes the custom .itp basename (Path(itp_path).name, e.g. 'etoh.itp') — matches the staging in copy_custom_guest_itp (41-07) which writes the ITP to output_dir/<src.name>; built-in path keeps '"{guest_type}_hydrate.itp"' #include unchanged
+- **[41-05]** Custom branch writes custom_guest_info['residue_name'] (e.g. 'MOL_H') directly in [molecules] — does NOT call get_hydrate_guest_residue_name (which would fall through to UNK for unknown mol_type; EXPORT-01)
+- **[41-05]** detect_guest_type_from_atoms call wrapped in `if not custom_active:` — custom branch bypasses the heuristic (EXPORT-05 / P3); detect_guest_type_from_atoms is NOT removed (built-in path still uses it); built-in path (ch4/thf/co2/h2 + #include + get_hydrate_guest_residue_name) indented verbatim under elif — byte-identical (no regression: 14/14 interface_top/interface_gro + 107/107 tests/test_output + tests/test_cli pass)
 
 ### Pending Todos
 
@@ -149,6 +154,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T05:48Z
-Stopped at: Completed 41-04-PLAN.md (P3 custom guest interface GRO)
+Last session: 2026-07-05T06:32Z
+Stopped at: Completed 41-05-PLAN.md (P3 custom guest interface TOP)
 Resume file: None
