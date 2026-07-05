@@ -17,6 +17,12 @@ from quickice.gui.custom_molecule_renderer import (
     CUSTOM_MOLECULE_COLORS,
     BOND_DISTANCE_THRESHOLD,
 )
+from quickice.structure_generation.types import (
+    HydrateStructure,
+    HydrateConfig,
+    HydrateLatticeInfo,
+    MoleculeIndex,
+)
 
 
 class TestGetElementFromAtomName:
@@ -261,6 +267,165 @@ class TestBondDistanceThreshold:
         for bond_name, distance in typical_bonds.items():
             assert distance < BOND_DISTANCE_THRESHOLD, \
                 f"{bond_name} bond ({distance} nm) should be below threshold"
+
+
+# ---------------------------------------------------------------------------
+# Phase 42 (MIXED-05): per-type guest actors in hydrate_renderer
+# ---------------------------------------------------------------------------
+#
+# These tests exercise quickice.gui.hydrate_renderer (NOT custom_molecule_renderer
+# above). They live in this file because plan 42-04 designates it as the home
+# for the per-type actor count + visibility tests. The renderer now returns one
+# vtkActor per non-water mol_type (defaultdict grouping) and render_hydrate_structure
+# returns [water, *guests] (variable length).
+
+# Skip the whole class if VTK is unavailable (headless crash guard per AGENTS.md).
+vtk = pytest.importorskip("vtk")  # noqa: F841 — used as skip sentinel
+
+from quickice.gui.hydrate_renderer import (  # noqa: E402 — after importorskip
+    create_guest_actor,
+    render_hydrate_structure,
+)
+
+
+def _build_hydrate_structure(guest_specs):
+    """Build a synthetic HydrateStructure (no GenIce2) for renderer tests.
+
+    Args:
+        guest_specs: list of ``(mol_type, atom_names)`` tuples for the guest
+            molecules, appended in order after 2 TIP4P water molecules.
+
+    Returns:
+        HydrateStructure with ``positions``, ``atom_names``, ``cell``, and a
+        ``molecule_index`` of [water, water, *guests]. ``config`` is a minimal
+        built-in ch4 HydrateConfig (the renderer does not read it).
+    """
+    # Two TIP4P water molecules (OW, HW1, HW2, MW) each — 8 atoms.
+    atom_names = [
+        "OW", "HW1", "HW2", "MW",
+        "OW", "HW1", "HW2", "MW",
+    ]
+    positions = np.zeros((8, 3))
+    positions[:, 0] = np.linspace(0.01, 0.08, 8)
+    molecule_index = [
+        MoleculeIndex(0, 4, "water"),
+        MoleculeIndex(4, 4, "water"),
+    ]
+    offset = 8
+    for mol_type, names in guest_specs:
+        cnt = len(names)
+        atom_names.extend(names)
+        seg_pos = np.zeros((cnt, 3))
+        seg_pos[:, 0] = np.linspace(0.10 + offset * 0.005, 0.10 + offset * 0.005 + cnt * 0.003, cnt)
+        positions = np.vstack([positions, seg_pos])
+        molecule_index.append(MoleculeIndex(offset, cnt, mol_type))
+        offset += cnt
+
+    cell = np.eye(3) * 3.0  # 3.0 nm cubic box (headroom for VTK bounds)
+    config = HydrateConfig()  # built-in ch4 default; renderer does not read it
+    lattice_info = HydrateLatticeInfo.from_lattice_type("sI")
+    return HydrateStructure(
+        positions=positions,
+        atom_names=atom_names,
+        cell=cell,
+        molecule_index=molecule_index,
+        config=config,
+        lattice_info=lattice_info,
+        report="test",
+        guest_count=len(guest_specs),
+        water_count=2,
+    )
+
+
+# Guest atom-name sequences (must match the mol_type's [ atoms ] order so the
+# renderer's distance-based bond detection has plausible geometry).
+_CH4_NAMES = ["C", "H", "H", "H", "H"]                      # 5 atoms
+_ETOH_MIX_NAMES = ["H", "C", "H", "H", "C", "H", "H", "O", "H"]  # 9 atoms
+
+
+class TestPerTypeGuestActors:
+    """Phase 42 (MIXED-05): one vtkActor per non-water mol_type."""
+
+    @pytest.fixture(autouse=True)
+    def _offscreen_qt(self, monkeypatch):
+        """Force headless Qt + VTK offscreen (AGENTS.md headless constraint)."""
+        monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    def test_mixed_renders_n_plus_1_actors(self):
+        """2 guest types -> render_hydrate_structure returns 3 actors (1 water + 2 guests)."""
+        structure = _build_hydrate_structure([
+            ("ch4", _CH4_NAMES),
+            ("etoh_mix", _ETOH_MIX_NAMES),
+        ])
+        actors = render_hydrate_structure(structure)
+        assert len(actors) == 3, f"expected 3 actors (water + 2 guests), got {len(actors)}"
+        # create_guest_actor returns one actor per non-water mol_type
+        guest_actors = create_guest_actor(structure)
+        assert isinstance(guest_actors, list)
+        assert len(guest_actors) == 2, f"expected 2 guest actors, got {len(guest_actors)}"
+
+    def test_single_guest_renders_two_actors(self):
+        """Single guest type -> 2 actors (1 water + 1 guest) — no regression."""
+        structure = _build_hydrate_structure([("ch4", _CH4_NAMES)])
+        actors = render_hydrate_structure(structure)
+        assert len(actors) == 2, f"expected 2 actors (water + 1 guest), got {len(actors)}"
+        assert len(create_guest_actor(structure)) == 1
+
+    def test_no_guest_renders_one_actor(self):
+        """Water-only -> 1 actor (just water); create_guest_actor returns []."""
+        structure = _build_hydrate_structure([])
+        actors = render_hydrate_structure(structure)
+        assert len(actors) == 1, f"expected 1 actor (water only), got {len(actors)}"
+        guest_actors = create_guest_actor(structure)
+        assert guest_actors == [], f"expected empty guest-actor list, got {guest_actors}"
+
+    def test_per_type_visibility_toggle(self):
+        """Toggling one guest actor's visibility does not affect the others.
+
+        Foundation for a future GUI per-type visibility checkbox (not wired here).
+        """
+        structure = _build_hydrate_structure([
+            ("ch4", _CH4_NAMES),
+            ("etoh_mix", _ETOH_MIX_NAMES),
+        ])
+        actors = render_hydrate_structure(structure)
+        assert len(actors) == 3
+        water, guest1, guest2 = actors
+        # All visible by default
+        assert water.GetVisibility() == 1
+        assert guest1.GetVisibility() == 1
+        assert guest2.GetVisibility() == 1
+        # Toggle ONLY the second guest actor off
+        guest2.VisibilityOff()
+        assert guest2.GetVisibility() == 0
+        # The other two remain visible — per-type toggling works
+        assert water.GetVisibility() == 1
+        assert guest1.GetVisibility() == 1
+
+    def test_create_guest_actor_returns_list_not_single_actor(self):
+        """create_guest_actor returns a list (not a single vtkActor) — shape contract."""
+        structure = _build_hydrate_structure([("ch4", _CH4_NAMES)])
+        result = create_guest_actor(structure)
+        assert isinstance(result, list), "create_guest_actor must return a list"
+        # And every element is a vtkActor (has SetMapper/GetVisibility)
+        for a in result:
+            assert hasattr(a, "GetVisibility")
+            assert hasattr(a, "SetMapper")
+
+    def test_per_type_colors_override(self):
+        """per_type_colors override takes precedence over the default palette."""
+        structure = _build_hydrate_structure([
+            ("ch4", _CH4_NAMES),
+            ("etoh_mix", _ETOH_MIX_NAMES),
+        ])
+        # Override ch4's bond color; etoh_mix falls back to palette[1] (cyan)
+        actors = create_guest_actor(structure, per_type_colors={"ch4": (10, 20, 30)})
+        assert len(actors) == 2
+        # The override does not crash; both actors are created (bond color is set
+        # on the mapper, not directly inspectable without a render, so we assert
+        # the actor count + that the override path was exercised without error).
+        assert hasattr(actors[0], "GetMapper")
+        assert hasattr(actors[1], "GetMapper")
 
 
 if __name__ == "__main__":

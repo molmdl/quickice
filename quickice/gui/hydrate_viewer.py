@@ -85,6 +85,10 @@ class HydrateViewerWidget(QWidget):
         self._vtk_available = _VTK_AVAILABLE
         self._current_structure: HydrateStructure | None = None
         self._hydrate_actors: list = []
+        # Phase 42 (MIXED-05): guest actors = _hydrate_actors[1:] (one actor per
+        # non-water mol_type). Tracked separately so a future per-type visibility
+        # checkbox can toggle individual guest types. Water is always [0].
+        self._guest_actors: list = []
         self._representation_mode: str = "ball_and_stick"
         
         # Unit cell state (matching molecular_viewer.py pattern)
@@ -244,10 +248,13 @@ class HydrateViewerWidget(QWidget):
         
         # Render hydrate structure to get actors
         self._hydrate_actors = render_hydrate_structure(structure)
-        
-        # Track water framework actor separately for hbond toggle
-        # render_hydrate_structure returns [water_actor, guest_actor]
+
+        # Track water framework actor separately for hbond toggle.
+        # render_hydrate_structure returns [water_actor, *guest_actors] (variable
+        # length — Phase 42 MIXED-05): water is always index 0; guests are [1:].
         self._water_actor = self._hydrate_actors[0] if len(self._hydrate_actors) > 0 else None
+        # Guest actors (one per non-water mol_type) for per-type visibility toggles
+        self._guest_actors = self._hydrate_actors[1:]
         
         # Add actors to renderer
         for actor in self._hydrate_actors:
@@ -321,7 +328,9 @@ class HydrateViewerWidget(QWidget):
         
         # Clear actor list
         self._hydrate_actors = []
-        
+        # Clear guest-actor tracking (Phase 42 — MIXED-05)
+        self._guest_actors = []
+
         # Clear current structure
         self._current_structure = None
     
@@ -397,6 +406,9 @@ class HydrateViewerWidget(QWidget):
             self._hydrate_actors = render_hydrate_structure(
                 current_structure, mode
             )
+            # Re-track water + guest actors after re-render (variable length)
+            self._water_actor = self._hydrate_actors[0] if len(self._hydrate_actors) > 0 else None
+            self._guest_actors = self._hydrate_actors[1:]
             for actor in self._hydrate_actors:
                 self.renderer.AddActor(actor)
             

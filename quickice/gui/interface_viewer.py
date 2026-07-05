@@ -63,7 +63,13 @@ class InterfaceViewerWidget(QWidget):
         self._current_hydrate: HydrateStructure | None = None
         self._ice_bond_actor: vtkActor | None = None
         self._water_bond_actor: vtkActor | None = None
-        self._guest_actor: vtkActor | None = None  # For guest molecules (Issue 2)
+        # Phase 42 (MIXED-05): hydrate guests render as a variable-length list
+        # (one vtkActor per non-water mol_type). _guest_actors is the list
+        # (hydrate_actors[1:]); _guest_actor (singular) is kept as the PRIMARY
+        # guest actor (list[0] or None) for backward-compat with methods that
+        # reference a single guest actor.
+        self._guest_actors: list = []
+        self._guest_actor: vtkActor | None = None  # Primary guest actor (back-compat)
         self._unit_cell_actor: vtkActor | None = None
         
         # Set up VTK rendering pipeline
@@ -151,18 +157,25 @@ class InterfaceViewerWidget(QWidget):
             guest_actor = self._create_guest_ball_and_stick_actor(
                 structure, guest_mol
             )
+            # InterfaceStructure path: a single guest actor (interface guests are
+            # not multi-type yet). Track it in both _guest_actors (list, Phase 42
+            # convention) and _guest_actor (primary, back-compat with methods
+            # below that reference a single actor).
+            self._guest_actors = [guest_actor]
             self._guest_actor = guest_actor
         else:
+            self._guest_actors = []
             self._guest_actor = None
-        
+
         # Create unit cell actor
         self._unit_cell_actor = create_unit_cell_actor(structure.cell)
-        
+
         # Add all actors to renderer (bond lines and unit cell only)
         self.renderer.AddActor(self._ice_bond_actor)
         self.renderer.AddActor(self._water_bond_actor)
-        if self._guest_actor is not None:
-            self.renderer.AddActor(self._guest_actor)
+        # Add ALL guest actors (variable-length list — Phase 42 MIXED-05)
+        for actor in self._guest_actors:
+            self.renderer.AddActor(actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
         # Auto-fit camera to frame all actors
@@ -223,17 +236,25 @@ class InterfaceViewerWidget(QWidget):
         # Render water framework as lines (like interface)
         # Use hydrate renderer to create water framework actor
         hydrate_actors = render_hydrate_structure(structure, "ball_and_stick")
-        
-        # hydrate_actors[0] = water_actor, [1] = guest_actor
+
+        # render_hydrate_structure returns [water_actor, *guest_actors]
+        # (variable length — Phase 42 MIXED-05): water is always index 0;
+        # guests are [1:] (one actor per non-water mol_type, may be empty for
+        # a water-only hydrate).
         self._water_bond_actor = hydrate_actors[0]
-        self._guest_actor = hydrate_actors[1]
-        
+        self._guest_actors = hydrate_actors[1:]  # variable-length list of guest actors
+        # Primary guest actor (back-compat with methods that reference a single
+        # actor): the first guest actor, or None for a water-only hydrate.
+        self._guest_actor = self._guest_actors[0] if self._guest_actors else None
+
         # Create unit cell actor
         self._unit_cell_actor = create_unit_cell_actor(structure.cell)
-        
+
         # Add actors to renderer
         self.renderer.AddActor(self._water_bond_actor)
-        self.renderer.AddActor(self._guest_actor)
+        # Add ALL guest actors (variable-length list — Phase 42 MIXED-05)
+        for actor in self._guest_actors:
+            self.renderer.AddActor(actor)
         self.renderer.AddActor(self._unit_cell_actor)
         
         # Auto-fit camera to frame all actors
@@ -346,10 +367,14 @@ class InterfaceViewerWidget(QWidget):
             self.renderer.RemoveActor(self._water_bond_actor)
             self._water_bond_actor = None
         
-        # Remove guest actor (Issue 2)
-        if self._guest_actor is not None:
-            self.renderer.RemoveActor(self._guest_actor)
-            self._guest_actor = None
+        # Remove guest actors (Issue 2 + Phase 42 MIXED-05): remove ALL actors in
+        # the variable-length _guest_actors list, then clear the list and the
+        # primary-singular back-compat reference.
+        for actor in self._guest_actors:
+            if actor is not None:
+                self.renderer.RemoveActor(actor)
+        self._guest_actors = []
+        self._guest_actor = None
         
         # Remove unit cell actor
         if self._unit_cell_actor is not None:
