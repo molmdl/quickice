@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 COMPLETE (11/11 plans) — GROMACS Export for Custom Guests (41-01..41-11 all done; EXPORT-01..EXPORT-06 fully closed for both GUI + CLI paths)
+**Current Focus:** Phase 42 IN PROGRESS (1/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map bug fix prerequisite). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 COMPLETE (41-01..41-11 all done; EXPORT-01..EXPORT-06 fully closed for both GUI + CLI paths). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 42 IN PROGRESS (42-00 done: sH cage_type_map fix). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 41 of 48 (GROMACS Export for Custom Guests) — COMPLETE |
-| Plan | 11/11 complete (41-01..41-11 all done) |
-| Status | Phase 41 complete; 41-08 (CLI custom_guest_info threading — final plan of phase 41) complete. EXPORT-01..EXPORT-06 fully closed for both GUI (41-06/41-10) + CLI (41-08/41-11) paths. |
-| Last activity | 2026-07-05 — Completed 41-08-PLAN.md (CLI custom_guest_info threading) |
+| Phase | 42 of 48 (Mixed Cage Occupancy) — IN PROGRESS |
+| Plan | 1/8 complete (42-00 done; 42-01..42-07 pending) |
+| Status | Phase 42 in progress. 42-00 (sH cage_type_map bug fix prerequisite) complete: large id 16→20, medium key 12_1 added, silent-zero large-cage placement fixed + regression-guarded. Ready for 42-01 (CageGuestAssignment data model). |
+| Last activity | 2026-07-05 — Completed 42-00-PLAN.md (sH cage_type_map fix) |
 
-**Progress:** [██████░░░░] ~57% (24/42 v4.7 plans complete)
+**Progress:** [█████░░░░░] ~54% (26/48 v4.7 plans complete across phases 38-47; Phase 42: 1/8)
 
 ---
 
@@ -146,6 +146,9 @@ Recent decisions affecting v4.7 work:
 - **[41-08]** _build_custom_guest_info(config) added as a MODULE-LEVEL function in pipeline.py (placed after report_progress, before CLIPipeline) — unit-testable in isolation without instantiating the pipeline; returns {'mol_type': config.guest_type, 'residue_name': '{guest_residue_name}_H', 'itp_path': Path(config.guest_itp_path)} for custom HydrateConfig and None for built-in/None; reuses the top-level `from pathlib import Path` import (no inline re-import per plan guidance)
 - **[41-08]** _run_export_step hydrate branch threads custom_guest_info=_build_custom_guest_info(getattr(hydrate, "config", None)) to BOTH write_interface_gro_file and write_interface_top_file (keyword arg); built-in ch4/thf passes None (writers' built-in branch byte-identical, no regression); ITP copy UNCHANGED (still copy_itp_files_for_structure → 41-07 custom branch); existing except (OSError, ValueError) handler kept AS-IS (no bare except Exception per AGENTS.md — _build_custom_guest_info uses getattr guards so it cannot raise)
 - **[41-08]** Integration test (test_run_export_step_custom_hydrate) uses ABSOLUTE guest_itp_path (ETOH_ITP constant from tests/test_cli/test_itp_helpers_custom_guest.py convention) for cwd-independent ITP copy; unit test 1 uses the plan's literal relative path 'quickice/data/custom/etoh.itp' for the exact Path-equality assertion (Path equality is structural — no file I/O in the helper, so cwd is irrelevant). HydrateStructure built manually (2 water + 1 ethanol, 17 atoms, no GenIce2, <1s per test) mirroring simple_hydrate_structure from conftest
+- **[42-00]** sH cage_type_map corrected: large id 16→20 (the "16" was an sII id nonexistent in sH — parse_guest silently placed 0 large guests); medium key 12_1 added (was missing — sH medium cages were unreachable). Latent Phase 39 oversight. sH cages dict (small/medium/large) intentionally NOT touched (HydrateLatticeInfo.from_lattice_type already iterates it correctly)
+- **[42-00]** valid_keys structural test relaxed to {small, large, medium, guest} so sH medium and filled-ice guest aliases are permitted; dedicated test_sh_cage_type_map_values asserts the exact corrected sH map
+- **[42-00]** Regression test uses empirically-verified GenIce2 counts (2 large / 6 small / 8 total for sH 1×1×1) NOT the plan's research estimates (10/30/40) — research assumed 1 crystallographic unit cell, but GenIce2's sH cell = 2 unit cells (68 waters → 6 small + 4 medium + 2 large). Downstream 42-01+ tests must use empirical counts, not single-cell estimates
 
 ### Pending Todos
 
@@ -164,6 +167,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T07:00Z
-Stopped at: Phase 41 VERIFIED (passed, 4/4 must-haves). Ready for Phase 42 (Mixed Cage Occupancy).
+Last session: 2026-07-05T08:12Z
+Stopped at: Completed 42-00-PLAN.md (sH cage_type_map bug fix prerequisite for Phase 42 Mixed Cage Occupancy)
 Resume file: None

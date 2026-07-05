@@ -113,7 +113,7 @@ Plans:
 **Plans:** 8 plans
 
 Plans:
-- [ ] 42-00-PLAN.md — Fix sH cage_type_map bug (prerequisite: large→20, add medium→12_1)
+- [x] 42-00-PLAN.md — Fix sH cage_type_map bug (prerequisite: large→20, add medium→12_1)
 - [ ] 42-01-PLAN.md — Data model: CageGuestAssignment + HydrateConfig.cage_guest_assignments + legacy shim + HydrateStructure.guest_descriptors (MIXED-01/02/03 foundation)
 - [ ] 42-02-PLAN.md — Generator: multi-guest _run_via_api loop + ExitStack + _build_molecule_index (MIXED-01/02/03 generation)
 - [ ] 42-03-PLAN.md — GROMACS writers: list[dict] custom_guest_info across 4 writers + looped atomtypes merge (MIXED-04)
