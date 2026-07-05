@@ -115,7 +115,7 @@ HYDRATE_LATTICES: dict[str, dict[str, Any]] = {
             "large": {"name": "5¹²6⁸", "count_per_unit_cell": 1, "guest_fits": ["thf"]},
         },
         "unit_cell_molecules": 34,
-        "cage_type_map": {"small": "12", "large": "16"},
+        "cage_type_map": {"small": "12", "medium": "12_1", "large": "20"},
         "is_triclinic": True,
         "is_water_only": False,
     },

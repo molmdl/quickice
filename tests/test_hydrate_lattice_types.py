@@ -72,13 +72,22 @@ class TestHydrateLatticesStructure:
             assert isinstance(value, str)
             assert len(value) > 0
 
-    # 8. cage_type_map keys are small or large
+    # 8. cage_type_map keys are small, large, medium, or guest
     @pytest.mark.parametrize("lattice_type", list(HYDRATE_LATTICES.keys()))
     def test_cage_type_map_keys_are_small_or_large(self, lattice_type):
         entry = HYDRATE_LATTICES[lattice_type]
-        valid_keys = {"small", "large"}
+        valid_keys = {"small", "large", "medium", "guest"}
         for key in entry["cage_type_map"].keys():
             assert key in valid_keys, f"cage_type_map key '{key}' not in {valid_keys}"
+
+    # 8b. sH cage_type_map has correct small/medium/large GenIce2 cage ids
+    def test_sh_cage_type_map_values(self):
+        # GenIce2 sH lattice exposes cage ids 12 (small), 12_1 (medium), 20 (large).
+        # The previous impl wrongly used "16" (an sII large-cage id) for sH large,
+        # which silently placed zero large-cage guests. This guards against regression.
+        assert HYDRATE_LATTICES["sH"]["cage_type_map"] == {
+            "small": "12", "medium": "12_1", "large": "20",
+        }
 
     # 9. Water-only lattices have empty cage_type_map
     def test_water_only_lattices_have_empty_cage_type_map(self):
