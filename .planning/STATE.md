@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 42 IN PROGRESS (3/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 42 IN PROGRESS (5/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype; 42-03 done: 4 hydrate GROMACS writers promoted to list[dict] custom_guest_info; 42-04 done: per-type guest VTK actors — create_guest_actor returns list[vtkActor] per mol_type, render_hydrate_structure returns [water, *guests], _DEFAULT_PALETTE bond-color cycle, hydrate_viewer + interface_viewer handle variable-length list). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 42 of 48 (Mixed Cage Occupancy) — IN PROGRESS |
-| Plan | 3/8 complete (42-00 done, 42-01 done, 42-02 done; 42-03..42-07 pending) |
-| Status | Phase 42 in progress. 42-02 (hydrate generator multi-guest) complete: _run_via_api loops cage_guest_assignments calling parse_guest per cage key (Pattern 2); generate() nests custom_guest_module via ExitStack per DISTINCT custom guest_type (deduped — Pattern 3); _build_molecule_index uses resname_to_moltype dict for per-type MoleculeIndex.mol_type (Pattern 4); guest_descriptors populated. Mixed sI 2×2×2 CH4+etoh → 16+48 verified. Ready for 42-03 (gromacs-writers). |
-| Last activity | 2026-07-05 — Completed 42-02-PLAN.md (hydrate generator multi-guest loop + ExitStack + resname_to_moltype) |
+| Plan | 5/8 complete (42-00, 42-01, 42-02, 42-03, 42-04 done; 42-05..42-07 pending) |
+| Status | Phase 42 in progress. 42-04 (VTK per-type rendering) complete: create_guest_actor groups molecule_index by mol_type (defaultdict, excluding water) → one vtkActor per non-water mol_type (list, was single vtkActor); render_hydrate_structure returns [water, *guests] variable-length (was 2-element [water, guest]); per-type BOND color from _DEFAULT_PALETTE cycle (gray/cyan/yellow/red/purple), atoms stay CPK; per_type_colors override hook; hydrate_viewer + interface_viewer handle the list (water=[0], guests=[1:], no hard [1] indexing); interface_viewer keeps _guest_actor singular as primary for back-compat; 6 new TestPerTypeGuestActors tests (24/24 pass). Ready for 42-05. |
+| Last activity | 2026-07-05 — Completed 42-04-PLAN.md (per-type guest VTK actors + variable-length render_hydrate_structure + caller updates) |
 
-**Progress:** [██████░░░░] ~58% (28/48 v4.7 plans complete across phases 38-47; Phase 42: 3/8)
+**Progress:** [██████░░░░] ~62% (30/48 v4.7 plans complete across phases 38-47; Phase 42: 5/8)
 
 ---
 
@@ -160,6 +160,16 @@ Recent decisions affecting v4.7 work:
 - **[42-02]** _build_molecule_index builds resname_to_moltype dict from ALL cage assignments (Pattern 4): built-ins map guest_type.upper() → guest_type (ch4→"CH4"); custom maps guest_residue_name → guest_type (MOL→"etoh_mix"); per-type MoleculeIndex.mol_type via dict lookup. guest_signature/guest_type/guest_atom_labels/guest_atom_count kept from PRIMARY (first) assignment for the atom-label fallback path (single-guest backward compat)
 - **[42-02]** guest_descriptors: one GuestDescriptor per cage assignment (one per cage_key, NOT per distinct guest_type — plan says "one per assignment"); legacy single-custom-guest yields 2 descriptors (same mol_type, different cage_keys); GuestDescriptor.guest_name: built-ins use GUEST_MOLECULES[name], custom uses guest_residue_name (mirrors HydrateConfig.__post_init__)
 - **[42-02]** Two Rule 1 auto-fixes to plan snippets: (1) dedup custom assignments by guest_type in generate() ExitStack (plan's per-assignment registration would crash custom_guest_module's sys.modules assert for legacy single-custom-guest); (2) kept guest_signature/guest_type defined in _build_molecule_index (plan's snippet omitted them but the atom-label fallback path kept by plan uses them — would NameError). Plan's verify referenced nonexistent tests/test_hydrate_generator.py — used tests/test_e2e_hydrate_generation.py instead
+- **[42-03]** All 4 hydrate GROMACS writers (write_multi_molecule_gro_file, write_multi_molecule_top_file, write_interface_gro_file, write_interface_top_file) promoted from custom_guest_info: dict | None to list[dict] | None (Phase 41 → Phase 42 API). custom_by_moltype = {ci["mol_type"]: ci for ci in (custom_guest_info or [])} dict built ONCE before the per-molecule / per-mol_type loop drives O(1) res_name resolution for N custom guests (replaces single-dict `mol.mol_type == custom_guest_info["mol_type"]` match with `mol.mol_type in custom_by_moltype`); built-in elif (ch4/thf/co2/h2) + else (UNK) branches UNCHANGED (no hardcoded built-in gates excluding custom — Pitfall avoided)
+- **[42-03]** Atomtypes merge looped in write_multi_molecule_top_file + write_interface_top_file: `for ci in (custom_guest_info or []): if ci.get("itp_path"): _merge_custom_atomtypes(f, Path(ci["itp_path"]), _written_atomtypes, ...)` — _written_atomtypes accumulates across guests → shared atomtypes (e.g. hc across two custom ITPs) written only once (Don't Hand-Roll table). _merge_custom_atomtypes itself UNCHANGED (shared primitive, [41-01]); only the call site loops
+- **[42-03]** DeprecationWarning + 1-element wrap for legacy single-dict callers: isinstance(custom_guest_info, dict) guard at the top of EACH of the 4 writers wraps to [custom_guest_info] with stacklevel=2 (transition safety through 42-05/42-07, not silent wrong output). Plan's DECIDE: 'since 42-05/42-07 will update all call sites to pass lists, a single dict is no longer valid' — chose graceful wrap+warn over hard break so any missed call site still produces correct output during transition. Existing call sites (quickice/cli/pipeline.py:845-847 _build_custom_guest_info, 41-10/41-11 e2e tests) still pass single dicts → DeprecationWarning fires (visible in test output) but wrap produces correct output
+- **[42-03]** Interface writers resolve the single guest stream via `next(m for m in iface.molecule_index if m.mol_type in custom_by_moltype)` — interface carries ONE guest stream so only one entry matches; defensive fallback to `next(iter(custom_by_moltype.values()))` when molecule_index lacks a match (caller expected to keep them consistent). custom_active for interface writers keeps `is not None` AND adds `len(custom_guest_info) > 0` — self-documents None/empty-list equivalence
+- **[42-03]** Test fixture: synthetic 22-atom mixed HydrateStructure (2 water + 1 CH4 + 1 etoh_mix) built manually (no GenIce2) — extends the 41-06 17-atom 2-water + 1-ethanol pattern with a 5-atom built-in CH4 so both the registry path (CH4 → CH4_H) AND the custom_guest_info path (etoh_mix → MOL_H) fire in the same test. TestMultiGuestWriter: 4 tests (test_multi_guest_top_has_both_molecules, test_multi_guest_gro_has_both_residues, test_custom_guest_info_list_backward_compat_none, test_single_dict_deprecated_warns). Plan's test file path tests/test_gromacs_export_hydrate.py did not match actual repo path tests/test_output/test_gromacs_export_hydrate.py — located via glob, appended to existing module per plan instruction
+- **[42-04]** create_guest_actor refactored to group molecule_index by mol_type (collections.defaultdict(list), excluding water) → returns list[vtkActor] (one per non-water mol_type, in first-occurrence insertion order = palette index); empty list for no guests (was a hidden actor with VisibilityOff) — callers iterate [1:] (no-op for water-only); signature gained per_type_colors: dict[str, tuple] | None = None override hook (precedence over palette)
+- **[42-04]** render_hydrate_structure returns [water_actor, *guest_actors] variable-length (was always 2-element [water, guest]); breaking return-shape change (Q3 recommendation (a) — list + iterate [1:]); water-only → [water], single → [water, guest], mixed → [water, guest1, guest2, ...]
+- **[42-04]** Per-type BOND color only from _DEFAULT_PALETTE [(180,180,180),(0,200,200),(220,220,0),(200,80,80),(160,80,200)] (gray/cyan/yellow/red/purple); atoms stay CPK via ELEMENT_TO_ATOMIC_NUMBER atomic-number lookup (avoids per-atom scalar arrays — Q4 minimal change); first guest keeps legacy gray so single-guest rendering visually unchanged
+- **[42-04]** hydrate_viewer adds _guest_actors = _hydrate_actors[1:] (set after set_hydrate_structure + set_representation_mode re-render, cleared in _clear_actors); _water_actor stays [0]; existing for-actor loops already handle variable length (no change to AddActor/RemoveActor loops)
+- **[42-04]** interface_viewer set_hydrate_structure stores _guest_actors = hydrate_actors[1:] (list, source of truth) AND keeps _guest_actor (singular) as primary = _guest_actors[0] if _guest_actors else None for back-compat with methods referencing a single actor (RemoveActor/guards); _clear_actors removes ALL guest actors in the list then clears both refs; InterfaceStructure path (single guest) tracks [guest_actor] in both refs. No [1] hard indexing remains in callers (grep-verified: only [0] for water + [1:] for guests)
 
 ### Pending Todos
 
@@ -178,6 +188,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T08:27Z
-Stopped at: Completed 42-02-PLAN.md (hydrate generator multi-guest _run_via_api loop + ExitStack + resname_to_moltype + guest_descriptors)
+Last session: 2026-07-05T08:34Z
+Stopped at: Completed 42-04-PLAN.md (per-type guest VTK actors + variable-length render_hydrate_structure + caller updates for hydrate_viewer/interface_viewer)
 Resume file: None
