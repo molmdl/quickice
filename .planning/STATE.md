@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (5/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03 done)
+**Current Focus:** Phase 41 IN PROGRESS (6/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03 done; 41-04..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done; 41-04, 41-05, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 5/11 complete (41-09, 41-01, 41-07, 41-02, 41-03 done) |
-| Status | Phase 41 in progress; 41-03 (custom_guest_info + atomtypes merge on write_multi_molecule_top_file) complete |
-| Last activity | 2026-07-05 — Completed 41-03-PLAN.md (custom guest TOP molecules + atomtypes merge) |
+| Plan | 6/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done) |
+| Status | Phase 41 in progress; 41-06 (GUI export_hydrate is_custom_guest branch + custom_guest_info threading to writers) complete |
+| Last activity | 2026-07-05 — Completed 41-06-PLAN.md (GUI custom guest hydrate export) |
 
-**Progress:** [█████░░░░░] ~45% (19/42 v4.7 plans complete)
+**Progress:** [█████░░░░░] ~48% (20/42 v4.7 plans complete)
 
 ---
 
@@ -122,6 +122,11 @@ Recent decisions affecting v4.7 work:
 - **[41-03]** write_multi_molecule_top_file gains custom_guest_info: dict | None = None as the LAST keyword param (after registry); dict shape {mol_type, residue_name, itp_path} — first writer-side consumer of _merge_custom_atomtypes (41-01)
 - **[41-03]** [molecules] custom-guest branch inserted INSIDE the existing 'if res_name is None:' chain (custom_guest_info -> elif built-in ch4/thf/co2/h2 -> else UNK); [atomtypes] merge placed AFTER built-in GAFF2 blocks and BEFORE the #include block (GROMACS ordering invariant: all [atomtypes] precede molecule definitions)
 - **[41-03]** #include for the custom .itp produced by the EXISTING itp_files mechanism (unchanged) — plan does NOT add a second #include; custom_guest_info.get('itp_path') guard makes the merge a no-op when itp_path is falsy
+- **[41-06]** HydrateGROMACSExporter.export_hydrate branches on config.is_custom_guest BEFORE registry.register_hydrate_guest — built-in path keeps _get_hydrate_guest_itp_path + registry.register_hydrate_guest(guest_upper); custom path uses Path(config.guest_itp_path) (raises FileNotFoundError if missing) + config.guest_residue_name + custom_guest_info dict, leaving the shared MoleculetypeRegistry empty (writers use custom_guest_info instead)
+- **[41-06]** guest_name_for_transform indirection: a single branch-bound variable (custom: config.guest_residue_name <=3 chars; built-in: config.guest_type.upper()) feeds the trailing transform_guest_itp call — so 'MOL_H' (5 chars) passes validate_gro_residue_name instead of 'ETOH_E2E_H' (8 chars) raising ValueError
+- **[41-06]** custom_guest_info dict shape {mol_type, residue_name, itp_path} kept identical to 41-02/41-03; residue_name pre-computed as '{config.guest_residue_name}_H' so both writers receive the final 5-char GRO residue name; first GUI-side consumer of the 41-02/41-03 writer APIs
+- **[41-06]** Built-in ch4/thf path line-for-line unchanged modulo the shared registry instantiation moved BEFORE the branch (no regression: 8/8 test_gromacs_export_hydrate.py still pass); GUI broad except Exception retained per AGENTS.md
+- **[41-06]** Manual HydrateStructure construction in tests (no GenIce2): 17-atom 2-water + 9-atom ethanol fixture mirrors simple_hydrate_structure from conftest — fast (<1s) and deterministic; MoleculeIndex(8, 9, "etoh_e2e") matches config.guest_type so the custom_guest_info["mol_type"] lookup in both writers fires
 
 ### Pending Todos
 
@@ -140,6 +145,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T05:36Z
-Stopped at: Completed 41-03-PLAN.md (custom guest TOP molecules + atomtypes merge)
+Last session: 2026-07-05T05:48Z
+Stopped at: Completed 41-06-PLAN.md (GUI custom guest hydrate export)
 Resume file: None
