@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (3/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07 done)
+**Current Focus:** Phase 41 IN PROGRESS (4/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07 done; 41-02..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02 done; 41-03..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 3/11 complete (41-09, 41-01, 41-07 done) |
-| Status | Phase 41 in progress; 41-07 (copy_custom_guest_itp + CLI hydrate routing) complete |
-| Last activity | 2026-07-05 — Completed 41-07-PLAN.md (copy_custom_guest_itp + is_custom_guest branch) |
+| Plan | 4/11 complete (41-09, 41-01, 41-07, 41-02 done) |
+| Status | Phase 41 in progress; 41-02 (custom_guest_info param on write_multi_molecule_gro_file) complete |
+| Last activity | 2026-07-05 — Completed 41-02-PLAN.md (custom guest GRO residue name) |
 
-**Progress:** [████░░░░░░] ~40% (17/42 v4.7 plans complete)
+**Progress:** [████░░░░░░] ~43% (18/42 v4.7 plans complete)
 
 ---
 
@@ -116,6 +116,9 @@ Recent decisions affecting v4.7 work:
 - **[41-07]** copy_custom_guest_itp(output_dir, itp_path, residue_name) added to quickice/cli/itp_helpers.py — reads custom guest ITP, applies transform_guest_itp(content, residue_name, '_H') (comments atomtypes + renames moleculetype to '{name}_H' + rewrites [atoms] resname), writes to output_dir/<itp basename>; uses except (OSError, ValueError) per AGENTS.md (no bare except Exception); returns None for missing source / >5-char residue name (logged at error)
 - **[41-07]** copy_itp_files_for_structure hydrate branch dispatches on config.is_custom_guest BEFORE the built-in _resolve_guest_type_for_hydrate_step/_copy_hydrate_guest_itp path; custom path uses explicit config.guest_itp_path + config.guest_residue_name, built-in ch4/thf path UNCHANGED (still _copy_hydrate_guest_itp → '{guest_type}_hydrate.itp'); the two paths stay disjoint by is_custom_guest
 - **[41-07]** Custom guest ITP basename preserved (output_dir / src.name, e.g. 'etoh.itp') so it matches the .top #include naming from plans 41-05/41-08; built-in _copy_hydrate_guest_itp keeps its '{guest_type}_hydrate.itp' convention; tests/test_cli/ subdir created without __init__.py (pytest discovers via rootdir mode)
+- **[41-02]** write_multi_molecule_gro_file gains custom_guest_info: dict | None = None as the LAST keyword param (after registry); dict shape {mol_type, residue_name, itp_path} — itp_path unused by GRO writer (consumed by TOP writers 41-03/41-04/41-05 for atomtypes merge) but kept for a single consistent API
+- **[41-02]** Custom-guest branch inserted INSIDE the existing 'if res_name is None:' chain (custom_guest_info -> elif built-in ch4/thf/co2/h2 -> else UNK) so the registry path still wins when present and the built-in guest path still wins for known guest mol_types; validate_gro_residue_name still enforced unconditionally ('MOL_H' = 5 chars passes)
+- **[41-02]** quickice/output/gromacs_writer.py matches .gitignore 'output/' pattern but is already tracked — plain `git add` refuses with "paths are ignored"; use `git add -f` to stage (pre-existing repo gitignore interaction, not introduced by this plan; affects 41-03..41-05 edits to the same file)
 
 ### Pending Todos
 
@@ -134,6 +137,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T05:28Z
-Stopped at: Completed 41-07-PLAN.md (copy_custom_guest_itp + is_custom_guest branch in CLI hydrate ITP copy)
+Last session: 2026-07-05T05:30Z
+Stopped at: Completed 41-02-PLAN.md (custom_guest_info param on write_multi_molecule_gro_file)
 Resume file: None
