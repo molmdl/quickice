@@ -29,6 +29,27 @@ def report_progress(message: str) -> None:
     print(f"[PROGRESS] {message}", file=sys.stderr)
 
 
+def _build_custom_guest_info(config) -> dict | None:
+    """Build the ``custom_guest_info`` dict for the hydrate writers, or ``None``.
+
+    Returns ``{'mol_type': config.guest_type,
+    'residue_name': '{guest_residue_name}_H', 'itp_path': Path(config.guest_itp_path)}``
+    when ``config`` is a custom-guest ``HydrateConfig`` (``is_custom_guest`` True),
+    else ``None`` (built-in guests, or ``config is None``).
+
+    Kept as a module-level function (not a method) so it can be unit-tested in
+    isolation without instantiating ``CLIPipeline``. ``Path`` is reused from the
+    top-level ``from pathlib import Path`` import.
+    """
+    if config is None or not getattr(config, "is_custom_guest", False):
+        return None
+    return {
+        "mol_type": config.guest_type,
+        "residue_name": f"{config.guest_residue_name}_H",
+        "itp_path": Path(config.guest_itp_path),
+    }
+
+
 class CLIPipeline:
     """CLI pipeline orchestrator for QuickIce v4.5 generation workflows.
 
@@ -817,8 +838,13 @@ class CLIPipeline:
                     guest_atom_count=guest_atom_count,
                     guest_nmolecules=guest_nmolecules,
                 )
-                write_interface_gro_file(wrapper, gro_path)
-                write_interface_top_file(wrapper, top_path)
+                # Thread custom-guest metadata (mol_type, residue_name, itp_path)
+                # to the writers — None for built-in hydrate guests (ch4/thf).
+                # The ITP copy itself is handled by copy_itp_files_for_structure
+                # (plan 41-07 custom branch) below — unchanged here.
+                custom_guest_info = _build_custom_guest_info(getattr(hydrate, "config", None))
+                write_interface_gro_file(wrapper, gro_path, custom_guest_info=custom_guest_info)
+                write_interface_top_file(wrapper, top_path, custom_guest_info=custom_guest_info)
             elif step_name == "interface":
                 write_interface_gro_file(structure, gro_path)
                 write_interface_top_file(structure, top_path)
