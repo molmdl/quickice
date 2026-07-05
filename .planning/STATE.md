@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 8/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04, 41-05 done) |
-| Status | Phase 41 in progress; 41-05 (P3 metadata-driven custom guest in write_interface_top_file) complete |
-| Last activity | 2026-07-05 — Completed 41-05-PLAN.md (P3 custom guest interface TOP) |
+| Plan | 9/11 complete (41-01..41-07, 41-09, 41-10 done) |
+| Status | Phase 41 in progress; 41-10 (GUI custom-guest grompp e2e, EXPORT-06 GUI half) complete |
+| Last activity | 2026-07-05 — Completed 41-10-PLAN.md (GUI custom-guest grompp e2e) |
 
 **Progress:** [██████░░░░] ~52% (22/42 v4.7 plans complete)
 
@@ -131,6 +131,9 @@ Recent decisions affecting v4.7 work:
 - **[41-04]** Custom branch chunks guest atoms by the matching molecule_index entry's .count (NOT count_guest_atoms heuristic) — fixes the 9-atom ethanol being miscounted as 5 (EXPORT-05 / P3); fallback atoms_per_mol = guest_atom_count // max(guest_nmolecules, 1) when no index entry matches
 - **[41-04]** Custom branch uses custom_guest_info['residue_name'] directly (e.g. 'MOL_H') — does NOT call detect_guest_type_from_atoms, which returns None for unknown guests and falls through to 'UNK' (EXPORT-04); validate_gro_residue_name still enforced
 - **[41-04]** Built-in path (ch4/thf via detect + count_guest_atoms + reorder) indented verbatim under else: — byte-identical for built-in guests (no regression: 8/8 interface_gro/interface_top + 96/96 tests/test_output pass); custom_guest_info path is purely additive
+- **[41-10]** @gmx_skipif e2e test (tests/test_e2e_custom_guest_gui_grompp.py::test_custom_guest_gui_grompp_passes) proves gmx grompp exits 0 on a custom ethanol guest hydrate exported via the GUI multi-molecule writers (write_multi_molecule_gro_file + write_multi_molecule_top_file with custom_guest_info); closes EXPORT-06 for the GUI path. Single solid test (no speculative parameterization) — phase scope is one custom guest; sI sufficient per plan guidance
+- **[41-10]** Test box = 3.0 nm (NOT the plan's literal 2.0 nm) so the GROMACS PBC rule (cutoff 1.0 nm < half the shortest box vector) is satisfied; MDP untouched. The plan's 2.0 nm hit the exact 2*cutoff limit and grompp rejected it ("cut-off longer than half the shortest box vector") — Rule 1 auto-fix; positions (linspace 0.01..0.17) unchanged so no coordinate change needed
+- **[41-10]** GUI custom-guest grompp e2e pattern: synthetic 2-water + 1-ethanol system (17 atoms, no GenIce2) → write_multi_molecule_* (custom_guest_info) → _stage_itp_files + _stage_custom_guest_itp → assert_itp_completeness + assert_gro_top_consistent → run_gmx_grompp (exit 0); CLI half (41-11) follows the same pattern with HydrateGROMACSExporter + copy_custom_guest_itp instead of test-only staging helpers
 - **[41-05]** write_interface_top_file gains custom_guest_info: dict | None = None as the LAST keyword param (after filepath); dict shape {mol_type, residue_name, itp_path} identical to 41-02/41-03/41-04 — fourth and final writer-side consumer of the API
 - **[41-05]** Custom branch (custom_active = custom_guest_info is not None AND guest_atom_count>0 AND guest_nmolecules>0) calls _merge_custom_atomtypes(f, Path(itp_path), _written_atomtypes, label) INSTEAD of the built-in ch4/thf/co2/h2 atomtype blocks or the CH4 fallback — oh/ho written, hc/c3/h1 deduped against the pre-seeded water/GAFF2 atomtypes (EXPORT-03)
 - **[41-05]** Custom branch #includes the custom .itp basename (Path(itp_path).name, e.g. 'etoh.itp') — matches the staging in copy_custom_guest_itp (41-07) which writes the ITP to output_dir/<src.name>; built-in path keeps '"{guest_type}_hydrate.itp"' #include unchanged
@@ -155,5 +158,5 @@ Recent decisions affecting v4.7 work:
 ## Session Continuity
 
 Last session: 2026-07-05T06:32Z
-Stopped at: Completed 41-05-PLAN.md (P3 custom guest interface TOP)
+Stopped at: Completed 41-10-PLAN.md (GUI custom-guest grompp e2e)
 Resume file: None
