@@ -1514,6 +1514,7 @@ def write_multi_molecule_gro_file(
     title: str = "Multi-molecule system exported by QuickIce",
     atom_names: list[str] | None = None,
     registry: 'MoleculetypeRegistry | None' = None,
+    custom_guest_info: dict | None = None,
 ) -> None:
     """Write multi-molecule system to GROMACS .gro format.
     
@@ -1530,6 +1531,16 @@ def write_multi_molecule_gro_file(
         registry: Optional MoleculetypeRegistry for context-specific residue naming.
                   When provided, uses registry to determine residue names for guest
                   molecules (e.g. "CH4_H" for hydrate guests vs "CH4" for default).
+        custom_guest_info: Optional dict mapping a custom guest mol_type to its
+                  residue name, so the writer emits the caller-supplied name
+                  (e.g. "MOL_H") instead of falling through to "UNK" for an
+                  unknown mol_type. Shape:
+                  ``{"mol_type": str, "residue_name": str, "itp_path": Path}``.
+                  ``itp_path`` is unused by this GRO writer (it is consumed by
+                  the TOP writers for the atomtypes merge) but is kept on the
+                  dict for a single consistent API across plans 41-02..41-05.
+                  When None or the mol_type does not match, the built-in
+                  registry/fallback path is used (no regression).
     
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
@@ -1574,7 +1585,9 @@ def write_multi_molecule_gro_file(
                         res_name = registry.get_gromacs_name(liquid_key)
             
             if res_name is None:
-                if mol.mol_type in ["ch4", "thf", "co2", "h2"]:
+                if custom_guest_info is not None and mol.mol_type == custom_guest_info["mol_type"]:
+                    res_name = custom_guest_info["residue_name"]
+                elif mol.mol_type in ["ch4", "thf", "co2", "h2"]:
                     res_name = get_guest_residue_name(mol.mol_type)
                 else:
                     gromacs_info = MOLECULE_TO_GROMACS.get(mol.mol_type, {"res_name": "UNK"})
