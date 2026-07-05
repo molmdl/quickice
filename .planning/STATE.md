@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (6/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done)
+**Current Focus:** Phase 41 IN PROGRESS (7/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done; 41-04, 41-05, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done; 41-05, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 6/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06 done) |
-| Status | Phase 41 in progress; 41-06 (GUI export_hydrate is_custom_guest branch + custom_guest_info threading to writers) complete |
-| Last activity | 2026-07-05 — Completed 41-06-PLAN.md (GUI custom guest hydrate export) |
+| Plan | 7/11 complete (41-09, 41-01, 41-07, 41-02, 41-03, 41-06, 41-04 done) |
+| Status | Phase 41 in progress; 41-04 (P3 metadata-driven custom guest in write_interface_gro_file) complete |
+| Last activity | 2026-07-05 — Completed 41-04-PLAN.md (P3 custom guest interface GRO) |
 
-**Progress:** [█████░░░░░] ~48% (20/42 v4.7 plans complete)
+**Progress:** [██████░░░░] ~50% (21/42 v4.7 plans complete)
 
 ---
 
@@ -127,6 +127,10 @@ Recent decisions affecting v4.7 work:
 - **[41-06]** custom_guest_info dict shape {mol_type, residue_name, itp_path} kept identical to 41-02/41-03; residue_name pre-computed as '{config.guest_residue_name}_H' so both writers receive the final 5-char GRO residue name; first GUI-side consumer of the 41-02/41-03 writer APIs
 - **[41-06]** Built-in ch4/thf path line-for-line unchanged modulo the shared registry instantiation moved BEFORE the branch (no regression: 8/8 test_gromacs_export_hydrate.py still pass); GUI broad except Exception retained per AGENTS.md
 - **[41-06]** Manual HydrateStructure construction in tests (no GenIce2): 17-atom 2-water + 9-atom ethanol fixture mirrors simple_hydrate_structure from conftest — fast (<1s) and deterministic; MoleculeIndex(8, 9, "etoh_e2e") matches config.guest_type so the custom_guest_info["mol_type"] lookup in both writers fires
+- **[41-04]** write_interface_gro_file gains custom_guest_info: dict | None = None as the LAST keyword param (after filepath); dict shape {mol_type, residue_name, itp_path} identical to 41-02/41-03 — itp_path unused by GRO writer (consumed by TOP writers) but kept for API consistency
+- **[41-04]** Custom branch chunks guest atoms by the matching molecule_index entry's .count (NOT count_guest_atoms heuristic) — fixes the 9-atom ethanol being miscounted as 5 (EXPORT-05 / P3); fallback atoms_per_mol = guest_atom_count // max(guest_nmolecules, 1) when no index entry matches
+- **[41-04]** Custom branch uses custom_guest_info['residue_name'] directly (e.g. 'MOL_H') — does NOT call detect_guest_type_from_atoms, which returns None for unknown guests and falls through to 'UNK' (EXPORT-04); validate_gro_residue_name still enforced
+- **[41-04]** Built-in path (ch4/thf via detect + count_guest_atoms + reorder) indented verbatim under else: — byte-identical for built-in guests (no regression: 8/8 interface_gro/interface_top + 96/96 tests/test_output pass); custom_guest_info path is purely additive
 
 ### Pending Todos
 
@@ -146,5 +150,5 @@ Recent decisions affecting v4.7 work:
 ## Session Continuity
 
 Last session: 2026-07-05T05:48Z
-Stopped at: Completed 41-06-PLAN.md (GUI custom guest hydrate export)
+Stopped at: Completed 41-04-PLAN.md (P3 custom guest interface GRO)
 Resume file: None
