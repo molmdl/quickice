@@ -1439,17 +1439,43 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
     return None
 
 
-def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
+def write_interface_top_file(
+    iface: InterfaceStructure,
+    filepath: str,
+    custom_guest_info: dict | None = None,
+) -> None:
     """Write GROMACS topology file for interface structure.
     
     Writes topology with SOL (water) for ice + water, and CH4/THF for guests
     if present. Uses #include directives for molecule definitions.
     
+    When ``custom_guest_info`` is supplied (CLI/GUI custom-guest hydrate path),
+    the guest is identified by ``mol_type`` (NOT ``detect_guest_type_from_atoms``,
+    which returns None for unknown guests → no [molecules] entry today). The
+    custom atomtypes are merged via ``_merge_custom_atomtypes`` (oh/ho written,
+    hc/c3/h1 deduped), the custom ``.itp`` filename is ``#include`` d, and
+    ``custom_guest_info["residue_name"]`` (e.g. ``"MOL_H"``) is listed in
+    ``[ molecules ]``. The built-in ch4/thf/co2/h2 path (custom_guest_info is
+    None) is unchanged — ``detect_guest_type_from_atoms`` + the GAFF2 built-in
+    atomtype blocks + ``"{guest_type}_hydrate.itp"`` #include +
+    ``get_hydrate_guest_residue_name`` are all preserved verbatim.
+    
     Args:
         iface: InterfaceStructure object with ice, guest, and water counts
         filepath: Output file path for .top file
+        custom_guest_info: Optional dict ``{"mol_type": str, "residue_name": str,
+            "itp_path": Path}`` for a custom guest molecule. When None, the
+            built-in ch4/thf/co2/h2 path is used (no regression).
     """
     total_molecules = iface.ice_nmolecules + iface.guest_nmolecules + iface.water_nmolecules
+
+    # Custom-guest branch is opt-in: only active when the caller supplies
+    # custom_guest_info AND the interface actually carries guest atoms/molecules.
+    custom_active = (
+        custom_guest_info is not None
+        and iface.guest_atom_count > 0
+        and iface.guest_nmolecules > 0
+    )
     
     with open(filepath, 'w') as f:
         # Header
@@ -1476,11 +1502,14 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         for name, params in WATER_ATOMTYPES.items():
             f.write(_format_atomtype_line(name, params))
             _written_atomtypes[name] = params
-        
-        # Guest atom types if guests are present
-        # Detect guest type from atom names (similar to write_ion_top_file)
+
+        # Guest atom types if guests are present.
+        # P3 fix (EXPORT-05): the custom branch is metadata-driven — it does NOT
+        # call detect_guest_type_from_atoms (which returns None for unknown
+        # guests like ethanol, falling through to the CH4 fallback that misses
+        # oh/ho). The built-in path keeps detect_guest_type_from_atoms.
         guest_type = None
-        if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
+        if not custom_active and iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
             # Get atom names for the guest region
             # NEW ORDER: ice → water → guests
             # Guest atoms start at ice_atom_count + water_atom_count
@@ -1488,8 +1517,17 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
             guest_end = guest_start + iface.guest_atom_count
             guest_atom_names = iface.atom_names[guest_start:guest_end]
             guest_type = detect_guest_type_from_atoms(guest_atom_names)
-        
-        if iface.guest_atom_count > 0 and guest_type:
+
+        if custom_active:
+            # Merge custom guest atomtypes (oh/ho written, hc/c3/h1 deduped
+            # against water/GAFF2). Replaces the CH4 fallback block.
+            _merge_custom_atomtypes(
+                f,
+                Path(custom_guest_info["itp_path"]),
+                _written_atomtypes,
+                f"custom guest {custom_guest_info['mol_type']} atom types",
+            )
+        elif iface.guest_atom_count > 0 and guest_type:
             if guest_type == "ch4":
                 _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
                                        "CH4 atom types (GAFF2)", _written_atomtypes)
@@ -1513,8 +1551,13 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         # Include molecule definitions (after atomtypes, as GROMACS requires)
         f.write("; Molecule definitions\n")
         f.write('#include "tip4p-ice.itp"\n')
-        
-        if iface.guest_nmolecules > 0 and guest_type:
+
+        if custom_active:
+            # #include the custom guest .itp (basename of the supplied path,
+            # e.g. "etoh.itp"). Matches the staging in copy_custom_guest_itp
+            # (plan 41-07) which writes the ITP to output_dir/<src.name>.
+            f.write(f'#include "{Path(custom_guest_info["itp_path"]).name}"\n')
+        elif iface.guest_nmolecules > 0 and guest_type:
             # Include the correct .itp file based on detected guest type
             # Interface guests come from hydrate cages, use hydrate-specific ITP
             f.write(f'#include "{guest_type}_hydrate.itp"\n')
@@ -1539,8 +1582,13 @@ def write_interface_top_file(iface: InterfaceStructure, filepath: str) -> None:
         
         # Guest molecules (after all SOL in .gro file)
         if iface.guest_nmolecules > 0:
-            # Use already-detected guest_type from above
-            if guest_type:
+            if custom_active:
+                # P3: custom guest residue name from custom_guest_info
+                # (e.g. "MOL_H") — does NOT call get_hydrate_guest_residue_name
+                # (which would fall through to UNK for unknown mol_type).
+                f.write(f"{custom_guest_info['residue_name']:<10s} {iface.guest_nmolecules}\n")
+            elif guest_type:
+                # Use already-detected guest_type from above
                 guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 f.write(f"{guest_res_name:<10s} {iface.guest_nmolecules}\n")
 
