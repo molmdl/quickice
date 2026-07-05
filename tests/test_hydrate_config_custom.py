@@ -12,7 +12,11 @@ Validates:
 
 import pytest
 
-from quickice.structure_generation.types import HydrateConfig, GUEST_MOLECULES
+from quickice.structure_generation.types import (
+    CageGuestAssignment,
+    GUEST_MOLECULES,
+    HydrateConfig,
+)
 
 
 # ── Custom guest valid construction ───────────────────────────────────────
@@ -149,3 +153,104 @@ class TestFromDictCustomFields:
         assert config.is_custom_guest is False
         assert config.guest_residue_name == ""  # default
         assert config.guest_gro_path == ""  # default
+
+
+# ── Phase 42: cage_guest_assignments (mixed cage occupancy) ───────────────
+
+class TestCageGuestAssignments:
+    """Tests for the Phase 42 cage_guest_assignments data model.
+
+    Validates:
+    - Explicit cage_guest_assignments dict API works and overrides legacy
+    - Per-assignment built-in metadata auto-population in __post_init__
+    - Legacy single-guest shim synthesizes small/large (sI) and single-key
+      (filled ice) assignments
+    - Duplicate custom guest_residue_name is rejected (Pitfall 6)
+    - Water-only lattices produce empty cage_guest_assignments
+    """
+
+    def test_cage_guest_assignments_explicit(self):
+        """Explicit cage_guest_assignments dict works; legacy guest_type stays default (primary)."""
+        config = HydrateConfig(
+            lattice_type="sI",
+            cage_guest_assignments={
+                "small": CageGuestAssignment(guest_type="ch4", occupancy=60.0),
+                "large": CageGuestAssignment(guest_type="thf", occupancy=100.0),
+            },
+        )
+        assert config.cage_guest_assignments["small"].occupancy == 60.0
+        assert config.cage_guest_assignments["large"].guest_type == "thf"
+        # Legacy guest_type stays default "ch4" (primary guest)
+        assert config.guest_type == "ch4"
+
+    def test_cage_guest_assignments_explicit_builtin_metadata_populated(self):
+        """__post_init__ auto-populates per-assignment built-in metadata from GUEST_MOLECULES."""
+        config = HydrateConfig(
+            lattice_type="sI",
+            cage_guest_assignments={
+                "small": CageGuestAssignment(guest_type="ch4", occupancy=60.0),
+                "large": CageGuestAssignment(guest_type="thf", occupancy=100.0),
+            },
+        )
+        # small (ch4)
+        small = config.cage_guest_assignments["small"]
+        assert small.guest_atom_labels == list(GUEST_MOLECULES["ch4"]["atom_labels"])
+        assert small.guest_atom_count == GUEST_MOLECULES["ch4"]["atoms"]
+        # large (thf)
+        large = config.cage_guest_assignments["large"]
+        assert large.guest_atom_labels == list(GUEST_MOLECULES["thf"]["atom_labels"])
+        assert large.guest_atom_count == GUEST_MOLECULES["thf"]["atoms"]
+
+    def test_legacy_shim_synthesizes_small_large(self):
+        """Legacy single-guest sI config synthesizes small/large assignments."""
+        config = HydrateConfig(
+            lattice_type="sI",
+            guest_type="ch4",
+            cage_occupancy_small=60.0,
+            cage_occupancy_large=80.0,
+        )
+        assert set(config.cage_guest_assignments.keys()) == {"small", "large"}
+        assert config.cage_guest_assignments["small"].guest_type == "ch4"
+        assert config.cage_guest_assignments["small"].occupancy == 60.0
+        assert config.cage_guest_assignments["large"].guest_type == "ch4"
+        assert config.cage_guest_assignments["large"].occupancy == 80.0
+
+    def test_legacy_shim_filled_ice_single_key(self):
+        """Filled ice (c0te) shim synthesizes only 'small' (single cage_type_map key)."""
+        config = HydrateConfig(lattice_type="c0te", guest_type="ch4")
+        assert set(config.cage_guest_assignments.keys()) == {"small"}
+        assert "large" not in config.cage_guest_assignments
+
+    def test_duplicate_custom_residue_name_rejected(self):
+        """Two custom assignments with the same guest_residue_name raise ValueError (Pitfall 6)."""
+        etoh_labels = ["H", "C", "H", "H", "C", "H", "H", "O", "H"]
+        with pytest.raises(ValueError, match="MOL"):
+            HydrateConfig(
+                lattice_type="sI",
+                cage_guest_assignments={
+                    "small": CageGuestAssignment(
+                        guest_type="etoh_a",
+                        occupancy=100.0,
+                        guest_residue_name="MOL",
+                        guest_gro_path="quickice/data/custom/etoh.gro",
+                        guest_itp_path="quickice/data/custom/etoh.itp",
+                        guest_atom_labels=list(etoh_labels),
+                        guest_atom_count=9,
+                    ),
+                    "large": CageGuestAssignment(
+                        guest_type="etoh_b",
+                        occupancy=100.0,
+                        guest_residue_name="MOL",
+                        guest_gro_path="quickice/data/custom/etoh.gro",
+                        guest_itp_path="quickice/data/custom/etoh.itp",
+                        guest_atom_labels=list(etoh_labels),
+                        guest_atom_count=9,
+                    ),
+                },
+            )
+
+    def test_water_only_lattice_empty_assignments(self):
+        """Water-only lattice (sTprime) shim produces empty cage_guest_assignments."""
+        config = HydrateConfig(lattice_type="sTprime", guest_type="ch4")
+        assert config.cage_guest_assignments == {}
+        assert len(config.cage_guest_assignments) == 0

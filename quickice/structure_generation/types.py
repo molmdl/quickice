@@ -467,6 +467,38 @@ class CageGuestAssignment:
 
 
 @dataclass
+class GuestDescriptor:
+    """One guest type present in a generated HydrateStructure (Phase 42).
+
+    Populated by the generator (42-02) when a HydrateStructure carries one or
+    more distinct guest types (mixed cage occupancy). One ``GuestDescriptor``
+    per guest type records its display info and which cage key it was assigned
+    to. The legacy single-guest fields on HydrateStructure (``guest_name``,
+    ``guest_atom_labels``, ``guest_atom_count``, ``guest_itp_path``) remain
+    the "primary guest" (first non-water assignment) for backward compat
+    (Pitfall 7); downstream readers (to_candidate, hydrate_viewer,
+    interface_viewer) still read them.
+
+    Attributes:
+        mol_type: Matches MoleculeIndex.mol_type (e.g. "ch4", "etoh_mix").
+        cage_key: Which cage key it was assigned to ("small"/"large"/
+            "medium"/"guest").
+        guest_name: Display name.
+        guest_residue_name: GRO residue name (e.g. "MOL", "" for built-ins).
+        is_custom: True if this is a custom guest (not in GUEST_MOLECULES).
+        atom_labels: Atom name sequence for one molecule.
+        atom_count: Number of atoms per guest molecule.
+    """
+    mol_type: str
+    cage_key: str
+    guest_name: str
+    guest_residue_name: str
+    is_custom: bool
+    atom_labels: list[str] = field(default_factory=list)
+    atom_count: int = 0
+
+
+@dataclass
 class HydrateConfig:
     """Configuration for hydrate structure generation.
     
@@ -1116,6 +1148,11 @@ class HydrateStructure:
     guest_atom_labels: list[str] = field(default_factory=list)
     guest_atom_count: int = 0
     guest_itp_path: str = ""
+    # Phase 42 mixed cage occupancy: one GuestDescriptor per distinct guest
+    # type present in the generated structure. Populated by the generator
+    # (42-02). The legacy single-guest fields above remain the "primary
+    # guest" (first non-water assignment) for backward compat (Pitfall 7).
+    guest_descriptors: list[GuestDescriptor] = field(default_factory=list)
 
     def to_candidate(self) -> Candidate:
         """Convert hydrate structure to ice Candidate for interface generation.
