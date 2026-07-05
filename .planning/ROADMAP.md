@@ -110,13 +110,17 @@ Plans:
   2. User can set per-cage-type occupancy percentage (e.g., 60% CH₄ in small cages + 100% custom in large cages)
   3. Mixed occupancy hydrate exports correctly to GROMACS with multiple guest .itp includes in .top
   4. Mixed occupancy hydrate renders correctly in VTK with per-type visual styles
-**Plans**: TBD
+**Plans:** 8 plans
 
 Plans:
-- [ ] 42-01: Implement parse_guest spec string construction for mixed occupancy
-- [ ] 42-02: Per-cage-type guest assignment and occupancy controls
-- [ ] 42-03: Multi-guest GROMACS export (multiple .itp includes in .top)
-- [ ] 42-04: Mixed occupancy VTK rendering with per-type styles
+- [ ] 42-00-PLAN.md — Fix sH cage_type_map bug (prerequisite: large→20, add medium→12_1)
+- [ ] 42-01-PLAN.md — Data model: CageGuestAssignment + HydrateConfig.cage_guest_assignments + legacy shim + HydrateStructure.guest_descriptors (MIXED-01/02/03 foundation)
+- [ ] 42-02-PLAN.md — Generator: multi-guest _run_via_api loop + ExitStack + _build_molecule_index (MIXED-01/02/03 generation)
+- [ ] 42-03-PLAN.md — GROMACS writers: list[dict] custom_guest_info across 4 writers + looped atomtypes merge (MIXED-04)
+- [ ] 42-04-PLAN.md — VTK per-type rendering: create_guest_actor list + variable-length render + caller updates (MIXED-05)
+- [ ] 42-05-PLAN.md — GUI export glue: export_hydrate builds list + loops transform_guest_itp + mixed grompp e2e (MIXED-04 GUI)
+- [ ] 42-06-PLAN.md — GUI per-cage-type controls: hydrate_panel rows + get_configuration builds cage_guest_assignments (MIXED-01/02/03 GUI)
+- [ ] 42-07-PLAN.md — CLI surface: --cage-guest repeatable flag + pipeline build config + CLI mixed grompp e2e (MIXED-01/02/03/04 CLI)
 
 #### Phase 43: Depol Mode
 **Goal**: Users can select depol mode for hydrate generation, with strict as the safe default
@@ -224,7 +228,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
 | 40. Custom Guest Bridge Core | v4.7 | 5/5 | ✓ Complete | 2026-07-02 |
 | 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
-| 42. Mixed Cage Occupancy | v4.7 | 0/4 | Not started | - |
+| 42. Mixed Cage Occupancy | v4.7 | 0/8 | Not started | - |
 | 43. Depol Mode | v4.7 | 0/2 | Not started | - |
 | 44. GUI Integration | v4.7 | 0/4 | Not started | - |
 | 45. CLI Integration | v4.7 | 0/3 | Not started | - |
