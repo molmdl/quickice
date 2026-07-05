@@ -1643,6 +1643,7 @@ def write_multi_molecule_top_file(
     system_name: str = "Multi-molecule system",
     itp_files: dict[str, str] | None = None,
     registry: MoleculetypeRegistry | None = None,
+    custom_guest_info: dict | None = None,
 ) -> None:
     """Write GROMACS topology file with multiple moleculetypes.
     
@@ -1656,6 +1657,14 @@ def write_multi_molecule_top_file(
         itp_files: Optional mapping of mol_type -> itp path to use instead of bundled
                    Example: {"ch4": "/path/to/custom_ch4.itp"}
         registry: Optional MoleculetypeRegistry for unique naming (default: use module-level)
+        custom_guest_info: Optional dict describing a custom hydrate guest molecule,
+                   enabling EXPORT-01 (residue name in [ molecules ]) and EXPORT-03
+                   (atomtypes merge into the main .top).  Shape::
+                       {"mol_type": str,         # matches a MoleculeIndex.mol_type
+                        "residue_name": str,     # e.g. "MOL_H" (used in [ molecules ])
+                        "itp_path": Path}        # source .itp for atomtypes merge
+                   When None (default), the writer behaves exactly as before
+                   (no regression for built-in ch4/thf/co2/h2 guests).
         
     Note:
         The main .top file uses #include to include separate .itp files.
@@ -1699,7 +1708,9 @@ def write_multi_molecule_top_file(
         
         # Fall back to standard naming
         if res_name is None:
-            if mol_type in ["ch4", "thf", "co2", "h2"]:
+            if custom_guest_info is not None and mol_type == custom_guest_info["mol_type"]:
+                res_name = custom_guest_info["residue_name"]
+            elif mol_type in ["ch4", "thf", "co2", "h2"]:
                 res_name = get_guest_residue_name(mol_type)
             else:
                 gromacs_info = MOLECULE_TO_GROMACS.get(mol_type, {"mol_name": "UNK"})
@@ -1776,7 +1787,20 @@ def write_multi_molecule_top_file(
         if "h2" in unique_types:
             _write_atomtypes_block(f, H2_ATOMTYPE_NAMES,
                                    "H2 atom types (GAFF2)", _written_atomtypes)
-        
+
+        # Custom guest atom types (EXPORT-03): merge from the custom guest ITP
+        # with dedup.  Written BEFORE the #include block so all [ atomtypes ]
+        # (water+ion+GAFF2+custom) precede molecule definitions (GROMACS
+        # ordering invariant).  The #include for the custom guest is already
+        # produced by the itp_files loop below — do NOT add a second one.
+        if custom_guest_info is not None and custom_guest_info.get("itp_path"):
+            _merge_custom_atomtypes(
+                f,
+                Path(custom_guest_info["itp_path"]),
+                _written_atomtypes,
+                f"custom guest {custom_guest_info['mol_type']} atom types",
+            )
+
         f.write("\n")
         
         # Include molecule definitions (AFTER atomtypes)
