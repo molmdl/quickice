@@ -427,6 +427,46 @@ class InterfaceStructure:
 
 
 @dataclass
+class CageGuestAssignment:
+    """One guest assignment for one cage type (Phase 42 mixed occupancy).
+
+    A HydrateConfig carries a ``cage_guest_assignments`` dict mapping cage
+    keys (e.g. "small"/"large"/"medium"/"guest") to one ``CageGuestAssignment``
+    each. This allows different guest types and independent occupancy per
+    cage type while the legacy single-guest HydrateConfig fields continue to
+    describe the *primary* guest for backward compatibility.
+
+    Attributes:
+        guest_type: Guest molecule slug. Built-in slugs ("ch4", "thf") have
+            metadata auto-populated from GUEST_MOLECULES in
+            HydrateConfig.__post_init__ when ``guest_atom_labels`` is empty.
+            Custom slugs require explicit metadata (guest_residue_name,
+            guest_atom_labels, guest_atom_count, guest_gro_path).
+        occupancy: Cage occupancy percentage (0-100).
+        guest_residue_name: GRO residue name (required for custom guests;
+            "" for built-ins).
+        guest_gro_path: Path to custom guest .gro file (required for custom
+            guests; "" for built-ins).
+        guest_itp_path: Path to custom guest .itp file (for custom guests).
+        guest_atom_labels: Atom name sequence for one molecule (for
+            metadata-driven identification).
+        guest_atom_count: Number of atoms per guest molecule.
+    """
+    guest_type: str
+    occupancy: float = 100.0
+    guest_residue_name: str = ""
+    guest_gro_path: str = ""
+    guest_itp_path: str = ""
+    guest_atom_labels: list[str] = field(default_factory=list)
+    guest_atom_count: int = 0
+
+    @property
+    def is_custom_guest(self) -> bool:
+        """True if this assignment's guest_type is a custom guest (not in GUEST_MOLECULES)."""
+        return self.guest_type not in GUEST_MOLECULES
+
+
+@dataclass
 class HydrateConfig:
     """Configuration for hydrate structure generation.
     
@@ -478,6 +518,12 @@ class HydrateConfig:
     guest_itp_path: str = ""
     guest_residue_name: str = ""
     guest_gro_path: str = ""
+    # Phase 42 mixed cage occupancy: per-cage-key guest assignments. When
+    # supplied explicitly, each cage key ("small"/"large"/"medium"/"guest")
+    # maps to one CageGuestAssignment with its own guest_type + occupancy.
+    # When left empty, __post_init__ synthesizes it from the legacy single-
+    # guest fields above (backward-compat shim).
+    cage_guest_assignments: dict[str, CageGuestAssignment] = field(default_factory=dict)
     
     def __post_init__(self):
         """Validate configuration parameters and auto-populate guest metadata.
@@ -537,6 +583,99 @@ class HydrateConfig:
                 self.guest_atom_labels = list(guest_info["atom_labels"])
             if not self.guest_atom_count:
                 self.guest_atom_count = guest_info["atoms"]
+        
+        # Phase 42 mixed cage occupancy: handle cage_guest_assignments.
+        # Two modes:
+        #   (1) Legacy single-guest API (cage_guest_assignments empty): synthesize
+        #       assignments from the legacy fields above (backward-compat shim).
+        #   (2) Explicit Phase 42 API (cage_guest_assignments supplied): auto-
+        #       populate built-in assignment metadata per-assignment, then validate
+        #       custom assignment metadata + enforce distinct guest_residue_name
+        #       across custom assignments (Pitfall 6).
+        if not self.cage_guest_assignments and self.guest_type:
+            # (1) Backward-compat shim: synthesize cage_guest_assignments from
+            # the legacy single-guest fields. Existing callers (GUI hydrate_panel,
+            # CLI pipeline, tests) that pass only the legacy fields continue to
+            # work unchanged. "small"/"large" come from the legacy occupancy
+            # fields; "medium"/"guest" have no legacy field, so they are only
+            # set when cage_guest_assignments is passed explicitly.
+            lattice_entry = HYDRATE_LATTICES[self.lattice_type]
+            cmap = lattice_entry.get("cage_type_map", {})
+            syn: dict[str, CageGuestAssignment] = {}
+            if "small" in cmap:
+                syn["small"] = CageGuestAssignment(
+                    guest_type=self.guest_type, occupancy=self.cage_occupancy_small,
+                    guest_residue_name=self.guest_residue_name,
+                    guest_gro_path=self.guest_gro_path,
+                    guest_itp_path=self.guest_itp_path,
+                    guest_atom_labels=list(self.guest_atom_labels),
+                    guest_atom_count=self.guest_atom_count,
+                )
+            if "large" in cmap:
+                syn["large"] = CageGuestAssignment(
+                    guest_type=self.guest_type, occupancy=self.cage_occupancy_large,
+                    guest_residue_name=self.guest_residue_name,
+                    guest_gro_path=self.guest_gro_path,
+                    guest_itp_path=self.guest_itp_path,
+                    guest_atom_labels=list(self.guest_atom_labels),
+                    guest_atom_count=self.guest_atom_count,
+                )
+            self.cage_guest_assignments = syn
+        elif self.cage_guest_assignments:
+            # (2) Explicit Phase 42 API.
+            # (2a) Auto-populate built-in assignment metadata per-assignment
+            # (mirrors the legacy single-guest auto-populate above, but PER
+            # assignment). This is the canonical place for this population —
+            # single source of truth in __post_init__. Ensures CageGuestAssignment
+            # entries for built-in guests passed via the explicit dict path
+            # (e.g. GUI get_configuration) have complete atom_labels/atom_count.
+            for assignment in self.cage_guest_assignments.values():
+                if assignment.guest_type in GUEST_MOLECULES and not assignment.guest_atom_labels:
+                    ginfo = GUEST_MOLECULES[assignment.guest_type]
+                    assignment.guest_atom_labels = list(ginfo["atom_labels"])
+                    assignment.guest_atom_count = ginfo["atoms"]
+            # (2b) Validate custom-guest metadata per assignment + enforce
+            # distinct guest_residue_name across custom assignments (Pitfall 6).
+            # The _H hydrate path's register_hydrate_guest does NOT disambiguate
+            # (unlike the _L liquid path), so duplicate residue names would
+            # collide in the GRO/topology. Do NOT auto-disambiguate — reject.
+            seen_residue_names: dict[str, str] = {}  # residue_name -> first cage_key
+            for cage_key, assignment in self.cage_guest_assignments.items():
+                if assignment.is_custom_guest:
+                    if not assignment.guest_residue_name:
+                        raise ValueError(
+                            f"Custom guest_type '{assignment.guest_type}' in cage '{cage_key}' "
+                            f"requires guest_residue_name (the GRO residue name, <=3 chars base "
+                            f"for _H suffix). Set guest_residue_name explicitly."
+                        )
+                    if not assignment.guest_atom_labels:
+                        raise ValueError(
+                            f"Custom guest_type '{assignment.guest_type}' in cage '{cage_key}' "
+                            f"requires guest_atom_labels (atom name sequence for one molecule, "
+                            f"for metadata-driven identification). Set guest_atom_labels explicitly."
+                        )
+                    if not assignment.guest_atom_count:
+                        raise ValueError(
+                            f"Custom guest_type '{assignment.guest_type}' in cage '{cage_key}' "
+                            f"requires guest_atom_count (number of atoms per guest molecule). "
+                            f"Set guest_atom_count explicitly."
+                        )
+                    if not assignment.guest_gro_path:
+                        raise ValueError(
+                            f"Custom guest_type '{assignment.guest_type}' in cage '{cage_key}' "
+                            f"requires guest_gro_path (path to the custom guest .gro file for "
+                            f"GenIce2 Molecule module building). Set guest_gro_path explicitly."
+                        )
+                    # Pitfall 6: distinct guest_residue_name across custom assignments.
+                    if assignment.guest_residue_name in seen_residue_names:
+                        raise ValueError(
+                            f"Duplicate guest_residue_name '{assignment.guest_residue_name}' "
+                            f"across custom cage assignments: cage '{seen_residue_names[assignment.guest_residue_name]}' "
+                            f"and cage '{cage_key}' both use this residue name. Custom hydrate "
+                            f"guests must have distinct guest_residue_name (the _H hydrate path "
+                            f"does not disambiguate)."
+                        )
+                    seen_residue_names[assignment.guest_residue_name] = cage_key
     
     @classmethod
     def from_dict(cls, d: dict) -> "HydrateConfig":
@@ -544,7 +683,22 @@ class HydrateConfig:
         
         Guest metadata fields are passed through if present,
         with defaults for backward compatibility.
+
+        Phase 42: if ``cage_guest_assignments`` is present in the dict, each
+        entry is rebuilt as a CageGuestAssignment (the dict values may be
+        dicts or CageGuestAssignment instances). All legacy keys are kept.
         """
+        # Phase 42: rebuild cage_guest_assignments entries into CageGuestAssignment
+        # objects if the dict supplies them (the explicit Phase 42 API path).
+        raw_assignments = d.get("cage_guest_assignments", {})
+        rebuilt_assignments: dict[str, CageGuestAssignment] = {}
+        for cage_key, entry in raw_assignments.items():
+            if isinstance(entry, CageGuestAssignment):
+                rebuilt_assignments[cage_key] = entry
+            elif isinstance(entry, dict):
+                rebuilt_assignments[cage_key] = CageGuestAssignment(**entry)
+            # Non-dict/non-CageGuestAssignment values are skipped silently;
+            # __post_init__ will handle the (now empty) dict via the legacy shim.
         return cls(
             lattice_type=d.get("lattice_type", "sI"),
             guest_type=d.get("guest_type", "ch4"),
@@ -559,12 +713,29 @@ class HydrateConfig:
             guest_itp_path=d.get("guest_itp_path", ""),
             guest_residue_name=d.get("guest_residue_name", ""),
             guest_gro_path=d.get("guest_gro_path", ""),
+            cage_guest_assignments=rebuilt_assignments,
         )
     
     @property
     def is_custom_guest(self) -> bool:
-        """True if guest_type is a custom guest (not in GUEST_MOLECULES)."""
+        """True if the PRIMARY guest_type is a custom guest (not in GUEST_MOLECULES).
+
+        Reflects the legacy single-guest ``guest_type`` field. For the explicit
+        Phase 42 API where multiple guest types may be assigned to different
+        cages, use ``has_custom_assignment`` to detect any custom assignment.
+        """
         return self.guest_type not in GUEST_MOLECULES
+
+    @property
+    def has_custom_assignment(self) -> bool:
+        """True if any per-cage assignment is a custom guest (Phase 42).
+
+        Used by the generator (42-02) for the ExitStack decision: when any
+        cage is assigned a custom guest, the custom_guest_module sys.modules
+        injection context manager is required (mirroring the 40-05 path).
+        """
+        return any(a.is_custom_guest for a in self.cage_guest_assignments.values())
+
     
     def get_genice_lattice_name(self) -> str:
         """Get GenIce2 lattice name for this configuration."""
