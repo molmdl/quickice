@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (2/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01 done)
+**Current Focus:** Phase 41 IN PROGRESS (3/11 plans) — GROMACS Export for Custom Guests (41-09, 41-01, 41-07 done)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01 done; 41-02..41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-09, 41-01, 41-07 done; 41-02..41-06, 41-08, 41-10, 41-11 pending). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 2/11 complete (41-09, 41-01 done) |
-| Status | Phase 41 in progress; 41-01 (_merge_custom_atomtypes helper) complete |
-| Last activity | 2026-07-03 — Completed 41-01-PLAN.md (_merge_custom_atomtypes tested helper) |
+| Plan | 3/11 complete (41-09, 41-01, 41-07 done) |
+| Status | Phase 41 in progress; 41-07 (copy_custom_guest_itp + CLI hydrate routing) complete |
+| Last activity | 2026-07-05 — Completed 41-07-PLAN.md (copy_custom_guest_itp + is_custom_guest branch) |
 
-**Progress:** [████░░░░░░] ~38% (16/42 v4.7 plans complete)
+**Progress:** [████░░░░░░] ~40% (17/42 v4.7 plans complete)
 
 ---
 
@@ -113,6 +113,9 @@ Recent decisions affecting v4.7 work:
 - **[41-01]** _merge_custom_atomtypes(f, itp_path, written, label) added as a shared tested merge+dedup primitive (parse → conflict-check → write-new-only → record); existing inline merge code in write_custom_molecule_top_file / write_ion_top_file is intentionally NOT refactored (zero regression risk; consumer phases EXPORT-03 / write_multi_molecule_top_file / write_interface_top_file will adopt it later)
 - **[41-01]** No-op returns BEFORE writing the '; label' comment header — header is written only when parse_itp_atomtypes returns non-empty (so a no-section ITP yields a truly empty file)
 - **[41-01]** Tests pre-seed *written* from GAFF2_ATOMTYPES (importable source of truth) rather than hardcoded values, guaranteeing exact LJ-param match with etoh.itp hc/c3/h1 for deterministic dedup
+- **[41-07]** copy_custom_guest_itp(output_dir, itp_path, residue_name) added to quickice/cli/itp_helpers.py — reads custom guest ITP, applies transform_guest_itp(content, residue_name, '_H') (comments atomtypes + renames moleculetype to '{name}_H' + rewrites [atoms] resname), writes to output_dir/<itp basename>; uses except (OSError, ValueError) per AGENTS.md (no bare except Exception); returns None for missing source / >5-char residue name (logged at error)
+- **[41-07]** copy_itp_files_for_structure hydrate branch dispatches on config.is_custom_guest BEFORE the built-in _resolve_guest_type_for_hydrate_step/_copy_hydrate_guest_itp path; custom path uses explicit config.guest_itp_path + config.guest_residue_name, built-in ch4/thf path UNCHANGED (still _copy_hydrate_guest_itp → '{guest_type}_hydrate.itp'); the two paths stay disjoint by is_custom_guest
+- **[41-07]** Custom guest ITP basename preserved (output_dir / src.name, e.g. 'etoh.itp') so it matches the .top #include naming from plans 41-05/41-08; built-in _copy_hydrate_guest_itp keeps its '{guest_type}_hydrate.itp' convention; tests/test_cli/ subdir created without __init__.py (pytest discovers via rootdir mode)
 
 ### Pending Todos
 
@@ -131,6 +134,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-03T13:47:29Z
-Stopped at: Completed 41-01-PLAN.md (_merge_custom_atomtypes tested helper)
+Last session: 2026-07-05T05:28Z
+Stopped at: Completed 41-07-PLAN.md (copy_custom_guest_itp + is_custom_guest branch in CLI hydrate ITP copy)
 Resume file: None
