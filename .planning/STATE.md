@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 42 IN PROGRESS (2/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 42 IN PROGRESS (3/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 42 of 48 (Mixed Cage Occupancy) — IN PROGRESS |
-| Plan | 2/8 complete (42-00 done, 42-01 done; 42-02..42-07 pending) |
-| Status | Phase 42 in progress. 42-01 (CageGuestAssignment data model) complete: central Phase 42 data model in place — CageGuestAssignment + HydrateConfig.cage_guest_assignments + __post_init__ legacy shim + per-assignment built-in auto-populate + Pitfall 6 duplicate-residue rejection + GuestDescriptor + HydrateStructure.guest_descriptors. Ready for 42-02 (hydrate_generator). |
-| Last activity | 2026-07-05 — Completed 42-01-PLAN.md (CageGuestAssignment + cage_guest_assignments data model) |
+| Plan | 3/8 complete (42-00 done, 42-01 done, 42-02 done; 42-03..42-07 pending) |
+| Status | Phase 42 in progress. 42-02 (hydrate generator multi-guest) complete: _run_via_api loops cage_guest_assignments calling parse_guest per cage key (Pattern 2); generate() nests custom_guest_module via ExitStack per DISTINCT custom guest_type (deduped — Pattern 3); _build_molecule_index uses resname_to_moltype dict for per-type MoleculeIndex.mol_type (Pattern 4); guest_descriptors populated. Mixed sI 2×2×2 CH4+etoh → 16+48 verified. Ready for 42-03 (gromacs-writers). |
+| Last activity | 2026-07-05 — Completed 42-02-PLAN.md (hydrate generator multi-guest loop + ExitStack + resname_to_moltype) |
 
-**Progress:** [██████░░░░] ~56% (27/48 v4.7 plans complete across phases 38-47; Phase 42: 2/8)
+**Progress:** [██████░░░░] ~58% (28/48 v4.7 plans complete across phases 38-47; Phase 42: 3/8)
 
 ---
 
@@ -155,6 +155,11 @@ Recent decisions affecting v4.7 work:
 - **[42-01]** has_custom_assignment property (any(a.is_custom_guest ...)) for generator ExitStack/custom_guest_module decision (42-02); legacy is_custom_guest property preserved (reflects PRIMARY guest_type, not renamed — Pitfall 4)
 - **[42-01]** from_dict rebuilds CageGuestAssignment per entry (accepts dict via CageGuestAssignment(**entry) or existing instance; non-dict/non-instance skipped silently → shim handles empty dict)
 - **[42-01]** GuestDescriptor dataclass (mol_type, cage_key, guest_name, guest_residue_name, is_custom, atom_labels, atom_count) + HydrateStructure.guest_descriptors: list[GuestDescriptor] field (default empty, populated by 42-02); legacy single-guest fields (guest_name, guest_atom_labels, guest_atom_count, guest_itp_path) kept as primary guest (Pitfall 7); to_candidate() unchanged (already multi-guest-aware via guest_types accumulation)
+- **[42-02]** _run_via_api loops config.cage_guest_assignments calling parse_guest per cage key (Pattern 2); each cage_key maps to a DISTINCT cage_id via cage_type_map so parse_guest's "Cage type already specified" assert never fires (Pitfall 2); water-only lattices + zero-occupancy assignments skipped; legacy single-guest small/large branch removed
+- **[42-02]** generate() uses ExitStack to nest custom_guest_module per DISTINCT custom guest_type (Pattern 3) — DEDUPED by guest_type (not per-assignment) because custom_guest_module asserts sys.modules key is absent and the 42-01 legacy shim synthesizes the SAME guest_type for small+large (legacy single-custom-guest would crash the assert if registered twice); ExitStack guarantees cleanup on exception (Pitfall 5)
+- **[42-02]** _build_molecule_index builds resname_to_moltype dict from ALL cage assignments (Pattern 4): built-ins map guest_type.upper() → guest_type (ch4→"CH4"); custom maps guest_residue_name → guest_type (MOL→"etoh_mix"); per-type MoleculeIndex.mol_type via dict lookup. guest_signature/guest_type/guest_atom_labels/guest_atom_count kept from PRIMARY (first) assignment for the atom-label fallback path (single-guest backward compat)
+- **[42-02]** guest_descriptors: one GuestDescriptor per cage assignment (one per cage_key, NOT per distinct guest_type — plan says "one per assignment"); legacy single-custom-guest yields 2 descriptors (same mol_type, different cage_keys); GuestDescriptor.guest_name: built-ins use GUEST_MOLECULES[name], custom uses guest_residue_name (mirrors HydrateConfig.__post_init__)
+- **[42-02]** Two Rule 1 auto-fixes to plan snippets: (1) dedup custom assignments by guest_type in generate() ExitStack (plan's per-assignment registration would crash custom_guest_module's sys.modules assert for legacy single-custom-guest); (2) kept guest_signature/guest_type defined in _build_molecule_index (plan's snippet omitted them but the atom-label fallback path kept by plan uses them — would NameError). Plan's verify referenced nonexistent tests/test_hydrate_generator.py — used tests/test_e2e_hydrate_generation.py instead
 
 ### Pending Todos
 
@@ -173,6 +178,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T08:19Z
-Stopped at: Completed 42-01-PLAN.md (CageGuestAssignment + cage_guest_assignments + legacy shim + GuestDescriptor data model)
+Last session: 2026-07-05T08:27Z
+Stopped at: Completed 42-02-PLAN.md (hydrate generator multi-guest _run_via_api loop + ExitStack + resname_to_moltype + guest_descriptors)
 Resume file: None
