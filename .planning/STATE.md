@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 41 IN PROGRESS (10/11 plans) — GROMACS Export for Custom Guests (41-01..41-07, 41-09, 41-10, 41-11 done; EXPORT-06 fully closed; 41-08 pending)
+**Current Focus:** Phase 41 COMPLETE (11/11 plans) — GROMACS Export for Custom Guests (41-01..41-11 all done; EXPORT-01..EXPORT-06 fully closed for both GUI + CLI paths)
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 IN PROGRESS (41-01..41-07, 41-09, 41-10, 41-11 done; EXPORT-06 fully closed; 41-08 pending). Phase 40 COMPLETE (40-01..40-05 done).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 41 COMPLETE (41-01..41-11 all done; EXPORT-01..EXPORT-06 fully closed for both GUI + CLI paths). Phase 40 COMPLETE (40-01..40-05 done).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 41 of 48 (GROMACS Export for Custom Guests) — IN PROGRESS |
-| Plan | 10/11 complete (41-01..41-07, 41-09, 41-10, 41-11 done) |
-| Status | Phase 41 in progress; 41-11 (CLI custom-guest grompp e2e, EXPORT-06 CLI half) complete — EXPORT-06 fully closed (both GUI 41-10 + CLI 41-11) |
-| Last activity | 2026-07-05 — Completed 41-11-PLAN.md (CLI custom-guest grompp e2e) |
+| Phase | 41 of 48 (GROMACS Export for Custom Guests) — COMPLETE |
+| Plan | 11/11 complete (41-01..41-11 all done) |
+| Status | Phase 41 complete; 41-08 (CLI custom_guest_info threading — final plan of phase 41) complete. EXPORT-01..EXPORT-06 fully closed for both GUI (41-06/41-10) + CLI (41-08/41-11) paths. |
+| Last activity | 2026-07-05 — Completed 41-08-PLAN.md (CLI custom_guest_info threading) |
 
-**Progress:** [██████░░░░] ~55% (23/42 v4.7 plans complete)
+**Progress:** [██████░░░░] ~57% (24/42 v4.7 plans complete)
 
 ---
 
@@ -143,6 +143,9 @@ Recent decisions affecting v4.7 work:
 - **[41-11]** CLI custom-guest grompp e2e pattern: synthetic 2-water + 1-ethanol InterfaceStructure (17 atoms, no GenIce2) → write_interface_gro_file + write_interface_top_file (custom_guest_info) → _stage_itp_files + _stage_custom_guest_itp → assert_itp_completeness + assert_gro_top_consistent → run_gmx_grompp (exit 0). Differs from the 41-10 GUI pattern ONLY in the writer pair (write_interface_* vs write_multi_molecule_*); both share the staging + assertion + grompp contract
 - **[41-11]** Test box = 3.0 nm (NOT the plan's literal 2.0 nm) — lesson carried over from 41-10 (grompp rejects box exactly at 2*cutoff; cutoff 1.0 nm < half the shortest box vector must be strictly satisfied); MDP untouched. The plan's InterfaceStructure code block omitted report= (a required dataclass field, no default) — added report="test" per the execution context (Rule 3 auto-fix; no behavioral impact since report is not consumed by the writers under test)
 - **[41-11]** Module-scope fixture system (_IFACE/_CGI/_ATOM_NAMES/_POSITIONS/_CELL/_MOLECULE_INDEX) — immutable-ish and cheap, matching the test_e2e_gmx_validation.py convention; the plan explicitly permitted module-scope ("immutable-ish and cheap"). Single solid test (no parameterization) — phase scope is one custom guest, sI sufficient (mirrors 41-10 guidance)
+- **[41-08]** _build_custom_guest_info(config) added as a MODULE-LEVEL function in pipeline.py (placed after report_progress, before CLIPipeline) — unit-testable in isolation without instantiating the pipeline; returns {'mol_type': config.guest_type, 'residue_name': '{guest_residue_name}_H', 'itp_path': Path(config.guest_itp_path)} for custom HydrateConfig and None for built-in/None; reuses the top-level `from pathlib import Path` import (no inline re-import per plan guidance)
+- **[41-08]** _run_export_step hydrate branch threads custom_guest_info=_build_custom_guest_info(getattr(hydrate, "config", None)) to BOTH write_interface_gro_file and write_interface_top_file (keyword arg); built-in ch4/thf passes None (writers' built-in branch byte-identical, no regression); ITP copy UNCHANGED (still copy_itp_files_for_structure → 41-07 custom branch); existing except (OSError, ValueError) handler kept AS-IS (no bare except Exception per AGENTS.md — _build_custom_guest_info uses getattr guards so it cannot raise)
+- **[41-08]** Integration test (test_run_export_step_custom_hydrate) uses ABSOLUTE guest_itp_path (ETOH_ITP constant from tests/test_cli/test_itp_helpers_custom_guest.py convention) for cwd-independent ITP copy; unit test 1 uses the plan's literal relative path 'quickice/data/custom/etoh.itp' for the exact Path-equality assertion (Path equality is structural — no file I/O in the helper, so cwd is irrelevant). HydrateStructure built manually (2 water + 1 ethanol, 17 atoms, no GenIce2, <1s per test) mirroring simple_hydrate_structure from conftest
 
 ### Pending Todos
 
@@ -161,6 +164,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T06:37Z
-Stopped at: Completed 41-11-PLAN.md (CLI custom-guest grompp e2e — EXPORT-06 fully closed)
+Last session: 2026-07-05T06:42Z
+Stopped at: Completed 41-08-PLAN.md (CLI custom_guest_info threading — final plan of phase 41; phase 41 now COMPLETE 11/11)
 Resume file: None
