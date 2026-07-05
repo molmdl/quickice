@@ -14,6 +14,8 @@ Radius Control:
 - For better visibility, the atomic radius scale factor can be increased.
 """
 
+from collections import defaultdict
+
 import numpy as np
 from vtkmodules.all import (
     vtkMoleculeMapper,
@@ -93,6 +95,21 @@ ELEMENT_TO_ATOMIC_NUMBER: dict[str, int] = {
 # Non-covalent: O-O in ice ~0.28nm, O-O in hydrate cages ~0.30nm
 # Use 0.16nm threshold to capture all covalent bonds including C-C but NOT H-H
 BOND_DISTANCE_THRESHOLD = 0.16  # nm (captures O-H, C-H, C-O, C-C bonds, excludes H-H)
+
+# Per-type bond color palette for guest actors (Phase 42 — MIXED-05).
+# Each guest mol_type gets its own vtkActor; the i-th distinct guest type (in
+# first-occurrence order) cycles through this palette for its BOND color so a
+# mixed hydrate (e.g. CH4 + custom) is visually distinguishable by type. Atom
+# coloring stays CPK (via ELEMENT_TO_ATOMIC_NUMBER) — only bond color differs
+# per type, keeping the change minimal and avoiding per-atom scalar arrays.
+# Values are RGB 0-255 (the convention used by vtkMoleculeMapper.SetBondColor).
+_DEFAULT_PALETTE: list[tuple[int, int, int]] = [
+    (180, 180, 180),  # gray   — first guest (keeps the legacy single-guest color)
+    (0, 200, 200),    # cyan   — second guest
+    (220, 220, 0),    # yellow — third guest
+    (200, 80, 80),    # red    — fourth guest
+    (160, 80, 200),   # purple — fifth guest
+]
 
 
 def _set_molecule_lattice(molecule: vtkMolecule, cell: np.ndarray) -> None:
@@ -388,123 +405,150 @@ def _build_vtk_molecule_from_molecule_index(
     return molecule
 
 
-def create_guest_actor(structure, mode: str = "ball_and_stick") -> vtkActor:
-    """Create an actor for guest molecules with specified representation.
-    
-    Guest molecules (CH4, THF, CO2, H2) are rendered with the specified
-    representation mode using CPK coloring (matching Tab 1).
-    
+def create_guest_actor(
+    structure,
+    mode: str = "ball_and_stick",
+    per_type_colors: dict[str, tuple] | None = None,
+) -> list:
+    """Create one vtkActor per guest ``mol_type`` with specified representation.
+
+    Guest molecules (CH4, THF, CO2, H2, custom guests, ...) are grouped by
+    their ``MoleculeIndex.mol_type`` (excluding water). Each distinct
+    ``mol_type`` gets its OWN ``vtkMolecule`` + ``vtkMoleculeMapper`` +
+    ``vtkActor`` so a mixed hydrate (e.g. CH4 + custom) renders one actor per
+    guest type with a distinct bond color from ``_DEFAULT_PALETTE`` (or from
+    ``per_type_colors`` when supplied). Atom coloring stays CPK (via
+    ``ELEMENT_TO_ATOMIC_NUMBER``) — only the bond color differs per type.
+
+    Phase 42 (MIXED-05): previously this built ONE ``vtkMolecule`` from ALL
+    non-water molecules → ONE actor → all guests shared one color and were
+    indistinguishable by type. Now it returns a ``list[vtkActor]`` (one per
+    non-water ``mol_type``, in first-occurrence order).
+
     Args:
         structure: HydrateStructure with molecule_index containing guest molecules
         mode: Representation mode - "vdw", "ball_and_stick", or "stick"
-    
+        per_type_colors: Optional override ``{mol_type: (r, g, b)}`` (RGB 0-255).
+            When a ``mol_type`` is absent from this dict, the i-th group falls
+            back to ``_DEFAULT_PALETTE[i % len(_DEFAULT_PALETTE)]``.
+
     Returns:
-        vtkActor with guest molecules rendered in specified mode
+        List of vtkActor objects, one per non-water ``mol_type`` (in
+        first-occurrence order). Empty list if there are no guest molecules —
+        callers handle the empty case (do NOT rely on a hidden actor).
     """
-    # Check if there are any guest molecules
-    has_guest = any(mol.mol_type != "water" for mol in structure.molecule_index)
-    
-    if not has_guest:
-        # No guest molecules - return empty hidden actor
-        mapper = vtkMoleculeMapper()
-        actor = vtkActor()
-        actor.SetMapper(mapper)
-        actor.VisibilityOff()
-        return actor
-    
-    # Build ONE vtkMolecule from all guest atoms, but only bond atoms within SAME molecule
-    # Use a similar approach to water - iterate through molecule_index for guests
-    molecule = vtkMolecule()
-    
+    # Group molecule_index entries by mol_type, excluding water.
+    # defaultdict(list) preserves first-occurrence insertion order (Py3.7+),
+    # so the i-th group corresponds to the i-th palette entry.
+    by_type: dict[str, list] = defaultdict(list)
     for mol in structure.molecule_index:
         if mol.mol_type == "water":
-            continue  # Skip water, only process guests
-        
-        # Get positions for this guest molecule
-        start = mol.start_idx
-        end = start + mol.count
-        mol_positions = structure.positions[start:end]
-        mol_names = structure.atom_names[start:end]
-        
-        # Add atoms for this molecule (skipping virtual sites like MW)
-        atom_ids = []
-        visible_positions = []
-        for pos, name in zip(mol_positions, mol_names):
-            element = _get_element_from_atom_name(name)
-            if element is None:
-                continue  # Skip virtual sites like MW
-            atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
-            atom_id = molecule.AppendAtom(atomic_number, float(pos[0]), float(pos[1]), float(pos[2]))
-            atom_ids.append(atom_id)
-            visible_positions.append(pos)
-        
-        # Add bonds only within this guest molecule
-        n_atoms = len(atom_ids)
-        for i in range(n_atoms):
-            for j in range(i + 1, n_atoms):
-                dist = np.linalg.norm(visible_positions[i] - visible_positions[j])
-                if dist < BOND_DISTANCE_THRESHOLD:
-                    molecule.AppendBond(atom_ids[i], atom_ids[j], 1)
-    
-    # Set the lattice for PBC handling (keeps molecules complete at boundaries)
-    # This is the same pattern used in candidate_to_vtk_molecule() for the ice tab
-    _set_molecule_lattice(molecule, structure.cell)
-    
-    # Get representation settings (matching molecular_viewer.py)
+            continue
+        by_type[mol.mol_type].append(mol)
+
+    if not by_type:
+        # No guest molecules — return an empty list (NOT a hidden actor).
+        # Callers (hydrate_viewer, interface_viewer) handle the empty case by
+        # iterating [1:] (guests) which is a no-op for a water-only structure.
+        return []
+
+    per_type_colors = per_type_colors or {}
     settings = get_representation_settings(mode)
-    
-    # Create mapper with specified rendering mode
-    mapper = vtkMoleculeMapper()
-    mapper.SetInputData(molecule)
-    mapper.SetRenderAtoms(True)   # Render atom spheres
-    mapper.SetRenderBonds(True)   # Render bonds as cylinders
-    
-    if mode == "vdw":
-        mapper.UseVDWSpheresSettings()
-        mapper.SetAtomicRadiusTypeToVDWRadius()
-    elif mode == "ball_and_stick":
-        mapper.UseBallAndStickSettings()
-        mapper.SetAtomicRadiusTypeToVDWRadius()
-    else:  # stick
-        mapper.UseLiquoriceStickSettings()
-        mapper.SetAtomicRadiusTypeToUnitRadius()
-    
-    # Apply radius settings (matching Tab 1's molecular_viewer.py)
-    mapper.SetAtomicRadiusScaleFactor(settings['atomic_radius_scale'])
-    mapper.SetBondRadius(settings['bond_radius'])
-    
-    # Set custom bond color for visibility (RGB 0-255)
-    mapper.SetBondColor(180, 180, 180)  # Gray bonds
-    
-    # Create actor
-    actor = vtkActor()
-    actor.SetMapper(mapper)
-    actor.SetScale(1.0, 1.0, 1.0)
-    
-    return actor
+    actors: list = []
+
+    for i, (mol_type, mols) in enumerate(by_type.items()):
+        # Build ONE vtkMolecule for this mol_type, bonding only within each
+        # molecule (reuses the existing per-molecule atom-append + intra-
+        # molecule bond logic, scoped to ``mols`` in this group).
+        molecule = vtkMolecule()
+        for mol in mols:
+            start = mol.start_idx
+            end = start + mol.count
+            mol_positions = structure.positions[start:end]
+            mol_names = structure.atom_names[start:end]
+
+            atom_ids = []
+            visible_positions = []
+            for pos, name in zip(mol_positions, mol_names):
+                element = _get_element_from_atom_name(name)
+                if element is None:
+                    continue  # Skip virtual sites like MW
+                atomic_number = ELEMENT_TO_ATOMIC_NUMBER.get(element, 6)
+                atom_id = molecule.AppendAtom(
+                    atomic_number, float(pos[0]), float(pos[1]), float(pos[2])
+                )
+                atom_ids.append(atom_id)
+                visible_positions.append(pos)
+
+            # Bonds only within this guest molecule (no cross-molecule bonds)
+            n_atoms = len(atom_ids)
+            for ii in range(n_atoms):
+                for jj in range(ii + 1, n_atoms):
+                    dist = np.linalg.norm(visible_positions[ii] - visible_positions[jj])
+                    if dist < BOND_DISTANCE_THRESHOLD:
+                        molecule.AppendBond(atom_ids[ii], atom_ids[jj], 1)
+
+        # Set the lattice for PBC handling (keeps molecules complete at boundaries)
+        _set_molecule_lattice(molecule, structure.cell)
+
+        # Create mapper with specified rendering mode (reuses lines 454-474)
+        mapper = vtkMoleculeMapper()
+        mapper.SetInputData(molecule)
+        mapper.SetRenderAtoms(True)
+        mapper.SetRenderBonds(True)
+
+        if mode == "vdw":
+            mapper.UseVDWSpheresSettings()
+            mapper.SetAtomicRadiusTypeToVDWRadius()
+        elif mode == "ball_and_stick":
+            mapper.UseBallAndStickSettings()
+            mapper.SetAtomicRadiusTypeToVDWRadius()
+        else:  # stick
+            mapper.UseLiquoriceStickSettings()
+            mapper.SetAtomicRadiusTypeToUnitRadius()
+
+        mapper.SetAtomicRadiusScaleFactor(settings['atomic_radius_scale'])
+        mapper.SetBondRadius(settings['bond_radius'])
+
+        # Per-type bond color from the palette (or per_type_colors override).
+        # Atoms stay CPK (atomic-number driven) — only bond color differs.
+        color = per_type_colors.get(mol_type, _DEFAULT_PALETTE[i % len(_DEFAULT_PALETTE)])
+        mapper.SetBondColor(*color)
+
+        actor = vtkActor()
+        actor.SetMapper(mapper)
+        actor.SetScale(1.0, 1.0, 1.0)
+        actors.append(actor)
+
+    return actors
 
 
-def render_hydrate_structure(structure, mode: str = "ball_and_stick") -> list[vtkActor]:
+def render_hydrate_structure(structure, mode: str = "ball_and_stick") -> list:
     """Render a hydrate structure with specified representation.
     
     Creates VTK actors for:
     - Water framework: rendered with specified mode
-    - Guest molecules: rendered with specified mode (matching Tab 1)
+    - Guest molecules: rendered with specified mode (matching Tab 1), one
+      vtkActor per distinct non-water ``mol_type`` (Phase 42 — MIXED-05)
     
     Args:
         structure: HydrateStructure with water framework and guest molecules
         mode: Representation mode - "vdw", "ball_and_stick", or "stick"
     
     Returns:
-        List of vtkActor objects [water_actor, guest_actor]
+        List of vtkActor objects ``[water_actor, *guest_actors]`` (variable
+        length). ``water_actor`` is always index 0; ``guest_actors`` is the
+        one-actor-per-mol_type list from :func:`create_guest_actor` (empty for
+        a water-only structure, so the result is ``[water_actor]``). Callers
+        iterate ``actors[1:]`` for the guests and never hard-index ``[1]``.
     """
     # Create water framework actor (with specified mode)
     water_actor = create_water_framework_actor(structure, mode)
-    
-    # Create guest molecules actor (with specified mode)
-    guest_actor = create_guest_actor(structure, mode)
-    
-    return [water_actor, guest_actor]
+
+    # Create guest molecule actors — one per non-water mol_type (variable length)
+    guest_actors = create_guest_actor(structure, mode)
+
+    return [water_actor, *guest_actors]
 
 
 def add_hydrate_actors_to_viewer(viewer, structure) -> list[vtkActor]:
