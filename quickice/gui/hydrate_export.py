@@ -10,7 +10,13 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from quickice.structure_generation.types import HydrateStructure, HydrateConfig
+from quickice.structure_generation.types import (
+    CageGuestAssignment,
+    GuestDescriptor,
+    GUEST_MOLECULES,
+    HydrateConfig,
+    HydrateStructure,
+)
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 
@@ -144,66 +150,160 @@ class HydrateGROMACSExporter:
             # Built-in guests register into it (CH4 -> "CH4_H", THF -> "THF_H");
             # custom guests leave it empty (writers use custom_guest_info instead).
             #
-            # Phase 42-05: iterate config.cage_guest_assignments (one entry per
-            # cage key). Built-in guests (ch4/thf) register in the registry and
-            # use the bundled _hydrate.itp; custom guests append to the
-            # custom_guest_info list + itp_files dict and are transformed per
-            # ITP. register_hydrate_guest is idempotent for the same guest
-            # (verified in moleculetype_registry.py lines 62-65), so a legacy
-            # single-guest HydrateConfig synthesizing small+large with the
-            # same ch4 guest registers CH4_H once (second call is a no-op).
+            # Phase 42-08 fix: drive ITP staging from the STRUCTURE (what's
+            # actually being exported — structure.molecule_index + the
+            # .gro/.top writers iterate it) rather than config.cage_guest_assignments
+            # (what the panel says). When the user changes the lattice without
+            # regenerating, config.cage_guest_assignments becomes empty (sTprime
+            # has no cage rows) but structure.molecule_index still carries the
+            # old mixed guests — driving from structure ensures the staged ITPs
+            # always match the exported .gro/.top content regardless of
+            # config/structure desync. register_hydrate_guest is idempotent for
+            # the same guest (returns existing name on duplicate), so a legacy
+            # single-guest config synthesizing small+large with the same ch4
+            # registers CH4_H once (second call is a no-op).
             registry = MoleculetypeRegistry()
             custom_guest_info: list[dict] = []
             itp_files: dict[str, str] = {}
-            # (source_itp_path, residue_name_for_transform) per assignment.
+            # (source_itp_path, residue_name_for_transform) per guest ITP.
             custom_guest_itps: list[tuple[Path, str]] = []
 
-            for _cage_key, assignment in config.cage_guest_assignments.items():
-                if assignment.is_custom_guest:
-                    # Custom guest: validate, collect for custom_guest_info +
-                    # transform. Residue name "{guest_residue_name}_H" must be
-                    # <=5 chars (e.g. "MOL_H") so validate_gro_residue_name
-                    # passes and the ITP transform does not ValueError on a
-                    # long guest_type like "etoh_mix" -> "ETOH_MIX_H" (9 chars).
-                    guest_itp_path = Path(assignment.guest_itp_path)
-                    if not guest_itp_path.exists():
-                        raise FileNotFoundError(
-                            f"Custom guest ITP not found: {guest_itp_path}"
+            # Unique guest mol_types in the structure (excluding water), in
+            # first-occurrence insertion order so ITP staging matches the
+            # .gro/.top writer output (the writers iterate molecule_index).
+            unique_mol_types: list[str] = []
+            _seen_mol: set[str] = set()
+            for _m in structure.molecule_index:
+                if _m.mol_type != "water" and _m.mol_type not in _seen_mol:
+                    unique_mol_types.append(_m.mol_type)
+                    _seen_mol.add(_m.mol_type)
+
+            # Config lookup for custom ITP paths — config is the source of
+            # WHERE the ITP file is; the structure is the source of WHAT to
+            # stage. Keyed by guest_type (= mol_type) for O(1) lookup.
+            _config_by_moltype: dict[str, CageGuestAssignment] = {
+                a.guest_type: a for a in config.cage_guest_assignments.values()
+            }
+            # Descriptor lookup for custom guest residue names. Keyed by
+            # mol_type. Empty for pre-Phase-42 structures (no
+            # guest_descriptors) — handled by the fallback below.
+            _descriptor_by_moltype: dict[str, GuestDescriptor] = {
+                gd.mol_type: gd for gd in structure.guest_descriptors
+            }
+
+            if unique_mol_types and not structure.guest_descriptors:
+                # Backward-compat fallback for pre-Phase-42 structures: drive
+                # ITP staging from config.cage_guest_assignments (the old
+                # logic). Such structures lack guest_descriptors, so the
+                # structure cannot resolve custom-guest residue names. The
+                # desync bug only manifests with mixed-guest structures (which
+                # require guest_descriptors), so the old config-driven path is
+                # safe here — pre-Phase-42 structures + config are always
+                # consistent.
+                for _cage_key, assignment in config.cage_guest_assignments.items():
+                    if assignment.is_custom_guest:
+                        # Custom guest: validate, collect for custom_guest_info +
+                        # transform. Residue name "{guest_residue_name}_H" must
+                        # be <=5 chars (e.g. "MOL_H") so validate_gro_residue_name
+                        # passes and the ITP transform does not ValueError on a
+                        # long guest_type like "etoh_mix" -> "ETOH_MIX_H".
+                        guest_itp_path = Path(assignment.guest_itp_path)
+                        if not guest_itp_path.exists():
+                            raise FileNotFoundError(
+                                f"Custom guest ITP not found: {guest_itp_path}"
+                            )
+                        residue_name_h = f"{assignment.guest_residue_name}_H"
+                        custom_guest_info.append({
+                            "mol_type": assignment.guest_type,
+                            "residue_name": residue_name_h,
+                            "itp_path": guest_itp_path,
+                        })
+                        itp_files[assignment.guest_type] = guest_itp_path.name
+                        custom_guest_itps.append(
+                            (guest_itp_path, assignment.guest_residue_name)
                         )
-                    residue_name_h = f"{assignment.guest_residue_name}_H"
-                    custom_guest_info.append({
-                        "mol_type": assignment.guest_type,
-                        "residue_name": residue_name_h,
-                        "itp_path": guest_itp_path,
-                    })
-                    itp_files[assignment.guest_type] = guest_itp_path.name
-                    custom_guest_itps.append(
-                        (guest_itp_path, assignment.guest_residue_name)
-                    )
-                else:
-                    # Built-in guest (ch4/thf): register + use bundled
-                    # _hydrate.itp. register_hydrate_guest is idempotent for
-                    # the same guest (returns existing name on duplicate), so
-                    # a legacy single-guest config synthesizing small+large
-                    # with the same ch4 guest registers CH4_H exactly once.
-                    guest_itp_path = _get_hydrate_guest_itp_path(
-                        assignment.guest_type
-                    )
-                    registry.register_hydrate_guest(
-                        assignment.guest_type.upper()
-                    )
-                    itp_files[assignment.guest_type] = guest_itp_path.name
-                    # Built-in ITPs are pre-transformed (moleculetype "CH4_H",
-                    # [atoms] resname "CH4_H"); transform_guest_itp is
-                    # idempotent on them (STATE [38-04] "read-transform-write":
-                    # Step 2 line.replace(old_name, new_name, 1) is a no-op
-                    # when old_name == new_name == "CH4_H"; Step 3 rewrites
-                    # resname to the same value). Use guest_type.upper() as
-                    # the transform name so new_name = "CH4_H" matches the
-                    # pre-transformed ITP.
-                    custom_guest_itps.append(
-                        (guest_itp_path, assignment.guest_type.upper())
-                    )
+                    else:
+                        # Built-in guest (ch4/thf): register + use bundled
+                        # _hydrate.itp. register_hydrate_guest is idempotent.
+                        guest_itp_path = _get_hydrate_guest_itp_path(
+                            assignment.guest_type
+                        )
+                        registry.register_hydrate_guest(
+                            assignment.guest_type.upper()
+                        )
+                        itp_files[assignment.guest_type] = guest_itp_path.name
+                        # Built-in ITPs are pre-transformed (moleculetype
+                        # "CH4_H", [atoms] resname "CH4_H"); transform_guest_itp
+                        # is idempotent on them. Use guest_type.upper() as the
+                        # transform name so new_name = "CH4_H" matches the
+                        # pre-transformed ITP.
+                        custom_guest_itps.append(
+                            (guest_itp_path, assignment.guest_type.upper())
+                        )
+            else:
+                # Structure-driven path (Phase 42-08 fix): iterate the unique
+                # guest mol_types actually present in structure.molecule_index.
+                # This is what the .gro/.top writers iterate, so the staged
+                # ITPs always match the exported content — even when config is
+                # out of sync (empty after a lattice change without regen).
+                # When the structure has no guests (water-only), unique_mol_types
+                # is empty and this loop is a no-op (no guest ITPs needed).
+                for mol_type in unique_mol_types:
+                    if mol_type in GUEST_MOLECULES:
+                        # Built-in guest (ch4/thf): register + use the bundled
+                        # _hydrate.itp. register_hydrate_guest is idempotent.
+                        guest_itp_path = _get_hydrate_guest_itp_path(mol_type)
+                        registry.register_hydrate_guest(mol_type.upper())
+                        itp_files[mol_type] = guest_itp_path.name
+                        # Built-in ITPs are pre-transformed (moleculetype
+                        # "CH4_H", [atoms] resname "CH4_H"); transform_guest_itp
+                        # is idempotent on them (Step 2 line.replace is a no-op
+                        # when old==new=="CH4_H"; Step 3 rewrites resname to
+                        # the same value). Use mol_type.upper() as the transform
+                        # name so new_name = "CH4_H" matches the pre-transformed
+                        # ITP.
+                        custom_guest_itps.append(
+                            (guest_itp_path, mol_type.upper())
+                        )
+                    else:
+                        # Custom guest: the descriptor gives residue_name
+                        # (WHAT to name it) and config gives the ITP path
+                        # (WHERE the source ITP file is). The structure is the
+                        # source of WHAT to stage; config is the source of
+                        # WHERE the ITP file is. Both must resolve — a custom
+                        # guest in the structure but absent from config means
+                        # the export cannot locate its ITP.
+                        descriptor = _descriptor_by_moltype.get(mol_type)
+                        if descriptor is None:
+                            raise ValueError(
+                                f"Custom guest mol_type '{mol_type}' present "
+                                f"in structure.molecule_index has no matching "
+                                f"entry in structure.guest_descriptors — cannot "
+                                f"resolve residue_name for ITP staging."
+                            )
+                        assignment = _config_by_moltype.get(mol_type)
+                        if assignment is None or not assignment.guest_itp_path:
+                            raise FileNotFoundError(
+                                f"Custom guest mol_type '{mol_type}' present "
+                                f"in structure.molecule_index has no ITP path "
+                                f"in config.cage_guest_assignments — cannot "
+                                f"stage ITP."
+                            )
+                        guest_itp_path = Path(assignment.guest_itp_path)
+                        if not guest_itp_path.exists():
+                            raise FileNotFoundError(
+                                f"Custom guest ITP not found: {guest_itp_path}"
+                            )
+                        residue_name_h = f"{descriptor.guest_residue_name}_H"
+                        custom_guest_info.append({
+                            "mol_type": mol_type,
+                            "residue_name": residue_name_h,
+                            "itp_path": guest_itp_path,
+                        })
+                        itp_files[mol_type] = guest_itp_path.name
+                        custom_guest_itps.append(
+                            (guest_itp_path, descriptor.guest_residue_name)
+                        )
 
             # custom_guest_info is [] when all guests are built-in (writers'
             # None-equivalent — list[dict] API treats None and [] identically

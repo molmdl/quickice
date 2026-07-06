@@ -681,3 +681,197 @@ class TestMultiGuestWriter:
         with pytest.warns(DeprecationWarning, match="list\\[dict\\]"):
             from quickice.output.gromacs_writer import write_interface_top_file
             write_interface_top_file(iface, str(iface_top), custom_guest_info=legacy_dict)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 42-08 Fix 1: structure-driven ITP staging regression test
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Proves ITP staging is driven by structure.molecule_index (what's actually
+# being exported) rather than config.cage_guest_assignments (what the panel
+# says). When the user changes the lattice without regenerating,
+# config.cage_guest_assignments becomes empty (sTprime has no cage rows) but
+# the structure still carries the old mixed guests — driving from structure
+# ensures the staged ITPs always match the exported .gro/.top content.
+#
+# This test would FAIL with the old config-driven code (the ITP staging loop
+# is a no-op when cage_guest_assignments is empty → ch4_hydrate.itp +
+# thf_hydrate.itp never staged) and PASSES with the structure-driven fix.
+
+from quickice.structure_generation.types import (  # noqa: E402
+    GuestDescriptor,
+    HydrateLatticeInfo,
+)
+from quickice.structure_generation.types import GUEST_MOLECULES  # noqa: E402
+
+
+def _build_mixed_ch4_thf_structure_with_descriptors() -> HydrateStructure:
+    """Build a mixed CH4+THF HydrateStructure with guest_descriptors populated.
+
+    26 atoms total (no GenIce2 — fast, deterministic):
+        - 8 water atoms: 2 × (OW, HW1, HW2, MW)
+        - 5 CH4 atoms: 1 × (C, H, H, H, H)            [built-in, mol_type="ch4"]
+        - 13 THF atoms: 1 × (O, CA, CA, CB, CB, H×8)   [built-in, mol_type="thf"]
+
+    guest_descriptors is populated as a real Phase 42 generator would
+    (one GuestDescriptor per distinct guest mol_type). This is the key
+    precondition that selects the structure-driven staging path in
+    HydrateGROMACSExporter.export_hydrate.
+    """
+    positions = np.zeros((26, 3))
+    # Water (8 atoms)
+    for i in range(8):
+        positions[i] = [0.01 * i, 0.01 * i, 0.01 * i]
+    # CH4 (5 atoms)
+    for i in range(5):
+        positions[8 + i] = [0.1 + 0.01 * i, 0.1, 0.1]
+    # THF (13 atoms)
+    for i in range(13):
+        positions[13 + i] = [0.2 + 0.01 * i, 0.2, 0.2]
+
+    atom_names = (
+        ["OW", "HW1", "HW2", "MW"] * 2  # 2 water
+        + ["C", "H", "H", "H", "H"]  # 1 CH4
+        + ["O", "CA", "CA", "CB", "CB", "H", "H", "H", "H", "H", "H", "H", "H"]  # 1 THF
+    )
+
+    cell = np.eye(3) * 1.2  # 1.2 nm cubic box
+
+    molecule_index = [
+        MoleculeIndex(0, 4, "water"),
+        MoleculeIndex(4, 4, "water"),
+        MoleculeIndex(8, 5, "ch4"),
+        MoleculeIndex(13, 13, "thf"),
+    ]
+
+    # guest_descriptors populated as a real Phase 42 generator would.
+    guest_descriptors = [
+        GuestDescriptor(
+            mol_type="ch4",
+            cage_key="small",
+            guest_name=GUEST_MOLECULES["ch4"]["name"],
+            guest_residue_name="",
+            is_custom=False,
+            atom_labels=list(GUEST_MOLECULES["ch4"]["atom_labels"]),
+            atom_count=GUEST_MOLECULES["ch4"]["atoms"],
+        ),
+        GuestDescriptor(
+            mol_type="thf",
+            cage_key="large",
+            guest_name=GUEST_MOLECULES["thf"]["name"],
+            guest_residue_name="",
+            is_custom=False,
+            atom_labels=list(GUEST_MOLECULES["thf"]["atom_labels"]),
+            atom_count=GUEST_MOLECULES["thf"]["atoms"],
+        ),
+    ]
+
+    # Config simulating lattice change to sTprime WITHOUT regeneration:
+    # sTprime has an empty cage_type_map → HydrateConfig.__post_init__ shim
+    # synthesizes an EMPTY cage_guest_assignments dict. This is the exact
+    # config/structure desync scenario from Issue 1.
+    config = HydrateConfig(
+        lattice_type="sTprime",
+        guest_type="ch4",  # primary (legacy) — built-in, valid without metadata
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    assert config.cage_guest_assignments == {}, (
+        "Test setup precondition: sTprime config must have empty "
+        "cage_guest_assignments (simulating lattice change without regen). "
+        f"Got: {dict(config.cage_guest_assignments)}"
+    )
+
+    # lattice_info reflects the structure's actual lattice (sI) — the structure
+    # was generated as sI then the panel was switched to sTprime.
+    lattice_info = HydrateLatticeInfo.from_lattice_type("sI")
+
+    return HydrateStructure(
+        positions=positions,
+        atom_names=atom_names,
+        cell=cell,
+        molecule_index=molecule_index,
+        config=config,
+        lattice_info=lattice_info,
+        report="test",
+        guest_count=2,  # 1 CH4 + 1 THF
+        water_count=2,
+        guest_descriptors=guest_descriptors,
+    )
+
+
+class TestStructureDrivenItpStaging:
+    """Regression tests for Phase 42-08 Fix 1: structure-driven ITP staging.
+
+    The ITP staging loop in HydrateGROMACSExporter.export_hydrate must stage
+    guest .itp files based on what's in structure.molecule_index (what the
+    .gro/.top writers will reference), not what's in config.cage_guest_assignments
+    (what the panel says). This prevents missing-ITP exports when config and
+    structure are out of sync (lattice changed without regenerating).
+    """
+
+    def test_export_hydrate_stages_itps_from_structure_not_config(
+        self, mock_hydrate_save_dialog
+    ):
+        """Both ch4_hydrate.itp + thf_hydrate.itp are staged even when config
+        has empty cage_guest_assignments.
+
+        Builds a mixed HydrateStructure (CH4 + THF in molecule_index, with
+        guest_descriptors populated as a real Phase 42 generator would) and
+        passes a config with EMPTY cage_guest_assignments (sTprime — simulating
+        a lattice change without regeneration). Asserts BOTH built-in guest
+        ITPs are staged to the output directory.
+
+        This test would FAIL with the old config-driven code (the staging loop
+        iterates the empty config.cage_guest_assignments → no-op → no guest
+        ITPs staged) and PASSES with the structure-driven fix (staging iterates
+        the structure's unique guest mol_types → both ITPs staged).
+        """
+        structure = _build_mixed_ch4_thf_structure_with_descriptors()
+        # Precondition: the desync scenario is in effect.
+        assert structure.config.cage_guest_assignments == {}, (
+            "Precondition: config must have empty cage_guest_assignments "
+            "(sTprime desync scenario)."
+        )
+        assert {"ch4", "thf"}.issubset(
+            {m.mol_type for m in structure.molecule_index}
+        ), "Precondition: structure must carry both ch4 + thf guests."
+        assert len(structure.guest_descriptors) == 2, (
+            "Precondition: structure must have 2 guest_descriptors (selects "
+            "the structure-driven staging path)."
+        )
+
+        save_path, dialog_p, mb_p = mock_hydrate_save_dialog("mixed_desync.gro")
+        exporter = HydrateGROMACSExporter(parent_widget=None)
+
+        with dialog_p, mb_p:
+            result = exporter.export_hydrate(structure, structure.config)
+
+        assert result is True, "export_hydrate should succeed for mixed + desync"
+        out_dir = Path(save_path).parent
+
+        # Both built-in guest ITPs must be staged — driven by
+        # structure.molecule_index, NOT config.cage_guest_assignments.
+        assert (out_dir / "ch4_hydrate.itp").exists(), (
+            "ch4_hydrate.itp must be staged even when config.cage_guest_assignments "
+            "is empty (structure-driven staging — Phase 42-08 Fix 1). The old "
+            "config-driven code would leave this file unstaged → grompp fails."
+        )
+        assert (out_dir / "thf_hydrate.itp").exists(), (
+            "thf_hydrate.itp must be staged even when config.cage_guest_assignments "
+            "is empty (structure-driven staging — Phase 42-08 Fix 1). The old "
+            "config-driven code would leave this file unstaged → grompp fails."
+        )
+
+        # The .top must reference both ITPs (the writers iterate
+        # structure.molecule_index, which has both ch4 + thf).
+        top_path = out_dir / "mixed_desync.top"
+        assert top_path.exists(), f".top not written: {top_path}"
+        top_content = top_path.read_text()
+        assert "ch4_hydrate.itp" in top_content, (
+            ".top must #include ch4_hydrate.itp (driven by structure.molecule_index)."
+        )
+        assert "thf_hydrate.itp" in top_content, (
+            ".top must #include thf_hydrate.itp (driven by structure.molecule_index)."
+        )
