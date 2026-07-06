@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 42 IN PROGRESS (5/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype; 42-03 done: 4 hydrate GROMACS writers promoted to list[dict] custom_guest_info; 42-04 done: per-type guest VTK actors — create_guest_actor returns list[vtkActor] per mol_type, render_hydrate_structure returns [water, *guests], _DEFAULT_PALETTE bond-color cycle, hydrate_viewer + interface_viewer handle variable-length list). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 42 IN PROGRESS (6/8 plans) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype; 42-03 done: 4 hydrate GROMACS writers promoted to list[dict] custom_guest_info; 42-04 done: per-type guest VTK actors; 42-05 done: GUI export_hydrate iterates cage_guest_assignments + mixed CH4+ethanol grompp e2e (MIXED-04 GUI path closed); 42-07 committed concurrently by another agent (--cage-guest CLI flag + list-based _build_custom_guest_info — verify completeness). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
 | Phase | 42 of 48 (Mixed Cage Occupancy) — IN PROGRESS |
-| Plan | 5/8 complete (42-00, 42-01, 42-02, 42-03, 42-04 done; 42-05..42-07 pending) |
-| Status | Phase 42 in progress. 42-04 (VTK per-type rendering) complete: create_guest_actor groups molecule_index by mol_type (defaultdict, excluding water) → one vtkActor per non-water mol_type (list, was single vtkActor); render_hydrate_structure returns [water, *guests] variable-length (was 2-element [water, guest]); per-type BOND color from _DEFAULT_PALETTE cycle (gray/cyan/yellow/red/purple), atoms stay CPK; per_type_colors override hook; hydrate_viewer + interface_viewer handle the list (water=[0], guests=[1:], no hard [1] indexing); interface_viewer keeps _guest_actor singular as primary for back-compat; 6 new TestPerTypeGuestActors tests (24/24 pass). Ready for 42-05. |
-| Last activity | 2026-07-05 — Completed 42-04-PLAN.md (per-type guest VTK actors + variable-length render_hydrate_structure + caller updates) |
+| Plan | 6/8 complete (42-00, 42-01, 42-02, 42-03, 42-04, 42-05 done; 42-06 pending; 42-07 committed concurrently — verify) |
+| Status | Phase 42 in progress. 42-05 (GUI multi-guest export) complete: HydrateGROMACSExporter.export_hydrate refactored to iterate config.cage_guest_assignments (built-in ch4/thf -> registry.register_hydrate_guest idempotent + bundled _hydrate.itp; custom -> custom_guest_info list + itp_files dict + custom_guest_itps transform queue); transform_guest_itp called once per guest ITP (idempotent no-op on pre-transformed built-in ITPs); single-guest legacy export byte-identical (title strings kept as "{lattice} + {guest}"); test_mixed_gui_grompp_passes @gmx_skipif e2e proves gmx grompp exit 0 on mixed CH4+ethanol (22-atom synthetic fixture, 3.0 nm box) — MIXED-04 closed for GUI path. 17/17 tests pass (12 hydrate export + 5 mixed cage). Ready for 42-06. |
+| Last activity | 2026-07-06 — Completed 42-05-PLAN.md (GUI multi-guest export_hydrate + mixed grompp e2e) |
 
-**Progress:** [██████░░░░] ~62% (30/48 v4.7 plans complete across phases 38-47; Phase 42: 5/8)
+**Progress:** [██████░░░░] ~64% (31/48 v4.7 plans complete across phases 38-47; Phase 42: 6/8)
 
 ---
 
@@ -170,6 +170,12 @@ Recent decisions affecting v4.7 work:
 - **[42-04]** Per-type BOND color only from _DEFAULT_PALETTE [(180,180,180),(0,200,200),(220,220,0),(200,80,80),(160,80,200)] (gray/cyan/yellow/red/purple); atoms stay CPK via ELEMENT_TO_ATOMIC_NUMBER atomic-number lookup (avoids per-atom scalar arrays — Q4 minimal change); first guest keeps legacy gray so single-guest rendering visually unchanged
 - **[42-04]** hydrate_viewer adds _guest_actors = _hydrate_actors[1:] (set after set_hydrate_structure + set_representation_mode re-render, cleared in _clear_actors); _water_actor stays [0]; existing for-actor loops already handle variable length (no change to AddActor/RemoveActor loops)
 - **[42-04]** interface_viewer set_hydrate_structure stores _guest_actors = hydrate_actors[1:] (list, source of truth) AND keeps _guest_actor (singular) as primary = _guest_actors[0] if _guest_actors else None for back-compat with methods referencing a single actor (RemoveActor/guards); _clear_actors removes ALL guest actors in the list then clears both refs; InterfaceStructure path (single guest) tracks [guest_actor] in both refs. No [1] hard indexing remains in callers (grep-verified: only [0] for water + [1:] for guests)
+- **[42-05]** HydrateGROMACSExporter.export_hydrate refactored to iterate config.cage_guest_assignments (one entry per cage key): built-in guests (ch4/thf) register in MoleculetypeRegistry (idempotent — register_hydrate_guest lines 62-65 check source_key in _registered before adding, so legacy single-ch4 config synthesizing small+large with same ch4 registers CH4_H once) + use bundled _hydrate.itp; custom guests append to custom_guest_info list + itp_files dict + custom_guest_itps transform queue (residue_name "{guest_residue_name}_H" <=5 chars)
+- **[42-05]** transform_guest_itp called once per guest ITP via the custom_guest_itps loop (idempotent no-op on pre-transformed built-in ITPs: Step 2 line.replace(old_name="CH4_H", new_name="CH4_H", 1) is a no-op when old==new; Step 3 rewrites [atoms] resname to the same value); built-in ITPs safely go through the same transform loop as custom ITPs
+- **[42-05]** cgi_for_writers = custom_guest_info if non-empty else None — writers' None-equivalent (list[dict] API treats None and [] identically via `for ci in (custom_guest_info or [])` loop); when all guests are built-in (legacy single-ch4 config), None is passed
+- **[42-05]** Title strings kept as "{lattice} + {guest}" (NOT the plan snippet's "{lattice}") — Rule 1 auto-fix: plan snippet would change .gro/.top title text, violating byte-identical single-guest success criteria; guest variable (config.guest_type, primary) still defined and meaningful for mixed hydrates
+- **[42-05]** test_mixed_gui_grompp_passes (@gmx_skipif) e2e: synthetic 22-atom mixed HydrateStructure (2 water + 1 CH4 + 1 ethanol, no GenIce2, <1s) reuses 42-03 fixture pattern with cell scaled to 3.0 nm (STATE [41-10] lesson: grompp rejects box at 2*cutoff); _stage_itp_files stages ALL #include'd ITPs (tip4p + ch4_hydrate + etoh) + _stage_custom_guest_itp overwrites etoh.itp -> moleculetype MOL_H; gmx grompp exit 0; closes MIXED-04 for GUI path
+- **[42-05]** itp_files keyed by mol_type (ch4 -> ch4_hydrate.itp, etoh_mix -> etoh.itp) so write_multi_molecule_top_file emits one #include per unique guest via itp_includes loop (deduped by included_files set); _stage_itp_files stages ch4_hydrate.itp automatically (it's #include'd in the .top) — no separate built-in ITP staging needed
 
 ### Pending Todos
 
@@ -188,6 +194,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-05T08:34Z
-Stopped at: Completed 42-04-PLAN.md (per-type guest VTK actors + variable-length render_hydrate_structure + caller updates for hydrate_viewer/interface_viewer)
+Last session: 2026-07-06T05:23Z
+Stopped at: Completed 42-05-PLAN.md (GUI multi-guest export_hydrate iterates cage_guest_assignments + mixed CH4+ethanol grompp e2e — MIXED-04 GUI path closed)
 Resume file: None
