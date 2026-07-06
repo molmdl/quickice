@@ -18,6 +18,7 @@ from quickice.structure_generation.types import (
     HydrateStructure,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
+from quickice.gui.export import _build_default_path, _remember_export_dir
 
 
 def _get_guest_itp_path(guest_type: str) -> Path:
@@ -109,10 +110,18 @@ class HydrateGROMACSExporter:
             - Guest .itp files: Copied to export directory
         """
         # Generate default filename: hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro
+        # Use an ABSOLUTE path so QFileDialog opens in a predictable directory
+        # (the last-used export dir, defaulting to home) with the correct
+        # filename pre-selected. A bare filename made the starting directory
+        # unpredictable and let the user accidentally overwrite an unrelated
+        # file (e.g. an ion export) — see .planning/debug/export-filename-ux.md.
         lattice = config.lattice_type
         guest = config.guest_type
         nx, ny, nz = config.supercell_x, config.supercell_y, config.supercell_z
-        default_name = f"hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro"
+        default_name = _build_default_path(
+            self.parent,
+            f"hydrate_{lattice}_{guest}_{nx}x{ny}x{nz}.gro",
+        )
         
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -125,6 +134,7 @@ class HydrateGROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)

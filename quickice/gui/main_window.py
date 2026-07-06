@@ -11,6 +11,7 @@ This module provides the MainWindow class that assembles all GUI components:
 """
 
 import logging
+from pathlib import Path
 import numpy as np
 
 from PySide6.QtWidgets import (
@@ -105,6 +106,13 @@ class MainWindow(QMainWindow):
         
         # Store current custom molecule result for export (Phase 34)
         self._current_custom_molecule_result = None
+        
+        # Last export directory — remembered across all export dialogs so each
+        # QFileDialog opens in a predictable location (defaults to home on first
+        # use). Prevents the user from accidentally overwriting an unrelated
+        # file in whatever directory Qt happens to open. See
+        # .planning/debug/export-filename-ux.md.
+        self._last_export_dir = Path.home()
         
         # Setup UI
         self._setup_ui()

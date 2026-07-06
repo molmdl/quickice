@@ -65,6 +65,41 @@ def _detect_guest_type_from_structure(structure) -> str | None:
     return None
 
 
+def _build_default_path(parent, filename: str) -> str:
+    """Build an absolute default path for ``QFileDialog.getSaveFileName``.
+
+    QFileDialog.getSaveFileName interprets a bare filename (no directory) as
+    relative to the process CWD / Qt's last-used directory, which makes the
+    dialog's starting location unpredictable. With a bare default the dialog
+    may open in a directory containing unrelated files the user could
+    accidentally click to overwrite (see ``.planning/debug/export-filename-ux.md``).
+
+    This returns ``str(last_export_dir / filename)`` so the dialog always
+    opens in a predictable directory with the correct filename pre-selected.
+    The last-export directory lives on ``parent`` (the MainWindow) and is
+    updated by :func:`_remember_export_dir` after each successful selection,
+    defaulting to the user's home directory on first use — the standard
+    desktop-app pattern (GROMACS, VMD, PyMOL all remember the last directory).
+    """
+    last_dir = getattr(parent, "_last_export_dir", None)
+    if last_dir is None:
+        last_dir = Path.home()
+    return str(last_dir / filename)
+
+
+def _remember_export_dir(parent, filepath: str) -> None:
+    """Remember the directory of a chosen export path on ``parent``.
+
+    Call after a (non-cancelled) QFileDialog selection so the next export
+    opens in the same directory. No-op on an empty path (cancel) or when
+    ``parent`` is ``None`` (e.g. unit tests constructing an exporter without
+    a real widget parent — there is nowhere to persist the directory, but the
+    export itself is unaffected).
+    """
+    if filepath and parent is not None:
+        parent._last_export_dir = Path(filepath).parent
+
+
 class SoluteGROMACSExporter:
     """Handle GROMACS file export for solute structures.
     
@@ -97,7 +132,9 @@ class SoluteGROMACSExporter:
         # Generate default filename with solute type and count
         solute_type = solute_structure.solute_type.lower()
         n_molecules = solute_structure.n_molecules
-        default_name = f"solute_{solute_type}_{n_molecules}molecules.gro"
+        default_name = _build_default_path(
+            self.parent, f"solute_{solute_type}_{n_molecules}molecules.gro"
+        )
 
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -110,6 +147,7 @@ class SoluteGROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)
@@ -211,7 +249,10 @@ class CustomMoleculeGROMACSExporter:
         # Generate default filename
         moleculetype_name = custom_structure.moleculetype_name
         n_molecules = custom_structure.custom_molecule_count
-        default_name = f"custom_system_{moleculetype_name}_{n_molecules}molecules.gro"
+        default_name = _build_default_path(
+            self.parent,
+            f"custom_system_{moleculetype_name}_{n_molecules}molecules.gro",
+        )
         
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -224,6 +265,7 @@ class CustomMoleculeGROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)
@@ -314,9 +356,10 @@ class IonGROMACSExporter:
         
         # Include solute info in filename if present
         if ion_structure.solute_n_molecules > 0:
-            default_name = f"ions_{na_count}na_{cl_count}cl_with_{ion_structure.solute_n_molecules}{ion_structure.solute_type.lower()}.gro"
+            bare_name = f"ions_{na_count}na_{cl_count}cl_with_{ion_structure.solute_n_molecules}{ion_structure.solute_type.lower()}.gro"
         else:
-            default_name = f"ions_{na_count}na_{cl_count}cl.gro"
+            bare_name = f"ions_{na_count}na_{cl_count}cl.gro"
+        default_name = _build_default_path(self.parent, bare_name)
 
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -329,6 +372,7 @@ class IonGROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)
@@ -449,7 +493,9 @@ class PDBExporter:
         # Generate default filename
         phase_id = ranked_candidate.candidate.phase_id or "ice"
         rank = ranked_candidate.rank
-        default_name = f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.pdb"
+        default_name = _build_default_path(
+            self.parent, f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.pdb"
+        )
         
         # Show save dialog
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -462,6 +508,7 @@ class PDBExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .pdb extension
         path = Path(filepath)
@@ -524,13 +571,14 @@ class DiagramExporter:
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self.parent,
             "Save Phase Diagram Image",
-            "phase_diagram.png",
+            _build_default_path(self.parent, "phase_diagram.png"),
             "PNG Image (*.png);;SVG Image (*.svg);;All Files (*)",
             "PNG Image (*.png)"
         )
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         path = Path(filepath)
         
@@ -614,9 +662,10 @@ class ViewportExporter:
         """
         # Generate default filename with viewport identifier if provided
         if viewport_name:
-            default_filename = f"ice_structure_{viewport_name}.png"
+            bare_filename = f"ice_structure_{viewport_name}.png"
         else:
-            default_filename = "ice_structure.png"
+            bare_filename = "ice_structure.png"
+        default_filename = _build_default_path(self.parent, bare_filename)
         
         # Show save dialog with PNG and JPEG options
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -629,6 +678,7 @@ class ViewportExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         path = Path(filepath)
         
@@ -720,7 +770,9 @@ class GROMACSExporter:
         # Generate default filename with rank/T/P info
         phase_id = ranked_candidate.candidate.phase_id or "ice"
         rank = ranked_candidate.rank
-        default_name = f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.gro"
+        default_name = _build_default_path(
+            self.parent, f"{phase_id}_{T:.0f}K_{P:.2f}MPa_c{rank}.gro"
+        )
 
         # Extract candidate from RankedCandidate
         candidate = ranked_candidate.candidate
@@ -736,6 +788,7 @@ class GROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)
@@ -857,7 +910,7 @@ class InterfaceGROMACSExporter:
         """
         # Generate default filename with mode info
         mode = interface_structure.mode
-        default_name = f"interface_{mode}.gro"
+        default_name = _build_default_path(self.parent, f"interface_{mode}.gro")
 
         # Show save dialog for .gro file
         filepath, selected_filter = QFileDialog.getSaveFileName(
@@ -870,6 +923,7 @@ class InterfaceGROMACSExporter:
         
         if not filepath:
             return False
+        _remember_export_dir(self.parent, filepath)
         
         # Ensure .gro extension
         path = Path(filepath)
