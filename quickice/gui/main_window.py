@@ -1715,7 +1715,7 @@ class MainWindow(QMainWindow):
                 f"Hydrate structure exported successfully.\n\n"
                 f"Files: hydrate_{config.lattice_type}_{config.guest_type}.gro/.top\n"
                 f"Water: {structure.water_count} molecules\n"
-                f"Guests: {structure.guest_count} {config.guest_type}"
+                f"{_hydrate_export_guest_label(structure, config)}"
             )
     
     @Slot()
@@ -2062,6 +2062,38 @@ def _get_citation(phase_id: str) -> str:
         "ice_xv": "Salzmann, C.G. et al. (2009). Phys. Rev. Lett., 103(10), 105701. DOI: 10.1103/PhysRevLett.103.105701",
     }
     return citations.get(phase_id, "See IAPWS R14-08(2011) for phase data.")
+
+
+def _hydrate_export_guest_label(structure, config) -> str:
+    """Build the 'Guests: ...' label for the hydrate export success dialog.
+
+    For single-guest hydrates (0 or 1 ``guest_descriptors``), keeps the legacy
+    format ``'Guests: {count} {primary_guest_type}'``. For mixed hydrates (2+
+    ``guest_descriptors``), shows per-type composition (e.g.
+    ``'Guests: 1 ch4 + 6 thf'``) using ``structure.molecule_index`` counts —
+    accurate per Phase 42-01/42-02 GuestDescriptor.
+
+    Phase 42-08 Fix 2: the old label used ``config.guest_type`` (the PRIMARY
+    single guest) for ALL guests, mislabelling a mixed (1 CH4 + 6 THF) hydrate
+    as ``'7 ch4'``. Now uses ``structure.guest_descriptors`` +
+    ``structure.molecule_index`` for accurate per-type composition when mixed.
+
+    Args:
+        structure: HydrateStructure (carries molecule_index + guest_descriptors).
+        config: HydrateConfig (carries the primary guest_type for the legacy
+            single-guest fallback format).
+
+    Returns:
+        The 'Guests: ...' string for the export success dialog.
+    """
+    if hasattr(structure, "guest_descriptors") and len(structure.guest_descriptors) > 1:
+        from collections import Counter
+        guest_counts = Counter(
+            m.mol_type for m in structure.molecule_index if m.mol_type != "water"
+        )
+        parts = [f"{count} {mol_type}" for mol_type, count in guest_counts.items()]
+        return f"Guests: {' + '.join(parts)}"
+    return f"Guests: {structure.guest_count} {config.guest_type}"
 
 
 def _configure_opengl_for_remote():
