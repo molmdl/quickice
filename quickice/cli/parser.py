@@ -216,7 +216,8 @@ Examples:
         type=str,
         choices=["CH4", "THF"],
         default="CH4",
-        help="Guest molecule type (default: CH4). Ignored for water-only lattices (sTprime, 17)."
+        help="Guest molecule type (default: CH4). Ignored for water-only lattices "
+             "(sTprime, 17). (deprecated; use --cage-guest for mixed occupancy)"
     )
 
     hydrate_group.add_argument(
@@ -244,14 +245,29 @@ Examples:
         "--cage-occupancy-small",
         type=validate_occupancy_range,
         default=100.0,
-        help="Small cage occupancy percentage (default: 100.0)"
+        help="Small cage occupancy percentage (default: 100.0). "
+             "(deprecated; use --cage-guest for mixed occupancy)"
     )
 
     hydrate_group.add_argument(
         "--cage-occupancy-large",
         type=validate_occupancy_range,
         default=100.0,
-        help="Large cage occupancy percentage (default: 100.0)"
+        help="Large cage occupancy percentage (default: 100.0). "
+             "(deprecated; use --cage-guest for mixed occupancy)"
+    )
+
+    hydrate_group.add_argument(
+        "--cage-guest",
+        action="append",
+        default=None,
+        metavar="KEY=GUEST:OCC",
+        help=("Per-cage-type guest assignment (repeatable). Format: "
+              "--cage-guest small=CH4:60 --cage-guest large=THF:100. "
+              "KEY is a cage_type_map key (small/medium/large/guest). "
+              "GUEST is CH4 or THF (built-in only on CLI for v4.7). "
+              "OCC is 0-100 occupancy percentage. "
+              "When supplied, overrides --guest/--cage-occupancy-small/large."),
     )
 
     # Custom molecule insertion argument group

@@ -57,7 +57,14 @@ ETOH_GRO = _DATA_CUSTOM / "etoh.gro"
 # ── Test 1: _build_custom_guest_info for a custom HydrateConfig ──────────────
 
 def test_build_custom_guest_info_custom():
-    """Custom HydrateConfig → dict with mol_type/residue_name/itp_path."""
+    """Custom HydrateConfig → 1-element list[dict] with mol_type/residue_name/itp_path.
+
+    The sI legacy single-custom-guest path goes through the 42-01 __post_init__
+    shim which populates cage_guest_assignments for BOTH small and large cages
+    (same etoh_e2e guest). _build_custom_guest_info dedups by mol_type so the
+    returned list has ONE entry (not two) — matching the 42-02 ExitStack dedup
+    and the 42-03 writers' custom_by_moltype dict semantics.
+    """
     cfg = HydrateConfig(
         lattice_type="sI",
         guest_type="etoh_e2e",
@@ -68,11 +75,13 @@ def test_build_custom_guest_info_custom():
         guest_atom_count=9,
     )
     info = _build_custom_guest_info(cfg)
-    assert info == {
-        "mol_type": "etoh_e2e",
-        "residue_name": "MOL_H",
-        "itp_path": Path("quickice/data/custom/etoh.itp"),
-    }
+    assert info == [
+        {
+            "mol_type": "etoh_e2e",
+            "residue_name": "MOL_H",
+            "itp_path": Path("quickice/data/custom/etoh.itp"),
+        }
+    ]
 
 
 # ── Test 2: _build_custom_guest_info returns None for built-in/None ──────────

@@ -29,25 +29,119 @@ def report_progress(message: str) -> None:
     print(f"[PROGRESS] {message}", file=sys.stderr)
 
 
-def _build_custom_guest_info(config) -> dict | None:
-    """Build the ``custom_guest_info`` dict for the hydrate writers, or ``None``.
+def _build_custom_guest_info(config) -> list[dict] | None:
+    """Build the ``custom_guest_info`` list for the hydrate writers, or ``None``.
 
-    Returns ``{'mol_type': config.guest_type,
-    'residue_name': '{guest_residue_name}_H', 'itp_path': Path(config.guest_itp_path)}``
-    when ``config`` is a custom-guest ``HydrateConfig`` (``is_custom_guest`` True),
-    else ``None`` (built-in guests, or ``config is None``).
+    Returns a list of dicts (one per DISTINCT custom guest_type, deduped by
+    ``mol_type``) when ``config`` carries any custom cage assignment, else
+    ``None`` (built-in guests, or ``config is None``). Dedup by ``mol_type``
+    matches the 42-02 generator's ExitStack dedup and the 42-03 writers'
+    ``custom_by_moltype`` dict (duplicate ``mol_type`` entries would be
+    collapsed anyway — dedup here keeps the list canonical).
+
+    Each dict: ``{'mol_type': a.guest_type, 'residue_name': '{guest_residue_name}_H',
+    'itp_path': Path(a.guest_itp_path)}``. Built-in guests (``ch4``/``thf``) are
+    excluded — the registry handles them. The Phase 41 legacy single-custom-guest
+    path (``HydrateConfig(guest_type='etoh_e2e', ...)``) goes through the 42-01
+    ``__post_init__`` shim which populates ``cage_guest_assignments`` for both
+    ``small`` and ``large``; the dedup here collapses that to a 1-element list.
 
     Kept as a module-level function (not a method) so it can be unit-tested in
     isolation without instantiating ``CLIPipeline``. ``Path`` is reused from the
     top-level ``from pathlib import Path`` import.
     """
-    if config is None or not getattr(config, "is_custom_guest", False):
+    if config is None:
         return None
-    return {
-        "mol_type": config.guest_type,
-        "residue_name": f"{config.guest_residue_name}_H",
-        "itp_path": Path(config.guest_itp_path),
-    }
+    assignments = getattr(config, "cage_guest_assignments", {}) or {}
+    seen_mol_types: set[str] = set()
+    out: list[dict] = []
+    for assignment in assignments.values():
+        if not getattr(assignment, "is_custom_guest", False):
+            continue  # built-in ch4/thf handled by the MoleculetypeRegistry
+        mol_type = assignment.guest_type
+        if mol_type in seen_mol_types:
+            continue  # dedup by mol_type (sI small+large both etoh_e2e -> 1 entry)
+        seen_mol_types.add(mol_type)
+        out.append({
+            "mol_type": mol_type,
+            "residue_name": f"{assignment.guest_residue_name}_H",
+            "itp_path": Path(assignment.guest_itp_path),
+        })
+    return out or None
+
+
+def _parse_cage_guest_args(args, lattice_type: str) -> dict:
+    """Parse ``args.cage_guest`` (list of ``"KEY=GUEST:OCC"`` strings) into a
+    ``dict[str, CageGuestAssignment]`` keyed by cage type map key.
+
+    Returns an empty dict when ``args.cage_guest`` is ``None``/empty (the
+    ``HydrateConfig.__post_init__`` legacy shim then synthesizes
+    ``cage_guest_assignments`` from ``--guest``/``--cage-occupancy-small/large``).
+
+    Raises:
+        ValueError: on malformed input (bad key, non-built-in guest, bad
+            occupancy, out-of-range occupancy, duplicate cage key, or cage key
+            not present in the lattice's ``cage_type_map``). The CLI source step
+            catches ``ValueError`` and reports a clear error to the user.
+    """
+    specs = getattr(args, "cage_guest", None)
+    if not specs:
+        return {}
+    # Lazy import to keep pipeline.py importable without structure_generation
+    # being fully loaded (matches the existing _run_source_step pattern).
+    from quickice.structure_generation.types import (
+        CageGuestAssignment,
+        HYDRATE_LATTICES,
+    )
+    if lattice_type not in HYDRATE_LATTICES:
+        raise ValueError(f"Unknown lattice type: {lattice_type!r}")
+    cmap = HYDRATE_LATTICES[lattice_type].get("cage_type_map", {})
+    out: dict = {}
+    for spec in specs:
+        key, _, rest = spec.partition("=")
+        if not key or not rest:
+            raise ValueError(
+                f"invalid spec {spec!r}: expected 'KEY=GUEST:OCC' "
+                f"(e.g. small=CH4:60)"
+            )
+        guest, _, occ_str = rest.partition(":")
+        if not guest:
+            raise ValueError(
+                f"invalid spec {spec!r}: missing GUEST (expected 'KEY=GUEST:OCC')"
+            )
+        guest_lower = guest.lower()
+        # CLI surface is built-in-only for v4.7 (per plan; full custom-guest CLI
+        # requiring --custom-guest-gro/--custom-guest-itp is deferred). The GUI
+        # already supports custom-guest mixed occupancy via the explicit API.
+        if guest_lower not in ("ch4", "thf"):
+            raise ValueError(
+                f"invalid spec {spec!r}: GUEST {guest!r} is not a built-in CH4 or "
+                f"THF. Custom-guest CLI support is deferred (use the GUI for "
+                f"custom-guest mixed occupancy)."
+            )
+        try:
+            occ = float(occ_str) if occ_str else 100.0
+        except ValueError:
+            raise ValueError(
+                f"invalid spec {spec!r}: OCC {occ_str!r} is not a number"
+            )
+        if not (0.0 <= occ <= 100.0):
+            raise ValueError(
+                f"invalid spec {spec!r}: OCC must be 0-100, got {occ}"
+            )
+        if key not in cmap:
+            valid = ", ".join(sorted(cmap.keys())) or "(none for this lattice)"
+            raise ValueError(
+                f"invalid spec {spec!r}: cage key {key!r} not valid for lattice "
+                f"{lattice_type!r} (valid keys: {valid})"
+            )
+        if key in out:
+            raise ValueError(
+                f"duplicate --cage-guest key {key!r}: each cage key may be "
+                f"assigned at most once"
+            )
+        out[key] = CageGuestAssignment(guest_type=guest_lower, occupancy=occ)
+    return out
 
 
 class CLIPipeline:
@@ -260,8 +354,24 @@ class CLIPipeline:
                 return 1
 
             try:
+                # Phase 42 mixed cage occupancy: build cage_guest_assignments
+                # from --cage-guest (repeatable KEY=GUEST:OCC) when supplied;
+                # else fall back to the legacy --guest/--cage-occupancy-small/large
+                # fields (the HydrateConfig.__post_init__ shim synthesizes
+                # cage_guest_assignments from them when the dict is empty).
+                lattice_type = getattr(self.args, 'lattice_type', 'sI')
+                cage_guest_assignments: dict = {}
+                if getattr(self.args, 'cage_guest', None):
+                    try:
+                        cage_guest_assignments = _parse_cage_guest_args(
+                            self.args, lattice_type
+                        )
+                    except ValueError as e:
+                        report_progress(f"Source step failed: bad --cage-guest — {e}")
+                        return 1
                 config = HydrateConfig(
-                    lattice_type=getattr(self.args, 'lattice_type', 'sI'),
+                    lattice_type=lattice_type,
+                    cage_guest_assignments=cage_guest_assignments,
                     guest_type=getattr(self.args, 'guest', 'CH4').lower(),
                     supercell_x=getattr(self.args, 'supercell_x', 1),
                     supercell_y=getattr(self.args, 'supercell_y', 1),
@@ -839,8 +949,10 @@ class CLIPipeline:
                     guest_nmolecules=guest_nmolecules,
                 )
                 # Thread custom-guest metadata (mol_type, residue_name, itp_path)
-                # to the writers — None for built-in hydrate guests (ch4/thf).
-                # The ITP copy itself is handled by copy_itp_files_for_structure
+                # to the writers — None for all-built-in hydrate guests (ch4/thf),
+                # or a list of dicts (one per distinct custom guest_type, deduped
+                # by mol_type) when --cage-guest supplies a custom guest. The
+                # ITP copy itself is handled by copy_itp_files_for_structure
                 # (plan 41-07 custom branch) below — unchanged here.
                 custom_guest_info = _build_custom_guest_info(getattr(hydrate, "config", None))
                 write_interface_gro_file(wrapper, gro_path, custom_guest_info=custom_guest_info)
