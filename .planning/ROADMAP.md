@@ -119,7 +119,7 @@ Plans:
 - [x] 42-03-PLAN.md — GROMACS writers: list[dict] custom_guest_info across 4 writers + looped atomtypes merge (MIXED-04)
 - [x] 42-04-PLAN.md — VTK per-type rendering: create_guest_actor list + variable-length render + caller updates (MIXED-05)
 - [x] 42-05-PLAN.md — GUI export glue: export_hydrate builds list + loops transform_guest_itp + mixed grompp e2e (MIXED-04 GUI)
-- [ ] 42-06-PLAN.md — GUI per-cage-type controls: hydrate_panel rows + get_configuration builds cage_guest_assignments (MIXED-01/02/03 GUI)
+- [x] 42-06-PLAN.md — GUI per-cage-type controls: hydrate_panel rows + get_configuration builds cage_guest_assignments (MIXED-01/02/03 GUI)
 - [x] 42-07-PLAN.md — CLI surface: --cage-guest repeatable flag + pipeline build config + CLI mixed grompp e2e (MIXED-01/02/03/04 CLI)
 
 #### Phase 43: Depol Mode
