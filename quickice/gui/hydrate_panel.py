@@ -2,8 +2,8 @@
 
 This module provides the HydratePanel class for hydrate configuration:
 - Lattice type selection (sI, sII, sH, c0te, c1te, c2te, ice1hte, sTprime, 16, 17)
-- Guest molecule selection (CH4, THF, CO2, H2)
-- Cage occupancy controls (disabled for water-only lattices)
+- Per-cage-type guest + occupancy rows (one per cage_type_map key; rebuilt on
+  lattice change) — Phase 42 mixed cage occupancy
 - Supercell dimensions
 - Lattice info display (handles water-only and filled-ice structures)
 """
@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 
 from quickice.structure_generation.types import (
-    HydrateConfig, HydrateLatticeInfo,
+    HydrateConfig, HydrateLatticeInfo, CageGuestAssignment,
     HYDRATE_LATTICES, GUEST_MOLECULES
 )
 from quickice.gui.hydrate_viewer import HydrateViewerWidget
@@ -69,13 +69,10 @@ class HydratePanel(QWidget):
         lattice_group = self._create_lattice_group()
         left_layout.addWidget(lattice_group)
         
-        # Guest molecule group
-        guest_group = self._create_guest_group()
-        left_layout.addWidget(guest_group)
-        
-        # Occupancy group
-        occupancy_group = self._create_occupancy_group()
-        left_layout.addWidget(occupancy_group)
+        # Cage guest assignment group (per-cage-type guest + occupancy rows
+        # rebuilt when the lattice changes; one row per cage_type_map key)
+        cage_group = self._create_cage_assignment_group()
+        left_layout.addWidget(cage_group)
         
         # Supercell group
         supercell_group = self._create_supercell_group()
@@ -160,8 +157,12 @@ class HydratePanel(QWidget):
         main_layout.addLayout(left_layout, stretch=2)
         main_layout.addLayout(right_layout, stretch=3)
         
-        # Set initial UI state for guest/occupancy controls based on default lattice
+        # Set initial UI state: build per-cage rows for the default lattice,
+        # then refresh the force-field label + info display (they read the
+        # first cage row's selected guest).
         self._update_guest_ui_for_lattice()
+        self._update_ff_label()
+        self._update_info_display()
     
     def _create_lattice_group(self) -> QGroupBox:
         """Create lattice type selection group."""
@@ -195,78 +196,107 @@ class HydratePanel(QWidget):
         group.setLayout(layout)
         return group
     
-    def _create_guest_group(self) -> QGroupBox:
-        """Create guest molecule selection group."""
-        group = QGroupBox("Guest Molecule")
-        layout = QFormLayout()
-        
-        guest_row = QHBoxLayout()
-        self.guest_combo = QComboBox()
-        for guest_id, guest_info in GUEST_MOLECULES.items():
-            self.guest_combo.addItem(
-                f"{guest_info['name']} ({guest_info['formula']})",
-                guest_id
-            )
-        guest_row.addWidget(self.guest_combo)
-        guest_row.addWidget(HelpIcon(
-            "Guest molecule type for hydrate cages.\n"
-            "• CH₄ — Methane (fits in small cages)\n"
-            "• THF — Tetrahydrofuran (fits in large cages)\n"
-            "Disabled for water-only lattices (sT′, Ice XVII).\n"
-            "Force field: GAFF parameters bundled in export."
-        ))
-        guest_row.addStretch()
-        
-        layout.addRow("Guest type:", guest_row)
-        
-        # Force field info label
+    def _create_cage_assignment_group(self) -> QGroupBox:
+        """Create the per-cage guest assignment group.
+
+        Builds a dynamic ``QFormLayout`` with one row per cage key in the
+        selected lattice's ``cage_type_map`` (rebuilt by
+        ``_rebuild_cage_rows``). Each row has a guest ``QComboBox`` (built-in
+        guests from ``GUEST_MOLECULES``) + an occupancy ``QDoubleSpinBox``
+        (0-100 %). Water-only lattices show a "no cages" label and no rows.
+
+        A force-field info label is kept (reads the first cage row's guest via
+        ``_update_ff_label``), preserving the legacy single-guest display.
+        """
+        group = QGroupBox("Cage Guest Assignment")
+        self._cage_form_layout = QFormLayout()
+        # Per-cage widgets are built in _rebuild_cage_rows(); keep references
+        # in dicts keyed by cage key ("small"/"medium"/"large"/"guest").
+        self._cage_guest_combos: dict[str, QComboBox] = {}
+        self._cage_occupancy_spins: dict[str, QDoubleSpinBox] = {}
+        # Wrapper widget so the per-cage rows can be rebuilt cleanly without
+        # disturbing the outer form layout (which also holds the ff label).
+        self._cage_rows_container = QWidget()
+        self._cage_rows_layout = QFormLayout(self._cage_rows_container)
+        self._cage_form_layout.addRow(self._cage_rows_container)
+        # Force field info label (reads the first cage row's selected guest).
         self.ff_label = QLabel()
         self.ff_label.setStyleSheet("color: gray; font-style: italic;")
-        layout.addRow("Force field:", self.ff_label)
-        self._update_ff_label()
-        
-        group.setLayout(layout)
+        self._cage_form_layout.addRow("Force field:", self.ff_label)
+        group.setLayout(self._cage_form_layout)
         return group
-    
-    def _create_occupancy_group(self) -> QGroupBox:
-        """Create cage occupancy controls group."""
-        group = QGroupBox("Cage Occupancy")
-        layout = QFormLayout()
-        
-        # Small cage occupancy
-        small_row = QHBoxLayout()
-        self.occupancy_small = QDoubleSpinBox()
-        self.occupancy_small.setRange(0.0, 100.0)
-        self.occupancy_small.setValue(100.0)
-        self.occupancy_small.setSuffix("%")
-        self.occupancy_small.setDecimals(1)
-        small_row.addWidget(self.occupancy_small)
-        small_row.addWidget(HelpIcon(
-            "Occupancy percentage for small cages (0-100%).\n"
-            "Default: 100% (fully occupied).\n"
-            "Lower values create partial occupancy."
-        ))
-        small_row.addStretch()
-        layout.addRow("Small cages:", small_row)
-        
-        # Large cage occupancy
-        large_row = QHBoxLayout()
-        self.occupancy_large = QDoubleSpinBox()
-        self.occupancy_large.setRange(0.0, 100.0)
-        self.occupancy_large.setValue(100.0)
-        self.occupancy_large.setSuffix("%")
-        self.occupancy_large.setDecimals(1)
-        large_row.addWidget(self.occupancy_large)
-        large_row.addWidget(HelpIcon(
-            "Occupancy percentage for large cages (0-100%).\n"
-            "Default: 100% (fully occupied).\n"
-            "Lower values create partial occupancy."
-        ))
-        large_row.addStretch()
-        layout.addRow("Large cages:", large_row)
-        
-        group.setLayout(layout)
-        return group
+
+    def _rebuild_cage_rows(self):
+        """Rebuild per-cage guest+occupancy rows from the selected lattice.
+
+        Clears any existing rows and creates one row per cage key in
+        ``HYDRATE_LATTICES[lattice]["cage_type_map"]``. Each row pairs a guest
+        ``QComboBox`` (built-in guests) with an occupancy ``QDoubleSpinBox``
+        (0-100 %, default 100 %). Water-only lattices (empty
+        ``cage_type_map``) show a "No cages — water-only structure" label and
+        no rows. Filled ices (single "small" key) show one "Guest cages" row.
+
+        ``configuration_changed`` is emitted when any per-cage combo or spin
+        changes; combo changes also refresh the force-field label and lattice
+        info display (mirrors the legacy ``_on_guest_changed`` flow).
+        """
+        # Clear existing rows + widget references.
+        self._cage_guest_combos.clear()
+        self._cage_occupancy_spins.clear()
+        while self._cage_rows_layout.rowCount():
+            self._cage_rows_layout.removeRow(0)
+
+        lattice_id = self.lattice_combo.currentData()
+        if not lattice_id:
+            return
+        lattice_entry = HYDRATE_LATTICES.get(lattice_id, {})
+        cage_type_map = lattice_entry.get("cage_type_map", {})
+
+        if not cage_type_map:
+            # Water-only lattice: no cage rows.
+            label = QLabel("No cages — water-only structure")
+            label.setStyleSheet("color: gray; font-style: italic;")
+            self._cage_rows_layout.addRow(label)
+            return
+
+        num_keys = len(cage_type_map)
+        for cage_key in cage_type_map:
+            row = QHBoxLayout()
+            # Guest combo (built-in guests with guest_id as item data).
+            combo = QComboBox()
+            for guest_id, guest_info in GUEST_MOLECULES.items():
+                combo.addItem(
+                    f"{guest_info['name']} ({guest_info['formula']})",
+                    guest_id,
+                )
+            combo.currentIndexChanged.connect(self._on_guest_changed)
+            row.addWidget(combo)
+            row.addStretch()
+            # Occupancy spinbox (0-100 %, default 100 %).
+            spin = QDoubleSpinBox()
+            spin.setRange(0.0, 100.0)
+            spin.setValue(100.0)
+            spin.setSuffix("%")
+            spin.setDecimals(1)
+            spin.valueChanged.connect(lambda: self.configuration_changed.emit())
+            row.addWidget(spin)
+            # Store references + add the row.
+            self._cage_guest_combos[cage_key] = combo
+            self._cage_occupancy_spins[cage_key] = spin
+            row_label = "Guest cages" if num_keys == 1 else f"{cage_key.capitalize()} cages"
+            self._cage_rows_layout.addRow(row_label, row)
+
+    def _first_cage_guest_id(self):
+        """Return the selected guest_id of the first per-cage row, or None.
+
+        Used by ``_update_ff_label`` and ``_update_info_display`` to mirror the
+        legacy single-guest display using the first cage row's guest (the
+        per-cage fit display is a nice-to-have, not required by this plan).
+        """
+        if self._cage_guest_combos:
+            first_combo = next(iter(self._cage_guest_combos.values()))
+            return first_combo.currentData()
+        return None
     
     def _create_supercell_group(self) -> QGroupBox:
         """Create supercell dimensions group."""
@@ -333,17 +363,19 @@ class HydratePanel(QWidget):
     def _setup_connections(self):
         """Setup signal connections."""
         self.lattice_combo.currentIndexChanged.connect(self._on_lattice_changed)
-        self.guest_combo.currentIndexChanged.connect(self._on_guest_changed)
-        self.occupancy_small.valueChanged.connect(lambda: self.configuration_changed.emit())
-        self.occupancy_large.valueChanged.connect(lambda: self.configuration_changed.emit())
+        # Per-cage combo/spin connections are wired in _rebuild_cage_rows
+        # (the widgets are rebuilt whenever the lattice changes).
         self.supercell_x.valueChanged.connect(lambda: self.configuration_changed.emit())
         self.supercell_y.valueChanged.connect(lambda: self.configuration_changed.emit())
         self.supercell_z.valueChanged.connect(lambda: self.configuration_changed.emit())
     
     def _on_lattice_changed(self):
         """Handle lattice type change."""
-        self._update_info_display()
+        # Rebuild per-cage rows FIRST so the ff label + info display read the
+        # new (default) cage row guest instead of the now-removed old widgets.
         self._update_guest_ui_for_lattice()
+        self._update_ff_label()
+        self._update_info_display()
         self.configuration_changed.emit()
     
     def _on_guest_changed(self):
@@ -353,41 +385,27 @@ class HydratePanel(QWidget):
         self.configuration_changed.emit()
     
     def _update_guest_ui_for_lattice(self):
-        """Enable/disable guest and occupancy controls based on lattice type.
-        
-        Water-only lattices (sTprime, Ice XVII) have no cages, so guest
-        selection and occupancy controls are disabled.
+        """Rebuild per-cage guest+occupancy rows for the selected lattice.
+
+        Water-only lattices show a "no cages" label; filled ices show one row;
+        sI/sII show two rows; sH shows three rows. Enabling is handled by the
+        rows simply existing or not (no separate setEnabled calls).
         """
-        lattice_id = self.lattice_combo.currentData()
-        if not lattice_id:
-            return
-
-        lattice_entry = HYDRATE_LATTICES.get(lattice_id, {})
-        is_water_only = lattice_entry.get("is_water_only", False)
-        cage_type_map = lattice_entry.get("cage_type_map", {})
-
-        # Disable guest combo for water-only lattices
-        self.guest_combo.setEnabled(not is_water_only)
-
-        # Disable occupancy controls for water-only lattices
-        self.occupancy_small.setEnabled(not is_water_only)
-
-        # For single-cage-type lattices (filled ices), disable large occupancy
-        # since both map to the same cage type
-        has_large_cage = "large" in cage_type_map
-        self.occupancy_large.setEnabled(not is_water_only and has_large_cage)
+        self._rebuild_cage_rows()
     
     def _update_ff_label(self):
-        """Update force field label based on selected guest."""
-        guest_id = self.guest_combo.currentData()
+        """Update force field label based on the first cage row's selected guest."""
+        guest_id = self._first_cage_guest_id()
         if guest_id and guest_id in GUEST_MOLECULES:
             ff = GUEST_MOLECULES[guest_id].get('force_field', 'Unknown')
             self.ff_label.setText(ff)
+        else:
+            self.ff_label.setText("")
     
     def _update_info_display(self):
         """Update lattice info display."""
         lattice_id = self.lattice_combo.currentData()
-        guest_id = self.guest_combo.currentData()
+        guest_id = self._first_cage_guest_id()
         
         if not lattice_id:
             return
@@ -433,15 +451,27 @@ class HydratePanel(QWidget):
     
     def get_configuration(self) -> HydrateConfig:
         """Get current configuration as HydrateConfig.
-        
+
+        Builds ``cage_guest_assignments`` from the per-cage rows (one
+        ``CageGuestAssignment`` per cage key with its selected guest type +
+        occupancy). Built-in guest metadata (``guest_atom_labels`` /
+        ``guest_atom_count``) is auto-populated per-assignment by
+        ``HydrateConfig.__post_init__`` (the canonical single source of truth
+        per 42-01), so this method only supplies ``guest_type`` + ``occupancy``.
+
         Returns:
             HydrateConfig with current UI values
         """
+        cage_guest_assignments = {}
+        for cage_key, combo in self._cage_guest_combos.items():
+            guest_id = combo.currentData() or "ch4"
+            occ = self._cage_occupancy_spins[cage_key].value()
+            cage_guest_assignments[cage_key] = CageGuestAssignment(
+                guest_type=guest_id, occupancy=occ
+            )
         return HydrateConfig(
             lattice_type=self.lattice_combo.currentData(),
-            guest_type=self.guest_combo.currentData(),
-            cage_occupancy_small=self.occupancy_small.value(),
-            cage_occupancy_large=self.occupancy_large.value(),
+            cage_guest_assignments=cage_guest_assignments,
             supercell_x=self.supercell_x.value(),
             supercell_y=self.supercell_y.value(),
             supercell_z=self.supercell_z.value(),
