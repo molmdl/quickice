@@ -43,11 +43,11 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### Mixed Cage Occupancy
 
-- [ ] **MIXED-01**: User can assign different guest types to different cage types on ALL hydrate lattices (sI small/large, sII small/large, sH small/medium/large, filled ice channels)
-- [ ] **MIXED-02**: User can assign any available guest type (CH₄, THF, or custom) to any cage type (e.g., CH₄ in small cages + custom guest in large cages)
-- [ ] **MIXED-03**: User can set per-cage-type occupancy percentage (e.g., 60% CH₄ in small + 100% custom in large)
-- [ ] **MIXED-04**: Mixed occupancy hydrate exports correctly to GROMACS with multiple guest .itp files in .top
-- [ ] **MIXED-05**: Mixed occupancy hydrate renders correctly in VTK with per-type styles
+- [x] **MIXED-01**: User can assign different guest types to different cage types on ALL hydrate lattices (sI small/large, sII small/large, sH small/medium/large, filled ice channels)
+- [x] **MIXED-02**: User can assign any available guest type (CH₄, THF, or custom) to any cage type (e.g., CH₄ in small cages + custom guest in large cages)
+- [x] **MIXED-03**: User can set per-cage-type occupancy percentage (e.g., 60% CH₄ in small + 100% custom in large)
+- [x] **MIXED-04**: Mixed occupancy hydrate exports correctly to GROMACS with multiple guest .itp files in .top
+- [x] **MIXED-05**: Mixed occupancy hydrate renders correctly in VTK with per-type styles
 
 ### Depol Mode
 
@@ -164,11 +164,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXPORT-04 | Phase 41 | Complete |
 | EXPORT-05 | Phase 41 | Complete |
 | EXPORT-06 | Phase 41 | Complete |
-| MIXED-01 | Phase 42 | Pending |
-| MIXED-02 | Phase 42 | Pending |
-| MIXED-03 | Phase 42 | Pending |
-| MIXED-04 | Phase 42 | Pending |
-| MIXED-05 | Phase 42 | Pending |
+| MIXED-01 | Phase 42 | Complete |
+| MIXED-02 | Phase 42 | Complete |
+| MIXED-03 | Phase 42 | Complete |
+| MIXED-04 | Phase 42 | Complete |
+| MIXED-05 | Phase 42 | Complete |
 | DEPOL-01 | Phase 43 | Pending |
 | DEPOL-02 | Phase 43 | Pending |
 | DEPOL-03 | Phase 43 | Pending |

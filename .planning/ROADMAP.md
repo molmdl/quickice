@@ -228,7 +228,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 39. Extended Lattice Types | v4.7 | 5/5 | ✓ Complete | 2026-06-30 |
 | 40. Custom Guest Bridge Core | v4.7 | 5/5 | ✓ Complete | 2026-07-02 |
 | 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
-| 42. Mixed Cage Occupancy | v4.7 | 7/8 | In progress | 2026-07-06 |
+| 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 0/2 | Not started | - |
 | 44. GUI Integration | v4.7 | 0/4 | Not started | - |
 | 45. CLI Integration | v4.7 | 0/3 | Not started | - |
