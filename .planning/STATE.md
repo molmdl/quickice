@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 43 COMPLETE (43-01 + 43-02 done). ROADMAP/REQUIREMENTS/PROJECT reorganized 2026-07-07: phases 44-48 audited, 14 stubs → 5 real plans remaining. 49/61 v4.7 requirements complete. Phase 46 verified complete (0 plans needed). Ready for Phase 44 (1 plan: custom guest upload panel).
+**Current Focus:** Phase 44 COMPLETE (44-02 done: custom guest upload panel + per-cage wiring + Pitfall 6 auto-revert mitigation + 7 headless tests). GUI-02/05/06 now Complete (51/61 v4.7 requirements). User identified TWO follow-up issues for an urgent cross-tab phase: (1) Pitfall 6 engine over-restriction — same-custom-in-all-cages should aggregate like ch4 but types.py:712 checks residue_name dup without distinguishing same-guest-type (safe) from different-guest-type-same-name (real collision); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs doesn't thread custom_guest_info, uses old _detect_guest_type heuristic → None for custom). Ready for urgent cross-tab phase.
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-43 COMPLETE + Phase 46 verified-by-code. ROADMAP reorganized 2026-07-07: 5 real plans remaining (44-02, 45-01b+02a, 47-05, 48-01, 48-02). 49/61 requirements complete.
+**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-44 COMPLETE + Phase 46 verified-by-code. 51/61 requirements complete (GUI-02/05/06 closed in 44-02). Remaining: 45 (CLI 45-01b+02a), 47-05 (filled-ice grompp), 48 (docs). Two urgent cross-tab issues identified for a new phase: Pitfall 6 engine relaxation + interface-tab custom guest export wiring.
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 44 of 48 (GUI Integration) — IN PROGRESS (Tasks 1-2 of plan 44-02 done; Task 3 human-verify checkpoint awaiting user) |
-| Plan | 1/1 phase plan in progress (44-02: Tasks 1-2 done, Task 3 checkpoint pending) |
-| Status | Plan 44-02 Tasks 1-2 COMPLETE (custom guest upload panel + per-cage wiring + Pitfall 6 mitigation + 7 headless tests). Task 3 is a checkpoint:human-verify — awaiting user GUI verification (launch `python -m quickice`, verify the 8 steps in the plan's Task 3). 49/61 v4.7 requirements complete (GUI-02/05/06 custom-per-cage half pending the checkpoint). |
-| Last activity | 2026-07-07 — Completed Tasks 1-2 of 44-02-PLAN.md; checkpoint reached |
+| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 46 also verified complete (0 plans needed) |
+| Plan | 1/1 phase plan complete (44-02 done; 44-01/03/04 done in prior phases) |
+| Status | Phase 44 COMPLETE (8/8 must-haves verified). 51/61 v4.7 requirements complete (GUI-02/05/06 closed). User identified TWO urgent cross-tab issues: (1) Pitfall 6 engine over-restriction (types.py:712 rejects same-custom-in-all-cages though it would aggregate like ch4 — needs to distinguish same-guest-type from different-guest-type-same-name); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs uses old _detect_guest_type heuristic → None for custom, doesn't thread custom_guest_info). Ready for urgent cross-tab phase before Phase 45. |
+| Last activity | 2026-07-07 — Phase 44-02 executed + verified (8/8 must-haves passed); GUI-02/05/06 marked Complete |
 
-**Progress:** [████████░░] ~82% (49/61 v4.7 requirements complete; 36 plan-summaries + Phase 46 verified-by-code. 44-02 Tasks 1-2 done, Task 3 checkpoint pending. After 44-02 checkpoint: 4 real plans remaining across phases 45/47/48)
+**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 37 plan-summaries + Phase 46 verified-by-code. Phase 44 done. 4 real plans remaining across phases 45/47/48 + 1 urgent cross-tab phase)
 
 ---
 
@@ -223,6 +223,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T10:31Z
-Stopped at: Plan 44-02 Tasks 1-2 COMPLETE (custom guest upload panel + per-cage wiring + Pitfall 6 mitigation + 7 headless tests committed at a259fee + 1b4b25e). Task 3 (checkpoint:human-verify) reached — awaiting user GUI verification. SUMMARY.md + STATE.md updated but NOT yet committed (continuation agent will do the final `docs(44-02): complete custom guest upload plan` commit after the checkpoint is approved).
+Last session: 2026-07-07T21:15Z
+Stopped at: Phase 44 COMPLETE (44-02 executed + verified 8/8 must-haves passed; GUI-02/05/06 marked Complete; 51/61 requirements). User identified TWO urgent cross-tab issues for a new phase before Phase 45: (1) Pitfall 6 engine relaxation — types.py:712 over-restricts (same-custom-in-all-cages should aggregate like ch4); (2) Interface tab custom guest export broken (to_candidate drops descriptors; export_interface_gromacs doesn't thread custom_guest_info). User will add an urgent phase to wire all tabs like standard hydrate.
 Resume file: None

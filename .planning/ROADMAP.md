@@ -149,7 +149,7 @@ Plans:
 
 Plans:
 - [x] 44-01: Add new lattice types to Hydrate tab dropdown — **DONE in 39-04** (`hydrate_panel.py:178` iterates `HYDRATE_LATTICES` for all 10 types; `test_hydrate_panel.py` covers c0te/sTprime). Satisfies **GUI-01**.
-- [ ] 44-02: Custom guest upload panel in Hydrate tab (.gro + .itp QFileDialog + validation feedback) — **THE ONLY REMAINING PLAN**. Covers **GUI-02 + GUI-05**. Also unblocks **GUI-06** (custom-per-cage via existing 42-06 row infra; built-in-only limit was the documented 42-06 known limitation).
+- [x] 44-02: Custom guest upload panel in Hydrate tab (.gro + .itp QFileDialog + validation feedback) — **DONE**. Covers **GUI-02 + GUI-05**. Also unblocks **GUI-06** (custom-per-cage via existing 42-06 row infra; built-in-only limit was the documented 42-06 known limitation).
 - [x] 44-03: Mixed occupancy per-cage-type guest/occupancy controls — **DONE in 42-06** (`_rebuild_cage_rows` + per-cage combos/spinners; built-in guests only — custom-per-cage is gated on 44-02). Satisfies **GUI-03** (built-in path) + **GUI-06** (built-in path).
 - [x] 44-04: Depol mode dropdown + HydrateWorker config passthrough — **DONE in 43-02** (`depol_combo` QComboBox strict/optimal + `get_configuration` passthrough; 43-02-SUMMARY explicitly notes "Phase 44 #4 references this as already-integrated — do NOT double-build"). Satisfies **GUI-04**.
 
@@ -233,7 +233,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
-| 44. GUI Integration | v4.7 | 0/1 (3 of 4 stubs done in 39-04/42-06/43-02) | Not started | - |
+| 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
 | 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |

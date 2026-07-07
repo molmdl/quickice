@@ -20,7 +20,7 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 - [x] **GUEST-09**: QuickIce cleans up sys.modules injection after generation (prevents pollution) — *Phase 40-04 (custom_guest_module context manager, try/finally)*
 - [x] **GUEST-10**: Custom guest registration is thread-safe (main-thread registration before HydrateWorker starts) — *Phase 40-05*
 
-**Note:** GUEST-01/02/03 remain pending — the data path + generator bridge + export all work (Phase 40/41), but the user-facing surfaces are not yet built: GUI upload panel is Phase 44-02, CLI `--custom-guest`/`--custom-guest-itp` is Phase 45-01b. GUEST-04..10 (the engine/validation/thread-safety layer) are complete.
+**Note:** GUEST-01/02/03 remain pending — the data path + generator bridge + export all work (Phase 40/41), and the GUI upload panel is now done (Phase 44-02). The CLI user-facing surface (`--custom-guest`/`--custom-guest-itp`) remains pending (Phase 45-01b). GUEST-04..10 (the engine/validation/thread-safety layer) are complete.
 
 ### GROMACS Export for Custom Guests
 
@@ -67,11 +67,11 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 ### GUI Integration
 
 - [x] **GUI-01**: Hydrate tab lattice dropdown includes all new lattice types (filled ices + Ice XVI/XVII + sT') — *Phase 39-04*
-- [ ] **GUI-02**: Hydrate tab has custom guest upload panel (.gro + .itp file pair selection) — *Phase 44-02*
-- [x] **GUI-03**: Hydrate tab has cage-type guest assignment controls (small/large/medium → guest type) — *Phase 42-06 (built-in guests; custom-per-cage gated on 44-02)*
+- [x] **GUI-02**: Hydrate tab has custom guest upload panel (.gro + .itp file pair selection) — *Phase 44-02*
+- [x] **GUI-03**: Hydrate tab has cage-type guest assignment controls (small/large/medium → guest type) — *Phase 42-06 (built-in) + 44-02 (custom-per-cage)*
 - [x] **GUI-04**: Hydrate tab has depol mode dropdown (strict/optimal) — *Phase 43-02*
-- [ ] **GUI-05**: Custom guest upload shows validation errors with specific messages (name too long, wrong comb-rule, unparseable) — *Phase 44-02*
-- [x] **GUI-06**: Hydrate tab mixed occupancy shows per-cage-type guest type and occupancy controls — *Phase 42-06 (built-in path done; custom path gated on 44-02)*
+- [x] **GUI-05**: Custom guest upload shows validation errors with specific messages (name too long, wrong comb-rule, unparseable) — *Phase 44-02*
+- [x] **GUI-06**: Hydrate tab mixed occupancy shows per-cage-type guest type and occupancy controls — *Phase 42-06 (built-in) + 44-02 (custom-per-cage via "Custom: {residue}" combo option)*
 
 ### CLI Integration
 
@@ -175,11 +175,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPOL-02 | Phase 43 | Complete |
 | DEPOL-03 | Phase 43 | Complete |
 | GUI-01 | Phase 39-04 | Complete |
-| GUI-02 | Phase 44-02 | Pending |
-| GUI-03 | Phase 42-06 | Complete (built-in; custom gated on 44-02) |
+| GUI-02 | Phase 44-02 | Complete |
+| GUI-03 | Phase 42-06 + 44-02 | Complete |
 | GUI-04 | Phase 43-02 | Complete |
-| GUI-05 | Phase 44-02 | Pending |
-| GUI-06 | Phase 42-06 | Complete (built-in; custom gated on 44-02) |
+| GUI-05 | Phase 44-02 | Complete |
+| GUI-06 | Phase 42-06 + 44-02 | Complete |
 | CLI-01 | Phase 39-03 | Complete |
 | CLI-02 | Phase 45-01b | Pending |
 | CLI-03 | Phase 45-02a | Pending |
@@ -203,8 +203,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v4.7 requirements: 61 total (PIPE×4, LATTICE×9, GUEST×10, EXPORT×6, MIXED×5, DEPOL×3, GUI×6, CLI×4, VTK×2, TEST×8, DOCS×4)
 - Mapped to phases: 61/61 ✓
 - Unmapped: 0
-- Complete: 49
-- Pending: 12 (GUEST-01/02/03 → 44-02 + 45-01b; GUI-02/05 → 44-02; CLI-02/03 → 45-01b + 45-02a; TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
+- Complete: 51
+- Pending: 10 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02/03 → 45-01b + 45-02a; TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
 
 ---
 *Requirements defined: 2026-06-27*
