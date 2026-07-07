@@ -556,7 +556,10 @@ class HydrateConfig:
     # When left empty, __post_init__ synthesizes it from the legacy single-
     # guest fields above (backward-compat shim).
     cage_guest_assignments: dict[str, CageGuestAssignment] = field(default_factory=dict)
-    
+    # Phase 43 depol mode: 'strict' (default, preserves current behavior) or 'optimal'.
+    # 'none' is excluded — produces physically unrealistic structures (nonzero dipole).
+    depol_mode: str = "strict"
+
     def __post_init__(self):
         """Validate configuration parameters and auto-populate guest metadata.
         
@@ -577,6 +580,13 @@ class HydrateConfig:
             raise ValueError(f"cage_occupancy_large must be 0-100, got {self.cage_occupancy_large}")
         if self.supercell_x < 1 or self.supercell_y < 1 or self.supercell_z < 1:
             raise ValueError("Supercell dimensions must be >= 1")
+        # Phase 43: validate depol_mode. QuickIce is the SOLE gatekeeper —
+        # GenIce2 accepts any string silently (even 'banana' runs iter=1000).
+        # 'none' is rejected: iter=0 -> nonzero net dipole -> unrealistic.
+        if self.depol_mode not in ("strict", "optimal"):
+            raise ValueError(
+                f"depol_mode must be 'strict' or 'optimal', got {self.depol_mode!r}"
+            )
         
         if self.guest_type not in GUEST_MOLECULES:
             # Custom guest (Phase 40): require explicit metadata, do NOT auto-populate
@@ -746,6 +756,7 @@ class HydrateConfig:
             guest_residue_name=d.get("guest_residue_name", ""),
             guest_gro_path=d.get("guest_gro_path", ""),
             cage_guest_assignments=rebuilt_assignments,
+            depol_mode=d.get("depol_mode", "strict"),
         )
     
     @property

@@ -314,7 +314,7 @@ class HydrateStructureGenerator:
                 formatter=formatter,
                 water=water,
                 guests=guests,
-                depol='strict'
+                depol=config.depol_mode
             )
             
             # Parse GRO format result
