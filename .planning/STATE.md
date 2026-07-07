@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 42 COMPLETE (8/8 plans + post-phase bugfix 42-08) — Mixed Cage Occupancy (42-00 done: sH cage_type_map fix; 42-01 done: CageGuestAssignment data model; 42-02 done: hydrate generator multi-guest loop + ExitStack + resname_to_moltype; 42-03 done: 4 hydrate GROMACS writers promoted to list[dict] custom_guest_info; 42-04 done: per-type guest VTK actors; 42-05 done: GUI export_hydrate iterates cage_guest_assignments + mixed CH4+ethanol grompp e2e (MIXED-04 GUI path closed); 42-06 done: GUI per-cage-type rows (QComboBox+QDoubleSpinBox per cage_type_map key) + get_configuration builds cage_guest_assignments + 6 headless GUI tests (MIXED-01/02/03 GUI surface closed); 42-07 done: CLI --cage-guest flag + _parse_cage_guest_args helper + list-based _build_custom_guest_info + mixed built-in CH4+THF grompp e2e (MIXED-04 CLI path closed, built-in-only); 42-08 done: post-phase bugfix — structure-driven ITP staging in export_hydrate (fixes missing guest ITPs after lattice change without regen) + accurate mixed-guest export dialog label via _hydrate_export_guest_label helper; 6 new tests; debug resolved). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 43 IN PROGRESS (43-01 done: HydrateConfig.depol_mode field + __post_init__ validation against {strict,optimal} + from_dict passthrough + hydrate_generator _run_via_api passes config.depol_mode to GenIce2 generate_ice + 8 new tests (6 unit + 2 e2e); DEPOL-02 + DEPOL-03 satisfied at config+generator layer; DEPOL-01 requires 43-02 GUI selector). Phase 42 COMPLETE (8/8 plans + post-phase bugfix 42-08). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 42 IN PROGRESS (42-00 done: sH cage_type_map fix). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 43 IN PROGRESS (43-01 done: HydrateConfig.depol_mode + generator passthrough + 8 tests). Phase 42 COMPLETE (42-00..42-07 + post-phase bugfix 42-08). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 42 of 48 (Mixed Cage Occupancy) — COMPLETE (+ post-phase bugfix 42-08) |
-| Plan | 8/8 phase plans + 1 post-phase bugfix (42-08) complete |
-| Status | Phase 42 COMPLETE + 42-08 bugfix done. 42-08 fixed two confirmed GUI hydrate export bugs from .planning/debug/mixed-export-itp-and-dialog.md: (1) Fix 1 functional — HydrateGROMACSExporter.export_hydrate ITP staging now driven by structure.molecule_index + guest_descriptors (what's exported) instead of config.cage_guest_assignments (what the panel says); fixes config/structure desync after lattice change without regen (sTprime empty cage_guest_assignments → old loop no-op → .top #includes ch4+thf hydrate ITPs but they're never staged → grompp fails). Built-in path registers + uses bundled _hydrate.itp; custom path hybrid (structure.guest_descriptors for residue_name, config.cage_guest_assignments for ITP path); backward-compat fallback to config-driven loop when guest_descriptors empty (pre-Phase-42). (2) Fix 2 cosmetic — export success dialog now shows accurate per-type mixed-guest composition ("Guests: 1 ch4 + 6 thf") via new _hydrate_export_guest_label(structure, config) module-level helper; single-guest keeps legacy "Guests: N ch4"; hasattr guard for older structures. 6 new tests (1 regression RED-verified via git stash + 5 dialog-label unit). Debug file marked status: resolved. All MIXED export paths now self-consistent under config/structure desync. Ready for Phase 43. |
-| Last activity | 2026-07-06 — Completed 42-08 bugfix (structure-driven ITP staging + accurate mixed-guest dialog label; 6 tests; debug resolved) |
+| Phase | 43 of 48 (Depol Mode) — IN PROGRESS |
+| Plan | 1/2 phase plans complete (43-01 done; 43-02 GUI selector pending) |
+| Status | Phase 43 IN PROGRESS. 43-01 done: HydrateConfig.depol_mode field (default "strict", validated against {"strict","optimal"}) added as last dataclass field; __post_init__ validation rejects "none" (GenIce2 accepts it silently -> iter=0 -> nonzero dipole -> unrealistic) and typos (GenIce2 runs iter=1000 on any string); from_dict threads depol_mode through (explicit -> passthrough; absent -> "strict"); hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice(depol=...) replacing the hardcoded 'strict'; generator.py:126 ice-path hardcode UNTOUCHED (out of scope); 8 new tests (6 unit TestDepolMode + 2 e2e TestDepolModePassthrough with module-scoped GenIce2 fixtures asserting optimal succeeds + optimal≡strict equal atom counts — Pitfall 1: strict≡optimal in GenIce2 2.2.13.1). 234 hydrate regression tests pass (backward compat: every existing HydrateConfig call site omits depol_mode -> "strict"). DEPOL-02 + DEPOL-03 satisfied at config+generator layer; DEPOL-01 (user-selectable) requires 43-02 GUI. Ready for 43-02. |
+| Last activity | 2026-07-07 — Completed 43-01-PLAN.md |
 
-**Progress:** [███████░░░] ~69% (33/48 v4.7 plans complete across phases 38-47; Phase 42: 8/8 + post-phase bugfix 42-08 COMPLETE)
+**Progress:** [███████░░░] ~71% (34/48 v4.7 plans complete across phases 38-47; Phase 43: 1/2 complete; Phase 42: 8/8 + post-phase bugfix 42-08 COMPLETE)
 
 ---
 
@@ -189,6 +189,12 @@ Recent decisions affecting v4.7 work:
 - **[42-08]** Fix 2 (cosmetic — misleading dialog): _hydrate_export_guest_label(structure, config) module-level pure helper replaces inline `f"Guests: {structure.guest_count} {config.guest_type}"` in _on_export_hydrate_gromacs. Mixed (2+ guest_descriptors) → per-type counts via Counter over non-water mol_types in structure.molecule_index ("Guests: 1 ch4 + 6 thf"); single-guest (0/1 descriptors) → legacy "Guests: N ch4". hasattr guard on guest_descriptors for older/incomplete structures (no crash). Extracted to module-level for headless unit testability (5 tests in tests/test_output/test_hydrate_export_dialog_label.py)
 - **[42-08]** Regression test test_export_hydrate_stages_itps_from_structure_not_config (tests/test_output/test_gromacs_export_hydrate.py::TestStructureDrivenItpStaging): builds mixed CH4+THF HydrateStructure (26 atoms, guest_descriptors populated) + sTprime config (empty cage_guest_assignments) → asserts BOTH ch4_hydrate.itp + thf_hydrate.itp staged. RED-verified via git stash (fails with old config-driven code: ch4_hydrate.itp not staged) → GREEN with fix. Total Phase 42-08 tests added: 1 regression + 5 dialog-label unit = 6
 - **[42-08]** Debug file .planning/debug/mixed-export-itp-and-dialog.md marked status: resolved with root_cause/fix/verification/files_changed/commits filled. Phase 42 now fully closed including post-phase bugfix (42-08); ready for Phase 43
+- **[43-01]** HydrateConfig.depol_mode: str = "strict" added as the LAST dataclass field (after cage_guest_assignments) to minimize diff and avoid disturbing __post_init__ legacy-shim logic; every existing HydrateConfig(...) call site uses keyword args and omits depol_mode -> inherits "strict" -> byte-identical current behavior (backward compat by default)
+- **[43-01]** __post_init__ validation set is {"strict", "optimal"} ONLY — "none" is rejected even though GenIce2 accepts it silently (iter=0 -> nonzero net dipole -> physically unrealistic); typos like "banana" rejected (GenIce2 would run iter=1000 on any string). QuickIce is the SOLE gatekeeper for depol_mode validity. Validation placed immediately after the supercell check, before the guest_type custom-guest branch
+- **[43-01]** from_dict threads depol_mode through as the LAST kwarg in the cls(...) call: depol_mode=d.get("depol_mode", "strict") — explicit -> passthrough; absent -> "strict" default. Old UI dicts without depol_mode continue to work (backward compatible)
+- **[43-01]** hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice(depol=...) replacing the single hardcoded 'strict' at line 317 (the ONLY in-scope call site). generator.py:126 ice-path hardcode (depol='strict', non-hydrate TIP3P path, different class) left UNTOUCHED — out of scope for Phase 43 (hydrate-only)
+- **[43-01]** e2e test test_optimal_and_strict_have_equal_atom_counts asserts EQUALITY not difference — Pitfall 1: strict≡optimal in GenIce2 2.2.13.1 (Stage34E branches only on "none" vs anything-else; both -> dipoleOptimizationCycles=1000). A test asserting strict≠optimal would be a false-future-proofing bug. Module-scoped fixtures amortize GenIce2 calls (sI 1×1×1: 46 water + 8 ch4 = 224 atoms each, ~10ms per call)
+- **[43-01]** No CLI --depol flag (Phase 45 / CLI-03 scope); no hydrate_worker.py or gromacs_writer.py edit (depol rides along config; export path unaffected — depol only sets H-bond orientation during generation). CLI pipeline.py:372 inherits "strict" default automatically
 
 ### Pending Todos
 
@@ -207,6 +213,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-06T11:13Z
-Stopped at: Completed 42-08 bugfix (structure-driven ITP staging in export_hydrate + accurate mixed-guest dialog label; 6 tests; debug file resolved)
+Last session: 2026-07-07T07:51Z
+Stopped at: Completed 43-01-PLAN.md (HydrateConfig.depol_mode field + generator passthrough + 8 tests; DEPOL-02/03 satisfied at config+generator layer)
 Resume file: None

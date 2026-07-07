@@ -133,7 +133,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 43-01-PLAN.md — HydrateConfig depol_mode field + generator passthrough + tests
+- [x] 43-01-PLAN.md — HydrateConfig depol_mode field + generator passthrough + tests
 - [ ] 43-02-PLAN.md — GUI depol mode selector (QComboBox) + get_configuration wiring + headless tests
 
 #### Phase 44: GUI Integration
@@ -229,7 +229,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 40. Custom Guest Bridge Core | v4.7 | 5/5 | ✓ Complete | 2026-07-02 |
 | 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
-| 43. Depol Mode | v4.7 | 0/2 | Not started | - |
+| 43. Depol Mode | v4.7 | 1/2 | 🚧 In progress | - |
 | 44. GUI Integration | v4.7 | 0/4 | Not started | - |
 | 45. CLI Integration | v4.7 | 0/3 | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/2 | Not started | - |
