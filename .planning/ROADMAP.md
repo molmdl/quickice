@@ -145,13 +145,13 @@ Plans:
   2. User can upload a custom guest .gro+.itp pair from the Hydrate tab and see specific validation errors (name too long, wrong comb-rule, unparseable)
   3. Hydrate tab has cage-type guest assignment controls (small/large/medium → guest type) for mixed occupancy
   4. Hydrate tab has depol mode dropdown (strict/optimal) with strict as default
-**Plans**: TBD
+**Plans**: 1 plan (3 of 4 original stubs already satisfied by prior vertical-slice phases; only custom-guest upload remains)
 
 Plans:
-- [ ] 44-01: Add new lattice types to Hydrate tab dropdown
-- [ ] 44-02: Custom guest upload panel in Hydrate tab
-- [ ] 44-03: Mixed occupancy per-cage-type guest/occupancy controls
-- [ ] 44-04: Depol mode dropdown + HydrateWorker config passthrough
+- [x] 44-01: Add new lattice types to Hydrate tab dropdown — **DONE in 39-04** (`hydrate_panel.py:178` iterates `HYDRATE_LATTICES` for all 10 types; `test_hydrate_panel.py` covers c0te/sTprime). Satisfies **GUI-01**.
+- [ ] 44-02: Custom guest upload panel in Hydrate tab (.gro + .itp QFileDialog + validation feedback) — **THE ONLY REMAINING PLAN**. Covers **GUI-02 + GUI-05**. Also unblocks **GUI-06** (custom-per-cage via existing 42-06 row infra; built-in-only limit was the documented 42-06 known limitation).
+- [x] 44-03: Mixed occupancy per-cage-type guest/occupancy controls — **DONE in 42-06** (`_rebuild_cage_rows` + per-cage combos/spinners; built-in guests only — custom-per-cage is gated on 44-02). Satisfies **GUI-03** (built-in path) + **GUI-06** (built-in path).
+- [x] 44-04: Depol mode dropdown + HydrateWorker config passthrough — **DONE in 43-02** (`depol_combo` QComboBox strict/optimal + `get_configuration` passthrough; 43-02-SUMMARY explicitly notes "Phase 44 #4 references this as already-integrated — do NOT double-build"). Satisfies **GUI-04**.
 
 #### Phase 45: CLI Integration
 **Goal**: All new hydrate features are accessible from the CLI for scripting and batch workflows
@@ -162,12 +162,14 @@ Plans:
   2. CLI --custom-guest and --custom-guest-itp flags allow specifying a custom guest .gro/.itp file pair
   3. CLI --depol flag supports strict/optimal selection with strict as default
   4. CLI --guest-small and --guest-large flags enable mixed cage occupancy with per-cage occupancy values
-**Plans**: TBD
+**Plans**: 1 plan (2 of 4 sub-items already satisfied; collapse remaining into one plan covering CLI-02 + CLI-03 + custom-guest grompp e2e)
 
 Plans:
-- [ ] 45-01: Extend --hydrate-lattice for new types + add --custom-guest/--custom-guest-itp
-- [ ] 45-02: Add --depol and --guest-small/--guest-large flags
-- [ ] 45-03: CLI end-to-end validation for new hydrate features
+- [x] 45-01a: Extend --hydrate-lattice for new types — **DONE in 39-03** (`parser.py:209` choices list already includes all 10 lattice types; `test_triclinic_blocking.py` covers c0te/c1te/c2te/ice1hte). Satisfies **CLI-01**.
+- [ ] 45-01b: Add `--custom-guest` / `--custom-guest-itp` flags + CLI custom-guest grompp e2e — **REMAINING**. `pipeline.py:113-115` comment explicitly defers this ("CLI surface is built-in-only for v4.7"). Covers **CLI-02** + closes the CLI half of EXPORT-06 / TEST-07 for custom guests. Combine with 45-02a in one plan (both touch `parser.py` + `pipeline.py`).
+- [ ] 45-02a: Add `--depol` flag (strict/optimal, default strict) — **REMAINING**. Config field exists since 43-01 (`HydrateConfig.depol_mode`); CLI call site at `pipeline.py:372` inherits "strict" automatically — just needs the argparse flag + passthrough. Covers **CLI-03**. Combine with 45-01b.
+- [x] 45-02b: `--guest-small`/`--guest-large` mixed occupancy — **DONE in 42-07** as repeatable `--cage-guest KEY=GUEST:OCC` (better design than two separate flags; supports medium cage + any cage_type_map key). `test_cli/test_mixed_cage_cli.py` has grompp e2e. Satisfies **CLI-04**.
+- [x] 45-03 (partial): CLI e2e for built-in mixed occupancy — **DONE in 42-07** (`test_mixed_cli_built_in_grompp`). Custom-guest CLI grompp e2e folds into 45-01b.
 
 #### Phase 46: VTK Rendering
 **Goal**: Custom guest molecules render with distinct visual style in the 3D hydrate viewer
@@ -176,11 +178,13 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Custom guest molecules render with distinct style in the hydrate 3D viewer (visually different from built-in CH₄/THF)
   2. Element map covers common custom guest atom types (C, O, H, N, S, etc.) so non-standard elements are not rendered as unknown
-**Plans**: TBD
+**Plans**: 0 plans (both requirements already satisfied by prior phases — verification-only)
 
 Plans:
-- [ ] 46-01: Extend element map for common custom guest atom types
-- [ ] 46-02: Custom guest distinct rendering style in hydrate viewer
+- [x] 46-01: Extend element map for common custom guest atom types — **DONE** (`hydrate_renderer.py:68` `ELEMENT_TO_ATOMIC_NUMBER` covers H..Ca including C, O, H, N, S, Cl, P, F, Na, K, Mg, Si, B). Satisfies **VTK-02**.
+- [x] 46-02: Custom guest distinct rendering style in hydrate viewer — **DONE in 42-04** (`create_guest_actor` returns `list[vtkActor]` one per non-water mol_type with per-type bond color palette from `_DEFAULT_PALETTE`; `render_hydrate_structure` returns variable-length `[water, *guest_actors]`; mixed hydrate e2e test in 42-05 exercises the path). Satisfies **VTK-01**.
+
+**Note:** Phase 46 is marked COMPLETE via code verification (no PLAN/SUMMARY files created — work was delivered as vertical slices inside 42-04/42-05). A `/gsd-verify-work 46` pass can confirm if desired, but no new plans are needed.
 
 #### Phase 47: Testing & Validation
 **Goal**: All new features are covered by unit tests, e2e tests, and grompp validation
@@ -191,17 +195,17 @@ Plans:
   2. E2E tests cover filled ice generation (C0, C1, C2, Ih, sT') and custom guest hydrate generation + GROMACS export
   3. E2E tests cover mixed cage occupancy hydrate generation
   4. Grompp validation tests confirm both custom guest and new lattice type exports produce valid GROMACS inputs
-**Plans**: TBD
+**Plans**: 1 plan (7 of 8 test requirements already satisfied by prior phases' TDD-style vertical slices; only filled-ice grompp gap remains)
 
 Plans:
-- [ ] 47-01: Unit tests for custom guest validation, sys.modules, _build_molecule_index
-- [ ] 47-02: E2E tests for filled ice generation
-- [ ] 47-03: E2E tests for custom guest hydrate + GROMACS export
-- [ ] 47-04: E2E tests for mixed cage occupancy
-- [ ] 47-05: Grompp validation tests for custom guest + new lattice exports
+- [x] 47-01: Unit tests for custom guest validation, sys.modules, _build_molecule_index — **DONE** in Phase 40 (`test_custom_guest_bridge.py` covers validate_custom_guest_files + custom_guest_module injection/cleanup; `test_hydrate_config_custom.py` + `test_hydrate_config_metadata.py` cover _build_molecule_index with custom guest types; GRO/ITP validation edge cases covered in 40-01/40-04). Satisfies **TEST-01, TEST-02, TEST-03**.
+- [x] 47-02: E2E tests for filled ice generation — **DONE in 39-05** (`test_hydrate_lattice_types.py` parametrized for c0te/c1te/c2te/ice1hte/sTprime/16/17; 157 parametrized structural validation tests). Satisfies **TEST-04**.
+- [x] 47-03: E2E tests for custom guest hydrate + GROMACS export — **DONE in 41** (`test_e2e_custom_guest_hydrate.py` + `test_e2e_custom_guest_gui_grompp.py` + `test_e2e_custom_guest_cli_grompp.py`). Satisfies **TEST-05 + TEST-07** (custom guest half).
+- [x] 47-04: E2E tests for mixed cage occupancy — **DONE in 42** (`test_e2e_mixed_cage_occupancy.py` + `test_e2e_sh_cage_occupancy.py` + `test_cli/test_mixed_cage_cli.py`). Satisfies **TEST-06**.
+- [ ] 47-05: Grompp validation tests for new lattice type exports (filled ices) — **REMAINING (THE ONLY GAP)**. Custom guest grompp done (47-03); built-in mixed grompp done (42-07); **filled-ice (c0te/c1te/c2te/ice1hte) grompp not explicitly tested** — these lattices use `parse_guest` + `cage_type_map["guest"]` single-entry path (39-02) which has no grompp e2e. One small plan: parameterized `@gmx_skipif` grompp test for the 4 filled-ice lattices. Satisfies **TEST-08**.
 
 #### Phase 48: Documentation
-**Goal**: Users can learn about all new hydrate features from updated documentation
+**Goal**: Users can learn about all new hydrate features from updated documentation (in-app + external)
 **Depends on**: Phases 38-46 (all features shipped)
 **Requirements**: DOCS-01, DOCS-02, DOCS-03, DOCS-04
 **Success Criteria** (what must be TRUE):
@@ -209,13 +213,12 @@ Plans:
   2. GUI guide covers new lattice types, custom guest upload, mixed occupancy controls, and depol selector
   3. CLI reference documents new flags (--hydrate-lattice extended values, --custom-guest, --custom-guest-itp, --depol, --guest-small, --guest-large)
   4. Custom guest ITP requirements are documented (comb-rule=2 mandatory, residue name ≤3 chars for _H suffix, _H suffix convention explained)
-**Plans**: TBD
+  5. In-app help (help_dialog.py + tooltips) is updated for v4.7 features and restructured for navigability (TOC buttons or tabbed sections — content has outgrown a single scrolling textbox)
+**Plans**: 2 plans (split external docs from in-app help restructure)
 
 Plans:
-- [ ] 48-01: README custom guest in hydrate workflow
-- [ ] 48-02: GUI guide updates for new hydrate features
-- [ ] 48-03: CLI reference updates for new flags
-- [ ] 48-04: Custom guest ITP requirements documentation
+- [ ] 48-01: External docs — README custom guest workflow + GUI guide + CLI reference + ITP requirements (covers **DOCS-01, DOCS-02, DOCS-03, DOCS-04**). One plan, 2-3 tasks: README + docs/gui-guide.md + docs/cli-reference.md + docs/gro-itp-guide.md. All four files already exist — this is an update, not creation.
+- [ ] 48-02: In-app help restructure — audit `quickice/gui/help_dialog.py` + per-widget tooltips for v4.7 features (new lattice types, custom guest upload, depol, mixed cage); restructure help dialog from single scrolling textbox to indexed format (TOC buttons or QTabWidget sections) since content volume now warrants navigation. Covers the in-app-help half of DOCS-02 (user-facing text inside the app, not the markdown guide). One plan, 2 tasks: restructure dialog container + populate v4.7 content.
 
 ## Progress
 
@@ -230,11 +233,13 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 41. GROMACS Export for Custom Guests | v4.7 | 11/11 | ✓ Complete | 2026-07-05 |
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
-| 44. GUI Integration | v4.7 | 0/4 | Not started | - |
-| 45. CLI Integration | v4.7 | 0/3 | Not started | - |
-| 46. VTK Rendering | v4.7 | 0/2 | Not started | - |
-| 47. Testing & Validation | v4.7 | 0/5 | Not started | - |
-| 48. Documentation | v4.7 | 0/4 | Not started | - |
+| 44. GUI Integration | v4.7 | 0/1 (3 of 4 stubs done in 39-04/42-06/43-02) | Not started | - |
+| 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
+| 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
+| 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
+| 48. Documentation | v4.7 | 0/2 (external + in-app help restructure) | Not started | - |
+
+**Remaining v4.7 work after reorganization:** ~5 plans (44-02, 45-01b+02a combined, 47-05, 48-01, 48-02) down from 14 stubs.
 
 ## Dependency Graph
 
@@ -258,18 +263,21 @@ Phase 42: Mixed Cage Occupancy
      │  │              │           │
      ▼  ▼              ▼           ▼
 Phase 43*  Phase 44: GUI  Phase 45: CLI  Phase 46: VTK
-(already)   Integration    Integration    Rendering
-     │              │           │           │
-     ├──────────────┴───────────┴───────────┘
+(already)   Integration    Integration    Rendering ✓ DONE
+     │      (44-02 only)   (45-01b+02a)   (no plans needed)
+     │              │           │
+     ├──────────────┴───────────┘
      │
      ▼
 Phase 47: Testing & Validation
+  (47-05 filled-ice grompp gap only)
      │
      ▼
 Phase 48: Documentation
+  (48-01 external + 48-02 in-app help restructure)
 ```
 
-*Phase 43 (Depol Mode) can execute after Phase 38, parallel with Phases 39-42.
+*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44/45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42).
 
 ---
 

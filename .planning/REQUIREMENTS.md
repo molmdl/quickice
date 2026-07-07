@@ -12,13 +12,15 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 - [ ] **GUEST-01**: User can upload a custom guest molecule (.gro + .itp) and generate a hydrate structure with that molecule placed in cage positions
 - [ ] **GUEST-02**: User can select which cage type (small/large/medium) to place the custom guest in
 - [ ] **GUEST-03**: User can set cage occupancy percentage for custom guest (0-100%)
-- [ ] **GUEST-04**: QuickIce validates custom guest GRO file is parseable (atom names + positions)
-- [ ] **GUEST-05**: QuickIce validates custom guest ITP file is parseable (moleculetype name, atom types, charges)
-- [ ] **GUEST-06**: QuickIce rejects custom guest residue names >3 chars (GRO 5-char limit with _H suffix)
-- [ ] **GUEST-07**: QuickIce rejects ITP files with comb-rule=1 (must be comb-rule=2, Lorentz-Berthelot)
-- [ ] **GUEST-08**: QuickIce registers custom guest in sys.modules and GenIce2 finds it via safe_import
-- [ ] **GUEST-09**: QuickIce cleans up sys.modules injection after generation (prevents pollution)
-- [ ] **GUEST-10**: Custom guest registration is thread-safe (main-thread registration before HydrateWorker starts)
+- [x] **GUEST-04**: QuickIce validates custom guest GRO file is parseable (atom names + positions) — *Phase 40-04*
+- [x] **GUEST-05**: QuickIce validates custom guest ITP file is parseable (moleculetype name, atom types, charges) — *Phase 40-04*
+- [x] **GUEST-06**: QuickIce rejects custom guest residue names >3 chars (GRO 5-char limit with _H suffix) — *Phase 38-03 + 40-03*
+- [x] **GUEST-07**: QuickIce rejects ITP files with comb-rule=1 (must be comb-rule=2, Lorentz-Berthelot) — *Phase 40-01 + 40-04*
+- [x] **GUEST-08**: QuickIce registers custom guest in sys.modules and GenIce2 finds it via safe_import — *Phase 40-04 + 40-05*
+- [x] **GUEST-09**: QuickIce cleans up sys.modules injection after generation (prevents pollution) — *Phase 40-04 (custom_guest_module context manager, try/finally)*
+- [x] **GUEST-10**: Custom guest registration is thread-safe (main-thread registration before HydrateWorker starts) — *Phase 40-05*
+
+**Note:** GUEST-01/02/03 remain pending — the data path + generator bridge + export all work (Phase 40/41), but the user-facing surfaces are not yet built: GUI upload panel is Phase 44-02, CLI `--custom-guest`/`--custom-guest-itp` is Phase 45-01b. GUEST-04..10 (the engine/validation/thread-safety layer) are complete.
 
 ### GROMACS Export for Custom Guests
 
@@ -64,42 +66,42 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### GUI Integration
 
-- [ ] **GUI-01**: Hydrate tab lattice dropdown includes all new lattice types (filled ices + Ice XVI/XVII + sT')
-- [ ] **GUI-02**: Hydrate tab has custom guest upload panel (.gro + .itp file pair selection)
-- [ ] **GUI-03**: Hydrate tab has cage-type guest assignment controls (small/large/medium → guest type)
-- [ ] **GUI-04**: Hydrate tab has depol mode dropdown (strict/optimal)
-- [ ] **GUI-05**: Custom guest upload shows validation errors with specific messages (name too long, wrong comb-rule, unparseable)
-- [ ] **GUI-06**: Hydrate tab mixed occupancy shows per-cage-type guest type and occupancy controls
+- [x] **GUI-01**: Hydrate tab lattice dropdown includes all new lattice types (filled ices + Ice XVI/XVII + sT') — *Phase 39-04*
+- [ ] **GUI-02**: Hydrate tab has custom guest upload panel (.gro + .itp file pair selection) — *Phase 44-02*
+- [x] **GUI-03**: Hydrate tab has cage-type guest assignment controls (small/large/medium → guest type) — *Phase 42-06 (built-in guests; custom-per-cage gated on 44-02)*
+- [x] **GUI-04**: Hydrate tab has depol mode dropdown (strict/optimal) — *Phase 43-02*
+- [ ] **GUI-05**: Custom guest upload shows validation errors with specific messages (name too long, wrong comb-rule, unparseable) — *Phase 44-02*
+- [x] **GUI-06**: Hydrate tab mixed occupancy shows per-cage-type guest type and occupancy controls — *Phase 42-06 (built-in path done; custom path gated on 44-02)*
 
 ### CLI Integration
 
-- [ ] **CLI-01**: CLI --hydrate-lattice flag supports new lattice type names (c0te, c1te, c2te, ice1hte, sTprime, 16, 17)
-- [ ] **CLI-02**: CLI --custom-guest and --custom-guest-itp flags for custom guest .gro/.itp file pair
-- [ ] **CLI-03**: CLI --depol flag (strict/optimal, default strict)
-- [ ] **CLI-04**: CLI mixed occupancy via --guest-small and --guest-large with occupancy values
+- [x] **CLI-01**: CLI --hydrate-lattice flag supports new lattice type names (c0te, c1te, c2te, ice1hte, sTprime, 16, 17) — *Phase 39-03*
+- [ ] **CLI-02**: CLI --custom-guest and --custom-guest-itp flags for custom guest .gro/.itp file pair — *Phase 45-01b*
+- [ ] **CLI-03**: CLI --depol flag (strict/optimal, default strict) — *Phase 45-02a*
+- [x] **CLI-04**: CLI mixed occupancy via --guest-small and --guest-large with occupancy values — *Phase 42-07 (implemented as repeatable `--cage-guest KEY=GUEST:OCC`, superset of the original spec — supports medium cage + any cage_type_map key)*
 
 ### VTK Rendering
 
-- [ ] **VTK-01**: Custom guest molecules render with distinct style in hydrate 3D viewer
-- [ ] **VTK-02**: Element map is extended for common custom guest atom types (C, O, H, N, S, etc.)
+- [x] **VTK-01**: Custom guest molecules render with distinct style in hydrate 3D viewer — *Phase 42-04 (create_guest_actor returns list[vtkActor] per mol_type with per-type bond color palette)*
+- [x] **VTK-02**: Element map is extended for common custom guest atom types (C, O, H, N, S, etc.) — *hydrate_renderer.py:68 ELEMENT_TO_ATOMIC_NUMBER covers H..Ca*
 
 ### Testing & Validation
 
-- [ ] **TEST-01**: Unit tests for custom guest GRO/ITP validation (valid, name too long, wrong comb-rule, unparseable)
-- [ ] **TEST-02**: Unit tests for sys.modules injection and cleanup
-- [ ] **TEST-03**: Unit tests for _build_molecule_index with custom guest types
-- [ ] **TEST-04**: E2E tests for filled ice generation (C0, C1, C2, Ih, sT')
-- [ ] **TEST-05**: E2E tests for custom guest hydrate generation + GROMACS export
-- [ ] **TEST-06**: E2E tests for mixed cage occupancy hydrate generation
-- [ ] **TEST-07**: Grompp validation tests for custom guest hydrate exports
-- [ ] **TEST-08**: Grompp validation tests for new lattice type exports
+- [x] **TEST-01**: Unit tests for custom guest GRO/ITP validation (valid, name too long, wrong comb-rule, unparseable) — *Phase 40-04 (test_custom_guest_bridge.py)*
+- [x] **TEST-02**: Unit tests for sys.modules injection and cleanup — *Phase 40-04 (test_custom_guest_bridge.py)*
+- [x] **TEST-03**: Unit tests for _build_molecule_index with custom guest types — *Phase 40-05 + test_hydrate_config_custom.py + test_hydrate_config_metadata.py*
+- [x] **TEST-04**: E2E tests for filled ice generation (C0, C1, C2, Ih, sT') — *Phase 39-05 (test_hydrate_lattice_types.py, 157 parametrized tests)*
+- [x] **TEST-05**: E2E tests for custom guest hydrate generation + GROMACS export — *Phase 41 (test_e2e_custom_guest_hydrate.py + _gui_grompp.py + _cli_grompp.py)*
+- [x] **TEST-06**: E2E tests for mixed cage occupancy hydrate generation — *Phase 42 (test_e2e_mixed_cage_occupancy.py + test_e2e_sh_cage_occupancy.py + test_cli/test_mixed_cage_cli.py)*
+- [x] **TEST-07**: Grompp validation tests for custom guest hydrate exports — *Phase 41-10/41-11 (GUI + CLI custom-guest grompp e2e)*
+- [ ] **TEST-08**: Grompp validation tests for new lattice type exports — *Phase 47-05 (filled-ice c0te/c1te/c2te/ice1hte grompp — the only remaining test gap)*
 
 ### Documentation
 
-- [ ] **DOCS-01**: README updated with custom guest in hydrate workflow
-- [ ] **DOCS-02**: GUI guide updated with new lattice types, custom guest upload, mixed occupancy, depol selector
-- [ ] **DOCS-03**: CLI reference updated with new flags (--hydrate-lattice, --custom-guest, --depol)
-- [ ] **DOCS-04**: Custom guest ITP requirements documented (comb-rule=2, residue name ≤3 chars, _H suffix convention)
+- [ ] **DOCS-01**: README updated with custom guest in hydrate workflow — *Phase 48-01*
+- [ ] **DOCS-02**: GUI guide updated with new lattice types, custom guest upload, mixed occupancy, depol selector — *Phase 48-01 (external docs) + Phase 48-02 (in-app help_dialog.py + tooltips, restructured to indexed format)*
+- [ ] **DOCS-03**: CLI reference updated with new flags (--hydrate-lattice, --custom-guest, --depol) — *Phase 48-01*
+- [ ] **DOCS-04**: Custom guest ITP requirements documented (comb-rule=2, residue name ≤3 chars, _H suffix convention) — *Phase 48-01*
 
 ## Deferred (v4.8+)
 
@@ -148,16 +150,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LATTICE-07 | Phase 39 | Complete |
 | LATTICE-08 | Phase 39 | Complete |
 | LATTICE-09 | Phase 39 | Complete |
-| GUEST-01 | Phase 40 | Pending |
-| GUEST-02 | Phase 40 | Pending |
-| GUEST-03 | Phase 40 | Pending |
-| GUEST-04 | Phase 40 | Pending |
-| GUEST-05 | Phase 40 | Pending |
-| GUEST-06 | Phase 40 | Pending |
-| GUEST-07 | Phase 40 | Pending |
-| GUEST-08 | Phase 40 | Pending |
-| GUEST-09 | Phase 40 | Pending |
-| GUEST-10 | Phase 40 | Pending |
+| GUEST-01 | Phase 40 + 44-02 | Pending (engine done in 40; user GUI surface in 44-02) |
+| GUEST-02 | Phase 40 + 44-02 | Pending (engine done in 40; user GUI surface in 44-02) |
+| GUEST-03 | Phase 40 + 44-02 | Pending (engine done in 40; user GUI surface in 44-02) |
+| GUEST-04 | Phase 40 | Complete |
+| GUEST-05 | Phase 40 | Complete |
+| GUEST-06 | Phase 38 + 40 | Complete |
+| GUEST-07 | Phase 40 | Complete |
+| GUEST-08 | Phase 40 | Complete |
+| GUEST-09 | Phase 40 | Complete |
+| GUEST-10 | Phase 40 | Complete |
 | EXPORT-01 | Phase 41 | Complete |
 | EXPORT-02 | Phase 41 | Complete |
 | EXPORT-03 | Phase 41 | Complete |
@@ -172,35 +174,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPOL-01 | Phase 43 | Complete |
 | DEPOL-02 | Phase 43 | Complete |
 | DEPOL-03 | Phase 43 | Complete |
-| GUI-01 | Phase 44 | Pending |
-| GUI-02 | Phase 44 | Pending |
-| GUI-03 | Phase 44 | Pending |
-| GUI-04 | Phase 44 | Pending |
-| GUI-05 | Phase 44 | Pending |
-| GUI-06 | Phase 44 | Pending |
-| CLI-01 | Phase 45 | Pending |
-| CLI-02 | Phase 45 | Pending |
-| CLI-03 | Phase 45 | Pending |
-| CLI-04 | Phase 45 | Pending |
-| VTK-01 | Phase 46 | Pending |
-| VTK-02 | Phase 46 | Pending |
-| TEST-01 | Phase 47 | Pending |
-| TEST-02 | Phase 47 | Pending |
-| TEST-03 | Phase 47 | Pending |
-| TEST-04 | Phase 47 | Pending |
-| TEST-05 | Phase 47 | Pending |
-| TEST-06 | Phase 47 | Pending |
-| TEST-07 | Phase 47 | Pending |
-| TEST-08 | Phase 47 | Pending |
-| DOCS-01 | Phase 48 | Pending |
-| DOCS-02 | Phase 48 | Pending |
-| DOCS-03 | Phase 48 | Pending |
-| DOCS-04 | Phase 48 | Pending |
+| GUI-01 | Phase 39-04 | Complete |
+| GUI-02 | Phase 44-02 | Pending |
+| GUI-03 | Phase 42-06 | Complete (built-in; custom gated on 44-02) |
+| GUI-04 | Phase 43-02 | Complete |
+| GUI-05 | Phase 44-02 | Pending |
+| GUI-06 | Phase 42-06 | Complete (built-in; custom gated on 44-02) |
+| CLI-01 | Phase 39-03 | Complete |
+| CLI-02 | Phase 45-01b | Pending |
+| CLI-03 | Phase 45-02a | Pending |
+| CLI-04 | Phase 42-07 | Complete |
+| VTK-01 | Phase 42-04 | Complete |
+| VTK-02 | Phase 42-04 + element map | Complete |
+| TEST-01 | Phase 40-04 | Complete |
+| TEST-02 | Phase 40-04 | Complete |
+| TEST-03 | Phase 40-05 | Complete |
+| TEST-04 | Phase 39-05 | Complete |
+| TEST-05 | Phase 41 | Complete |
+| TEST-06 | Phase 42 | Complete |
+| TEST-07 | Phase 41-10/41-11 | Complete |
+| TEST-08 | Phase 47-05 | Pending (filled-ice grompp gap) |
+| DOCS-01 | Phase 48-01 | Pending |
+| DOCS-02 | Phase 48-01 + 48-02 | Pending |
+| DOCS-03 | Phase 48-01 | Pending |
+| DOCS-04 | Phase 48-01 | Pending |
 
 **Coverage:**
-- v4.7 requirements: 45 total
-- Mapped to phases: 45/45 ✓
+- v4.7 requirements: 61 total (PIPE×4, LATTICE×9, GUEST×10, EXPORT×6, MIXED×5, DEPOL×3, GUI×6, CLI×4, VTK×2, TEST×8, DOCS×4)
+- Mapped to phases: 61/61 ✓
 - Unmapped: 0
+- Complete: 49
+- Pending: 12 (GUEST-01/02/03 → 44-02 + 45-01b; GUI-02/05 → 44-02; CLI-02/03 → 45-01b + 45-02a; TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
 
 ---
 *Requirements defined: 2026-06-27*

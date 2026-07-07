@@ -113,19 +113,20 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 
 **v4.7 Extended Hydrate Generation:**
 
-- [ ] Filled ice structures (c0te, c1te, c2te, ice1hte, sTprime) via GenIce2
-- [ ] New guest molecules in hydrate (CO₂, H₂, ethane)
-- [ ] Mixed cage occupancy / binary clathrates (e.g., CO₂+CH₄)
-- [ ] Water model selector (TIP4P-ICE, SPC/E, TIP3P) for hydrate generation
-- [ ] Depol mode (hydrate without guests)
-- [ ] P3 export fix (per-molecule mol_type MW detection in GROMACS export)
-- [ ] Custom guest molecule in hydrate (user-provided .gro/.itp → GenIce2 bridge)
-- [ ] sys.modules injection for custom guest registration with GenIce2
-- [ ] ITP transformation pipeline (_H suffix, atomtypes comment-out, residue rewrite, comb-rule validation)
-- [ ] Custom guest upload panel in Hydrate tab (GUI)
-- [ ] CLI --custom-guest + --custom-guest-itp flags
-- [ ] Cage-guest size validation (effective diameter vs cage cavity)
-- [ ] Thread-safe custom guest registration (QThread context)
+- [x] Filled ice structures (c0te, c1te, c2te, ice1hte, sTprime) via GenIce2 — *Phase 39 (COMPLETE)*
+- [ ] New guest molecules in hydrate (CO₂, H₂, ethane) — *Deferred to v4.8+ (force field verification needed)*
+- [x] Mixed cage occupancy / binary clathrates (e.g., CO₂+CH₄) — *Phase 42 (COMPLETE; built-in guests via GUI+CLI; custom-per-cage via GUI pending 44-02, via CLI pending 45-01b)*
+- [ ] Water model selector (TIP4P-ICE, SPC/E, TIP3P) for hydrate generation — *Deferred to v4.8+ (downstream impact)*
+- [x] Depol mode (hydrate without guests) — *Phase 43 (COMPLETE; strict/optimal, default strict)*
+- [x] P3 export fix (per-molecule mol_type MW detection in GROMACS export) — *Phase 41 (COMPLETE)*
+- [x] Custom guest molecule in hydrate (user-provided .gro/.itp → GenIce2 bridge) — *Engine COMPLETE in Phase 40; GUI upload panel pending 44-02; CLI flags pending 45-01b*
+- [x] sys.modules injection for custom guest registration with GenIce2 — *Phase 40-04/40-05 (COMPLETE)*
+- [x] ITP transformation pipeline (_H suffix, atomtypes comment-out, residue rewrite, comb-rule validation) — *Phase 38-04 + 40-01/40-02 (COMPLETE)*
+- [ ] Custom guest upload panel in Hydrate tab (GUI) — *Phase 44-02 (PENDING — the only remaining Phase 44 work)*
+- [ ] CLI --custom-guest + --custom-guest-itp flags — *Phase 45-01b (PENDING)*
+- [ ] CLI --depol flag — *Phase 45-02a (PENDING)*
+- [ ] Cage-guest size validation (effective diameter vs cage cavity) — *Deferred (not in v4.7 scope)*
+- [x] Thread-safe custom guest registration (QThread context) — *Phase 40-05 (COMPLETE; main-thread registration before HydrateWorker)*
 
 ### Out of Scope
 
@@ -163,18 +164,19 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 
 ## Current State
 
-**Version:** v4.5 (shipped 2026-06-27)
-**Tech Stack:** Python 3.14, PySide6 6.10.2, VTK 9.5.2, GenIce2, spglib, numpy, scipy, matplotlib, iapws
+**Version:** v4.7 in progress (Phases 38-43 complete, 44-48 pending; v4.5 shipped 2026-06-27)
+**Tech Stack:** Python 3.14, PySide6 6.10.2, VTK 9.5.2, GenIce2 2.2.13.1, spglib, numpy, scipy, matplotlib, iapws
 **Code:** ~33,558 lines of Python (quickice package), ~27,838 lines (tests)
-**Test Coverage:** 1,032 tests passing (422 E2E, 45 grompp validation)
+**Test Coverage:** 1,032+ tests passing (growing with v4.7 phases; 49/61 v4.7 requirements verified)
 **Output:** PDB, GROMACS (.gro/.top/.itp), PNG/SVG exports, 3D viewport captures
 **Phases Supported:** 12 ice polymorphs (Ih, Ic, II, III, IV, V, VI, VII, VIII, IX, XI, X)
-**Hydrate Structures:** sI, sII, sH with CH4/THF guests
+**Hydrate Structures:** sI, sII, sH + filled ices (C0/c0te, C1/c1te, C2/c2te, Ih/ice1hte) + sT' (water-only) + Ice XVI (16) + Ice XVII (17) — 10 lattice types total (Phase 39)
+**Hydrate Guests:** Built-in CH₄, THF + custom guest molecules via GenIce2 bridge (Phase 40; GUI upload pending 44-02, CLI pending 45-01b); mixed cage occupancy with per-cage-type assignment (Phase 42); depol mode strict/optimal (Phase 43)
 **Ion Types:** NaCl (Madrid2019 parameters)
 **Solute Types:** CH4, THF (GAFF2 parameters)
 **Custom Molecules:** User-provided .gro/.itp with validation
 **Interface Modes:** Slab, Pocket (sphere/cubic), Piece
-**CLI Pipeline:** Full 6-step pipeline (source→interface→custom→solute→ion→export)
+**CLI Pipeline:** Full 6-step pipeline (source→interface→custom→solute→ion→export) + `--cage-guest` repeatable flag for mixed occupancy (Phase 42-07); `--custom-guest`/`--depol` pending (Phase 45)
 **Entry Point:** `python -m quickice` (auto-routes CLI/GUI)
 **Distribution:** Standalone executable (PyInstaller)
 **Water Model:** TIP4P-ICE (Abascal et al. 2005, DOI: 10.1063/1.1931662)
@@ -245,4 +247,4 @@ Generate ready-to-use initial models and topologies for GROMACS for the simulati
 - **Reference**: Do not make up any reference or information. Always verify source. Note and explicitly document limitations.
 
 ---
-*Last updated: 2026-06-27 after v4.7 milestone initialization*
+*Last updated: 2026-07-07 after v4.7 phases 38-43 complete + phase 44-48 reorganization (14 stubs → 5 real plans remaining)*

@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 43 COMPLETE (43-01 + 43-02 done: HydrateConfig.depol_mode field + __post_init__ validation + from_dict passthrough + hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice + GUI QComboBox (strict/optimal, default strict) wired into HydratePanel between supercell and info groups + get_configuration passes depol_mode + configuration_changed emitted on combo change + 4 headless GUI tests. DEPOL-01/02/03 ALL SATISFIED). Phase 42 COMPLETE (8/8 + 42-08 bugfix). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 43 COMPLETE (43-01 + 43-02 done). ROADMAP/REQUIREMENTS/PROJECT reorganized 2026-07-07: phases 44-48 audited, 14 stubs → 5 real plans remaining. 49/61 v4.7 requirements complete. Phase 46 verified complete (0 plans needed). Ready for Phase 44 (1 plan: custom guest upload panel).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 43 COMPLETE (43-01 config+generator passthrough + 43-02 GUI QComboBox; DEPOL-01/02/03 all satisfied). Phase 42 COMPLETE (42-00..42-07 + post-phase bugfix 42-08). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
+**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-43 COMPLETE + Phase 46 verified-by-code. ROADMAP reorganized 2026-07-07: 5 real plans remaining (44-02, 45-01b+02a, 47-05, 48-01, 48-02). 49/61 requirements complete.
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 43 of 48 (Depol Mode) — COMPLETE |
+| Phase | 43 of 48 (Depol Mode) — COMPLETE; Phase 46 also verified complete (0 plans needed) |
 | Plan | 2/2 phase plans complete (43-01 + 43-02 done) |
-| Status | Phase 43 COMPLETE. 43-02 done: HydratePanel._create_depol_group() QGroupBox with strict/optimal QComboBox (index 0 = "strict" default, index 1 = "optimal") inserted between supercell group and lattice info group in _setup_ui; depol_combo.currentIndexChanged -> configuration_changed.emit() wired in _setup_connections; get_configuration passes depol_mode=self.depol_combo.currentData() (last kwarg, after supercell_z); currentData() returns "strict"/"optimal" — both valid per 43-01 __post_init__ so get_configuration can never produce invalid config; no "none" item (Pitfall 2 — __post_init__ rejects it, GUI must not offer it); no hydrate_worker/gromacs_writer/cli edits (depol rides along config; export unaffected; CLI --depol is Phase 45 scope); 4 headless TestDepolCombo tests pass (default strict, 2 items {strict,optimal}, get_configuration round-trip strict->strict + optimal->optimal, combo change emits configuration_changed >=1 per change) + 6 existing TestHydratePanelCageRows tests still pass (10/10 in test_hydrate_panel.py). DEPOL-01/02/03 ALL SATISFIED — Phase 43 end-to-end complete. Ready for Phase 44 (GUI Integration). |
-| Last activity | 2026-07-07 — Completed 43-02-PLAN.md |
+| Status | Phase 43 COMPLETE. ROADMAP/REQUIREMENTS/PROJECT reorganized 2026-07-07: phases 44-48 audited against codebase, 14 stubs → 5 real plans remaining (44-02, 45-01b+02a, 47-05, 48-01, 48-02). 49/61 v4.7 requirements complete. Ready for Phase 44 (GUI Integration — 1 plan: custom guest upload panel). |
+| Last activity | 2026-07-07 — Reorganized phases 44-48 (ROADMAP + REQUIREMENTS + PROJECT) |
 
-**Progress:** [███████░░░] ~73% (35/48 v4.7 plans complete across phases 38-47; Phase 43: 2/2 COMPLETE — Phase 44 next; Phase 42: 8/8 + post-phase bugfix 42-08 COMPLETE)
+**Progress:** [████████░░] ~80% (49/61 v4.7 requirements complete; 35 plan-summaries + Phase 46 verified-by-code. After reorganization: 5 real plans remaining across phases 44/45/47/48)
 
 ---
 
@@ -198,6 +198,7 @@ Recent decisions affecting v4.7 work:
 - **[43-02]** HydratePanel._create_depol_group() QGroupBox + QComboBox (strict default index 0, optimal index 1) inserted between supercell group and lattice info group in _setup_ui — separate QGroupBox (per 43-RESEARCH Open Q1) more discoverable than a row inside Hydrate Lattice group; mirrors the established lattice-combo pattern (QComboBox + HelpIcon + addStretch + QFormLayout row); depol_combo.currentIndexChanged -> configuration_changed.emit() wired in _setup_connections; get_configuration passes depol_mode=self.depol_combo.currentData() as the LAST kwarg (after supercell_z, matching 43-01's last-field placement); currentData() returns "strict"/"optimal" — both valid per 43-01 __post_init__ so get_configuration can never produce invalid config
 - **[43-02]** No "none" item in the GUI combo (Pitfall 2 — __post_init__ rejects it, GUI must not offer it); no hydrate_worker/gromacs_writer/cli edits (depol rides along config; export unaffected; CLI --depol is Phase 45 scope). Tooltip text describes the INTENDED strict/optimal distinction (per GenIce2 CLI help / GenIce3 pol_loop_1/pol_loop_2 design), not a guaranteed runtime delta in GenIce2 2.2.13.1 where strict≡optimal — text is factual as written (intent + "does not change atom count" which IS true)
 - **[43-02]** 4 headless TestDepolCombo tests (per-class panel fixture copy of TestHydratePanelCageRows 4-line fixture — pytest fixtures are per-class): default strict (index 0, data "strict"), 2 items {strict,optimal}, get_configuration round-trip strict->strict + optimal->optimal, combo change emits configuration_changed >=1 per change (plain Python list slot, not QtSignalSpy — matches existing panel test approach). No test asserts strict≠optimal generate different structures (Pitfall 1). DEPOL-01/02/03 ALL SATISFIED — Phase 43 end-to-end complete; Phase 44 #4 references this selector as already-integrated (do NOT double-build)
+- **[ROADMAP-REORG 2026-07-07]** Audited phases 44-48 stubs against codebase: most work already delivered as vertical slices inside 39-42. Reorganized ROADMAP/REQUIREMENTS/PROJECT to reflect reality. Phase 44: 4 stubs → 1 plan (44-02 custom guest upload; 44-01 done in 39-04, 44-03 done in 42-06 built-in, 44-04 done in 43-02). Phase 45: 3 stubs → 1 plan (45-01b+02a combined: --custom-guest + --depol; 45-01a done in 39-03, 45-02b done in 42-07 as --cage-guest). Phase 46: 2 stubs → 0 plans (VTK-01/02 done in 42-04 + element map; verification-only). Phase 47: 5 stubs → 1 plan (47-05 filled-ice grompp gap TEST-08; 47-01..04 done in 39-05/40/41/42). Phase 48: 4 stubs → 2 plans (48-01 external docs, 48-02 in-app help restructure to indexed/TOC format since content outgrew single scrolling textbox). Total: 14 stubs → 5 real plans. REQUIREMENTS.md: 49/61 complete (was stale at 0/45); GUEST-04..10 now marked complete (engine layer done; GUEST-01/02/03 pending user surfaces). PROJECT.md Active checklist + Current State updated (hydrate structures now lists all 10 lattice types + custom guests + mixed occupancy + depol; version v4.7 in-progress).
 
 ### Pending Todos
 
@@ -216,6 +217,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T08:13Z
-Stopped at: Completed 43-02-PLAN.md (Phase 43 Depol Mode COMPLETE — GUI QComboBox + config+generator passthrough; DEPOL-01/02/03 all satisfied)
+Last session: 2026-07-07T17:30Z
+Stopped at: Reorganized phases 44-48 in ROADMAP/REQUIREMENTS/PROJECT (14 stubs → 5 real plans; 49/61 requirements complete; ready for /gsd-plan-phase 44)
 Resume file: None
