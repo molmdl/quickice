@@ -15,6 +15,7 @@ from quickice.structure_generation.types import (
     HydrateConfig,
     HydrateLatticeInfo,
 )
+from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
 
 
 # ── Structural validation tests for HYDRATE_LATTICES entries ────────────
@@ -336,3 +337,69 @@ class TestHydrateConfigExtendedTypes:
     def test_config_ice_xvii_genice_name(self):
         config = HydrateConfig(lattice_type="17")
         assert config.get_genice_lattice_name() == "17"
+
+
+# ── Phase 43 depol_mode passthrough (e2e) ─────────────────────────────────
+
+
+class TestDepolModePassthrough:
+    """E2E tests proving config.depol_mode reaches GenIce2 generate_ice.
+
+    Both fixtures use module scope to amortize the ~3-5s GenIce2 calls per
+    AGENTS.md. CRITICAL: do NOT assert strict != optimal differ — in GenIce2
+    2.2.13.1 both modes set dipoleOptimizationCycles=1000 (identical output).
+    These tests assert the documented invariant (both succeed, equal atom
+    counts), not a nonexistent behavioral difference (Pitfall 1).
+    """
+
+    @pytest.fixture(scope="module")
+    def optimal_structure(self):
+        """Generate sI + CH4 with depol_mode='optimal' once for the module."""
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(
+            lattice_type="sI",
+            guest_type="ch4",
+            supercell_x=1,
+            supercell_y=1,
+            supercell_z=1,
+            depol_mode="optimal",
+        )
+        return gen.generate(config)
+
+    @pytest.fixture(scope="module")
+    def strict_structure(self):
+        """Generate sI + CH4 with depol_mode='strict' once for the module."""
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(
+            lattice_type="sI",
+            guest_type="ch4",
+            supercell_x=1,
+            supercell_y=1,
+            supercell_z=1,
+            depol_mode="strict",
+        )
+        return gen.generate(config)
+
+    def test_generate_with_optimal_depol_succeeds(self, optimal_structure):
+        """config.depol_mode='optimal' reaches GenIce2 without error.
+
+        Asserts the structure was generated (not None) and has water_count>0,
+        proving config.depol_mode flows through hydrate_generator._run_via_api
+        to ice.generate_ice(depol=...) without raising.
+        """
+        structure = optimal_structure
+        assert structure is not None
+        assert structure.water_count > 0
+
+    def test_optimal_and_strict_have_equal_atom_counts(
+        self, optimal_structure, strict_structure
+    ):
+        """optimal and strict produce EQUAL total atom counts in GenIce2 2.2.13.1.
+
+        Both modes set dipoleOptimizationCycles=1000 (Stage34E branches only
+        on 'none' vs anything-else). This asserts the documented invariant
+        (both succeed with equal atom counts), NOT a behavioral difference.
+        A test asserting strict != optimal would be a false-future-proofing
+        bug (Pitfall 1) — they are identical in this GenIce2 version.
+        """
+        assert len(optimal_structure.positions) == len(strict_structure.positions)

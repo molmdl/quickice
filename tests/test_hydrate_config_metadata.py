@@ -248,3 +248,47 @@ class TestHydrateStructureMetadata:
         assert structure.guest_atom_labels == ["C", "H1", "H2", "H3", "H4"]
         assert structure.guest_atom_count == 5
         assert structure.guest_itp_path == "/path/to/custom.itp"
+
+
+# ── Phase 43 depol_mode ──────────────────────────────────────────────────
+
+
+class TestDepolMode:
+    """Tests for HydrateConfig.depol_mode field (Phase 43).
+
+    QuickIce is the SOLE gatekeeper for valid depol_mode values — GenIce2
+    accepts any string silently (even 'banana' runs iter=1000). 'none' is
+    rejected because it yields physically unrealistic structures (iter=0
+    -> nonzero net dipole). Default 'strict' preserves the pre-Phase-43
+    byte-identical behavior for every existing HydrateConfig call site.
+    """
+
+    def test_depol_mode_default_is_strict(self):
+        """Omitting depol_mode inherits the 'strict' default (backward compat)."""
+        config = HydrateConfig(guest_type="ch4")
+        assert config.depol_mode == "strict"
+
+    def test_depol_mode_optimal_passthrough(self):
+        """Explicit 'optimal' is stored verbatim (no transformation)."""
+        config = HydrateConfig(guest_type="ch4", depol_mode="optimal")
+        assert config.depol_mode == "optimal"
+
+    def test_depol_mode_invalid_none_raises(self):
+        """'none' is rejected even though GenIce2 accepts it (iter=0 -> unrealistic)."""
+        with pytest.raises(ValueError, match="depol_mode"):
+            HydrateConfig(guest_type="ch4", depol_mode="none")
+
+    def test_depol_mode_invalid_banana_raises(self):
+        """Typo is rejected; GenIce2 would silently run iter=1000 on 'banana'."""
+        with pytest.raises(ValueError, match="depol_mode"):
+            HydrateConfig(guest_type="ch4", depol_mode="banana")
+
+    def test_from_dict_depol_passthrough_explicit(self):
+        """from_dict passes depol_mode through when present in the dict."""
+        config = HydrateConfig.from_dict({"depol_mode": "optimal"})
+        assert config.depol_mode == "optimal"
+
+    def test_from_dict_depol_defaults_to_strict(self):
+        """from_dict defaults to 'strict' when depol_mode is absent (backward compat)."""
+        config = HydrateConfig.from_dict({})
+        assert config.depol_mode == "strict"
