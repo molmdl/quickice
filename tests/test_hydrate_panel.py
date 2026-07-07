@@ -17,9 +17,10 @@ from tests/test_custom_molecule_panel_34_6.py.
 """
 
 import sys
+from pathlib import Path
 
 import pytest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from quickice.gui.hydrate_panel import HydratePanel
 
@@ -173,3 +174,186 @@ class TestDepolCombo:
         idx0 = panel.depol_combo.findData("strict")
         panel.depol_combo.setCurrentIndex(idx0)
         assert len(emitted) >= 2  # second change emits again
+
+
+# ---------------------------------------------------------------------------
+# Bundled fixture paths (Phase 44-02 custom guest upload tests).
+# ---------------------------------------------------------------------------
+_ETOH_GRO = "quickice/data/custom/etoh.gro"
+_ETOH_ITP = "quickice/data/custom/etoh.itp"
+_COMBRULE1_ITP = "quickice/data/custom/test_invalid/etoh_combrule1.itp"
+_NOT_A_GRO = "quickice/data/custom/test_invalid/not_a_gro.txt"
+_NO_ATOMTYPES_ITP = "quickice/data/custom/test_invalid/etoh_no_atomtypes.itp"
+
+
+def _upload_valid_pair(panel, gro_path, itp_path):
+    """Bypass QFileDialog: set paths directly + trigger validation.
+
+    QFileDialog cannot run headless, so tests set ``_cg_gro_path`` /
+    ``_cg_itp_path`` directly and call ``_try_validate_custom_guest`` to
+    exercise the same validation + descriptor-population path the handlers
+    use after a real file pick.
+    """
+    panel._cg_gro_path = Path(gro_path)
+    panel._cg_itp_path = Path(itp_path)
+    panel._try_validate_custom_guest()
+
+
+def _make_long_resname_gro(tmp_path):
+    """Create a GRO with a 5-char residue name (>3 chars, invalid).
+
+    Replaces the residue-name field (fixed-width columns 5-9, 0-indexed —
+    5 chars wide) in every atom line with ``"ETHAN"`` so the GRO parser's
+    fixed-width column slicing still sees correctly-aligned atom-name and
+    coordinate columns. A naive ``src.replace("MOL", "ETHAN")`` would shift
+    every subsequent column by 2 chars and make the GRO unparseable
+    (``"could not convert string to float"``) before the validator's
+    ``exceeds 3 chars`` check (step 4) could fire — so the field-slice
+    replacement is required to actually exercise the intended validation
+    path.
+    """
+    src = Path(_ETOH_GRO).read_text()
+    lines = src.split("\n")
+    n = int(lines[1])
+    for i in range(n):
+        atom_line = lines[2 + i]
+        # Residue-name field is columns 5-9 (0-indexed), 5 chars wide.
+        lines[2 + i] = atom_line[:5] + "ETHAN" + atom_line[10:]
+    bad = "\n".join(lines)
+    p = tmp_path / "etoh_long.gro"
+    p.write_text(bad)
+    return p
+
+
+class TestCustomGuestUpload:
+    """Custom guest upload panel wiring (Phase 44-02).
+
+    Covers the upload QGroupBox (two QFileDialog buttons + status labels +
+    validation label), the ``_try_validate_custom_guest`` -> engine
+    validator -> ``parse_gro_file`` flow, the "Custom: {residue}" per-cage
+    combo option, the ``get_configuration`` custom CageGuestAssignment
+    branch, and the Pitfall 6 mitigation (auto-clear second cage).
+    """
+
+    @pytest.fixture
+    def panel(self, monkeypatch):
+        """Provide a headless HydratePanel instance for each test."""
+        monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+        if not QApplication.instance():
+            QApplication(sys.argv)
+        return HydratePanel()
+
+    def test_valid_upload_populates_custom_guest_and_adds_combo_option(self, panel):
+        """Valid upload populates _custom_guest + adds 'Custom: MOL' to every combo."""
+        _upload_valid_pair(panel, _ETOH_GRO, _ETOH_ITP)
+        assert panel._custom_guest is not None
+        assert panel._custom_guest['residue_name'] == 'MOL'
+        assert panel._custom_guest['atom_count'] == 9
+        assert panel._custom_guest['atom_labels'] == ['H', 'C', 'H', 'H', 'C', 'H', 'H', 'O', 'H']
+        assert panel._custom_guest['guest_type'] == 'custom_gui'
+        # Selecting sI rebuilds the rows; the custom option must appear in
+        # every per-cage combo.
+        _select_lattice(panel, "sI")
+        for combo in panel._cage_guest_combos.values():
+            assert combo.findData(panel._custom_guest['guest_type']) >= 0
+            # Item text starts with "Custom: MOL"
+            custom_idx = combo.findData(panel._custom_guest['guest_type'])
+            assert combo.itemText(custom_idx).startswith("Custom: MOL")
+        # Validation label is green with the success message.
+        assert "✓" in panel.cg_validation_label.text()
+        assert "MOL" in panel.cg_validation_label.text()
+        assert "9 atoms" in panel.cg_validation_label.text()
+
+    def test_invalid_combrule1_shows_specific_error_and_keeps_none(self, panel):
+        """comb-rule=1 -> specific red error mentioning 'must be 2' and 'comb-rule=1'; _custom_guest stays None."""
+        _upload_valid_pair(panel, _ETOH_GRO, _COMBRULE1_ITP)
+        assert panel._custom_guest is None
+        text = panel.cg_validation_label.text()
+        assert "comb-rule must be 2" in text
+        assert "got comb-rule=1" in text
+        assert "red" in panel.cg_validation_label.styleSheet()
+
+    def test_invalid_not_a_gro_shows_parse_error(self, panel):
+        """Unparseable GRO -> red 'Failed to parse GRO file' error; _custom_guest stays None."""
+        _upload_valid_pair(panel, _NOT_A_GRO, _ETOH_ITP)
+        assert panel._custom_guest is None
+        text = panel.cg_validation_label.text()
+        assert "Failed to parse GRO file" in text
+        assert "red" in panel.cg_validation_label.styleSheet()
+
+    def test_invalid_long_resname_shows_specific_error(self, panel, tmp_path):
+        """5-char residue name -> red 'exceeds 3 chars' error mentioning 'ETHAN'; _custom_guest stays None."""
+        long_gro = _make_long_resname_gro(tmp_path)
+        _upload_valid_pair(panel, str(long_gro), _ETOH_ITP)
+        assert panel._custom_guest is None
+        text = panel.cg_validation_label.text()
+        assert "exceeds 3 chars" in text
+        assert "ETHAN" in text
+        assert "red" in panel.cg_validation_label.styleSheet()
+
+    def test_no_atomtypes_warning_shown_but_upload_succeeds(self, panel, monkeypatch):
+        """Missing [ atomtypes ] is a WARNING: QMessageBox.warning fires (monkeypatched to no-op) + upload succeeds."""
+        # The QMessageBox.warning is modal — monkeypatch to a no-op so the
+        # headless test does not hang waiting for a dialog dismissal.
+        monkeypatch.setattr(QMessageBox, "warning", lambda *a, **kw: QMessageBox.Ok)
+        _upload_valid_pair(panel, _ETOH_GRO, _NO_ATOMTYPES_ITP)
+        # Warning is non-blocking — upload still succeeds.
+        assert panel._custom_guest is not None
+        assert panel._custom_guest['residue_name'] == 'MOL'
+        assert "✓" in panel.cg_validation_label.text()
+        assert "green" in panel.cg_validation_label.styleSheet()
+
+    def test_get_configuration_round_trips_custom_in_one_cage(self, panel):
+        """get_configuration builds a fully-populated custom CageGuestAssignment for one cage; the other cage stays built-in.
+
+        This also proves mixed 1-custom + 1-builtin does NOT raise
+        HydrateConfig.__post_init__'s Pitfall 6 ValueError (Pitfall 6 only
+        fires when the SAME custom guest is in 2 cages).
+        """
+        _upload_valid_pair(panel, _ETOH_GRO, _ETOH_ITP)
+        _select_lattice(panel, "sI")
+        _set_guest(panel, "small", panel._custom_guest['guest_type'])
+        _set_occupancy(panel, "small", 80.0)
+        # large cage keeps the default built-in (ch4)
+        cfg = panel.get_configuration()
+        small = cfg.cage_guest_assignments['small']
+        assert small.guest_type == 'custom_gui'
+        assert small.guest_residue_name == 'MOL'
+        assert small.guest_atom_count == 9
+        assert small.guest_atom_labels == ['H', 'C', 'H', 'H', 'C', 'H', 'H', 'O', 'H']
+        assert small.guest_gro_path.endswith('etoh.gro')
+        assert small.guest_itp_path.endswith('etoh.itp')
+        assert small.occupancy == 80.0
+        assert small.is_custom_guest is True
+        # large cage is still built-in
+        large = cfg.cage_guest_assignments['large']
+        assert large.is_custom_guest is False
+
+    def test_pitfall6_auto_clears_second_cage(self, panel):
+        """Selecting custom in a second cage auto-clears the first; get_configuration does not raise."""
+        _upload_valid_pair(panel, _ETOH_GRO, _ETOH_ITP)
+        _select_lattice(panel, "sI")
+        _set_guest(panel, "small", panel._custom_guest['guest_type'])
+        _set_guest(panel, "large", panel._custom_guest['guest_type'])
+        # After the second selection, only ONE cage should have the custom
+        # guest (the most-recently-changed cage keeps it; the other reverts
+        # to the first built-in, ch4).
+        custom_type = panel._custom_guest['guest_type']
+        n_custom = sum(
+            1 for c in panel._cage_guest_combos.values()
+            if c.currentData() == custom_type
+        )
+        assert n_custom == 1
+        # get_configuration must NOT raise (Pitfall 6 would raise ValueError
+        # if both cages had the custom guest with the same residue name).
+        cfg = panel.get_configuration()
+        # Exactly one custom assignment + one built-in assignment.
+        custom_count = sum(
+            1 for a in cfg.cage_guest_assignments.values() if a.is_custom_guest
+        )
+        builtin_count = sum(
+            1 for a in cfg.cage_guest_assignments.values() if not a.is_custom_guest
+        )
+        assert custom_count == 1
+        assert builtin_count == 1
+
