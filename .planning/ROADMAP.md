@@ -130,11 +130,11 @@ Plans:
   1. User can select depol mode (strict/optimal) in the Hydrate tab
   2. Depol mode is passed through to GenIce2 generate_ice() call
   3. Default depol mode is 'strict' (preserves current behavior for existing users)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 43-01: Add depol mode to HydrateConfig and generator passthrough
-- [ ] 43-02: GUI depol mode selector in Hydrate tab
+- [ ] 43-01-PLAN.md — HydrateConfig depol_mode field + generator passthrough + tests
+- [ ] 43-02-PLAN.md — GUI depol mode selector (QComboBox) + get_configuration wiring + headless tests
 
 #### Phase 44: GUI Integration
 **Goal**: All new hydrate features are accessible from the Hydrate tab with validation feedback
