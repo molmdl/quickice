@@ -125,3 +125,51 @@ class TestHydratePanelCageRows:
         # Change back to water-only (0 rows) — rows cleared.
         _select_lattice(panel, "sTprime")
         assert len(panel._cage_guest_combos) == 0
+
+
+class TestDepolCombo:
+    """Depol mode QComboBox wiring (Phase 43-02)."""
+
+    @pytest.fixture
+    def panel(self, monkeypatch):
+        """Provide a headless HydratePanel instance for each test."""
+        monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+        if not QApplication.instance():
+            QApplication(sys.argv)
+        return HydratePanel()
+
+    def test_depol_combo_default_is_strict(self, panel):
+        """depol_combo defaults to index 0 / data "strict"."""
+        assert hasattr(panel, "depol_combo")
+        assert panel.depol_combo.currentIndex() == 0
+        assert panel.depol_combo.currentData() == "strict"
+
+    def test_depol_combo_has_two_items(self, panel):
+        """depol_combo has exactly 2 items with data {"strict", "optimal"}."""
+        assert panel.depol_combo.count() == 2
+        data_values = {panel.depol_combo.itemData(i) for i in range(2)}
+        assert data_values == {"strict", "optimal"}
+
+    def test_get_configuration_default_depol_is_strict(self, panel):
+        """get_configuration round-trips strict->strict and optimal->optimal."""
+        cfg = panel.get_configuration()
+        assert cfg.depol_mode == "strict"
+
+        idx = panel.depol_combo.findData("optimal")
+        assert idx >= 0
+        panel.depol_combo.setCurrentIndex(idx)
+        cfg2 = panel.get_configuration()
+        assert cfg2.depol_mode == "optimal"
+
+    def test_depol_combo_change_emits_configuration_changed(self, panel):
+        """Changing the depol combo emits configuration_changed at least once per change."""
+        emitted = []
+        panel.configuration_changed.connect(lambda: emitted.append(True))
+        idx = panel.depol_combo.findData("optimal")
+        assert idx >= 0
+        panel.depol_combo.setCurrentIndex(idx)
+        assert len(emitted) >= 1  # changing to optimal emits at least once
+        # Change back to strict
+        idx0 = panel.depol_combo.findData("strict")
+        panel.depol_combo.setCurrentIndex(idx0)
+        assert len(emitted) >= 2  # second change emits again
