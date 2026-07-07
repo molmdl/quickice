@@ -78,12 +78,15 @@ def _build_default_path(parent, filename: str) -> str:
     opens in a predictable directory with the correct filename pre-selected.
     The last-export directory lives on ``parent`` (the MainWindow) and is
     updated by :func:`_remember_export_dir` after each successful selection,
-    defaulting to the user's home directory on first use — the standard
-    desktop-app pattern (GROMACS, VMD, PyMOL all remember the last directory).
+    defaulting to the current working directory on first launch — matching the
+    original bare-filename behavior (Qt resolved bare names relative to CWD)
+    and typical scientific CLI tool conventions (the user ``cd``'d to their
+    project directory and expects output there). Subsequent exports reuse the
+    last-used directory so the user does not have to re-navigate each time.
     """
     last_dir = getattr(parent, "_last_export_dir", None)
     if last_dir is None:
-        last_dir = Path.home()
+        last_dir = Path.cwd()
     return str(last_dir / filename)
 
 

@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         # use). Prevents the user from accidentally overwriting an unrelated
         # file in whatever directory Qt happens to open. See
         # .planning/debug/export-filename-ux.md.
-        self._last_export_dir = Path.home()
+        self._last_export_dir = Path.cwd()
         
         # Setup UI
         self._setup_ui()
