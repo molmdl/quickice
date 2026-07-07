@@ -8,10 +8,13 @@ This module provides the HydratePanel class for hydrate configuration:
 - Lattice info display (handles water-only and filled-ice structures)
 """
 
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QDoubleSpinBox, QSpinBox, QGroupBox,
-    QFormLayout, QTextEdit, QPushButton, QStackedWidget
+    QFormLayout, QTextEdit, QPushButton, QStackedWidget,
+    QFileDialog, QMessageBox
 )
 from PySide6.QtCore import Signal, Qt
 
@@ -68,6 +71,12 @@ class HydratePanel(QWidget):
         # Lattice selection group
         lattice_group = self._create_lattice_group()
         left_layout.addWidget(lattice_group)
+        
+        # Custom guest upload group (Phase 44-02). ONE shared slot; on valid
+        # upload the custom guest becomes a "Custom: {residue}" option in
+        # every per-cage combo (added by _rebuild_cage_rows).
+        custom_guest_group = self._create_custom_guest_group()
+        left_layout.addWidget(custom_guest_group)
         
         # Cage guest assignment group (per-cage-type guest + occupancy rows
         # rebuilt when the lattice changes; one row per cage_type_map key)
@@ -223,6 +232,191 @@ class HydratePanel(QWidget):
         group.setLayout(layout)
         return group
 
+    def _create_custom_guest_group(self) -> QGroupBox:
+        """Create the custom guest upload group (Phase 44-02).
+
+        Adds a single shared custom-guest upload slot: two ``QPushButton``s
+        opening ``QFileDialog`` for ``.gro`` / ``.itp`` files, each with a
+        status ``QLabel`` (gray "No file selected" -> black filename on
+        selection), and a word-wrapped validation ``QLabel`` (gray prompt ->
+        green ``✓`` on success, red ``✗`` + specific engine error messages on
+        failure). On a valid upload the custom guest becomes a
+        "Custom: {residue}" option in every per-cage combo (added by
+        ``_rebuild_cage_rows``).
+
+        All custom-guest state (``_custom_guest``, ``_cg_gro_path``,
+        ``_cg_itp_path``) is initialized here so it stays co-located with the
+        panel it belongs to (not in ``__init__``).
+        """
+        group = QGroupBox("Custom Guest (optional)")
+        layout = QFormLayout()
+
+        # .gro row
+        gro_row = QHBoxLayout()
+        self.cg_gro_button = QPushButton("Upload .gro File")
+        self.cg_gro_button.setMaximumWidth(150)
+        self.cg_gro_button.clicked.connect(self._upload_custom_gro)
+        self.cg_gro_status = QLabel("No file selected")
+        self.cg_gro_status.setStyleSheet("color: gray;")
+        gro_row.addWidget(self.cg_gro_button)
+        gro_row.addWidget(self.cg_gro_status)
+        gro_row.addStretch()
+        layout.addRow("GRO:", gro_row)
+
+        # .itp row
+        itp_row = QHBoxLayout()
+        self.cg_itp_button = QPushButton("Upload .itp File")
+        self.cg_itp_button.setMaximumWidth(150)
+        self.cg_itp_button.clicked.connect(self._upload_custom_itp)
+        self.cg_itp_status = QLabel("No file selected")
+        self.cg_itp_status.setStyleSheet("color: gray;")
+        itp_row.addWidget(self.cg_itp_button)
+        itp_row.addWidget(self.cg_itp_status)
+        itp_row.addStretch()
+        layout.addRow("ITP:", itp_row)
+
+        # Validation feedback (word-wrapped so long engine error messages
+        # wrap instead of stretching the panel).
+        self.cg_validation_label = QLabel("Upload both files to validate")
+        self.cg_validation_label.setWordWrap(True)
+        layout.addRow(self.cg_validation_label)
+
+        # Slot state (None until a valid pair is uploaded). All
+        # custom-guest state co-located here for readability.
+        self._custom_guest = None  # dict: guest_type, residue_name, gro_path,
+                                  #      itp_path, atom_labels, atom_count
+        self._cg_gro_path = None
+        self._cg_itp_path = None
+
+        group.setLayout(layout)
+        return group
+
+    def _upload_custom_gro(self):
+        """Handle .gro file upload via QFileDialog (Phase 44-02)."""
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select Custom Guest GRO File", "",
+            "GRO Files (*.gro);;All Files (*)"
+        )
+        if filepath:
+            self._cg_gro_path = Path(filepath)
+            self.cg_gro_status.setText(self._cg_gro_path.name)
+            self.cg_gro_status.setStyleSheet("color: black;")
+            self._try_validate_custom_guest()
+
+    def _upload_custom_itp(self):
+        """Handle .itp file upload via QFileDialog (Phase 44-02)."""
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select Custom Guest ITP File", "",
+            "ITP Files (*.itp);;All Files (*)"
+        )
+        if filepath:
+            self._cg_itp_path = Path(filepath)
+            self.cg_itp_status.setText(self._cg_itp_path.name)
+            self.cg_itp_status.setStyleSheet("color: black;")
+            self._try_validate_custom_guest()
+
+    def _derive_guest_type_slug(self, itp_path) -> str:
+        """Derive the GenIce2 plugin slug for the uploaded custom guest.
+
+        Single-occupancy slot: a fixed slug is sufficient (re-upload
+        overwrites ``_custom_guest`` entirely; the generator only registers
+        what is in ``cage_guest_assignments``). ``audit_name`` accepts
+        ``^[A-Za-z0-9-_]+$`` and is already called inside
+        ``validate_custom_guest_files`` step 7, so ``"custom_gui"`` passes.
+
+        The ``itp_path`` parameter is kept for API stability / future
+        derivation if multi-slot is ever added; it is intentionally unused.
+        """
+        return "custom_gui"
+
+    def _try_validate_custom_guest(self):
+        """Validate the uploaded .gro + .itp pair and store the descriptor.
+
+        Reuses :func:`validate_custom_guest_files` (the canonical engine
+        validator — never reimplement per GUI-05). On a valid pair, calls
+        :func:`parse_gro_file` once to get the atom-name list (the validator
+        does NOT return atom names — Pitfall 3) and stores the descriptor on
+        ``self._custom_guest``. Rebuilds the per-cage rows so the
+        "Custom: {residue}" option appears in every combo. Emits
+        ``configuration_changed``.
+
+        On an invalid pair: sets the validation label red with the specific
+        engine error messages, clears ``self._custom_guest``, rebuilds the
+        cage rows (removes any previously-added Custom option), and emits
+        ``configuration_changed``.
+
+        All engine imports (``validate_custom_guest_files``,
+        ``parse_gro_file``) are lazy imports INSIDE this handler per
+        AGENTS.md (no top-level engine imports in ``hydrate_panel.py``). GUI
+        code may use a broad ``except Exception`` as a safety net per
+        AGENTS.md (only ``quickice/cli/pipeline.py`` forbids bare
+        ``except Exception``).
+        """
+        # Early-return when not both paths are selected.
+        if not (self._cg_gro_path and self._cg_itp_path):
+            return
+
+        guest_type = self._derive_guest_type_slug(self._cg_itp_path)
+
+        # REUSE the canonical validator (do NOT reimplement — GUI-05).
+        from quickice.structure_generation.custom_guest_bridge import (
+            validate_custom_guest_files,
+        )
+        result = validate_custom_guest_files(
+            self._cg_gro_path, self._cg_itp_path, guest_type
+        )
+
+        if not result.is_valid:
+            self.cg_validation_label.setText(
+                "✗ Validation failed:\n" + "\n".join(result.errors)
+            )
+            self.cg_validation_label.setStyleSheet("color: red;")
+            self._custom_guest = None
+            self._rebuild_cage_rows()  # remove any stale Custom option
+            self.configuration_changed.emit()
+            return
+
+        # Warnings are non-blocking (e.g. missing [ atomtypes ]). Surface them
+        # via a modal dialog but still treat the upload as valid. Pattern
+        # from custom_molecule_panel.py::_show_validation_warnings.
+        if result.warnings:
+            QMessageBox.warning(
+                self, "Custom Guest Warnings", "\n".join(result.warnings)
+            )
+
+        # Valid: parse the GRO once to get atom_names (the validator does NOT
+        # return them — Pitfall 3). Defensive broad except per AGENTS.md for
+        # GUI code (validation already ran, so this should not fail, but be
+        # safe).
+        try:
+            from quickice.structure_generation.gro_parser import parse_gro_file
+            _, atom_names, _ = parse_gro_file(self._cg_gro_path)
+        except Exception as exc:
+            self.cg_validation_label.setText(
+                f"✗ Validation succeeded but GRO re-parse failed: {exc}"
+            )
+            self.cg_validation_label.setStyleSheet("color: red;")
+            self._custom_guest = None
+            self._rebuild_cage_rows()
+            self.configuration_changed.emit()
+            return
+
+        self._custom_guest = {
+            "guest_type": guest_type,
+            "residue_name": result.residue_name,
+            "gro_path": str(self._cg_gro_path),
+            "itp_path": str(self._cg_itp_path),
+            "atom_labels": list(atom_names),       # -> CageGuestAssignment.guest_atom_labels
+            "atom_count": result.gro_atom_count,   # -> CageGuestAssignment.guest_atom_count
+        }
+        self.cg_validation_label.setText(
+            f"✓ Custom guest validated: {result.residue_name} "
+            f"({result.gro_atom_count} atoms)"
+        )
+        self.cg_validation_label.setStyleSheet("color: green;")
+        self._rebuild_cage_rows()  # add "Custom: {residue}" to every combo
+        self.configuration_changed.emit()
+
     def _create_cage_assignment_group(self) -> QGroupBox:
         """Create the per-cage guest assignment group.
 
@@ -296,7 +490,20 @@ class HydratePanel(QWidget):
                     f"{guest_info['name']} ({guest_info['formula']})",
                     guest_id,
                 )
-            combo.currentIndexChanged.connect(self._on_guest_changed)
+            # Phase 44-02: if a custom guest is loaded, add it as an option.
+            # is_custom_guest detects via guest_type not in GUEST_MOLECULES
+            # (types.py:466); the item data is the custom guest_type slug.
+            if self._custom_guest is not None:
+                combo.addItem(
+                    f"Custom: {self._custom_guest['residue_name']}",
+                    self._custom_guest['guest_type'],
+                )
+            # Phase 44-02: route through _on_cage_guest_changed so the Pitfall 6
+            # mitigation (_enforce_single_custom_cage) runs on every change.
+            # The lambda captures cage_key by default arg to avoid late-binding.
+            combo.currentIndexChanged.connect(
+                lambda _idx, ck=cage_key: self._on_cage_guest_changed(ck)
+            )
             row.addWidget(combo)
             row.addStretch()
             # Occupancy spinbox (0-100 %, default 100 %).
@@ -406,11 +613,58 @@ class HydratePanel(QWidget):
         self._update_info_display()
         self.configuration_changed.emit()
     
-    def _on_guest_changed(self):
-        """Handle guest molecule change."""
+    def _on_cage_guest_changed(self, cage_key):
+        """Handle a per-cage guest combo change (Phase 44-02).
+
+        Routes every per-cage combo change through the Pitfall 6 mitigation
+        (``_enforce_single_custom_cage``) so selecting the custom guest in a
+        second cage auto-clears the first back to a built-in (prevents the
+        ``ValueError: Duplicate guest_residue_name`` from
+        ``HydrateConfig.__post_init__`` — Pitfall 6 / 42-01 design decision;
+        an engine fix to relax it is out of scope for 44-02 because the _H
+        hydrate path does not disambiguate residue names).
+
+        Then refreshes the force-field label + lattice info display (mirrors
+        the legacy ``_on_guest_changed`` flow) and emits
+        ``configuration_changed``.
+        """
+        self._enforce_single_custom_cage(cage_key)
         self._update_ff_label()
         self._update_info_display()  # Update guest fit info
         self.configuration_changed.emit()
+
+    def _enforce_single_custom_cage(self, changed_cage_key):
+        """Restrict the custom guest to a single cage at a time (Pitfall 6).
+
+        If the user selects "Custom: {residue}" in a second cage, auto-clear
+        the FIRST cage back to index 0 (the first built-in, usually ch4). The
+        auto-clear IS the feedback — no dialog is shown. The most-recently-
+        changed cage (``changed_cage_key``) keeps the custom guest; every
+        other cage with the custom guest reverts to the built-in.
+
+        Verified: mixed 1-custom + 1-builtin works (``has_custom_assignment
+        =True``, no ``ValueError``). Same custom guest in 2 cages would
+        otherwise raise from ``HydrateConfig.__post_init__`` (types.py:711-720)
+        and propagate uncaught through ``main_window.py:742,748`` (no
+        try/except there).
+        """
+        if self._custom_guest is None:
+            return
+        custom_type = self._custom_guest['guest_type']
+        cages_with_custom = [
+            ck for ck, c in self._cage_guest_combos.items()
+            if c.currentData() == custom_type
+        ]
+        if len(cages_with_custom) <= 1:
+            return
+        # Keep the most-recently-changed cage; reset every other cage to the
+        # first built-in (index 0). setCurrentIndex(0) re-emits
+        # currentIndexChanged, which re-enters _on_cage_guest_changed for the
+        # reset cage — but on re-entry that cage no longer has the custom
+        # guest, so the recursion terminates (len(cages_with_custom) == 1).
+        for ck in cages_with_custom:
+            if ck != changed_cage_key:
+                self._cage_guest_combos[ck].setCurrentIndex(0)
     
     def _update_guest_ui_for_lattice(self):
         """Rebuild per-cage guest+occupancy rows for the selected lattice.
@@ -494,9 +748,23 @@ class HydratePanel(QWidget):
         for cage_key, combo in self._cage_guest_combos.items():
             guest_id = combo.currentData() or "ch4"
             occ = self._cage_occupancy_spins[cage_key].value()
-            cage_guest_assignments[cage_key] = CageGuestAssignment(
-                guest_type=guest_id, occupancy=occ
-            )
+            if guest_id not in GUEST_MOLECULES and self._custom_guest is not None:
+                # Phase 44-02: custom guest — supply FULL metadata (no
+                # auto-populate; __post_init__ only auto-populates built-ins).
+                cg = self._custom_guest
+                cage_guest_assignments[cage_key] = CageGuestAssignment(
+                    guest_type=cg['guest_type'],
+                    occupancy=occ,
+                    guest_residue_name=cg['residue_name'],
+                    guest_gro_path=cg['gro_path'],
+                    guest_itp_path=cg['itp_path'],
+                    guest_atom_labels=list(cg['atom_labels']),
+                    guest_atom_count=cg['atom_count'],
+                )
+            else:
+                cage_guest_assignments[cage_key] = CageGuestAssignment(
+                    guest_type=guest_id, occupancy=occ
+                )
         return HydrateConfig(
             lattice_type=self.lattice_combo.currentData(),
             cage_guest_assignments=cage_guest_assignments,
