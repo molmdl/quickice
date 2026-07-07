@@ -51,9 +51,9 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### Depol Mode
 
-- [ ] **DEPOL-01**: User can select depol mode (strict/optimal) in Hydrate tab
-- [ ] **DEPOL-02**: Depol mode is passed through to GenIce2 generate_ice() call
-- [ ] **DEPOL-03**: Default depol mode is 'strict' (preserves current behavior)
+- [x] **DEPOL-01**: User can select depol mode (strict/optimal) in Hydrate tab
+- [x] **DEPOL-02**: Depol mode is passed through to GenIce2 generate_ice() call
+- [x] **DEPOL-03**: Default depol mode is 'strict' (preserves current behavior)
 
 ### Internal Pipeline (prerequisite engineering)
 
@@ -169,9 +169,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MIXED-03 | Phase 42 | Complete |
 | MIXED-04 | Phase 42 | Complete |
 | MIXED-05 | Phase 42 | Complete |
-| DEPOL-01 | Phase 43 | Pending |
-| DEPOL-02 | Phase 43 | Pending |
-| DEPOL-03 | Phase 43 | Pending |
+| DEPOL-01 | Phase 43 | Complete |
+| DEPOL-02 | Phase 43 | Complete |
+| DEPOL-03 | Phase 43 | Complete |
 | GUI-01 | Phase 44 | Pending |
 | GUI-02 | Phase 44 | Pending |
 | GUI-03 | Phase 44 | Pending |
