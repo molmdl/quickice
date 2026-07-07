@@ -153,6 +153,48 @@ Plans:
 - [x] 44-03: Mixed occupancy per-cage-type guest/occupancy controls — **DONE in 42-06** (`_rebuild_cage_rows` + per-cage combos/spinners; built-in guests only — custom-per-cage is gated on 44-02). Satisfies **GUI-03** (built-in path) + **GUI-06** (built-in path).
 - [x] 44-04: Depol mode dropdown + HydrateWorker config passthrough — **DONE in 43-02** (`depol_combo` QComboBox strict/optimal + `get_configuration` passthrough; 43-02-SUMMARY explicitly notes "Phase 44 #4 references this as already-integrated — do NOT double-build"). Satisfies **GUI-04**.
 
+#### Phase 44.1: Wire Custom Guest Through All Tabs Like Standard Hydrate (INSERTED)
+
+**Goal**: Custom guest hydrate flows through the Interface tab and exports valid GROMACS output like a standard (built-in) hydrate, and the Pitfall 6 engine over-restriction is relaxed so the same custom guest can be assigned to multiple cages (aggregating like ch4).
+**Depends on**: Phase 44 (GUI custom guest upload panel done; issues discovered during 44-02 human-verify checkpoint)
+**Plans:** 22 plans
+
+Plans:
+- [ ] 44.1-01-PLAN.md — Pitfall 6 engine relaxation (track residue_name→guest_type; reject only different guest_types)
+- [ ] 44.1-02-PLAN.md — to_candidate() carries guest_descriptors + guest_atom_counts in metadata
+- [ ] 44.1-03-PLAN.md — count_guest_atoms accepts guest_atom_count for custom guests
+- [ ] 44.1-04-PLAN.md — Move _build_custom_guest_info to neutral quickice/output/guest_info.py
+- [ ] 44.1-05-PLAN.md — slab.py threads guest_atom_count from candidate metadata
+- [ ] 44.1-06-PLAN.md — pocket.py threads guest_atom_count from candidate metadata
+- [ ] 44.1-07-PLAN.md — piece.py threads guest_atom_count from candidate metadata
+- [ ] 44.1-08-PLAN.md — Shared _stage_hydrate_guest_itps helper (DRY across 4 exporters)
+- [ ] 44.1-09-PLAN.md — GUI InterfaceGROMACSExporter threads custom_guest_info + ITP staging
+- [ ] 44.1-10-PLAN.md — GUI MainWindow interface export handler passes hydrate_config
+- [ ] 44.1-11-PLAN.md — GUI SoluteGROMACSExporter + extend write_solute_top/gro_file with custom_guest_info
+- [ ] 44.1-12-PLAN.md — GUI MainWindow solute export handler passes hydrate_config
+- [ ] 44.1-13-PLAN.md — GUI CustomMoleculeGROMACSExporter + extend write_custom_molecule_top/gro_file
+- [ ] 44.1-14-PLAN.md — GUI MainWindow custom-molecule export handler passes hydrate_config
+- [ ] 44.1-15-PLAN.md — GUI IonGROMACSExporter + extend write_ion_top/gro_file with custom_guest_info
+- [ ] 44.1-16-PLAN.md — GUI MainWindow ion export handler passes hydrate_config
+- [ ] 44.1-17-PLAN.md — CLI interface/custom/solute/ion export branches thread custom_guest_info + itp_helpers
+- [ ] 44.1-18-PLAN.md — Remove 44-02 _enforce_single_custom_cage auto-clear (engine now allows 2 cages)
+- [ ] 44.1-19-PLAN.md — Full e2e (GUI): custom guest → interface → solute → ion → export grompp
+- [ ] 44.1-20-PLAN.md — Full e2e (CLI): custom guest → all export branches grompp
+- [ ] 44.1-21-PLAN.md — Full e2e: same custom guest in 2 cages (Pitfall 6 relaxation) → grompp
+- [ ] 44.1-22-PLAN.md — Regression guard: built-in ch4 + thf through ALL tabs (GUI + CLI)
+
+**Details:**
+Two issues discovered during Phase 44-02 human-verify checkpoint (user-generated custom guest hydrate → Interface tab → export):
+
+1. **Pitfall 6 engine over-restriction** (`quickice/structure_generation/types.py:711-720`): `HydrateConfig.__post_init__` rejects duplicate `guest_residue_name` across custom cage assignments, but checks residue name alone — not `(guest_type, guest_residue_name)`. This blocks the SAFE case (same custom guest in 2 cages, which aggregates to one `MOL_H` moleculetype exactly like ch4-in-all-cages) while correctly blocking the UNSAFE case (two different custom guests sharing the same residue name). Fix: track `guest_residue_name → guest_type`; only raise when a *different* `guest_type` claims an already-seen residue name. ~3-line change. This lets the 44-02 GUI auto-revert mitigation be removed/relaxed (single custom guest can occupy multiple cages like ch4).
+
+2. **Interface tab custom guest export broken** (two parts):
+   - **(a)** `quickice/structure_generation/types.py:1168` `HydrateStructure.to_candidate()` carries `guest_type_counts` in metadata but DROPS the `CageGuestAssignment` descriptor fields (residue_name, gro_path, itp_path, atom_labels, atom_count). When a hydrate becomes an interface template, the custom guest info is lost.
+   - **(b)** `quickice/gui/export.py:901-965` `InterfaceGROMACSExporter.export_interface_gromacs()` calls `write_interface_gro_file`/`write_interface_top_file` with NO `custom_guest_info` kwarg (export.py:942-947) — the Phase 41-04/41-05 custom path never fires. It instead uses the old `_detect_guest_type_from_structure` heuristic (export.py:959) which returns `None` for custom guests → no ITP staged, no atomtypes merged, wrong/missing residue name → broken `.top`.
+   - **Fix:** mirror the 42-08 pattern — `to_candidate()` carries custom guest descriptors (or the exporter reconstructs `custom_guest_info` from the interface structure's `guest_descriptors` + the original `HydrateConfig`); `export_interface_gromacs` threads `custom_guest_info` to both interface writers using the structure-driven ITP staging approach.
+
+**Scope note:** Phase 44 goal ("Hydrate tab") is COMPLETE — these are cross-tab concerns that predates Phase 44 (the Interface export path was never wired for custom guests in any phase). Marked INSERTED/URGENT because the user hit this immediately during 44-02 acceptance testing.
+
 #### Phase 45: CLI Integration
 **Goal**: All new hydrate features are accessible from the CLI for scripting and batch workflows
 **Depends on**: Phase 38 (pipeline), Phase 39 (lattice types), Phase 40 (custom guest), Phase 43 (depol)
@@ -223,7 +265,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47 → 48
+Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -234,6 +276,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
 | 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
+| 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 0/22 | Planned (22 plans, 5 waves) | - |
 | 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
@@ -264,20 +307,26 @@ Phase 42: Mixed Cage Occupancy
      ▼  ▼              ▼           ▼
 Phase 43*  Phase 44: GUI  Phase 45: CLI  Phase 46: VTK
 (already)   Integration    Integration    Rendering ✓ DONE
-     │      (44-02 only)   (45-01b+02a)   (no plans needed)
-     │              │           │
-     ├──────────────┴───────────┘
-     │
-     ▼
-Phase 47: Testing & Validation
-  (47-05 filled-ice grompp gap only)
-     │
-     ▼
+      │      (44-02 only)   (45-01b+02a)   (no plans needed)
+      │          │
+      │          ▼
+      │   Phase 44.1 (INSERTED)
+      │   (wire custom guest
+      │    through all tabs)
+      │          │
+      │          ▼
+      ├──────────┴───────────┐
+      │                      │
+      ▼                      ▼
+Phase 47: Testing & Validation  Phase 45: CLI
+  (47-05 filled-ice grompp gap)   (45-01b+02a)
+      │
+      ▼
 Phase 48: Documentation
   (48-01 external + 48-02 in-app help restructure)
 ```
 
-*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44/45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42).
+*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42).
 
 ---
 

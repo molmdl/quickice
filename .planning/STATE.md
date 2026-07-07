@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 46 also verified complete (0 plans needed) |
-| Plan | 1/1 phase plan complete (44-02 done; 44-01/03/04 done in prior phases) |
-| Status | Phase 44 COMPLETE (8/8 must-haves verified). 51/61 v4.7 requirements complete (GUI-02/05/06 closed). User identified TWO urgent cross-tab issues: (1) Pitfall 6 engine over-restriction (types.py:712 rejects same-custom-in-all-cages though it would aggregate like ch4 — needs to distinguish same-guest-type from different-guest-type-same-name); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs uses old _detect_guest_type heuristic → None for custom, doesn't thread custom_guest_info). Ready for urgent cross-tab phase before Phase 45. |
-| Last activity | 2026-07-07 — Phase 44-02 executed + verified (8/8 must-haves passed); GUI-02/05/06 marked Complete |
+| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — NOT PLANNED YET; Phase 46 also verified complete (0 plans needed) |
+| Plan | 1/1 phase plan complete (44-02 done; 44-01/03/04 done in prior phases); 44.1 has 0 plans (not planned) |
+| Status | Phase 44 COMPLETE (8/8 must-haves verified). Phase 44.1 (INSERTED urgent) created to wire custom guest through all tabs — not planned yet. 51/61 v4.7 requirements complete (GUI-02/05/06 closed). Two urgent cross-tab issues for 44.1: (1) Pitfall 6 engine over-restriction (types.py:712 rejects same-custom-in-all-cages though it would aggregate like ch4 — needs to distinguish same-guest-type from different-guest-type-same-name); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs uses old _detect_guest_type heuristic → None for custom, doesn't thread custom_guest_info). Ready for /gsd-plan-phase 44.1. |
+| Last activity | 2026-07-07 — Phase 44-02 executed + verified (8/8 must-haves passed); Phase 44.1 (INSERTED) created for urgent cross-tab wiring |
 
 **Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 37 plan-summaries + Phase 46 verified-by-code. Phase 44 done. 4 real plans remaining across phases 45/47/48 + 1 urgent cross-tab phase)
 
@@ -55,6 +55,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ---
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- **[2026-07-07]** Phase 44.1 inserted after Phase 44: "Wire Custom Guest Through All Tabs Like Standard Hydrate" (URGENT). Discovered during 44-02 human-verify checkpoint — user generated a custom guest hydrate, moved to the Interface tab, and found the export broken. Two issues: (1) Pitfall 6 engine over-restriction (`types.py:712` rejects same-custom-in-all-cages though it aggregates like ch4 — needs to distinguish same-guest-type from different-guest-type-same-name); (2) Interface tab custom guest export broken (`to_candidate` drops custom descriptors; `export_interface_gromacs` uses old `_detect_guest_type` heuristic → None for custom, doesn't thread `custom_guest_info`). Phase 44 goal (Hydrate tab) remains COMPLETE; 44.1 covers cross-tab concerns that predate Phase 44 (Interface export never wired for custom guests in any phase). Not planned yet — run `/gsd-plan-phase 44.1` to break down.
 
 ### Decisions
 
