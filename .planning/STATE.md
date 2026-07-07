@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 43 IN PROGRESS (43-01 done: HydrateConfig.depol_mode field + __post_init__ validation against {strict,optimal} + from_dict passthrough + hydrate_generator _run_via_api passes config.depol_mode to GenIce2 generate_ice + 8 new tests (6 unit + 2 e2e); DEPOL-02 + DEPOL-03 satisfied at config+generator layer; DEPOL-01 requires 43-02 GUI selector). Phase 42 COMPLETE (8/8 plans + post-phase bugfix 42-08). Phase 41 COMPLETE (11/11).
+**Current Focus:** Phase 43 COMPLETE (43-01 + 43-02 done: HydrateConfig.depol_mode field + __post_init__ validation + from_dict passthrough + hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice + GUI QComboBox (strict/optimal, default strict) wired into HydratePanel between supercell and info groups + get_configuration passes depol_mode + configuration_changed emitted on combo change + 4 headless GUI tests. DEPOL-01/02/03 ALL SATISFIED). Phase 42 COMPLETE (8/8 + 42-08 bugfix). Phase 41 COMPLETE (11/11).
 
 ---
 
@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phase 43 IN PROGRESS (43-01 done: HydrateConfig.depol_mode + generator passthrough + 8 tests). Phase 42 COMPLETE (42-00..42-07 + post-phase bugfix 42-08). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
+**Current focus:** v4.7 Extended Hydrate Generation — Phase 43 COMPLETE (43-01 config+generator passthrough + 43-02 GUI QComboBox; DEPOL-01/02/03 all satisfied). Phase 42 COMPLETE (42-00..42-07 + post-phase bugfix 42-08). Phase 41 COMPLETE (41-01..41-11). Phase 40 COMPLETE (40-01..40-05).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 43 of 48 (Depol Mode) — IN PROGRESS |
-| Plan | 1/2 phase plans complete (43-01 done; 43-02 GUI selector pending) |
-| Status | Phase 43 IN PROGRESS. 43-01 done: HydrateConfig.depol_mode field (default "strict", validated against {"strict","optimal"}) added as last dataclass field; __post_init__ validation rejects "none" (GenIce2 accepts it silently -> iter=0 -> nonzero dipole -> unrealistic) and typos (GenIce2 runs iter=1000 on any string); from_dict threads depol_mode through (explicit -> passthrough; absent -> "strict"); hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice(depol=...) replacing the hardcoded 'strict'; generator.py:126 ice-path hardcode UNTOUCHED (out of scope); 8 new tests (6 unit TestDepolMode + 2 e2e TestDepolModePassthrough with module-scoped GenIce2 fixtures asserting optimal succeeds + optimal≡strict equal atom counts — Pitfall 1: strict≡optimal in GenIce2 2.2.13.1). 234 hydrate regression tests pass (backward compat: every existing HydrateConfig call site omits depol_mode -> "strict"). DEPOL-02 + DEPOL-03 satisfied at config+generator layer; DEPOL-01 (user-selectable) requires 43-02 GUI. Ready for 43-02. |
-| Last activity | 2026-07-07 — Completed 43-01-PLAN.md |
+| Phase | 43 of 48 (Depol Mode) — COMPLETE |
+| Plan | 2/2 phase plans complete (43-01 + 43-02 done) |
+| Status | Phase 43 COMPLETE. 43-02 done: HydratePanel._create_depol_group() QGroupBox with strict/optimal QComboBox (index 0 = "strict" default, index 1 = "optimal") inserted between supercell group and lattice info group in _setup_ui; depol_combo.currentIndexChanged -> configuration_changed.emit() wired in _setup_connections; get_configuration passes depol_mode=self.depol_combo.currentData() (last kwarg, after supercell_z); currentData() returns "strict"/"optimal" — both valid per 43-01 __post_init__ so get_configuration can never produce invalid config; no "none" item (Pitfall 2 — __post_init__ rejects it, GUI must not offer it); no hydrate_worker/gromacs_writer/cli edits (depol rides along config; export unaffected; CLI --depol is Phase 45 scope); 4 headless TestDepolCombo tests pass (default strict, 2 items {strict,optimal}, get_configuration round-trip strict->strict + optimal->optimal, combo change emits configuration_changed >=1 per change) + 6 existing TestHydratePanelCageRows tests still pass (10/10 in test_hydrate_panel.py). DEPOL-01/02/03 ALL SATISFIED — Phase 43 end-to-end complete. Ready for Phase 44 (GUI Integration). |
+| Last activity | 2026-07-07 — Completed 43-02-PLAN.md |
 
-**Progress:** [███████░░░] ~71% (34/48 v4.7 plans complete across phases 38-47; Phase 43: 1/2 complete; Phase 42: 8/8 + post-phase bugfix 42-08 COMPLETE)
+**Progress:** [███████░░░] ~73% (35/48 v4.7 plans complete across phases 38-47; Phase 43: 2/2 COMPLETE — Phase 44 next; Phase 42: 8/8 + post-phase bugfix 42-08 COMPLETE)
 
 ---
 
@@ -195,6 +195,9 @@ Recent decisions affecting v4.7 work:
 - **[43-01]** hydrate_generator._run_via_api passes config.depol_mode to GenIce2 generate_ice(depol=...) replacing the single hardcoded 'strict' at line 317 (the ONLY in-scope call site). generator.py:126 ice-path hardcode (depol='strict', non-hydrate TIP3P path, different class) left UNTOUCHED — out of scope for Phase 43 (hydrate-only)
 - **[43-01]** e2e test test_optimal_and_strict_have_equal_atom_counts asserts EQUALITY not difference — Pitfall 1: strict≡optimal in GenIce2 2.2.13.1 (Stage34E branches only on "none" vs anything-else; both -> dipoleOptimizationCycles=1000). A test asserting strict≠optimal would be a false-future-proofing bug. Module-scoped fixtures amortize GenIce2 calls (sI 1×1×1: 46 water + 8 ch4 = 224 atoms each, ~10ms per call)
 - **[43-01]** No CLI --depol flag (Phase 45 / CLI-03 scope); no hydrate_worker.py or gromacs_writer.py edit (depol rides along config; export path unaffected — depol only sets H-bond orientation during generation). CLI pipeline.py:372 inherits "strict" default automatically
+- **[43-02]** HydratePanel._create_depol_group() QGroupBox + QComboBox (strict default index 0, optimal index 1) inserted between supercell group and lattice info group in _setup_ui — separate QGroupBox (per 43-RESEARCH Open Q1) more discoverable than a row inside Hydrate Lattice group; mirrors the established lattice-combo pattern (QComboBox + HelpIcon + addStretch + QFormLayout row); depol_combo.currentIndexChanged -> configuration_changed.emit() wired in _setup_connections; get_configuration passes depol_mode=self.depol_combo.currentData() as the LAST kwarg (after supercell_z, matching 43-01's last-field placement); currentData() returns "strict"/"optimal" — both valid per 43-01 __post_init__ so get_configuration can never produce invalid config
+- **[43-02]** No "none" item in the GUI combo (Pitfall 2 — __post_init__ rejects it, GUI must not offer it); no hydrate_worker/gromacs_writer/cli edits (depol rides along config; export unaffected; CLI --depol is Phase 45 scope). Tooltip text describes the INTENDED strict/optimal distinction (per GenIce2 CLI help / GenIce3 pol_loop_1/pol_loop_2 design), not a guaranteed runtime delta in GenIce2 2.2.13.1 where strict≡optimal — text is factual as written (intent + "does not change atom count" which IS true)
+- **[43-02]** 4 headless TestDepolCombo tests (per-class panel fixture copy of TestHydratePanelCageRows 4-line fixture — pytest fixtures are per-class): default strict (index 0, data "strict"), 2 items {strict,optimal}, get_configuration round-trip strict->strict + optimal->optimal, combo change emits configuration_changed >=1 per change (plain Python list slot, not QtSignalSpy — matches existing panel test approach). No test asserts strict≠optimal generate different structures (Pitfall 1). DEPOL-01/02/03 ALL SATISFIED — Phase 43 end-to-end complete; Phase 44 #4 references this selector as already-integrated (do NOT double-build)
 
 ### Pending Todos
 
@@ -213,6 +216,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T07:51Z
-Stopped at: Completed 43-01-PLAN.md (HydrateConfig.depol_mode field + generator passthrough + 8 tests; DEPOL-02/03 satisfied at config+generator layer)
+Last session: 2026-07-07T08:13Z
+Stopped at: Completed 43-02-PLAN.md (Phase 43 Depol Mode COMPLETE — GUI QComboBox + config+generator passthrough; DEPOL-01/02/03 all satisfied)
 Resume file: None
