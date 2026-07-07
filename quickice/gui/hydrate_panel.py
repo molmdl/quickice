@@ -78,6 +78,10 @@ class HydratePanel(QWidget):
         supercell_group = self._create_supercell_group()
         left_layout.addWidget(supercell_group)
         
+        # Depolarization mode (Phase 43)
+        depol_group = self._create_depol_group()
+        left_layout.addWidget(depol_group)
+        
         # Lattice info display
         info_group = self._create_info_group()
         left_layout.addWidget(info_group)
@@ -195,7 +199,30 @@ class HydratePanel(QWidget):
         layout.addRow("Lattice type:", lattice_row)
         group.setLayout(layout)
         return group
-    
+
+    def _create_depol_group(self) -> QGroupBox:
+        """Create the depolarization mode selection group (Phase 43)."""
+        group = QGroupBox("Depolarization")
+        layout = QFormLayout()
+
+        row = QHBoxLayout()
+        self.depol_combo = QComboBox()
+        self.depol_combo.addItem("Strict (ice rules, zero net dipole)", "strict")
+        self.depol_combo.addItem("Optimal (relaxed)", "optimal")
+        # currentIndex 0 = "strict" = default (preserves pre-Phase-43 behavior)
+        row.addWidget(self.depol_combo)
+        row.addWidget(HelpIcon(
+            "Depolarization mode for hydrogen-bond orientation.\n"
+            "• Strict — enforce ice rules / zero net dipole (default, safe).\n"
+            "• Optimal — relaxed depolarization.\n"
+            "Affects H-bond orientation only; does not change atom count."
+        ))
+        row.addStretch()
+
+        layout.addRow("Depol mode:", row)
+        group.setLayout(layout)
+        return group
+
     def _create_cage_assignment_group(self) -> QGroupBox:
         """Create the per-cage guest assignment group.
 
@@ -365,6 +392,7 @@ class HydratePanel(QWidget):
         self.lattice_combo.currentIndexChanged.connect(self._on_lattice_changed)
         # Per-cage combo/spin connections are wired in _rebuild_cage_rows
         # (the widgets are rebuilt whenever the lattice changes).
+        self.depol_combo.currentIndexChanged.connect(lambda: self.configuration_changed.emit())
         self.supercell_x.valueChanged.connect(lambda: self.configuration_changed.emit())
         self.supercell_y.valueChanged.connect(lambda: self.configuration_changed.emit())
         self.supercell_z.valueChanged.connect(lambda: self.configuration_changed.emit())
@@ -475,6 +503,7 @@ class HydratePanel(QWidget):
             supercell_x=self.supercell_x.value(),
             supercell_y=self.supercell_y.value(),
             supercell_z=self.supercell_z.value(),
+            depol_mode=self.depol_combo.currentData(),
         )
     
     def _on_hbonds_toggled(self):
