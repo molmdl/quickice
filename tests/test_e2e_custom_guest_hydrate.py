@@ -24,6 +24,7 @@ import pytest
 
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
 from quickice.structure_generation.modes.slab import assemble_slab
+from quickice.structure_generation.modes.pocket import assemble_pocket
 from quickice.structure_generation.types import HydrateConfig, HydrateStructure, InterfaceConfig
 
 
@@ -420,5 +421,103 @@ class TestAssembleSlabCustomGuestNoCrash:
         )
         assert iface.guest_atom_count == 5 * iface.guest_nmolecules, (
             f"Built-in ch4 slab guest_atom_count={iface.guest_atom_count} != "
+            f"5 * guest_nmolecules={5 * iface.guest_nmolecules}"
+        )
+
+
+class TestAssemblePocketCustomGuestNoCrash:
+    """Verify assemble_pocket succeeds for a custom guest hydrate (44.1-06).
+
+    Phase 44.1 plan 06: the pocket mode had the identical broken pattern as
+    slab (44.1-05) plus an additional guest_atoms_per_mol heuristic bug in the
+    tiling section. _detect_guest_atoms / _count_guest_molecules called
+    count_guest_atoms with only guest_type (the custom slug, e.g.
+    "etoh_e2e"), which fell through the ch4/thf heuristic and miscounted atoms
+    -> IndexError. The guest_atoms_per_mol heuristic in the tiling section also
+    defaulted to 1 for ethanol (first atom "H"), which fragmented 9-atom
+    molecules during cavity-distance filtering and miscounted guest_nmolecules.
+    Plan 06 threads the explicit guest_atom_count (from candidate.metadata
+    "guest_atom_counts", populated by 44.1-02 to_candidate) through the pocket
+    path and uses it for guest_atoms_per_mol so custom ethanol (9 atoms) is
+    counted and tiled correctly.
+
+    Success criteria:
+      * assemble_pocket returns (no IndexError) for a custom ethanol hydrate.
+      * iface.guest_nmolecules > 0 (guests were placed in the ice region).
+      * iface.guest_atom_count == 9 * iface.guest_nmolecules (correct count).
+      * Built-in ch4 pocket still works (regression guard) with
+        iface.guest_atom_count == 5 * iface.guest_nmolecules.
+    """
+
+    @staticmethod
+    def _pocket_config():
+        """Shared InterfaceConfig for pocket generation tests.
+
+        Uses pocket-mode fields (pocket_diameter, pocket_shape) rather than the
+        slab-mode ice_thickness/water_thickness. box dimensions and pocket
+        diameter mirror the 44.1-06 probe in the plan; only the candidate
+        (custom vs built-in) differs between the custom and regression tests.
+        """
+        return InterfaceConfig(
+            mode="pocket",
+            box_x=3.0,
+            box_y=3.0,
+            box_z=3.0,
+            seed=42,
+            pocket_diameter=2.0,
+            pocket_shape="sphere",
+        )
+
+    def test_assemble_pocket_custom_guest_no_crash(self, custom_guest_hydrate):
+        """Custom ethanol hydrate -> pocket interface generates without crash.
+
+        The test name's "no_crash" assertion is that assemble_pocket returns at
+        all. Before 44.1-06 it raised IndexError inside _detect_guest_atoms
+        because count_guest_atoms miscounted the custom 9-atom ethanol via
+        the ch4/thf heuristic, so the molecule stride went out of bounds.
+        Additionally the guest_atoms_per_mol heuristic in the tiling section
+        fragmented the 9-atom ethanol molecules during cavity filtering.
+        """
+        candidate = custom_guest_hydrate.to_candidate()
+
+        # Sanity: candidate carries the threaded metadata (44.1-02).
+        assert "guest_atom_counts" in candidate.metadata
+        assert candidate.metadata["guest_atom_counts"].get(_GUEST_TYPE) == 9
+
+        iface = assemble_pocket(candidate, self._pocket_config())
+
+        # Guest molecules placed in the tiled ice region (outside the cavity).
+        assert iface.guest_nmolecules > 0, (
+            "Custom ethanol pocket should have guest molecules in the ice region"
+        )
+        # Each ethanol is 9 atoms; total guest atoms must be 9 * nmolecules.
+        assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+            f"Custom ethanol pocket guest_atom_count={iface.guest_atom_count} != "
+            f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
+        )
+
+    def test_assemble_pocket_builtin_ch4_regression(self):
+        """Built-in ch4 pocket generation unchanged after 44.1-06.
+
+        Regression guard: the guest_atom_count threading must not break the
+        built-in path. For ch4, candidate.metadata["guest_atom_counts"] maps
+        "ch4" -> 5, and the guest_atoms_per_mol heuristic also yields 5 (first
+        atom "C", second not "O"), so behavior is byte-identical to the
+        pre-44.1-06 path.
+        """
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(lattice_type="sI", guest_type="ch4")
+        candidate = gen.generate(config).to_candidate()
+
+        # Sanity: built-in ch4 carries the metadata too (44.1-02).
+        assert candidate.metadata["guest_atom_counts"].get("ch4") == 5
+
+        iface = assemble_pocket(candidate, self._pocket_config())
+
+        assert iface.guest_nmolecules > 0, (
+            "Built-in ch4 pocket should have guest molecules in the ice region"
+        )
+        assert iface.guest_atom_count == 5 * iface.guest_nmolecules, (
+            f"Built-in ch4 pocket guest_atom_count={iface.guest_atom_count} != "
             f"5 * guest_nmolecules={5 * iface.guest_nmolecules}"
         )
