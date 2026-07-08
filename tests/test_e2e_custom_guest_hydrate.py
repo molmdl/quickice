@@ -23,7 +23,8 @@ import numpy as np
 import pytest
 
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
-from quickice.structure_generation.types import HydrateConfig, HydrateStructure
+from quickice.structure_generation.modes.slab import assemble_slab
+from quickice.structure_generation.types import HydrateConfig, HydrateStructure, InterfaceConfig
 
 
 # Unique guest_type for this test module — avoids sys.modules key collisions
@@ -330,4 +331,94 @@ class TestToCandidateCarriesDescriptors:
         assert ch4_candidate.metadata["guest_atom_counts"].get("ch4") == 5, (
             f"Built-in ch4 atom_count should be 5, got "
             f"{ch4_candidate.metadata['guest_atom_counts'].get('ch4')}"
+        )
+
+
+class TestAssembleSlabCustomGuestNoCrash:
+    """Verify assemble_slab succeeds for a custom guest hydrate (44.1-05).
+
+    Phase 44.1 plan 05: the slab mode previously crashed with IndexError on
+    custom guests because _detect_guest_atoms / _count_guest_molecules called
+    count_guest_atoms with only guest_type (the custom slug, e.g. "etoh_e2e"),
+    which fell through the ch4/thf heuristic and miscounted atoms. Plan 05
+    threads the explicit guest_atom_count (from candidate.metadata
+    "guest_atom_counts", populated by 44.1-02 to_candidate) through the slab
+    path so custom ethanol (9 atoms) is counted correctly.
+
+    Success criteria:
+      * assemble_slab returns (no IndexError) for a custom ethanol hydrate.
+      * iface.guest_nmolecules > 0 (guests were placed in the ice layers).
+      * iface.guest_atom_count == 9 * iface.guest_nmolecules (correct count).
+      * Built-in ch4 slab still works (regression guard) with
+        iface.guest_atom_count == 5 * iface.guest_nmolecules.
+    """
+
+    @staticmethod
+    def _slab_config():
+        """Shared InterfaceConfig for slab generation tests.
+
+        box_x/box_y/box_z and ice/water thicknesses mirror the 44.1-05 probe
+        in the plan; only the candidate (custom vs built-in) differs between
+        the custom and regression tests.
+        """
+        return InterfaceConfig(
+            mode="slab",
+            box_x=3.0,
+            box_y=3.0,
+            box_z=8.0,
+            seed=42,
+            ice_thickness=2.0,
+            water_thickness=4.0,
+        )
+
+    def test_assemble_slab_custom_guest_no_crash(self, custom_guest_hydrate):
+        """Custom ethanol hydrate -> slab interface generates without crash.
+
+        The test name's "no_crash" assertion is that assemble_slab returns at
+        all. Before 44.1-05 it raised IndexError inside _detect_guest_atoms
+        because count_guest_atoms miscounted the custom 9-atom ethanol via
+        the ch4/thf heuristic, so the molecule stride went out of bounds.
+        """
+        candidate = custom_guest_hydrate.to_candidate()
+
+        # Sanity: candidate carries the threaded metadata (44.1-02).
+        assert "guest_atom_counts" in candidate.metadata
+        assert candidate.metadata["guest_atom_counts"].get(_GUEST_TYPE) == 9
+
+        iface = assemble_slab(candidate, self._slab_config())
+
+        # Guest molecules placed in the tiled ice layers.
+        assert iface.guest_nmolecules > 0, (
+            "Custom ethanol slab should have guest molecules in the ice layers"
+        )
+        # Each ethanol is 9 atoms; total guest atoms must be 9 * nmolecules.
+        assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+            f"Custom ethanol slab guest_atom_count={iface.guest_atom_count} != "
+            f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
+        )
+
+    def test_assemble_slab_builtin_ch4_regression(self):
+        """Built-in ch4 slab generation unchanged after 44.1-05.
+
+        Regression guard: the guest_atom_count threading must not break the
+        built-in path. For ch4, candidate.metadata["guest_atom_counts"] maps
+        "ch4" -> 5, but count_guest_atoms ignores guest_atom_count when
+        guest_type is "ch4" (it returns CH4_ATOMS_PER_MOLECULE=5 directly), so
+        the behavior is byte-identical to the pre-44.1-05 path.
+        """
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(lattice_type="sI", guest_type="ch4")
+        candidate = gen.generate(config).to_candidate()
+
+        # Sanity: built-in ch4 carries the metadata too (44.1-02).
+        assert candidate.metadata["guest_atom_counts"].get("ch4") == 5
+
+        iface = assemble_slab(candidate, self._slab_config())
+
+        assert iface.guest_nmolecules > 0, (
+            "Built-in ch4 slab should have guest molecules in the ice layers"
+        )
+        assert iface.guest_atom_count == 5 * iface.guest_nmolecules, (
+            f"Built-in ch4 slab guest_atom_count={iface.guest_atom_count} != "
+            f"5 * guest_nmolecules={5 * iface.guest_nmolecules}"
         )
