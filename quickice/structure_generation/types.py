@@ -677,11 +677,15 @@ class HydrateConfig:
                     assignment.guest_atom_labels = list(ginfo["atom_labels"])
                     assignment.guest_atom_count = ginfo["atoms"]
             # (2b) Validate custom-guest metadata per assignment + enforce
-            # distinct guest_residue_name across custom assignments (Pitfall 6).
-            # The _H hydrate path's register_hydrate_guest does NOT disambiguate
-            # (unlike the _L liquid path), so duplicate residue names would
-            # collide in the GRO/topology. Do NOT auto-disambiguate — reject.
-            seen_residue_names: dict[str, str] = {}  # residue_name -> first cage_key
+            # Pitfall 6 (relaxed in 44.1): the same custom guest (same
+            # guest_type) may be assigned to MULTIPLE cages — it aggregates
+            # into ONE _H moleculetype exactly like ch4-in-all-cages. Only
+            # DIFFERENT guest_types sharing a residue name genuinely collide
+            # (the _H hydrate path's register_hydrate_guest does NOT
+            # disambiguate, unlike the _L liquid path), so reject that. Also
+            # guard (44.1): one guest_type must use a SINGLE residue_name
+            # across cages (one moleculetype -> one residue name).
+            _seen_residue_name_to_guest_type: dict[str, str] = {}  # residue_name -> guest_type
             for cage_key, assignment in self.cage_guest_assignments.items():
                 if assignment.is_custom_guest:
                     if not assignment.guest_residue_name:
@@ -708,16 +712,35 @@ class HydrateConfig:
                             f"requires guest_gro_path (path to the custom guest .gro file for "
                             f"GenIce2 Molecule module building). Set guest_gro_path explicitly."
                         )
-                    # Pitfall 6: distinct guest_residue_name across custom assignments.
-                    if assignment.guest_residue_name in seen_residue_names:
+                    # Pitfall 6 (relaxed 44.1): reject only when DIFFERENT
+                    # guest_types share the same residue_name (genuine
+                    # collision). Same guest_type in multiple cages is
+                    # allowed (aggregates into one moleculetype like ch4).
+                    existing_gt = _seen_residue_name_to_guest_type.get(assignment.guest_residue_name)
+                    if existing_gt is not None and existing_gt != assignment.guest_type:
                         raise ValueError(
                             f"Duplicate guest_residue_name '{assignment.guest_residue_name}' "
-                            f"across custom cage assignments: cage '{seen_residue_names[assignment.guest_residue_name]}' "
-                            f"and cage '{cage_key}' both use this residue name. Custom hydrate "
-                            f"guests must have distinct guest_residue_name (the _H hydrate path "
-                            f"does not disambiguate)."
+                            f"across DIFFERENT custom guest_types: '{existing_gt}' and "
+                            f"'{assignment.guest_type}' both use this residue name. Custom hydrate "
+                            f"guests of DIFFERENT types must have distinct guest_residue_name "
+                            f"(the _H hydrate path does not disambiguate)."
                         )
-                    seen_residue_names[assignment.guest_residue_name] = cage_key
+                    # Guard (44.1): same guest_type across cages must use the
+                    # SAME residue_name. One moleculetype (mol_type) maps to
+                    # one residue name in the _H path.
+                    existing_resname_for_gt = None
+                    for _rn, _gt in _seen_residue_name_to_guest_type.items():
+                        if _gt == assignment.guest_type:
+                            existing_resname_for_gt = _rn
+                            break
+                    if existing_resname_for_gt is not None and existing_resname_for_gt != assignment.guest_residue_name:
+                        raise ValueError(
+                            f"Same custom guest_type '{assignment.guest_type}' uses different "
+                            f"guest_residue_name across cages: '{existing_resname_for_gt}' and "
+                            f"'{assignment.guest_residue_name}'. One moleculetype must have a "
+                            f"single residue name (the _H hydrate path does not disambiguate)."
+                        )
+                    _seen_residue_name_to_guest_type[assignment.guest_residue_name] = assignment.guest_type
     
     @classmethod
     def from_dict(cls, d: dict) -> "HydrateConfig":
