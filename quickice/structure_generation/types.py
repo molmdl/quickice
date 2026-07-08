@@ -1251,5 +1251,17 @@ class HydrateStructure:
                 "guest_count": self.guest_count,
                 "guest_type_counts": guest_type_counts,
                 "original_hydrate": True,
+                # NEW (44.1): carry guest descriptors so interface modes can
+                # identify custom guest atoms precisely (atom_count) instead of
+                # the ch4/thf heuristic. Without this, slab/pocket/piece modes
+                # miscount custom guest atoms -> IndexError.
+                "guest_descriptors": list(self.guest_descriptors),
+                # NEW (44.1): fast lookup mol_type -> atom_count for
+                # count_guest_atoms. For built-in ch4/thf this is populated by
+                # the generator with the correct atom_count (ch4=5, thf=13).
+                "guest_atom_counts": {
+                    gd.mol_type: gd.atom_count
+                    for gd in self.guest_descriptors
+                },
             }
         )
