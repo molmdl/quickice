@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 44 COMPLETE (44-02 done: custom guest upload panel + per-cage wiring + Pitfall 6 auto-revert mitigation + 7 headless tests). GUI-02/05/06 now Complete (51/61 v4.7 requirements). User identified TWO follow-up issues for an urgent cross-tab phase: (1) Pitfall 6 engine over-restriction — same-custom-in-all-cages should aggregate like ch4 but types.py:712 checks residue_name dup without distinguishing same-guest-type (safe) from different-guest-type-same-name (real collision); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs doesn't thread custom_guest_info, uses old _detect_guest_type heuristic → None for custom). Ready for urgent cross-tab phase.
+**Current Focus:** Phase 44.1 IN PROGRESS (1/22 plans done): 44.1-01 complete (Pitfall 6 engine relaxation — same custom guest now allowed in multiple cages, aggregates like ch4). Remaining 21 plans wire custom guest through Interface tab + all exporters (GUI+CLI). GUI-02/05/06 Complete (51/61 v4.7 requirements).
 
 ---
 
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — NOT PLANNED YET; Phase 46 also verified complete (0 plans needed) |
-| Plan | 1/1 phase plan complete (44-02 done; 44-01/03/04 done in prior phases); 44.1 has 0 plans (not planned) |
-| Status | Phase 44 COMPLETE (8/8 must-haves verified). Phase 44.1 (INSERTED urgent) created to wire custom guest through all tabs — not planned yet. 51/61 v4.7 requirements complete (GUI-02/05/06 closed). Two urgent cross-tab issues for 44.1: (1) Pitfall 6 engine over-restriction (types.py:712 rejects same-custom-in-all-cages though it would aggregate like ch4 — needs to distinguish same-guest-type from different-guest-type-same-name); (2) custom guest hydrate → Interface tab → export broken (to_candidate drops custom descriptors; export_interface_gromacs uses old _detect_guest_type heuristic → None for custom, doesn't thread custom_guest_info). Ready for /gsd-plan-phase 44.1. |
-| Last activity | 2026-07-07 — Phase 44-02 executed + verified (8/8 must-haves passed); Phase 44.1 (INSERTED) created for urgent cross-tab wiring |
+| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — IN PROGRESS (1/22 plans done); Phase 46 also verified complete (0 plans needed) |
+| Plan | 44-02 done (44-01/03/04 done in prior phases); 44.1-01 DONE (Pitfall 6 engine relaxation); 21 plans remaining in 44.1 |
+| Status | Phase 44.1 IN PROGRESS — 44.1-01 complete: Pitfall 6 relaxed in HydrateConfig.__post_init__ to track residue_name→guest_type (same custom guest in multiple cages now allowed, aggregates like ch4; different guest_types sharing a residue name still rejected; new guard rejects same guest_type with different residue names). 51/61 v4.7 requirements complete. Next: 44.1-02 (to_candidate carries guest_descriptors). |
+| Last activity | 2026-07-08 — Completed 44.1-01 (Pitfall 6 engine relaxation; 2 atomic commits) |
 
-**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 37 plan-summaries + Phase 46 verified-by-code. Phase 44 done. 4 real plans remaining across phases 45/47/48 + 1 urgent cross-tab phase)
+**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 318 plan-summaries + Phase 46 verified-by-code. Phase 44 done; Phase 44.1 IN PROGRESS (1/22). 4 real plans remaining across phases 45/47/48 + 21 plans in urgent cross-tab phase 44.1)
 
 ---
 
@@ -209,6 +209,7 @@ Recent decisions affecting v4.7 work:
 - **[44-02]** Pitfall 6 mitigation = auto-clear (NOT try/except wrap): _enforce_single_custom_cage(changed_cage_key) finds all cages whose combo.currentData() == custom guest_type; if >1, resets every cage EXCEPT changed_cage_key to setCurrentIndex(0) (first built-in, usually ch4). Most-recently-changed cage keeps the custom guest. Auto-clear IS the feedback (no dialog). Verified: mixed 1-custom + 1-builtin works (has_custom_assignment=True, no ValueError); same custom in 2 cages would otherwise raise from HydrateConfig.__post_init__ (types.py:711-720) and propagate uncaught through main_window.py:742,748 (no try/except). 42-01 design decision — _H hydrate path does not disambiguate residue names; engine fix out of scope for 44-02
 - **[44-02]** Rule 1 deviation in test helper: plan's _make_long_resname_gro used naive src.replace("MOL", "ETHAN") which shifts GRO fixed-width columns by 2 chars (ETHAN=5 vs MOL=3) and fails the parser ("could not convert string to float") BEFORE the validator's "exceeds 3 chars" step-4 check fires. Fixed helper to replace exactly the residue-name field (cols 5-9, 0-indexed, 5 chars wide) in every atom line so the validator's step-4 check fires as intended. Test intent unchanged; only the helper implementation corrected
 - **[44-02]** Module-top import additions to hydrate_panel.py: QFileDialog + QMessageBox added to the existing from PySide6.QtWidgets import (...) block (single grouped import, no separate line); from pathlib import Path added (NOT previously imported). NO top-level quickice.structure_generation imports added (validate_custom_guest_files + parse_gro_file are lazy imports inside _try_validate_custom_guest handler body per AGENTS.md). GUI code uses broad except Exception around the parse_gro_file call (defensive safety net; AGENTS.md only forbids bare except in quickice/cli/pipeline.py)
+- **[44.1-01]** Pitfall 6 engine relaxation: HydrateConfig.__post_init__ now tracks `_seen_residue_name_to_guest_type` (residue_name→guest_type) instead of `seen_residue_names` (residue_name→cage_key). Rejects ONLY when a DIFFERENT guest_type claims an already-seen residue name (genuine collision); allows the SAME custom guest_type in multiple cages (aggregates into one _H moleculetype exactly like ch4-in-all-cages). New guard (Open Question Q4): same guest_type across cages must use a SINGLE residue_name (one moleculetype → one residue name in the _H path); mismatched residue names for the same guest_type raise with "different" message. Prerequisite for removing the 44-02 _enforce_single_custom_cage auto-clear mitigation (plan 44.1-18). Existing unsafe case (etoh_a + etoh_b both "MOL") still rejected unchanged; 18 custom-config tests + 36 metadata tests green.
 
 ### Pending Todos
 
@@ -227,6 +228,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T21:15Z
-Stopped at: Phase 44 COMPLETE (44-02 executed + verified 8/8 must-haves passed; GUI-02/05/06 marked Complete; 51/61 requirements). User identified TWO urgent cross-tab issues for a new phase before Phase 45: (1) Pitfall 6 engine relaxation — types.py:712 over-restricts (same-custom-in-all-cages should aggregate like ch4); (2) Interface tab custom guest export broken (to_candidate drops descriptors; export_interface_gromacs doesn't thread custom_guest_info). User will add an urgent phase to wire all tabs like standard hydrate.
+Last session: 2026-07-08T09:31Z
+Stopped at: Completed 44.1-01-PLAN.md (Pitfall 6 engine relaxation in HydrateConfig.__post_init__; same custom guest now allowed in multiple cages). Phase 44.1 IN PROGRESS (1/22 plans). Next plan: 44.1-02 (to_candidate carries guest_descriptors + guest_atom_counts in metadata).
 Resume file: None

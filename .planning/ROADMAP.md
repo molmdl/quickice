@@ -160,7 +160,7 @@ Plans:
 **Plans:** 22 plans
 
 Plans:
-- [ ] 44.1-01-PLAN.md — Pitfall 6 engine relaxation (track residue_name→guest_type; reject only different guest_types)
+- [x] 44.1-01-PLAN.md — Pitfall 6 engine relaxation (track residue_name→guest_type; reject only different guest_types)
 - [ ] 44.1-02-PLAN.md — to_candidate() carries guest_descriptors + guest_atom_counts in metadata
 - [ ] 44.1-03-PLAN.md — count_guest_atoms accepts guest_atom_count for custom guests
 - [ ] 44.1-04-PLAN.md — Move _build_custom_guest_info to neutral quickice/output/guest_info.py
@@ -276,7 +276,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
 | 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
-| 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 0/22 | Planned (22 plans, 5 waves) | - |
+| 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 1/22 | In progress | 2026-07-08 |
 | 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
