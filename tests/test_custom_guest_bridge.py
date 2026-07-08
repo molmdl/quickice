@@ -264,5 +264,110 @@ class TestSysModulesInjection:
         assert key not in sys.modules
 
 
+# ── count_guest_atoms explicit atom count tests (Phase 44.1-03) ────────────
+
+
+class TestCountGuestAtomsCustomExplicit:
+    """Tests that count_guest_atoms honors guest_atom_count for custom guests.
+
+    Phase 44.1-03 root-cause fix: the ch4/thf heuristic in count_guest_atoms
+    miscounts custom guest atoms (e.g. ethanol=9 miscounted as 5), which
+    causes an IndexError when interface modes (slab/pocket/piece) tile guests
+    using the wrong atom count and the accumulated indices overshoot the
+    atom_names array. The new ``guest_atom_count`` param short-circuits the
+    heuristic for custom guests.
+    """
+
+    # Ethanol atom layout per molecule (9 atoms, mirrors ETOH_ATOMS labels).
+    ETOH_ATOM_NAMES = ["H", "C", "H", "H", "C", "H", "H", "O", "H"]
+
+    def test_count_guest_atoms_custom_explicit(self):
+        """Explicit guest_atom_count=9 yields exactly 8 ethanol molecules.
+
+        Stepping through 8 ethanol molecules (72 atom names) with the explicit
+        count returns 9 per step — no IndexError, no overshoot. The heuristic
+        path (no guest_atom_count) is shown to miscount the same atoms,
+        documenting WHY the explicit count is required. Built-in ch4 (no
+        guest_atom_count) still returns 5 — regression guard.
+        """
+        from quickice.utils.molecule_utils import count_guest_atoms
+
+        # 8 ethanol molecules x 9 atoms = 72 atom names
+        atoms = self.ETOH_ATOM_NAMES * 8
+        assert len(atoms) == 72
+
+        # Stepping with the explicit count must yield exactly 8 molecules,
+        # each step returning 9. No IndexError, no overshoot.
+        total = 0
+        idx = 0
+        while idx < len(atoms):
+            step = count_guest_atoms(
+                atoms, idx, guest_type="etoh_e2e", guest_atom_count=9
+            )
+            assert step == 9, f"expected 9 atoms per molecule, got {step} at idx {idx}"
+            if step == 0:
+                break
+            total += 1
+            idx += step
+        assert total == 8, f"expected 8 molecules, got {total}"
+        assert idx == 72, f"expected final idx 72, got {idx}"
+
+        # HEURISTIC MISCOUNT PROOF: the same atoms WITHOUT guest_atom_count
+        # do NOT yield 9 per molecule — documenting why the explicit count is
+        # required. The ch4/thf heuristic returns 1/2/13 for ethanol atoms
+        # (fragile pattern matching), so either the per-step count != 9 OR
+        # the resulting molecule count != 8.
+        first_step_heuristic = count_guest_atoms(
+            atoms, 0, guest_type="etoh_e2e"
+        )
+        # Also check the None heuristic path for completeness.
+        first_step_none = count_guest_atoms(atoms, 0, guest_type=None)
+        # At least one heuristic path must disagree with 9 — proves the
+        # heuristic is wrong for custom guests (the bug we're fixing).
+        assert first_step_heuristic != 9 or first_step_none != 9, (
+            "Heuristic unexpectedly agrees with 9 for both custom-guest_type "
+            "and None paths — explicit count would be redundant"
+        )
+
+        # REGRESSION GUARD: built-in ch4 (no guest_atom_count) still 5.
+        assert count_guest_atoms(["C", "H", "H", "H", "H"], 0, guest_type="ch4") == 5
+        # And built-in thf still 13.
+        assert count_guest_atoms(["O", "CA", "CA", "CB", "CB"], 0, guest_type="thf") == 13
+
+    def test_count_guest_atoms_ignores_explicit_count_for_builtins(self):
+        """guest_atom_count is IGNORED when guest_type is ch4/thf/None.
+
+        This guards the gate condition ``guest_type not in ("ch4", "thf", None)``
+        so a stray guest_atom_count cannot corrupt built-in counts or the
+        heuristic fallback.
+        """
+        from quickice.utils.molecule_utils import count_guest_atoms
+
+        # ch4 with a wrong explicit count still returns 5 (builtin wins).
+        assert (
+            count_guest_atoms(
+                ["C", "H", "H", "H", "H"], 0, guest_type="ch4", guest_atom_count=99
+            )
+            == 5
+        )
+        # thf with a wrong explicit count still returns 13.
+        assert (
+            count_guest_atoms(
+                ["O", "CA", "CA", "CB", "CB"], 0, guest_type="thf", guest_atom_count=99
+            )
+            == 13
+        )
+        # None guest_type with an explicit count falls through to heuristic
+        # (guest_atom_count is only honored for non-builtin guest types).
+        # CH4-pattern atoms with guest_type=None + guest_atom_count=99 still
+        # return the heuristic result (5), NOT 99.
+        assert (
+            count_guest_atoms(
+                ["C", "H", "H", "H", "H"], 0, guest_type=None, guest_atom_count=99
+            )
+            == 5
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
