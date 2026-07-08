@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 44.1 IN PROGRESS (1/22 plans done): 44.1-01 complete (Pitfall 6 engine relaxation — same custom guest now allowed in multiple cages, aggregates like ch4). Remaining 21 plans wire custom guest through Interface tab + all exporters (GUI+CLI). GUI-02/05/06 Complete (51/61 v4.7 requirements).
+**Current Focus:** Phase 44.1 IN PROGRESS (2/22 plans done): 44.1-01 complete (Pitfall 6 engine relaxation — same custom guest now allowed in multiple cages, aggregates like ch4); 44.1-02 complete (to_candidate now carries guest_descriptors + guest_atom_counts in Candidate.metadata — root-cause fix for interface-tab IndexError crash). Remaining 20 plans wire custom guest through Interface tab + all exporters (GUI+CLI). GUI-02/05/06 Complete (51/61 v4.7 requirements).
 
 ---
 
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — IN PROGRESS (1/22 plans done); Phase 46 also verified complete (0 plans needed) |
-| Plan | 44-02 done (44-01/03/04 done in prior phases); 44.1-01 DONE (Pitfall 6 engine relaxation); 21 plans remaining in 44.1 |
-| Status | Phase 44.1 IN PROGRESS — 44.1-01 complete: Pitfall 6 relaxed in HydrateConfig.__post_init__ to track residue_name→guest_type (same custom guest in multiple cages now allowed, aggregates like ch4; different guest_types sharing a residue name still rejected; new guard rejects same guest_type with different residue names). 51/61 v4.7 requirements complete. Next: 44.1-02 (to_candidate carries guest_descriptors). |
-| Last activity | 2026-07-08 — Completed 44.1-01 (Pitfall 6 engine relaxation; 2 atomic commits) |
+| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — IN PROGRESS (2/22 plans done); Phase 46 also verified complete (0 plans needed) |
+| Plan | 44-02 done (44-01/03/04 done in prior phases); 44.1-01 DONE (Pitfall 6 engine relaxation); 44.1-02 DONE (to_candidate carries guest_descriptors + guest_atom_counts); 20 plans remaining in 44.1 |
+| Status | Phase 44.1 IN PROGRESS — 44.1-02 complete: HydrateStructure.to_candidate() metadata now carries guest_descriptors (list[GuestDescriptor]) + guest_atom_counts (dict mol_type→atom_count) so interface modes (slab/pocket/piece) identify custom guest atoms precisely via atom_count instead of the ch4/thf heuristic (root-cause fix for the interface-tab IndexError crash). Built-in ch4=5/thf=13 + custom ethanol=9 verified. 51/61 v4.7 requirements complete. Next: 44.1-03. |
+| Last activity | 2026-07-08 — Completed 44.1-02 (to_candidate guest_descriptors threading; 2 atomic commits) |
 
-**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 318 plan-summaries + Phase 46 verified-by-code. Phase 44 done; Phase 44.1 IN PROGRESS (1/22). 4 real plans remaining across phases 45/47/48 + 21 plans in urgent cross-tab phase 44.1)
+**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 319 plan-summaries + Phase 46 verified-by-code. Phase 44 done; Phase 44.1 IN PROGRESS (2/22). 4 real plans remaining across phases 45/47/48 + 20 plans in urgent cross-tab phase 44.1)
 
 ---
 
@@ -210,6 +210,7 @@ Recent decisions affecting v4.7 work:
 - **[44-02]** Rule 1 deviation in test helper: plan's _make_long_resname_gro used naive src.replace("MOL", "ETHAN") which shifts GRO fixed-width columns by 2 chars (ETHAN=5 vs MOL=3) and fails the parser ("could not convert string to float") BEFORE the validator's "exceeds 3 chars" step-4 check fires. Fixed helper to replace exactly the residue-name field (cols 5-9, 0-indexed, 5 chars wide) in every atom line so the validator's step-4 check fires as intended. Test intent unchanged; only the helper implementation corrected
 - **[44-02]** Module-top import additions to hydrate_panel.py: QFileDialog + QMessageBox added to the existing from PySide6.QtWidgets import (...) block (single grouped import, no separate line); from pathlib import Path added (NOT previously imported). NO top-level quickice.structure_generation imports added (validate_custom_guest_files + parse_gro_file are lazy imports inside _try_validate_custom_guest handler body per AGENTS.md). GUI code uses broad except Exception around the parse_gro_file call (defensive safety net; AGENTS.md only forbids bare except in quickice/cli/pipeline.py)
 - **[44.1-01]** Pitfall 6 engine relaxation: HydrateConfig.__post_init__ now tracks `_seen_residue_name_to_guest_type` (residue_name→guest_type) instead of `seen_residue_names` (residue_name→cage_key). Rejects ONLY when a DIFFERENT guest_type claims an already-seen residue name (genuine collision); allows the SAME custom guest_type in multiple cages (aggregates into one _H moleculetype exactly like ch4-in-all-cages). New guard (Open Question Q4): same guest_type across cages must use a SINGLE residue_name (one moleculetype → one residue name in the _H path); mismatched residue names for the same guest_type raise with "different" message. Prerequisite for removing the 44-02 _enforce_single_custom_cage auto-clear mitigation (plan 44.1-18). Existing unsafe case (etoh_a + etoh_b both "MOL") still rejected unchanged; 18 custom-config tests + 36 metadata tests green.
+- **[44.1-02]** HydrateStructure.to_candidate() metadata now carries TWO new keys: `guest_descriptors` (list[GuestDescriptor], copied via `list(self.guest_descriptors)` to avoid shared mutable state) + `guest_atom_counts` (flat dict `mol_type -> atom_count` via dict comprehension for O(1) lookup by interface modes). Root-cause fix for the interface-tab IndexError crash: interface modes (slab/pocket/piece, plans 44.1-05/06/07) can now read `candidate.metadata['guest_atom_counts'][mol_type]` for the precise atom_count instead of the ch4/thf heuristic that miscounts custom guests (ethanol=9 miscounted as 5). Built-ins covered too — generator already populates guest_descriptors with correct atom_count (ch4=5, thf=13), so the same dict-comprehension works for both paths (no special-casing). 8/8 test_e2e_custom_guest_hydrate + 36/36 metadata tests green. Unblocks 44.1-05/06/07 (interface modes) + 44.1-09/17 (exporters needing cage_key/residue_name).
 
 ### Pending Todos
 
@@ -228,6 +229,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-08T09:31Z
-Stopped at: Completed 44.1-01-PLAN.md (Pitfall 6 engine relaxation in HydrateConfig.__post_init__; same custom guest now allowed in multiple cages). Phase 44.1 IN PROGRESS (1/22 plans). Next plan: 44.1-02 (to_candidate carries guest_descriptors + guest_atom_counts in metadata).
+Last session: 2026-07-08T09:35Z
+Stopped at: Completed 44.1-02-PLAN.md (to_candidate now carries guest_descriptors + guest_atom_counts in Candidate.metadata; root-cause fix for interface-tab IndexError crash). Phase 44.1 IN PROGRESS (2/22 plans). Next plan: 44.1-03.
 Resume file: None
