@@ -272,3 +272,62 @@ class TestBuiltinThfStillGenerates:
         assert "unknown" not in mol_types, (
             f"Built-in thf should not produce 'unknown' molecules, got {mol_types}"
         )
+
+
+class TestToCandidateCarriesDescriptors:
+    """Verify HydrateStructure.to_candidate() carries guest_descriptors (44.1-02).
+
+    Phase 44.1 plan 02 root-cause fix: to_candidate() previously dropped
+    guest_descriptors, so interface modes (slab/pocket/piece) could not
+    identify custom guest atoms precisely and fell back to the ch4/thf
+    heuristic -> IndexError on custom guests. The candidate metadata must
+    now carry:
+      * guest_descriptors (list[GuestDescriptor]) - full per-guest-type info
+      * guest_atom_counts (dict mol_type -> atom_count) - fast lookup for
+        count_guest_atoms, which must read the custom ethanol atom_count=9
+        (not the ch4/thf heuristic).
+    Built-in ch4 must also carry atom_count=5 (regression guard).
+    """
+
+    def test_to_candidate_carries_descriptors(self, custom_guest_hydrate):
+        """to_candidate metadata must include guest_descriptors + guest_atom_counts.
+
+        Custom ethanol (etoh_e2e) must map to atom_count=9; built-in ch4 must
+        map to atom_count=5. guest_descriptors must be non-empty.
+        """
+        # --- Custom guest (ethanol) path ---
+        candidate = custom_guest_hydrate.to_candidate()
+
+        assert "guest_descriptors" in candidate.metadata, (
+            "to_candidate() metadata missing 'guest_descriptors' - interface "
+            "modes cannot identify custom guest atoms precisely (44.1-02)"
+        )
+        assert "guest_atom_counts" in candidate.metadata, (
+            "to_candidate() metadata missing 'guest_atom_counts' - interface "
+            "modes cannot look up custom guest atom_count (44.1-02)"
+        )
+
+        # Custom guest (etoh_e2e) must map to atom_count=9 (ethanol)
+        custom_counts = candidate.metadata["guest_atom_counts"]
+        assert custom_counts.get(_GUEST_TYPE) == 9, (
+            f"Custom guest '{_GUEST_TYPE}' atom_count should be 9 (ethanol), "
+            f"got {custom_counts.get(_GUEST_TYPE)}; full map: {custom_counts}"
+        )
+
+        # At least one GuestDescriptor present
+        assert len(candidate.metadata["guest_descriptors"]) >= 1, (
+            "guest_descriptors should be non-empty for a hydrate with guests"
+        )
+
+        # --- Built-in ch4 path (regression guard) ---
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(lattice_type="sI", guest_type="ch4")
+        ch4_candidate = gen.generate(config).to_candidate()
+
+        assert "guest_atom_counts" in ch4_candidate.metadata, (
+            "Built-in ch4 to_candidate() metadata missing 'guest_atom_counts'"
+        )
+        assert ch4_candidate.metadata["guest_atom_counts"].get("ch4") == 5, (
+            f"Built-in ch4 atom_count should be 5, got "
+            f"{ch4_candidate.metadata['guest_atom_counts'].get('ch4')}"
+        )
