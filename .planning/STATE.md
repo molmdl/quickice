@@ -2,7 +2,7 @@
 
 **Project:** QuickIce - Condition-based Ice Structure Generation
 **Core Value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
-**Current Focus:** Phase 44.1 IN PROGRESS (2/22 plans done): 44.1-01 complete (Pitfall 6 engine relaxation — same custom guest now allowed in multiple cages, aggregates like ch4); 44.1-02 complete (to_candidate now carries guest_descriptors + guest_atom_counts in Candidate.metadata — root-cause fix for interface-tab IndexError crash). Remaining 20 plans wire custom guest through Interface tab + all exporters (GUI+CLI). GUI-02/05/06 Complete (51/61 v4.7 requirements).
+**Current Focus:** Phase 44.1 IN PROGRESS (3/22 plans done): 44.1-01 complete (Pitfall 6 engine relaxation — same custom guest now allowed in multiple cages, aggregates like ch4); 44.1-02 complete (to_candidate now carries guest_descriptors + guest_atom_counts in Candidate.metadata — root-cause fix for interface-tab IndexError crash); 44.1-03 complete (count_guest_atoms gained guest_atom_count kwarg — short-circuits the ch4/thf heuristic for custom guests so ethanol=9 returns 9, not 5; built-in ch4/thf + None heuristic paths byte-identical). Remaining 19 plans wire custom guest through Interface tab + all exporters (GUI+CLI). GUI-02/05/06 Complete (51/61 v4.7 requirements).
 
 ---
 
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — IN PROGRESS (2/22 plans done); Phase 46 also verified complete (0 plans needed) |
-| Plan | 44-02 done (44-01/03/04 done in prior phases); 44.1-01 DONE (Pitfall 6 engine relaxation); 44.1-02 DONE (to_candidate carries guest_descriptors + guest_atom_counts); 20 plans remaining in 44.1 |
-| Status | Phase 44.1 IN PROGRESS — 44.1-02 complete: HydrateStructure.to_candidate() metadata now carries guest_descriptors (list[GuestDescriptor]) + guest_atom_counts (dict mol_type→atom_count) so interface modes (slab/pocket/piece) identify custom guest atoms precisely via atom_count instead of the ch4/thf heuristic (root-cause fix for the interface-tab IndexError crash). Built-in ch4=5/thf=13 + custom ethanol=9 verified. 51/61 v4.7 requirements complete. Next: 44.1-03. |
-| Last activity | 2026-07-08 — Completed 44.1-02 (to_candidate guest_descriptors threading; 2 atomic commits) |
+| Phase | 44 of 48 (GUI Integration) — COMPLETE; Phase 44.1 (INSERTED urgent) — IN PROGRESS (3/22 plans done); Phase 46 also verified complete (0 plans needed) |
+| Plan | 44-02 done (44-01/03/04 done in prior phases); 44.1-01 DONE (Pitfall 6 engine relaxation); 44.1-02 DONE (to_candidate carries guest_descriptors + guest_atom_counts); 44.1-03 DONE (count_guest_atoms accepts guest_atom_count for custom guests); 19 plans remaining in 44.1 |
+| Status | Phase 44.1 IN PROGRESS — 44.1-03 complete: count_guest_atoms (molecule_utils.py:21) gained guest_atom_count: int|None=None as the LAST kwarg; short-circuit returns guest_atom_count when not None AND guest_type not in (ch4, thf, None) — custom ethanol=9 returns 9 instead of the heuristic's 5/13 (root-cause fix for the interface-tab IndexError crash's atom-counting layer). Built-in ch4/thf explicit path + None heuristic fallback byte-identical (42/42 count_guest_atoms tests + 6/6 ion-path tests + 18/18 custom-guest-bridge tests green). 51/61 v4.7 requirements complete. Next: 44.1-04. |
+| Last activity | 2026-07-08 — Completed 44.1-03 (count_guest_atoms guest_atom_count kwarg; 2 atomic commits) |
 
-**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 319 plan-summaries + Phase 46 verified-by-code. Phase 44 done; Phase 44.1 IN PROGRESS (2/22). 4 real plans remaining across phases 45/47/48 + 20 plans in urgent cross-tab phase 44.1)
+**Progress:** [████████░░] ~84% (51/61 v4.7 requirements complete; 320 plan-summaries + Phase 46 verified-by-code. Phase 44 done; Phase 44.1 IN PROGRESS (3/22). 4 real plans remaining across phases 45/47/48 + 19 plans in urgent cross-tab phase 44.1)
 
 ---
 
@@ -211,6 +211,7 @@ Recent decisions affecting v4.7 work:
 - **[44-02]** Module-top import additions to hydrate_panel.py: QFileDialog + QMessageBox added to the existing from PySide6.QtWidgets import (...) block (single grouped import, no separate line); from pathlib import Path added (NOT previously imported). NO top-level quickice.structure_generation imports added (validate_custom_guest_files + parse_gro_file are lazy imports inside _try_validate_custom_guest handler body per AGENTS.md). GUI code uses broad except Exception around the parse_gro_file call (defensive safety net; AGENTS.md only forbids bare except in quickice/cli/pipeline.py)
 - **[44.1-01]** Pitfall 6 engine relaxation: HydrateConfig.__post_init__ now tracks `_seen_residue_name_to_guest_type` (residue_name→guest_type) instead of `seen_residue_names` (residue_name→cage_key). Rejects ONLY when a DIFFERENT guest_type claims an already-seen residue name (genuine collision); allows the SAME custom guest_type in multiple cages (aggregates into one _H moleculetype exactly like ch4-in-all-cages). New guard (Open Question Q4): same guest_type across cages must use a SINGLE residue_name (one moleculetype → one residue name in the _H path); mismatched residue names for the same guest_type raise with "different" message. Prerequisite for removing the 44-02 _enforce_single_custom_cage auto-clear mitigation (plan 44.1-18). Existing unsafe case (etoh_a + etoh_b both "MOL") still rejected unchanged; 18 custom-config tests + 36 metadata tests green.
 - **[44.1-02]** HydrateStructure.to_candidate() metadata now carries TWO new keys: `guest_descriptors` (list[GuestDescriptor], copied via `list(self.guest_descriptors)` to avoid shared mutable state) + `guest_atom_counts` (flat dict `mol_type -> atom_count` via dict comprehension for O(1) lookup by interface modes). Root-cause fix for the interface-tab IndexError crash: interface modes (slab/pocket/piece, plans 44.1-05/06/07) can now read `candidate.metadata['guest_atom_counts'][mol_type]` for the precise atom_count instead of the ch4/thf heuristic that miscounts custom guests (ethanol=9 miscounted as 5). Built-ins covered too — generator already populates guest_descriptors with correct atom_count (ch4=5, thf=13), so the same dict-comprehension works for both paths (no special-casing). 8/8 test_e2e_custom_guest_hydrate + 36/36 metadata tests green. Unblocks 44.1-05/06/07 (interface modes) + 44.1-09/17 (exporters needing cage_key/residue_name).
+- **[44.1-03]** count_guest_atoms (molecule_utils.py:21) gained `guest_atom_count: int|None=None` as the LAST kwarg (after guest_type) — short-circuit returns guest_atom_count ONLY when not None AND guest_type not in (ch4, thf, None); built-in explicit ch4/thf path + None heuristic fallback byte-identical (stray guest_atom_count=99 ignored for ch4/thf/None, gated by test). Three disjoint paths in one function: custom (explicit count) / built-in (CH4/THF_ATOMS_PER_MOLECULE) / heuristic (pattern matching). Gate uses literal `not in ("ch4","thf",None)` enumeration (NOT `not in GUEST_MOLECULES`) so the gate stays local to molecule_utils.py with no cross-module import. Purely additive API — positional callers `count_guest_atoms(atom_names, start, guest_type)` unchanged. 42/42 count_guest_atoms + 6/6 ion-path + 18/18 custom-guest-bridge tests green. Unblocks 44.1-05/06/07 (interface modes pass `guest_atom_count=candidate.metadata['guest_atom_counts'][mol_type]` to count_guest_atoms in their _detect_guest_atoms tiling loops).
 
 ### Pending Todos
 
@@ -229,6 +230,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-08T09:35Z
-Stopped at: Completed 44.1-02-PLAN.md (to_candidate now carries guest_descriptors + guest_atom_counts in Candidate.metadata; root-cause fix for interface-tab IndexError crash). Phase 44.1 IN PROGRESS (2/22 plans). Next plan: 44.1-03.
+Last session: 2026-07-08T09:41Z
+Stopped at: Completed 44.1-03-PLAN.md (count_guest_atoms accepts guest_atom_count kwarg for custom guests; short-circuits the ch4/thf heuristic so ethanol=9 returns 9 not 5 — atom-counting layer of the interface-tab IndexError fix). Phase 44.1 IN PROGRESS (3/22 plans). Next plan: 44.1-04.
 Resume file: None
