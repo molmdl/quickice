@@ -21,7 +21,7 @@ from quickice.utils.molecule_utils import count_guest_atoms
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 
-def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None) -> tuple[list[int], list[int]]:
+def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None, guest_atom_count: int | None = None) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
     For hydrate candidates:
@@ -34,6 +34,10 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
         guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
             bypasses heuristic detection in count_guest_atoms for correct, explicit
             identification. When None, falls back to heuristic atom-name matching.
+        guest_atom_count: NEW (44.1) explicit atom count for custom (non-ch4/thf)
+            guests. Threaded to count_guest_atoms so custom ethanol (9 atoms) is
+            counted correctly instead of falling through the ch4/thf heuristic
+            (which miscounts custom atoms -> IndexError). Ignored for ch4/thf/None.
     """
     water_indices = []
     guest_indices = []
@@ -46,7 +50,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
                 water_indices.extend(range(i, i + atoms_per_mol))
                 i += atoms_per_mol
             else:
-                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type)
+                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type, guest_atom_count=guest_atom_count)
                 
                 # SAFEGUARD: Check if the detected "guest" is actually a water molecule
                 # that was misidentified due to counting errors
@@ -72,8 +76,17 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
     return water_indices, guest_indices
 
 
-def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None) -> int:
-    """Count the number of distinct guest molecules from guest atom indices."""
+def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None, guest_atom_count: int | None = None) -> int:
+    """Count the number of distinct guest molecules from guest atom indices.
+    
+    Args:
+        atom_names: Full list of atom names from candidate
+        guest_indices: Indices of guest atoms (from _detect_guest_atoms)
+        guest_type: Explicit guest molecule type ("ch4" or "thf") threaded to
+            count_guest_atoms. When None, falls back to heuristic.
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests,
+            threaded to count_guest_atoms so the per-molecule stride is correct.
+    """
     if not guest_indices:
         return 0
     
@@ -81,7 +94,7 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], gues
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type)
+        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type, guest_atom_count=guest_atom_count)
         count += 1
         i += atoms_in_mol
     
@@ -156,15 +169,24 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         # QuickIce hydrates have a single guest type; extract it
         _guest_type = next(iter(guest_type_counts), None) if guest_type_counts else None
 
+        # NEW (44.1): explicit atom count for custom guests (prevents IndexError).
+        # to_candidate() populates "guest_atom_counts" as {mol_type: atom_count}
+        # (44.1-02). For built-in ch4/thf this maps to 5/13 (ignored by
+        # count_guest_atoms since guest_type is "ch4"/"thf"). For custom guests
+        # (e.g. etoh_e2e=9) this short-circuits the ch4/thf heuristic so the
+        # per-molecule stride is correct.
+        guest_atom_counts = candidate.metadata.get("guest_atom_counts", {})
+        _guest_atom_count = guest_atom_counts.get(_guest_type) if _guest_type else None
+
         # Extract guest atoms from candidate positions
         water_indices, guest_indices = _detect_guest_atoms(
-            candidate.atom_names, atoms_per_mol, guest_type=_guest_type
+            candidate.atom_names, atoms_per_mol, guest_type=_guest_type, guest_atom_count=_guest_atom_count
         )
         
         if guest_indices:
             raw_guest_positions = candidate.positions[guest_indices].copy()
             guest_atom_names = [candidate.atom_names[i] for i in guest_indices]
-            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type)
+            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type, guest_atom_count=_guest_atom_count)
             
             # For tiling, use ONLY water-framework atoms
             water_framework_positions = candidate.positions[water_indices]
@@ -347,7 +369,16 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         guest_cell_dims = get_cell_extent(candidate.cell)
         
         # Determine atoms per GUEST molecule (not water framework)
-        if guest_atom_names[0] == "Me":
+        # NEW (44.1): prefer the explicit guest_atom_count threaded from candidate
+        # metadata (44.1-02) for custom guests whose first atom is not Me/C/O
+        # (e.g. ethanol starts with "H" -> heuristic below defaults to 1, which
+        # fragments multi-atom guests and miscounts molecules). Falls back to the
+        # first-atom heuristic for built-in guests. Byte-identical for ch4 (5)
+        # and thf (13) since the metadata carries the same values the heuristic
+        # would produce.
+        if _guest_atom_count is not None:
+            guest_atoms_per_mol = _guest_atom_count
+        elif guest_atom_names[0] == "Me":
             guest_atoms_per_mol = 1
         elif guest_atom_names[0] == "C":
             if len(guest_atom_names) >= 2 and guest_atom_names[1] == "O":
