@@ -369,5 +369,53 @@ class TestCountGuestAtomsCustomExplicit:
         )
 
 
+# ── _build_custom_guest_info neutral-module test (Phase 44.1-04) ────────────
+
+
+def test_build_custom_guest_info_from_guest_info_module():
+    """_build_custom_guest_info is importable from the neutral
+    quickice.output.guest_info module (no Qt/CLI cross-import) and behaves
+    identically for None / built-in / custom configs.
+
+    Phase 44.1-04 moved the builder from quickice/cli/pipeline.py to
+    quickice/output/guest_info.py so GUI exporters (plan 08+) and CLI export
+    branches (plan 17) share it without GUI->CLI (argparse) or CLI->Qt (headless
+    break) cross-imports. pipeline.py re-exports it for backward compatibility
+    (existing call sites unchanged).
+    """
+    from quickice.output.guest_info import _build_custom_guest_info
+    from quickice.structure_generation.types import HydrateConfig
+
+    # None config -> None
+    assert _build_custom_guest_info(None) is None
+
+    # Built-in ch4 config -> None (no custom guests; the MoleculetypeRegistry
+    # handles built-in ch4/thf — _build_custom_guest_info excludes them).
+    cfg_builtin = HydrateConfig(lattice_type="sI", guest_type="ch4")
+    assert _build_custom_guest_info(cfg_builtin) is None
+
+    # Custom etoh_e2e config: the legacy single-custom-guest path goes through
+    # the 42-01 __post_init__ shim which populates cage_guest_assignments for
+    # BOTH small and large cages (same etoh_e2e guest). _build_custom_guest_info
+    # dedups by mol_type so the returned list has ONE entry (not two) — matching
+    # the 42-02 ExitStack dedup and the 42-03 writers' custom_by_moltype dict.
+    cfg_custom = HydrateConfig(
+        lattice_type="sI",
+        guest_type="etoh_e2e",
+        guest_residue_name="MOL",
+        guest_gro_path=str(ETOH_GRO),
+        guest_itp_path=str(ETOH_ITP),
+        guest_atom_labels=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
+        guest_atom_count=9,
+    )
+    info = _build_custom_guest_info(cfg_custom)
+    assert info is not None, "custom config should yield a non-None list"
+    assert len(info) == 1, f"expected 1 entry (deduped), got {len(info)}: {info}"
+    entry = info[0]
+    assert entry["mol_type"] == "etoh_e2e", entry
+    assert entry["residue_name"] == "MOL_H", entry
+    assert entry["itp_path"] == ETOH_ITP, entry
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
