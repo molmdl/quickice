@@ -18,7 +18,12 @@ CH4_ATOMS_PER_MOLECULE: int = 5   # All-atom methane: C + 4H
 THF_ATOMS_PER_MOLECULE: int = 13  # Tetrahydrofuran: O + 2CA + 2CB + 8H
 
 
-def count_guest_atoms(atom_names: list[str], start: int, guest_type: str | None = None) -> int:
+def count_guest_atoms(
+    atom_names: list[str],
+    start: int,
+    guest_type: str | None = None,
+    guest_atom_count: int | None = None,
+) -> int:
     """Count atoms in a guest molecule starting at index.
 
     When guest_type is provided, returns the atom count directly without
@@ -28,6 +33,11 @@ def count_guest_atoms(atom_names: list[str], start: int, guest_type: str | None 
     Supported guest types with explicit guest_type:
     - "ch4": 5 atoms (all-atom methane: C + 4H)
     - "thf": 13 atoms (tetrahydrofuran: O, CA, CA, CB, CB, H×8)
+
+    Custom guests (Phase 44.1): pass ``guest_atom_count`` explicitly so any
+    non-builtin guest molecule (ethanol=9, etc.) is counted correctly instead
+    of falling through to the ch4/thf heuristic, which miscounts custom atoms
+    and causes an IndexError in interface generation (slab/pocket/piece tiling).
 
     Heuristic detection (guest_type=None) handles:
     - Me: 1 atom (united-atom methane)
@@ -42,12 +52,22 @@ def count_guest_atoms(atom_names: list[str], start: int, guest_type: str | None 
         guest_type: Explicit guest molecule type ("ch4" or "thf").
             When provided, bypasses heuristic detection entirely.
             When None (default), uses heuristic atom-name pattern matching.
+        guest_atom_count: Explicit atom count for a custom (non-ch4/thf/None)
+            guest. Takes priority over the heuristic for custom guests only;
+            ignored when guest_type is "ch4", "thf", or None so the built-in
+            explicit path and the heuristic fallback stay byte-identical.
 
     Returns:
         Number of atoms in this guest molecule
     """
     if start >= len(atom_names):
         return 0
+
+    # NEW (44.1): explicit atom count for custom guests (non-ch4/thf/None).
+    # Takes priority over the ch4/thf heuristic. Prevents IndexError from
+    # miscounting custom guest atoms in interface generation.
+    if guest_atom_count is not None and guest_type not in ("ch4", "thf", None):
+        return guest_atom_count
 
     # Explicit guest_type: return atom count directly, no heuristic needed
     if guest_type is not None:
