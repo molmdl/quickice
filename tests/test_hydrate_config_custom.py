@@ -249,6 +249,75 @@ class TestCageGuestAssignments:
                 },
             )
 
+    def test_same_custom_guest_in_two_cages_allowed(self):
+        """Same custom guest_type in two cages with the same residue_name is allowed (44.1).
+
+        This is the SAFE case Pitfall 6 previously over-rejected: a single
+        custom guest assigned to both small and large cages aggregates into
+        ONE _H moleculetype exactly like ch4-in-all-cages, so it must NOT
+        raise.
+        """
+        etoh_labels = ["H", "C", "H", "H", "C", "H", "H", "O", "H"]
+        config = HydrateConfig(
+            lattice_type="sI",
+            cage_guest_assignments={
+                "small": CageGuestAssignment(
+                    guest_type="etoh_e2e",
+                    occupancy=100.0,
+                    guest_residue_name="MOL",
+                    guest_gro_path="quickice/data/custom/etoh.gro",
+                    guest_itp_path="quickice/data/custom/etoh.itp",
+                    guest_atom_labels=list(etoh_labels),
+                    guest_atom_count=9,
+                ),
+                "large": CageGuestAssignment(
+                    guest_type="etoh_e2e",
+                    occupancy=100.0,
+                    guest_residue_name="MOL",
+                    guest_gro_path="quickice/data/custom/etoh.gro",
+                    guest_itp_path="quickice/data/custom/etoh.itp",
+                    guest_atom_labels=list(etoh_labels),
+                    guest_atom_count=9,
+                ),
+            },
+        )
+        assert len(config.cage_guest_assignments) == 2
+        assert config.cage_guest_assignments["small"].is_custom_guest is True
+        assert config.cage_guest_assignments["large"].is_custom_guest is True
+
+    def test_same_guest_type_different_resname_rejected(self):
+        """Same custom guest_type with DIFFERENT residue_names across cages raises (44.1 guard).
+
+        One moleculetype maps to a single residue name in the _H hydrate path,
+        so the same guest_type using different residue names across cages must
+        be rejected.
+        """
+        etoh_labels = ["H", "C", "H", "H", "C", "H", "H", "O", "H"]
+        with pytest.raises(ValueError, match="different"):
+            HydrateConfig(
+                lattice_type="sI",
+                cage_guest_assignments={
+                    "small": CageGuestAssignment(
+                        guest_type="etoh_e2e",
+                        occupancy=100.0,
+                        guest_residue_name="MOL",
+                        guest_gro_path="quickice/data/custom/etoh.gro",
+                        guest_itp_path="quickice/data/custom/etoh.itp",
+                        guest_atom_labels=list(etoh_labels),
+                        guest_atom_count=9,
+                    ),
+                    "large": CageGuestAssignment(
+                        guest_type="etoh_e2e",
+                        occupancy=100.0,
+                        guest_residue_name="ETH",
+                        guest_gro_path="quickice/data/custom/etoh.gro",
+                        guest_itp_path="quickice/data/custom/etoh.itp",
+                        guest_atom_labels=list(etoh_labels),
+                        guest_atom_count=9,
+                    ),
+                },
+            )
+
     def test_water_only_lattice_empty_assignments(self):
         """Water-only lattice (sTprime) shim produces empty cage_guest_assignments."""
         config = HydrateConfig(lattice_type="sTprime", guest_type="ch4")
