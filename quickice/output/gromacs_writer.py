@@ -2041,7 +2041,11 @@ def write_multi_molecule_top_file(
             f.write(f"{line}\n")
 
 
-def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
+def write_ion_gro_file(
+    ion_structure: IonStructure,
+    filepath: str,
+    custom_guest_info: list[dict] | None = None,
+) -> None:
     """Write ion structure to GROMACS .gro format.
 
     Exports molecules in ORDER: SOL (ice+water), guest, NA, CL.
@@ -2050,11 +2054,51 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     Args:
         ion_structure: IonStructure object with molecule_index
         filepath: Output file path for .gro file
+        custom_guest_info: Opt-in list of dicts (one per custom guest) for
+            metadata-driven custom guest writing (mirror of
+            ``write_interface_gro_file``'s ``custom_guest_info`` kwarg from
+            plans 41-04 / 44.1-09, ``write_solute_gro_file`` from 44.1-11, and
+            ``write_custom_molecule_gro_file`` from 44.1-13). When provided,
+            the guest residue name is taken from the matching
+            ``custom_guest_info[i]['residue_name']`` (e.g. 'MOL_H') instead of
+            being detected via ``detect_guest_type_from_atoms`` (which returns
+            ``None`` for unknown guests and falls through to 'GUE'). When
+            ``None`` or empty (default), the built-in path
+            (``detect_guest_type_from_atoms`` + ch4/thf reordering) is used
+            byte-identically to before this param was added. Dict shape:
+            ``{'mol_type': str, 'residue_name': str, 'itp_path': Path}``. A
+            legacy single ``dict`` is wrapped into a 1-element list with a
+            ``DeprecationWarning`` (transition safety).
 
     Note:
         GROMACS .gro format limits atom and residue numbers to 5 digits.
         For systems with >99999 atoms, atom numbers wrap at 100000 (standard GROMACS convention).
     """
+    # Transition safety: wrap a legacy single dict into a 1-element list.
+    if isinstance(custom_guest_info, dict):
+        warnings.warn(
+            "write_ion_gro_file: custom_guest_info expects a list[dict] as of "
+            "plan 44.1-15 (a single dict is deprecated and will be rejected in "
+            "a future release). Wrapping the dict into a 1-element list.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        custom_guest_info = [custom_guest_info]
+
+    # Custom-guest branch is opt-in: only active when the caller supplies
+    # custom_guest_info AND the structure actually carries guest atoms.
+    # Mirrors write_solute_gro_file:3215-3227 (plan 44.1-11). IonStructure
+    # carries guest_atom_count directly (no interface_structure ref).
+    custom_active = (
+        custom_guest_info is not None
+        and len(custom_guest_info) > 0
+        and ion_structure.guest_atom_count > 0
+    )
+    custom_by_moltype = (
+        {ci["mol_type"]: ci for ci in custom_guest_info}
+        if custom_active else {}
+    )
+
     # Build an ordered list of molecules: SOL (ice+water) first, then guest, then custom molecules, then solutes, then NA, then CL
     ordered_mols = []
     # Pass 1: SOL molecules (ice + water)
@@ -2064,6 +2108,14 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
     # Pass 2: guest molecules
     for mol in ion_structure.molecule_index:
         if mol.mol_type == "guest":
+            ordered_mols.append(("guest", mol))
+        elif custom_active and mol.mol_type in custom_by_moltype:
+            # Custom guest mol_type (e.g. "etoh_e2e") — collect when the
+            # caller opted in via custom_guest_info. The built-in path
+            # (custom_guest_info is None -> custom_active is False) only
+            # collects literal "guest" entries, preserving byte-identical
+            # behavior for ch4/thf. Mirrors write_solute_gro_file's
+            # `m.mol_type in custom_by_moltype` lookup (plan 41-04).
             ordered_mols.append(("guest", mol))
     # Pass 3: custom molecules (if present)
     # Note: custom molecules are stored separately, not in molecule_index
@@ -2265,7 +2317,7 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                                     f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
 
                 elif mol_type == "guest":
-                    # Guest molecule (CH4, THF, etc.) - write all atoms
+                    # Guest molecule (CH4, THF, or custom guest) — write all atoms
                     res_num += 1
                     res_num_wrapped = res_num % 100000
 
@@ -2274,25 +2326,51 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
                     mol_atom_names = ion_structure.atom_names[start:start + mol.count]
                     mol_positions = wrapped_positions[start:start + mol.count]
 
-                    # Detect guest type from atom names
-                    guest_type = detect_guest_type_from_atoms(mol_atom_names)
-
-                    # Get residue name from hydrate itp file (ion guests are hydrate cage guests)
-                    if guest_type:
-                        guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    if custom_active:
+                        # P3 / EXPORT-05 custom guest (mirror write_interface_gro_file
+                        # custom branch, plans 41-04 / 44.1-09 / 44.1-11 / 44.1-13):
+                        # use the caller-supplied residue name (e.g. "MOL_H")
+                        # from custom_guest_info instead of detect_guest_type_from_atoms
+                        # (which returns None for custom guests like ethanol). The
+                        # ion path carries a single guest stream; resolve via the
+                        # matching molecule_index mol_type, falling back to the
+                        # first/only custom_guest_info entry (defensive — matches
+                        # the solute/custom-molecule writers' fallback for
+                        # synthetic 'guest' entries when molecule_index lacks the
+                        # real mol_type).
+                        ci = custom_by_moltype.get(mol.mol_type)
+                        if ci is None:
+                            ci = next(iter(custom_by_moltype.values()))
+                        guest_res_name = ci["residue_name"]
+                        validate_gro_residue_name(
+                            guest_res_name,
+                            context="Ion custom guest GRO residue name",
+                        )
+                        # No reorder — custom guest atoms are already in ITP
+                        # canonical order (the interface / solute / custom-molecule
+                        # writers' custom branches also skip reorder_guest_atoms).
                     else:
-                        guest_res_name = "GUE"  # Fallback
-                    
-                    validate_gro_residue_name(guest_res_name, context="Ion guest residue name")
+                        # Built-in path: detect guest type and get residue name
+                        # (byte-identical to before custom_guest_info).
+                        # Detect guest type from atom names
+                        guest_type = detect_guest_type_from_atoms(mol_atom_names)
 
-                    # Reorder guest atoms to match .itp canonical order
-                    # (e.g., CH4: C first instead of H first from GenIce2)
-                    reorder_mapping = None
-                    if guest_type in ["ch4", "thf"]:
-                        mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
-                        # Also reorder positions to match the reordered names
-                        if reorder_mapping is not None:
-                            mol_positions = [mol_positions[i] for i in reorder_mapping]
+                        # Get residue name from hydrate itp file (ion guests are hydrate cage guests)
+                        if guest_type:
+                            guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                        else:
+                            guest_res_name = "GUE"  # Fallback
+
+                        validate_gro_residue_name(guest_res_name, context="Ion guest residue name")
+
+                        # Reorder guest atoms to match .itp canonical order
+                        # (e.g., CH4: C first instead of H first from GenIce2)
+                        reorder_mapping = None
+                        if guest_type in ["ch4", "thf"]:
+                            mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
+                            # Also reorder positions to match the reordered names
+                            if reorder_mapping is not None:
+                                mol_positions = [mol_positions[i] for i in reorder_mapping]
 
                     for i in range(mol.count):
                         atom_num += 1
@@ -2401,7 +2479,11 @@ def write_ion_gro_file(ion_structure: IonStructure, filepath: str) -> None:
         raise
 
 
-def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
+def write_ion_top_file(
+    ion_structure: IonStructure,
+    filepath: str,
+    custom_guest_info: list[dict] | None = None,
+) -> None:
     """Write GROMACS topology file for ion structure.
 
     Uses SOL molecule type for water and ice, NA for sodium, CL for chloride.
@@ -2413,7 +2495,35 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     Args:
         ion_structure: IonStructure object with molecule_index
         filepath: Output file path for .top file
+        custom_guest_info: Opt-in list of dicts (one per custom guest) for
+            metadata-driven custom guest writing (mirror of
+            ``write_interface_top_file``'s ``custom_guest_info`` kwarg from
+            plans 41-05 / 44.1-09, ``write_solute_top_file`` from 44.1-11, and
+            ``write_custom_molecule_top_file`` from 44.1-13). When supplied,
+            the guest is identified by ``mol_type`` (NOT
+            ``detect_guest_type_from_atoms``, which returns None for unknown
+            guests -> ``guest_res_name="GUE"`` + a non-existent
+            ``#include "guest.itp"`` -> grompp fatal). The custom atomtypes are
+            merged via ``_merge_custom_atomtypes`` (oh/ho written, hc/c3/h1
+            deduped), the custom ``.itp`` filename is ``#include``d, and the
+            matching ``custom_guest_info[i]['residue_name']`` (e.g.
+            ``"MOL_H"``) is listed in ``[ molecules ]``. The built-in
+            ch4/thf path (custom_guest_info is None or empty) is unchanged.
+            Dict shape: ``{'mol_type': str, 'residue_name': str,
+            'itp_path': Path}``. A legacy single ``dict`` is wrapped into a
+            1-element list with a ``DeprecationWarning`` (transition safety).
     """
+    # Transition safety: wrap a legacy single dict into a 1-element list.
+    if isinstance(custom_guest_info, dict):
+        warnings.warn(
+            "write_ion_top_file: custom_guest_info expects a list[dict] as of "
+            "plan 44.1-15 (a single dict is deprecated and will be rejected in "
+            "a future release). Wrapping the dict into a 1-element list.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        custom_guest_info = [custom_guest_info]
+
     # Count molecules by type across ENTIRE molecule_index
     # This ensures proper grouping (all SOL together, not stuttering)
     sol_count = sum(1 for m in ion_structure.molecule_index if m.mol_type in ("water", "ice"))
@@ -2432,7 +2542,40 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
     # Detect guest type from atom names (for including correct .itp and residue name)
     guest_type = None
     guest_res_name = "GUE"  # Fallback
-    if guest_count > 0 and ion_structure.guest_atom_count > 0:
+    # Custom-guest branch is opt-in (mirror write_interface_top_file:1536-1603,
+    # plans 41-05 / 44.1-09 / 44.1-11 / 44.1-13). When active, the residue name
+    # comes from custom_guest_info (e.g. "MOL_H") and the custom ITP is
+    # #include'd by basename; detect_guest_type_from_atoms is skipped (returns
+    # None for custom guests). The built-in path (custom_guest_info is None or
+    # empty) is byte-identical to before this param was added.
+    custom_active = (
+        custom_guest_info is not None
+        and len(custom_guest_info) > 0
+        and guest_count > 0
+        and ion_structure.guest_atom_count > 0
+    )
+    custom_by_moltype = (
+        {ci["mol_type"]: ci for ci in custom_guest_info}
+        if custom_active else {}
+    )
+    if custom_active:
+        # Resolve the custom residue name via the matching molecule_index
+        # entry's mol_type (fall back to the first/only custom_guest_info
+        # entry — defensive, matches the interface/solute/custom-molecule
+        # writers' fallback when molecule_index lacks a match or uses the
+        # literal "guest" mol_type).
+        guest_index_entry = next(
+            (m for m in ion_structure.molecule_index
+             if m.mol_type in custom_by_moltype),
+            None,
+        )
+        if guest_index_entry is not None:
+            ci_mol = custom_by_moltype[guest_index_entry.mol_type]
+        else:
+            ci_mol = next(iter(custom_by_moltype.values()))
+        guest_res_name = ci_mol["residue_name"]
+    elif guest_count > 0 and ion_structure.guest_atom_count > 0:
+        # Built-in path: detect guest type from atom names of first guest
         # Get atom names for the first guest molecule to detect type
         # Find the first guest molecule in molecule_index
         for mol in ion_structure.molecule_index:
@@ -2528,6 +2671,23 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
             _write_atomtypes_block(f, THF_ATOMTYPE_NAMES,
                                    "THF atom types (GAFF2)", _written_atomtypes)
 
+        # Custom GUEST atom types (hydrate cage guests) — merge via the shared
+        # _merge_custom_atomtypes (plan 41-01). ci["itp_path"] is the SOURCE ITP
+        # (uncommented [atomtypes]); the #include below resolves to the STAGED
+        # transformed ITP (same filename, [atomtypes] commented) written to the
+        # export dir by _stage_hydrate_guest_itps (plan 44.1-08). Dedup via
+        # _written_atomtypes prevents duplicates with water/GAFF2/custom-molecule
+        # types. Mirrors write_solute_top_file:3798-3806 (plans 41-05 / 44.1-11).
+        if custom_active:
+            for ci in custom_guest_info:
+                if ci.get("itp_path"):
+                    _merge_custom_atomtypes(
+                        f,
+                        Path(ci["itp_path"]),
+                        _written_atomtypes,
+                        f"custom guest {ci['mol_type']} atom types",
+                    )
+
         # Custom molecule atom types (if present) — with deduplication (Bug 3 fix)
         # Checks parameter compatibility: raises ValueError if a custom atomtype
         # name matches an existing one with different LJ parameters.
@@ -2562,7 +2722,16 @@ def write_ion_top_file(ion_structure: IonStructure, filepath: str) -> None:
         f.write('#include "tip4p-ice.itp"\n')
 
         # Include guest itp if guests present
-        if guest_count > 0:
+        if custom_active:
+            # #include each custom guest .itp (basename of ci["itp_path"], e.g.
+            # "etoh.itp"). The staged transformed ITP (moleculetype MOL_H,
+            # [atomtypes] commented, [atoms] resname MOL_H) is written to
+            # path.parent/<basename> by _stage_hydrate_guest_itps (plan 44.1-08).
+            # Mirrors write_solute_top_file:3847-3849 (plans 41-05 / 44.1-11).
+            for ci in custom_guest_info:
+                if ci.get("itp_path"):
+                    f.write(f'#include "{Path(ci["itp_path"]).name}"\n')
+        elif guest_count > 0:
             if guest_type:
                 # Include the hydrate-specific .itp file based on guest type
                 # Ion tab guests come from hydrate cages, use hydrate ITP
