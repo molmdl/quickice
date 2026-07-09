@@ -28,7 +28,7 @@ from quickice.structure_generation.overlap_resolver import (
 from quickice.phase_mapping.water_density import water_density_gcm3
 
 
-def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None) -> tuple[list[int], list[int]]:
+def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None, guest_atom_count: int | None = None) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
     For hydrate candidates:
@@ -41,6 +41,10 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
         guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
             bypasses heuristic detection in count_guest_atoms for correct, explicit
             identification. When None, falls back to heuristic atom-name matching.
+        guest_atom_count: NEW (44.1) explicit atom count for custom (non-ch4/thf)
+            guests. Threaded to count_guest_atoms so custom ethanol (9 atoms) is
+            counted correctly instead of falling through the ch4/thf heuristic
+            (which miscounts custom atoms -> IndexError). Ignored for ch4/thf/None.
     
     Returns:
         Tuple of (water_framework_atom_indices, guest_atom_indices) as lists
@@ -61,7 +65,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
                 # This is a guest molecule (united-atom CH4 'Me', all-atom CH4 'C', etc.)
                 # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
                 # Detect based on atom type
-                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type)
+                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type, guest_atom_count=guest_atom_count)
                 
                 # SAFEGUARD: Check if the detected "guest" is actually a water molecule
                 # that was misidentified due to counting errors
@@ -88,7 +92,7 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
     return water_indices, guest_indices
 
 
-def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None) -> int:
+def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None, guest_atom_count: int | None = None) -> int:
     """Count the number of distinct guest molecules from guest atom indices.
     
     The guest_indices list contains all atom indices belonging to guests.
@@ -100,6 +104,8 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], gues
         guest_indices: List of atom indices belonging to guests
         guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
             bypasses heuristic detection in count_guest_atoms.
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests,
+            threaded to count_guest_atoms so the per-molecule stride is correct.
     
     Returns:
         Number of distinct guest molecules
@@ -111,7 +117,7 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], gues
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type)
+        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type, guest_atom_count=guest_atom_count)
         count += 1
         i += atoms_in_mol
     
@@ -202,10 +208,19 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         # QuickIce hydrates have a single guest type; extract it
         _guest_type = next(iter(guest_type_counts), None) if guest_type_counts else None
 
+        # NEW (44.1): explicit atom count for custom guests (prevents IndexError).
+        # to_candidate() populates "guest_atom_counts" as {mol_type: atom_count}
+        # (44.1-02). For built-in ch4/thf this maps to 5/13 (ignored by
+        # count_guest_atoms since guest_type is "ch4"/"thf"). For custom guests
+        # (e.g. etoh_e2e=9) this short-circuits the ch4/thf heuristic so the
+        # per-molecule stride is correct.
+        guest_atom_counts = candidate.metadata.get("guest_atom_counts", {})
+        _guest_atom_count = guest_atom_counts.get(_guest_type) if _guest_type else None
+
         # Extract guest atoms from candidate positions
         # Water framework = OW-based, Guest = anything else (Me, C, etc.)
         water_indices, guest_indices = _detect_guest_atoms(
-            candidate.atom_names, atoms_per_mol, guest_type=_guest_type
+            candidate.atom_names, atoms_per_mol, guest_type=_guest_type, guest_atom_count=_guest_atom_count
         )
         
         if guest_indices:
@@ -217,7 +232,7 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             # Each unique starting index is a different molecule
             # Since _detect_guest_atoms returns consecutive atom indices per molecule,
             # we count how many distinct molecules by counting the starts
-            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type)
+            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type, guest_atom_count=_guest_atom_count)
             
             # Translate guest to box center (same as ice)
             guest_center = np.mean(guest_positions, axis=0)
