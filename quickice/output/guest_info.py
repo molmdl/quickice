@@ -213,6 +213,36 @@ def _stage_hydrate_guest_itps(
             getattr(structure, "guest_nmolecules", 0) if structure else 0
         )
 
+    # Regression fix (CustomMoleculeStructure chain, exposed by the 44.1-11
+    # solute-exporter wiring): when guest_nmolecules=0 but molecule_index has
+    # guest entries (and guest_atom_count > 0), recover the guest molecule
+    # count from molecule_index. This mirrors the old
+    # _detect_guest_type_from_structure (quickice/gui/export.py) which used
+    # molecule_index as the PRIMARY source — a workflow chain that passes
+    # through CustomMoleculeStructure (which historically lacked
+    # guest_nmolecules) can leave interface_structure.guest_nmolecules=0 even
+    # though molecule_index has guest entries and guest_atom_count > 0.
+    # Without this recovery the presence gate below short-circuits, the guest
+    # ITP is NOT staged, yet the writer still #includes it (guest_count is
+    # computed from molecule_index) -> grompp "File not found". Safe for the
+    # interface path (assemble_slab produces an EMPTY molecule_index for
+    # custom guests, so this recovery doesn't trigger) and the no-guest path
+    # (molecule_index has no guest entries -> no recovery -> gate
+    # short-circuits as before). Rule 1 deviation (bug fix), tracked in
+    # 44.1-11-SUMMARY.
+    if (
+        guest_nmolecules <= 0
+        and guest_atom_count > 0
+        and structure is not None
+    ):
+        _mi = getattr(structure, "molecule_index", None)
+        if _mi:
+            _mi_guest_count = sum(
+                1 for m in _mi if getattr(m, "mol_type", "") == "guest"
+            )
+            if _mi_guest_count > 0:
+                guest_nmolecules = _mi_guest_count
+
     # Gate: no guests -> nothing to stage (e.g. ion-only export, ice-only
     # interface). Return the no-op result so the exporter skips guest ITP
     # staging entirely. Both counts must be positive: atom_count==0 means no
