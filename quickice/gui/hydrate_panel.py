@@ -498,9 +498,14 @@ class HydratePanel(QWidget):
                     f"Custom: {self._custom_guest['residue_name']}",
                     self._custom_guest['guest_type'],
                 )
-            # Phase 44-02: route through _on_cage_guest_changed so the Pitfall 6
-            # mitigation (_enforce_single_custom_cage) runs on every change.
-            # The lambda captures cage_key by default arg to avoid late-binding.
+            # Phase 44-02: route per-cage combo changes through
+            # _on_cage_guest_changed so the ff label + lattice info refresh on
+            # every change. Plan 44.1-01 relaxed the engine to allow the same
+            # custom guest in multiple cages (same guest_type aggregates into one
+            # _H moleculetype exactly like ch4), so the per-cage change just
+            # updates the combo without auto-clearing (the 44-02 auto-clear
+            # mitigation was removed in 44.1-18). The lambda captures cage_key
+            # by default arg to avoid late-binding.
             combo.currentIndexChanged.connect(
                 lambda _idx, ck=cage_key: self._on_cage_guest_changed(ck)
             )
@@ -616,56 +621,22 @@ class HydratePanel(QWidget):
     def _on_cage_guest_changed(self, cage_key):
         """Handle a per-cage guest combo change (Phase 44-02).
 
-        Routes every per-cage combo change through the Pitfall 6 mitigation
-        (``_enforce_single_custom_cage``) so selecting the custom guest in a
-        second cage auto-clears the first back to a built-in (prevents the
-        ``ValueError: Duplicate guest_residue_name`` from
-        ``HydrateConfig.__post_init__`` — Pitfall 6 / 42-01 design decision;
-        an engine fix to relax it is out of scope for 44-02 because the _H
-        hydrate path does not disambiguate residue names).
+        Refreshes the force-field label + lattice info display (mirrors the
+        legacy ``_on_guest_changed`` flow) and emits ``configuration_changed``.
 
-        Then refreshes the force-field label + lattice info display (mirrors
-        the legacy ``_on_guest_changed`` flow) and emits
-        ``configuration_changed``.
+        The engine (relaxed in plan 44.1-01) allows the same custom guest in
+        multiple cages — same ``guest_type`` across cages aggregates into one
+        ``_H`` moleculetype exactly like ``ch4`` — so this handler no longer
+        auto-clears a previously-selected cage. The 44-02 auto-clear
+        mitigation was removed in 44.1-18 because the
+        ``residue_name``→``guest_type`` check in
+        ``HydrateConfig.__post_init__`` only rejects genuine collisions (a
+        DIFFERENT ``guest_type`` claiming an already-seen residue name).
         """
-        self._enforce_single_custom_cage(cage_key)
         self._update_ff_label()
         self._update_info_display()  # Update guest fit info
         self.configuration_changed.emit()
 
-    def _enforce_single_custom_cage(self, changed_cage_key):
-        """Restrict the custom guest to a single cage at a time (Pitfall 6).
-
-        If the user selects "Custom: {residue}" in a second cage, auto-clear
-        the FIRST cage back to index 0 (the first built-in, usually ch4). The
-        auto-clear IS the feedback — no dialog is shown. The most-recently-
-        changed cage (``changed_cage_key``) keeps the custom guest; every
-        other cage with the custom guest reverts to the built-in.
-
-        Verified: mixed 1-custom + 1-builtin works (``has_custom_assignment
-        =True``, no ``ValueError``). Same custom guest in 2 cages would
-        otherwise raise from ``HydrateConfig.__post_init__`` (types.py:711-720)
-        and propagate uncaught through ``main_window.py:742,748`` (no
-        try/except there).
-        """
-        if self._custom_guest is None:
-            return
-        custom_type = self._custom_guest['guest_type']
-        cages_with_custom = [
-            ck for ck, c in self._cage_guest_combos.items()
-            if c.currentData() == custom_type
-        ]
-        if len(cages_with_custom) <= 1:
-            return
-        # Keep the most-recently-changed cage; reset every other cage to the
-        # first built-in (index 0). setCurrentIndex(0) re-emits
-        # currentIndexChanged, which re-enters _on_cage_guest_changed for the
-        # reset cage — but on re-entry that cage no longer has the custom
-        # guest, so the recursion terminates (len(cages_with_custom) == 1).
-        for ck in cages_with_custom:
-            if ck != changed_cage_key:
-                self._cage_guest_combos[ck].setCurrentIndex(0)
-    
     def _update_guest_ui_for_lattice(self):
         """Rebuild per-cage guest+occupancy rows for the selected lattice.
 
