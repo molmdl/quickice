@@ -25,6 +25,7 @@ import pytest
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
 from quickice.structure_generation.modes.slab import assemble_slab
 from quickice.structure_generation.modes.pocket import assemble_pocket
+from quickice.structure_generation.modes.piece import assemble_piece
 from quickice.structure_generation.types import HydrateConfig, HydrateStructure, InterfaceConfig
 
 
@@ -519,5 +520,111 @@ class TestAssemblePocketCustomGuestNoCrash:
         )
         assert iface.guest_atom_count == 5 * iface.guest_nmolecules, (
             f"Built-in ch4 pocket guest_atom_count={iface.guest_atom_count} != "
+            f"5 * guest_nmolecules={5 * iface.guest_nmolecules}"
+        )
+
+
+class TestAssemblePieceCustomGuestNoCrash:
+    """Verify assemble_piece succeeds for a custom guest hydrate (44.1-07).
+
+    Phase 44.1 plan 07: the piece mode had the identical broken pattern as
+    slab (44.1-05) and pocket (44.1-06). _detect_guest_atoms /
+    _count_guest_molecules called count_guest_atoms with only guest_type
+    (the custom slug, e.g. "etoh_e2e"), which fell through the ch4/thf
+    heuristic and miscounted atoms -> IndexError. Plan 07 threads the
+    explicit guest_atom_count (from candidate.metadata "guest_atom_counts",
+    populated by 44.1-02 to_candidate) through the piece path so custom
+    ethanol (9 atoms) is counted correctly.
+
+    Unlike pocket (44.1-06), piece.py needs NO Rule 1 deviation for a
+    guest_atoms_per_mol tiling heuristic: piece mode does not tile guests
+    into a region (slab) or cavity-filter them (pocket). Guests are simply
+    extracted from the candidate and translated to the box center, so the
+    only stride that matters is the one inside _detect_guest_atoms /
+    _count_guest_molecules, both fixed by threading guest_atom_count.
+
+    Success criteria:
+      * assemble_piece returns (no IndexError) for a custom ethanol hydrate.
+      * iface.guest_nmolecules > 0 (guests were placed in the centered piece).
+      * iface.guest_atom_count == 9 * iface.guest_nmolecules (correct count).
+      * Built-in ch4 piece still works (regression guard) with
+        iface.guest_atom_count == 5 * iface.guest_nmolecules.
+    """
+
+    @staticmethod
+    def _piece_config():
+        """Shared InterfaceConfig for piece generation tests.
+
+        box_x/box_y/box_z mirror the 44.1-07 probe in the plan. Piece mode
+        centers the ice piece in the water box, so ice_thickness/
+        water_thickness (slab fields) are not used by assemble_piece but are
+        passed for parity with the plan's probe (they default to 0.0 in
+        InterfaceConfig; passing them explicitly is harmless and documents
+        the intended geometry). Only the candidate (custom vs built-in)
+        differs between the custom and regression tests.
+        """
+        return InterfaceConfig(
+            mode="piece",
+            box_x=3.0,
+            box_y=3.0,
+            box_z=8.0,
+            seed=42,
+            ice_thickness=2.0,
+            water_thickness=4.0,
+        )
+
+    def test_assemble_piece_custom_guest_no_crash(self, custom_guest_hydrate):
+        """Custom ethanol hydrate -> piece interface generates without crash.
+
+        The test name's "no_crash" assertion is that assemble_piece returns at
+        all. Before 44.1-07 it raised IndexError inside _detect_guest_atoms
+        because count_guest_atoms miscounted the custom 9-atom ethanol via
+        the ch4/thf heuristic (first atom "H" + len(sample)>=5 triggers the CH4
+        c_count/h_count branch returning 5), so the molecule stride went out
+        of bounds.
+        """
+        candidate = custom_guest_hydrate.to_candidate()
+
+        # Sanity: candidate carries the threaded metadata (44.1-02).
+        assert "guest_atom_counts" in candidate.metadata
+        assert candidate.metadata["guest_atom_counts"].get(_GUEST_TYPE) == 9
+
+        iface = assemble_piece(candidate, self._piece_config())
+
+        # Guest molecules placed in the centered ice piece.
+        assert iface.guest_nmolecules > 0, (
+            "Custom ethanol piece should have guest molecules in the centered piece"
+        )
+        # Each ethanol is 9 atoms; total guest atoms must be 9 * nmolecules.
+        assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+            f"Custom ethanol piece guest_atom_count={iface.guest_atom_count} != "
+            f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
+        )
+
+    def test_assemble_piece_builtin_ch4_regression(self):
+        """Built-in ch4 piece generation unchanged after 44.1-07.
+
+        Regression guard: the guest_atom_count threading must not break the
+        built-in path. For ch4, candidate.metadata["guest_atom_counts"] maps
+        "ch4" -> 5, but count_guest_atoms ignores guest_atom_count when
+        guest_type is "ch4" (it returns CH4_ATOMS_PER_MOLECULE=5 directly), so
+        the behavior is byte-identical to the pre-44.1-07 path. piece.py also
+        has no guest_atoms_per_mol tiling heuristic, so there is no secondary
+        stride to regress.
+        """
+        gen = HydrateStructureGenerator()
+        config = HydrateConfig(lattice_type="sI", guest_type="ch4")
+        candidate = gen.generate(config).to_candidate()
+
+        # Sanity: built-in ch4 carries the metadata too (44.1-02).
+        assert candidate.metadata["guest_atom_counts"].get("ch4") == 5
+
+        iface = assemble_piece(candidate, self._piece_config())
+
+        assert iface.guest_nmolecules > 0, (
+            "Built-in ch4 piece should have guest molecules in the centered piece"
+        )
+        assert iface.guest_atom_count == 5 * iface.guest_nmolecules, (
+            f"Built-in ch4 piece guest_atom_count={iface.guest_atom_count} != "
             f"5 * guest_nmolecules={5 * iface.guest_nmolecules}"
         )
