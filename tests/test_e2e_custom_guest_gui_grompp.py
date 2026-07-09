@@ -55,12 +55,14 @@ from quickice.structure_generation.types import (  # noqa: E402
 from quickice.gui.export import (  # noqa: E402
     CustomMoleculeGROMACSExporter,
     InterfaceGROMACSExporter,
+    IonGROMACSExporter,
     SoluteGROMACSExporter,
 )
 from e2e_export_helpers import (  # noqa: E402
     _stage_itp_files,
     _stage_custom_guest_itp,
     _insert_solutes,
+    _insert_ions,
     run_gmx_grompp,
     MDP_PATH,
     ETOH_GRO,
@@ -768,6 +770,233 @@ def test_custom_guest_custom_molecule_export_grompp(tmp_path):
     assert "SOL" in gro_res and "MOL_H" in gro_res and "MOL" in gro_res, (
         f"expected SOL + MOL_H + MOL in .gro residues, got {gro_res}"
     )
+    assert "GUE" not in gro_res, (
+        f"GUE must NOT appear in .gro residues (custom_guest_info not threaded): "
+        f"{gro_res}"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# GUI IonGROMACSExporter custom-guest ion export (44.1-15)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+def test_custom_guest_ion_export_grompp(tmp_path):
+    """gmx grompp exits 0 on a custom ethanol guest hydrate exported via the
+    GUI ``IonGROMACSExporter.export_ion_gromacs`` method (plan 44.1-15).
+
+    Mirrors ``test_custom_guest_solute_export_grompp`` (44.1-11) and
+    ``test_custom_guest_custom_molecule_export_grompp`` (44.1-13) but
+    exercises the ION exporter (ice+water+guest+Na+Cl ions) instead of the
+    solute / custom-molecule exporter. This is the FOURTH and LAST of the
+    four per-exporter wiring plans (44.1-09 interface / 44.1-11 solute /
+    44.1-13 custom-molecule / 44.1-15 ion).
+
+    IMPORTANT DIFFERENCE from 44.1-11/13: ``IonStructure`` (types.py:826-876)
+    has NO ``interface_structure`` field — only ``guest_nmolecules`` /
+    ``guest_atom_count`` (populated by ``IonInserter.replace_water_with_ions``
+    from the source interface, ion_inserter.py:243/287/312/538). The exporter
+    passes the ion_structure ITSELF to the staging helper (config-driven
+    Option A — no structure ref to follow, see 44.1-RESEARCH §5).
+
+    Flow:
+      1. Generate a REAL custom ethanol hydrate via
+         ``HydrateStructureGenerator`` (sI 1x1x1, fast).
+      2. ``hydrate.to_candidate()`` -> ``assemble_slab(...)`` ->
+         InterfaceStructure (no IndexError — plans 44.1-02/03/05 fixed the
+         guest_atom_count threading through slab mode).
+      3. ``_insert_ions(iface, concentration=0.15)`` -> IonStructure. The
+         IonInserter creates its own molecule_index internally (literal
+         mol_type=="guest" entries, ion_inserter.py:150-153) and propagates
+         guest_atom_count / guest_nmolecules from the source interface
+         (ion_inserter.py:243/287/312/538). Na+ / Cl- ions replace water
+         molecules in the water region (no overlap with ice/water/guest).
+      4. Mock ``QFileDialog.getSaveFileName`` (under ``QT_QPA_PLATFORM=offscreen``
+         it returns ``("", "")`` which makes the exporter return ``False``
+         without writing any files). The exporter calls ``getSaveFileName`` ONCE
+         for the .gro path; the .top path is derived from ``path.stem``.
+         ``QMessageBox`` is mocked to suppress any warning/error dialogs.
+      5. ``exporter.export_ion_gromacs(ion_structure, hydrate_config=config)``
+         calls the shared helper ``_stage_hydrate_guest_itps`` (plan 44.1-08)
+         with the ion_structure ITSELF as the structure argument (no
+         interface_structure to follow), which:
+           - builds ``custom_guest_info`` from the hydrate config
+             ``[{mol_type='etoh_e2e', residue_name='MOL_H',
+                itp_path=Path('quickice/data/custom/etoh.itp')}]``
+           - transforms + writes the custom ``etoh.itp`` to the workspace
+             (moleculetype ``MOL_H``, ``[atomtypes]`` commented, ``[atoms]``
+             resname ``MOL_H``) via the reused ``transform_guest_itp``
+         then threads ``custom_guest_info`` to BOTH ``write_ion_gro_file`` and
+         ``write_ion_top_file`` (extended in 44.1-15 to accept the kwarg —
+         previously they emitted ``guest_res_name="GUE"`` + a non-existent
+         ``#include "guest.itp"`` for custom guests, which made grompp
+         fatal), then copies ``tip4p-ice.itp`` + writes ``ion.itp`` (the Na+
+         / Cl- combined ion ITP).
+      6. ``assert_itp_completeness`` + ``assert_gro_top_consistent`` (file
+         consistency always runs).
+      7. ``gmx grompp`` -> ``rc == 0`` (topology is self-consistent +
+         simulation-ready).
+
+    This verifies the plan's wiring: ``hydrate_config`` ->
+    ``_stage_hydrate_guest_itps`` -> ``custom_guest_info`` -> ion writers
+    -> valid GROMACS output. The previous broken path (``hydrate_config`` not
+    accepted; ``write_ion_top_file`` used ``detect_guest_type_from_atoms`` ->
+    None for custom -> ``guest_res_name="GUE"`` + ``#include "guest.itp"``;
+    ``_detect_guest_type_from_structure`` -> None -> ``shutil.copy`` raised
+    ``FileNotFoundError``) would fail at grompp with
+    ``File not found: 'guest.itp'`` and a ``GUE`` moleculetype that no ITP
+    defines.
+    """
+    # 1. Generate a real custom ethanol hydrate (sI 1x1x1, fast).
+    gen = HydrateStructureGenerator()
+    config = HydrateConfig(
+        lattice_type="sI",
+        guest_type="etoh_e2e",
+        guest_residue_name="MOL",
+        guest_gro_path="quickice/data/custom/etoh.gro",
+        guest_itp_path="quickice/data/custom/etoh.itp",
+        guest_atom_labels=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
+        guest_atom_count=9,
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    hydrate = gen.generate(config)
+
+    # 2. to_candidate() -> assemble_slab() -> InterfaceStructure (44.1-02/05).
+    candidate = hydrate.to_candidate()
+    iface = assemble_slab(
+        candidate,
+        InterfaceConfig(
+            mode="slab",
+            box_x=3.0,
+            box_y=3.0,
+            box_z=8.0,
+            seed=42,
+            ice_thickness=2.0,
+            water_thickness=4.0,
+        ),
+    )
+    # Custom ethanol (9 atoms/mol) must be threaded correctly through slab
+    # mode (44.1-05): guest_atom_count == 9 * guest_nmolecules.
+    assert iface.guest_nmolecules > 0, "custom ethanol slab should have guests"
+    assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+        f"custom ethanol slab guest_atom_count={iface.guest_atom_count} != "
+        f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
+    )
+
+    # 3. Run the ion inserter to produce an IonStructure. IonInserter creates
+    #    its own molecule_index internally (literal "guest" entries,
+    #    ion_inserter.py:150-153) and propagates guest_atom_count /
+    #    guest_nmolecules from the source interface
+    #    (ion_inserter.py:243/287/312/538). Na+ / Cl- replace water molecules
+    #    in the water region (no overlap with ice/water/guest).
+    ion_structure = _insert_ions(iface, concentration=0.15)
+    assert (ion_structure.na_count > 0 or ion_structure.cl_count > 0), (
+        "ion inserter should place Na+ / Cl- ions in the water region"
+    )
+    # The ion structure must carry the guest info propagated from the
+    # interface (ion_inserter.py:243/287/312/538) so the exporter's staging
+    # helper presence gate passes.
+    assert ion_structure.guest_atom_count > 0, (
+        "IonStructure.guest_atom_count must be propagated from the source "
+        "interface for the staging helper's presence gate"
+    )
+    assert ion_structure.guest_nmolecules > 0, (
+        "IonStructure.guest_nmolecules must be propagated from the source "
+        "interface for the staging helper's presence gate"
+    )
+
+    # 4. Mock QFileDialog + QMessageBox so the exporter runs end-to-end
+    #    without a real GUI. The exporter calls getSaveFileName ONCE for the
+    #    .gro path; the .top path is derived from path.stem (no second dialog).
+    gro_path = tmp_path / "output.gro"
+    top_path = tmp_path / "output.top"
+    with patch(
+        "quickice.gui.export.QFileDialog.getSaveFileName",
+        return_value=(str(gro_path), "GRO Files (*.gro)"),
+    ), patch("quickice.gui.export.QMessageBox"):
+        exporter = IonGROMACSExporter(parent_widget=None)
+        ok = exporter.export_ion_gromacs(
+            ion_structure, hydrate_config=config
+        )
+        assert ok is True, (
+            "export_ion_gromacs returned False — export failed (the "
+            "QFileDialog mock may not have been picked up, or staging raised)"
+        )
+
+    # 5. Files were written by the exporter (writers + ITP staging).
+    assert gro_path.exists(), f".gro not written: {gro_path}"
+    assert top_path.exists(), f".top not written: {top_path}"
+    assert (tmp_path / "tip4p-ice.itp").exists(), (
+        "water ITP (tip4p-ice.itp) not staged by the exporter"
+    )
+    assert (tmp_path / "ion.itp").exists(), (
+        "ion ITP (ion.itp) not written by write_ion_itp"
+    )
+    assert (tmp_path / "etoh.itp").exists(), (
+        "custom guest ITP (etoh.itp) not staged by _stage_hydrate_guest_itps"
+    )
+    # The staged etoh.itp must be the TRANSFORMED copy (moleculetype MOL_H),
+    # not the raw source ITP (moleculetype etoh). This is the prerequisite for
+    # grompp: the .top [molecules] lists MOL_H, so the #include'd ITP must
+    # define moleculetype MOL_H.
+    staged_etoh = (tmp_path / "etoh.itp").read_text()
+    assert "MOL_H" in staged_etoh, (
+        "staged etoh.itp is missing the MOL_H moleculetype — transform_guest_itp "
+        "was not applied by _stage_hydrate_guest_itps"
+    )
+
+    # 6. Stage the MDP for grompp + run file-consistency assertions.
+    shutil.copy(MDP_PATH, tmp_path / "em.mdp")
+    assert_itp_completeness(str(top_path), tmp_path)
+    assert_gro_top_consistent(str(gro_path), str(top_path))
+
+    # 7. Run gmx grompp — must exit 0 (topology is self-consistent +
+    #    simulation-ready). The previous broken path (write_ion_top_file
+    #    emitted guest_res_name="GUE" + #include "guest.itp";
+    #    _detect_guest_type_from_structure -> None -> shutil.copy raised
+    #    FileNotFoundError) would fail here with "File not found: 'guest.itp'"
+    #    and a GUE moleculetype that no ITP defines.
+    exit_code, stderr = run_gmx_grompp(
+        tmp_path, gro_file="output.gro", top_file="output.top"
+    )
+    assert exit_code == 0, (
+        f"gmx grompp failed (GUI IonGROMACSExporter custom guest):\n{stderr}"
+    )
+
+    # 8. .top [molecules] lists SOL + MOL_H + NA + CL; .gro residues contain
+    #    SOL + MOL_H + NA + CL. This proves the custom_guest_info threading
+    #    reached the ion writers: the [molecules] block uses
+    #    custom_guest_info['residue_name'] (MOL_H) for the cage guest and the
+    #    ion labels (NA / CL) for the ions; the .gro emits MOL_H residues for
+    #    the 9-atom ethanol cage-guest chunk and NA / CL residues for the ions.
+    mols = parse_top_molecules(str(top_path))
+    assert "SOL" in mols and "MOL_H" in mols, (
+        f"expected SOL + MOL_H in [molecules], got {mols}"
+    )
+    # NA / CL appear when ions were placed.
+    if ion_structure.na_count > 0:
+        assert "NA" in mols, f"expected NA in [molecules] (na_count>0), got {mols}"
+    if ion_structure.cl_count > 0:
+        assert "CL" in mols, f"expected CL in [molecules] (cl_count>0), got {mols}"
+    assert "GUE" not in mols, (
+        f"GUE must NOT appear in [molecules] (custom_guest_info not threaded): "
+        f"{mols}"
+    )
+    gro_res = set(parse_gro_residue_names(str(gro_path)))
+    assert "SOL" in gro_res and "MOL_H" in gro_res, (
+        f"expected SOL + MOL_H in .gro residues, got {gro_res}"
+    )
+    if ion_structure.na_count > 0:
+        assert "NA" in gro_res, (
+            f"expected NA in .gro residues (na_count>0), got {gro_res}"
+        )
+    if ion_structure.cl_count > 0:
+        assert "CL" in gro_res, (
+            f"expected CL in .gro residues (cl_count>0), got {gro_res}"
+        )
     assert "GUE" not in gro_res, (
         f"GUE must NOT appear in .gro residues (custom_guest_info not threaded): "
         f"{gro_res}"
