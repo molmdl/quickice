@@ -898,11 +898,28 @@ class InterfaceGROMACSExporter:
         """
         self.parent = parent_widget
     
-    def export_interface_gromacs(self, interface_structure: InterfaceStructure) -> bool:
+    def export_interface_gromacs(
+        self, interface_structure: InterfaceStructure, hydrate_config=None
+    ) -> bool:
         """Export interface structure to GROMACS format.
 
         Args:
             interface_structure: InterfaceStructure with ice and water phases
+            hydrate_config: Optional :class:`HydrateConfig` that produced the
+                hydrate the interface was assembled from. When the interface
+                carries custom guest molecules (e.g. a custom ethanol hydrate
+                exported via the Interface tab), this drives the config-driven
+                ITP staging via :func:`quickice.output.guest_info._stage_hydrate_guest_itps`
+                (plan 44.1-08): it builds ``custom_guest_info`` from the config,
+                transforms + writes each custom ITP with the ``_H`` suffix, and
+                threads ``custom_guest_info`` to both
+                :func:`write_interface_gro_file` and
+                :func:`write_interface_top_file` (which already accept the
+                kwarg from plans 41-04 / 41-05). When ``None`` (built-in
+                ch4 / thf path) or a config with only built-in cage assignments,
+                the helper copies the bundled pre-transformed
+                ``{guest_type}_hydrate.itp`` — byte-identical to the previous
+                built-in path.
 
         Returns:
             True if export succeeded
@@ -938,39 +955,54 @@ class InterfaceGROMACSExporter:
         itp_path = path.with_name(path.stem + '.itp')
         
         try:
+            # Stage hydrate guest ITPs (config-driven, plan 44.1-08/09).
+            # Replaces the broken _detect_guest_type_from_structure (returns
+            # None for custom guests like etoh_e2e) + shutil.copy(
+            # {guest_type}_hydrate.itp) (FileNotFoundError for custom) pattern.
+            # The helper handles both paths: custom guests get a transformed
+            # ITP (moleculetype {base}_H, [atomtypes] commented, [atoms] resname
+            # {base}_H) written to path.parent; built-in ch4/thf get the
+            # bundled pre-transformed {guest_type}_hydrate.itp copied across.
+            # custom_guest_info is None for the no-guest / built-in paths (the
+            # writers treat None and [] identically via `for ci in (x or [])`).
+            from quickice.output.guest_info import _stage_hydrate_guest_itps
+            custom_guest_info, _staged_guest_itps = _stage_hydrate_guest_itps(
+                path.parent, hydrate_config, interface_structure,
+                guest_atom_count=getattr(interface_structure, 'guest_atom_count', 0),
+                guest_nmolecules=getattr(interface_structure, 'guest_nmolecules', 0),
+            )
+
             # Write .gro file using gromacs_writer
             from quickice.output.gromacs_writer import write_interface_gro_file
-            write_interface_gro_file(interface_structure, str(path))
-            
+            write_interface_gro_file(
+                interface_structure, str(path),
+                custom_guest_info=custom_guest_info,
+            )
+
             # Write .top file
             from quickice.output.gromacs_writer import write_interface_top_file
-            write_interface_top_file(interface_structure, str(top_path))
-            
+            write_interface_top_file(
+                interface_structure, str(top_path),
+                custom_guest_info=custom_guest_info,
+            )
+
             # Copy .itp files from data directory
             import shutil
             from quickice.output.gromacs_writer import get_tip4p_itp_path
-            
+
             # Copy water .itp file (must match the #include "tip4p-ice.itp" in .top file)
             water_itp_source = get_tip4p_itp_path()
             water_itp_dest = path.with_name("tip4p-ice.itp")
             shutil.copy(water_itp_source, water_itp_dest)
-            
-            # Copy guest .itp file if guests are present
-            guest_type = _detect_guest_type_from_structure(interface_structure)
-            
-            if guest_type:
-                try:
-                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                    shutil.copy(guest_itp_source, guest_itp_dest)
-                except FileNotFoundError:
-                    QMessageBox.warning(
-                        self.parent, "Missing Guest ITP",
-                        f"Guest ITP file for '{guest_type}' not found.\n"
-                        f"The exported .top file will reference it, but it won't be bundled.\n"
-                        f"Add the missing .itp file manually before running GROMACS."
-                    )
-            
+
+            # Guest .itp staging is config-driven via _stage_hydrate_guest_itps
+            # above. The previous _detect_guest_type_from_structure +
+            # shutil.copy({guest_type}_hydrate.itp) block is removed: it could
+            # not handle custom guests (detect returns None, so no ITP was
+            # staged and grompp would fail with a missing-ITP error), and the
+            # helper now covers both the custom (transform+write) and built-in
+            # (shutil.copy of the bundled _hydrate.itp) paths in one place.
+
             return True
         except Exception as e:
             import traceback
