@@ -425,11 +425,33 @@ class IonGROMACSExporter:
         """Initialize ion GROMACS exporter."""
         self.parent = parent_widget
     
-    def export_ion_gromacs(self, ion_structure: IonStructure) -> bool:
+    def export_ion_gromacs(
+        self, ion_structure: IonStructure, hydrate_config=None
+    ) -> bool:
         """Export ion structure to GROMACS format.
 
         Args:
             ion_structure: IonStructure with water + ion positions (+ solutes if present)
+            hydrate_config: Optional :class:`HydrateConfig` that produced the
+                hydrate the ion's interface was assembled from. When the
+                interface carries custom guest molecules (e.g. a custom
+                ethanol hydrate exported via the Ion tab), this drives the
+                config-driven ITP staging via
+                :func:`quickice.output.guest_info._stage_hydrate_guest_itps`
+                (plan 44.1-08): it builds ``custom_guest_info`` from the
+                config, transforms + writes each custom ITP with the ``_H``
+                suffix, and threads ``custom_guest_info`` to both
+                :func:`write_ion_gro_file` and :func:`write_ion_top_file`
+                (extended in plan 44.1-15 to accept the kwarg). When ``None``
+                (built-in ch4 / thf path) or a config with only built-in cage
+                assignments, the helper copies the bundled pre-transformed
+                ``{guest_type}_hydrate.itp`` — byte-identical to the previous
+                built-in path. Unlike SoluteStructure (which delegates guest
+                info to ``interface_structure``), :class:`IonStructure`
+                carries its OWN ``guest_atom_count`` / ``guest_nmolecules``
+                (populated by the ion inserter from the source interface), so
+                the ion_structure itself is passed to the helper as the
+                ``structure`` argument (no interface_structure ref to follow).
 
         Returns:
             True if export succeeded
@@ -467,13 +489,44 @@ class IonGROMACSExporter:
         top_path = path.with_name(path.stem + '.top')
         
         try:
+            # Stage hydrate guest ITPs (config-driven, plan 44.1-08/15).
+            # Replaces the broken _detect_guest_type_from_structure (returns
+            # None for custom guests like etoh_e2e) + shutil.copy(
+            # {guest_type}_hydrate.itp) (FileNotFoundError for custom) pattern.
+            # The helper handles both paths: custom guests get a transformed
+            # ITP (moleculetype {base}_H, [atomtypes] commented, [atoms] resname
+            # {base}_H) written to path.parent; built-in ch4/thf get the
+            # bundled pre-transformed {guest_type}_hydrate.itp copied across.
+            #
+            # IonStructure has NO interface_structure field (types.py:826-876)
+            # — it carries its OWN guest_atom_count / guest_nmolecules
+            # (populated by IonInserter.replace_water_with_ions from the
+            # source interface, ion_inserter.py:243/287/312/538). Pass the
+            # ion_structure itself as the structure for the helper's presence
+            # gate + built-in detection. Matches the 44.1-13
+            # CustomMoleculeGROMACSExporter pattern (which also passes the
+            # flattened structure, not interface_structure, because the
+            # flattened structure's own attrs are authoritative). The
+            # 44.1-11 helper regression fix (recover guest_nmolecules from
+            # molecule_index) is ALREADY in place — inherited by this plan.
+            from quickice.output.guest_info import _stage_hydrate_guest_itps
+            custom_guest_info, _staged_guest_itps = _stage_hydrate_guest_itps(
+                path.parent, hydrate_config, ion_structure,
+                guest_atom_count=getattr(ion_structure, 'guest_atom_count', 0),
+                guest_nmolecules=getattr(ion_structure, 'guest_nmolecules', 0),
+            )
+
             # Write .gro file
             from quickice.output.gromacs_writer import write_ion_gro_file
-            write_ion_gro_file(ion_structure, str(path))
+            write_ion_gro_file(
+                ion_structure, str(path), custom_guest_info=custom_guest_info
+            )
             
             # Write .top file
             from quickice.output.gromacs_writer import write_ion_top_file
-            write_ion_top_file(ion_structure, str(top_path))
+            write_ion_top_file(
+                ion_structure, str(top_path), custom_guest_info=custom_guest_info
+            )
             
             # Create ion.itp with ion parameters (named ion.itp to match .top references)
             from quickice.structure_generation.gromacs_ion_export import write_ion_itp
@@ -487,21 +540,14 @@ class IonGROMACSExporter:
             water_itp_path = path.with_name("tip4p-ice.itp")
             shutil.copy(itp_source, water_itp_path)
             
-            # Copy guest .itp file if guests are present in the original interface
-            guest_type = _detect_guest_type_from_structure(ion_structure)
-            
-            if guest_type:
-                try:
-                    guest_itp_source = _get_hydrate_guest_itp_path(guest_type)
-                    guest_itp_dest = path.with_name(f"{guest_type}_hydrate.itp")
-                    shutil.copy(guest_itp_source, guest_itp_dest)
-                except FileNotFoundError:
-                    QMessageBox.warning(
-                        self.parent, "Missing Guest ITP",
-                        f"Guest ITP file for '{guest_type}' not found.\n"
-                        f"The exported .top file will reference it, but it won't be bundled.\n"
-                        f"Add the missing .itp file manually before running GROMACS."
-                    )
+            # Guest .itp staging is config-driven via _stage_hydrate_guest_itps
+            # above. The previous _detect_guest_type_from_structure +
+            # shutil.copy({guest_type}_hydrate.itp) + QMessageBox.warning block
+            # is removed: it could not handle custom guests (detect returns
+            # None, so no ITP was staged and grompp would fail with a
+            # missing-ITP error), and the helper now covers both the custom
+            # (transform+write) and built-in (shutil.copy of the bundled
+            # _hydrate.itp) paths in one place.
             
             # Copy solute .itp file if solutes are present (liquid solutes use _liquid.itp)
             if ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None:
