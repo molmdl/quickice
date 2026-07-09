@@ -417,5 +417,135 @@ def test_build_custom_guest_info_from_guest_info_module():
     assert entry["itp_path"] == ETOH_ITP, entry
 
 
+# ── _stage_hydrate_guest_itps shared helper tests (Phase 44.1-08) ─────────────
+
+
+def test_stage_hydrate_guest_itps_helper(tmp_path):
+    """_stage_hydrate_guest_itps stages hydrate-guest ITPs for the 4 GUI
+    exporters (interface / solute / custom-molecule / ion) in a config-driven
+    way, returning (custom_guest_info, itp_files).
+
+    Phase 44.1-08 DRYs the broken ``_detect_guest_type_from_structure`` (returns
+    None for custom) + ``shutil.copy({guest_type}_hydrate.itp)`` (FileNotFoundError
+    for custom) pattern duplicated 4x in quickice/gui/export.py. Mirrors
+    hydrate_export.py:253-359 (42-08) but config-driven (44.1-RESEARCH §5 Option A
+    — safe for the interface path: you can't change the interface without
+    regenerating from the hydrate, so no 42-08-style desync).
+
+    Three cases:
+    - No-guest: hydrate_config=None + zero counts -> (None, {}); nothing staged.
+    - Custom: etoh_e2e config -> custom_guest_info is a 1-entry list with
+      mol_type='etoh_e2e'/residue_name='MOL_H', and a transformed etoh.itp
+      (moleculetype 'MOL_H', [atomtypes] commented, [atoms] resname 'MOL_H') is
+      written to output_dir.
+    - Built-in: ch4 config -> custom_guest_info is None (no custom) and the
+      bundled ch4_hydrate.itp is copied to output_dir (pre-transformed; no
+      transform needed, matching the existing export.py built-in path).
+    """
+    from quickice.output.guest_info import _stage_hydrate_guest_itps
+    from quickice.structure_generation.types import HydrateConfig
+
+    # ── No-guest case: hydrate_config=None, zero counts -> (None, {}) ──
+    # This is the ion-only / ice-only export path: no hydrate guests to stage.
+    # The helper short-circuits at the presence gate without touching the
+    # filesystem (no ITP reads/writes/copies).
+    cgi_none, itps_none = _stage_hydrate_guest_itps(
+        tmp_path, None, None, guest_atom_count=0, guest_nmolecules=0
+    )
+    assert cgi_none is None, f"no-guest -> expected None custom_guest_info, got {cgi_none}"
+    assert itps_none == {}, f"no-guest -> expected empty itp_files, got {itps_none}"
+    # Nothing was staged to the output dir.
+    assert list(tmp_path.iterdir()) == [], "no-guest path must not stage any files"
+
+    # ── Custom case: etoh_e2e config -> transform + write custom ITP ──
+    # 72 atoms / 8 molecules = 9 atoms/mol (ethanol). The presence gate passes
+    # (both > 0), _build_custom_guest_info returns a 1-entry list (deduped:
+    # sI small+large both etoh_e2e -> 1 entry), and the helper transforms the
+    # source etoh.itp (moleculetype 'MOL' -> 'MOL_H', [atomtypes] commented,
+    # [atoms] resname 'MOL' -> 'MOL_H') and writes it to output_dir.
+    cfg_custom = HydrateConfig(
+        lattice_type="sI",
+        guest_type="etoh_e2e",
+        guest_residue_name="MOL",
+        guest_gro_path=str(ETOH_GRO),
+        guest_itp_path=str(ETOH_ITP),
+        guest_atom_labels=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
+        guest_atom_count=9,
+    )
+    custom_dir = tmp_path / "custom"
+    custom_dir.mkdir()
+    cgi_custom, itps_custom = _stage_hydrate_guest_itps(
+        custom_dir, cfg_custom, None, guest_atom_count=72, guest_nmolecules=8
+    )
+    # custom_guest_info is a 1-entry list (deduped) for the gro/top writers.
+    assert cgi_custom is not None, "custom path -> custom_guest_info must not be None"
+    assert isinstance(cgi_custom, list), cgi_custom
+    assert len(cgi_custom) == 1, f"expected 1 entry (deduped), got {len(cgi_custom)}: {cgi_custom}"
+    centry = cgi_custom[0]
+    assert centry["mol_type"] == "etoh_e2e", centry
+    assert centry["residue_name"] == "MOL_H", centry
+    assert centry["itp_path"] == ETOH_ITP, centry
+    # The transformed ITP was written to output_dir under the source filename.
+    staged_itp = custom_dir / "etoh.itp"
+    assert staged_itp.exists(), f"expected staged {staged_itp}, dir contents: {list(custom_dir.iterdir())}"
+    assert "etoh.itp" in itps_custom, itps_custom
+    assert itps_custom["etoh.itp"] == str(staged_itp), itps_custom
+    # Verify the transform was applied (mirrors hydrate_export.py:353-359):
+    # - [atomtypes] commented out (Step 1)
+    # - moleculetype name -> 'MOL_H' (Step 2)
+    # - [atoms] resname column -> 'MOL_H' (Step 3, deferred from 38-04)
+    transformed = staged_itp.read_text()
+    assert "; [ atomtypes ]" in transformed, "Step 1: [atomtypes] must be commented out"
+    assert "MOL_H" in transformed, "transformed ITP must carry the MOL_H moleculetype/resname"
+    # moleculetype line: 'MOL_H       3' (name + nrexcl)
+    moltype_lines = [
+        ln for ln in transformed.splitlines()
+        if ln.strip() and not ln.strip().startswith(";")
+        and ln.split()[0] == "MOL_H"
+    ]
+    assert moltype_lines, "expected a 'MOL_H ...' moleculetype name line"
+    # Every [atoms] data row carries resname 'MOL_H' (field index 3).
+    in_atoms = False
+    atom_rows_checked = 0
+    for ln in transformed.splitlines():
+        s = ln.strip()
+        if s.startswith("[") and "atoms" in s.lower():
+            in_atoms = True
+            continue
+        if in_atoms and s.startswith("["):
+            break
+        if in_atoms and s and not s.startswith(";"):
+            fields = s.split()
+            if len(fields) >= 4:
+                assert fields[3] == "MOL_H", f"[atoms] resname must be MOL_H, got {fields[3]!r}: {ln!r}"
+                atom_rows_checked += 1
+    # Sanity: we actually inspected [atoms] rows (etoh.itp has 9 atoms).
+    assert atom_rows_checked == 9, f"expected 9 [atoms] rows with MOL_H resname, got {atom_rows_checked}"
+
+    # ── Built-in case: ch4 config -> copy bundled ch4_hydrate.itp ──
+    # _build_custom_guest_info returns None for ch4 (built-in excluded), so the
+    # helper takes the built-in path: detect guest_type (config fallback here
+    # since structure=None) and shutil.copy the pre-transformed ch4_hydrate.itp.
+    # custom_guest_info is None (no custom guests for the writers).
+    cfg_builtin = HydrateConfig(lattice_type="sI", guest_type="ch4")
+    builtin_dir = tmp_path / "builtin"
+    builtin_dir.mkdir()
+    cgi_builtin, itps_builtin = _stage_hydrate_guest_itps(
+        builtin_dir, cfg_builtin, None, guest_atom_count=40, guest_nmolecules=8
+    )
+    # Built-in path -> custom_guest_info is None (the MoleculetypeRegistry handles
+    # built-in ch4/thf in the gro/top writers; no custom_guest_info kwarg needed).
+    assert cgi_builtin is None, f"built-in ch4 -> expected None custom_guest_info, got {cgi_builtin}"
+    # The bundled ch4_hydrate.itp was copied to output_dir.
+    assert "ch4_hydrate.itp" in itps_builtin, itps_builtin
+    staged_builtin = builtin_dir / "ch4_hydrate.itp"
+    assert staged_builtin.exists(), f"expected staged {staged_builtin}, dir contents: {list(builtin_dir.iterdir())}"
+    assert itps_builtin["ch4_hydrate.itp"] == str(staged_builtin), itps_builtin
+    # The bundled _hydrate.itp is pre-transformed (moleculetype 'CH4_H'); the
+    # built-in path copies it unchanged (matches existing export.py:185-187).
+    builtin_content = staged_builtin.read_text()
+    assert "CH4_H" in builtin_content, "bundled ch4_hydrate.itp must carry the CH4_H moleculetype"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
