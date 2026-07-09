@@ -43,18 +43,28 @@ from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
 )
 from quickice.structure_generation.modes.slab import assemble_slab  # noqa: E402
+from quickice.structure_generation.custom_molecule_inserter import (  # noqa: E402
+    CustomMoleculeInserter,
+)
 from quickice.structure_generation.types import (  # noqa: E402
+    CustomMoleculeConfig,
     HydrateConfig,
     InterfaceConfig,
     MoleculeIndex,
 )
-from quickice.gui.export import InterfaceGROMACSExporter, SoluteGROMACSExporter  # noqa: E402
+from quickice.gui.export import (  # noqa: E402
+    CustomMoleculeGROMACSExporter,
+    InterfaceGROMACSExporter,
+    SoluteGROMACSExporter,
+)
 from e2e_export_helpers import (  # noqa: E402
     _stage_itp_files,
     _stage_custom_guest_itp,
     _insert_solutes,
     run_gmx_grompp,
     MDP_PATH,
+    ETOH_GRO,
+    ETOH_ITP,
     parse_top_molecules,
     parse_gro_residue_names,
     assert_itp_completeness,
@@ -497,6 +507,266 @@ def test_custom_guest_solute_export_grompp(tmp_path):
     gro_res = set(parse_gro_residue_names(str(gro_path)))
     assert "SOL" in gro_res and "MOL_H" in gro_res and "CH4_L" in gro_res, (
         f"expected SOL + MOL_H + CH4_L in .gro residues, got {gro_res}"
+    )
+    assert "GUE" not in gro_res, (
+        f"GUE must NOT appear in .gro residues (custom_guest_info not threaded): "
+        f"{gro_res}"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# GUI CustomMoleculeGROMACSExporter custom-guest custom-molecule export (44.1-13)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+def test_custom_guest_custom_molecule_export_grompp(tmp_path):
+    """gmx grompp exits 0 on a custom ethanol guest hydrate exported via the
+    GUI ``CustomMoleculeGROMACSExporter.export_custom_molecule_gromacs`` method
+    (plan 44.1-13).
+
+    Mirrors ``test_custom_guest_solute_export_grompp`` (44.1-11) but exercises
+    the CUSTOM MOLECULE exporter (ice+water+guest+custom molecule) instead of
+    the solute exporter (ice+water+guest+solute). This is the THIRD of four
+    per-exporter wiring plans (44.1-09 interface / 44.1-11 solute /
+    44.1-13 custom-molecule / 44.1-15 ion).
+
+    A custom-molecule export has TWO kinds of "custom" molecules:
+      1. The hydrate CAGE GUEST (ethanol in cages) — staged via
+         ``_stage_hydrate_guest_itps`` as ``etoh.itp`` (moleculetype MOL_H) and
+         threaded to the writers via ``custom_guest_info``. This is the key
+         thing this test verifies (the plan's must-have: "custom guest ITP
+         staged + .top references MOL_H (not GUE)").
+      2. The USER-PROVIDED custom molecule (also ethanol here) inserted via
+         ``CustomMoleculeInserter`` — staged by the exporter's existing
+         custom-molecule ITP copy (atomtypes commented).
+
+    Both use the SAME source ``etoh.itp``/``etoh.gro``. To avoid a filename
+    COLLISION (the cage-guest staging writes ``etoh.itp`` with moleculetype
+    MOL_H, but the custom-molecule copy would overwrite it with the original
+    moleculetype) and a DUPLICATE ``#include "etoh.itp"`` in the .top, the
+    custom molecule uses a RENAMED COPY (``cmet.itp``/``cmet.gro``) with the
+    ``[ moleculetype ]`` name changed from ``etoh`` to ``MOL``. This makes:
+      - ``.top [molecules]`` use ``MOL`` (from ``parse_itp_file(cmet.itp)``)
+      - ``.gro`` use ``MOL`` (from ``register_custom_molecule()``)
+      so ``assert_gro_top_consistent`` passes (direct match). The cage guest
+    still uses ``etoh.itp`` -> ``MOL_H``. No filename collision, no duplicate
+    #include.
+
+    Flow:
+      1. Generate a REAL custom ethanol hydrate via
+         ``HydrateStructureGenerator`` (sI 1x1x1, fast).
+      2. ``hydrate.to_candidate()`` -> ``assemble_slab(...)`` ->
+         InterfaceStructure (no IndexError -- plans 44.1-02/03/05 fixed the
+         guest_atom_count threading through slab mode).
+      3. Copy ``etoh.gro``/``etoh.itp`` to ``tmp_path/cmet.gro``/``cmet.itp``
+         with the ``[ moleculetype ]`` name renamed from ``etoh`` to ``MOL``
+         (so the .top ``[molecules]`` name matches the .gro residue name).
+         Insert 1 custom molecule via ``CustomMoleculeInserter.place_random``
+         -> ``CustomMoleculeStructure`` (carries ``interface_structure`` with
+         the ethanol cage guests).
+      4. Mock ``QFileDialog.getSaveFileName`` (under ``QT_QPA_PLATFORM=offscreen``
+         it returns ``("", "")`` which makes the exporter return ``False``
+         without writing any files). The exporter calls ``getSaveFileName`` ONCE
+         for the .gro path; the .top path is derived from ``path.stem``.
+         ``QMessageBox`` is mocked to suppress any warning/error dialogs.
+      5. ``exporter.export_custom_molecule_gromacs(custom_structure,
+         hydrate_config=config)`` calls the shared helper
+         ``_stage_hydrate_guest_itps`` (plan 44.1-08) which:
+           - builds ``custom_guest_info`` from the hydrate config
+             ``[{mol_type='etoh_e2e', residue_name='MOL_H',
+                itp_path=Path('quickice/data/custom/etoh.itp')}]``
+           - transforms + writes the custom ``etoh.itp`` to the workspace
+             (moleculetype ``MOL_H``, ``[atomtypes]`` commented, ``[atoms]``
+             resname ``MOL_H``) via the reused ``transform_guest_itp``
+         then threads ``custom_guest_info`` to BOTH
+         ``write_custom_molecule_gro_file`` and ``write_custom_molecule_top_file``
+         (extended in 44.1-13 to accept the kwarg -- previously they emitted
+         ``guest_res_name="GUE"`` + a non-existent ``#include "guest.itp"``
+         for custom guests, which made grompp fatal), then copies
+         ``tip4p-ice.itp`` + the custom molecule ``cmet.itp`` (atomtypes
+         commented).
+      6. ``assert_itp_completeness`` + ``assert_gro_top_consistent`` (file
+         consistency always runs).
+      7. ``gmx grompp`` -> ``rc == 0`` (topology is self-consistent +
+         simulation-ready).
+
+    This verifies the plan's wiring: ``hydrate_config`` ->
+    ``_stage_hydrate_guest_itps`` -> ``custom_guest_info`` -> custom-molecule
+    writers -> valid GROMACS output. The previous broken path
+    (``hydrate_config`` not accepted; ``write_custom_molecule_top_file`` used
+    ``detect_guest_type_from_atoms`` -> None for custom ->
+    ``guest_res_name="GUE"`` + ``#include "guest.itp"``;
+    ``_detect_guest_type_from_structure`` -> None -> ``shutil.copy`` raised
+    ``FileNotFoundError``) would fail at grompp with
+    ``File not found: 'guest.itp'`` and a ``GUE`` moleculetype that no ITP
+    defines.
+    """
+    # 1. Generate a real custom ethanol hydrate (sI 1x1x1, fast).
+    gen = HydrateStructureGenerator()
+    config = HydrateConfig(
+        lattice_type="sI",
+        guest_type="etoh_e2e",
+        guest_residue_name="MOL",
+        guest_gro_path="quickice/data/custom/etoh.gro",
+        guest_itp_path="quickice/data/custom/etoh.itp",
+        guest_atom_labels=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
+        guest_atom_count=9,
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    hydrate = gen.generate(config)
+
+    # 2. to_candidate() -> assemble_slab() -> InterfaceStructure (44.1-02/05).
+    candidate = hydrate.to_candidate()
+    iface = assemble_slab(
+        candidate,
+        InterfaceConfig(
+            mode="slab",
+            box_x=3.0,
+            box_y=3.0,
+            box_z=8.0,
+            seed=42,
+            ice_thickness=2.0,
+            water_thickness=4.0,
+        ),
+    )
+    # Custom ethanol (9 atoms/mol) must be threaded correctly through slab
+    # mode (44.1-05): guest_atom_count == 9 * guest_nmolecules.
+    assert iface.guest_nmolecules > 0, "custom ethanol slab should have guests"
+    assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+        f"custom ethanol slab guest_atom_count={iface.guest_atom_count} != "
+        f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
+    )
+
+    # 3. Build a renamed copy of the ethanol custom molecule data so the
+    #    custom-molecule ITP (cmet.itp) does NOT collide with the cage-guest
+    #    ITP (etoh.itp, staged as MOL_H by _stage_hydrate_guest_itps). Both
+    #    the cage guest and the custom molecule use the same source etoh.itp;
+    #    without the rename the exporter's custom-molecule ITP copy (atomtypes
+    #    commented, moleculetype "etoh") would OVERWRITE the staged cage-guest
+    #    ITP (moleculetype MOL_H), and the .top would have a DUPLICATE
+    #    #include "etoh.itp". The [moleculetype] name is renamed from "etoh"
+    #    to "MOL" so the .top [molecules] name ("MOL" from parse_itp_file)
+    #    matches the .gro residue name ("MOL" from register_custom_molecule).
+    #    The [atoms] resname is already "MOL" in etoh.itp.
+    cmet_gro = tmp_path / "cmet.gro"
+    cmet_itp = tmp_path / "cmet.itp"
+    shutil.copy(ETOH_GRO, cmet_gro)
+    cmet_lines = ETOH_ITP.read_text().splitlines(keepends=True)
+    _in_moltype = False
+    for i, line in enumerate(cmet_lines):
+        if "[ moleculetype ]" in line:
+            _in_moltype = True
+        elif _in_moltype and line.strip() and not line.strip().startswith(";"):
+            # First non-comment, non-empty line after [ moleculetype ] is the
+            # moleculetype name ("etoh       3"); rename "etoh" -> "MOL".
+            cmet_lines[i] = line.replace("etoh", "MOL", 1)
+            break
+    cmet_itp.write_text("".join(cmet_lines))
+
+    # Insert 1 custom molecule into the interface. CustomMoleculeInserter
+    # creates its own registry internally (register_custom_molecule() ->
+    # "MOL"), so the .gro residue name is "MOL" and matches the renamed
+    # cmet.itp moleculetype. place_random places the molecule in the water
+    # region (no overlap with ice/water/guest regions).
+    cm_config = CustomMoleculeConfig(
+        placement_mode="random",
+        gro_path=cmet_gro,
+        itp_path=cmet_itp,
+        molecule_count=1,
+    )
+    inserter = CustomMoleculeInserter(cm_config, seed=42)
+    custom_structure = inserter.place_random(iface, 1)
+    assert custom_structure.custom_molecule_count > 0, (
+        "custom molecule inserter should place 1 molecule in the water region"
+    )
+    # The custom structure must carry the guest info propagated from the
+    # interface (custom_molecule_inserter.py:782-783) so the exporter's
+    # staging helper presence gate passes.
+    assert custom_structure.guest_atom_count > 0, (
+        "CustomMoleculeStructure.guest_atom_count must be propagated from the "
+        "interface for the staging helper's presence gate"
+    )
+
+    # 4. Mock QFileDialog + QMessageBox so the exporter runs end-to-end
+    #    without a real GUI. The exporter calls getSaveFileName ONCE for the
+    #    .gro path; the .top path is derived from path.stem (no second dialog).
+    gro_path = tmp_path / "output.gro"
+    top_path = tmp_path / "output.top"
+    with patch(
+        "quickice.gui.export.QFileDialog.getSaveFileName",
+        return_value=(str(gro_path), "GRO Files (*.gro)"),
+    ), patch("quickice.gui.export.QMessageBox"):
+        exporter = CustomMoleculeGROMACSExporter(parent_widget=None)
+        ok = exporter.export_custom_molecule_gromacs(
+            custom_structure, hydrate_config=config
+        )
+        assert ok is True, (
+            "export_custom_molecule_gromacs returned False -- export failed "
+            "(the QFileDialog mock may not have been picked up, or staging "
+            "raised)"
+        )
+
+    # 5. Files were written by the exporter (writers + ITP staging).
+    assert gro_path.exists(), f".gro not written: {gro_path}"
+    assert top_path.exists(), f".top not written: {top_path}"
+    assert (tmp_path / "tip4p-ice.itp").exists(), (
+        "water ITP (tip4p-ice.itp) not staged by the exporter"
+    )
+    assert (tmp_path / "etoh.itp").exists(), (
+        "custom guest ITP (etoh.itp) not staged by _stage_hydrate_guest_itps"
+    )
+    assert (tmp_path / "cmet.itp").exists(), (
+        "custom molecule ITP (cmet.itp) not copied by the exporter"
+    )
+    # The staged etoh.itp must be the TRANSFORMED copy (moleculetype MOL_H),
+    # not the raw source ITP (moleculetype etoh). This is the prerequisite for
+    # grompp: the .top [molecules] lists MOL_H, so the #include'd ITP must
+    # define moleculetype MOL_H.
+    staged_etoh = (tmp_path / "etoh.itp").read_text()
+    assert "MOL_H" in staged_etoh, (
+        "staged etoh.itp is missing the MOL_H moleculetype -- transform_guest_itp "
+        "was not applied by _stage_hydrate_guest_itps"
+    )
+
+    # 6. Stage the MDP for grompp + run file-consistency assertions.
+    shutil.copy(MDP_PATH, tmp_path / "em.mdp")
+    assert_itp_completeness(str(top_path), tmp_path)
+    assert_gro_top_consistent(str(gro_path), str(top_path))
+
+    # 7. Run gmx grompp -- must exit 0 (topology is self-consistent +
+    #    simulation-ready). The previous broken path (write_custom_molecule_top_file
+    #    emitted guest_res_name="GUE" + no #include for the custom ITP;
+    #    _detect_guest_type_from_structure -> None -> shutil.copy raised
+    #    FileNotFoundError) would fail here with "File not found: 'guest.itp'"
+    #    and a GUE moleculetype that no ITP defines.
+    exit_code, stderr = run_gmx_grompp(
+        tmp_path, gro_file="output.gro", top_file="output.top"
+    )
+    assert exit_code == 0, (
+        f"gmx grompp failed (GUI CustomMoleculeGROMACSExporter custom guest):\n{stderr}"
+    )
+
+    # 8. .top [molecules] lists SOL + MOL_H + MOL; .gro residues contain
+    #    SOL + MOL_H + MOL. This proves the custom_guest_info threading
+    #    reached the custom-molecule writers: the [molecules] block uses
+    #    custom_guest_info['residue_name'] (MOL_H) for the cage guest and the
+    #    ITP moleculetype name (MOL) for the custom molecule; the .gro emits
+    #    MOL_H residues for the 9-atom ethanol cage-guest chunk and MOL
+    #    residues for the custom molecule.
+    mols = parse_top_molecules(str(top_path))
+    assert "SOL" in mols and "MOL_H" in mols and "MOL" in mols, (
+        f"expected SOL + MOL_H + MOL in [molecules], got {mols}"
+    )
+    assert "GUE" not in mols, (
+        f"GUE must NOT appear in [molecules] (custom_guest_info not threaded): "
+        f"{mols}"
+    )
+    gro_res = set(parse_gro_residue_names(str(gro_path)))
+    assert "SOL" in gro_res and "MOL_H" in gro_res and "MOL" in gro_res, (
+        f"expected SOL + MOL_H + MOL in .gro residues, got {gro_res}"
     )
     assert "GUE" not in gro_res, (
         f"GUE must NOT appear in .gro residues (custom_guest_info not threaded): "
