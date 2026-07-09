@@ -329,31 +329,33 @@ class TestCustomGuestUpload:
         large = cfg.cage_guest_assignments['large']
         assert large.is_custom_guest is False
 
-    def test_pitfall6_auto_clears_second_cage(self, panel):
-        """Selecting custom in a second cage auto-clears the first; get_configuration does not raise."""
+    def test_same_custom_in_two_cages_gui_kept(self, panel):
+        """Same custom guest in 2 cages is allowed by the engine (44.1-01); both kept.
+
+        After 44.1-01 relaxed the engine (``residue_name``→``guest_type``
+        check in ``HydrateConfig.__post_init__`` only rejects genuine
+        collisions — a DIFFERENT ``guest_type`` claiming an already-seen
+        residue name) and 44.1-18 removed the 44-02 GUI auto-clear
+        mitigation, BOTH cages keep the custom guest (same ``guest_type``
+        aggregates into one ``_H`` moleculetype exactly like ``ch4``).
+        """
         _upload_valid_pair(panel, _ETOH_GRO, _ETOH_ITP)
         _select_lattice(panel, "sI")
         _set_guest(panel, "small", panel._custom_guest['guest_type'])
         _set_guest(panel, "large", panel._custom_guest['guest_type'])
-        # After the second selection, only ONE cage should have the custom
-        # guest (the most-recently-changed cage keeps it; the other reverts
-        # to the first built-in, ch4).
+        # After 44.1-01 engine relaxation + 44.1-18 removal of auto-clear,
+        # BOTH cages keep the custom guest (same guest_type aggregates like ch4).
         custom_type = panel._custom_guest['guest_type']
         n_custom = sum(
             1 for c in panel._cage_guest_combos.values()
             if c.currentData() == custom_type
         )
-        assert n_custom == 1
-        # get_configuration must NOT raise (Pitfall 6 would raise ValueError
-        # if both cages had the custom guest with the same residue name).
+        assert n_custom == 2
+        # get_configuration must NOT raise (engine allows same guest_type in 2 cages).
         cfg = panel.get_configuration()
-        # Exactly one custom assignment + one built-in assignment.
+        # Both assignments are custom.
         custom_count = sum(
             1 for a in cfg.cage_guest_assignments.values() if a.is_custom_guest
         )
-        builtin_count = sum(
-            1 for a in cfg.cage_guest_assignments.values() if not a.is_custom_guest
-        )
-        assert custom_count == 1
-        assert builtin_count == 1
+        assert custom_count == 2
 
