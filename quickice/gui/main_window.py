@@ -1806,7 +1806,9 @@ class MainWindow(QMainWindow):
             return
         
         solute_structure = self._current_solute_result
-        success = self._solute_gromacs_exporter.export_solute_gromacs(solute_structure)
+        success = self._solute_gromacs_exporter.export_solute_gromacs(
+            solute_structure, hydrate_config=self._current_hydrate_config
+        )
         
         if success:
             # Count water molecules from interface
