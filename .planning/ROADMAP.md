@@ -195,23 +195,38 @@ Two issues discovered during Phase 44-02 human-verify checkpoint (user-generated
 
 **Scope note:** Phase 44 goal ("Hydrate tab") is COMPLETE — these are cross-tab concerns that predates Phase 44 (the Interface export path was never wired for custom guests in any phase). Marked INSERTED/URGENT because the user hit this immediately during 44-02 acceptance testing.
 
-#### Phase 45: CLI Integration
-**Goal**: All new hydrate features are accessible from the CLI for scripting and batch workflows
+#### Phase 45: E2E Hydrate Tab Workflow (redefined from CLI Integration)
+**Goal**: Prove that ALL GUI tabs (Ice → Hydrate → Interface → Custom → Solute → Ion → Export) AND the CLI pipeline work correctly end-to-end with BOTH (a) the 7 new lattice types from Phase 39 (c0te, c1te, c2te, ice1hte, sTprime, 16, 17) and (b) custom hydrate guests (Phase 40 GenIce2 bridge). Close the --depol CLI flag gap (CLI-03).
 **Depends on**: Phase 38 (pipeline), Phase 39 (lattice types), Phase 40 (custom guest), Phase 43 (depol)
 **Requirements**: CLI-01, CLI-02, CLI-03, CLI-04
 **Success Criteria** (what must be TRUE):
-  1. CLI --hydrate-lattice flag accepts all new lattice type names (c0te, c1te, c2te, ice1hte, sTprime, 16, 17)
-  2. CLI --custom-guest and --custom-guest-itp flags allow specifying a custom guest .gro/.itp file pair
-  3. CLI --depol flag supports strict/optimal selection with strict as default
-  4. CLI --guest-small and --guest-large flags enable mixed cage occupancy with per-cage occupancy values
-**Plans**: 1 plan (2 of 4 sub-items already satisfied; collapse remaining into one plan covering CLI-02 + CLI-03 + custom-guest grompp e2e)
+  1. New lattice types (sII, sH, c2te, ice1hte, sTprime, 16, 17) produce grompp-valid output through the Interface tab (GUI + CLI)
+  2. New lattice types (sII, c2te, ice1hte, 16) pass grompp through the FULL tab chain (Interface→Solute→Custom→Ion) via GUI + CLI
+  3. Water-only lattices (sTprime, 17) survive solute/ion insertion without crashing + grompp rc=0
+  4. Triclinic lattices (c0te, c1te) are blocked at the CLI interface step + GUI worker (e2e, not just validator)
+  5. Triclinic hydrate-only export @ 4×4×4 passes grompp (CLI + GUI — both export paths)
+  6. Custom ethanol guest with non-sI lattices (sII, c2te, ice1hte, 16) passes grompp through GUI + CLI
+  7. CLI --depol flag accepts strict/optimal with strict as default (CLI-03)
+  8. Mixed built-in occupancy with new lattices passes grompp via GUI hydrate exporter
+**Plans**: 14 plans in 6 waves (13 test-only + 1 code-change for --depol)
 
 Plans:
-- [x] 45-01a: Extend --hydrate-lattice for new types — **DONE in 39-03** (`parser.py:209` choices list already includes all 10 lattice types; `test_triclinic_blocking.py` covers c0te/c1te/c2te/ice1hte). Satisfies **CLI-01**.
-- [ ] 45-01b: Add `--custom-guest` / `--custom-guest-itp` flags + CLI custom-guest grompp e2e — **REMAINING**. `pipeline.py:113-115` comment explicitly defers this ("CLI surface is built-in-only for v4.7"). Covers **CLI-02** + closes the CLI half of EXPORT-06 / TEST-07 for custom guests. Combine with 45-02a in one plan (both touch `parser.py` + `pipeline.py`).
-- [ ] 45-02a: Add `--depol` flag (strict/optimal, default strict) — **REMAINING**. Config field exists since 43-01 (`HydrateConfig.depol_mode`); CLI call site at `pipeline.py:372` inherits "strict" automatically — just needs the argparse flag + passthrough. Covers **CLI-03**. Combine with 45-01b.
-- [x] 45-02b: `--guest-small`/`--guest-large` mixed occupancy — **DONE in 42-07** as repeatable `--cage-guest KEY=GUEST:OCC` (better design than two separate flags; supports medium cage + any cage_type_map key). `test_cli/test_mixed_cage_cli.py` has grompp e2e. Satisfies **CLI-04**.
-- [x] 45-03 (partial): CLI e2e for built-in mixed occupancy — **DONE in 42-07** (`test_mixed_cli_built_in_grompp`). Custom-guest CLI grompp e2e folds into 45-01b.
+- [ ] 45-01-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) GUI interface export + grompp
+- [ ] 45-02-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) CLI interface export + grompp
+- [ ] 45-03-PLAN.md — sH (4480 guests, slow) GUI + CLI interface export + grompp
+- [ ] 45-04-PLAN.md — New lattices (sII/c2te/ice1hte/16) GUI full cross-tab (4 exporters) + grompp
+- [ ] 45-05-PLAN.md — New lattices (sII/c2te/ice1hte/16) CLI full cross-tab (3 branches) + grompp
+- [ ] 45-06-PLAN.md — sH full cross-tab GUI (4 exporters) + CLI (3 branches) + grompp
+- [ ] 45-07-PLAN.md — Water-only (sTprime/17) solute/ion cross-tab — verify no crash + grompp (Pitfall 3)
+- [ ] 45-08-PLAN.md — Triclinic blocking e2e (CLI _run_interface_step + GUI worker) for c0te/c1te
+- [ ] 45-09-PLAN.md — Triclinic hydrate-only export @ 4×4×4 (CLI + GUI) + grompp for c0te/c1te (Pitfall 1 + 6)
+- [ ] 45-10-PLAN.md — Custom ethanol + non-sI lattices (sII/c2te/ice1hte/16) GUI interface export + grompp
+- [ ] 45-11-PLAN.md — Custom ethanol + non-sI lattices CLI interface export + grompp
+- [ ] 45-12-PLAN.md — --depol CLI flag (parser.py + pipeline.py threading + test) — closes CLI-03 (ONLY code change)
+- [ ] 45-13-PLAN.md — Mixed built-in (CH4+THF) + sII/16 via GUI hydrate exporter + grompp
+- [ ] 45-14-PLAN.md — Filled-ice (c2te/ice1hte) single-cage-key GUI hydrate export + grompp
+
+**Prior work already satisfied:** CLI-01 (--hydrate-lattice all 10 types — DONE in 39-03), CLI-04 (--cage-guest mixed occupancy — DONE in 42-07). CLI-02 (--custom-guest/--custom-guest-itp) is DEFERRED BY DESIGN (pipeline.py:73-81 — GUI-only for v4.7; CLI custom-cage-guest e2e tests use the Python API directly, tested in 45-10/45-11).
 
 #### Phase 46: VTK Rendering
 **Goal**: Custom guest molecules render with distinct visual style in the 3D hydrate viewer
@@ -277,12 +292,12 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
 | 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
 | 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 22/22 | ✓ Complete | 2026-07-10 |
-| 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
+| 45. E2E Hydrate Tab Workflow | v4.7 | 0/14 (13 test-only + 1 code-change --depol) | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
 | 48. Documentation | v4.7 | 0/2 (external + in-app help restructure) | Not started | - |
 
-**Remaining v4.7 work after reorganization:** ~5 plans (44-02, 45-01b+02a combined, 47-05, 48-01, 48-02) down from 14 stubs.
+**Remaining v4.7 work after reorganization:** ~18 plans (45-01..14 e2e hydrate tab workflow, 47-05 filled-ice grompp, 48-01, 48-02).
 
 ## Dependency Graph
 
