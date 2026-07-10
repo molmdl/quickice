@@ -869,6 +869,15 @@ class CLIPipeline:
             gro_path = str(self._output_dir / f"{step_name}.gro")
             top_path = str(self._output_dir / f"{step_name}.top")
 
+            # Build custom_guest_info from the persisted hydrate config (plan 44.1-17).
+            # self._hydrate_result carries .config (HydrateConfig) when the source
+            # step generated a hydrate; None for plain-ice CLI runs -> cgi=None ->
+            # built-in path (custom_guest_info=None) byte-identical to pre-44.1-17.
+            # The hydrate branch below keeps its own local custom_guest_info (the
+            # working reference); this threads cgi to the other 4 branches.
+            hydrate_config = getattr(self._hydrate_result, "config", None)
+            cgi = _build_custom_guest_info(hydrate_config)
+
             # Writer dispatch by step type
             if step_name == "ice":
                 write_gro_file(structure, gro_path)
@@ -918,17 +927,17 @@ class CLIPipeline:
                 write_interface_gro_file(wrapper, gro_path, custom_guest_info=custom_guest_info)
                 write_interface_top_file(wrapper, top_path, custom_guest_info=custom_guest_info)
             elif step_name == "interface":
-                write_interface_gro_file(structure, gro_path)
-                write_interface_top_file(structure, top_path)
+                write_interface_gro_file(structure, gro_path, custom_guest_info=cgi)
+                write_interface_top_file(structure, top_path, custom_guest_info=cgi)
             elif step_name == "custom":
-                write_custom_molecule_gro_file(structure, gro_path)
-                write_custom_molecule_top_file(structure, top_path)
+                write_custom_molecule_gro_file(structure, gro_path, custom_guest_info=cgi)
+                write_custom_molecule_top_file(structure, top_path, custom_guest_info=cgi)
             elif step_name == "solute":
-                write_solute_gro_file(structure, gro_path)
-                write_solute_top_file(structure, top_path)
+                write_solute_gro_file(structure, gro_path, custom_guest_info=cgi)
+                write_solute_top_file(structure, top_path, custom_guest_info=cgi)
             elif step_name == "ion":
-                write_ion_gro_file(structure, gro_path)
-                write_ion_top_file(structure, top_path)
+                write_ion_gro_file(structure, gro_path, custom_guest_info=cgi)
+                write_ion_top_file(structure, top_path, custom_guest_info=cgi)
 
             # Copy ITP files
             itp_files = copy_itp_files_for_structure(
