@@ -280,7 +280,8 @@ def _resolve_guest_type_for_hydrate_step(structure: Any, args_ref: Any = None) -
 
 
 def copy_itp_files_for_structure(
-    output_dir: Path, structure: Any, step_name: str, args_ref: Any = None
+    output_dir: Path, structure: Any, step_name: str, args_ref: Any = None,
+    hydrate_config: Any = None,
 ) -> list[str]:
     """Copy all required ITP files for a given structure and step type.
 
@@ -295,6 +296,12 @@ def copy_itp_files_for_structure(
         step_name: Step type name ('ice', 'hydrate', 'interface',
                    'custom', 'solute', 'ion').
         args_ref: Optional args namespace for fallback guest type resolution.
+        hydrate_config: Optional HydrateConfig persisted on the CLI pipeline
+            (``self._hydrate_result.config``). When set and carrying a custom
+            guest assignment, the interface/custom/solute/ion branches stage
+            the transformed custom guest ITP (mirror of the hydrate branch)
+            via ``copy_custom_guest_itp`` (plan 44.1-17). ``None`` for plain-ice
+            CLI runs -> built-in ``_detect_guest_type`` path unchanged.
 
     Returns:
         List of ITP filenames that were successfully copied.
@@ -333,6 +340,21 @@ def copy_itp_files_for_structure(
                 logger.warning("Hydrate step but no guest type detected — skipping guest ITP")
 
     elif step_name == "interface":
+        # Custom guest ITP staging (44.1-17): when the hydrate config carries a
+        # custom assignment, stage the transformed custom ITP (mirror the
+        # hydrate branch). The built-in _detect_guest_type path below is kept
+        # as a fallback (returns None for custom -> no-op for custom guests).
+        if hydrate_config is not None:
+            from quickice.output.guest_info import _build_custom_guest_info
+            cgi = _build_custom_guest_info(hydrate_config)
+            if cgi:
+                for ci in cgi:
+                    itp_name = copy_custom_guest_itp(
+                        output_dir, Path(ci["itp_path"]),
+                        ci["residue_name"].removesuffix("_H"),
+                    )
+                    if itp_name:
+                        copied.append(itp_name)
         # Interface step: tip4p-ice.itp + guest ITP if guests present
         guest_atom_count = getattr(structure, "guest_atom_count", 0)
         if guest_atom_count > 0:
@@ -345,6 +367,18 @@ def copy_itp_files_for_structure(
                 logger.warning("Interface has guests but type could not be detected")
 
     elif step_name == "custom":
+        # Custom guest ITP staging (44.1-17): mirror the hydrate branch.
+        if hydrate_config is not None:
+            from quickice.output.guest_info import _build_custom_guest_info
+            cgi = _build_custom_guest_info(hydrate_config)
+            if cgi:
+                for ci in cgi:
+                    itp_name = copy_custom_guest_itp(
+                        output_dir, Path(ci["itp_path"]),
+                        ci["residue_name"].removesuffix("_H"),
+                    )
+                    if itp_name:
+                        copied.append(itp_name)
         # Custom step: tip4p-ice.itp + custom ITP (atomtypes commented)
         #              + hydrate guest ITP if guests present
         itp_path = getattr(structure, "itp_path", None)
@@ -366,6 +400,18 @@ def copy_itp_files_for_structure(
                     copied.append(itp_name)
 
     elif step_name == "solute":
+        # Custom guest ITP staging (44.1-17): mirror the hydrate branch.
+        if hydrate_config is not None:
+            from quickice.output.guest_info import _build_custom_guest_info
+            cgi = _build_custom_guest_info(hydrate_config)
+            if cgi:
+                for ci in cgi:
+                    itp_name = copy_custom_guest_itp(
+                        output_dir, Path(ci["itp_path"]),
+                        ci["residue_name"].removesuffix("_H"),
+                    )
+                    if itp_name:
+                        copied.append(itp_name)
         # Solute step: tip4p-ice.itp + solute liquid ITP (atomtypes commented)
         #              + custom ITP if custom_molecule_count > 0 (atomtypes commented)
         #              + hydrate guest ITP if guests present
@@ -412,6 +458,18 @@ def copy_itp_files_for_structure(
                     copied.append(itp_name)
 
     elif step_name == "ion":
+        # Custom guest ITP staging (44.1-17): mirror the hydrate branch.
+        if hydrate_config is not None:
+            from quickice.output.guest_info import _build_custom_guest_info
+            cgi = _build_custom_guest_info(hydrate_config)
+            if cgi:
+                for ci in cgi:
+                    itp_name = copy_custom_guest_itp(
+                        output_dir, Path(ci["itp_path"]),
+                        ci["residue_name"].removesuffix("_H"),
+                    )
+                    if itp_name:
+                        copied.append(itp_name)
         # Ion step: tip4p-ice.itp + ion.itp (generated) + solute liquid ITP
         #           + custom ITP + hydrate guest ITP
         from quickice.structure_generation.gromacs_ion_export import write_ion_itp

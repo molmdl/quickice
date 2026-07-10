@@ -941,7 +941,7 @@ class CLIPipeline:
 
             # Copy ITP files
             itp_files = copy_itp_files_for_structure(
-                self._output_dir, structure, step_name
+                self._output_dir, structure, step_name, hydrate_config=hydrate_config
             )
 
             report_progress(
