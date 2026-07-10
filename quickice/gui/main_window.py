@@ -1865,7 +1865,9 @@ class MainWindow(QMainWindow):
             return
         
         custom_structure = self._current_custom_molecule_result
-        success = self._custom_molecule_gromacs_exporter.export_custom_molecule_gromacs(custom_structure)
+        success = self._custom_molecule_gromacs_exporter.export_custom_molecule_gromacs(
+            custom_structure, hydrate_config=self._current_hydrate_config
+        )
         
         if success:
             # Build complete molecule breakdown matching .gro file contents
