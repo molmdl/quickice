@@ -1648,7 +1648,9 @@ class MainWindow(QMainWindow):
             return
         
         iface = self._current_interface_result
-        success = self._interface_gromacs_exporter.export_interface_gromacs(iface)
+        success = self._interface_gromacs_exporter.export_interface_gromacs(
+            iface, hydrate_config=self._current_hydrate_config
+        )
         
         if success:
             # Build molecule breakdown — interface may contain guest molecules from hydrate
