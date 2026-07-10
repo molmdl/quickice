@@ -1745,7 +1745,9 @@ class MainWindow(QMainWindow):
             return
         
         ion_structure = self._current_ion_result
-        success = self._ion_gromacs_exporter.export_ion_gromacs(ion_structure)
+        success = self._ion_gromacs_exporter.export_ion_gromacs(
+            ion_structure, hydrate_config=self._current_hydrate_config
+        )
         
         if success:
             # Count water and ice molecules from molecule_index
