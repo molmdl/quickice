@@ -383,3 +383,15 @@ def test_export_solute_handler_passes_hydrate_config():
     assert 'hydrate_config=self._current_hydrate_config' in src, \
         'handler must pass self._current_hydrate_config to the exporter'
 
+
+def test_export_custom_molecule_handler_passes_hydrate_config():
+    """MainWindow._on_export_custom_molecule_gromacs passes self._current_hydrate_config
+    to the exporter so the config-driven custom guest path (44.1-13) activates
+    through the actual GUI export action (44.1-14).
+    """
+    import inspect
+    from quickice.gui.main_window import MainWindow
+    src = inspect.getsource(MainWindow._on_export_custom_molecule_gromacs)
+    assert 'hydrate_config=self._current_hydrate_config' in src, \
+        'handler must pass self._current_hydrate_config to the exporter'
+
