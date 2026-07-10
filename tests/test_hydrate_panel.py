@@ -359,3 +359,15 @@ class TestCustomGuestUpload:
         )
         assert custom_count == 2
 
+
+def test_export_interface_handler_passes_hydrate_config():
+    """MainWindow._on_export_interface_gromacs passes self._current_hydrate_config
+    to the exporter so the config-driven custom guest path (44.1-09) activates
+    through the actual GUI export action (44.1-10).
+    """
+    import inspect
+    from quickice.gui.main_window import MainWindow
+    src = inspect.getsource(MainWindow._on_export_interface_gromacs)
+    assert 'hydrate_config=self._current_hydrate_config' in src, \
+        'handler must pass self._current_hydrate_config to the exporter'
+
