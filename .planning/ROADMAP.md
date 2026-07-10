@@ -161,27 +161,27 @@ Plans:
 
 Plans:
 - [x] 44.1-01-PLAN.md — Pitfall 6 engine relaxation (track residue_name→guest_type; reject only different guest_types)
-- [ ] 44.1-02-PLAN.md — to_candidate() carries guest_descriptors + guest_atom_counts in metadata
-- [ ] 44.1-03-PLAN.md — count_guest_atoms accepts guest_atom_count for custom guests
-- [ ] 44.1-04-PLAN.md — Move _build_custom_guest_info to neutral quickice/output/guest_info.py
-- [ ] 44.1-05-PLAN.md — slab.py threads guest_atom_count from candidate metadata
-- [ ] 44.1-06-PLAN.md — pocket.py threads guest_atom_count from candidate metadata
-- [ ] 44.1-07-PLAN.md — piece.py threads guest_atom_count from candidate metadata
-- [ ] 44.1-08-PLAN.md — Shared _stage_hydrate_guest_itps helper (DRY across 4 exporters)
-- [ ] 44.1-09-PLAN.md — GUI InterfaceGROMACSExporter threads custom_guest_info + ITP staging
-- [ ] 44.1-10-PLAN.md — GUI MainWindow interface export handler passes hydrate_config
-- [ ] 44.1-11-PLAN.md — GUI SoluteGROMACSExporter + extend write_solute_top/gro_file with custom_guest_info
-- [ ] 44.1-12-PLAN.md — GUI MainWindow solute export handler passes hydrate_config
-- [ ] 44.1-13-PLAN.md — GUI CustomMoleculeGROMACSExporter + extend write_custom_molecule_top/gro_file
-- [ ] 44.1-14-PLAN.md — GUI MainWindow custom-molecule export handler passes hydrate_config
-- [ ] 44.1-15-PLAN.md — GUI IonGROMACSExporter + extend write_ion_top/gro_file with custom_guest_info
-- [ ] 44.1-16-PLAN.md — GUI MainWindow ion export handler passes hydrate_config
-- [ ] 44.1-17-PLAN.md — CLI interface/custom/solute/ion export branches thread custom_guest_info + itp_helpers
-- [ ] 44.1-18-PLAN.md — Remove 44-02 _enforce_single_custom_cage auto-clear (engine now allows 2 cages)
-- [ ] 44.1-19-PLAN.md — Full e2e (GUI): custom guest → interface → solute → ion → export grompp
-- [ ] 44.1-20-PLAN.md — Full e2e (CLI): custom guest → all export branches grompp
-- [ ] 44.1-21-PLAN.md — Full e2e: same custom guest in 2 cages (Pitfall 6 relaxation) → grompp
-- [ ] 44.1-22-PLAN.md — Regression guard: built-in ch4 + thf through ALL tabs (GUI + CLI)
+- [x] 44.1-02-PLAN.md — to_candidate() carries guest_descriptors + guest_atom_counts in metadata
+- [x] 44.1-03-PLAN.md — count_guest_atoms accepts guest_atom_count for custom guests
+- [x] 44.1-04-PLAN.md — Move _build_custom_guest_info to neutral quickice/output/guest_info.py
+- [x] 44.1-05-PLAN.md — slab.py threads guest_atom_count from candidate metadata
+- [x] 44.1-06-PLAN.md — pocket.py threads guest_atom_count from candidate metadata
+- [x] 44.1-07-PLAN.md — piece.py threads guest_atom_count from candidate metadata
+- [x] 44.1-08-PLAN.md — Shared _stage_hydrate_guest_itps helper (DRY across 4 exporters)
+- [x] 44.1-09-PLAN.md — GUI InterfaceGROMACSExporter threads custom_guest_info + ITP staging
+- [x] 44.1-10-PLAN.md — GUI MainWindow interface export handler passes hydrate_config
+- [x] 44.1-11-PLAN.md — GUI SoluteGROMACSExporter + extend write_solute_top/gro_file with custom_guest_info
+- [x] 44.1-12-PLAN.md — GUI MainWindow solute export handler passes hydrate_config
+- [x] 44.1-13-PLAN.md — GUI CustomMoleculeGROMACSExporter + extend write_custom_molecule_top/gro_file
+- [x] 44.1-14-PLAN.md — GUI MainWindow custom-molecule export handler passes hydrate_config
+- [x] 44.1-15-PLAN.md — GUI IonGROMACSExporter + extend write_ion_top/gro_file with custom_guest_info
+- [x] 44.1-16-PLAN.md — GUI MainWindow ion export handler passes hydrate_config
+- [x] 44.1-17-PLAN.md — CLI interface/custom/solute/ion export branches thread custom_guest_info + itp_helpers
+- [x] 44.1-18-PLAN.md — Remove 44-02 _enforce_single_custom_cage auto-clear (engine now allows 2 cages)
+- [x] 44.1-19-PLAN.md — Full e2e (GUI): custom guest → interface → solute → ion → export grompp
+- [x] 44.1-20-PLAN.md — Full e2e (CLI): custom guest → all export branches grompp
+- [x] 44.1-21-PLAN.md — Full e2e: same custom guest in 2 cages (Pitfall 6 relaxation) → grompp
+- [x] 44.1-22-PLAN.md — Regression guard: built-in ch4 + thf through ALL tabs (GUI + CLI)
 
 **Details:**
 Two issues discovered during Phase 44-02 human-verify checkpoint (user-generated custom guest hydrate → Interface tab → export):
@@ -276,7 +276,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 42. Mixed Cage Occupancy | v4.7 | 8/8 | ✓ Complete | 2026-07-06 |
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
 | 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
-| 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 1/22 | In progress | 2026-07-08 |
+| 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 22/22 | ✓ Complete | 2026-07-10 |
 | 45. CLI Integration | v4.7 | 0/1 (2 of 4 sub-items done in 39-03/42-07) | Not started | - |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |

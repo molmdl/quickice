@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-44 COMPLETE + Phase 46 verified-by-code. 51/61 requirements complete (GUI-02/05/06 closed in 44-02). Remaining: 45 (CLI 45-01b+02a), 47-05 (filled-ice grompp), 48 (docs). Two urgent cross-tab issues identified for a new phase: Pitfall 6 engine relaxation + interface-tab custom guest export wiring.
+**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-44.1 COMPLETE + Phase 46 verified-by-code. Phase 44.1 (INSERTED urgent cross-tab wiring) COMPLETE 22/22 plans, 13/13 must-haves verified (gmx grompp rc=0 at every export link). 51/61 requirements complete. Remaining: 45 (CLI 45-01b+02a), 47-05 (filled-ice grompp), 48 (docs).
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
