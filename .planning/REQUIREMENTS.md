@@ -76,8 +76,8 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 ### CLI Integration
 
 - [x] **CLI-01**: CLI --hydrate-lattice flag supports new lattice type names (c0te, c1te, c2te, ice1hte, sTprime, 16, 17) — *Phase 39-03*
-- [ ] **CLI-02**: CLI --custom-guest and --custom-guest-itp flags for custom guest .gro/.itp file pair — *Phase 45-01b*
-- [ ] **CLI-03**: CLI --depol flag (strict/optimal, default strict) — *Phase 45-02a*
+- [ ] **CLI-02**: CLI --custom-guest and --custom-guest-itp flags for custom guest .gro/.itp file pair — *Phase 45-01b (DEFERRED BY DESIGN — pipeline.py:73-81; GUI-only for v4.7; CLI custom-cage-guest e2e tested via Python API in 45-10/45-11)*
+- [x] **CLI-03**: CLI --depol flag (strict/optimal, default strict) — *Phase 45-12*
 - [x] **CLI-04**: CLI mixed occupancy via --guest-small and --guest-large with occupancy values — *Phase 42-07 (implemented as repeatable `--cage-guest KEY=GUEST:OCC`, superset of the original spec — supports medium cage + any cage_type_map key)*
 
 ### VTK Rendering
@@ -181,8 +181,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUI-05 | Phase 44-02 | Complete |
 | GUI-06 | Phase 42-06 + 44-02 | Complete |
 | CLI-01 | Phase 39-03 | Complete |
-| CLI-02 | Phase 45-01b | Pending |
-| CLI-03 | Phase 45-02a | Pending |
+| CLI-02 | Phase 45-01b | Pending (deferred by design — GUI-only for v4.7) |
+| CLI-03 | Phase 45-12 | Complete |
 | CLI-04 | Phase 42-07 | Complete |
 | VTK-01 | Phase 42-04 | Complete |
 | VTK-02 | Phase 42-04 + element map | Complete |
@@ -203,8 +203,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v4.7 requirements: 61 total (PIPE×4, LATTICE×9, GUEST×10, EXPORT×6, MIXED×5, DEPOL×3, GUI×6, CLI×4, VTK×2, TEST×8, DOCS×4)
 - Mapped to phases: 61/61 ✓
 - Unmapped: 0
-- Complete: 51
-- Pending: 10 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02/03 → 45-01b + 45-02a; TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
+- Complete: 52
+- Pending: 9 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02 → 45-01b (deferred by design); TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
 
 ---
 *Requirements defined: 2026-06-27*

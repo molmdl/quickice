@@ -211,20 +211,20 @@ Two issues discovered during Phase 44-02 human-verify checkpoint (user-generated
 **Plans**: 14 plans in 6 waves (13 test-only + 1 code-change for --depol)
 
 Plans:
-- [ ] 45-01-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) GUI interface export + grompp
-- [ ] 45-02-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) CLI interface export + grompp
-- [ ] 45-03-PLAN.md — sH (4480 guests, slow) GUI + CLI interface export + grompp
-- [ ] 45-04-PLAN.md — New lattices (sII/c2te/ice1hte/16) GUI full cross-tab (4 exporters) + grompp
-- [ ] 45-05-PLAN.md — New lattices (sII/c2te/ice1hte/16) CLI full cross-tab (3 branches) + grompp
-- [ ] 45-06-PLAN.md — sH full cross-tab GUI (4 exporters) + CLI (3 branches) + grompp
-- [ ] 45-07-PLAN.md — Water-only (sTprime/17) solute/ion cross-tab — verify no crash + grompp (Pitfall 3)
-- [ ] 45-08-PLAN.md — Triclinic blocking e2e (CLI _run_interface_step + GUI worker) for c0te/c1te
-- [ ] 45-09-PLAN.md — Triclinic hydrate-only export @ 4×4×4 (CLI + GUI) + grompp for c0te/c1te (Pitfall 1 + 6)
-- [ ] 45-10-PLAN.md — Custom ethanol + non-sI lattices (sII/c2te/ice1hte/16) GUI interface export + grompp
-- [ ] 45-11-PLAN.md — Custom ethanol + non-sI lattices CLI interface export + grompp
-- [ ] 45-12-PLAN.md — --depol CLI flag (parser.py + pipeline.py threading + test) — closes CLI-03 (ONLY code change)
-- [ ] 45-13-PLAN.md — Mixed built-in (CH4+THF) + sII/16 via GUI hydrate exporter + grompp
-- [ ] 45-14-PLAN.md — Filled-ice (c2te/ice1hte) single-cage-key GUI hydrate export + grompp
+- [x] 45-01-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) GUI interface export + grompp
+- [x] 45-02-PLAN.md — New lattices (sII/c2te/ice1hte/sTprime/16/17) CLI interface export + grompp
+- [x] 45-03-PLAN.md — sH (4480 guests, slow) GUI + CLI interface export + grompp
+- [x] 45-04-PLAN.md — New lattices (sII/c2te/ice1hte/16) GUI full cross-tab (4 exporters) + grompp
+- [x] 45-05-PLAN.md — New lattices (sII/c2te/ice1hte/16) CLI full cross-tab (3 branches) + grompp
+- [x] 45-06-PLAN.md — sH full cross-tab GUI (4 exporters) + CLI (3 branches) + grompp
+- [x] 45-07-PLAN.md — Water-only (sTprime/17) solute/ion cross-tab — verify no crash + grompp (Pitfall 3)
+- [x] 45-08-PLAN.md — Triclinic blocking e2e (CLI _run_interface_step + GUI worker) for c0te/c1te
+- [x] 45-09-PLAN.md — Triclinic hydrate-only export @ 4×4×4 (CLI + GUI) + grompp for c0te/c1te (Pitfall 1 + 6)
+- [x] 45-10-PLAN.md — Custom ethanol + non-sI lattices (sII/c2te/ice1hte/16) GUI interface export + grompp
+- [x] 45-11-PLAN.md — Custom ethanol + non-sI lattices CLI interface export + grompp
+- [x] 45-12-PLAN.md — --depol CLI flag (parser.py + pipeline.py threading + test) — closes CLI-03 (ONLY code change)
+- [x] 45-13-PLAN.md — Mixed built-in (CH4+THF) + sII/16 via GUI hydrate exporter + grompp
+- [x] 45-14-PLAN.md — Filled-ice (c2te/ice1hte) single-cage-key GUI hydrate export + grompp
 
 **Prior work already satisfied:** CLI-01 (--hydrate-lattice all 10 types — DONE in 39-03), CLI-04 (--cage-guest mixed occupancy — DONE in 42-07). CLI-02 (--custom-guest/--custom-guest-itp) is DEFERRED BY DESIGN (pipeline.py:73-81 — GUI-only for v4.7; CLI custom-cage-guest e2e tests use the Python API directly, tested in 45-10/45-11).
 
@@ -292,12 +292,12 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 43. Depol Mode | v4.7 | 2/2 | ✓ Complete | 2026-07-07 |
 | 44. GUI Integration | v4.7 | 1/1 (3 of 4 stubs done in 39-04/42-06/43-02) | ✓ Complete | 2026-07-07 |
 | 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 22/22 | ✓ Complete | 2026-07-10 |
-| 45. E2E Hydrate Tab Workflow | v4.7 | 0/14 (13 test-only + 1 code-change --depol) | Not started | - |
+| 45. E2E Hydrate Tab Workflow | v4.7 | 14/14 (13 test-only + 1 code-change --depol) | ✓ Complete | 2026-07-11 |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
 | 48. Documentation | v4.7 | 0/2 (external + in-app help restructure) | Not started | - |
 
-**Remaining v4.7 work after reorganization:** ~18 plans (45-01..14 e2e hydrate tab workflow, 47-05 filled-ice grompp, 48-01, 48-02).
+**Remaining v4.7 work after reorganization:** ~4 plans (47-05 filled-ice grompp, 48-01, 48-02). Phase 45 COMPLETE (14/14 plans, 8/8 success criteria verified, CLI-03 closed).
 
 ## Dependency Graph
 
