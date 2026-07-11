@@ -270,6 +270,15 @@ Examples:
               "When supplied, overrides --guest/--cage-occupancy-small/large."),
     )
 
+    hydrate_group.add_argument(
+        "--depol",
+        type=str,
+        choices=["strict", "optimal"],
+        default="strict",
+        help="Depolarization mode (default: strict). 'strict' = ice rules, "
+             "zero net dipole; 'optimal' = relaxed dipole optimization.",
+    )
+
     # Custom molecule insertion argument group
     custom_group = parser.add_argument_group(
         'custom molecule insertion',

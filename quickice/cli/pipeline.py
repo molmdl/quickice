@@ -338,6 +338,7 @@ class CLIPipeline:
                     supercell_z=getattr(self.args, 'supercell_z', 1),
                     cage_occupancy_small=getattr(self.args, 'cage_occupancy_small', 100.0),
                     cage_occupancy_large=getattr(self.args, 'cage_occupancy_large', 100.0),
+                    depol_mode=getattr(self.args, 'depol', 'strict'),
                 )
                 generator = HydrateStructureGenerator()
                 self._hydrate_result = generator.generate(config)
