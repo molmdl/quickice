@@ -324,9 +324,9 @@ Set unit cell repetitions (nx × ny × nz):
 
 ### Workflow
 
-1. Select lattice type (sI, sII, or sH)
-2. Select guest molecule (CH₄ or THF)
-3. Adjust cage occupancy if needed
+1. Select lattice type (sI, sII, sH, or one of the filled-ice/water-only types — see Lattice Types table above)
+2. Select guest molecule per cage type (CH₄, THF, or uploaded custom guest) and set occupancy
+3. Select depol mode (Strict default, or Optimal)
 4. Set supercell dimensions
 5. Click "Generate Hydrate"
 6. View structure in 3D viewer
