@@ -135,6 +135,17 @@ Generate clathrate hydrate structures with guest molecules:
 
 *Export includes bundled GAFF2 parameters for guest molecules.*
 
+### Custom Guest in Hydrate Workflow
+
+QuickIce v4.7 supports uploading custom guest molecules for hydrate cage placement (GUI-only for v4.7):
+
+1. **Upload** — In the Hydrate tab, upload a `.gro` + `.itp` file pair for your custom guest molecule
+2. **Validate** — QuickIce validates the ITP: comb-rule must be 2 (Lorentz-Berthelot), residue base name must be ≤3 characters (the `_H` suffix for hydrate guests brings the total to ≤5 chars per GRO format limits), and the GRO must be parseable
+3. **Generate** — Select the custom guest from the per-cage dropdown and generate the hydrate structure; the custom guest appears as `Custom: {residue}` in the cage guest combos
+4. **Export** — Export for GROMACS; the custom guest `.itp` is bundled with atomtypes commented out and merged into the main `.top`, and the residue name gets the `_H` suffix (e.g., MOL → MOL_H)
+
+> **Note:** Custom guest in hydrate is a GUI-only feature for v4.7. The CLI supports built-in CH₄/THF guests via `--cage-guest`. See [GRO/ITP Guide](docs/gro-itp-guide.md) for detailed ITP format requirements.
+
 ### Tab 2: Interface Construction
 
 Build ice-water interfaces for molecular dynamics simulations:
