@@ -244,11 +244,26 @@ Hydrate Generation allows you to:
 
 ### Lattice Types
 
-| Lattice | Description | Typical Guests | Cage Types |
-|---------|-------------|----------------|------------|
-| sI | Structure I | CH₄ | 2 small + 6 large cages |
-| sII | Structure II | THF, larger guests | 16 small + 8 large cages |
-| sH | Structure H | Requires helper molecule | 3 small + 2 medium + 1 large |
+QuickIce v4.7 supports 10 hydrate lattice types:
+
+| Key | GenIce2 Name | Description | Cage Type Map | Triclinic | Water-Only |
+|-----|-------------|-------------|---------------|-----------|------------|
+| sI | CS1 | Structure I hydrate | small="12", large="14" | No | No |
+| sII | CS2 | Structure II hydrate | small="12", large="16" | No | No |
+| sH | sH | Structure H hydrate | small="12", medium="12_1", large="20" | Yes | No |
+| c0te | c0te | Filled ice C0 (Teeratchanan 2015) | small="Ne1" | Yes | No |
+| c1te | c1te | Filled ice C1 (Teeratchanan 2015) | small="Ne1" | Yes | No |
+| c2te | c2te | Filled ice C2 (Teeratchanan 2015) | small="Ne1" | No | No |
+| ice1hte | ice1hte | Filled ice Ih (Teeratchanan 2015) | small="Ne1" | No | No |
+| sTprime | sTprime | Filled ice sT′ (Smirnov 2013) | (no cages) | No | Yes |
+| 16 | 16 | Ice XVI (empty sII framework) | small="12", large="16" | No | No |
+| 17 | 17 | Ice XVII (ultralow density) | (no cages) | No | Yes |
+
+**Water-only lattices** (sTprime, 17): Guest and occupancy controls are hidden in the GUI — these lattices produce pure water frameworks with no cage guests.
+
+**Triclinic lattices** (c0te, c1te): Blocked for interface generation (the Interface tab shows an error). sH is triclinic for data accuracy but NOT blocked — it generates interfaces normally. Hydrate-only export is supported for all triclinic types.
+
+**Filled ices** (c0te, c1te, c2te, ice1hte): Use the `small` cage key (not `guest`) for CLI `--cage-guest` assignments. These have a single cage type mapped to GenIce2 cage id `Ne1`.
 
 ### Guest Molecules
 
