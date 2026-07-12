@@ -350,7 +350,7 @@ Phase 47: Testing & Validation  Phase 45: CLI
       │
       ▼
 Phase 48: Documentation
-  (48-01 external + 48-02 in-app help restructure)
+  (14 plans: 8 external docs + 3 in-app help + 1 tooltip + 1 version bump + 1 verification)
 ```
 
 *Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42).
