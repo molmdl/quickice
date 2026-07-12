@@ -560,17 +560,30 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
 
 Hydrate lattice type. Determines the cage structure and guest molecule arrangement.
 
-**Choices:** `sI`, `sII`, `sH`
+**Choices:** `sI`, `sII`, `sH`, `c0te`, `c1te`, `c2te`, `ice1hte`, `sTprime`, `16`, `17` (10 total)
 
 **Default:** `sI`
 
-| Type | Cages | Description |
-|------|-------|-------------|
-| `sI` | 2 small (5¹²) + 6 large (5¹²6²) | Most common; CH4 hydrate |
-| `sII` | 16 small (5¹²) + 8 large (5¹²6⁴) | Larger guests; THF hydrate |
-| `sH` | 3 small + 2 medium + 1 large | Rare; requires help gas |
+| Choice | Description | Cage Keys | Water-Only | Triclinic |
+|--------|-------------|-----------|------------|-----------|
+| `sI` | Structure I hydrate | `small`, `large` | No | No |
+| `sII` | Structure II hydrate | `small`, `large` | No | No |
+| `sH` | Structure H hydrate | `small`, `medium`, `large` | No | Yes |
+| `c0te` | Filled ice C0 (Teeratchanan 2015) | `small` | No | Yes |
+| `c1te` | Filled ice C1 (Teeratchanan 2015) | `small` | No | Yes |
+| `c2te` | Filled ice C2 (Teeratchanan 2015) | `small` | No | No |
+| `ice1hte` | Filled ice Ih (Teeratchanan 2015) | `small` | No | No |
+| `sTprime` | Filled ice sT′ (Smirnov 2013) | — (no cages) | Yes | No |
+| `16` | Ice XVI (empty sII framework) | `small`, `large` | No | No |
+| `17` | Ice XVII (ultralow density) | — (no cages) | Yes | No |
 
 **Required with:** `--hydrate`
+
+**Notes:**
+
+- **Triclinic types** (`c0te`, `c1te`): Blocked when used with `--interface` (produces an error — these filled-ice structures have triclinic cells with off-diagonal elements that cannot be transformed into an orthogonal supercell). Hydrate-only export is supported. Note that `sH` is marked triclinic for data accuracy but is **not** blocked in interface generation.
+- **Water-only types** (`sTprime`, `17`): Ignore `--guest` and `--cage-guest` (there are no cages to fill). They generate pure water frameworks.
+- **Filled ices** (`c0te`, `c1te`, `c2te`, `ice1hte`): Use cage key `small` (NOT `guest`) with `--cage-guest`. The `cage_type_map` for these lattices has a single `small` key (mapped to the GenIce2 cage id `Ne1`). See the `--cage-guest` filled-ice gotcha below.
 
 ```bash
 # Structure II hydrate with THF guest
@@ -578,6 +591,12 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sII --guest THF
 
 # Structure H hydrate with CH4
 python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sH --guest CH4
+
+# Filled ice C0 (hydrate-only export; not compatible with --interface)
+python -m quickice -T 250 -P 50 --hydrate --lattice-type c0te --guest CH4
+
+# Water-only sT′ (ignores --guest / --cage-guest)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sTprime
 ```
 
 ---
