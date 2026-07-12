@@ -125,11 +125,13 @@ Generate ice crystal structures from thermodynamic conditions:
 
 Generate clathrate hydrate structures with guest molecules:
 
-- **Structure types** — sI, sII, sH
-- **Guest molecules** — CH₄ (methane), THF (tetrahydrofuran)
-- **Cage occupancy** — Configure guest occupancy per cage type
+- **Structure types** — 10 lattice types: sI, sII, sH (classical clathrates); c0te, c1te, c2te, ice1hte (filled ices); sTprime, 17 (water-only); 16 (Ice XVI empty framework)
+- **Guest molecules** — Built-in CH₄ (methane) and THF (tetrahydrofuran), plus custom guest upload (.gro + .itp, GUI-only for v4.7)
+- **Mixed cage occupancy** — Assign different guest types to different cage types (e.g., CH₄ in small cages + THF in large cages) with per-cage occupancy percentages
+- **Depol mode** — Strict (ice rules, zero net dipole, default) or Optimal (relaxed dipole optimization)
+- **Custom guest upload** — Upload a custom .gro + .itp pair; QuickIce validates comb-rule=2, residue name ≤3 chars, and atom count (see Custom Guest Workflow below)
 - **Supercell size** — Set unit cell repetitions
-- **Dual-style rendering** — Water lines + guest ball-and-stick
+- **Dual-style rendering** — Water lines + guest ball-and-stick (per-type colors for mixed guests)
 
 *Export includes bundled GAFF2 parameters for guest molecules.*
 
