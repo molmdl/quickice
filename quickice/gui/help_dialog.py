@@ -1,68 +1,78 @@
 """Quick reference help dialog for QuickIce GUI.
 
 Per INFO-04: Modal dialog showing keyboard shortcuts and workflow summary.
+
+Structure (Phase 48-09): QStackedWidget + QListWidget TOC layout. The single
+QScrollArea was replaced with a left TOC (QListWidget) and right stacked pages
+(QStackedWidget). Each page wraps its content in a QScrollArea for independent
+scrolling. The OK button lives in the outer layout, outside the stacked widget,
+so it is always visible regardless of the selected page.
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QScrollArea, QWidget
+    QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QListWidget,
+    QListWidgetItem, QScrollArea, QStackedWidget, QVBoxLayout, QWidget,
 )
 from PySide6.QtCore import Qt
 
 
 class QuickReferenceDialog(QDialog):
     """Quick reference help dialog for QuickIce GUI.
-    
+
     This modal dialog provides:
     - Brief application description
     - Keyboard shortcuts list
     - Workflow summary
     - Links to external resources
-    
+
     Per CONTEXT.md: Uses modal QDialog (not panel, not F1 shortcut).
     """
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Quick Reference - QuickIce")
-        self.setMinimumWidth(450)
-        self.setMaximumWidth(600)
+        self.setMinimumWidth(600)
+        self.setMaximumWidth(800)
         self.setMinimumHeight(400)
         self.setMaximumHeight(700)
-        
+
         self._setup_ui()
-    
+
     def _setup_ui(self):
-        """Setup dialog content."""
-        # Main dialog layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Create scroll area
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        
-        # Create content widget to hold all scrollable content
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
-        layout.setSpacing(12)
-        layout.setContentsMargins(12, 12, 12, 12)
-        
-        # Introduction
-        intro = QLabel(
+        """Setup dialog content with a TOC + stacked pages layout."""
+        # Outer vertical layout: body (TOC + pages) on top, OK button below.
+        outer = QVBoxLayout(self)
+        outer.setSpacing(0)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        # Body horizontal layout: TOC (left, fixed) + pages (right, stretches).
+        body = QHBoxLayout()
+        body.setSpacing(0)
+        body.setContentsMargins(0, 0, 0, 0)
+
+        # --- TOC (left) ---
+        self.toc = QListWidget()
+        self.toc.setFixedWidth(160)
+        self.toc.currentRowChanged.connect(self._on_section_changed)
+
+        # --- Pages (right) ---
+        self.pages = QStackedWidget()
+
+        # --- 8 sections (verbatim content migrated from the prior QScrollArea) ---
+        # 1. Introduction
+        intro_label = QLabel(
             "QuickIce generates plausible ice crystal structure candidates "
             "for given thermodynamic conditions (temperature and pressure), "
             "and constructs ice-water interfaces (GUI only) for molecular dynamics simulations."
         )
-        intro.setWordWrap(True)
-        layout.addWidget(intro)
-        
-        # Keyboard shortcuts section
-        layout.addWidget(self._create_section_label("Keyboard Shortcuts"))
-        shortcuts_text = QLabel(
+        intro_label.setWordWrap(True)
+        intro_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Introduction", self._make_page(intro_label))
+
+        # 2. Keyboard Shortcuts
+        shortcuts_label = QLabel(
             "Enter — Generate structures\n"
             "Escape — Cancel generation\n"
             "Ctrl+S — Export current tab for GROMACS\n"
@@ -77,14 +87,14 @@ class QuickReferenceDialog(QDialog):
             "Ctrl+J — Export ions for GROMACS\n"
             "Ctrl+Alt+S — Save viewport screenshot"
         )
-        shortcuts_text.setTextInteractionFlags(
+        shortcuts_label.setWordWrap(True)
+        shortcuts_label.setTextInteractionFlags(
             Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
         )
-        layout.addWidget(shortcuts_text)
-        
-        # Workflow section
-        layout.addWidget(self._create_section_label("Workflow"))
-        workflow_text = QLabel(
+        self._add_section("Keyboard Shortcuts", self._make_page(shortcuts_label))
+
+        # 3. Workflow
+        workflow_label = QLabel(
             "Tab 0 — Ice Generation:\n"
             "1. Enter temperature, pressure, and molecule count\n"
             "2. Click on phase diagram OR type values directly\n"
@@ -129,12 +139,14 @@ class QuickReferenceDialog(QDialog):
             "30. Set ion concentration and insert ions into interface\n"
             "31. Export ions for GROMACS (Ctrl+J)"
         )
-        workflow_text.setWordWrap(True)
-        layout.addWidget(workflow_text)
-        
-        # Dimension Relationships section (NEW)
-        layout.addWidget(self._create_section_label("Dimension Relationships"))
-        dimension_text = QLabel(
+        workflow_label.setWordWrap(True)
+        workflow_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Workflow", self._make_page(workflow_label))
+
+        # 4. Dimension Relationships
+        dimension_label = QLabel(
             "SLAB MODE:\n"
             "• Box Z MUST equal: 2 × ice_thickness + water_thickness\n"
             "• Example: ice=3.0 nm, water=4.0 nm → box_z = 10.0 nm\n"
@@ -160,12 +172,14 @@ class QuickReferenceDialog(QDialog):
             "• Water molecules closer than this to ice oxygen atoms are removed\n"
             "• Prevents atomic overlaps between ice and water"
         )
-        dimension_text.setWordWrap(True)
-        layout.addWidget(dimension_text)
-        
-        # Best Practices section (NEW)
-        layout.addWidget(self._create_section_label("Best Practices"))
-        best_practices_text = QLabel(
+        dimension_label.setWordWrap(True)
+        dimension_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Dimension Relationships", self._make_page(dimension_label))
+
+        # 5. Best Practices
+        best_practices_label = QLabel(
             "CHOOSING BOX DIMENSIONS:\n"
             "• X, Y: Large enough to contain ice candidate lateral dimensions\n"
             "• Z: Depends on mode (see Dimension Relationships above)\n"
@@ -190,35 +204,41 @@ class QuickReferenceDialog(QDialog):
             "• 'Ice II not supported': Ice II (rhombohedral) cannot form orthogonal supercells - use Ice V or Ice VI instead\n"
             "• 'Triclinic cell': Transformation applied automatically for Ice V (monoclinic)"
         )
-        best_practices_text.setWordWrap(True)
-        layout.addWidget(best_practices_text)
-        
-        # Custom Molecule Preparation section (NEW)
-        layout.addWidget(self._create_section_label("Custom Molecule Preparation"))
-        custom_mol_text = QLabel(
+        best_practices_label.setWordWrap(True)
+        best_practices_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Best Practices", self._make_page(best_practices_label))
+
+        # 6. Custom Molecule Preparation
+        custom_mol_label = QLabel(
             "GRO file: Coordinates in nm, residue name in columns 6-10\n"
             "ITP file: Must include [ atomtypes ], [ moleculetype ], [ atoms ] sections\n"
             "Force field: User-provided [ atomtypes ] required\n"
             "Validation: Atom count and residue name checked on upload\n"
             "See Help > Custom Molecules in menu for detailed format guide"
         )
-        custom_mol_text.setWordWrap(True)
-        layout.addWidget(custom_mol_text)
-        
-        # External references
-        layout.addWidget(self._create_section_label("More Information"))
-        refs_text = QLabel(
+        custom_mol_label.setWordWrap(True)
+        custom_mol_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Custom Molecule Preparation", self._make_page(custom_mol_label))
+
+        # 7. More Information
+        refs_label = QLabel(
             "• Click phase regions in diagram to see scientific references\n"
             "• GenIce2 repository: https://github.com/genice-dev/GenIce2\n"
             "• IAPWS (water standards): https://www.iapws.org"
         )
-        refs_text.setOpenExternalLinks(True)
-        refs_text.setWordWrap(True)
-        layout.addWidget(refs_text)
-        
-        # Important notes section
-        layout.addWidget(self._create_section_label("Important Notes"))
-        notes_text = QLabel(
+        refs_label.setOpenExternalLinks(True)
+        refs_label.setWordWrap(True)
+        refs_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("More Information", self._make_page(refs_label))
+
+        # 8. Important Notes
+        notes_label = QLabel(
             "• Actual molecule count may differ from requested to satisfy\n"
             "  crystal structure symmetry constraints\n"
             "• GROMACS export generates .gro, .top, and .itp files\n"
@@ -228,31 +248,56 @@ class QuickReferenceDialog(QDialog):
             "• Ice Ih density uses IAPWS R10-06(2009) for temperature-dependent accuracy\n"
             "• Water density for interfaces uses IAPWS-95 formulation"
         )
-        notes_text.setWordWrap(True)
-        layout.addWidget(notes_text)
-        
-        # Add stretch to push content up
-        layout.addStretch()
-        
-        # Set content widget to scroll area
-        scroll_area.setWidget(content_widget)
-        
-        # Add scroll area to main layout
-        main_layout.addWidget(scroll_area)
-        
-        # Standard OK button (outside scroll area)
+        notes_label.setWordWrap(True)
+        notes_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Important Notes", self._make_page(notes_label))
+
+        body.addWidget(self.toc)
+        body.addWidget(self.pages, 1)   # pages stretch
+        outer.addLayout(body)
+
+        # OK button OUTSIDE the stacked widget (always visible).
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
-        main_layout.addWidget(button_box)
-    
-    def _create_section_label(self, text: str) -> QLabel:
-        """Create a section header label.
-        
-        Args:
-            text: Section title text
-            
-        Returns:
-            QLabel with bold formatting
+        outer.addWidget(button_box)
+
+        # Show the first section when the dialog opens.
+        self.toc.setCurrentRow(0)
+
+    def _on_section_changed(self, row):
+        """Switch the stacked widget page when the TOC selection changes."""
+        self.pages.setCurrentIndex(row)
+
+    def _add_section(self, title, content_widget):
+        """Add a section to the TOC and the stacked widget.
+
+        Keeps the TOC row index and the stacked page index in sync
+        (TOC row N corresponds to page index N).
         """
-        label = QLabel(f"<b>{text}</b>")
-        return label
+        item = QListWidgetItem(title)
+        self.toc.addItem(item)
+        self.pages.addWidget(content_widget)
+
+    def _make_page(self, label):
+        """Wrap a QLabel in an independently scrollable page widget.
+
+        Each page scrolls on its own so long content does not affect the
+        TOC list or the OK button.
+        """
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setSpacing(12)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.addWidget(label)
+        layout.addStretch()
+
+        scroll_area.setWidget(content)
+        return scroll_area
