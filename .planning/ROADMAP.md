@@ -268,14 +268,26 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. README documents the custom guest in hydrate workflow (upload → validate → generate → export)
   2. GUI guide covers new lattice types, custom guest upload, mixed occupancy controls, and depol selector
-  3. CLI reference documents new flags (--hydrate-lattice extended values, --custom-guest, --custom-guest-itp, --depol, --guest-small, --guest-large)
+  3. CLI reference documents new flags (--lattice-type extended to 10 choices, --cage-guest, --depol) and marks --guest/--cage-occupancy-small/--cage-occupancy-large as DEPRECATED. Custom guest in hydrate is GUI-only for v4.7 (no CLI flag).
   4. Custom guest ITP requirements are documented (comb-rule=2 mandatory, residue name ≤3 chars for _H suffix, _H suffix convention explained)
-  5. In-app help (help_dialog.py + tooltips) is updated for v4.7 features and restructured for navigability (TOC buttons or tabbed sections — content has outgrown a single scrolling textbox)
-**Plans**: 2 plans (split external docs from in-app help restructure)
+  5. In-app help (help_dialog.py + tooltips) is updated for v4.7 features and restructured for navigability (QStackedWidget + QListWidget TOC — content has outgrown a single scrolling textbox)
+**Plans**: 14 plans in 4 waves
 
 Plans:
-- [ ] 48-01: External docs — README custom guest workflow + GUI guide + CLI reference + ITP requirements (covers **DOCS-01, DOCS-02, DOCS-03, DOCS-04**). One plan, 2-3 tasks: README + docs/gui-guide.md + docs/cli-reference.md + docs/gro-itp-guide.md. All four files already exist — this is an update, not creation.
-- [ ] 48-02: In-app help restructure — audit `quickice/gui/help_dialog.py` + per-widget tooltips for v4.7 features (new lattice types, custom guest upload, depol, mixed cage); restructure help dialog from single scrolling textbox to indexed format (TOC buttons or QTabWidget sections) since content volume now warrants navigation. Covers the in-app-help half of DOCS-02 (user-facing text inside the app, not the markdown guide). One plan, 2 tasks: restructure dialog container + populate v4.7 content.
+- [ ] 48-01-PLAN.md — README Tab 1 hydrate rewrite + custom-guest workflow subsection (DOCS-01)
+- [ ] 48-02-PLAN.md — README version + Known Issues + footer sweep v4.5→v4.7 (cross-cutting)
+- [ ] 48-03-PLAN.md — GUI guide Hydrate lattice types table (10 rows) (DOCS-02-ext)
+- [ ] 48-04-PLAN.md — GUI guide Custom guest upload + mixed occupancy + depol subsections (DOCS-02-ext)
+- [ ] 48-05-PLAN.md — GUI guide header/version sweep v4.5→v4.7 (cross-cutting)
+- [ ] 48-06-PLAN.md — CLI ref hydrate flags rewrite + --cage-guest + --depol + DEPRECATED banners (DOCS-03)
+- [ ] 48-07-PLAN.md — CLI ref version/examples sweep v4.5→v4.7 + v4.7 examples (cross-cutting)
+- [ ] 48-08-PLAN.md — GRO/ITP guide custom guest ITP requirements section (DOCS-04)
+- [ ] 48-09-PLAN.md — help_dialog.py skeleton restructure to QStackedWidget+QListWidget TOC (DOCS-02-in-app)
+- [ ] 48-10-PLAN.md — help_dialog.py v4.7 content pages (4 new pages) (DOCS-02-in-app)
+- [ ] 48-11-PLAN.md — help_dialog headless smoke test (DOCS-02-in-app)
+- [ ] 48-12-PLAN.md — hydrate_panel per-cage tooltips (DOCS-02-in-app)
+- [ ] 48-13-PLAN.md — Version string bump 4.5.0 → 4.7.0 (cross-cutting)
+- [ ] 48-14-PLAN.md — Final verification sweep (all DOCS)
 
 ## Progress
 
@@ -295,9 +307,9 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 45. E2E Hydrate Tab Workflow | v4.7 | 14/14 (13 test-only + 1 code-change --depol) | ✓ Complete | 2026-07-11 |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
-| 48. Documentation | v4.7 | 0/2 (external + in-app help restructure) | Not started | - |
+| 48. Documentation | v4.7 | 0/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | Not started | - |
 
-**Remaining v4.7 work after reorganization:** ~2 plans (48-01 external docs, 48-02 in-app help restructure). Phase 45 COMPLETE (14/14). Phase 47 COMPLETE (1/1 — 47-05 closes TEST-08). Phases 38-47 ALL COMPLETE.
+**Remaining v4.7 work after reorganization:** 14 plans (48-01..48-14 — Phase 48 Documentation, aggressively split per user request). Phase 47 COMPLETE (1/1). Phases 38-47 ALL COMPLETE.
 
 ## Dependency Graph
 
