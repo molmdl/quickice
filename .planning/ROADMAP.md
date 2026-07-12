@@ -259,7 +259,7 @@ Plans:
 - [x] 47-02: E2E tests for filled ice generation — **DONE in 39-05** (`test_hydrate_lattice_types.py` parametrized for c0te/c1te/c2te/ice1hte/sTprime/16/17; 157 parametrized structural validation tests). Satisfies **TEST-04**.
 - [x] 47-03: E2E tests for custom guest hydrate + GROMACS export — **DONE in 41** (`test_e2e_custom_guest_hydrate.py` + `test_e2e_custom_guest_gui_grompp.py` + `test_e2e_custom_guest_cli_grompp.py`). Satisfies **TEST-05 + TEST-07** (custom guest half).
 - [x] 47-04: E2E tests for mixed cage occupancy — **DONE in 42** (`test_e2e_mixed_cage_occupancy.py` + `test_e2e_sh_cage_occupancy.py` + `test_cli/test_mixed_cage_cli.py`). Satisfies **TEST-06**.
-- [ ] 47-05-PLAN.md — CLI hydrate-only branch grompp validation for c2te/ice1hte filled-ice lattices at native orthorhombic supercells (closes **TEST-08** — the only remaining gap; c2te@3x3x3 + ice1hte@4x4x4 via `CLIPipeline._run_export_step` hydrate branch). The roadmap's prior "c0te/c1te/c2te/ice1hte grompp not explicitly tested" framing is STALE — Phase 45 already closed c0te/c1te (CLI+GUI), c2te/ice1hte (GUI hydrate branch via 45-14), and c2te/ice1hte (CLI interface/solute/ion branches via 45-05). Only the CLI hydrate-ONLY branch for c2te/ice1hte remained.
+- [x] 47-05-PLAN.md — CLI hydrate-only branch grompp validation for c2te/ice1hte filled-ice lattices at native orthorhombic supercells (closes **TEST-08** — the only remaining gap; c2te@3x3x3 + ice1hte@4x4x4 via `CLIPipeline._run_export_step` hydrate branch). The roadmap's prior "c0te/c1te/c2te/ice1hte grompp not explicitly tested" framing is STALE — Phase 45 already closed c0te/c1te (CLI+GUI), c2te/ice1hte (GUI hydrate branch via 45-14), and c2te/ice1hte (CLI interface/solute/ion branches via 45-05). Only the CLI hydrate-ONLY branch for c2te/ice1hte remained. **DONE 2026-07-12** — tests/test_e2e_filled_ice_cli_hydrate_grompp.py (2 parametrized @gmx_skipif cases, gmx grompp rc=0; ZERO new production code).
 
 #### Phase 48: Documentation
 **Goal**: Users can learn about all new hydrate features from updated documentation (in-app + external)
@@ -294,10 +294,10 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 44.1. Wire Custom Guest Through All Tabs (INSERTED) | v4.7 | 22/22 | ✓ Complete | 2026-07-10 |
 | 45. E2E Hydrate Tab Workflow | v4.7 | 14/14 (13 test-only + 1 code-change --depol) | ✓ Complete | 2026-07-11 |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
-| 47. Testing & Validation | v4.7 | 0/1 (7 of 8 test reqs done in 39-05/40/41/42) | Not started | - |
+| 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 0/2 (external + in-app help restructure) | Not started | - |
 
-**Remaining v4.7 work after reorganization:** ~4 plans (47-05 filled-ice grompp, 48-01, 48-02). Phase 45 COMPLETE (14/14 plans, 8/8 success criteria verified, CLI-03 closed).
+**Remaining v4.7 work after reorganization:** ~2 plans (48-01 external docs, 48-02 in-app help restructure). Phase 45 COMPLETE (14/14). Phase 47 COMPLETE (1/1 — 47-05 closes TEST-08). Phases 38-47 ALL COMPLETE.
 
 ## Dependency Graph
 
