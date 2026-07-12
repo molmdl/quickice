@@ -274,12 +274,46 @@ QuickIce v4.7 supports 10 hydrate lattice types:
 
 **GAFF2 Preparation:** Guest molecule parameters use GAFF2 with RESP2(0.5) partial charges, prepared using Multiwfn and Sobtop. Partial charge prepared using the RESP2.sh script from Multiwfn. QM calculations were done using Gaussian 16 Rev. C01. See [main README](../README.md#guest-molecules-gaff2) for full citations.
 
-### Cage Occupancy
+**Custom Guest Upload (GUI-only for v4.7):** In addition to built-in CH₄ and THF, you can upload a custom guest molecule (.gro + .itp pair). The custom guest appears as `Custom: {residue}` in the per-cage guest dropdowns. See [Custom Guest Upload](#custom-guest-upload) below for details.
 
-- **Small cages:** Occupancy percentage for small cages (0-100%)
-- **Large cages:** Occupancy percentage for large cages (0-100%)
-- Default: 100% (fully occupied)
-- Lower values create partial occupancy for mixed-guest systems
+> **Note:** Custom guest in hydrate is a GUI-only feature for v4.7. The CLI supports built-in CH₄/THF only (via `--cage-guest`).
+
+### Mixed Cage Occupancy
+
+QuickIce v4.7 supports mixed cage occupancy — different guest types in different cage types with independent occupancy percentages:
+
+- **Per-cage-type controls:** Each cage type in the lattice's `cage_type_map` gets its own row with a guest QComboBox and an occupancy QDoubleSpinBox (0-100%)
+- **Multi-guest systems:** Assign different guests to different cage types (e.g., CH₄ in small cages + THF in large cages)
+- **Per-cage occupancy:** Set occupancy independently per cage type (e.g., 60% CH₄ in small + 100% THF in large)
+- **Water-only lattices** (sTprime, 17): Guest and occupancy controls are hidden (no cages to fill)
+- **Filled ices** (c0te, c1te, c2te, ice1hte): Single cage row (the `small` cage key only)
+
+**Example:** For sI with CH₄ in small cages (60%) and THF in large cages (100%):
+1. Select lattice type `sI`
+2. In the "Small cages" row, select CH₄ and set occupancy to 60%
+3. In the "Large cages" row, select THF and set occupancy to 100%
+4. Click Generate Hydrate
+
+### Custom Guest Upload
+
+Upload a custom guest molecule for hydrate cage placement (GUI-only for v4.7):
+
+1. **Upload** — Click the custom guest upload button and select a `.gro` + `.itp` file pair
+2. **Validate** — QuickIce validates the ITP: comb-rule must be 2 (Lorentz-Berthelot), residue base name must be ≤3 characters (the `_H` suffix brings the total to ≤5 chars for GRO format), and the GRO must be parseable
+3. **Select** — The custom guest appears as `Custom: {residue}` in each per-cage guest dropdown
+4. **Generate** — Select the custom guest for the desired cage types and generate
+5. **Export** — The custom guest `.itp` is bundled with `[ atomtypes ]` commented out and merged into the main `.top`; the residue name gets the `_H` suffix (e.g., MOL → MOL_H)
+
+See [GRO/ITP Guide](gro-itp-guide.md#custom-guest-itp-requirements-for-hydrate-cage-guests) for detailed ITP format requirements.
+
+### Depol Mode
+
+The depol (depolarization) mode controls H-bond orientation during hydrate generation:
+
+- **Strict** (default) — Ice rules enforced, zero net dipole. Standard behavior.
+- **Optimal** — Relaxed dipole optimization.
+
+Select the mode from the Depol dropdown in the Hydrate tab. Default is Strict. In GenIce2 2.2.13.1, strict and optimal produce identical atom counts — the mode affects H-bond orientation, not the number of atoms.
 
 ### Supercell Dimensions
 
