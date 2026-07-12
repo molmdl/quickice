@@ -11,7 +11,7 @@ A portable GUI application for generating ice structures, ice-water interfaces, 
 
 **What is QuickIce?**
 
-QuickIce v4.5 provides a 6-tab GUI workflow for generating molecular dynamics starting structures:
+QuickIce v4.7 provides a 6-tab GUI workflow for generating molecular dynamics starting structures:
 
 - **Ice Generation** — 11 ice polymorphs from thermodynamic conditions
 - **Hydrate Generation** — Clathrate structures (sI, sII, sH) with guest molecules
@@ -423,5 +423,5 @@ quickice/
 
 ---
 
-*QuickIce v4.5 — Solute & Custom Molecule Insertion*
-*Last updated: 2026-06-15*
+*QuickIce v4.7 — Extended Hydrate Generation*
+*Last updated: 2026-07-12*
