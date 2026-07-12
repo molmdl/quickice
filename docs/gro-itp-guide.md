@@ -982,6 +982,6 @@ Before uploading custom molecule files to QuickIce, verify:
 
 ---
 
-*Guide version: v4.5*
-*Last updated: 2026-05-07*
-*For QuickIce v4.5 documentation, see [GUI Guide](gui-guide.md)*
+*Guide version: v4.7*
+*Last updated: 2026-07-12*
+*For QuickIce v4.7 documentation, see [GUI Guide](gui-guide.md)*
