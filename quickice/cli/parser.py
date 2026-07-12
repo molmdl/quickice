@@ -383,7 +383,7 @@ Examples:
         "--version",
         "-V",
         action="version",
-        version="%(prog)s 4.5.0"
+        version="%(prog)s 4.7.0"
     )
     
     # Mode selection flags (consumed by entry router before argparse runs;
