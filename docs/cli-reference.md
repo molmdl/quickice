@@ -603,6 +603,8 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sTprime
 
 ### `--guest`
 
+> **⚠️ DEPRECATED:** Use `--cage-guest` for mixed cage occupancy. `--guest` is kept for backward compatibility with no behavior change.
+
 Guest molecule type trapped in the hydrate cages. The guest molecule determines the hydrate stability and cage occupancy.
 
 **Choices:** `CH4`, `THF`
@@ -623,6 +625,8 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
 # THF hydrate (sII)
 python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sII --guest THF
 ```
+
+> **Custom guest:** Custom guest upload in hydrate is GUI-only for v4.7. There is no CLI flag for custom guest upload; the CLI `--guest` and `--cage-guest` flags support the built-in `CH4`/`THF` guests only.
 
 ---
 
@@ -650,6 +654,8 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
 
 ### `--cage-occupancy-small`
 
+> **⚠️ DEPRECATED:** Use `--cage-guest` for mixed cage occupancy. This flag is kept for backward compatibility with no behavior change.
+
 Occupancy percentage for small cages (0–100%). Controls what fraction of small cages contain guest molecules.
 
 **Type:** Float (default: 100.0)
@@ -668,6 +674,8 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
 
 ### `--cage-occupancy-large`
 
+> **⚠️ DEPRECATED:** Use `--cage-guest` for mixed cage occupancy. This flag is kept for backward compatibility with no behavior change.
+
 Occupancy percentage for large cages (0–100%). Controls what fraction of large cages contain guest molecules.
 
 **Type:** Float (default: 100.0)
@@ -684,6 +692,62 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4
 python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --guest CH4 \
   --cage-occupancy-small 80.0 --cage-occupancy-large 95.0
 ```
+
+---
+
+### `--cage-guest`
+
+Per-cage-type guest assignment (repeatable). Allows mixed cage occupancy — different guest types in different cage types with independent occupancy percentages.
+
+**Format:** `KEY=GUEST:OCC` (repeatable)
+
+**Parameters:**
+- `KEY` — A `cage_type_map` key: `small`, `medium`, `large`, or `guest`
+- `GUEST` — Guest molecule: `CH4` or `THF` (built-in only on CLI for v4.7)
+- `OCC` — Occupancy percentage: 0-100
+
+**Default:** None. When supplied, overrides `--guest`/`--cage-occupancy-small`/`--cage-occupancy-large`.
+
+**Required with:** `--hydrate`
+
+```bash
+# Mixed occupancy: CH4 in small cages (60%) + THF in large cages (100%)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI \
+  --cage-guest small=CH4:60 --cage-guest large=THF:100
+
+# sH with 3 cage types
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sH \
+  --cage-guest small=CH4:100 --cage-guest medium=CH4:50 --cage-guest large=THF:100
+```
+
+> **Filled-ice gotcha:** For filled ices (`c0te`, `c1te`, `c2te`, `ice1hte`), use cage key `small` (NOT `guest`). These lattices have a single `cage_type_map` entry keyed `small` (mapped to the GenIce2 cage id `Ne1`). Using `--cage-guest guest=CH4:100` produces 0 guests.
+
+> **Custom guest:** Custom guest upload in hydrate is GUI-only for v4.7. The CLI `--cage-guest` flag supports the built-in `CH4`/`THF` guests only.
+
+---
+
+### `--depol`
+
+Depolarization mode for hydrate generation.
+
+**Choices:** `strict`, `optimal`
+
+**Default:** `strict`
+
+- **`strict`** — Ice rules enforced, zero net dipole (default; preserves standard behavior)
+- **`optimal`** — Relaxed dipole optimization
+
+**Required with:** `--hydrate`
+
+```bash
+# Strict depol (default)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --depol strict
+
+# Optimal depol
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --depol optimal
+```
+
+> **Note:** In GenIce2 2.2.13.1, `strict` and `optimal` produce identical atom counts. The depol mode affects H-bond orientation during generation, not the number of atoms.
 
 ---
 
