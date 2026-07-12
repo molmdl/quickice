@@ -94,7 +94,7 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 - [x] **TEST-05**: E2E tests for custom guest hydrate generation + GROMACS export — *Phase 41 (test_e2e_custom_guest_hydrate.py + _gui_grompp.py + _cli_grompp.py)*
 - [x] **TEST-06**: E2E tests for mixed cage occupancy hydrate generation — *Phase 42 (test_e2e_mixed_cage_occupancy.py + test_e2e_sh_cage_occupancy.py + test_cli/test_mixed_cage_cli.py)*
 - [x] **TEST-07**: Grompp validation tests for custom guest hydrate exports — *Phase 41-10/41-11 (GUI + CLI custom-guest grompp e2e)*
-- [ ] **TEST-08**: Grompp validation tests for new lattice type exports — *Phase 47-05 (filled-ice c0te/c1te/c2te/ice1hte grompp — the only remaining test gap)*
+- [x] **TEST-08**: Grompp validation tests for new lattice type exports — *Phase 47-05 (CLI hydrate-only branch grompp for c2te@3x3x3 + ice1hte@4x4x4 native orthorhombic supercells — the last remaining gap; c0te/c1te closed by Phase 45)*
 
 ### Documentation
 
@@ -193,7 +193,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-05 | Phase 41 | Complete |
 | TEST-06 | Phase 42 | Complete |
 | TEST-07 | Phase 41-10/41-11 | Complete |
-| TEST-08 | Phase 47-05 | Pending (filled-ice grompp gap) |
+| TEST-08 | Phase 47-05 | Complete |
 | DOCS-01 | Phase 48-01 | Pending |
 | DOCS-02 | Phase 48-01 + 48-02 | Pending |
 | DOCS-03 | Phase 48-01 | Pending |
@@ -203,8 +203,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v4.7 requirements: 61 total (PIPE×4, LATTICE×9, GUEST×10, EXPORT×6, MIXED×5, DEPOL×3, GUI×6, CLI×4, VTK×2, TEST×8, DOCS×4)
 - Mapped to phases: 61/61 ✓
 - Unmapped: 0
-- Complete: 52
-- Pending: 9 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02 → 45-01b (deferred by design); TEST-08 → 47-05; DOCS-01..04 → 48-01/48-02)
+- Complete: 53
+- Pending: 8 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02 → 45-01b (deferred by design); DOCS-01..04 → 48-01/48-02)
 
 ---
 *Requirements defined: 2026-06-27*
