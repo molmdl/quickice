@@ -306,8 +306,7 @@ Key limitations:
 - Ranking uses distance-based energy estimates, not force field calculations
 - Some phase boundaries have limited experimental data
 - High-pressure phases (> 30 GPa) have larger uncertainties
-- Only pure water ice systems supported
-- CLI support for v4.5 features (Tabs 3-5) is available via `python -m quickice`
+- CLI support for v4.7 features is available via `python -m quickice`
 
 ## Dependencies
 
