@@ -41,9 +41,9 @@ These scripts live at the top level of the extracted package, next to the `quick
 
 ### Linux binary
 
-* Download `quickice-v4.5.0-linux-x86_64.tar.gz` under "Assets".
+* Download `quickice-v4.7.0-linux-x86_64.tar.gz` under "Assets".
 * How to use the binary:
-    1. Extract the tarball: `tar xfz quickice-v4.5.0-linux-x86_64.tar.gz`
+    1. Extract the tarball: `tar xfz quickice-v4.7.0-linux-x86_64.tar.gz`
     2. cd to the package directory: `cd package`
         * Double-click: `./QuickIce.sh` (or right-click → Run)
         * On local Linux machine with full features: `./quickice-gui/quickice-gui --gui`
@@ -53,7 +53,7 @@ CLI flags also work with the binary (e.g., `./quickice-gui/quickice-gui -T 300 -
 
 ### Windows executable
 
-* Download `quickice-v4.5.0-windows-x86_64.zip` under "Assets".
+* Download `quickice-v4.7.0-windows-x86_64.zip` under "Assets".
 * How to use the binary:
     1. Extract the package
     2. Double-click `QuickIce.bat` at the top level to launch the GUI
