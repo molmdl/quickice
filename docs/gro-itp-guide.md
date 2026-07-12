@@ -565,6 +565,55 @@ Both use "CUSTOM" as the identifier.
 
 ---
 
+## Custom Guest ITP Requirements (for Hydrate Cage Guests)
+
+When uploading a custom guest molecule for hydrate cage placement (GUI-only for v4.7), the `.gro` and `.itp` files must meet specific requirements enforced by QuickIce's validation pipeline. The CLI supports built-in CH₄/THF guests only (via `--cage-guest KEY=GUEST:OCC`); there is no CLI flag for custom hydrate cage guests in v4.7.
+
+### 1. comb-rule = 2 (Mandatory)
+
+The ITP `[ defaults ]` section, when present, must specify `comb-rule = 2` (Lorentz-Berthelot combining rules, AMBER/GAFF2 convention). This is consistent with QuickIce's main `.top` file, which always supplies `comb-rule = 2`.
+
+- **Rejected:** If `[ defaults ]` contains a comb-rule other than 2 (e.g. `comb-rule = 1`), the upload fails with: `ITP comb-rule must be 2 (Lorentz-Berthelot / AMBER-GAFF2); got comb-rule=1. QuickIce does not auto-convert A/B rules. Please regenerate the ITP with comb-rule=2.`
+- **Accepted:** If `[ defaults ]` is absent, the upload succeeds — the main `.top` file supplies `comb-rule = 2`.
+
+This is enforced by `parse_itp_defaults_comb_rule()` in `quickice/structure_generation/itp_parser.py`, with the rejection check in `quickice/structure_generation/custom_guest_bridge.py` (the validator rejects only when the parsed value is non-`None` and `!= 2`).
+
+### 2. Residue Base Name ≤ 3 Characters
+
+The GRO file format uses fixed-width columns (6-10) for residue names, allowing a maximum of 5 characters. QuickIce appends an `_H` suffix to hydrate guest residue names (see rule 3 below), so the **base name must be ≤ 3 characters** to keep the total ≤ 5 chars.
+
+- **Accepted:** `MOL` (3 chars) → `MOL_H` (5 chars) ✓
+- **Rejected:** `ETHAN` (5 chars) → `ETHAN_H` (7 chars) ✗ — error: `Custom guest residue name 'ETHAN' (5 chars) exceeds 3 chars. GRO format allows 5-char residue names; QuickIce reserves 2 chars for the '_H' hydrate suffix. Use a residue name of 3 chars or fewer (e.g. 'MOL').`
+
+The ≤3-char base-name check is enforced at upload time in `quickice/structure_generation/custom_guest_bridge.py`; the downstream 5-char GRO limit is enforced by `validate_gro_residue_name()` in `quickice/output/gromacs_writer.py` (raises `ValueError` if the transformed name exceeds 5 chars).
+
+### 3. `_H` Suffix Convention
+
+Hydrate cage guests use the `_H` suffix; liquid solutes use the `_L` suffix. The `MoleculetypeRegistry` (in `quickice/structure_generation/moleculetype_registry.py`) produces the registered moleculetype name: `register_hydrate_guest('MOL')` → `MOL_H`, `register_liquid_solute('CH4')` → `CH4_L`. During export, `transform_guest_itp()` (in `quickice/output/gromacs_writer.py`) rewrites the `[ moleculetype ]` name and the `[ atoms ]` residue name from `{base}` to `{base}_H`.
+
+Example: A custom guest with residue name `MOL` becomes `MOL_H` in the exported `.gro` and `.top` files. Built-in guests follow the same convention: `CH4` → `CH4_H`, `THF` → `THF_H`.
+
+### 4. `[ atomtypes ]` Commented Out + Merged
+
+The `[ atomtypes ]` section in the uploaded `.itp` is **commented out** during export (step 1 of `transform_guest_itp`), and the atom type definitions are **merged into the main `.top`** file's `[ atomtypes ]` section via `_merge_custom_atomtypes()` (in `quickice/output/gromacs_writer.py`). This prevents duplicate atomtype conflicts between the custom guest and the bundled force field parameters (TIP4P-ICE water + GAFF2 built-in guests).
+
+### 5. Distinct from Tab-3 Liquid Custom Molecule
+
+The hydrate custom guest (Tab 1) is distinct from the liquid custom molecule (Tab 3):
+
+| Property | Hydrate Custom Guest (Tab 1) | Liquid Custom Molecule (Tab 3) |
+|----------|-------------------------------|--------------------------------|
+| Suffix | `_H` | None |
+| Residue name limit | ≤ 3 chars (base) | ≤ 5 chars (no suffix) |
+| comb-rule requirement | comb-rule = 2 mandatory (if `[ defaults ]` present) | Inherited from main `.top` |
+| `[ atomtypes ]` handling | Commented out + merged into main `.top` | Commented out + merged into main `.top` |
+| Placement | Hydrate cages (GenIce2 bridge) | Liquid region (random/custom positions) |
+| CLI flag | None (GUI-only for v4.7) | `--custom-gro` + `--custom-itp` (requires `--interface`) |
+
+> **Note:** Custom guest in hydrate is a GUI-only feature for v4.7. The CLI supports built-in CH₄/THF guests only (via `--cage-guest KEY=GUEST:OCC`, repeatable). Documenting `--custom-gro`/`--custom-itp` as hydrate cage guest flags would be incorrect — those flags are for Tab-3 liquid custom molecules and require `--interface`.
+
+---
+
 ## Examples
 
 ### Example 1: Small Molecule (Ethanol)
