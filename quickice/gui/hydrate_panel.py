@@ -510,6 +510,14 @@ class HydratePanel(QWidget):
                 lambda _idx, ck=cage_key: self._on_cage_guest_changed(ck)
             )
             row.addWidget(combo)
+            # HelpIcon for the per-cage guest combo (v4.7 mixed cage occupancy).
+            row.addWidget(HelpIcon(
+                "Guest molecule for this cage type. Choose from built-in "
+                "CH₄ (methane) or THF (tetrahydrofuran), or an uploaded "
+                "custom guest (if loaded). Built-in CH₄/THF only on CLI "
+                "for v4.7. Different cage types can have different guests "
+                "(mixed cage occupancy)."
+            ))
             row.addStretch()
             # Occupancy spinbox (0-100 %, default 100 %).
             spin = QDoubleSpinBox()
@@ -519,6 +527,14 @@ class HydratePanel(QWidget):
             spin.setDecimals(1)
             spin.valueChanged.connect(lambda: self.configuration_changed.emit())
             row.addWidget(spin)
+            # HelpIcon for the per-cage occupancy spinbox (v4.7 mixed cage occupancy).
+            row.addWidget(HelpIcon(
+                "Occupancy percentage for this cage type (0-100%). "
+                "Default: 100% (fully occupied). Lower values create "
+                "partial occupancy. Each cage type has independent "
+                "occupancy — e.g., 60% CH₄ in small cages + 100% THF in "
+                "large cages."
+            ))
             # Store references + add the row.
             self._cage_guest_combos[cage_key] = combo
             self._cage_occupancy_spins[cage_key] = spin
