@@ -283,7 +283,7 @@ Plans:
 - [ ] 48-07-PLAN.md — CLI ref version/examples sweep v4.5→v4.7 + v4.7 examples (cross-cutting)
 - [ ] 48-08-PLAN.md — GRO/ITP guide custom guest ITP requirements section (DOCS-04)
 - [ ] 48-09-PLAN.md — help_dialog.py skeleton restructure to QStackedWidget+QListWidget TOC (DOCS-02-in-app)
-- [ ] 48-10-PLAN.md — help_dialog.py v4.7 content pages (4 new pages) (DOCS-02-in-app)
+- [x] 48-10-PLAN.md — help_dialog.py v4.7 content pages (4 new pages) (DOCS-02-in-app)
 - [ ] 48-11-PLAN.md — help_dialog headless smoke test (DOCS-02-in-app)
 - [ ] 48-12-PLAN.md — hydrate_panel per-cage tooltips (DOCS-02-in-app)
 - [ ] 48-13-PLAN.md — Version string bump 4.5.0 → 4.7.0 (cross-cutting)
