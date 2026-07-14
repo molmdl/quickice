@@ -1,6 +1,6 @@
 # QuickIce GUI Guide
 
-This guide covers the QuickIce v4.5 graphical user interface.
+This guide covers the QuickIce v4.7 graphical user interface.
 
 ## Overview
 
@@ -36,8 +36,8 @@ The main window is divided into six tabs:
 ### Basic Workflow
 
 ![QuickIce GUI](images/quickice-v4-gui.png)
-*QuickIce GUI v4.5 — Six-tab workflow: Ice Generation, Hydrate, Interface, Custom Molecule, Solute, and Ion tabs*
-**Note:** v4.5 adds Custom Molecule (Tab 3) and Solute Insertion (Tab 4), moving Ion to Tab 5.
+*QuickIce GUI v4.7 — Six-tab workflow: Ice Generation, Hydrate, Interface, Custom Molecule, Solute, and Ion tabs*
+**Note:** v4.5 added Custom Molecule (Tab 3) and Solute Insertion (Tab 4), moving Ion to Tab 5; v4.7 adds Extended Hydrate Generation (filled ices, custom guests, mixed cage occupancy, depol mode).
 
 1. Enter temperature (K), pressure (MPa), and molecule count
 2. Click on the phase diagram OR type values directly
@@ -179,7 +179,7 @@ The File menu provides multiple export formats:
 
 ### Export for GROMACS
 
-QuickIce v4.0 added interface construction; v4.5 adds solute and custom molecule insertion with direct GROMACS export for molecular dynamics simulations.
+QuickIce v4.0 added interface construction; v4.5 added solute and custom molecule insertion; v4.7 adds extended hydrate generation with filled ices, custom guests, mixed cage occupancy, and depol mode, with direct GROMACS export for molecular dynamics simulations.
 
 **Menu Path:** File → Export for GROMACS (Ctrl+G)
 
