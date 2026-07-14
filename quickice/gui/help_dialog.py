@@ -145,7 +145,82 @@ class QuickReferenceDialog(QDialog):
         )
         self._add_section("Workflow", self._make_page(workflow_label))
 
-        # 4. Dimension Relationships
+        # 4. Extended Lattice Types (v4.7 — new)
+        extended_lattices_label = QLabel(
+            "<b>Extended Lattice Types (v4.7)</b><br><br>"
+            "QuickIce supports 10 hydrate lattice types:<br><br>"
+            "<b>Classical clathrates:</b> sI, sII, sH<br>"
+            "<b>Filled ices:</b> c0te (C0), c1te (C1), c2te (C2), ice1hte (Ih) "
+            "— Teeratchanan 2015<br>"
+            "<b>Water-only:</b> sTprime (sT′, Smirnov 2013), 17 (Ice XVII) "
+            "— no cage guests; guest/occupancy controls hidden<br>"
+            "<b>Empty frameworks:</b> 16 (Ice XVI, empty sII framework)<br><br>"
+            "<b>Triclinic lattices</b> (c0te, c1te): Blocked for interface generation. "
+            "sH is triclinic for data accuracy but NOT blocked.<br>"
+            "<b>Filled ices</b> use cage key 'small' (not 'guest') for CLI --cage-guest."
+        )
+        extended_lattices_label.setWordWrap(True)
+        extended_lattices_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Extended Lattice Types", self._make_page(extended_lattices_label))
+
+        # 5. Custom Guest in Hydrate (v4.7 — new, GUI-only)
+        custom_guest_label = QLabel(
+            "<b>Custom Guest in Hydrate (v4.7 — GUI-only)</b><br><br>"
+            "Upload a custom guest molecule (.gro + .itp) for hydrate cage placement.<br><br>"
+            "<b>Workflow:</b><br>"
+            "1. Upload .gro + .itp file pair<br>"
+            "2. Validate: comb-rule=2 mandatory, residue name ≤3 chars, GRO parseable<br>"
+            "3. Select 'Custom: {residue}' in per-cage guest dropdowns<br>"
+            "4. Generate hydrate structure<br>"
+            "5. Export: .itp bundled with [atomtypes] commented out + merged into .top; "
+            "residue name gets _H suffix (e.g. MOL → MOL_H)<br><br>"
+            "<b>GUI-only for v4.7.</b> The CLI supports built-in CH₄/THF only.<br>"
+            "See Help > GRO/ITP Guide (external) for detailed ITP requirements."
+        )
+        custom_guest_label.setWordWrap(True)
+        custom_guest_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Custom Guest in Hydrate", self._make_page(custom_guest_label))
+
+        # 6. Mixed Cage Occupancy (v4.7 — new)
+        mixed_occupancy_label = QLabel(
+            "<b>Mixed Cage Occupancy (v4.7)</b><br><br>"
+            "Assign different guest types to different cage types with independent occupancy:<br><br>"
+            "• Each cage type (small/medium/large) has its own guest dropdown + occupancy spinner<br>"
+            "• Multi-guest: e.g. CH₄ in small cages (60%) + THF in large cages (100%)<br>"
+            "• Water-only lattices (sTprime, 17): guest/occupancy controls hidden<br>"
+            "• Filled ices: single cage row (small only)<br><br>"
+            "<b>CLI:</b> Use --cage-guest KEY=GUEST:OCC (repeatable).<br>"
+            "Example: --cage-guest small=CH4:60 --cage-guest large=THF:100<br><br>"
+            "Note: --guest and --cage-occupancy-small/large are DEPRECATED; use --cage-guest."
+        )
+        mixed_occupancy_label.setWordWrap(True)
+        mixed_occupancy_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Mixed Cage Occupancy", self._make_page(mixed_occupancy_label))
+
+        # 7. Depol Mode (v4.7 — new)
+        depol_label = QLabel(
+            "<b>Depol Mode (v4.7)</b><br><br>"
+            "Controls H-bond orientation during hydrate generation:<br><br>"
+            "• <b>Strict</b> (default): Ice rules enforced, zero net dipole. Standard behavior.<br>"
+            "• <b>Optimal</b>: Relaxed dipole optimization.<br><br>"
+            "Select from the Depol dropdown in the Hydrate tab.<br>"
+            "CLI: --depol strict | optimal (default: strict)<br><br>"
+            "Note: In GenIce2 2.2.13.1, strict and optimal produce identical atom counts. "
+            "The mode affects H-bond orientation, not the number of atoms."
+        )
+        depol_label.setWordWrap(True)
+        depol_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self._add_section("Depol Mode", self._make_page(depol_label))
+
+        # 8. Dimension Relationships
         dimension_label = QLabel(
             "SLAB MODE:\n"
             "• Box Z MUST equal: 2 × ice_thickness + water_thickness\n"
@@ -178,7 +253,7 @@ class QuickReferenceDialog(QDialog):
         )
         self._add_section("Dimension Relationships", self._make_page(dimension_label))
 
-        # 5. Best Practices
+        # 9. Best Practices
         best_practices_label = QLabel(
             "CHOOSING BOX DIMENSIONS:\n"
             "• X, Y: Large enough to contain ice candidate lateral dimensions\n"
@@ -210,7 +285,7 @@ class QuickReferenceDialog(QDialog):
         )
         self._add_section("Best Practices", self._make_page(best_practices_label))
 
-        # 6. Custom Molecule Preparation
+        # 10. Custom Molecule Preparation
         custom_mol_label = QLabel(
             "GRO file: Coordinates in nm, residue name in columns 6-10\n"
             "ITP file: Must include [ atomtypes ], [ moleculetype ], [ atoms ] sections\n"
@@ -224,7 +299,7 @@ class QuickReferenceDialog(QDialog):
         )
         self._add_section("Custom Molecule Preparation", self._make_page(custom_mol_label))
 
-        # 7. More Information & Notes (combined from the former "More Information"
+        # 11. More Information & Notes (combined from the former "More Information"
         #    and "Important Notes" pages — both QLabels in one QVBoxLayout, with
         #    the notes content below the references, wrapped in a single
         #    QScrollArea for independent scrolling; matches the _make_page pattern).
