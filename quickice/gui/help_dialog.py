@@ -104,7 +104,7 @@ class QuickReferenceDialog(QDialog):
             "\n"
             "Tab 1 — Hydrate Generation:\n"
             "6. Switch to Hydrate Generation tab\n"
-            "7. Select lattice type (sI, sII, sH) and guest type (empty, CH₄, etc.)\n"
+            "7. Select lattice type (10 types: sI, sII, sH, c0te, c1te, c2te, ice1hte, sTprime, 16, 17) and guest type per cage\n"
             "8. Set unit cell repetitions and generate hydrate structure\n"
             "9. Export hydrate for GROMACS (Ctrl+H)\n"
             "\n"
@@ -224,7 +224,10 @@ class QuickReferenceDialog(QDialog):
         )
         self._add_section("Custom Molecule Preparation", self._make_page(custom_mol_label))
 
-        # 7. More Information
+        # 7. More Information & Notes (combined from the former "More Information"
+        #    and "Important Notes" pages — both QLabels in one QVBoxLayout, with
+        #    the notes content below the references, wrapped in a single
+        #    QScrollArea for independent scrolling; matches the _make_page pattern).
         refs_label = QLabel(
             "• Click phase regions in diagram to see scientific references\n"
             "• GenIce2 repository: https://github.com/genice-dev/GenIce2\n"
@@ -235,9 +238,7 @@ class QuickReferenceDialog(QDialog):
         refs_label.setTextInteractionFlags(
             Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
         )
-        self._add_section("More Information", self._make_page(refs_label))
 
-        # 8. Important Notes
         notes_label = QLabel(
             "• Actual molecule count may differ from requested to satisfy\n"
             "  crystal structure symmetry constraints\n"
@@ -252,7 +253,25 @@ class QuickReferenceDialog(QDialog):
         notes_label.setTextInteractionFlags(
             Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
         )
-        self._add_section("Important Notes", self._make_page(notes_label))
+
+        combined_scroll = QScrollArea()
+        combined_scroll.setWidgetResizable(True)
+        combined_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        combined_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        combined_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        combined_content = QWidget()
+        combined_layout = QVBoxLayout(combined_content)
+        combined_layout.setSpacing(12)
+        combined_layout.setContentsMargins(12, 12, 12, 12)
+        combined_layout.addWidget(refs_label)
+        combined_layout.addWidget(notes_label)
+        combined_layout.addStretch()
+        combined_scroll.setWidget(combined_content)
+        self._add_section("More Information & Notes", combined_scroll)
 
         body.addWidget(self.toc)
         body.addWidget(self.pages, 1)   # pages stretch
