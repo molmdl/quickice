@@ -278,7 +278,7 @@ Plans:
 - [ ] 48-02-PLAN.md — README version + Known Issues + footer sweep v4.5→v4.7 (cross-cutting)
 - [ ] 48-03-PLAN.md — GUI guide Hydrate lattice types table (10 rows) (DOCS-02-ext)
 - [ ] 48-04-PLAN.md — GUI guide Custom guest upload + mixed occupancy + depol subsections (DOCS-02-ext)
-- [ ] 48-05-PLAN.md — GUI guide header/version sweep v4.5→v4.7 (cross-cutting)
+- [x] 48-05-PLAN.md — GUI guide header/version sweep v4.5→v4.7 (cross-cutting)
 - [ ] 48-06-PLAN.md — CLI ref hydrate flags rewrite + --cage-guest + --depol + DEPRECATED banners (DOCS-03)
 - [ ] 48-07-PLAN.md — CLI ref version/examples sweep v4.5→v4.7 + v4.7 examples (cross-cutting)
 - [ ] 48-08-PLAN.md — GRO/ITP guide custom guest ITP requirements section (DOCS-04)
@@ -307,7 +307,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 45. E2E Hydrate Tab Workflow | v4.7 | 14/14 (13 test-only + 1 code-change --depol) | ✓ Complete | 2026-07-11 |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
-| 48. Documentation | v4.7 | 0/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | Not started | - |
+| 48. Documentation | v4.7 | 13/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | 🚧 In progress | - |
 
 **Remaining v4.7 work after reorganization:** 14 plans (48-01..48-14 — Phase 48 Documentation, aggressively split per user request). Phase 47 COMPLETE (1/1). Phases 38-47 ALL COMPLETE.
 
