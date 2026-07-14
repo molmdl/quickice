@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 | Field | Value |
 |-------|-------|
 | Milestone | v4.7 Extended Hydrate Generation |
-| Phase | 48 of 48 (Documentation) — IN PROGRESS (48-01, 48-02, 48-03, 48-06, 48-08, 48-09, 48-12, 48-13 done; others by parallel agents). Phases 38-47 ALL COMPLETE. |
-| Plan | 48-02 DONE — README version strings swept v4.5 → v4.7 (subtitle line 14, footer subtitle line 425 "QuickIce v4.7 — Extended Hydrate Generation", last-updated date line 426 2026-06-15→2026-07-12); false "Only pure water ice systems supported" Known Issues claim REMOVED entirely (not replaced with a caveat — QuickIce v4.7 supports hydrates, filled ices, and custom guests); Known Issues CLI support line updated "v4.5 features (Tabs 3-5)" → "v4.7 features"; 3 valid Known Issues (ranking estimates, phase boundary data, high-pressure uncertainties) unchanged. Zero v4.5 matches in subtitle/Known Issues/footer; v4.7 matches at subtitle + Known Issues CLI line + footer. Line numbers shifted from plan refs (14→14, 296→309, 297→310, 413→425, 414→426) due to the 48-01 Custom Guest subsection insertion — read README first per project_context. 2 atomic docs commits (796ba2c version sweep, db4374e Known Issues fix). |
-| Status | Phase 48 IN PROGRESS — 48-02 done. 6 plans remain per RESEARCH 14-plan split (help_dialog content 48-10 + others, by parallel agents). |
-| Last activity | 2026-07-12 — Completed 48-02-PLAN.md (README version sweep v4.5→v4.7 + removed false pure-water Known Issues claim). |
+| Phase | 48 of 48 (Documentation) — IN PROGRESS (48-01, 48-02, 48-03, 48-04, 48-06, 48-08, 48-09, 48-12, 48-13 done; others by parallel agents). Phases 38-47 ALL COMPLETE. |
+| Plan | 48-04 DONE — GUI guide Tab 1 three new subsections added: Custom Guest Upload (GUI-only for v4.7, 5-step upload→validate→select→generate→export, links GRO/ITP guide §Custom Guest ITP Requirements), Mixed Cage Occupancy (per-cage-type guest QComboBox + occupancy QDoubleSpinBox, multi-guest, water-only/filled-ice notes; REPLACED old "Small cages/Large cages" text), Depol Mode (strict default vs optimal, GenIce2 2.2.13.1 identical atom counts). Workflow steps fixed: step 1 "sI, sII, or sH" → all 10 lattice types (filled-ice/water-only + Lattice Types table), step 2 per-cage guest+occupancy, step 3 depol mode. Sourced from quickice/gui/hydrate_panel.py actual v4.7 controls; verified GRO/ITP guide heading line 568 before linking (AGENTS.md). Did NOT touch Overview bullet line 233 "sI, sII, sH" (belongs to 48-05 cross-cutting sweep). grep "sI, sII, or sH" ZERO matches. 2 atomic docs commits (6c16dad subsections, 3a5bef0 workflow steps). |
+| Status | Phase 48 IN PROGRESS — 48-04 done. 5 plans remain per RESEARCH 14-plan split (help_dialog content 48-10 + 48-05/07/11/14 by parallel agents). |
+| Last activity | 2026-07-14 — Completed 48-04-PLAN.md (GUI guide Custom Guest Upload + Mixed Cage Occupancy + Depol Mode subsections + fixed Workflow steps). |
 
-**Progress:** [█████████░] ~95% (53/61 v4.7 requirements complete; DOCS-01 closed by 48-01, DOCS-04 closed by 48-08, DOCS-02-in-app skeleton advanced by 48-09, README version strings swept to v4.7 by 48-02. Phases 38-47 ALL COMPLETE. Phase 48 docs in progress: 48-01 + 48-02 + 48-03 + 48-06 + 48-08 + 48-09 + 48-12 + 48-13 done, others by parallel agents)
+**Progress:** [█████████░] ~95% (53/61 v4.7 requirements complete; DOCS-01 closed by 48-01, DOCS-04 closed by 48-08, DOCS-02-ext GUI subsections closed by 48-04, DOCS-02-in-app skeleton advanced by 48-09, README version strings swept to v4.7 by 48-02. Phases 38-47 ALL COMPLETE. Phase 48 docs in progress: 48-01 + 48-02 + 48-03 + 48-04 + 48-06 + 48-08 + 48-09 + 48-12 + 48-13 done, others by parallel agents)
 
 ---
 
@@ -70,6 +70,7 @@ Recent decisions affecting v4.7 work:
 - sT' = water-only generation in v4.7 (no cagepos in GenIce2)
 - Built-in CO₂/H₂/ethane guests deferred to v4.8+ (force field verification needed)
 - Water model selector deferred to v4.8+ (downstream impact)
+- **[48-04]** GUI guide Tab 1 subsections (Custom Guest Upload GUI-only, Mixed Cage Occupancy per-cage-type, Depol Mode strict/optimal) sourced from hydrate_panel.py actual v4.7 controls, not plan paraphrase; GRO/ITP guide link anchor verified before use; Overview bullet "sI,sII,sH" left for 48-05 cross-cutting sweep (not this plan's subsection scope)
 - **[38-01]** Built-in guest types auto-populate metadata in __post_init__; custom types (Phase 40) must provide explicitly
 - **[38-01]** guest_itp_path is NOT auto-populated (only relevant for custom guests)
 - **[38-01]** atom_labels uses list copy from GUEST_MOLECULES to avoid shared mutable state
@@ -258,6 +259,6 @@ Recent decisions affecting v4.7 work:
 
 ## Session Continuity
 
-Last session: 2026-07-12T17:41Z
-Stopped at: Completed 48-02-PLAN.md (README version sweep v4.5→v4.7: subtitle line 14 + footer subtitle line 425 "QuickIce v4.7 — Extended Hydrate Generation" + last-updated date line 426 2026-06-15→2026-07-12; false "Only pure water ice systems supported" Known Issues line REMOVED entirely [not replaced with a caveat — QuickIce v4.7 supports hydrates, filled ices, custom guests]; CLI support line "v4.5 features (Tabs 3-5)" → "v4.7 features"; 3 valid Known Issues retained unchanged; grep v4.5 ZERO matches, grep "Only pure water" ZERO matches, grep v4.7 matches at subtitle+Known Issues+footer; line numbers shifted from plan refs due to 48-01 Custom Guest subsection insertion [14→14, 296→309, 297→310, 413→425, 414→426] — read README first per project_context; 2 atomic docs commits 796ba2c + db4374e; aligns README with code __version__ bump in 48-13). Phase 48 (Documentation) IN PROGRESS — 48-01 + 48-02 + 48-03 + 48-06 + 48-08 + 48-09 + 48-12 + 48-13 done; remaining plans per RESEARCH 14-plan split by parallel agents.
+Last session: 2026-07-14T06:03Z
+Stopped at: Completed 48-04-PLAN.md (GUI guide Tab 1 three new subsections: Custom Guest Upload [GUI-only for v4.7, 5-step upload→validate→select→generate→export, links GRO/ITP guide §Custom Guest ITP Requirements at line 568], Mixed Cage Occupancy [per-cage-type guest QComboBox + occupancy QDoubleSpinBox, multi-guest, water-only/filled-ice notes; REPLACED old "Small cages/Large cages" text], Depol Mode [strict default vs optimal, GenIce2 2.2.13.1 identical atom counts]. Workflow steps fixed: step 1 "sI, sII, or sH"→all 10 lattice types [filled-ice/water-only + Lattice Types table], step 2 per-cage guest+occupancy, step 3 depol mode. Sourced from quickice/gui/hydrate_panel.py actual v4.7 controls; verified GRO/ITP guide heading before linking; did NOT touch Overview bullet line 233 [belongs to 48-05]. grep "sI, sII, or sH" ZERO matches. 2 atomic docs commits 6c16dad + 3a5bef0). Phase 48 (Documentation) IN PROGRESS — 48-01 + 48-02 + 48-03 + 48-04 + 48-06 + 48-08 + 48-09 + 48-12 + 48-13 done; remaining plans per RESEARCH 14-plan split by parallel agents.
 Resume file: None
