@@ -98,10 +98,10 @@ Requirements for v4.7 Extended Hydrate Generation milestone. Each maps to roadma
 
 ### Documentation
 
-- [ ] **DOCS-01**: README updated with custom guest in hydrate workflow — *Phase 48-01*
-- [ ] **DOCS-02**: GUI guide updated with new lattice types, custom guest upload, mixed occupancy, depol selector — *Phase 48-01 (external docs) + Phase 48-02 (in-app help_dialog.py + tooltips, restructured to indexed format)*
-- [ ] **DOCS-03**: CLI reference updated with new flags (--hydrate-lattice, --custom-guest, --depol) — *Phase 48-01*
-- [ ] **DOCS-04**: Custom guest ITP requirements documented (comb-rule=2, residue name ≤3 chars, _H suffix convention) — *Phase 48-01*
+- [x] **DOCS-01**: README updated with custom guest in hydrate workflow — *Phase 48-01/48-02*
+- [x] **DOCS-02**: GUI guide updated with new lattice types, custom guest upload, mixed occupancy, depol selector — *Phase 48-03/48-04/48-05 (external docs) + Phase 48-09/48-10/48-11/48-12 (in-app help_dialog.py + tooltips, restructured to indexed format)*
+- [x] **DOCS-03**: CLI reference updated with new flags (--lattice-type extended to 10 choices, --cage-guest, --depol) and deprecated banners — *Phase 48-06/48-07*
+- [x] **DOCS-04**: Custom guest ITP requirements documented (comb-rule=2, residue name ≤3 chars, _H suffix convention) — *Phase 48-08*
 
 ## Deferred (v4.8+)
 
@@ -194,17 +194,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-06 | Phase 42 | Complete |
 | TEST-07 | Phase 41-10/41-11 | Complete |
 | TEST-08 | Phase 47-05 | Complete |
-| DOCS-01 | Phase 48-01 | Pending |
-| DOCS-02 | Phase 48-01 + 48-02 | Pending |
-| DOCS-03 | Phase 48-01 | Pending |
-| DOCS-04 | Phase 48-01 | Pending |
+| DOCS-01 | Phase 48-01/48-02 | Complete |
+| DOCS-02 | Phase 48-03/04/05 + 48-09/10/11/12 | Complete |
+| DOCS-03 | Phase 48-06/48-07 | Complete |
+| DOCS-04 | Phase 48-08 | Complete |
 
 **Coverage:**
 - v4.7 requirements: 61 total (PIPE×4, LATTICE×9, GUEST×10, EXPORT×6, MIXED×5, DEPOL×3, GUI×6, CLI×4, VTK×2, TEST×8, DOCS×4)
 - Mapped to phases: 61/61 ✓
 - Unmapped: 0
-- Complete: 53
-- Pending: 8 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02 → 45-01b (deferred by design); DOCS-01..04 → 48-01/48-02)
+- Complete: 57
+- Pending: 4 (GUEST-01/02/03 → 45-01b (GUI half done in 44-02); CLI-02 → 45-01b (deferred by design))
 
 ---
 *Requirements defined: 2026-06-27*
