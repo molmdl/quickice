@@ -1,12 +1,12 @@
 # GRO/ITP File Creation Guide for QuickIce
 
-This guide explains how to create valid GROMACS coordinate (.gro) and topology (.itp) files for custom molecules in QuickIce v4.5.
+This guide explains how to create valid GROMACS coordinate (.gro) and topology (.itp) files for custom molecules in QuickIce v4.7.
 
 ## Introduction
 
 ### Purpose
 
-QuickIce v4.5 allows you to insert custom molecules into ice-water interface structures. To do this, you need:
+QuickIce v4.7 allows you to insert custom molecules into ice-water interface structures. To do this, you need:
 
 1. **GRO file** — Atomic coordinates in GROMACS format
 2. **ITP file** — Force field topology parameters
