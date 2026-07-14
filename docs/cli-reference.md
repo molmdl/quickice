@@ -166,8 +166,10 @@ Display the current QuickIce version.
 **Usage:**
 ```bash
 python -m quickice --version
-# Output: python -m quickice 4.5.0
+# Output: python -m quickice 4.7.0
 ```
+
+> **Version history:** v4.0 added interface construction; v4.5 added solute and custom molecule insertion; v4.7 adds extended hydrate generation with filled ices, custom guests, mixed cage occupancy, and depol mode.
 
 ---
 
@@ -748,6 +750,37 @@ python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI --depol optimal
 ```
 
 > **Note:** In GenIce2 2.2.13.1, `strict` and `optimal` produce identical atom counts. The depol mode affects H-bond orientation during generation, not the number of atoms.
+
+---
+
+### v4.7 Hydrate Examples
+
+Comprehensive examples combining the v4.7 hydrate flags (`--lattice-type`, `--cage-guest`, `--depol`):
+
+```bash
+# Extended lattice type (filled ice C0)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type c0te --cage-guest small=CH4:100
+
+# Water-only lattice (no guests)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sTprime
+
+# Mixed cage occupancy (CH4 in small + THF in large)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI \
+  --cage-guest small=CH4:60 --cage-guest large=THF:100
+
+# sH with 3 cage types
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sH \
+  --cage-guest small=CH4:100 --cage-guest medium=CH4:50 --cage-guest large=THF:100
+
+# Depol mode (optimal)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type sI \
+  --cage-guest small=CH4:100 --depol optimal
+
+# Ice XVI (empty sII framework, 16)
+python -m quickice -T 250 -P 0.1 --hydrate --lattice-type 16
+```
+
+> **Filled-ice gotcha:** For filled ices (`c0te`, `c1te`, `c2te`, `ice1hte`), use cage key `small` (NOT `guest`) with `--cage-guest`. See the [`--cage-guest` filled-ice gotcha](#--cage-guest) above.
 
 ---
 
