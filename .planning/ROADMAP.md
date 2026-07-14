@@ -274,20 +274,20 @@ Plans:
 **Plans**: 14 plans in 4 waves
 
 Plans:
-- [ ] 48-01-PLAN.md — README Tab 1 hydrate rewrite + custom-guest workflow subsection (DOCS-01)
-- [ ] 48-02-PLAN.md — README version + Known Issues + footer sweep v4.5→v4.7 (cross-cutting)
-- [ ] 48-03-PLAN.md — GUI guide Hydrate lattice types table (10 rows) (DOCS-02-ext)
-- [ ] 48-04-PLAN.md — GUI guide Custom guest upload + mixed occupancy + depol subsections (DOCS-02-ext)
-- [x] 48-05-PLAN.md — GUI guide header/version sweep v4.5→v4.7 (cross-cutting)
-- [ ] 48-06-PLAN.md — CLI ref hydrate flags rewrite + --cage-guest + --depol + DEPRECATED banners (DOCS-03)
-- [ ] 48-07-PLAN.md — CLI ref version/examples sweep v4.5→v4.7 + v4.7 examples (cross-cutting)
-- [ ] 48-08-PLAN.md — GRO/ITP guide custom guest ITP requirements section (DOCS-04)
-- [ ] 48-09-PLAN.md — help_dialog.py skeleton restructure to QStackedWidget+QListWidget TOC (DOCS-02-in-app)
-- [x] 48-10-PLAN.md — help_dialog.py v4.7 content pages (4 new pages) (DOCS-02-in-app)
-- [x] 48-11-PLAN.md — help_dialog headless smoke test (DOCS-02-in-app)
-- [ ] 48-12-PLAN.md — hydrate_panel per-cage tooltips (DOCS-02-in-app)
-- [ ] 48-13-PLAN.md — Version string bump 4.5.0 → 4.7.0 (cross-cutting)
-- [ ] 48-14-PLAN.md — Final verification sweep (all DOCS)
+- [x] 48-01-PLAN.md — README Tab 1 hydrate rewrite + custom-guest workflow subsection (DOCS-01) ✓ DONE 2026-07-12
+- [x] 48-02-PLAN.md — README version + Known Issues + footer sweep v4.5→v4.7 (cross-cutting) ✓ DONE 2026-07-14
+- [x] 48-03-PLAN.md — GUI guide Hydrate lattice types table (10 rows) (DOCS-02-ext) ✓ DONE 2026-07-12
+- [x] 48-04-PLAN.md — GUI guide Custom guest upload + mixed occupancy + depol subsections (DOCS-02-ext) ✓ DONE 2026-07-14
+- [x] 48-05-PLAN.md — GUI guide header/version sweep v4.5→v4.7 (cross-cutting) ✓ DONE 2026-07-14
+- [x] 48-06-PLAN.md — CLI ref hydrate flags rewrite + --cage-guest + --depol + DEPRECATED banners (DOCS-03) ✓ DONE 2026-07-12
+- [x] 48-07-PLAN.md — CLI ref version/examples sweep v4.5→v4.7 + v4.7 examples (cross-cutting) ✓ DONE 2026-07-14
+- [x] 48-08-PLAN.md — GRO/ITP guide custom guest ITP requirements section (DOCS-04) ✓ DONE 2026-07-14
+- [x] 48-09-PLAN.md — help_dialog.py skeleton restructure to QStackedWidget+QListWidget TOC (DOCS-02-in-app) ✓ DONE 2026-07-12
+- [x] 48-10-PLAN.md — help_dialog.py v4.7 content pages (4 new pages) (DOCS-02-in-app) ✓ DONE 2026-07-14
+- [x] 48-11-PLAN.md — help_dialog headless smoke test (DOCS-02-in-app) ✓ DONE 2026-07-14
+- [x] 48-12-PLAN.md — hydrate_panel per-cage tooltips (DOCS-02-in-app) ✓ DONE 2026-07-12
+- [x] 48-13-PLAN.md — Version string bump 4.5.0 → 4.7.0 (cross-cutting) ✓ DONE 2026-07-12
+- [x] 48-14-PLAN.md — Final verification sweep (all DOCS) ✓ DONE 2026-07-14
 
 ## Progress
 
@@ -307,9 +307,9 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 45. E2E Hydrate Tab Workflow | v4.7 | 14/14 (13 test-only + 1 code-change --depol) | ✓ Complete | 2026-07-11 |
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
-| 48. Documentation | v4.7 | 13/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | 🚧 In progress | - |
+| 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 
-**Remaining v4.7 work after reorganization:** 14 plans (48-01..48-14 — Phase 48 Documentation, aggressively split per user request). Phase 47 COMPLETE (1/1). Phases 38-47 ALL COMPLETE.
+**v4.7 status after reorganization:** Phase 48 Documentation COMPLETE — all 14 plans (48-01..48-14) done (aggressively split per user request). Phase 47 COMPLETE (1/1). **Phases 38-48 ALL COMPLETE** — v4.7 milestone requirements 61/61 complete. 2 optional doc-hygiene follow-ups logged by the 48-14 final verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list in Overview) — not release blockers.
 
 ## Dependency Graph
 
