@@ -20,7 +20,7 @@ import pytest
 from types import SimpleNamespace
 
 from quickice.structure_generation.ion_inserter import IonInserter
-from quickice.structure_generation.types import MoleculeIndex
+from quickice.structure_generation.types import MoleculeIndex, detect_atoms_per_molecule
 
 
 # ── CRIT-02: alternation parity uses placement counter, not enumerate index ──
@@ -211,3 +211,149 @@ class TestCRIT02AlternationParity:
         ion_types = [m.mol_type for m in result.molecule_index
                      if m.mol_type in ("na", "cl")]
         assert ion_types == ["na", "cl", "na", "cl"]
+
+
+# ── SUSP-01: 3-atom GenIce fallback must not silently miscount ──────────────
+
+# detect_atoms_per_molecule is the canonical 3-vs-4 atom detector in types.py:
+# returns 4 iff the first atom is "OW" (TIP4P-family), else 3 (GenIce default).
+
+
+class TestSUSP01ThreeAtomGenIceFallback:
+    """The ice fallback in ``_build_molecule_index_from_structure`` must not
+    assume ``WATER_ATOMS_PER_MOLECULE`` (4) for 3-atom GenIce ice.
+
+    The fallback (``ion_inserter.py`` ~line 103) is only reached when
+    ``ice_nmolecules == 0`` AND ``interface_structure is None``. Before the
+    fix it computed ``ice_mols = ice_atom_count // WATER_ATOMS_PER_MOLECULE``
+    (4), silently miscounting 3-atom GenIce ice (300 atoms -> 75 mols instead
+    of 100), which corrupts the molecule_index downstream
+    (``ice_atoms_per_mol = 300 // 75 = 4``, not 3). The fix uses the 4-atom
+    divisor ONLY when the ice is confirmed TIP4P-family (first atom "OW" per
+    ``detect_atoms_per_molecule``); otherwise it raises ``ValueError`` so the
+    caller supplies ``ice_nmolecules`` instead of getting a corrupt structure.
+    """
+
+    @staticmethod
+    def _ice_only_structure(atom_names, ice_atom_count):
+        """Build a minimal structure that triggers the ice fallback.
+
+        ``ice_nmolecules=0`` and ``interface_structure=None`` defeat both
+        upstream fallbacks, leaving only the atom-count fallback at
+        ``ion_inserter.py`` ~line 103.
+        """
+        return SimpleNamespace(
+            positions=np.zeros((ice_atom_count, 3)),
+            atom_names=atom_names,
+            cell=np.diag([3.0, 3.0, 3.0]),
+            molecule_index=[],  # empty -> triggers _build_molecule_index_from_structure
+            ice_atom_count=ice_atom_count,
+            ice_nmolecules=0,   # forces the atom-count fallback
+            water_atom_count=0,
+            water_nmolecules=0,
+            guest_atom_count=0,
+            guest_nmolecules=0,
+            interface_structure=None,  # forces the atom-count fallback
+        )
+
+    def test_three_atom_genice_fallback_raises(self):
+        """A 3-atom GenIce ice (300 atoms) with no ice_nmolecules and no
+        interface_structure must raise ValueError, not silently return 75.
+
+        Before the fix this returned a molecule_index with ice_mols=75
+        (300 // 4), a silent miscount (should be 100 = 300 // 3).
+        """
+        # 3-atom GenIce pattern: O, H, H per molecule (300 atoms = 100 mols).
+        atom_names = ["O", "H", "H"] * 100
+        assert len(atom_names) == 300
+        assert detect_atoms_per_molecule(atom_names) == 3  # not TIP4P-family
+
+        structure = self._ice_only_structure(atom_names, ice_atom_count=300)
+        inserter = IonInserter(seed=42)
+
+        with pytest.raises(ValueError, match="3-atom GenIce") as excinfo:
+            inserter._build_molecule_index_from_structure(structure)
+
+        # The message must explain the silent-miscount it prevents and point
+        # the caller at the fix (supply ice_nmolecules).
+        msg = str(excinfo.value)
+        assert "75" in msg, (
+            f"Error message should expose the wrong value (75) it prevents; "
+            f"got: {msg}"
+        )
+        assert "100" in msg, (
+            f"Error message should expose the correct value (100) for "
+            f"3-atom ice; got: {msg}"
+        )
+        assert "ice_nmolecules" in msg, (
+            f"Error message should tell the caller to provide ice_nmolecules; "
+            f"got: {msg}"
+        )
+
+    def test_three_atom_genice_raise_propagates_through_replace(self):
+        """The raise must surface through the public replace_water_with_ions
+        path (empty molecule_index triggers the build), not just the private
+        helper.
+        """
+        atom_names = ["O", "H", "H"] * 100  # 300 atoms
+        structure = self._ice_only_structure(atom_names, ice_atom_count=300)
+        inserter = IonInserter(seed=42)
+
+        with pytest.raises(ValueError, match="3-atom GenIce"):
+            inserter.replace_water_with_ions(structure, ion_pairs=1)
+
+    def test_four_atom_tip4p_fallback_still_works(self):
+        """The fix is surgical: confirmed 4-atom TIP4P-family ice (first atom
+        "OW") must still use WATER_ATOMS_PER_MOLECULE and return a non-None
+        molecule_index -- the SUSP-01 guard must NOT change the 4-atom path.
+        """
+        # 4-atom TIP4P pattern: OW, HW1, HW2, MW per molecule (120 atoms = 30 mols).
+        atom_names = ["OW", "HW1", "HW2", "MW"] * 30
+        assert len(atom_names) == 120
+        assert detect_atoms_per_molecule(atom_names) == 4  # TIP4P-family
+
+        structure = self._ice_only_structure(atom_names, ice_atom_count=120)
+        inserter = IonInserter(seed=42)
+
+        # Must NOT raise -- the 4-atom divisor is confirmed correct here.
+        mol_index = inserter._build_molecule_index_from_structure(structure)
+
+        assert mol_index is not None, (
+            "4-atom TIP4P-family fallback must still return a molecule_index"
+        )
+        ice_entries = [m for m in mol_index if m.mol_type == "ice"]
+        assert len(ice_entries) == 30, (
+            f"Expected 30 ice entries (120 atoms // 4); got {len(ice_entries)}. "
+            f"The 4-atom fallback path must be unchanged by the SUSP-01 guard."
+        )
+        # And each ice entry carries the correct 4-atom count.
+        assert all(m.count == 4 for m in ice_entries)
+
+    def test_ice_nmolecules_present_skips_fallback_entirely(self):
+        """When ice_nmolecules is available (>0), the atom-count fallback is
+        not reached at all, so neither the raise nor the //4 compute fires.
+        This guards the normal (non-fallback) path is unchanged.
+        """
+        atom_names = ["O", "H", "H"] * 100  # 3-atom GenIce, 300 atoms
+        structure = SimpleNamespace(
+            positions=np.zeros((300, 3)),
+            atom_names=atom_names,
+            cell=np.diag([3.0, 3.0, 3.0]),
+            molecule_index=[],
+            ice_atom_count=300,
+            ice_nmolecules=100,  # AVAILABLE -> no fallback, no raise
+            water_atom_count=0,
+            water_nmolecules=0,
+            guest_atom_count=0,
+            guest_nmolecules=0,
+            interface_structure=None,
+        )
+        inserter = IonInserter(seed=42)
+
+        mol_index = inserter._build_molecule_index_from_structure(structure)
+
+        assert mol_index is not None
+        ice_entries = [m for m in mol_index if m.mol_type == "ice"]
+        assert len(ice_entries) == 100  # uses ice_nmolecules directly (3-atom)
+        assert all(m.count == 3 for m in ice_entries)
+

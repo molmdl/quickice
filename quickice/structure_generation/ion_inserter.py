@@ -20,6 +20,7 @@ from quickice.structure_generation.types import (
     InterfaceStructure,  # for compatibility with interface generation
     WATER_ATOMS_PER_MOLECULE,
     WATER_VOLUME_NM3,
+    detect_atoms_per_molecule,
 )
 
 
@@ -98,9 +99,38 @@ class IonInserter:
             if interface is not None:
                 ice_mols = getattr(interface, 'ice_nmolecules', 0)
             if ice_mols == 0:
-                # Compute from atom count (TIP4P: 4 atoms per molecule, GenIce: 3 atoms)
-                # Use ice_atom_count / first ice molecule count from molecule_index if available
-                ice_mols = ice_atom_count // WATER_ATOMS_PER_MOLECULE  # Conservative estimate
+                # SUSP-01: cannot reliably infer the ice molecule count from the
+                # atom count alone. TIP4P-family ice has 4 atoms/molecule
+                # (OW, HW1, HW2, MW) but GenIce ice has 3 (O, H, H). Dividing by
+                # WATER_ATOMS_PER_MOLECULE (4) for 3-atom GenIce ice silently
+                # miscounts (e.g. 300 atoms -> 75 mols instead of 100), which
+                # corrupts the molecule_index downstream (ice_atoms_per_mol =
+                # 300 // 75 = 4, not 3). Use the 4-atom divisor ONLY when the ice
+                # is confirmed TIP4P-family (first atom "OW" per
+                # detect_atoms_per_molecule); otherwise refuse to guess and
+                # raise so the caller supplies ice_nmolecules instead of
+                # getting a corrupt structure.
+                atom_names = getattr(structure, 'atom_names', None)
+                if (atom_names
+                        and detect_atoms_per_molecule(atom_names)
+                        == WATER_ATOMS_PER_MOLECULE):
+                    # Confirmed 4-atom TIP4P-family ice: divisor 4 is correct.
+                    ice_mols = ice_atom_count // WATER_ATOMS_PER_MOLECULE
+                else:
+                    first_atom = atom_names[0] if atom_names else "<none>"
+                    raise ValueError(
+                        f"Cannot determine ice molecule count: ice_nmolecules "
+                        f"is unavailable (0) and the interface_structure "
+                        f"fallback is absent. The ice is not confirmed "
+                        f"4-atom TIP4P-family (first atom name is {first_atom!r}). "
+                        f"Assuming WATER_ATOMS_PER_MOLECULE "
+                        f"({WATER_ATOMS_PER_MOLECULE}) would silently miscount "
+                        f"3-atom GenIce ice (e.g. {ice_atom_count} atoms -> "
+                        f"{ice_atom_count // WATER_ATOMS_PER_MOLECULE} mols "
+                        f"instead of {ice_atom_count // 3} for 3-atom ice). "
+                        f"Provide ice_nmolecules on the structure (or a "
+                        f"populated molecule_index) so the count is not guessed."
+                    )
         if water_mols == 0 and water_atom_count > 0:
             # Try interface_structure fallback first
             interface = getattr(structure, 'interface_structure', None)

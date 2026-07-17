@@ -223,19 +223,28 @@ class TestSoluteStructureNmolecules:
 class TestIonInserterBuildMoleculeIndexRobustness:
     """Verify _build_molecule_index_from_structure handles missing nmolecules fields."""
 
-    def test_build_molecule_index_uses_atom_count_fallback(self, interface_slab):
+    def test_build_molecule_index_uses_atom_count_fallback(self, interface_hydrate_slab):
         """_build_molecule_index_from_structure should fall back to atom count when nmolecules is 0.
 
         This tests the defense-in-depth fix: even if a structure somehow has
         ice_nmolecules=0 but ice_atom_count>0, the method should compute
         ice_nmolecules from atom counts instead of producing 0 entries.
+
+        NOTE (SUSP-01): the fallback now only computes for confirmed 4-atom
+        TIP4P-family ice (first atom "OW"). For 3-atom GenIce ice it raises
+        ValueError rather than silently miscounting with the 4-atom divisor
+        (e.g. 300 atoms -> 75 mols instead of 100); that 3-atom raise is
+        covered by tests/test_scancode_bugs_ion_inserter.py. This test
+        therefore uses a 4-atom TIP4P-family interface (hydrate slab, atom
+        names start with "OW") to exercise the PRESERVED 4-atom compute
+        fallback path.
         """
         # Create a minimal structure that simulates the old CustomMoleculeStructure
         # (has ice_atom_count and water_atom_count but ice_nmolecules=0/water_nmolecules=0)
         from quickice.structure_generation.types import MoleculeIndex
 
-        # Build molecule_index from interface_slab
-        interface = interface_slab
+        # Build molecule_index from the 4-atom TIP4P-family hydrate interface
+        interface = interface_hydrate_slab
         n_ice_mols = interface.ice_nmolecules
         n_water_mols = interface.water_nmolecules
         ice_atoms_per_mol = interface.ice_atom_count // n_ice_mols if n_ice_mols > 0 else 4
