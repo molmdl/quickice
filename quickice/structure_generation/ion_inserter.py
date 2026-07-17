@@ -427,6 +427,14 @@ class IonInserter:
         cl_count = 0
         ion_positions = []  # Track placed ion positions
         ion_tree = None  # KDTree for ion-ion overlap checking (rebuilt only on successful placement)
+        # CRIT-02: parity must reflect PLACEMENT order, not the enumerate
+        # index. A candidate rejected for overlap (continue above) still
+        # advances `i`, which would flip Na/Cl parity for all later placed
+        # ions and cause same-charge clustering. `placed_count` is
+        # incremented ONLY on successful placement, so Na/Cl strictly
+        # alternate by placement order regardless of how many candidates
+        # are skipped for overlap.
+        placed_count = 0
         
         for i, water_idx in enumerate(selected):
             water_mol = water_mols[water_idx]
@@ -455,7 +463,11 @@ class IonInserter:
             # Rebuild ion-ion KDTree only after successful placement (not on overlap rejection)
             ion_tree = cKDTree(np.array(ion_positions))
             
-            if i % 2 == 0:
+            # CRIT-02: use placed_count (incremented only on successful
+            # placement) so Na/Cl strictly alternate by PLACEMENT order.
+            # Rejected candidates (the `continue` guards above) do not
+            # advance placed_count, so they do not flip Na/Cl parity.
+            if placed_count % 2 == 0:
                 # Add Na+
                 new_positions.append(water_pos.reshape(1, 3))
                 new_atom_names.append("NA")
@@ -477,6 +489,7 @@ class IonInserter:
                 ))
                 current_idx += 1
                 cl_count += 1
+            placed_count += 1
         
         # Ensure charge neutrality: na_count must equal cl_count
         # Remove excess ions from the end (prefer removing from end to minimize disruption)
