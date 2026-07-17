@@ -16,6 +16,7 @@ from quickice.utils.molecule_utils import count_guest_atoms
 from quickice.structure_generation.types import Candidate, InterfaceStructure, IonStructure, MoleculeIndex
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
+from quickice.structure_generation.cell_utils import is_cell_orthogonal
 
 if TYPE_CHECKING:
     from quickice.structure_generation.types import CustomMoleculeStructure, SoluteStructure
@@ -294,14 +295,35 @@ def wrap_positions_into_box(positions: np.ndarray, cell: np.ndarray) -> np.ndarr
     For molecules spanning PBC boundaries, some atoms may be outside [0, boxsize).
     This function wraps each coordinate individually into the box for GRO file output.
     
+    For orthogonal (diagonal) cells, each axis is wrapped independently via
+    ``np.mod(pos[:, dim], cell[dim, dim])`` — this is the fast path used by slab
+    interface exports (slab.py forces orthogonal cells).
+    
+    For triclinic cells (non-zero off-diagonal elements, e.g. sH/c0te/c1te hydrate
+    cells parsed at hydrate_generator.py:414-430), the diagonal-only modulo would
+    ignore the off-diagonal shear and leave atoms outside the parallelepiped. The
+    triclinic branch wraps via fractional coordinates (``frac = pos @ inv(cell.T)``,
+    ``frac = np.mod(frac, 1.0)``, ``wrapped = frac @ cell.T``), reusing the proven
+    pattern from ``water_filler.wrap_positions_triclinic`` (CRIT-01 fix).
+    
     Args:
         positions: (N, 3) atom positions in nm
         cell: (3, 3) cell vectors as ROW vectors
     
     Returns:
-        (N, 3) positions wrapped into [0, cell[i,i])
+        (N, 3) positions wrapped into the cell (orthogonal: [0, cell[i,i));
+        triclinic: fractional coords in [0, 1))
     """
     wrapped = positions.copy()
+    if len(wrapped) == 0:
+        return wrapped
+    # Triclinic cells: wrap via fractional coordinates (handles off-diagonal shear).
+    if not is_cell_orthogonal(cell):
+        inv_cell_T = np.linalg.inv(cell.T)
+        frac = wrapped @ inv_cell_T
+        frac = np.mod(frac, 1.0)
+        return frac @ cell.T
+    # Orthogonal cells: per-axis diagonal modulo (fast path — correct for slabs).
     for dim in range(3):
         # Wrap using modulo: coord % box_size
         # np.mod handles negative numbers correctly
@@ -325,6 +347,19 @@ def wrap_molecules_into_box(
     2. Unwrap atoms to be together in same periodic image
     3. Wrap the whole molecule into [0, box_size)
     
+    For orthogonal (diagonal) cells, the unwrap + center-wrap use the diagonal
+    box sizes ``cell[d, d]`` (fast path used by slab interface exports, which
+    force orthogonal cells at slab.py:619).
+    
+    For triclinic cells (non-zero off-diagonal elements, e.g. sH/c0te/c1te
+    hydrate cells parsed at hydrate_generator.py:414-430), the diagonal-only
+    unwrap/center-wrap would ignore the off-diagonal shear and leave atoms
+    outside the parallelepiped. The triclinic branch wraps each molecule by its
+    fractional center-of-mass: ``frac = mol @ inv(cell.T)``; shift all atoms by
+    ``-floor(com_frac)``; ``wrapped = frac @ cell.T``. This handles unwrap AND
+    wrap in one step and naturally accounts for the triclinic shear, reusing the
+    proven pattern from ``water_filler.wrap_positions_triclinic`` (CRIT-01 fix).
+    
     Args:
         positions: (N, 3) atom positions in nm
         molecule_index: List of MoleculeIndex objects defining molecule boundaries
@@ -334,7 +369,30 @@ def wrap_molecules_into_box(
         (N, 3) positions with molecules wrapped as whole units
     """
     wrapped = positions.copy()
-    
+    if len(wrapped) == 0 or not molecule_index:
+        return wrapped
+
+    # Triclinic cells: wrap each molecule by fractional center-of-mass, reusing
+    # the proven water_filler.wrap_positions_triclinic pattern (adapted for
+    # variable-size molecule_index: ice/water=4, ch4=5, thf=13, na/cl=1).
+    # Handles unwrap + wrap in one step; accounts for off-diagonal shear.
+    if not is_cell_orthogonal(cell):
+        inv_cell_T = np.linalg.inv(cell.T)
+        for mol in molecule_index:
+            start = mol.start_idx
+            count = mol.count
+            mol_frac = wrapped[start:start + count] @ inv_cell_T
+            # Shift the whole molecule by the integer fractional offset that
+            # brings its center of mass into [0, 1). -np.floor(com) is the
+            # standard PBC image selector (identical to water_filler.py:121).
+            com_frac = mol_frac.mean(axis=0)
+            shift_frac = -np.floor(com_frac)
+            mol_frac = mol_frac + shift_frac
+            wrapped[start:start + count] = mol_frac @ cell.T
+        return wrapped
+
+    # Orthogonal cells: diagonal-only unwrap + center-wrap (fast path — correct
+    # for slab interfaces forced orthogonal at slab.py:619).
     for mol in molecule_index:
         start = mol.start_idx
         count = mol.count
