@@ -45,7 +45,6 @@ MainWindow stores results as `_current_*_result` attributes. Duck-typing sets ru
 - **Never hardcode TIP4P-ICE parameters.** Use module constants (`TIP4P_ICE_OW_SIGMA` / `TIP4P_ICE_OW_EPSILON` in `quickice/output/gromacs_writer.py`). For verification, check `quickice/data/tip4p-ice.itp` or the original literature (Abascal et al. 2005, DOI: 10.1063/1.1931662).
 - **Never hardcode `0.0299`** for water volume. Use `WATER_VOLUME_NM3` from `quickice/structure_generation/types.py`.
 - **Never hardcode `4`** for water atoms per molecule. Use `WATER_ATOMS_PER_MOLECULE` from `types.py`.
-- **AVOGADRO** is defined once in `ion_inserter.py` — import from there, never duplicate.
 - **All inserters return NEW structure objects.** Never mutate input structures (V-17 fix).
 - **cKDTree conditional rebuild:** Initialize tree as `None`, rebuild ONLY after successful placement (not on rejection). See `ion_inserter.py` and `solute_inserter.py`.
 - **Moleculetype naming:** Hydrate guests use `_H` suffix, liquid solutes use `_L` suffix. `MoleculetypeRegistry` in `quickice/structure_generation/moleculetype_registry.py` manages this. Never hardcode moleculetype names.
