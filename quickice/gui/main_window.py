@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QTabWidget
 )
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, Slot, QThread
+from PySide6.QtCore import Qt, Slot, QThread, Signal
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,80 @@ from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
 from quickice.gui.solute_panel import SolutePanel
 from quickice.gui.custom_molecule_panel import CustomMoleculePanel
+
+
+class IonInsertionWorker(QThread):
+    """QThread-based worker for ion insertion.
+
+    Runs ``insert_ions()`` in a background thread to prevent UI freezing
+    during ion insertion. Mirrors the ``HydrateWorker`` pattern (direct
+    ``QThread`` subclass per AGENTS.md — NOT QObject+moveToThread).
+
+    Signals:
+        progress_updated: Emitted with a status message during insertion.
+        insertion_complete: Emitted with the resulting ``IonStructure`` on success.
+        insertion_error: Emitted with an error message on failure.
+
+    The worker MUST NOT mutate GUI widgets directly from ``run()`` — it emits
+    signals that the main-thread handlers in ``MainWindow`` connect to.
+    """
+
+    progress_updated = Signal(str)        # Status message
+    insertion_complete = Signal(object)    # IonStructure
+    insertion_error = Signal(str)         # Error message
+
+    def __init__(self, interface, concentration_molar, liquid_volume_nm3, parent=None):
+        """Initialize the ion insertion worker.
+
+        Args:
+            interface: InterfaceStructure (or solute/custom-modified interface)
+                to insert ions into.
+            concentration_molar: NaCl concentration in mol/L (M).
+            liquid_volume_nm3: Liquid volume in nm³, or None to estimate from cell.
+            parent: Optional parent QObject.
+        """
+        super().__init__(parent)
+        self._interface = interface
+        self._concentration = concentration_molar
+        self._volume_arg = liquid_volume_nm3
+
+    def run(self):
+        """Execute ion insertion in the background thread.
+
+        Imports ``insert_ions`` internally (mirroring ``HydrateWorker``'s lazy
+        import of ``HydrateStructureGenerator`` inside ``run()``) so the heavy
+        import does not block the main thread. Emits ``insertion_complete``
+        with the resulting ``IonStructure`` on success, or ``insertion_error``
+        with a clear message on failure.
+        """
+        try:
+            self.progress_updated.emit("Starting ion insertion...")
+
+            # Import inside run() to avoid blocking the main thread (mirror HydrateWorker)
+            from quickice.structure_generation.ion_inserter import insert_ions
+
+            result = insert_ions(
+                self._interface, self._concentration, self._volume_arg
+            )
+
+            self.progress_updated.emit(
+                f"Ion insertion complete: {result.na_count} Na+, "
+                f"{result.cl_count} Cl-"
+            )
+            self.insertion_complete.emit(result)
+
+        except ValueError as e:
+            error_msg = f"Invalid ion configuration: {e}"
+            self.progress_updated.emit(f"Error: {error_msg}")
+            self.insertion_error.emit(error_msg)
+
+        except Exception as e:
+            # GUI worker: broad catch is acceptable here (AGENTS.md only bars
+            # bare-except in cli/pipeline.py). Convert to a clear user-facing
+            # message instead of an unhandled crash on the worker thread.
+            error_msg = f"Unexpected error during ion insertion ({type(e).__name__}): {e}"
+            self.progress_updated.emit(f"Error: {error_msg}")
+            self.insertion_error.emit(error_msg)
 
 
 class MainWindow(QMainWindow):
@@ -931,14 +1005,47 @@ class MainWindow(QMainWindow):
         # Pass None if liquid_volume is 0 (let insert_ions calculate from cell)
         volume_arg = None if liquid_volume <= 0 else liquid_volume
 
-        # Call module-level insert_ions function directly
-        ion_structure = insert_ions(
-            interface,
-            concentration,
-            volume_arg
-        )
+        # Stash context for the completion handler (the worker emits only the result)
+        self._ion_pending_interface = interface
+        self._ion_pending_source = current_source
 
-        # Store for export (Issue 1)
+        # Disable the Insert Ions button during work (mirror HydrateWorker
+        # button lifecycle: disabled before start(), re-enabled in the
+        # complete/error handlers).
+        self.ion_panel.insert_button.setEnabled(False)
+
+        # SAFE-01: run ion insertion off the GUI thread via IonInsertionWorker
+        # (mirrors HydrateWorker). The insertion runs inside the worker's
+        # run(); results are delivered via signals to the main-thread handlers.
+        self._ion_worker = IonInsertionWorker(interface, concentration, volume_arg)
+        self._ion_worker.progress_updated.connect(self._on_ion_progress)
+        self._ion_worker.insertion_complete.connect(self._on_ion_insertion_complete)
+        self._ion_worker.insertion_error.connect(self._on_ion_insertion_error)
+        self._ion_worker.start()
+    
+    def _on_ion_progress(self, message: str):
+        """Handle ion insertion progress update.
+
+        Args:
+            message: Progress message from the worker.
+        """
+        self.ion_panel.append_log(message)
+    
+    def _on_ion_insertion_complete(self, ion_structure):
+        """Handle ion insertion complete.
+
+        Runs on the main GUI thread (connected to the worker's
+        ``insertion_complete`` signal). Performs all GUI mutations and
+        re-enables the Insert Ions button.
+
+        Args:
+            ion_structure: IonStructure from the worker.
+        """
+        # Retrieve context stashed by _on_insert_ions before starting the worker
+        interface = getattr(self, '_ion_pending_interface', None)
+        current_source = getattr(self, '_ion_pending_source', '')
+
+        # Store for export
         self._current_ion_result = ion_structure
 
         # Render in IonPanel viewer: first show interface (ice + water bonds),
@@ -982,6 +1089,32 @@ class MainWindow(QMainWindow):
         self.ion_panel.append_log(
             f"Ion insertion complete: {ion_structure.na_count} Na+, {ion_structure.cl_count} Cl-"
         )
+
+        # Re-enable the Insert Ions button
+        self.ion_panel.insert_button.setEnabled(True)
+    
+    def _on_ion_insertion_error(self, error_msg: str):
+        """Handle ion insertion error.
+
+        Runs on the main GUI thread (connected to the worker's
+        ``insertion_error`` signal). Shows a user-facing error dialog and
+        re-enables the Insert Ions button.
+
+        Args:
+            error_msg: Error message from the worker.
+        """
+        self.ion_panel.append_log(f"Error: {error_msg}")
+
+        # Show error dialog (reuse the HydrateWorker error-display pattern)
+        QMessageBox.critical(
+            self,
+            "Ion Insertion Error",
+            f"Failed to insert ions:\n\n{error_msg}",
+            QMessageBox.StandardButton.Ok
+        )
+
+        # Re-enable the Insert Ions button
+        self.ion_panel.insert_button.setEnabled(True)
     
     def _on_solute_config_changed(self):
         """Handle solute configuration change."""
