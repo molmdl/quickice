@@ -50,6 +50,8 @@ def validate_gro_residue_name(res_name: str, context: str = "") -> None:
         raise ValueError(msg)
 
 
+# TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive).
+# Abascal et al. 2005, DOI: 10.1063/1.1931662.
 TIP4P_ICE_ALPHA = 0.13458335
 
 # TIP4P-ICE LJ parameters (Abascal et al. 2005, DOI: 10.1063/1.1931662)
@@ -438,10 +440,6 @@ def wrap_molecules_into_box(
         wrapped[start:start + count] = mol_positions
     
     return wrapped
-
-
-# TIP4P-ICE virtual site parameter (from tip4p-ice.itp virtual_sites3 directive)
-TIP4P_ICE_ALPHA = 0.13458335
 
 
 # Canonical atom order for guest molecules (matching .itp definitions)
@@ -1046,7 +1044,7 @@ def write_top_file(candidate: Candidate, filepath: str) -> None:
         
         f.write("[ virtual_sites3 ]\n")
         f.write("; Vsite from                    funct  a          b\n")
-        f.write("   4     1       2       3       1      0.13458335 0.13458335\n\n")
+        f.write(f"   4     1       2       3       1      {TIP4P_ICE_ALPHA} {TIP4P_ICE_ALPHA}\n\n")
         
         f.write("[ exclusions ]\n")
         f.write("  1  2  3  4\n")
