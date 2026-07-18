@@ -40,8 +40,12 @@ from tests.conftest import gmx_skipif
 from quickice.output import gromacs_writer as gwm
 from quickice.output.gromacs_writer import (
     TIP4P_ICE_ALPHA,
+    TIP4P_ICE_HW_CHARGE,
+    TIP4P_ICE_MW_CHARGE,
     TIP4P_ICE_OW_EPSILON,
     TIP4P_ICE_OW_SIGMA,
+    TIP4P_ICE_SETTLE_DHH,
+    TIP4P_ICE_SETTLE_DOH,
     write_gro_file,
     write_top_file,
 )
@@ -69,6 +73,31 @@ def _count_tip4p_ice_alpha_defs() -> int:
     """
     src = Path(gwm.__file__).read_text()
     return len(re.findall(r"^TIP4P_ICE_ALPHA\s*=\s*", src, re.M))
+
+
+def _parse_tip4p_ice_itp() -> dict:
+    """Parse quickice/data/tip4p-ice.itp and return the TIP4P-ICE values.
+
+    The bundled .itp is the source of truth per AGENTS.md. Used by UNIT-02
+    to cross-check the extracted charge/settle constants against the ITP.
+    """
+    text = (_data_dir() / "tip4p-ice.itp").read_text()
+    hw = re.search(
+        r"^\s*\d+\s+HW_ice\s+\d+\s+SOL\s+HW\d+\s+\d+\s+(\S+)\s+\S+\s*$",
+        text, re.M,
+    )
+    mw = re.search(
+        r"^\s*\d+\s+MW\s+\d+\s+SOL\s+MW\s+\d+\s+(\S+)\s+\S+\s*$",
+        text, re.M,
+    )
+    doh = re.search(r"^\s*1\s+2\s+1\s+(\S+)\s*$", text, re.M)
+    dhh = re.search(r"^\s*2\s+3\s+1\s+(\S+)\s*$", text, re.M)
+    return {
+        "hw_charge": float(hw.group(1)),
+        "mw_charge": float(mw.group(1)),
+        "settle_doh": float(doh.group(1)),
+        "settle_dhh": float(dhh.group(1)),
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -116,6 +145,57 @@ class TestUNIT03:
                 "regression: the virtual_sites3 line should use "
                 "{TIP4P_ICE_ALPHA}, not the literal."
             )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UNIT-02: TIP4P-ICE charges/settle/alpha constants
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestUNIT02:
+    """UNIT-02: TIP4P-ICE charges/settle distances extracted to constants."""
+
+    def test_constants_exist_with_correct_values(self):
+        """All four UNIT-02 constants exist and match the bundled ITP."""
+        itp = _parse_tip4p_ice_itp()
+        assert TIP4P_ICE_HW_CHARGE == 0.5897
+        assert TIP4P_ICE_MW_CHARGE == -1.1794
+        assert TIP4P_ICE_SETTLE_DOH == 0.09572
+        assert TIP4P_ICE_SETTLE_DHH == 0.15139
+        # Cross-check against the bundled tip4p-ice.itp (source of truth).
+        assert TIP4P_ICE_HW_CHARGE == itp["hw_charge"]
+        assert TIP4P_ICE_MW_CHARGE == itp["mw_charge"]
+        assert TIP4P_ICE_SETTLE_DOH == itp["settle_doh"]
+        assert TIP4P_ICE_SETTLE_DHH == itp["settle_dhh"]
+
+    def test_water_charge_neutrality(self):
+        """TIP4P-ICE water is charge-neutral: OW=0, 2*HW=+1.1794, MW=-1.1794."""
+        assert 2 * TIP4P_ICE_HW_CHARGE + TIP4P_ICE_MW_CHARGE == 0.0
+        assert TIP4P_ICE_MW_CHARGE == -(2 * TIP4P_ICE_HW_CHARGE)
+
+    def test_lj_constants_still_present(self):
+        """The pre-existing LJ constants (TIP4P_ICE_OW_SIGMA/EPSILON) are
+        unchanged by UNIT-02 (they were already constants)."""
+        assert TIP4P_ICE_OW_SIGMA == 3.16680e-1
+        assert TIP4P_ICE_OW_EPSILON == 8.82110e-1
+
+    def test_no_inline_charge_magic_numbers_in_top_writer(self):
+        """The [atoms]/[settles] lines in write_top_file must use the constants,
+        not inline 0.5897 / -1.1794 / 0.09572 / 0.15139 magic numbers.
+
+        The literals may still appear in the constant definitions and in
+        comments (documentation) — those are fine. They must NOT appear inside
+        any f.write(...) string literal (those are the inline magic numbers
+        UNIT-02 removed)."""
+        src = Path(gwm.__file__).read_text()
+        write_strings = re.findall(r'f?write\(\s*(?:f)?"([^"]*)"', src)
+        write_strings += re.findall(r"f?write\(\s*(?:f)?'([^']*)'", src)
+        for literal in ["0.5897", "-1.1794", "0.09572", "0.15139"]:
+            for s in write_strings:
+                assert literal not in s, (
+                    f"Inline {literal!r} found in an f.write string — "
+                    f"UNIT-02 regression: the [atoms]/[settles] lines should "
+                    f"use named constants, not the literal."
+                )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

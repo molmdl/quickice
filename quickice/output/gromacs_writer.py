@@ -59,6 +59,14 @@ TIP4P_ICE_ALPHA = 0.13458335
 TIP4P_ICE_OW_SIGMA = 3.16680e-1    # nm
 TIP4P_ICE_OW_EPSILON = 8.82110e-1   # kJ/mol
 
+# TIP4P-ICE charges and settle distances (from quickice/data/tip4p-ice.itp
+# [atoms]/[settles] sections; Abascal et al. 2005, DOI: 10.1063/1.1931662).
+# Water is charge-neutral: OW=0, 2*HW=+1.1794, MW=-1.1794 (net 0).
+TIP4P_ICE_HW_CHARGE = 0.5897       # e (HW_ice, x2 per water molecule)
+TIP4P_ICE_MW_CHARGE = -1.1794       # e (MW virtual site; = -2 * HW_CHARGE)
+TIP4P_ICE_SETTLE_DOH = 0.09572     # nm (O-H distance, [settles] doh)
+TIP4P_ICE_SETTLE_DHH = 0.15139     # nm (H-H distance, [settles] dhh)
+
 
 # ---------------------------------------------------------------------------
 # GAFF2 atomtype definitions for standard guest/solute molecules
@@ -1034,13 +1042,13 @@ def write_top_file(candidate: Candidate, filepath: str) -> None:
         f.write("[ atoms ]\n")
         f.write(";   nr  type  resi  res  atom  cgnr     charge    mass\n")
         f.write("   1   OW_ice    1  SOL    OW     1       0.0  16.00000\n")
-        f.write("   2   HW_ice    1  SOL   HW1     1     0.5897   1.00800\n")
-        f.write("   3   HW_ice    1  SOL   HW2     1     0.5897   1.00800\n")
-        f.write("   4   MW        1  SOL    MW     1    -1.1794   0.00000\n\n")
+        f.write(f"   2   HW_ice    1  SOL   HW1     1     {TIP4P_ICE_HW_CHARGE}   1.00800\n")
+        f.write(f"   3   HW_ice    1  SOL   HW2     1     {TIP4P_ICE_HW_CHARGE}   1.00800\n")
+        f.write(f"   4   MW        1  SOL    MW     1    {TIP4P_ICE_MW_CHARGE}   0.00000\n\n")
         
         f.write("[ settles ]\n")
         f.write("; i  funct  doh     dhh\n")
-        f.write("  1    1    0.09572  0.15139\n\n")
+        f.write(f"  1    1    {TIP4P_ICE_SETTLE_DOH}  {TIP4P_ICE_SETTLE_DHH}\n\n")
         
         f.write("[ virtual_sites3 ]\n")
         f.write("; Vsite from                    funct  a          b\n")
