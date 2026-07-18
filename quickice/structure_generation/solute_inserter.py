@@ -560,13 +560,20 @@ class SoluteInserter:
         ice_atom_names = structure.atom_names[:ice_atom_count]
         
         # Keep only non-overlapping water molecules
-        kept_water_positions = []
-        kept_water_atom_names = []
-        for mol_idx in water_molecules_to_keep:
-            atom_start = water_start + mol_idx * atoms_per_water
-            atom_end = atom_start + atoms_per_water
-            kept_water_positions.append(structure.positions[atom_start:atom_end])
-            kept_water_atom_names.extend(structure.atom_names[atom_start:atom_end])
+        # PERF-06: vectorized boolean-mask selection (replaces per-mol Python loop).
+        # water_reshaped (n_water_molecules, atoms_per_water, 3) and mol_overlaps
+        # (n_water_molecules,) were computed above. ~mol_overlaps is the keep mask;
+        # selecting kept molecule blocks via the mask yields the same rows in the
+        # same ascending molecule-index order as np.where(~mol_overlaps)[0].tolist()
+        # + per-mol append (numpy boolean-indexing preserves index order). The
+        # flattened atom-name list matches the loop's per-mol .extend output order
+        # exactly. Output is byte-equivalent to the loop.
+        keep_mask = ~mol_overlaps
+        kept_water_positions = water_reshaped[keep_mask]  # (n_kept, atoms_per_water, 3)
+        water_atom_names_all = np.asarray(
+            structure.atom_names[water_start:water_start + n_check_atoms]
+        ).reshape(n_water_molecules, atoms_per_water)
+        kept_water_atom_names = water_atom_names_all[keep_mask].reshape(-1).tolist()
         
         # Keep guest atoms
         guest_start = ice_atom_count + water_atom_count
@@ -597,8 +604,13 @@ class SoluteInserter:
             custom_atom_names = None
         
         # Combine: ice + kept_water + guests + custom_molecules (if present)
-        if kept_water_positions:
-            water_positions_array = np.vstack(kept_water_positions)
+        # PERF-06: kept_water_positions is now a (n_kept, atoms_per_water, 3) numpy
+        # array (vectorized boolean-mask selection above); reshape to (n_kept *
+        # atoms_per_water, 3) — identical to np.vstack of the per-mol list the
+        # old loop produced. Use .size > 0 instead of truthiness (numpy arrays do
+        # not support bool() for multi-element arrays).
+        if kept_water_positions.size > 0:
+            water_positions_array = kept_water_positions.reshape(-1, 3)
         else:
             water_positions_array = np.zeros((0, 3))
         
