@@ -386,17 +386,34 @@ class HydrateStructureGenerator:
         
         positions = np.array(positions, dtype=np.float64)
         
-        # Parse box vectors from last non-empty line
+        # Parse box vectors from the last line matching the GRO box-line format
+        # (exactly 3 floats for orthorhombic, or 9 floats for triclinic — all
+        # numeric). Scan backwards from the end so trailing blank/whitespace
+        # lines and any trailing non-box lines are skipped. This replaces a
+        # fragile earlier loop that skipped lines whose first char was not a
+        # digit and relied on the ``box_line = lines[-1]`` fallback, which
+        # (a) broke when the input had trailing blank/whitespace lines (the
+        # fallback picked a blank line) and (b) silently returned a 10 nm
+        # default box for malformed input because ``_parse_box_line`` falls
+        # back to ``np.eye(3) * 10.0`` when given <3 values. Standard GenIce2
+        # output (box line is the final line, 3 or 9 numeric values) parses
+        # identically to before.
         box_line = None
-        for line in lines[-5:]:
-            if line.strip() and not line[0].isdigit():
-                continue
-            if line.strip():
+        for line in reversed(lines):
+            values = line.split()
+            if len(values) in (3, 9):
+                try:
+                    [float(v) for v in values]
+                except ValueError:
+                    continue
                 box_line = line
                 break
         
         if box_line is None:
-            box_line = lines[-1]
+            raise ValueError(
+                "Invalid GRO format: no box-vector line found "
+                "(expected a final line with 3 or 9 numeric box values)"
+            )
         
         cell = self._parse_box_line(box_line)
         
