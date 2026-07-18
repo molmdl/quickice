@@ -12,6 +12,16 @@ import numpy as np
 
 from tests.conftest import run_quickice
 
+# Ensure `<cwd>/tmp/` exists as the base for TemporaryDirectory() below.
+# Required because CLIPipeline.execute (SAFE-05, commit ff9c7983) rejects
+# `--output` paths that resolve outside the working directory, mirroring the
+# input-path containment checks at pipeline.py:242-249 and :494-509. pytest's
+# default `tempfile.TemporaryDirectory()` is under `/tmp` (outside cwd), so the
+# 11 interface/slab/triclinic tests here would fail the SAFE-05 check. Anchoring
+# the temp dirs under `<cwd>/tmp/` (gitignored at `.gitignore:211`) keeps them
+# inside cwd. Mirrors the `make_temp_output_dir()` pattern in `test_cli_pipeline.py`.
+_TMP_BASE = Path.cwd() / "tmp"
+_TMP_BASE.mkdir(parents=True, exist_ok=True)
 
 
 def validate_gro_file(filepath: Path) -> dict:
@@ -176,7 +186,7 @@ class TestCLIInterfaceGeneration:
     
     def test_cli_slab_interface_ice_ih(self):
         """Slab mode with Ice Ih (baseline orthogonal) should work."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
@@ -209,7 +219,7 @@ class TestCLIInterfaceGeneration:
     
     def test_cli_piece_interface_ice_ii(self):
         """Piece mode with Ice II should fail with clear error message."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "piece",
@@ -231,7 +241,7 @@ class TestCLIInterfaceGeneration:
     
     def test_cli_pocket_interface_ice_v(self):
         """Pocket mode with Ice V (triclinic) should work."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "pocket",
@@ -261,7 +271,7 @@ class TestGROFileValidation:
     
     def test_gro_atom_count_matches_header(self):
         """Generated .gro file should have correct atom count."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             # Generate an interface
             returncode, stdout, stderr = run_quickice(
                 "--interface",
@@ -300,7 +310,7 @@ class TestGROFileValidation:
     
     def test_gro_coordinates_within_box(self):
         """Coordinates should be within box bounds for orthogonal cells."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             # Generate interface with Ice Ih (orthogonal)
             returncode, stdout, stderr = run_quickice(
                 "--interface",
@@ -327,7 +337,7 @@ class TestGROFileValidation:
     
     def test_gro_box_dimensions_valid(self):
         """Box dimensions should be positive."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
@@ -357,7 +367,7 @@ class TestGROFileValidation:
     
     def test_gro_triclinic_box_format(self):
         """Triclinic cells should have 9 box values (Ice V is supported triclinic phase)."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             # Generate Ice V interface (supported triclinic phase)
             returncode, stdout, stderr = run_quickice(
                 "--interface",
@@ -387,7 +397,7 @@ class TestTransformedTriclinicCells:
     
     def test_piece_mode_rejects_ice_ii(self):
         """Piece mode should reject Ice II with clear error message."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "piece",
@@ -409,7 +419,7 @@ class TestTransformedTriclinicCells:
     
     def test_piece_mode_accepts_transformed_ice_v(self):
         """Piece mode should work with Ice V after transformation."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             # Ice V transformation creates a large cell (~20nm)
             # Use slab mode instead for reliable testing
             returncode, stdout, stderr = run_quickice(
@@ -436,7 +446,7 @@ class TestTransformedTriclinicCells:
     
     def test_gromacs_export_transformed_cell(self):
         """GROMACS export should work for transformed triclinic cells (Ice V)."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             # Generate Ice V interface (supported triclinic phase)
             returncode, stdout, stderr = run_quickice(
                 "--interface",
@@ -463,7 +473,7 @@ class TestTransformedTriclinicCells:
     
     def test_ice_vi_interface_generation(self):
         """Ice VI (also triclinic) should work."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=str(_TMP_BASE)) as tmpdir:
             returncode, stdout, stderr = run_quickice(
                 "--interface",
                 "--mode", "slab",
