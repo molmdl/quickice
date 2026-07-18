@@ -161,6 +161,18 @@ class CLIPipeline:
         # Step 0: Create output directory
         try:
             output_path = Path(self.args.output).resolve()
+            # SEC-05: Reject --output that resolves outside the working directory.
+            # Mirrors the input-path containment checks at :242-249 (CSV) and
+            # :494-509 (custom gro/itp), and output/orchestrator.py:48-56. Inputs
+            # were checked but --output was not — an inconsistency. ValueError
+            # is not OSError, so it propagates past the local `except OSError`
+            # to main.py for fail-fast (consistent with the CSV check behavior).
+            cwd = Path.cwd().resolve()
+            if not output_path.is_relative_to(cwd):
+                raise ValueError(
+                    f"--output path resolves outside working directory: "
+                    f"{output_path} is not under {cwd}"
+                )
             output_path.mkdir(parents=True, exist_ok=True)
             self._output_dir = output_path
         except OSError as e:

@@ -44,6 +44,7 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -197,3 +198,128 @@ class TestCRIT04StrippedAssert:
                     "this is the CRIT-04 bug pattern (stripped under -O)."
                 )
                 break
+
+
+# ── SAFE-05: --output path-traversal containment check ───────────────────────
+
+
+class TestSAFE05OutputPathContainment:
+    """``--output`` resolving outside the working directory must be rejected.
+
+    Before the fix, ``CLIPipeline.execute`` resolved ``--output`` and created
+    the directory (pipeline.py:137) with NO containment check — while the INPUT
+    paths WERE checked at :242-249 (CSV, raises ValueError) and :494-509
+    (custom gro/itp, returns 1), and ``output/orchestrator.py:48-56`` checks
+    its output dir. The inconsistency meant ``--output /tmp/evil`` or any
+    absolute path outside cwd was silently accepted.
+
+    The fix adds a containment check mirroring the CSV/orchestrator style: after
+    ``output_path = Path(self.args.output).resolve()``, raise ``ValueError`` if
+    ``not output_path.is_relative_to(Path.cwd().resolve())``. ``ValueError`` is
+    not ``OSError``, so it propagates past the local ``except OSError`` to
+    ``main.py`` for fail-fast (consistent with the CSV check behavior).
+    """
+
+    @staticmethod
+    def _make_pipeline(output: str) -> CLIPipeline:
+        """Build a minimal CLIPipeline for the output-path check.
+
+        ``execute()`` accesses ``self.args.output`` directly (line 163) and
+        ``self.args.interface`` directly (line 196); all other step-flag
+        accesses use ``getattr(..., default)``. With ``interface=False`` and no
+        other step flags set, ``execute()`` falls through Steps 1-5 (all
+        skipped) and reaches the export step, which returns 1 because no
+        structure was generated — proving the Step-0 containment check PASSED
+        (execution proceeded past it).
+        """
+        args = SimpleNamespace(
+            output=output,
+            interface=False,
+            hydrate=False,
+            custom_gro=None,
+            solute_type=None,
+            ion_concentration=None,
+            no_overwrite=False,
+        )
+        return CLIPipeline(args)
+
+    def test_output_outside_cwd_raises_value_error(self, tmp_path, monkeypatch):
+        """``--output`` resolving outside cwd raises ValueError (not silently
+        accepted). This is the core SAFE-05 behavior.
+
+        We chdir into a clean tmp dir so the cwd is controlled, then point
+        ``--output`` at a sibling directory OUTSIDE cwd. The resolved path is
+        not under cwd, so the containment check must raise ValueError.
+        """
+        # cwd = tmp_path/work; output = tmp_path/escape (sibling, NOT under cwd)
+        work_dir = tmp_path / "work"
+        work_dir.mkdir()
+        monkeypatch.chdir(work_dir)
+        outside_output = (tmp_path / "escape").as_posix()  # sibling of work_dir
+
+        pipeline = self._make_pipeline(outside_output)
+        with pytest.raises(ValueError, match="--output path resolves outside"):
+            pipeline.execute()
+
+    def test_output_outside_cwd_via_traversal_raises(self, tmp_path, monkeypatch):
+        """A path-traversal-style ``--output`` (``../../escape``) that resolves
+        outside cwd is also rejected. This catches the ``../../etc/...`` style
+        escape the SAFE-05 report flagged.
+        """
+        work_dir = tmp_path / "work"
+        work_dir.mkdir()
+        monkeypatch.chdir(work_dir)
+        # ../../escape resolves to tmp_path.parent/escape — outside work_dir
+        traversal_output = "../../escape"
+
+        pipeline = self._make_pipeline(traversal_output)
+        with pytest.raises(ValueError, match="--output path resolves outside"):
+            pipeline.execute()
+
+    def test_output_inside_cwd_passes_containment_check(self, tmp_path, monkeypatch):
+        """An in-cwd ``--output`` passes the containment check and execution
+        proceeds past Step 0.
+
+        With no step flags set, ``execute()`` reaches the export step and
+        returns 1 (no structure generated) — proving the containment check did
+        NOT raise. We assert the return is an int (not a raised ValueError),
+        and that it is not the "output path resolves outside" error.
+        """
+        work_dir = tmp_path / "work"
+        work_dir.mkdir()
+        monkeypatch.chdir(work_dir)
+        inside_output = "out"  # resolves under work_dir
+
+        pipeline = self._make_pipeline(inside_output)
+        # The containment check must NOT raise. The pipeline falls through to
+        # the export step (no step flags set), which returns 1 (no structure).
+        # We accept any int return (0 or 1) as "containment check passed";
+        # the key assertion is that NO ValueError is raised here.
+        try:
+            rc = pipeline.execute()
+        except ValueError as e:
+            pytest.fail(
+                f"in-cwd --output raised ValueError (containment check is wrong): "
+                f"{e}"
+            )
+        assert isinstance(rc, int)
+        assert (work_dir / "out").is_dir()  # the dir was actually created
+
+    def test_output_absolute_inside_cwd_passes(self, tmp_path, monkeypatch):
+        """An absolute ``--output`` that resolves INSIDE cwd also passes
+        (covers the absolute-path-allowed-when-under-cwd case).
+        """
+        work_dir = tmp_path / "work"
+        work_dir.mkdir()
+        monkeypatch.chdir(work_dir)
+        inside_abs = (work_dir / "abs_out").as_posix()
+
+        pipeline = self._make_pipeline(inside_abs)
+        try:
+            rc = pipeline.execute()
+        except ValueError as e:
+            pytest.fail(
+                f"in-cwd absolute --output raised ValueError (wrong): {e}"
+            )
+        assert isinstance(rc, int)
+        assert (work_dir / "abs_out").is_dir()

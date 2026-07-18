@@ -36,10 +36,20 @@ ETOH_ITP = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "
 def make_temp_output_dir() -> str:
     """Create a temporary output directory for a pipeline test.
 
+    The directory is created UNDER the current working directory (``<cwd>/tmp/``)
+    rather than under the system temp dir (``/tmp``). This is required because
+    ``CLIPipeline.execute`` (SAFE-05) rejects ``--output`` paths that resolve
+    outside the working directory, mirroring the input-path containment checks
+    at pipeline.py:242-249 and :494-509. ``<cwd>/tmp/`` is ignored by
+    ``.gitignore`` (the ``tmp/`` entry). Each caller cleans up its own subdir
+    via ``shutil.rmtree(outdir, ignore_errors=True)``.
+
     Returns:
-        Path to the temporary directory.
+        Path to the temporary directory (under ``<cwd>/tmp/``).
     """
-    return tempfile.mkdtemp(prefix="test_cli_pipeline_")
+    tmp_base = Path.cwd() / "tmp"
+    tmp_base.mkdir(parents=True, exist_ok=True)
+    return tempfile.mkdtemp(prefix="test_cli_pipeline_", dir=str(tmp_base))
 
 
 # ---------------------------------------------------------------------------
