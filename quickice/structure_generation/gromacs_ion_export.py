@@ -15,7 +15,13 @@ CL_ATOM_MASS = 35.453
 NA_ATOM_TYPE = "NA"
 CL_ATOM_TYPE = "CL"
 
-# Partial charges (Madrid2019 ion parameters)
+# Partial charges (Madrid2019 ion parameters).
+# These are the REAL ion charges written to the [moleculetype] [atoms] section
+# of ion.itp (the charge GROMACS actually uses for electrostatics). This is
+# DISTINCT from the charge=0.0 placeholder in quickice/output/gromacs_writer.py
+# ION_ATOMTYPES, which is the [atomtypes] section convention (nonbonded params
+# only — charge column ignored). The two are DIFFERENT FIELDS in DIFFERENT
+# GROMACS sections and are NOT duplicates. See RESEARCH.md UNIT-05.
 NA_CHARGE = 0.85
 CL_CHARGE = -0.85
 

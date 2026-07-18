@@ -39,6 +39,7 @@ from tests.conftest import gmx_skipif
 
 from quickice.output import gromacs_writer as gwm
 from quickice.output.gromacs_writer import (
+    ION_ATOMTYPES,
     TIP4P_ICE_ALPHA,
     TIP4P_ICE_HW_CHARGE,
     TIP4P_ICE_MW_CHARGE,
@@ -49,7 +50,11 @@ from quickice.output.gromacs_writer import (
     write_gro_file,
     write_top_file,
 )
-from quickice.structure_generation.gromacs_ion_export import generate_ion_itp
+from quickice.structure_generation.gromacs_ion_export import (
+    CL_CHARGE,
+    NA_CHARGE,
+    generate_ion_itp,
+)
 from quickice.structure_generation.solute_inserter import (
     CH4_CH_BOND_LENGTH_NM,
     SoluteInserter,
@@ -114,6 +119,43 @@ def _parse_ch4_itp_bond() -> float:
     text = (_data_dir() / "ch4.itp").read_text()
     bond = re.search(r"^\s*1\s+2\s+1\s+(\S+)\s+", text, re.M)
     return float(bond.group(1))
+
+
+def _ion_atomtypes_has_clarifying_comment() -> bool:
+    """UNIT-05: ION_ATOMTYPES must carry a comment explaining the [atomtypes]
+    charge=0.0 placeholder convention (vs the real ±0.85 in [moleculetype]
+    [atoms])."""
+    src = Path(gwm.__file__).read_text()
+    # Find the ION_ATOMTYPES block and check for the convention explanation.
+    block = re.search(
+        r"# Madrid2019 ion atomtype parameters.*?ION_ATOMTYPES\s*[:=].*?\}",
+        src, re.S,
+    )
+    if block is None:
+        return False
+    comment = block.group(0)
+    return (
+        "charge" in comment.lower()
+        and "0.0" in comment
+        and "moleculetype" in comment.lower()
+        and "NOT" in comment  # "NOT duplicates"
+    )
+
+
+def _ion_export_has_clarifying_comment() -> bool:
+    """UNIT-05: gromacs_ion_export.py NA_CHARGE/CL_CHARGE must carry a comment
+    cross-referencing the [moleculetype] [atoms] vs [atomtypes] convention."""
+    import quickice.structure_generation.gromacs_ion_export as gie
+    src = Path(gie.__file__).read_text()
+    block = re.search(r"# Partial charges.*?CL_CHARGE\s*=\s*-?[\d.]+", src, re.S)
+    if block is None:
+        return False
+    comment = block.group(0)
+    return (
+        "moleculetype" in comment.lower()
+        and ("[atoms]" in comment or "[ atoms ]" in comment)
+        and "atomtypes" in comment.lower()
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -260,6 +302,86 @@ class TestUNIT04:
             assert abs(d - 0.109620) < 1e-9, (
                 f"C-H{i} bond length {d!r} != 0.109620 (UNIT-04 regression)"
             )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UNIT-05: GROMACS [atomtypes] vs [moleculetype] [atoms] convention
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestUNIT05:
+    """UNIT-05: [atomtypes] charge=0.0 placeholder vs [moleculetype] [atoms]
+    real ion charge — DIFFERENT fields, NOT duplicates. Clarifying comment
+    must be present; no consolidation."""
+
+    def test_ion_atomtypes_charge_is_zero_placeholder(self):
+        """ION_ATOMTYPES carries charge=0.0 (GROMACS [atomtypes] convention:
+        nonbonded params only; charge column is a placeholder)."""
+        for name in ("NA", "CL"):
+            params = ION_ATOMTYPES[name]
+            # params = (name, anum, mass, charge, ptype, sigma, epsilon)
+            charge = params[3]
+            assert charge == 0.0, (
+                f"ION_ATOMTYPES[{name!r}].charge = {charge!r}, expected 0.0 "
+                f"(GROMACS [atomtypes] convention — nonbonded params only). "
+                f"If this is non-zero, the [atomtypes] convention was broken."
+            )
+
+    def test_real_ion_charges_in_gromacs_ion_export(self):
+        """The REAL ion charges (±0.85) live in gromacs_ion_export.py
+        (written to [moleculetype] [atoms] section of ion.itp)."""
+        assert NA_CHARGE == 0.85
+        assert CL_CHARGE == -0.85
+
+    def test_ion_itp_contains_real_charges(self):
+        """generate_ion_itp writes the REAL ±0.85 charges to [moleculetype]
+        [atoms] (distinct from the [atomtypes] placeholder)."""
+        itp = generate_ion_itp(2, 3)
+        assert "0.85" in itp, f"Real NA charge 0.85 missing from ion.itp:\n{itp}"
+        assert "-0.85" in itp, f"Real CL charge -0.85 missing from ion.itp:\n{itp}"
+
+    def test_clarifying_comment_in_gromacs_writer(self):
+        """gromacs_writer.py ION_ATOMTYPES must document the [atomtypes]
+        charge=0.0 placeholder convention (UNIT-05 clarifying comment)."""
+        assert _ion_atomtypes_has_clarifying_comment(), (
+            "ION_ATOMTYPES in gromacs_writer.py is missing the UNIT-05 "
+            "clarifying comment explaining the [atomtypes] charge=0.0 "
+            "placeholder convention vs [moleculetype] [atoms] real charge."
+        )
+
+    def test_clarifying_comment_in_gromacs_ion_export(self):
+        """gromacs_ion_export.py NA_CHARGE/CL_CHARGE must cross-reference the
+        [moleculetype] [atoms] vs [atomtypes] convention (UNIT-05)."""
+        assert _ion_export_has_clarifying_comment(), (
+            "NA_CHARGE/CL_CHARGE in gromacs_ion_export.py is missing the "
+            "UNIT-05 cross-reference comment to the [atomtypes] convention."
+        )
+
+    def test_charges_not_consolidated(self):
+        """UNIT-05 decision: the [atomtypes] 0.0 and [atoms] ±0.85 are NOT
+        consolidated into a single shared constant (they are different
+        fields). ION_ATOMTYPES charge must remain 0.0, NOT reference
+        NA_CHARGE/CL_CHARGE."""
+        # If someone "consolidated" them, ION_ATOMTYPES would reference
+        # NA_CHARGE/CL_CHARGE. Verify it does NOT.
+        src = Path(gwm.__file__).read_text()
+        # Extract the ION_ATOMTYPES block.
+        block = re.search(
+            r"ION_ATOMTYPES\s*[:=].*?\{[^}]*\}",
+            src, re.S,
+        )
+        assert block is not None
+        block_text = block.group(0)
+        assert "NA_CHARGE" not in block_text, (
+            "UNIT-05 violation: ION_ATOMTYPES references NA_CHARGE — the "
+            "[atomtypes] 0.0 placeholder was incorrectly consolidated with "
+            "the [moleculetype] [atoms] real charge. These are DIFFERENT "
+            "GROMACS fields and MUST NOT be merged."
+        )
+        assert "CL_CHARGE" not in block_text, (
+            "UNIT-05 violation: ION_ATOMTYPES references CL_CHARGE — the "
+            "[atomtypes] 0.0 placeholder was incorrectly consolidated with "
+            "the [moleculetype] [atoms] real charge."
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

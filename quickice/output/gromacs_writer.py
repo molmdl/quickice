@@ -97,7 +97,15 @@ THF_ATOMTYPE_NAMES  = ["os", "c5", "hc", "h1"]
 CO2_ATOMTYPE_NAMES  = ["c_2", "o_2"]
 H2_ATOMTYPE_NAMES   = ["hn"]
 
-# Madrid2019 ion atomtype parameters (name → tuple)
+# Madrid2019 ion atomtype parameters (name → tuple).
+# NOTE: The `charge` field here is 0.0 by GROMACS convention — the [atomtypes]
+# section carries NONBONDED parameters only (sigma, epsilon); the charge column
+# is a placeholder and is IGNORED for nonbonded tabulation. The REAL ion charge
+# (Na+ = +0.85, Cl- = -0.85, Madrid2019) lives in the [moleculetype] [atoms]
+# section written by quickice/structure_generation/gromacs_ion_export.py
+# (NA_CHARGE / CL_CHARGE). The two values are DIFFERENT FIELDS in DIFFERENT
+# sections — they are NOT duplicates and MUST NOT be merged. See RESEARCH.md
+# UNIT-05 and Abascal/Madrid2019 conventions.
 ION_ATOMTYPES: dict[str, tuple[str, int, float, float, str, float, float]] = {
     "NA": ("NA", 11, 22.9898, 0.0, "A", 2.21737e-1, 1.47236e0),
     "CL": ("CL", 17, 35.453,  0.0, "A", 4.69906e-1, 7.69231e-2),
