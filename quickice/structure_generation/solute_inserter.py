@@ -34,6 +34,11 @@ logger = logging.getLogger(__name__)
 # Minimum separation distance between molecules (nm)
 MIN_SEPARATION = 0.3  # 3 Å
 
+# CH4 C-H bond length from quickice/data/ch4.itp [bonds] section
+# (r0 = 0.109620 nm for the c3-hc prebuilt bond). Used by _generate_ch4_coordinates
+# to place the 4 hydrogens at tetrahedral positions around the carbon.
+CH4_CH_BOND_LENGTH_NM = 0.109620  # nm
+
 
 class SoluteInserter:
     """Handles concentration-based solute insertion into liquid water regions.
@@ -162,8 +167,8 @@ class SoluteInserter:
         Returns:
             (5, 3) array with [C, H1, H2, H3, H4] positions centered at origin
         """
-        # Bond length from ch4.itp
-        r_ch = 0.109620  # nm
+        # Bond length from ch4.itp (see CH4_CH_BOND_LENGTH_NM module constant)
+        r_ch = CH4_CH_BOND_LENGTH_NM  # nm
         
         # Tetrahedral geometry: C at center, 4 H atoms at corners of tetrahedron
         # Tetrahedral angle = arccos(-1/3) ≈ 109.47°

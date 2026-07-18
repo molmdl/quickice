@@ -50,6 +50,11 @@ from quickice.output.gromacs_writer import (
     write_top_file,
 )
 from quickice.structure_generation.gromacs_ion_export import generate_ion_itp
+from quickice.structure_generation.solute_inserter import (
+    CH4_CH_BOND_LENGTH_NM,
+    SoluteInserter,
+)
+from quickice.structure_generation.types import SoluteConfig
 
 
 # ── Baseline MD5 (captured pre-refactor) ─────────────────────────────────────
@@ -98,6 +103,17 @@ def _parse_tip4p_ice_itp() -> dict:
         "settle_doh": float(doh.group(1)),
         "settle_dhh": float(dhh.group(1)),
     }
+
+
+def _parse_ch4_itp_bond() -> float:
+    """Parse quickice/data/ch4.itp [bonds] and return the C-H bond length (nm).
+
+    Used by UNIT-04 to cross-check the extracted CH4_CH_BOND_LENGTH_NM constant
+    against the bundled ITP (the source of truth).
+    """
+    text = (_data_dir() / "ch4.itp").read_text()
+    bond = re.search(r"^\s*1\s+2\s+1\s+(\S+)\s+", text, re.M)
+    return float(bond.group(1))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -196,6 +212,54 @@ class TestUNIT02:
                     f"UNIT-02 regression: the [atoms]/[settles] lines should "
                     f"use named constants, not the literal."
                 )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UNIT-04: CH4 C-H bond length constant
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestUNIT04:
+    """UNIT-04: CH4_CH_BOND_LENGTH_NM named constant in solute_inserter.py."""
+
+    def test_constant_exists_with_correct_value(self):
+        """CH4_CH_BOND_LENGTH_NM == 0.109620, cross-checked against ch4.itp."""
+        assert CH4_CH_BOND_LENGTH_NM == 0.109620
+        assert CH4_CH_BOND_LENGTH_NM == _parse_ch4_itp_bond()
+
+    def test_no_inline_r_ch_magic_number(self):
+        """The inline ``r_ch = 0.109620`` must be replaced by the constant.
+
+        The literal may still appear in the constant definition and in
+        docstrings/comments (documentation) — those are fine. The assignment
+        ``r_ch = <literal>`` must NOT exist; it should be
+        ``r_ch = CH4_CH_BOND_LENGTH_NM``."""
+        import quickice.structure_generation.solute_inserter as si
+        src = Path(si.__file__).read_text()
+        # An assignment of the literal to r_ch is the UNIT-04 bug.
+        bad_assignment = re.search(r"r_ch\s*=\s*0\.109620\b", src)
+        assert bad_assignment is None, (
+            f"Inline 'r_ch = 0.109620' found — UNIT-04 regression: should "
+            f"be 'r_ch = CH4_CH_BOND_LENGTH_NM'."
+        )
+        # The constant reference must be present.
+        assert re.search(r"r_ch\s*=\s*CH4_CH_BOND_LENGTH_NM\b", src), (
+            "r_ch = CH4_CH_BOND_LENGTH_NM not found — UNIT-04 not applied."
+        )
+
+    def test_ch4_geometry_preserves_bond_length(self):
+        """_generate_ch4_coordinates must still produce 0.109620 nm C-H bonds."""
+        inserter = SoluteInserter(
+            config=SoluteConfig(solute_type="CH4", concentration_molar=0.1),
+            seed=42,
+        )
+        coords = inserter._generate_ch4_coordinates()
+        assert coords.shape == (5, 3)
+        c = coords[0]
+        for i, h in enumerate(coords[1:], 1):
+            d = float(np.linalg.norm(h - c))
+            assert abs(d - 0.109620) < 1e-9, (
+                f"C-H{i} bond length {d!r} != 0.109620 (UNIT-04 regression)"
+            )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
