@@ -14,11 +14,21 @@ found. Standard GenIce2 output parses identically.
 SUSP-06 section is appended in a follow-up commit.
 """
 
+import logging
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
-from quickice.structure_generation.types import HydrateConfig
+from quickice.structure_generation.types import (
+    CustomMoleculeConfig,
+    HydrateConfig,
+    InterfaceStructure,
+)
+from quickice.structure_generation.custom_molecule_inserter import (
+    CustomMoleculeInserter,
+)
 
 
 # ── GRO string helpers ────────────────────────────────────────────────────────
@@ -212,3 +222,233 @@ class TestSUSP03BoxLineParse:
             f"sI cell diagonal {box_diag} outside expected ~1.2 nm range — "
             f"possible silent 10 nm default fallback?"
         )
+
+
+# ── SUSP-06: place_custom overlap warning ────────────────────────────────────
+
+# Logger name used by custom_molecule_inserter (``logging.getLogger(__name__)``).
+_SUSP06_LOGGER = "quickice.structure_generation.custom_molecule_inserter"
+
+
+def _make_custom_inserter(tmp_path, min_separation=0.3):
+    """Build a minimal CustomMoleculeInserter backed by temp .gro/.itp files.
+
+    The template is a 3-atom molecule (C1 + 2 H) centred near the origin so that
+    COM-COM distance between two placements approximates the atom-atom overlap.
+    ``place_custom`` reads the template via ``parse_gro_file`` in the
+    constructor, so real files are required.
+    """
+    gro_path = tmp_path / "suscp06_test.gro"
+    gro_path.write_text(
+        "SUSP06 test\n"
+        "    3\n"
+        "    1MOL    C1    1   0.000   0.000   0.000\n"
+        "    1MOL    H1    2   0.150   0.000   0.000\n"
+        "    1MOL    H2    3  -0.150   0.000   0.000\n"
+        "   5.0  5.0  5.0\n"
+    )
+    itp_path = tmp_path / "suscp06_test.itp"
+    itp_path.write_text(
+        "[ moleculetype ]\n"
+        "MOL       3\n"
+        "\n"
+        "[ atoms ]\n"
+        "    1   CT      1    MOL    C1    1   0.00  12.01\n"
+        "    2   HC      1    MOL    H1    2   0.00   1.008\n"
+        "    3   HC      1    MOL    H2    3   0.00   1.008\n"
+    )
+    # placement_mode="custom" requires positions/rotations to be set; use a
+    # placeholder that we override when calling place_custom directly.
+    config = CustomMoleculeConfig(
+        placement_mode="custom",
+        gro_path=gro_path,
+        itp_path=itp_path,
+        positions=[(0.0, 0.0, 0.0)],
+        rotations=[(0.0, 0.0, 0.0)],
+        min_separation=min_separation,
+    )
+    return CustomMoleculeInserter(config)
+
+
+def _make_minimal_interface(cell_diag=10.0):
+    """Build a minimal InterfaceStructure with no ice/water/guests.
+
+    ``place_custom`` only reads ``.cell``, ``.ice_atom_count``,
+    ``.water_atom_count``, ``.guest_atom_count``, ``.positions``,
+    ``.atom_names``, ``.ice_nmolecules``, ``.water_nmolecules``, and
+    ``.molecule_index`` from the structure, so an empty structure suffices.
+    """
+    return InterfaceStructure(
+        positions=np.zeros((0, 3), dtype=np.float64),
+        atom_names=[],
+        cell=np.eye(3) * cell_diag,
+        ice_atom_count=0,
+        water_atom_count=0,
+        ice_nmolecules=0,
+        water_nmolecules=0,
+        mode="slab",
+        report="",
+    )
+
+
+class TestSUSP06PlaceCustomWarning:
+    """SUSP-06: ``place_custom`` emits a warning that no overlap check is
+    performed, plus an additional distance-based warning when placed molecules
+    are closer than ``config.min_separation``.
+
+    Placement is NOT rejected (users may intentionally place overlapping
+    molecules); only a warning is emitted.
+    """
+
+    def test_notice_on_call_warning_always_emitted(self, tmp_path, caplog):
+        """Every ``place_custom`` call emits a 'no overlap check' notice."""
+        inserter = _make_custom_inserter(tmp_path)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0)],
+                rotations=[(0.0, 0.0, 0.0)],
+            )
+        notice_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "without overlap" in r.getMessage()
+        ]
+        assert len(notice_records) == 1, (
+            f"expected exactly 1 notice-on-call WARNING, got "
+            f"{[r.getMessage() for r in notice_records]}"
+        )
+
+    def test_overlap_pair_emits_overlap_warning(self, tmp_path, caplog):
+        """Two molecules closer than min_separation emit a 'possible overlap'
+        warning in addition to the notice-on-call warning."""
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        # COM-COM distance 0.1 nm < min_separation 0.3 nm -> overlap warning.
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            result = inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (1.1, 1.0, 1.0)],
+                rotations=[(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)],
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 1, (
+            f"expected 1 'possible overlap' WARNING, got "
+            f"{[r.getMessage() for r in overlap_records]}"
+        )
+        # Placement is NOT rejected — both molecules are placed.
+        assert result.custom_molecule_count == 2
+
+    def test_non_overlap_pair_emits_no_overlap_warning(self, tmp_path, caplog):
+        """Two molecules far apart (COM-COM >> min_separation) do NOT emit the
+        'possible overlap' warning; only the notice-on-call warning is emitted."""
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        # COM-COM distance 2.0 nm >> min_separation 0.3 nm -> no overlap warning.
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (3.0, 1.0, 1.0)],
+                rotations=[(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)],
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        notice_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "without overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 0, (
+            f"expected NO 'possible overlap' WARNING for non-overlapping pair, "
+            f"got {[r.getMessage() for r in overlap_records]}"
+        )
+        assert len(notice_records) == 1, (
+            f"expected 1 notice-on-call WARNING, got "
+            f"{[r.getMessage() for r in notice_records]}"
+        )
+
+    def test_single_molecule_emits_notice_only(self, tmp_path, caplog):
+        """A single molecule placement emits the notice but no overlap warning
+        (no pairs to check)."""
+        inserter = _make_custom_inserter(tmp_path)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0)],
+                rotations=[(0.0, 0.0, 0.0)],
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        notice_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "without overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 0
+        assert len(notice_records) == 1
+
+    def test_overlapping_placement_not_rejected(self, tmp_path, caplog):
+        """Overlapping molecules are still placed (no exception). SUSP-06 only
+        adds a warning; it does NOT add a hard rejection."""
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            result = inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (1.01, 1.0, 1.0)],  # 0.01 nm apart
+                rotations=[(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)],
+            )
+        # Both molecules placed despite the overlap.
+        assert result.custom_molecule_count == 2
+        # The overlap warning was emitted (informational, not a rejection).
+        assert any(
+            "possible overlap" in r.getMessage()
+            for r in caplog.records
+            if r.levelno >= logging.WARNING
+        )
+
+    def test_three_molecules_counts_pairs_correctly(self, tmp_path, caplog):
+        """With 3 molecules, the warning reports the correct number of close
+        pairs out of 3 total pairs (C(3,2)=3)."""
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        # mol 0 and 1 overlap (0.1 nm); mol 2 is far from both.
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (1.1, 1.0, 1.0), (5.0, 5.0, 5.0)],
+                rotations=[(0.0, 0.0, 0.0)] * 3,
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 1
+        msg = overlap_records[0].getMessage()
+        # 1 close pair out of 3 total pairs.
+        assert "1 of 3" in msg, f"expected '1 of 3' in message: {msg!r}"
+
+    def test_validation_error_still_raised(self, tmp_path):
+        """The positions/rotations length mismatch check still raises
+        (unaffected by the warning additions)."""
+        inserter = _make_custom_inserter(tmp_path)
+        iface = _make_minimal_interface()
+        with pytest.raises(ValueError, match="same length"):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (2.0, 2.0, 2.0)],
+                rotations=[(0.0, 0.0, 0.0)],  # length mismatch
+            )

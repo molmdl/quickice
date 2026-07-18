@@ -803,7 +803,13 @@ class CustomMoleculeInserter:
     ) -> CustomMoleculeStructure:
         """Place molecules at user-specified positions with rotations.
         
-        No overlap checking (user responsibility).
+        No overlap checking is performed (user responsibility): placed molecules
+        are NOT rejected even if they overlap. However, a warning IS emitted on
+        every call noting that no overlap check is performed, and an additional
+        warning is emitted when any pair of placed molecules has a COM-COM
+        distance below ``config.min_separation`` (a heuristic overlap notice).
+        This does NOT change placement behavior — users may intentionally place
+        overlapping molecules.
         
         Args:
             structure: InterfaceStructure (for cell info)
@@ -819,6 +825,16 @@ class CustomMoleculeInserter:
                 f"positions and rotations must have same length, "
                 f"got {len(positions)} vs {len(rotations)}"
             )
+        
+        n_molecules = len(positions)
+        # SUSP-06: place_custom performs NO overlap checking by design (user
+        # responsibility), but emit a warning so users are alerted rather than
+        # silently receiving overlapping placements. Do NOT reject overlapping
+        # placements — users may intentionally place molecules close together.
+        logger.warning(
+            "place_custom: placing %d custom molecule(s) without overlap "
+            "checking (user responsibility)", n_molecules
+        )
         
         # Center template at origin for rotation
         center = self.template_positions.mean(axis=0)
@@ -846,6 +862,28 @@ class CustomMoleculeInserter:
             molecule_index.append((current_idx, current_idx + len(self.template_atom_names)))
             
             current_idx += len(self.template_atom_names)
+        
+        # SUSP-06: distance-based overlap notice. Compute pairwise COM-COM
+        # distances between user-specified positions and warn when any pair is
+        # closer than ``config.min_separation``. This is a heuristic (COM-COM,
+        # not all-atom; no PBC minimum-image) — it only flags LIKELY overlaps
+        # and does NOT reject the placement. Users may legitimately place
+        # molecules close together; the warning is informational.
+        if n_molecules >= 2:
+            com_arr = np.array(positions, dtype=np.float64)
+            total_pairs = n_molecules * (n_molecules - 1) // 2
+            n_close_pairs = 0
+            for i in range(n_molecules):
+                for j in range(i + 1, n_molecules):
+                    if np.linalg.norm(com_arr[i] - com_arr[j]) < self.config.min_separation:
+                        n_close_pairs += 1
+            if n_close_pairs > 0:
+                logger.warning(
+                    "place_custom: %d of %d molecule pair(s) have COM-COM "
+                    "distance < %.3f nm (min_separation) — possible overlap "
+                    "(placement proceeds; no overlap check is performed)",
+                    n_close_pairs, total_pairs, self.config.min_separation,
+                )
         
         # Get interface structure info
         ice_atom_count = getattr(structure, 'ice_atom_count', 0)
