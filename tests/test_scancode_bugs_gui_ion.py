@@ -265,3 +265,206 @@ class TestSAFE01IonInsertionWorker:
         src = inspect.getsource(IonInsertionWorker.run)
         assert "from quickice.structure_generation.ion_inserter import" in src, \
             "run() must lazy-import insert_ions (mirror HydrateWorker lazy import)"
+
+
+class TestSAFE07NanInfConcentration:
+    """SAFE-07: NaN/Inf/None concentration must be rejected before round().
+
+    The old ``if concentration <= 0`` guard missed NaN (NaN <= 0 is False) and
+    Inf, so they reached ``int(round(concentration))`` inside
+    ``ion_inserter.py:calculate_ion_pairs`` (line 222) and crashed with an
+    unhelpful ``ValueError: cannot convert float NaN to integer``. The
+    hardened guard rejects None/NaN/Inf/<=0 with a clear
+    ``QMessageBox.warning`` BEFORE any worker construction or round() call.
+
+    These tests use ``MagicMock`` for the config (so NaN/Inf/None can be held
+    without ``IonConfig.__post_init__`` raising) and call ``_on_insert_ions``
+    directly on a MagicMock self — no MainWindow construction (matches the
+    SAFE-01 runtime-test approach).
+    """
+
+    def test_concentration_check_rejects_nan_inf_none_in_source(self):
+        """_on_insert_ions source must guard against None/NaN/Inf."""
+        src = inspect.getsource(MainWindow._on_insert_ions)
+        assert "math.isnan" in src, "must check math.isnan(concentration)"
+        assert "math.isinf" in src, "must check math.isinf(concentration)"
+        assert "concentration is None" in src, "must check concentration is None"
+
+    def test_math_imported_at_module_level(self):
+        """main_window must import math (for the isnan/isinf checks)."""
+        import quickice.gui.main_window as mw
+        assert hasattr(mw, "math"), "main_window module must import math"
+
+    def test_guard_precedes_worker_construction(self):
+        """The NaN/Inf guard must come before IonInsertionWorker construction.
+
+        The guard must fire BEFORE the worker is constructed/started; otherwise
+        NaN/Inf would reach insert_ions -> int(round(...)) on the worker thread
+        and crash with an unhelpful ValueError instead of a clean warning.
+        """
+        src = inspect.getsource(MainWindow._on_insert_ions)
+        guard_idx = src.find("math.isnan")
+        worker_idx = src.find("IonInsertionWorker(")
+        assert guard_idx != -1, "must have math.isnan guard"
+        assert worker_idx != -1, "must construct IonInsertionWorker"
+        assert guard_idx < worker_idx, \
+            "NaN/Inf guard must come before IonInsertionWorker construction"
+
+    def _make_fake_self(self, concentration):
+        """Build a MagicMock self with ion_panel returning the given concentration.
+
+        Uses a MagicMock config so NaN/Inf/None can be held without
+        IonConfig.__post_init__ raising (None < 0 raises TypeError; NaN/Inf
+        pass __post_init__ but the GUI check must still catch them).
+        """
+        fake_button = MagicMock()
+        fake_panel = MagicMock()
+        fake_panel.get_configuration.return_value = MagicMock(
+            concentration_molar=concentration
+        )
+        fake_panel.get_current_source.return_value = "Interface"
+        fake_panel.get_liquid_volume.return_value = 10.0
+        fake_panel.insert_button = fake_button
+        fake_self = MagicMock()
+        fake_self.ion_panel = fake_panel
+        fake_self._current_interface_result = MagicMock()  # non-None interface
+        return fake_self, fake_button
+
+    def test_nan_concentration_triggers_warning_and_returns_early(self):
+        """NaN concentration: QMessageBox.warning shown, no worker constructed.
+
+        Core SAFE-07 runtime guarantee: NaN must NOT reach insert_ions (which
+        would crash int(round(NaN))). The hardened guard shows a clear warning
+        and returns before constructing the worker.
+        """
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(float("nan"))
+        with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+            with patch("quickice.gui.main_window.IonInsertionWorker") as mock_worker_cls:
+                MainWindow._on_insert_ions(fake_self)
+        mock_qmb.warning.assert_called_once()
+        mock_worker_cls.assert_not_called()
+        # Button NOT disabled (early return before the disable/start lines)
+        fake_button.setEnabled.assert_not_called()
+
+    def test_inf_concentration_triggers_warning_and_returns_early(self):
+        """Inf concentration: QMessageBox.warning shown, no worker constructed."""
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(float("inf"))
+        with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+            with patch("quickice.gui.main_window.IonInsertionWorker") as mock_worker_cls:
+                MainWindow._on_insert_ions(fake_self)
+        mock_qmb.warning.assert_called_once()
+        mock_worker_cls.assert_not_called()
+        fake_button.setEnabled.assert_not_called()
+
+    def test_negative_inf_concentration_triggers_warning_and_returns_early(self):
+        """-Inf concentration: QMessageBox.warning shown (caught by math.isinf)."""
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(float("-inf"))
+        with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+            with patch("quickice.gui.main_window.IonInsertionWorker") as mock_worker_cls:
+                MainWindow._on_insert_ions(fake_self)
+        mock_qmb.warning.assert_called_once()
+        mock_worker_cls.assert_not_called()
+
+    def test_none_concentration_triggers_warning_and_returns_early(self):
+        """None concentration: QMessageBox.warning shown, no worker constructed.
+
+        Uses a MagicMock config (a real IonConfig cannot hold None — its
+        __post_init__ ``if concentration_molar < 0`` would raise TypeError on
+        None). The GUI handler's ``concentration is None`` short-circuits
+        before ``math.isnan(None)`` (which would also raise TypeError).
+        """
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(None)
+        with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+            with patch("quickice.gui.main_window.IonInsertionWorker") as mock_worker_cls:
+                MainWindow._on_insert_ions(fake_self)
+        mock_qmb.warning.assert_called_once()
+        mock_worker_cls.assert_not_called()
+        fake_button.setEnabled.assert_not_called()
+
+    def test_zero_concentration_triggers_warning_and_returns_early(self):
+        """Zero concentration: still rejected by the `<= 0` part of the guard."""
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(0.0)
+        with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+            with patch("quickice.gui.main_window.IonInsertionWorker") as mock_worker_cls:
+                MainWindow._on_insert_ions(fake_self)
+        mock_qmb.warning.assert_called_once()
+        mock_worker_cls.assert_not_called()
+
+    def test_valid_concentration_still_passes(self):
+        """A valid positive concentration must still proceed to worker construction.
+
+        Regression guard: the hardened check must NOT over-reject valid inputs.
+        A valid 0.5 M concentration should pass the guard and construct +
+        start the IonInsertionWorker (mocked so start() is a no-op), with the
+        button disabled during work.
+        """
+        _ensure_qapp()
+        fake_self, fake_button = self._make_fake_self(0.5)
+        mock_worker = MagicMock()
+        with patch("quickice.gui.main_window.IonInsertionWorker",
+                   return_value=mock_worker) as mock_worker_cls:
+            with patch("quickice.gui.main_window.QMessageBox") as mock_qmb:
+                MainWindow._on_insert_ions(fake_self)
+        # No warning shown for valid concentration
+        mock_qmb.warning.assert_not_called()
+        # Worker constructed and started (valid input proceeds)
+        mock_worker_cls.assert_called_once()
+        mock_worker.start.assert_called_once()
+        # Button disabled during work
+        fake_button.setEnabled.assert_any_call(False)
+
+    def test_int_round_nan_raises_valueerror_documents_bug(self):
+        """Document the crash SAFE-07 prevents: int(round(nan/inf)) crashes.
+
+        Without the GUI-level guard, NaN/Inf would reach
+        ``ion_inserter.py:222 int(round(n_formula_units))`` and crash with an
+        unhelpful exception (ValueError for NaN, OverflowError for Inf) and no
+        guided user message. This test documents WHY the pre-check is needed.
+        """
+        # NaN raises ValueError
+        with pytest.raises((ValueError, OverflowError)):
+            int(round(float("nan")))
+        # Inf / -Inf raise OverflowError
+        with pytest.raises((ValueError, OverflowError)):
+            int(round(float("inf")))
+        with pytest.raises((ValueError, OverflowError)):
+            int(round(float("-inf")))
+
+    def test_nan_comparison_returns_false_documents_old_guard_gap(self):
+        """Document WHY the old `<= 0` guard missed NaN: NaN comparisons return False.
+
+        ``float('nan') <= 0`` is False, so NaN slipped past the old guard.
+        ``float('inf') <= 0`` is also False, so Inf slipped past too. The
+        hardened guard uses ``math.isnan``/``math.isinf`` to catch these
+        explicitly (NaN is unordered — all comparisons with NaN return False).
+        """
+        import math
+        assert not (float("nan") <= 0), "NaN <= 0 is False (old guard missed NaN)"
+        assert not (float("inf") <= 0), "Inf <= 0 is False (old guard missed Inf)"
+        assert not (float("nan") > 0), "NaN is unordered — all comparisons False"
+        assert math.isnan(float("nan")), "math.isnan correctly identifies NaN"
+        assert math.isinf(float("inf")), "math.isinf correctly identifies Inf"
+
+    def test_ionconfig_post_init_misses_nan_documents_defense_in_depth(self):
+        """IonConfig.__post_init__ ALSO misses NaN — GUI check is the real guard.
+
+        IonConfig.__post_init__ uses ``if self.concentration_molar < 0``, which
+        also returns False for NaN (NaN is unordered). So
+        ``IonConfig(concentration_molar=float('nan'))`` constructs successfully —
+        the NaN is only caught by the GUI handler's hardened check. This is why
+        the SAFE-07 fix lives in main_window.py (the GUI boundary) rather than
+        relying on IonConfig's own validation.
+        """
+        import math
+        from quickice.structure_generation.types import IonConfig
+        # IonConfig.__post_init__ does NOT reject NaN (NaN < 0 is False)
+        config = IonConfig(concentration_molar=float("nan"))
+        assert math.isnan(config.concentration_molar), (
+            "IonConfig holds NaN (its __post_init__ misses it — the GUI "
+            "handler's hardened check is the real guard)"
+        )

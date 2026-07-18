@@ -11,6 +11,7 @@ This module provides the MainWindow class that assembles all GUI components:
 """
 
 import logging
+import math
 from pathlib import Path
 import numpy as np
 
@@ -995,7 +996,17 @@ class MainWindow(QMainWindow):
         # Extract concentration from config
         concentration = config.concentration_molar
         
-        if concentration <= 0:
+        # SAFE-07: reject None / NaN / Inf / non-positive concentrations BEFORE
+        # int(round(concentration)) is reached inside insert_ions ->
+        # calculate_ion_pairs (ion_inserter.py:222), where NaN would raise an
+        # unhelpful ValueError("cannot convert float NaN to integer"). NaN and
+        # Inf comparisons return False, so the old `<= 0` guard alone missed them.
+        if (
+            concentration is None
+            or math.isnan(concentration)
+            or math.isinf(concentration)
+            or concentration <= 0
+        ):
             QMessageBox.warning(
                 self, "Invalid Concentration",
                 "Please enter a valid concentration greater than 0 mol/L."
