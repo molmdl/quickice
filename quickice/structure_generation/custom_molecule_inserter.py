@@ -364,11 +364,13 @@ class CustomMoleculeInserter:
         Returns:
             True if overlap detected, False if placement is valid
         """
-        for atom_pos in positions:
-            min_dist = existing_tree.query(atom_pos, k=1)[0]
-            if min_dist < min_separation:
-                return True
-        return False
+        # PERF-04: batch cKDTree query (replaces per-atom Python loop).
+        # cKDTree.query supports batched input natively: for (N, 3) input it
+        # returns dists of shape (N,). The result is identical to the per-atom
+        # short-circuit loop (any overlap -> True, no overlap -> False) but
+        # avoids Python-loop overhead. Output is byte-equivalent to the loop.
+        dists, _ = existing_tree.query(positions, k=1)
+        return bool(np.any(dists < min_separation))
     
     def _remove_overlapping_water(
         self,
