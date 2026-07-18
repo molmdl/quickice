@@ -30,6 +30,32 @@ def report_progress(message: str) -> None:
     print(f"[PROGRESS] {message}", file=sys.stderr)
 
 
+def _validate_hydrate_atom_counts(
+    water_atom_count: int,
+    guest_atom_count: int,
+    total_positions: int,
+) -> None:
+    """Verify hydrate atom-count consistency before wrapping for export.
+
+    Replaces an ``assert`` that was silently stripped under ``python -O`` /
+    ``PYTHONOPTIMIZE=1`` (CRIT-04). A real ``if ...: raise ValueError`` is always
+    active, so a mismatch is rejected regardless of optimization level.
+
+    Args:
+        water_atom_count: Number of water-framework atoms (water_count * 4).
+        guest_atom_count: Number of guest atoms.
+        total_positions: Total number of atoms in ``hydrate.positions``.
+
+    Raises:
+        ValueError: If ``water_atom_count + guest_atom_count != total_positions``.
+    """
+    if water_atom_count + guest_atom_count != total_positions:
+        raise ValueError(
+            f"Hydrate atom-count mismatch: {water_atom_count} water + "
+            f"{guest_atom_count} guest != {total_positions} total"
+        )
+
+
 def _parse_cage_guest_args(args, lattice_type: str) -> dict:
     """Parse ``args.cage_guest`` (list of ``"KEY=GUEST:OCC"`` strings) into a
     ``dict[str, CageGuestAssignment]`` keyed by cage type map key.
@@ -897,11 +923,13 @@ class CLIPipeline:
                 # Verify atom counts are consistent before creating wrapper
                 # (catches bugs where water_count * 4 does not match actual
                 # water atoms in positions, which would silently corrupt
-                # downstream atom counting)
-                assert water_atom_count + guest_atom_count == len(hydrate.positions), \
-                    f"Atom count mismatch: water_atom_count({water_atom_count}) + " \
-                    f"guest_atom_count({guest_atom_count}) != " \
-                    f"total positions({len(hydrate.positions)})"
+                # downstream atom counting). CRIT-04: this was an `assert`
+                # that was silently stripped under `python -O`/PYTHONOPTIMIZE=1;
+                # the helper uses a real `if ...: raise ValueError` so the check
+                # is always active regardless of optimization level.
+                _validate_hydrate_atom_counts(
+                    water_atom_count, guest_atom_count, len(hydrate.positions)
+                )
                 guest_nmolecules = hydrate.guest_count
                 water_nmolecules = hydrate.water_count
                 wrapper = InterfaceStructure(
