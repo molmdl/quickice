@@ -220,13 +220,13 @@ Multi-molecule topologies follow GROMACS convention:
 [ molecules ]
 SOL               5919    ; Water molecules
 CH4_H             128     ; Hydrate guests (from Tab 1)
-THF_L             45      ; Liquid solutes (from Tab 4)
 CUSTOM_MOL_1      10      ; Custom molecules (from Tab 3)
+THF_L             45      ; Liquid solutes (from Tab 4)
 NA                12      ; Ions (from Tab 5)
 CL                12
 ```
 
-Order: SOL → hydrate guests → solutes → custom molecules → ions
+Order: SOL → hydrate guests → custom molecules → solutes → ions
 
 ### Water Model
 
