@@ -300,10 +300,23 @@ Plans:
   3. All produced `.top`/`.gro`/`.itp` files are byte-identical (or semantically identical — same numbers, possibly different comment/whitespace) to pre-refactor output
   4. `gmx grompp` dry-run passes on all export paths (ice, hydrate, interface, solute, custom, ion — both CLI + GUI)
   5. Full pytest suite passes with zero new failures (~1558+ tests)
-**Plans:** 0 plans
+**Plans:** 14 plans in 10 waves (Wave 0-9, sequential — each wave is a verification gate)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 48.1 to break down)
+- [ ] 48.1-01-PLAN.md — Wave 0: Capture SHA256 byte-equivalence baselines (TDD, 7 export paths)
+- [ ] 48.1-02-PLAN.md — Wave 1: Extract _shared.py (constants + 17 helpers + _registry singleton) + update test_tip4p_ice_lj_values.py
+- [ ] 48.1-03-PLAN.md — Wave 2a: Create _gro_format.py with 10 DRY helpers (TD-01 scaffolding, no caller updates)
+- [ ] 48.1-04-PLAN.md — Wave 2b: Apply helpers to write_gro_file + write_interface_gro_file (byte-eq verify)
+- [ ] 48.1-05-PLAN.md — Wave 2c: Apply helpers to write_multi_molecule_gro_file + write_ion_gro_file (byte-eq verify)
+- [ ] 48.1-06-PLAN.md — Wave 2d: Apply helpers to write_custom_molecule_gro_file + write_solute_gro_file (byte-eq verify, preserve divergences)
+- [ ] 48.1-07-PLAN.md — Wave 2e: Extract TOP [defaults] block to _shared._write_top_defaults (all 6 TOP writers)
+- [ ] 48.1-08-PLAN.md — Wave 3: Split ice_writer.py (smallest — validates pattern)
+- [ ] 48.1-09-PLAN.md — Wave 4: Split interface_writer.py (preserve 'if custom_guest_info:' gate divergence)
+- [ ] 48.1-10-PLAN.md — Wave 5: Split multi_molecule_writer.py (_registry singleton + no try/except)
+- [ ] 48.1-11-PLAN.md — Wave 6: Split ion_writer.py (largest — MoleculeIndex + 7 molecule types)
+- [ ] 48.1-12-PLAN.md — Wave 7: Split custom_writer.py (preserve divergent header format — NO :5d)
+- [ ] 48.1-13-PLAN.md — Wave 8: Split solute_writer.py (RISKIEST — empty-molecule_index fallback + no try/except)
+- [ ] 48.1-14-PLAN.md — Wave 9: Final verification + PR (all 5 success criteria documented)
 
 **Details:**
 Last remaining scancode item (FRAG-03 + TD-01 from `.planning/scancode-fixes/PLAN.md`). L-complexity major refactor with high regression risk — touches every export path. The 4067-line `gromacs_writer.py` file contains 6 near-identical GRO writer functions that should be split into per-structure modules with shared GRO-writer helpers extracted. Behavior must stay byte-identical for GROMACS (`.top`/`.gro`/`.itp` output must pass `gmx grompp`).
@@ -336,7 +349,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
-| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 0/0 | 🚧 Not planned yet (PR branch) | — |
+| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 0/14 | 🚧 Planned (14 plans in 10 waves — PR branch) | — |
 
 **v4.7 status after reorganization:** Phase 48 Documentation COMPLETE — all 14 plans (48-01..48-14) done (aggressively split per user request). Phase 47 COMPLETE (1/1). **Phases 38-48 ALL COMPLETE** — v4.7 milestone requirements 57/61 complete (4 pending: GUEST-01/02/03 GUI surfaces done in 44-02, CLI-02 deferred by design; DOCS-01..04 all complete). The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
