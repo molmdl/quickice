@@ -867,10 +867,44 @@ class SoluteInserter:
         max_coords = liquid_positions.max(axis=0)
         
         # Combined tree data: base existing atoms + placed solute atoms
-        # This array grows incrementally as solutes are placed, avoiding
-        # the O(N×M) double-vstack pattern of reassembling placed_positions
-        # on every rebuild.
-        combined_tree_data = existing_tree.data.copy() if existing_tree is not None else np.zeros((0, 3))
+        # PERF-02: pre-allocate the combined tree data array + batch the
+        # cKDTree rebuild. The old code did
+        # ``combined_tree_data = np.vstack([combined_tree_data, solute_positions])``
+        # followed by ``existing_tree = cKDTree(combined_tree_data)`` after
+        # EVERY successful placement (O(N) vstack + O(N log N) rebuild per
+        # placement, where N is the total atoms so far).
+        #
+        # The new code pre-allocates a (base_size + n_molecules *
+        # n_atoms_per_molecule, 3) array, copies the base existing atoms
+        # into the first slots, and writes each placement's atoms into the
+        # next slots (O(A) write, no vstack copy). The cKDTree is rebuilt
+        # only when a batch of ``_SOLUTE_BATCH_SIZE`` placements accumulates,
+        # from a slice of the pre-allocated array (no copy). Recent
+        # placements not yet merged into the tree are checked via a small
+        # ``buffer_tree`` (cKDTree rebuilt per successful placement from
+        # the buffer, byte-identical to the main tree's distance
+        # computation). This is byte-equivalent to the per-placement
+        # rebuild because the union of (main tree) and (buffer tree)
+        # equals all placed atoms so far.
+        #
+        # AGENTS.md cKDTree conditional rebuild rule is preserved: both
+        # the main tree and the buffer tree are rebuilt ONLY after
+        # successful placement (never on overlap rejection). The batch
+        # just amortizes the main tree rebuild over multiple successful
+        # placements.
+        _SOLUTE_BATCH_SIZE = 8
+        base_data = (
+            existing_tree.data.copy()
+            if existing_tree is not None
+            else np.zeros((0, 3))
+        )
+        base_size = int(len(base_data))
+        total_capacity = base_size + n_molecules * n_atoms_per_molecule
+        combined_tree_data_arr = np.zeros((total_capacity, 3))
+        combined_tree_data_arr[:base_size] = base_data
+        n_filled = base_size
+        recent_buffer: list[np.ndarray] = []  # not yet in existing_tree
+        buffer_tree = None  # cKDTree of recent_buffer (rebuilt per successful placement)
         
         # Place molecules
         placed_positions = []
@@ -902,11 +936,24 @@ class SoluteInserter:
                 # Translate to position
                 solute_positions = rotated_positions + position
                 
-                # Check overlap
+                # Check overlap against the main tree (existing + previous batches)
                 if existing_tree is not None:
                     if self._check_solute_overlap(
                         solute_positions,
                         existing_tree,
+                        config.min_separation
+                    ):
+                        continue  # Try again
+                
+                # PERF-02: also check against the buffer tree (current batch,
+                # not yet merged into existing_tree). Byte-identical to
+                # checking a combined tree of all placements so far because
+                # any(dists_main < threshold) OR any(dists_buffer < threshold)
+                # == any(dists_combined < threshold).
+                if buffer_tree is not None:
+                    if self._check_solute_overlap(
+                        solute_positions,
+                        buffer_tree,
                         config.min_separation
                     ):
                         continue  # Try again
@@ -920,13 +967,21 @@ class SoluteInserter:
                 placed_count += 1
                 placed = True
                 
-                # Conditional rebuild: only after successful placement (V-03 fix)
-                # Appends new solute positions to combined_tree_data and rebuilds tree.
-                # This avoids O(N×A) rebuilds (A = max_attempts per molecule) and
-                # reduces to O(N) rebuilds for N placed solutes, matching ion_inserter
-                # conditional rebuild pattern (TREE-01 / Plan 08).
-                combined_tree_data = np.vstack([combined_tree_data, solute_positions])
-                existing_tree = cKDTree(combined_tree_data)
+                # PERF-02: write the new solute positions into the pre-allocated
+                # array (O(A) write, no vstack copy) and append to the buffer.
+                combined_tree_data_arr[n_filled:n_filled + n_atoms_per_molecule] = solute_positions
+                n_filled += n_atoms_per_molecule
+                recent_buffer.append(solute_positions)
+                # Rebuild the small buffer tree (B*A atoms, byte-identical to
+                # the main tree's distance computation).
+                buffer_tree = cKDTree(np.vstack(recent_buffer))
+                
+                # Batch rebuild: merge the buffer into the main tree only when
+                # the batch is full. Rebuild from the pre-allocated slice.
+                if len(recent_buffer) >= _SOLUTE_BATCH_SIZE:
+                    existing_tree = cKDTree(combined_tree_data_arr[:n_filled])
+                    recent_buffer = []
+                    buffer_tree = None
                 
                 break  # Move to next molecule
             
