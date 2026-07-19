@@ -2202,22 +2202,22 @@ def write_ion_gro_file(
         # Create pseudo-entries for each custom molecule
         for i in range(ion_structure.custom_molecule_count):
             start = i * atoms_per_custom
-            ordered_mols.append(("custom", type('obj', (object,), {
-                'start_idx': start,
-                'count': atoms_per_custom,
-                'mol_type': 'custom'
-            })()))
+            ordered_mols.append(("custom", MoleculeIndex(
+                start_idx=start,
+                count=atoms_per_custom,
+                mol_type='custom'
+            )))
     # Pass 4: solute molecules (if present)
     # Note: solutes are stored separately, not in molecule_index
     has_solutes = ion_structure.solute_n_molecules > 0 and ion_structure.solute_positions is not None
     if has_solutes:
         for start, end in ion_structure.solute_molecule_indices:
             # Create a temporary MoleculeIndex-like object for solutes
-            ordered_mols.append(("solute", type('obj', (object,), {
-                'start_idx': start,
-                'count': end - start,
-                'mol_type': 'solute'
-            })()))
+            ordered_mols.append(("solute", MoleculeIndex(
+                start_idx=start,
+                count=end - start,
+                mol_type='solute'
+            )))
     # Pass 5: NA ions
     for mol in ion_structure.molecule_index:
         if mol.mol_type == "na":
@@ -3484,18 +3484,18 @@ def write_solute_gro_file(
         atoms_per_ice_mol = 3 if "O" in interface.atom_names[:interface.ice_atom_count] else 4
         for mol_idx in range(interface.ice_nmolecules):
             base_idx = mol_idx * atoms_per_ice_mol
-            ordered_mols.append(("sol", type('obj', (object,), {
-                'start_idx': base_idx,
-                'count': atoms_per_ice_mol,
-                'mol_type': 'ice'
-            })()))
+            ordered_mols.append(("sol", MoleculeIndex(
+                start_idx=base_idx,
+                count=atoms_per_ice_mol,
+                mol_type='ice'
+            )))
         for mol_idx in range(interface.water_nmolecules):
             base_idx = interface.ice_atom_count + mol_idx * 4
-            ordered_mols.append(("sol", type('obj', (object,), {
-                'start_idx': base_idx,
-                'count': 4,
-                'mol_type': 'water'
-            })()))
+            ordered_mols.append(("sol", MoleculeIndex(
+                start_idx=base_idx,
+                count=4,
+                mol_type='water'
+            )))
 
     # Pass 2: guest molecules (if present in interface)
     if interface.guest_atom_count > 0 and interface.guest_nmolecules > 0:
@@ -3517,11 +3517,11 @@ def write_solute_gro_file(
             atoms_per_guest = interface.guest_atom_count // max(interface.guest_nmolecules, 1)
             for mol_idx in range(interface.guest_nmolecules):
                 start = guest_start + mol_idx * atoms_per_guest
-                ordered_mols.append(("guest", type('obj', (object,), {
-                    'start_idx': start,
-                    'count': atoms_per_guest,
-                    'mol_type': 'guest'
-                })()))
+                ordered_mols.append(("guest", MoleculeIndex(
+                    start_idx=start,
+                    count=atoms_per_guest,
+                    mol_type='guest'
+                )))
 
     # Pass 3: custom molecules (if present, propagated from custom tab)
     has_custom = (solute_structure.custom_molecule_count > 0 and
@@ -3533,21 +3533,21 @@ def write_solute_gro_file(
 
         for i in range(solute_structure.custom_molecule_count):
             start = i * atoms_per_custom
-            ordered_mols.append(("custom", type('obj', (object,), {
-                'start_idx': start,
-                'count': atoms_per_custom,
-                'mol_type': 'custom'
-            })()))
+            ordered_mols.append(("custom", MoleculeIndex(
+                start_idx=start,
+                count=atoms_per_custom,
+                mol_type='custom'
+            )))
 
     # Pass 4: solute molecules (from solute_structure.positions)
     has_solutes = solute_structure.n_molecules > 0 and solute_structure.positions is not None
     if has_solutes:
         for start, end in solute_structure.molecule_indices:
-            ordered_mols.append(("solute", type('obj', (object,), {
-                'start_idx': start,
-                'count': end - start,
-                'mol_type': 'solute'
-            })()))
+            ordered_mols.append(("solute", MoleculeIndex(
+                start_idx=start,
+                count=end - start,
+                mol_type='solute'
+            )))
 
     # Count total atoms for header
     total_atoms = 0
