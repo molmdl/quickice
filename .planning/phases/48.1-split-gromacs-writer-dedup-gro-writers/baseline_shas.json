@@ -1,0 +1,42 @@
+{
+  "custom": {
+    "custom.gro": "78843b6ffdca44813d5aa5385b29b5a2e02d7e320b8ab9d24f0cf62cd830964c",
+    "custom.top": "a9192d43aeb85defe87d70cca64fea30bec9355abed878dfc959bc9853fa8fa6",
+    "etoh.itp": "21e9dab637ac33f249260383fb3a70623773f38c5d5b142eff2329e860ca857a",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "custom_guest": {
+    "custom_guest.gro": "58a11d2ba3050fa41fb4954cb6db4edced635906e5fa32906ba223fde8f6a5ae",
+    "custom_guest.top": "4803df04382828563b62446546e6388b313e3f4a038c5ca63060a57aab74c17e",
+    "etoh.itp": "bfa5b2acd7c029dc2fec901b926cf7e5f03ad0a3de0c98e3da9c7dd94f0fff57",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "hydrate": {
+    "ch4_hydrate.itp": "04bd2d0f8fe06b285799d2ac4a9e01ae145d89a3bfe1360e07f35ac1c66d6562",
+    "hydrate.gro": "3928378d3fc427551158f1d9c2c09eb7a2ce390b859e968cd419dff5a024a23b",
+    "hydrate.top": "79d224f1ae4c91a9ddff0bb08deb235fe30234cd1622f2c0641258e996c4a18c",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "ice": {
+    "ice.gro": "249d55817978b1e51630186bdc6e6cb612607097f61d37f5b399f3f18960596c",
+    "ice.top": "aefc92d719e2e36f824fd0090af7696c46af174523cc4c511d839fe271a53fcb",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "interface": {
+    "interface.gro": "360c46828ffc141032b0fe7d85a295d6cb120346f5d6cbd80a61711ddb18fd8d",
+    "interface.top": "0b3906009979e256efddf6d71098462d55002968502a156a95a79db86ff11fca",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "ion": {
+    "ion.gro": "963ca900b4db87001684dde9d9ff3371ff719e68fd3378366526c6911271af38",
+    "ion.itp": "37f8a09954042a9087e3ac34ea64a33d72af8d4b4c366fce1281d62b202f9d72",
+    "ion.top": "c52f81a97e063774011f0861dcb99b62431167f2aba6005bccca1db5537ea227",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  },
+  "solute": {
+    "ch4_liquid.itp": "0930b9e802619a8cf45150a2697bdd162e8dfdd6dd0862d6cd34b8a2486b6d7d",
+    "solute.gro": "15e99205a00a7c7fb307d5dd42927295c06990c5e1bd477ea90ceda29929468b",
+    "solute.top": "87bf5b599e7074226707143ecada1e2c2136cbdeb3aeec38f5cae14f48bd1822",
+    "tip4p-ice.itp": "f84993a2eea0914e98c0f44da275735fcaf1d4be02b988df67022f603e045568"
+  }
+}
