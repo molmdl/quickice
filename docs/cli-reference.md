@@ -146,7 +146,7 @@ Default: Export all candidates. Use `--candidate N` to export only rank N.
 
 ### `--no-overwrite`
 
-Do not overwrite existing output files. When this flag is set, QuickIce checks if the output directory already contains files before writing. If files exist, the pipeline exits with code 1.
+Do not overwrite existing output files. When this flag is set, QuickIce checks if the output directory already contains files before writing. If files exist, the pipeline skips this run and exits with code 0 (success; the existing files are left untouched). This lets you safely re-run a command in a populated output directory without overwriting results or signaling failure.
 
 **Type:** Boolean flag (store_true)
 
