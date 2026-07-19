@@ -455,7 +455,30 @@ class IonInserter:
         # Now add ions alternating Na+, Cl- with overlap checking
         na_count = 0
         cl_count = 0
-        ion_positions = []  # Track placed ion positions
+        # PERF-01: pre-allocate the ion positions array + batch the cKDTree
+        # rebuild. The old code appended to a Python list and rebuilt
+        # ``cKDTree(np.array(ion_positions))`` after EVERY successful
+        # placement (O(k^2 log k) total: k rebuilds of O(k log k) each).
+        #
+        # The new code pre-allocates a (len(selected), 3) array, writes each
+        # placement into a slot (O(1), no list-to-array copy), and rebuilds
+        # the tree only when a batch of ``_ION_BATCH_SIZE`` placements
+        # accumulates. Recent placements not yet merged into the tree are
+        # checked via a direct numpy distance scan against a small buffer
+        # (``recent_ion_buffer``). This is byte-identical to the per-placement
+        # rebuild because the union of (tree placements) and (buffer
+        # placements) equals all placements so far, and cKDTree.query and
+        # np.linalg.norm produce byte-identical Euclidean distances
+        # (verified in test_scancode_bugs_inserter_perf_rebuild).
+        #
+        # AGENTS.md cKDTree conditional rebuild rule is preserved: the tree
+        # is rebuilt ONLY after successful placement (never on overlap
+        # rejection). The batch just amortizes the rebuild over multiple
+        # successful placements.
+        _ION_BATCH_SIZE = 8
+        ion_positions_arr = np.zeros((len(selected), 3))
+        n_ions_placed = 0
+        recent_ion_buffer: list[np.ndarray] = []  # not yet in ion_tree
         ion_tree = None  # KDTree for ion-ion overlap checking (rebuilt only on successful placement)
         # CRIT-02: parity must reflect PLACEMENT order, not the enumerate
         # index. A candidate rejected for overlap (continue above) still
@@ -481,17 +504,33 @@ class IonInserter:
                     # Too close to existing atoms - skip this ion
                     continue
             
-            # Also check against previously placed ions
+            # Also check against previously placed ions (tree: previous batches)
             if ion_tree is not None:
                 min_ion_dist = ion_tree.query(water_pos, k=1)[0]
                 if min_ion_dist < MIN_SEPARATION:
                     # Too close to other ions - skip
                     continue
             
+            # PERF-01: also check against recent placements not yet merged
+            # into ion_tree (current batch). This is byte-identical to
+            # checking a combined tree of all placements so far because
+            # min(tree_dist, buffer_dist) == combined_tree.query(pos)[0].
+            if recent_ion_buffer:
+                buffer_arr = np.asarray(recent_ion_buffer)
+                buffer_dists = np.linalg.norm(buffer_arr - water_pos, axis=1)
+                if np.min(buffer_dists) < MIN_SEPARATION:
+                    # Too close to a recently placed ion (same batch) - skip
+                    continue
+            
             # Valid position - add ion (only reached after overlap checks pass)
-            ion_positions.append(water_pos)
-            # Rebuild ion-ion KDTree only after successful placement (not on overlap rejection)
-            ion_tree = cKDTree(np.array(ion_positions))
+            ion_positions_arr[n_ions_placed] = water_pos
+            n_ions_placed += 1
+            recent_ion_buffer.append(water_pos)
+            # Batch rebuild: merge the buffer into ion_tree only when the
+            # batch is full. Rebuild from the pre-allocated slice (no copy).
+            if len(recent_ion_buffer) >= _ION_BATCH_SIZE:
+                ion_tree = cKDTree(ion_positions_arr[:n_ions_placed])
+                recent_ion_buffer = []
             
             # CRIT-02: use placed_count (incremented only on successful
             # placement) so Na/Cl strictly alternate by PLACEMENT order.
