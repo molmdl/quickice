@@ -30,7 +30,7 @@ WATER_ATOMS_PER_MOLECULE: int = 4
 # TIP4P-ICE model's liquid-phase density at ambient conditions.
 #
 # For TIP4P-ICE specifically: Abascal, J. L. F., Sanz, E., García Fernández, R., & Vega, C.
-# (2005). A potential model for the phase diagram of TIP4P water.
+# (2005). A potential model for the study of ices and amorphous water: TIP4P/Ice.
 # J. Chem. Phys. 122, 234511. DOI: 10.1063/1.1931662
 #
 # For TIP4P/2005: Abascal, J. L. F., & Vega, C. (2005).

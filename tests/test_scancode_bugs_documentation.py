@@ -7,7 +7,16 @@ Covers:
   ``#include "tip4p-ice.itp"`` line written in the .top files.
 - CLI I1: the "TIP4P-ICE" citation label must sit next to DOI
   ``10.1063/1.1931662`` (Abascal 2005, per AGENTS.md), not next to
-  ``10.1063/1.2121600`` (TIP4P/2005).
+  ``10.1063/1.2121687`` (TIP4P/2005).
+- Item 2 (follow-up): the TIP4P-ICE paper TITLE on the
+  ``10.1063/1.1931662`` line in ``types.py`` must match README.md's
+  title for the same DOI (verified via doi.org to be "A potential
+  model for the study of ices and amorphous water: TIP4P/Ice").
+- Item 3 (follow-up): the TIP4P/2005 DOI in ``types.py`` must be
+  ``10.1063/1.2121687`` (the old ``10.1063/1.2121600`` returns 404
+  from both doi.org and Crossref; the new DOI was verified via
+  doi.org to resolve to "A general purpose model for the condensed
+  phases of water: TIP4P/2005" by Abascal & Vega 2005).
 """
 from pathlib import Path
 
@@ -117,4 +126,68 @@ def test_tip4p_ice_label_on_correct_doi():
     assert "TIP4P-ICE" not in f2005_context, (
         "The 'TIP4P-ICE' label must NOT be near DOI 10.1063/1.2121600. "
         f"Context:\n{f2005_context}"
+    )
+
+
+def test_tip4p_ice_paper_title_matches_readme():
+    """Item 2 (follow-up): the TIP4P-ICE paper TITLE on the
+    ``10.1063/1.1931662`` line in ``types.py`` must match README.md's
+    title for the same DOI.
+
+    The old title in ``types.py:33`` was "A potential model for the
+    phase diagram of TIP4P water" — that title belongs to a DIFFERENT
+    paper (the original TIP4P paper, Abascal & Vega 2005 is NOT "phase
+    diagram of TIP4P water"). The actual title for DOI 10.1063/1.1931662
+    (verified via doi.org) is "A potential model for the study of ices
+    and amorphous water: TIP4P/Ice" — which already appears in
+    ``README.md:237``. This test guards against the title regressing.
+    """
+    types_py = (
+        Path(quickice.__file__).parent
+        / "structure_generation"
+        / "types.py"
+    )
+    readme_md = (
+        Path(quickice.__file__).parent.parent / "README.md"
+    )
+
+    types_content = types_py.read_text()
+    readme_content = readme_md.read_text()
+
+    # The correct title (verified via doi.org for 10.1063/1.1931662 and
+    # already present in README.md:237).
+    correct_title = "A potential model for the study of ices and amorphous water: TIP4P/Ice"
+
+    # README must contain the correct title (canonical source).
+    assert correct_title in readme_content, (
+        f"README.md must contain the canonical TIP4P-ICE title "
+        f"{correct_title!r}"
+    )
+
+    # The wrong title must NOT appear in types.py.
+    wrong_title = "A potential model for the phase diagram of TIP4P water"
+    assert wrong_title not in types_content, (
+        f"types.py must not carry the wrong TIP4P-ICE title "
+        f"{wrong_title!r} — the actual title for DOI 10.1063/1.1931662 "
+        f"is {correct_title!r}."
+    )
+
+    # The correct title must appear in types.py near the
+    # 10.1063/1.1931662 DOI line.
+    types_lines = types_content.splitlines()
+    ice_doi_line = next(
+        (i for i, ln in enumerate(types_lines) if "10.1063/1.1931662" in ln),
+        None,
+    )
+    assert ice_doi_line is not None, (
+        "DOI 10.1063/1.1931662 not found in types.py"
+    )
+    # Title sits 1-2 lines above the DOI line.
+    ice_context = "\n".join(
+        types_lines[max(0, ice_doi_line - 2): ice_doi_line + 1]
+    )
+    assert correct_title in ice_context, (
+        f"types.py must carry the canonical TIP4P-ICE title "
+        f"{correct_title!r} near DOI 10.1063/1.1931662. "
+        f"Context:\n{ice_context}"
     )
