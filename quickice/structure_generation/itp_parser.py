@@ -6,7 +6,7 @@ to extract molecule information needed for structure generation.
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
 
@@ -24,6 +24,13 @@ class ITPMoleculeInfo:
         atom_names: List of atom names (fifth column in [ atoms ] section)
         charges: List of atom charges (seventh column in [ atoms ] section)
         has_atomtypes_section: Whether [ atomtypes ] section exists in file
+        atomtype_names: Names DEFINED in the [ atomtypes ] section (first
+            column of each data line). Empty when the section is absent.
+            Used by validate_custom_molecule (TD-07) to detect user uploads
+            that REDEFINE a built-in QuickIce atomtype name (OW_ice, HW_ice,
+            MW, NA, CL) which would cause a duplicate-atomtype error in
+            ``gmx grompp``. This is DISTINCT from ``atom_types`` (which are
+            the types REFERENCED by each atom in the [ atoms ] section).
     """
     molecule_name: str
     atom_count: int
@@ -31,6 +38,7 @@ class ITPMoleculeInfo:
     atom_names: List[str]
     charges: List[float]
     has_atomtypes_section: bool
+    atomtype_names: List[str] = field(default_factory=list)
 
 
 def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
@@ -144,6 +152,33 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         non_comment_content,
         re.IGNORECASE
     ))
+
+    # TD-07: Extract the atomtype NAMES DEFINED in the [ atomtypes ] section
+    # (first column of each data line). Used by validate_custom_molecule to
+    # detect user uploads that REDEFINE a built-in QuickIce atomtype name
+    # (OW_ice/HW_ice/MW/NA/CL), which would cause a duplicate-atomtype error
+    # in gmx grompp. This is distinct from atom_types (the types REFERENCED
+    # by each atom in the [ atoms ] section).
+    atomtype_names: List[str] = []
+    if has_atomtypes:
+        atomtypes_match = re.search(
+            r'\[\s*atomtypes\s*\](.*?)(?=\[\s*\w+\s*\]|$)',
+            content,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if atomtypes_match:
+            atomtypes_section = atomtypes_match.group(1)
+            for line in atomtypes_section.split('\n'):
+                stripped = line.strip()
+                if not stripped or stripped.startswith(';') or stripped.startswith('#'):
+                    continue
+                fields_at = stripped.split()
+                # GROMACS [ atomtypes ] puts the name in the FIRST column in
+                # both formats (with/without a bonded-type column). Require at
+                # least 2 fields so a stray comment fragment or a section
+                # header echo does not get picked up as a name.
+                if len(fields_at) >= 2:
+                    atomtype_names.append(fields_at[0])
     
     logger.info(
         f"Parsed {filepath.name}: {molecule_name}, {atom_count} atoms, "
@@ -156,7 +191,8 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         atom_types=atom_types,
         atom_names=atom_names,
         charges=charges,
-        has_atomtypes_section=has_atomtypes
+        has_atomtypes_section=has_atomtypes,
+        atomtype_names=atomtype_names,
     )
 
 

@@ -17,6 +17,29 @@ logger = logging.getLogger(__name__)
 # These are placeholders that should not trigger mismatch warnings
 GENERIC_RESIDUE_NAMES = {"MOL", "UNK", "LIG", "XXX", "RES", "DRG", "API", "HET", "UNL", "LIG1", "MOL1"}
 
+# Built-in atomtype names that QuickIce writes into the main .top file.
+# Source of truth: quickice/output/gromacs_writer.py — WATER_ATOMTYPES
+# (OW_ice, HW_ice, MW) and ION_ATOMTYPES (NA, CL). A user upload that
+# REDEFINES any of these names in its own [ atomtypes ] section would cause
+# a duplicate-atomtype error in `gmx grompp` (the main .top already defines
+# them). TD-07 rejects such uploads at validation time with a clear message
+# instead of letting them fail later at grompp with a confusing error.
+#
+# This literal is kept in sync with gromacs_writer.py via the regression test
+# `test_builtin_atomtype_names_match_gromacs_writer` in
+# tests/test_scancode_bugs_tech_debt.py — if the dicts change, that test
+# forces a review of this set. Defined here (rather than imported from
+# quickice.output.gromacs_writer) to avoid reversing the existing
+# dependency direction (output imports from structure_generation; not
+# vice versa).
+BUILTIN_ATOMTYPE_NAMES: frozenset[str] = frozenset({
+    "OW_ice",  # TIP4P-ICE water oxygen
+    "HW_ice",  # TIP4P-ICE water hydrogen
+    "MW",      # TIP4P-ICE water virtual site
+    "NA",      # Madrid2019 sodium ion
+    "CL",      # Madrid2019 chloride ion
+})
+
 
 @dataclass
 class ValidationResult:
@@ -187,6 +210,32 @@ def validate_custom_molecule(
             f"Missing [ atomtypes ] section in ITP file.\n"
             f"User must provide atom type parameters separately."
         )
+    
+    # TD-07: Check for atomtype CONFLICTS with built-in QuickIce types.
+    # A user upload that REDEFINES a built-in atomtype name (OW_ice, HW_ice,
+    # MW, NA, CL) in its [ atomtypes ] section would cause a duplicate-
+    # atomtype error in `gmx grompp` because the main .top already defines
+    # these. Reject at upload time with a clear, user-facing message so the
+    # user can rename the conflicting type (e.g. OW_ice -> OW_custom) BEFORE
+    # running grompp. This is a BLOCKING error. Non-conflicting uploads
+    # (including uploads that merely REFERENCE a built-in name in their
+    # [ atoms ] section without redefining it) are NOT rejected.
+    if itp_info.has_atomtypes_section:
+        conflicting = set(itp_info.atomtype_names) & BUILTIN_ATOMTYPE_NAMES
+        if conflicting:
+            conflicts_str = ", ".join(sorted(conflicting))
+            errors.append(
+                f"Atomtype name conflict with built-in QuickIce types:\n"
+                f"  Your ITP [ atomtypes ] section redefines: {conflicts_str}\n"
+                f"  These names are reserved for QuickIce's built-in TIP4P-ICE "
+                f"water (OW_ice, HW_ice, MW) and Madrid2019 ion (NA, CL) parameters "
+                f"and cannot be redefined — the main .top file already provides them.\n"
+                f"  Rename your atomtype(s) (e.g. 'OW_ice' -> 'OW_custom') to avoid a "
+                f"duplicate-atomtype error in `gmx grompp`."
+            )
+            logger.warning(
+                f"Custom molecule ITP redefines built-in atomtype(s): {conflicts_str}"
+            )
     
     is_valid = len(errors) == 0
     logger.info(
