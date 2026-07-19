@@ -29,11 +29,11 @@ WATER_ATOMS_PER_MOLECULE: int = 4
 # The value 0.0299 nm³ (= 1/33.4 molecules/nm³) is consistent with the
 # TIP4P-ICE model's liquid-phase density at ambient conditions.
 #
-# Reference: Abascal, J. L. F., Sanz, E., García Fernández, R., & Vega, C.
+# For TIP4P-ICE specifically: Abascal, J. L. F., Sanz, E., García Fernández, R., & Vega, C.
 # (2005). A potential model for the phase diagram of TIP4P water.
 # J. Chem. Phys. 122, 234511. DOI: 10.1063/1.1931662
 #
-# For TIP4P-ICE specifically: Abascal, J. L. F., & Vega, C. (2005).
+# For TIP4P/2005: Abascal, J. L. F., & Vega, C. (2005).
 # A general purpose model for the condensed phases of water: TIP4P/2005.
 # J. Chem. Phys. 123, 234505. DOI: 10.1063/1.2121600
 WATER_VOLUME_NM3: float = 0.0299
