@@ -365,6 +365,19 @@ Generate ice candidates in Tab 0 (Ice Generation) before using Tab 2.
 The candidate dropdown in Tab 2 is populated from Tab 0's results.
 Click "Refresh candidates" to sync after generating new candidates in Tab 0.
 
+### Source Selection
+
+The **Source** dropdown at the top of Tab 2 picks which structure to build the
+interface from (defined in `quickice/gui/interface_panel.py:258`):
+
+| Source | When to use |
+|--------|-------------|
+| **Ice Candidate** (default) | Use an ice structure generated in Tab 0 (Ice Generation). The candidate dropdown is populated from Tab 0's results; click "Refresh candidates" to sync after generating new candidates. This is the standard path for ice-water interface MD. |
+| **Hydrate Structure** | Generate a clathrate hydrate lattice (sI, sII, sH) directly in Tab 2, bypassing the Tab 1 hydrate-generation workflow. Use this when you want an interface built from a hydrate lattice and do not need the full Tab 1 guest/occupancy configuration. |
+
+Pick **Ice Candidate** for the normal Tab 0 → Tab 2 workflow. Pick
+**Hydrate Structure** to skip Tab 1 and generate a hydrate lattice inline.
+
 ### Phase Compatibility
 
 All supported ice phases except Ice II work with interface construction. The following phases are compatible:
