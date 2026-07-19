@@ -73,16 +73,18 @@ def test_tip4p_ice_label_on_correct_doi():
     """CLI I1: the 'TIP4P-ICE' citation label must sit next to DOI
     ``10.1063/1.1931662`` (Abascal 2005), per AGENTS.md.
 
-    The TIP4P/2005 label must sit next to DOI ``10.1063/1.2121600`` (which
+    The TIP4P/2005 label must sit next to DOI ``10.1063/1.2121687`` (which
     self-identifies as TIP4P/2005 by its title). The previous code reversed
     these labels: 'For TIP4P-ICE specifically' was attached to the
     10.1063/1.2121600 (TIP4P/2005) reference.
 
     This test only checks the LABEL-to-DOI assignment. It does NOT verify
-    the paper titles (a separate pre-existing issue: the title on the
-    10.1063/1.1931662 line does not match README.md's title for the same
-    DOI). Per the plan, CLI I1 swaps labels only and does not touch titles
-    or DOIs.
+    the paper titles (a separate follow-up issue, Item 2: the title on
+    the 10.1063/1.1931662 line was wrong and is now fixed to match
+    README.md's title for the same DOI). Per the plan, CLI I1 swaps labels
+    only and does not touch titles or DOIs. (Item 3 subsequently corrected
+    the TIP4P/2005 DOI from the 404 10.1063/1.2121600 to the verified
+    10.1063/1.2121687; this test was updated to track the new DOI.)
     """
     types_py = (
         Path(quickice.__file__).parent
@@ -109,23 +111,74 @@ def test_tip4p_ice_label_on_correct_doi():
         f"Context:\n{ice_context}"
     )
 
-    # Find the line carrying DOI 10.1063/1.2121600 (TIP4P/2005).
+    # Find the line carrying DOI 10.1063/1.2121687 (TIP4P/2005).
+    # Item 3 follow-up: the old DOI 10.1063/1.2121600 returns 404 from both
+    # doi.org and Crossref; the verified DOI for "A general purpose model
+    # for the condensed phases of water: TIP4P/2005" (Abascal & Vega 2005,
+    # J. Chem. Phys. 123, 234505) is 10.1063/1.2121687.
     f2005_doi_line = next(
-        (i for i, ln in enumerate(lines) if "10.1063/1.2121600" in ln), None
+        (i for i, ln in enumerate(lines) if "10.1063/1.2121687" in ln), None
     )
     assert f2005_doi_line is not None, (
-        "DOI 10.1063/1.2121600 not found in types.py"
+        "DOI 10.1063/1.2121687 not found in types.py"
     )
     f2005_context = "\n".join(
         lines[max(0, f2005_doi_line - 2): f2005_doi_line + 1]
     )
     assert "TIP4P/2005" in f2005_context, (
-        "The 'TIP4P/2005' label must be near DOI 10.1063/1.2121600. "
+        "The 'TIP4P/2005' label must be near DOI 10.1063/1.2121687. "
         f"Context:\n{f2005_context}"
     )
     assert "TIP4P-ICE" not in f2005_context, (
-        "The 'TIP4P-ICE' label must NOT be near DOI 10.1063/1.2121600. "
+        "The 'TIP4P-ICE' label must NOT be near DOI 10.1063/1.2121687. "
         f"Context:\n{f2005_context}"
+    )
+
+
+def test_tip4p_2005_doi_resolves():
+    """Item 3 (follow-up): the TIP4P/2005 DOI in ``types.py`` must be
+    ``10.1063/1.2121687`` (the verified DOI for "A general purpose model
+    for the condensed phases of water: TIP4P/2005" by Abascal & Vega 2005,
+    J. Chem. Phys. 123, 234505).
+
+    The old DOI ``10.1063/1.2121600`` returns 404 from both doi.org AND
+    Crossref — it is wrong. The user verified ``10.1063/1.2121687`` via
+    doi.org (resolves to the TIP4P/2005 paper, matching the existing
+    title/author/journal in types.py:36-38). The TIP4P/2005 reference is
+    an informational comment (not used by code), so the fix is in-place
+    DOI correction, not removal.
+    """
+    types_py = (
+        Path(quickice.__file__).parent
+        / "structure_generation"
+        / "types.py"
+    )
+    content = types_py.read_text()
+
+    # The old (404) DOI must NOT be present.
+    old_doi = "10.1063/1.2121600"
+    assert old_doi not in content, (
+        f"types.py must not carry the broken (404) TIP4P/2005 DOI {old_doi!r}. "
+        "Use 10.1063/1.2121687 (verified via doi.org)."
+    )
+
+    # The new (verified) DOI must be present.
+    new_doi = "10.1063/1.2121687"
+    assert new_doi in content, (
+        f"types.py must carry the verified TIP4P/2005 DOI {new_doi!r}."
+    )
+
+    # The TIP4P/2005 reference must still be present (Item 3 keeps the
+    # reference, only corrects the DOI).
+    assert "TIP4P/2005" in content, (
+        "The TIP4P/2005 informational reference must remain in types.py "
+        "(Item 3 corrects the DOI in-place, does not remove the reference)."
+    )
+    assert (
+        "A general purpose model for the condensed phases of water: TIP4P/2005"
+        in content
+    ), (
+        "The TIP4P/2005 paper title must remain in types.py."
     )
 
 

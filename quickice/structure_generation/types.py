@@ -35,7 +35,7 @@ WATER_ATOMS_PER_MOLECULE: int = 4
 #
 # For TIP4P/2005: Abascal, J. L. F., & Vega, C. (2005).
 # A general purpose model for the condensed phases of water: TIP4P/2005.
-# J. Chem. Phys. 123, 234505. DOI: 10.1063/1.2121600
+# J. Chem. Phys. 123, 234505. DOI: 10.1063/1.2121687
 WATER_VOLUME_NM3: float = 0.0299
 
 
