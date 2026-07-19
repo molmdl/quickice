@@ -134,9 +134,13 @@ def main() -> int:
                 top_filepath = output_path / top_filename
                 write_top_file(first_candidate, str(top_filepath))
                 
-                # Copy .itp file from data directory (single copy)
+                # Copy .itp file from data directory (single copy).
+                # Destination filename MUST match the #include "tip4p-ice.itp"
+                # line written in the .top file (see gui/export.py:391,1120
+                # and cli/itp_helpers.py:314). The bundled data file is
+                # quickice/data/tip4p-ice.itp (hyphen, not underscore).
                 itp_source = get_tip4p_itp_path()
-                itp_filename = "tip4p_ice.itp"
+                itp_filename = "tip4p-ice.itp"
                 itp_filepath = output_path / itp_filename
                 shutil.copy(itp_source, itp_filepath)
                 
