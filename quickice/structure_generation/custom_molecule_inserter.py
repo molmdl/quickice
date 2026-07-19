@@ -589,9 +589,45 @@ class CustomMoleculeInserter:
         # Build tree from existing atoms
         existing_tree = self._build_existing_atoms_tree(structure)
         
-        # Incremental tree data: grows by appending new positions on each successful placement
-        # instead of O(N²) vstack-and-rebuild from base + all placed positions
-        combined_tree_data = existing_tree.data.copy() if existing_tree is not None else np.zeros((0, 3))
+        # PERF-03: pre-allocate the combined tree data array + batch the
+        # cKDTree rebuild. The old code did
+        # ``combined_tree_data = np.vstack([combined_tree_data, placed_mol])``
+        # followed by ``existing_tree = cKDTree(combined_tree_data)`` after
+        # EVERY successful placement (O(N) vstack + O(N log N) rebuild per
+        # placement, where N is the total atoms so far).
+        #
+        # The new code pre-allocates a (base_size + n_molecules *
+        # n_atoms_per_molecule, 3) array, copies the base existing atoms
+        # into the first slots, and writes each placement's atoms into the
+        # next slots (O(A) write, no vstack copy). The cKDTree is rebuilt
+        # only when a batch of ``_CUSTOM_BATCH_SIZE`` placements accumulates,
+        # from a slice of the pre-allocated array (no copy). Recent
+        # placements not yet merged into the tree are checked via a small
+        # ``buffer_tree`` (cKDTree rebuilt per successful placement from
+        # the buffer, byte-identical to the main tree's distance
+        # computation). This is byte-equivalent to the per-placement
+        # rebuild because the union of (main tree) and (buffer tree)
+        # equals all placed atoms so far.
+        #
+        # AGENTS.md cKDTree conditional rebuild rule is preserved: both
+        # the main tree and the buffer tree are rebuilt ONLY after
+        # successful placement (never on overlap rejection). The batch
+        # just amortizes the main tree rebuild over multiple successful
+        # placements. Matches the PERF-02 solute inserter pattern.
+        _CUSTOM_BATCH_SIZE = 8
+        base_data = (
+            existing_tree.data.copy()
+            if existing_tree is not None
+            else np.zeros((0, 3))
+        )
+        base_size = int(len(base_data))
+        n_atoms_per_molecule = len(self.template_atom_names)
+        total_capacity = base_size + n_molecules * n_atoms_per_molecule
+        combined_tree_data_arr = np.zeros((total_capacity, 3))
+        combined_tree_data_arr[:base_size] = base_data
+        n_filled = base_size
+        recent_buffer: list[np.ndarray] = []  # not yet in existing_tree
+        buffer_tree = None  # cKDTree of recent_buffer (rebuilt per successful placement)
         
         # Get liquid region bounds
         liquid_start = ice_atom_count
@@ -640,7 +676,7 @@ class CustomMoleculeInserter:
                 # Translate to position
                 placed_mol = rotated + position
                 
-                # Check overlap
+                # Check overlap against the main tree (existing + previous batches)
                 if existing_tree is not None:
                     if self._check_overlap(
                         placed_mol,
@@ -649,17 +685,43 @@ class CustomMoleculeInserter:
                     ):
                         continue  # Try again
                 
+                # PERF-03: also check against the buffer tree (current batch,
+                # not yet merged into existing_tree). Byte-identical to
+                # checking a combined tree of all placements so far because
+                # any(dists_main < threshold) OR any(dists_buffer < threshold)
+                # == any(dists_combined < threshold).
+                if buffer_tree is not None:
+                    if self._check_overlap(
+                        placed_mol,
+                        buffer_tree,
+                        self.config.min_separation
+                    ):
+                        continue  # Try again
+                
                 # Valid placement - add to structure
                 placed_positions.append(placed_mol)
                 placed_atom_names.extend(self.template_atom_names)
-                molecule_index.append((current_idx, current_idx + len(self.template_atom_names)))
+                molecule_index.append((current_idx, current_idx + n_atoms_per_molecule))
                 
-                current_idx += len(self.template_atom_names)
+                current_idx += n_atoms_per_molecule
                 placed = True
                 
-                # Incremental rebuild: append new molecule's positions to combined data
-                combined_tree_data = np.vstack([combined_tree_data, placed_mol])
-                existing_tree = cKDTree(combined_tree_data)
+                # PERF-03: write the new molecule's positions into the
+                # pre-allocated array (O(A) write, no vstack copy) and
+                # append to the buffer.
+                combined_tree_data_arr[n_filled:n_filled + n_atoms_per_molecule] = placed_mol
+                n_filled += n_atoms_per_molecule
+                recent_buffer.append(placed_mol)
+                # Rebuild the small buffer tree (B*A atoms, byte-identical
+                # to the main tree's distance computation).
+                buffer_tree = cKDTree(np.vstack(recent_buffer))
+                
+                # Batch rebuild: merge the buffer into the main tree only
+                # when the batch is full. Rebuild from the pre-allocated slice.
+                if len(recent_buffer) >= _CUSTOM_BATCH_SIZE:
+                    existing_tree = cKDTree(combined_tree_data_arr[:n_filled])
+                    recent_buffer = []
+                    buffer_tree = None
                 
                 break  # Move to next molecule
             
