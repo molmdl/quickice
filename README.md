@@ -205,12 +205,12 @@ Press **Ctrl+S** from any tab to export the current structure:
 
 | Active Tab | Export Action | Files Generated |
 |------------|---------------|-----------------|
-| Tab 0 | Ice GROMACS | .gro, .top, tip4p_ice.itp |
-| Tab 1 | Hydrate GROMACS | .gro, .top, tip4p_ice.itp, ch4_hydrate.itp/thf_hydrate.itp |
-| Tab 2 | Interface GROMACS | .gro, .top, tip4p_ice.itp |
-| Tab 3 | Custom Molecule GROMACS | .gro, .top, tip4p_ice.itp, custom.itp |
-| Tab 4 | Solute GROMACS | .gro, .top, tip4p_ice.itp, ch4_liquid.itp/thf_liquid.itp |
-| Tab 5 | Ion GROMACS | .gro, .top, tip4p_ice.itp, ion.itp |
+| Tab 0 | Ice GROMACS | .gro, .top, tip4p-ice.itp |
+| Tab 1 | Hydrate GROMACS | .gro, .top, tip4p-ice.itp, ch4_hydrate.itp/thf_hydrate.itp |
+| Tab 2 | Interface GROMACS | .gro, .top, tip4p-ice.itp |
+| Tab 3 | Custom Molecule GROMACS | .gro, .top, tip4p-ice.itp, custom.itp |
+| Tab 4 | Solute GROMACS | .gro, .top, tip4p-ice.itp, ch4_liquid.itp/thf_liquid.itp |
+| Tab 5 | Ion GROMACS | .gro, .top, tip4p-ice.itp, ion.itp |
 
 ### Molecule Ordering
 
