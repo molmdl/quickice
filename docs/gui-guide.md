@@ -23,6 +23,27 @@ python -m quickice.gui
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).
 
+### Remote and Headless OpenGL
+
+When the GUI runs over SSH X11 forwarding, the default NVIDIA GLX library
+can crash under indirect rendering, taking VTK down with a segfault.
+QuickIce handles this automatically: `run_app()` calls
+`_configure_opengl_for_remote()` (in `quickice/gui/main_window.py`,
+defined near the `run_app` entry point) before creating `QApplication`.
+The function inspects the `DISPLAY` environment variable and, for remote
+displays (e.g. `localhost:12.0`, not a local `:0`-style display), sets:
+
+```
+__GLX_VENDOR_LIBRARY_NAME=mesa
+```
+
+This forces Mesa GLX, which handles indirect rendering correctly. No user
+action is required — the fix is applied transparently on remote displays.
+
+For fully headless runs (no display at all, e.g. CI or automated tests),
+set `QT_QPA_PLATFORM=offscreen` instead. `_configure_opengl_for_remote()`
+no-ops when `DISPLAY` is unset, letting Qt handle platform selection.
+
 ### Main Window Layout
 
 The main window is divided into six tabs:
