@@ -15,27 +15,23 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-# Check if VTK is available (may fail in remote/indirect rendering environments)
-# Same logic as interface_panel.py for consistency
+from quickice.gui.vtk_utils import is_vtk_available
+
+# Check if VTK is available (may fail in remote/indirect rendering environments).
+# VTK-DUP: detection logic centralized in quickice.gui.vtk_utils.is_vtk_available
+# (was copy-pasted across 6 viewer files). The VTK-dependent imports stay here
+# per AGENTS.md lazy-import rules.
 _VTK_AVAILABLE = False
-try:
-    # Test if we can create a basic VTK render window
-    # This will fail in environments with indirect rendering (SSH X11 forwarding)
-    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
-        # Likely SSH X11 forwarding - check for direct rendering
-        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
-    else:
-        # Local display or forced - assume VTK works
-        _VTK_AVAILABLE = True
-    
-    if _VTK_AVAILABLE:
+if is_vtk_available():
+    try:
         from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
         from vtkmodules.all import (
             vtkRenderer,
             vtkInteractorStyleTrackballCamera,
         )
-except Exception:
-    _VTK_AVAILABLE = False
+        _VTK_AVAILABLE = True
+    except Exception:
+        _VTK_AVAILABLE = False
 
 from quickice.structure_generation.types import HydrateStructure
 

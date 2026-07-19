@@ -15,23 +15,19 @@ from PySide6.QtCore import Signal, Qt
 import os
 
 from quickice.gui.validators import validate_temperature, validate_pressure, validate_nmolecules
+from quickice.gui.vtk_utils import is_vtk_available
 
-# Check if VTK is available (may fail in remote/indirect rendering environments)
+# Check if VTK is available (may fail in remote/indirect rendering environments).
+# VTK-DUP: detection logic centralized in quickice.gui.vtk_utils.is_vtk_available
+# (was copy-pasted across 6 viewer files). The VTK-dependent import
+# (DualViewerWidget) stays here per AGENTS.md lazy-import rules.
 _VTK_AVAILABLE = False
-try:
-    # Test if we can create a basic VTK render window
-    # This will fail in environments with indirect rendering (SSH X11 forwarding)
-    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
-        # Likely SSH X11 forwarding - check for direct rendering
-        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
-    else:
-        # Local display or forced - assume VTK works
-        _VTK_AVAILABLE = True
-    
-    if _VTK_AVAILABLE:
+if is_vtk_available():
+    try:
         from quickice.gui.dual_viewer import DualViewerWidget
-except Exception:
-    _VTK_AVAILABLE = False
+        _VTK_AVAILABLE = True
+    except Exception:
+        _VTK_AVAILABLE = False
 
 
 class InputPanel(QWidget):

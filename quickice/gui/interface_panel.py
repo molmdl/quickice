@@ -12,8 +12,8 @@ import os
 import numpy as np
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QComboBox, QDoubleSpinBox, QSpinBox, 
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QComboBox, QDoubleSpinBox, QSpinBox,
     QStackedWidget, QGroupBox, QFormLayout
 )
 from PySide6.QtCore import Signal, Qt
@@ -23,24 +23,20 @@ from quickice.gui.validators import (
     validate_box_dimension, validate_thickness,
     validate_pocket_diameter, validate_seed
 )
+from quickice.gui.vtk_utils import is_vtk_available
 
-# Check if VTK is available (may fail in remote/indirect rendering environments)
-# Same logic as hydrate_viewer.py and ion_viewer.py for consistency
+# Check if VTK is available (may fail in remote/indirect rendering environments).
+# VTK-DUP: detection logic centralized in quickice.gui.vtk_utils.is_vtk_available
+# (was copy-pasted across 6 viewer files, including interface_panel.py). The
+# VTK-dependent import (InterfaceViewerWidget) stays here per AGENTS.md
+# lazy-import rules.
 _VTK_AVAILABLE = False
-try:
-    # Test if we can create a basic VTK render window
-    # This will fail in environments with indirect rendering (SSH X11 forwarding)
-    if os.environ.get('DISPLAY') and 'localhost' in os.environ.get('DISPLAY', ''):
-        # Likely SSH X11 forwarding - check for direct rendering
-        _VTK_AVAILABLE = os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
-    else:
-        # Local display or forced - assume VTK works
-        _VTK_AVAILABLE = True
-    
-    if _VTK_AVAILABLE:
+if is_vtk_available():
+    try:
         from quickice.gui.interface_viewer import InterfaceViewerWidget
-except Exception:
-    _VTK_AVAILABLE = False
+        _VTK_AVAILABLE = True
+    except Exception:
+        _VTK_AVAILABLE = False
 
 
 class InterfacePanel(QWidget):

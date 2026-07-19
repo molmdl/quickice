@@ -3,7 +3,17 @@
 This module provides conversion utilities to transform QuickIce data structures
 into VTK objects for 3D rendering, along with actor creation functions for
 hydrogen bonds and unit cell visualization.
+
+It also hosts the shared VTK availability detection helper
+``is_vtk_available()`` (VTK-DUP fix), used by the 6 GUI viewer modules to
+decide whether to attempt VTK-dependent imports. The detection checks the
+DISPLAY env var for SSH X11 forwarding (indirect rendering) and the
+QUICKICE_FORCE_VTK override; it does NOT import VTK itself (each viewer
+imports its own VTK modules inside ``if is_vtk_available():`` per
+AGENTS.md lazy-import rules).
 """
+
+import os
 
 import numpy as np
 from scipy.spatial import cKDTree
@@ -800,3 +810,85 @@ def create_bond_lines_actor(
     actor.GetProperty().SetLineWidth(line_width)
     
     return actor
+
+
+# ── VTK-DUP: shared VTK availability detection ────────────────────────────────
+#
+# The 6 GUI viewer modules (view, hydrate_viewer, interface_panel, ion_viewer,
+# solute_viewer, custom_molecule_viewer) previously copy-pasted the same
+# ``_VTK_AVAILABLE`` detection block. The logic is centralized here so the
+# env-var heuristics live in one place.
+#
+# Detection heuristics (unchanged from the original copy-pasted block):
+# 1. If ``DISPLAY`` is set and contains ``'localhost'``, it is likely SSH
+#    X11 forwarding (indirect rendering), which often fails with VTK. In
+#    that case VTK is only enabled if ``QUICKICE_FORCE_VTK=true``.
+# 2. Otherwise (local display, or headless with
+#    ``QT_QPA_PLATFORM=offscreen`` and no ``DISPLAY``), assume VTK works.
+#
+# The result is cached after the first call — env vars do not change
+# during the process lifetime, so caching is safe and avoids repeating
+# the string checks on every viewer construction.
+#
+# Per AGENTS.md lazy-import rules, the VTK import itself is NOT done here
+# (this module does import VTK at the top for its conversion utilities,
+# but ``is_vtk_available()`` itself only checks env vars — it does not
+# import VTK). Each viewer imports its own VTK-dependent modules inside
+# an ``if is_vtk_available():`` block.
+
+_vtk_available_cache: "bool | None" = None
+
+
+def is_vtk_available() -> bool:
+    """Check whether VTK rendering is likely available in this environment.
+
+    Returns True if:
+    - ``DISPLAY`` is unset or doesn't contain ``'localhost'`` (local
+      display or headless with ``QT_QPA_PLATFORM=offscreen``), OR
+    - ``DISPLAY`` contains ``'localhost'`` AND
+      ``QUICKICE_FORCE_VTK=true`` (SSH X11 forwarding with explicit
+      override).
+
+    Returns False if:
+    - ``DISPLAY`` contains ``'localhost'`` AND ``QUICKICE_FORCE_VTK`` is
+      not ``'true'`` (SSH X11 forwarding, VTK likely fails), OR
+    - Any exception during the check (defensive — matches the original
+      try/except pattern in every viewer).
+
+    The result is cached after the first call. Env vars don't change
+    during the process lifetime, so caching is safe.
+
+    This function does NOT import VTK — it only checks the environment.
+    Each viewer imports its own VTK-dependent modules inside an
+    ``if is_vtk_available():`` block (AGENTS.md lazy-import rule).
+    """
+    global _vtk_available_cache
+    if _vtk_available_cache is not None:
+        return _vtk_available_cache
+    try:
+        display = os.environ.get('DISPLAY', '')
+        if display and 'localhost' in display:
+            # Likely SSH X11 forwarding (indirect rendering) — VTK often
+            # fails. Only enable if explicitly forced.
+            _vtk_available_cache = (
+                os.environ.get('QUICKICE_FORCE_VTK', '').lower() == 'true'
+            )
+        else:
+            # Local display or headless (QT_QPA_PLATFORM=offscreen) —
+            # assume VTK works.
+            _vtk_available_cache = True
+    except Exception:
+        _vtk_available_cache = False
+    return _vtk_available_cache
+
+
+def reset_vtk_available_cache() -> None:
+    """Reset the cached VTK availability result.
+
+    Intended for tests that need to re-evaluate availability after
+    changing env vars (e.g. monkeypatching ``DISPLAY``). Production code
+    should not call this — env vars don't change during the process
+    lifetime.
+    """
+    global _vtk_available_cache
+    _vtk_available_cache = None
