@@ -309,7 +309,7 @@ Plans:
 - [x] 48.1-04-PLAN.md — Wave 2b: Apply helpers to write_gro_file + write_interface_gro_file (byte-eq verify) ✓ DONE 2026-07-20
 - [x] 48.1-05-PLAN.md — Wave 2c: Apply helpers to write_multi_molecule_gro_file + write_ion_gro_file (byte-eq verify) ✓ DONE 2026-07-20
 - [x] 48.1-06-PLAN.md — Wave 2d: Apply helpers to write_custom_molecule_gro_file + write_solute_gro_file (byte-eq verify, preserve divergences) ✓ DONE 2026-07-20
-- [ ] 48.1-07-PLAN.md — Wave 2e: Extract TOP [defaults] block to _shared._write_top_defaults (all 6 TOP writers)
+- [x] 48.1-07-PLAN.md — Wave 2e: Extract TOP [defaults] block to _shared._write_top_defaults (all 6 TOP writers) ✓ DONE 2026-07-20
 - [ ] 48.1-08-PLAN.md — Wave 3: Split ice_writer.py (smallest — validates pattern)
 - [ ] 48.1-09-PLAN.md — Wave 4: Split interface_writer.py (preserve 'if custom_guest_info:' gate divergence)
 - [ ] 48.1-10-PLAN.md — Wave 5: Split multi_molecule_writer.py (_registry singleton + no try/except)
@@ -349,7 +349,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
-| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 6/14 | 🚧 In progress (Waves 0-2d complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers extracted + ALL 6 GRO writers refactored to call helpers, gromacs_writer.py is 3060-line re-export shim, 12 helper unit tests PASS, ALL 10 helpers have call sites, Wave 2 TD-01 DRY extraction COMPLETE — write_custom_molecule_gro_file preserves divergent header + 3-value diagonal box, write_solute_gro_file preserves empty-molecule_index fallback + 5 MoleculeIndex synthetic entries) | 2026-07-20 |
+| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 7/14 | 🚧 In progress (Waves 0-2e complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers extracted + ALL 6 GRO writers refactored to call helpers + ALL 6 TOP writers refactored to call _shared._write_top_defaults (parameterized helper — Rule 1 deviation: research §3 had an error claiming all 6 are byte-identical; actual source has 3 distinct format variants A/B/C preserved byte-identically), gromacs_writer.py is 3031-line re-export shim, 16 helper unit tests for _write_top_defaults + 12 for _gro_format, ALL 10 GRO helpers + _write_top_defaults have call sites, Wave 2 TD-01 DRY extraction FULLY COMPLETE — GRO + TOP [defaults] DRY extraction done) | 2026-07-20 |
 
 **v4.7 status after reorganization:** Phase 48 Documentation COMPLETE — all 14 plans (48-01..48-14) done (aggressively split per user request). Phase 47 COMPLETE (1/1). **Phases 38-48 ALL COMPLETE** — v4.7 milestone requirements 57/61 complete (4 pending: GUEST-01/02/03 GUI surfaces done in 44-02, CLI-02 deferred by design; DOCS-01..04 all complete). The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
