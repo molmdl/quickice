@@ -44,6 +44,27 @@ GROMACS_WRITER_PATH = (
 )
 
 
+def _all_output_writer_source() -> str:
+    """Concatenate the source of every ``quickice/output/*.py`` file.
+
+    The 7 MoleculeIndex construction sites (TD-ADHOC / Group 8 fix) were
+    originally all in ``gromacs_writer.py``. Phase 48.1 splits the per-structure
+    writers into sibling modules (``ice_writer.py``, ``interface_writer.py``,
+    ``multi_molecule_writer.py``, ``ion_writer.py``, ``custom_writer.py``,
+    ``solute_writer.py``), so the sites are now distributed across multiple
+    files. This helper scans ALL of them so the static regression guards
+    continue to find every site regardless of which file it lives in.
+
+    Uses ``Path("quickice/output").glob("*.py")`` so future per-structure
+    splits (Waves 7-8: custom_writer.py, solute_writer.py) are automatically
+    covered without further test edits. Mirrors the pattern in
+    ``tests/test_tip4p_ice_lj_values.py:104-108`` and
+    ``tests/test_scancode_bugs_constants.py:86-90``.
+    """
+    output_dir = Path(__file__).resolve().parent.parent / "quickice" / "output"
+    return "\n".join(p.read_text() for p in sorted(output_dir.glob("*.py")))
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TD-ADHOC: MoleculeIndex dataclass replaces ad-hoc type() objects
 # ══════════════════════════════════════════════════════════════════════════════
@@ -139,32 +160,46 @@ class TestMoleculeIndexAdhoc:
         )
 
     def test_gromacs_writer_has_no_adhoc_type_objects(self):
-        """STATIC REGRESSION GUARD: ``gromacs_writer.py`` must contain ZERO
-        ``type('obj', (object,), ...)`` occurrences.
+        """STATIC REGRESSION GUARD: no ``quickice/output/*.py`` writer may
+        contain ``type('obj', (object,), ...)`` occurrences.
 
-        Before TD-ADHOC there were 7; the fix replaces all of them with
-        ``MoleculeIndex(...)``. This test prevents reintroducing the ad-hoc
-        pattern.
+        Before TD-ADHOC there were 7 (all in ``gromacs_writer.py``); the fix
+        replaces all of them with ``MoleculeIndex(...)``. This test prevents
+        reintroducing the ad-hoc pattern in ANY output writer module
+        (gromacs_writer.py or any per-structure sibling split from it in
+        Phase 48.1 — ice_writer, interface_writer, multi_molecule_writer,
+        ion_writer, custom_writer, solute_writer).
         """
-        source = GROMACS_WRITER_PATH.read_text()
+        source = _all_output_writer_source()
         matches = re.findall(r"type\('obj',\s*\(object,\s*\)", source)
         assert matches == [], (
-            f"gromacs_writer.py must not contain ad-hoc type('obj', (object,), ...) "
-            f"instances (TD-ADHOC replaced them with MoleculeIndex). Found {len(matches)}."
+            f"no quickice/output/*.py writer may contain ad-hoc "
+            f"type('obj', (object,), ...) instances (TD-ADHOC replaced them "
+            f"with MoleculeIndex). Found {len(matches)}."
         )
 
     def test_gromacs_writer_has_seven_molecule_index_construction_sites(self):
         """STATIC REGRESSION GUARD: the 7 ad-hoc sites must now construct
         ``MoleculeIndex``. Count ``ordered_mols.append((..., MoleculeIndex(...))``
-        sites and verify exactly 7, covering the 5 distinct mol_type labels
-        used by the old ad-hoc sites: sol/ice, sol/water, guest, custom, solute.
+        sites across ALL ``quickice/output/*.py`` writers and verify exactly 7,
+        covering the 5 distinct mol_type labels used by the old ad-hoc sites:
+        sol/ice, sol/water, guest, custom, solute.
+
+        Originally all 7 sites were in ``gromacs_writer.py``. Phase 48.1 splits
+        the per-structure writers into sibling modules, so the sites are now
+        distributed: 2 in ``ion_writer.py`` (write_ion_gro_file — custom +
+        solute synthetic entries), 5 in ``gromacs_writer.py`` (write_solute_gro_file
+        — sol/ice, sol/water, guest, custom, solute synthetic entries). The
+        scan-all-files pattern (``_all_output_writer_source``) finds all 7
+        regardless of which file they live in.
         """
-        source = GROMACS_WRITER_PATH.read_text()
+        source = _all_output_writer_source()
         # Count MoleculeIndex constructions inside ordered_mols.append calls.
         mi_sites = re.findall(r"ordered_mols\.append\(\([^)]+,\s*MoleculeIndex\(", source)
         assert len(mi_sites) == 7, (
             f"Expected exactly 7 ordered_mols.append(... MoleculeIndex(...)) sites "
-            f"(TD-ADHOC replaces 7 ad-hoc type() objects), found {len(mi_sites)}."
+            f"across all quickice/output/*.py writers (TD-ADHOC replaces 7 ad-hoc "
+            f"type() objects), found {len(mi_sites)}."
         )
 
     @pytest.mark.parametrize(
@@ -187,8 +222,12 @@ class TestMoleculeIndexAdhoc:
 
         The 7 old sites covered 5 distinct shapes (custom and solute each
         appear twice — in ``write_ion_gro_file`` and ``write_solute_gro_file``).
+        After Phase 48.1, ``write_ion_gro_file`` lives in ``ion_writer.py`` and
+        ``write_solute_gro_file`` remains in ``gromacs_writer.py``; the scan-all-
+        files pattern (``_all_output_writer_source``) finds the shapes in
+        whichever sibling module they live in.
         """
-        source = GROMACS_WRITER_PATH.read_text()
+        source = _all_output_writer_source()
         # Labels in the source are double-quoted (e.g. ("sol", ...)); escape
         # the quotes and any regex metacharacters in the count expression.
         # Pattern: ordered_mols.append(("<label>", MoleculeIndex( ... count=<count_expr> ... mol_type='<mol_type>' ... ))
@@ -203,9 +242,9 @@ class TestMoleculeIndexAdhoc:
         )
         assert re.search(pattern, source, re.DOTALL), (
             f"Expected a MoleculeIndex construction site for label={label!r}, "
-            f"mol_type={mol_type!r}, count={count_expr!r} not found in "
-            f"gromacs_writer.py. The TD-ADHOC refactor must preserve the exact "
-            f"values of each ad-hoc site."
+            f"mol_type={mol_type!r}, count={count_expr!r} not found across "
+            f"quickice/output/*.py writers. The TD-ADHOC refactor must preserve "
+            f"the exact values of each ad-hoc site."
         )
 
     def test_gromacs_writer_module_imports_cleanly(self):
