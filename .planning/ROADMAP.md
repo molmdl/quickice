@@ -312,8 +312,8 @@ Plans:
 - [x] 48.1-07-PLAN.md — Wave 2e: Extract TOP [defaults] block to _shared._write_top_defaults (all 6 TOP writers) ✓ DONE 2026-07-20
 - [x] 48.1-08-PLAN.md — Wave 3: Split ice_writer.py (smallest — validates pattern) ✓ DONE 2026-07-20
 - [x] 48.1-09-PLAN.md — Wave 4: Split interface_writer.py (preserve 'if custom_guest_info:' gate divergence) ✓ DONE 2026-07-20
-- [ ] 48.1-10-PLAN.md — Wave 5: Split multi_molecule_writer.py (_registry singleton + no try/except)
-- [ ] 48.1-11-PLAN.md — Wave 6: Split ion_writer.py (largest — MoleculeIndex + 7 molecule types)
+- [x] 48.1-10-PLAN.md — Wave 5: Split multi_molecule_writer.py (_registry singleton + no try/except) ✓ DONE 2026-07-20
+- [x] 48.1-11-PLAN.md — Wave 6: Split ion_writer.py (largest — MoleculeIndex + 7 molecule types) ✓ DONE 2026-07-20
 - [ ] 48.1-12-PLAN.md — Wave 7: Split custom_writer.py (preserve divergent header format — NO :5d)
 - [ ] 48.1-13-PLAN.md — Wave 8: Split solute_writer.py (RISKIEST — empty-molecule_index fallback + no try/except)
 - [ ] 48.1-14-PLAN.md — Wave 9: Final verification + PR (all 5 success criteria documented)
@@ -349,7 +349,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
-| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 9/14 | 🚧 In progress (Waves 0-4 complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers + _write_top_defaults parameterized helper extracted, ALL 6 GRO + ALL 6 TOP writers refactored to call shared helpers, Wave 3 FIRST per-structure split complete — ice_writer.py created with write_gro_file + write_top_file moved byte-verbatim, Wave 4 SECOND per-structure split complete — interface_writer.py created with write_interface_gro_file + write_interface_top_file moved byte-verbatim + CRITICAL 'if custom_guest_info:' gate divergence PRESERVED, per-structure split pattern re-validated on the more-complex interface case for Waves 5-8), 1840 tests) | 2026-07-20 |
+| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 11/14 | 🚧 In progress (Waves 0-6 complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers + _write_top_defaults parameterized helper extracted, ALL 6 GRO + ALL 6 TOP writers refactored to call shared helpers, Wave 3 FIRST per-structure split — ice_writer.py, Wave 4 SECOND — interface_writer.py + PRESERVED 'if custom_guest_info:' gate divergence, Wave 5 THIRD — multi_molecule_writer.py + FIRST split exercising _registry singleton import from _shared + PRESERVED 'no try/except cleanup' divergence, Wave 6 FOURTH — ion_writer.py LARGEST at 807 lines + MoleculeIndex Group 8 fix preserved (2 synthetic entry sites verbatim) + custom_active 4-writer gate + try/except cleanup HAS it + _format_na_ion/_format_cl_ion unique + Rule 3 scan-all-files test fix; per-structure split pattern re-validated on the LARGEST case), 1840 tests) | 2026-07-20 |
 
 **v4.7 status after reorganization:** Phase 48 Documentation COMPLETE — all 14 plans (48-01..48-14) done (aggressively split per user request). Phase 47 COMPLETE (1/1). **Phases 38-48 ALL COMPLETE** — v4.7 milestone requirements 57/61 complete (4 pending: GUEST-01/02/03 GUI surfaces done in 44-02, CLI-02 deferred by design; DOCS-01..04 all complete). The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
