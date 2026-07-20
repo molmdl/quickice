@@ -306,7 +306,7 @@ Plans:
 - [x] 48.1-01-PLAN.md — Wave 0: Capture SHA256 byte-equivalence baselines (TDD, 7 export paths) ✓ DONE 2026-07-19
 - [x] 48.1-02-PLAN.md — Wave 1: Extract _shared.py (constants + 17 helpers + _registry singleton) + update test_tip4p_ice_lj_values.py ✓ DONE 2026-07-19
 - [x] 48.1-03-PLAN.md — Wave 2a: Create _gro_format.py with 10 DRY helpers (TD-01 scaffolding, no caller updates) ✓ DONE 2026-07-20
-- [ ] 48.1-04-PLAN.md — Wave 2b: Apply helpers to write_gro_file + write_interface_gro_file (byte-eq verify)
+- [x] 48.1-04-PLAN.md — Wave 2b: Apply helpers to write_gro_file + write_interface_gro_file (byte-eq verify) ✓ DONE 2026-07-20
 - [ ] 48.1-05-PLAN.md — Wave 2c: Apply helpers to write_multi_molecule_gro_file + write_ion_gro_file (byte-eq verify)
 - [ ] 48.1-06-PLAN.md — Wave 2d: Apply helpers to write_custom_molecule_gro_file + write_solute_gro_file (byte-eq verify, preserve divergences)
 - [ ] 48.1-07-PLAN.md — Wave 2e: Extract TOP [defaults] block to _shared._write_top_defaults (all 6 TOP writers)
@@ -349,7 +349,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 46. VTK Rendering | v4.7 | 0/0 (both reqs done in 42-04 + element map) | ✓ Complete (verification-only) | 2026-07-07 |
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
-| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 3/14 | 🚧 In progress (Waves 0-2a complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers extracted, gromacs_writer.py is 3129-line re-export shim, 12 helper unit tests PASS) | 2026-07-20 |
+| 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 4/14 | 🚧 In progress (Waves 0-2b complete — 14 byte-eq tests PASS, 7 sub-modules + _gro_format.py with 10 DRY helpers extracted + 2 of 6 GRO writers (write_gro_file, write_interface_gro_file) refactored to call helpers, gromacs_writer.py is 3129-line re-export shim, 12 helper unit tests PASS, helper-extraction pattern validated end-to-end) | 2026-07-20 |
 
 **v4.7 status after reorganization:** Phase 48 Documentation COMPLETE — all 14 plans (48-01..48-14) done (aggressively split per user request). Phase 47 COMPLETE (1/1). **Phases 38-48 ALL COMPLETE** — v4.7 milestone requirements 57/61 complete (4 pending: GUEST-01/02/03 GUI surfaces done in 44-02, CLI-02 deferred by design; DOCS-01..04 all complete). The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
