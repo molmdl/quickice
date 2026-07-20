@@ -52,6 +52,18 @@ from quickice.output._shared import (
     _get_molecule_atoms, detect_guest_type_from_atoms,
 )
 
+# DRY-extracted GRO formatting helpers (Wave 2a — plan 48.1-03). These pure
+# formatters eliminate ~590 lines of near-byte-identical inline code across
+# the 6 GRO writers. Plans 48.1-04/05/06 swap inline code for helper calls
+# 2 writers at a time. This module (gromacs_writer.py) is the Wave 2b caller
+# (write_gro_file + write_interface_gro_file). The other 4 writers are updated
+# in 48.1-05 (multi_molecule + ion) and 48.1-06 (custom_molecule + solute).
+from quickice.output._gro_format import (
+    _write_gro_header, _format_sol_ice_molecule, _format_sol_water_molecule,
+    _format_guest_molecule, _format_custom_molecule, _format_solute_molecule,
+    _format_na_ion, _format_cl_ion, _write_gro_box_vectors, _wrap_aux_positions,
+)
+
 
 def write_gro_file(candidate: Candidate, filepath: str) -> None:
     """Write candidate to GROMACS .gro format.
@@ -100,11 +112,18 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
     
     try:
         with open(filepath, 'w') as f:
-            f.write(f"Ice structure {candidate.phase_id} exported by QuickIce\n")
-            f.write(f"{n_atoms:5d}\n")
-
+            # Build all GRO lines (header + per-atom) into a single list and
+            # flush with one f.writelines() call (I/O-bound; the writelines
+            # call dominates execution time vs the O(N) Python formatting).
             lines = []
-            # Note: The lines.append() calls below are NOT wrapped in try/except because:
+            _write_gro_header(
+                lines,
+                f"Ice structure {candidate.phase_id} exported by QuickIce",
+                n_atoms,
+            )
+
+            # Note: The lines.append() calls below (inside the helper) are NOT
+            # wrapped in try/except because:
             # 1. String formatting of float values cannot fail unless the input array is malformed
             #    (which would be a programming bug, not a runtime error)
             # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
@@ -119,48 +138,30 @@ def write_gro_file(candidate: Candidate, filepath: str) -> None:
             # makes vectorization complex with minimal performance gain since the actual
             # bottleneck is disk I/O, not string formatting. Kept as explicit loop for
             # clarity and maintainability.
-            atom_num = 0
+            atom_num_counter = [0]  # 1-element mutable box threaded across molecule boundaries
             for mol_idx in range(nmol):
                 base_idx = mol_idx * 3
-                
+
                 o_pos = wrapped_positions[base_idx]
                 h1_pos = wrapped_positions[base_idx + 1]
                 h2_pos = wrapped_positions[base_idx + 2]
-                
+
                 mw_pos = compute_mw_position(o_pos, h1_pos, h2_pos)
 
                 res_num = (mol_idx + 1) % 100000
 
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"   OW{atom_num_wrapped:5d}"
-                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"  HW1{atom_num_wrapped:5d}"
-                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"  HW2{atom_num_wrapped:5d}"
-                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"   MW{atom_num_wrapped:5d}"
-                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                _format_sol_ice_molecule(
+                    lines, o_pos, h1_pos, h2_pos, mw_pos,
+                    res_num, atom_num_counter,
+                )
 
             f.writelines(lines)
-            
-            cell = candidate.cell
-            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+            # 9-value triclinic box vector line (matches the other 5 GRO writers
+            # that use the triclinic format; write_custom_molecule_gro_file is the
+            # sole divergent writer using a 3-value diagonal box line — see
+            # _gro_format._write_gro_box_vectors docstring).
+            _write_gro_box_vectors(f, candidate.cell)
     except (OSError, ValueError) as e:
         logger.error(f"Failed to write GRO file '{filepath}': {e}")
         if Path(filepath).exists():
