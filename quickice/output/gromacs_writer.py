@@ -2530,26 +2530,38 @@ def write_solute_gro_file(
             interface.positions, interface.cell
         )
 
-    # Wrap custom molecule positions into PBC box (same as AN-03 fix in write_ion_gro_file)
+    # Wrap custom molecule positions into PBC box (same as AN-03 fix in
+    # write_ion_gro_file). Uses _wrap_aux_positions (diagonal modulo — the
+    # AN-03 fix pattern shared by interface/ion/solute writers, established
+    # in 48.1-04 + 48.1-05). The `is not None and len(...) > 0` guards stay
+    # at the call site because the helper does NOT abstract attribute
+    # presence (the helper's own None/empty guard is a defensive backstop;
+    # the caller guards avoid constructing the diag modulo on a None/empty
+    # array in the first place — same pattern as the interface + ion writers).
     if solute_structure.custom_molecule_positions is not None and len(solute_structure.custom_molecule_positions) > 0:
-        wrapped_custom_mol_positions = solute_structure.custom_molecule_positions % np.diag(solute_structure.cell)
+        wrapped_custom_mol_positions = _wrap_aux_positions(
+            solute_structure.custom_molecule_positions, solute_structure.cell,
+        )
     else:
         wrapped_custom_mol_positions = solute_structure.custom_molecule_positions
 
-    # Wrap solute positions into PBC box (same as AN-03 fix in write_ion_gro_file)
+    # Wrap solute positions into PBC box (same as AN-03 fix in write_ion_gro_file).
     # Solute positions are a SEPARATE array from interface.positions, so
     # wrap_molecules_into_box does NOT cover them. Simple modulo wrapping
     # is sufficient — solute molecules (CH4, THF) are single small molecules
     # that don't span PBC boundaries.
     if solute_structure.positions is not None and len(solute_structure.positions) > 0:
-        wrapped_solute_positions = solute_structure.positions % np.diag(solute_structure.cell)
+        wrapped_solute_positions = _wrap_aux_positions(
+            solute_structure.positions, solute_structure.cell,
+        )
     else:
         wrapped_solute_positions = solute_structure.positions
 
-    atom_num = 0
+    atom_num_counter = [0]  # 1-element mutable box threaded across molecule boundaries
     res_num = 0
     lines = []
-    # Note: The lines.append() calls below are NOT wrapped in try/except because:
+    # Note: The lines.append() calls below (inside the helpers) are NOT
+    # wrapped in try/except because:
     # 1. String formatting of float values cannot fail unless the input array is malformed
     #    (which would be a programming bug, not a runtime error)
     # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
@@ -2559,17 +2571,25 @@ def write_solute_gro_file(
 
     try:
         with open(filepath, 'w') as f:
-            # Title line
+            # Build all GRO lines (header + per-atom) into a single list and
+            # flush with one f.writelines() call (I/O-bound; the writelines
+            # call dominates execution time vs the O(N) Python formatting).
+            # Dynamic title construction (per-structure: ice/water interface
+            # + optional custom + optional solutes + 'exported by QuickIce')
+            # kept inline — only the header LINE WRITE is delegated to
+            # _write_gro_header (the helper is a pure formatter that appends
+            # title + atom count lines to `lines`). The solute writer DOES
+            # use :5d for the atom count (line 2572 in pre-refactor source),
+            # so _write_gro_header is safe here (UNLIKE write_custom_molecule_gro_file
+            # which uses the divergent f"{total_atoms}\n" no-:5d format).
             title_parts = ["Ice/water interface"]
             if has_custom:
                 title_parts.append(f"{solute_structure.custom_molecule_count} custom molecules")
             if has_solutes:
                 title_parts.append(f"{solute_structure.n_molecules} {solute_structure.solute_type.upper()} solutes")
             title_parts.append("exported by QuickIce")
-            f.write(" + ".join(title_parts) + "\n")
-
-            # Number of atoms
-            f.write(f"{total_atoms:5d}\n")
+            title = " + ".join(title_parts)
+            _write_gro_header(lines, title, total_atoms)
 
             for mol_type, mol in ordered_mols:
                 if mol_type == "sol":
@@ -2580,7 +2600,12 @@ def write_solute_gro_file(
 
                     if mol.mol_type == "ice":
                         # Ice: 3 input atoms (O, H, H) -> 4 output atoms (OW, HW1, HW2, MW)
-                        # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms
+                        # or: 4 input atoms (OW, HW1, HW2, MW) -> 4 output atoms.
+                        # The caller computes mw_pos (3-atom classic ice via
+                        # compute_mw_position; 4-atom hydrate pulls the existing MW
+                        # from the wrapped_positions array) and passes it to
+                        # _format_sol_ice_molecule — the helper is a pure formatter
+                        # and does NOT call compute_mw_position internally.
                         o_pos = wrapped_positions[start]
                         h1_pos = wrapped_positions[start + 1]
                         h2_pos = wrapped_positions[start + 2]
@@ -2592,69 +2617,21 @@ def write_solute_gro_file(
                             # (already correctly placed by molecule-aware wrapping)
                             mw_pos = wrapped_positions[start + 3]
 
-                        # OW (oxygen)
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"   OW{atom_num_wrapped:5d}"
-                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-                        # HW1
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"  HW1{atom_num_wrapped:5d}"
-                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-                        # HW2
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"  HW2{atom_num_wrapped:5d}"
-                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-                        # MW (virtual site)
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"   MW{atom_num_wrapped:5d}"
-                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                        _format_sol_ice_molecule(
+                            lines, o_pos, h1_pos, h2_pos, mw_pos,
+                            res_num_wrapped, atom_num_counter,
+                        )
 
                     else:  # water
-                        # Water: 4 atoms (OW, HW1, HW2, MW)
-                        # Use existing MW from wrapped_positions (already correctly placed)
-                        o_pos = wrapped_positions[start]
-                        h1_pos = wrapped_positions[start + 1]
-                        h2_pos = wrapped_positions[start + 2]
-                        mw_pos = wrapped_positions[start + 3]
-
-                        # OW
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"   OW{atom_num_wrapped:5d}"
-                                    f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-                        # HW1
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"  HW1{atom_num_wrapped:5d}"
-                                    f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-                        # HW2
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"  HW2{atom_num_wrapped:5d}"
-                                    f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-                        # MW (virtual site)
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}SOL  "
-                                    f"   MW{atom_num_wrapped:5d}"
-                                    f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                        # Water: 4 atoms (OW, HW1, HW2, MW) — pass through (no MW recompute).
+                        # _format_sol_water_molecule takes the 4-position slice and writes
+                        # the pass-through lines using {name:>5s} — byte-identical to the
+                        # inline explicit "   OW"/"  HW1"/"  HW2"/"   MW" literals that
+                        # were here before (verified by _gro_format helper unit tests).
+                        mol_positions = wrapped_positions[start:start + mol.count]
+                        _format_sol_water_molecule(
+                            lines, mol_positions, res_num_wrapped, atom_num_counter,
+                        )
 
                 elif mol_type == "guest":
                     # Guest molecule (CH4, THF, or custom guest) — hydrate cage guests
@@ -2707,14 +2684,10 @@ def write_solute_gro_file(
                             if reorder_mapping is not None:
                                 mol_positions = [mol_positions[i] for i in reorder_mapping]
 
-                    for i in range(mol.count):
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        atom_name = mol_atom_names[i]
-                        pos = mol_positions[i]
-                        lines.append(f"{res_num_wrapped:5d}{guest_res_name:<5s}"
-                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    _format_guest_molecule(
+                        lines, mol_atom_names, mol_positions,
+                        res_num_wrapped, guest_res_name, atom_num_counter,
+                    )
 
                 elif mol_type == "custom":
                     # Custom molecule — write from solute_structure custom attributes
@@ -2735,12 +2708,10 @@ def write_solute_gro_file(
                     else:
                         mol_positions = np.zeros((mol.count, 3))
 
-                    for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        lines.append(f"{res_num_wrapped:5d}{res_name:<5s}"
-                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    _format_custom_molecule(
+                        lines, mol_atom_names, mol_positions,
+                        res_num_wrapped, res_name, atom_num_counter,
+                    )
 
                 elif mol_type == "solute":
                     # Solute molecule (CH4_L or THF_L) — write from solute_structure
@@ -2763,22 +2734,21 @@ def write_solute_gro_file(
 
                     validate_gro_residue_name(solute_res_name, context="Solute residue name")
 
-                    for i in range(count):
-                        atom_num += 1
-                        atom_num_wrapped = atom_num % 100000
-                        atom_name = mol_atom_names[i]
-                        pos = mol_positions[i]
-                        lines.append(f"{res_num_wrapped:5d}{solute_res_name:<5s}"
-                                    f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                    f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                    _format_solute_molecule(
+                        lines, mol_atom_names, mol_positions,
+                        res_num_wrapped, solute_res_name, atom_num_counter,
+                    )
 
             f.writelines(lines)
 
-            # Box vectors (triclinic format)
-            cell = interface.cell
-            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+            # 9-value triclinic box vector line (matches the other 5 GRO writers
+            # that use the triclinic format; write_custom_molecule_gro_file is the
+            # sole divergent writer using a 3-value diagonal box line — see
+            # _gro_format._write_gro_box_vectors docstring). The solute writer
+            # DOES use the 9-value triclinic format (verified by direct source
+            # read of pre-refactor lines 2817-2819), so calling the helper is
+            # safe here (UNLIKE write_custom_molecule_gro_file).
+            _write_gro_box_vectors(f, interface.cell)
     except (OSError, ValueError) as e:
         logger.error(f"Failed to write GRO file '{filepath}': {e}")
         if Path(filepath).exists():
