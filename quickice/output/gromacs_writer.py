@@ -325,41 +325,47 @@ def write_interface_gro_file(
 
     # PBC-wrap solute and custom molecule positions if present on InterfaceStructure
     # (defensive: interface-level export only writes ice+water+guests, but
-    # solute/custom positions may be carried forward from upstream insertion)
+    # solute/custom positions may be carried forward from upstream insertion).
+    # Uses _wrap_aux_positions (diagonal modulo — the AN-03 fix pattern shared
+    # by interface/ion/solute). The hasattr guard stays at the call site
+    # because the helper does not abstract attribute presence (older/incomplete
+    # InterfaceStructure instances may lack the attribute entirely).
     wrapped_solute_positions = None
     if hasattr(iface, 'solute_positions') and iface.solute_positions is not None and len(iface.solute_positions) > 0:
-        wrapped_solute_positions = iface.solute_positions % np.diag(iface.cell)
+        wrapped_solute_positions = _wrap_aux_positions(iface.solute_positions, iface.cell)
 
     wrapped_custom_positions = None
     if hasattr(iface, 'custom_molecule_positions') and iface.custom_molecule_positions is not None and len(iface.custom_molecule_positions) > 0:
-        wrapped_custom_positions = iface.custom_molecule_positions % np.diag(iface.cell)
+        wrapped_custom_positions = _wrap_aux_positions(iface.custom_molecule_positions, iface.cell)
 
-    atom_num = 0
+    atom_num_counter = [0]  # 1-element mutable box threaded across molecule boundaries
 
     try:
         with open(filepath, 'w') as f:
-            # Title line
-            f.write(f"Ice/water interface ({iface.mode}) exported by QuickIce\n")
-
-            # Number of atoms
-            f.write(f"{n_atoms:5d}\n")
-
-            # Build all atom lines in memory for better I/O performance
+            # Build all GRO lines (header + per-atom) into a single list and
+            # flush with one f.writelines() call (I/O-bound; the writelines
+            # call dominates execution time vs the O(N) Python formatting).
             lines = []
-            # Note: The lines.append() calls below are NOT wrapped in try/except because:
+            _write_gro_header(
+                lines,
+                f"Ice/water interface ({iface.mode}) exported by QuickIce",
+                n_atoms,
+            )
+            # Note: The lines.append() calls below (inside the helpers) are NOT
+            # wrapped in try/except because:
             # 1. String formatting of float values cannot fail unless the input array is malformed
             #    (which would be a programming bug, not a runtime error)
             # 2. numpy array indexing (positions[i]) would raise IndexError on malformed data,
             #    which is a programming error that should propagate rather than be silently caught
             # 3. Any actual I/O error occurs during f.writelines() inside the with-open block,
             #    which IS protected by try/except
-        
+
             # Define boundaries (NEW ORDER: ice → water → guests)
             ice_end = iface.ice_atom_count
             water_start = ice_end
             water_end = ice_end + iface.water_atom_count
             guest_start = water_end
-        
+
             # Detect atoms per ice molecule
             # Classic ice: 3 atoms (O, H, H) - uses "O" (not "OW")
             # Hydrate: 4 atoms (OW, HW1, HW2, MW) - uses "OW"
@@ -369,10 +375,14 @@ def write_interface_gro_file(
 
             # ICE MOLECULES: 3 atoms per molecule (O, H, H) → normalize to 4-atom
             # OR: 4 atoms per molecule (OW, HW1, HW2, MW) → normalize to 4-atom
+            # The caller computes mw_pos (3-atom classic ice via compute_mw_position;
+            # 4-atom hydrate pulls the existing MW from the wrapped_positions array)
+            # and passes it to _format_sol_ice_molecule — the helper is a pure
+            # formatter and does NOT call compute_mw_position internally.
             for mol_idx in range(iface.ice_nmolecules):
                 base_idx = mol_idx * atoms_per_ice_mol
                 o_pos = wrapped_positions[base_idx]
-            
+
                 # Get H positions based on atoms per molecule
                 if atoms_per_ice_mol == 3:
                     # Classic ice: O, H, H — no existing MW, must compute
@@ -389,55 +399,36 @@ def write_interface_gro_file(
                 # Wrap residue number at 100000 (GROMACS convention for large systems)
                 res_num = (mol_idx + 1) % 100000
 
-                # OW (oxygen)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"   OW{atom_num_wrapped:5d}"
-                            f"{o_pos[0]:8.3f}{o_pos[1]:8.3f}{o_pos[2]:8.3f}\n")
-
-                # HW1 (hydrogen 1)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"  HW1{atom_num_wrapped:5d}"
-                            f"{h1_pos[0]:8.3f}{h1_pos[1]:8.3f}{h1_pos[2]:8.3f}\n")
-
-                # HW2 (hydrogen 2)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"  HW2{atom_num_wrapped:5d}"
-                            f"{h2_pos[0]:8.3f}{h2_pos[1]:8.3f}{h2_pos[2]:8.3f}\n")
-
-                # MW (virtual site)
-                atom_num += 1
-                atom_num_wrapped = atom_num % 100000
-                lines.append(f"{res_num:5d}SOL  "
-                            f"   MW{atom_num_wrapped:5d}"
-                            f"{mw_pos[0]:8.3f}{mw_pos[1]:8.3f}{mw_pos[2]:8.3f}\n")
+                _format_sol_ice_molecule(
+                    lines, o_pos, h1_pos, h2_pos, mw_pos,
+                    res_num, atom_num_counter,
+                )
 
             # WATER MOLECULES: 4 atoms per molecule (OW, HW1, HW2, MW) → pass through
-            # Write WATER BEFORE guests (new order: ice → water → guests)
+            # Write WATER BEFORE guests (new order: ice → water → guests).
+            # _format_sol_water_molecule takes a 4-position slice (OW, HW1, HW2, MW)
+            # and writes the pass-through lines using {atom_name:>5s} — byte-identical
+            # to the inline generic loop that was here.
             for mol_idx in range(iface.water_nmolecules):
                 base_idx = water_start + mol_idx * 4
                 # Wrap residue number at 100000 (GROMACS convention for large systems)
                 res_num = (iface.ice_nmolecules + mol_idx + 1) % 100000
-
-                atom_names = ["OW", "HW1", "HW2", "MW"]
-                for i, atom_name in enumerate(atom_names):
-                    atom_num += 1
-                    atom_num_wrapped = atom_num % 100000
-                    pos = wrapped_positions[base_idx + i]
-                    lines.append(f"{res_num:5d}SOL  "
-                                f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                mol_positions = wrapped_positions[base_idx:base_idx + 4]
+                _format_sol_water_molecule(lines, mol_positions, res_num, atom_num_counter)
 
             # GUEST MOLECULES: pass through with native atom types
             # Write guests AFTER water (new order: ice → water → guests)
-        
+
             if iface.guest_atom_count > 0 and iface.guest_nmolecules > 0:
                 guest_atom_names = iface.atom_names[guest_start:]
+                # CRITICAL (research §7 risk #3): the interface writer uses
+                # `if custom_guest_info:` as the opt-in gate — NOT the
+                # `custom_active = (custom_guest_info is not None and len(...) > 0
+                # and ...)` pattern used by the other 4 GRO writers. The
+                # difference is intentional (interface path is older) and
+                # unifying would change byte-output for the empty-list case.
+                # The helper takes res_name as a caller-resolved parameter so
+                # the gate logic stays in the per-structure writer.
                 if custom_guest_info:
                     # ---- P3 / EXPORT-05: metadata-driven custom guest (no
                     # detect_guest_type_from_atoms, no count_guest_atoms heuristic
@@ -475,12 +466,10 @@ def write_interface_gro_file(
                         mol_atom_names = guest_atom_names[mol_start:mol_end]
                         mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
                         res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
-                        for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                            atom_num += 1
-                            atom_num_wrapped = atom_num % 100000
-                            lines.append(f"{res_num:5d}{guest_res_name:<5s}"
-                                         f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                         f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        _format_guest_molecule(
+                            lines, mol_atom_names, mol_positions,
+                            res_num, guest_res_name, atom_num_counter,
+                        )
                 else:
                     # ---- existing path: built-in hydrate / real interface structures (UNCHANGED) ----
                     # Determine guest type by analyzing all atom names
@@ -524,22 +513,19 @@ def write_interface_gro_file(
                         # Wrap residue number (guests come after all SOL molecules)
                         res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
 
-                        for i, (atom_name, pos) in enumerate(zip(mol_atom_names, mol_positions)):
-                            atom_num += 1
-                            atom_num_wrapped = atom_num % 100000
-                            lines.append(f"{res_num:5d}{guest_res_name:<5s}"
-                                        f"{atom_name:>5s}{atom_num_wrapped:5d}"
-                                        f"{pos[0]:8.3f}{pos[1]:8.3f}{pos[2]:8.3f}\n")
+                        _format_guest_molecule(
+                            lines, mol_atom_names, mol_positions,
+                            res_num, guest_res_name, atom_num_counter,
+                        )
 
                         mol_start = mol_end
 
             f.writelines(lines)
-        
-            # Box vectors (triclinic format)
-            cell = iface.cell
-            f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                    f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                    f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+
+            # 9-value triclinic box vector line (matches the other 5 GRO writers
+            # that use the triclinic format; write_custom_molecule_gro_file is the
+            # sole divergent writer using a 3-value diagonal box line).
+            _write_gro_box_vectors(f, iface.cell)
     except (OSError, ValueError) as e:
         logger.error(f"Failed to write GRO file '{filepath}': {e}")
         if Path(filepath).exists():
