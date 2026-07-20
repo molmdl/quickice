@@ -804,11 +804,26 @@ def write_multi_molecule_gro_file(
     if n_atoms > 99999:
         logger.warning(f"GRO format wraps atom numbers at 100,000 (have {n_atoms} atoms)")
     
+    # NOTE: This writer INTENTIONALLY LACKS the `try/except (OSError, ValueError)`
+    # cleanup block that write_gro_file / write_interface_gro_file /
+    # write_ion_gro_file / write_custom_molecule_gro_file have. The 4-writer
+    # pattern deletes the partial output file on OSError/ValueError; this
+    # writer leaves partial output on failure (pre-existing divergence —
+    # research §3 row "try/except cleanup"). DO NOT add try/except here
+    # "for consistency" — that would be a behavior change (partial files
+    # would be cleaned up where they weren't before), violating the
+    # byte-identical / behavior-identical contract. Preserved verbatim by
+    # plans 48.1-05 (this writer) and 48.1-06 (write_solute_gro_file).
     with open(filepath, 'w') as f:
-        f.write(f"{title}\n")
-        f.write(f"{n_atoms:5d}\n")
-        
+        # Build all GRO lines (header + per-atom) into a single list and
+        # flush with one f.writelines() call (I/O-bound; the writelines
+        # call dominates execution time vs the O(N) Python formatting).
+        # Header is appended to `lines` via the helper so a single
+        # f.writelines flushes header + atoms together (byte-identical
+        # to the prior f.write + f.writelines split — just reordered I/O).
         lines = []
+        _write_gro_header(lines, title, n_atoms)
+
         atom_num = 0
         # Build the custom_guest_info mol_type → dict lookup ONCE before the
         # per-molecule loop so res_name resolution is O(1) per molecule and
@@ -859,7 +874,27 @@ def write_multi_molecule_gro_file(
                 if reorder_mapping is not None:
                     mol_positions = [mol_positions[i] for i in reorder_mapping]
             
-            # Write atoms for this molecule
+            # Write atoms for this molecule — GENERIC per-atom loop.
+            #
+            # Research §3 row "SOL ice 3→4 expansion" + plan 48.1-05 Task 1:
+            # this writer uses a GENERIC per-atom loop (iterates `mol_atom_names`
+            # and emits each atom with a {res_name:<5s}{atom_name:>5s} format),
+            # NOT the specialized _format_sol_ice_molecule / _format_sol_water_molecule
+            # helpers (which assume 3-atom OHH → 4-atom OW/HW1/HW2/MW expansion
+            # or a 4-atom pass-through chunk). The multi-molecule writer's ice
+            # molecules are already 4-atom (OW, HW1, HW2, MW) because the input
+            # HydrateStructure has them pre-computed, and the res_name is
+            # resolved per-molecule via the registry/custom_guest_info/fallback
+            # chain (NOT hardcoded "SOL"). Forcing the generic loop into 1-atom
+            # _format_guest_molecule(lines, [name], [pos], res_num, res_name,
+            # atom_num_counter) calls would HURT readability (the helper expects
+            # a molecule's atom list — passing 1-atom chunks is awkward). The
+            # inline f-string is byte-identical to _format_guest_molecule's
+            # f-string (verified by _gro_format helper unit tests); the DRY win
+            # is the format string itself, which is already captured in the
+            # helper for the OTHER 4 writers that have specialized blocks. The
+            # generic loop stays inline — research §3 row "generic (uses
+            # atom_names)" documents this as the intentional divergence.
             for i in range(mol.count):
                 atom_num += 1
                 atom_num_wrapped = atom_num % 100000
@@ -877,10 +912,11 @@ def write_multi_molecule_gro_file(
         
         f.writelines(lines)
         
-        # Box vectors (triclinic format)
-        f.write(f"{cell[0,0]:10.5f}{cell[1,1]:10.5f}{cell[2,2]:10.5f}"
-                f"{cell[0,1]:10.5f}{cell[0,2]:10.5f}{cell[1,0]:10.5f}"
-                f"{cell[1,2]:10.5f}{cell[2,0]:10.5f}{cell[2,1]:10.5f}\n")
+        # 9-value triclinic box vector line (matches the other 5 GRO writers
+        # that use the triclinic format; write_custom_molecule_gro_file is the
+        # sole divergent writer using a 3-value diagonal box line — see
+        # _gro_format._write_gro_box_vectors docstring).
+        _write_gro_box_vectors(f, cell)
 
 
 def write_multi_molecule_top_file(
