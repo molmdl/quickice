@@ -94,6 +94,20 @@ def _parse_defaults(top_text: str) -> dict:
     return defaults
 
 
+def _all_output_sources() -> str:
+    """Concatenate all quickice/output/*.py source files for forbidden-value grep.
+
+    After the Phase 48.1 Wave 1 split, the LJ constants live in _constants.py
+    (re-exported through _shared.py), not in gromacs_writer.py. Scanning ALL
+    sibling .py files ensures forbidden values (e.g. the buggy 0.31668e-3
+    sigma, 0.88216e-6 epsilon, or comb-rule=1 defaults) cannot hide in any of
+    the new sub-modules. Uses Path("quickice/output").glob("*.py") so future
+    waves that add more sibling modules are automatically covered.
+    """
+    output_dir = Path("quickice/output")
+    return "\n".join(p.read_text() for p in sorted(output_dir.glob("*.py")))
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -269,18 +283,18 @@ class TestNoBuggyHardcodedValues:
     """Verify no traces of the catastrophic exponent errors remain in source."""
 
     def test_no_31668e_minus3(self):
-        """0.31668e-3 (1000x too small sigma) must not appear in gromacs_writer.py."""
-        source = Path("quickice/output/gromacs_writer.py").read_text()
+        """0.31668e-3 (1000x too small sigma) must not appear in any quickice/output/*.py source."""
+        source = _all_output_sources()
         assert "0.31668e-3" not in source, "Buggy sigma value 0.31668e-3 found in source"
 
     def test_no_88216e_minus6(self):
-        """0.88216e-6 (10^6x too small epsilon) must not appear in gromacs_writer.py."""
-        source = Path("quickice/output/gromacs_writer.py").read_text()
+        """0.88216e-6 (10^6x too small epsilon) must not appear in any quickice/output/*.py source."""
+        source = _all_output_sources()
         assert "0.88216e-6" not in source, "Buggy epsilon value 0.88216e-6 found in source"
 
     def test_no_comb_rule_1(self):
-        """comb-rule 1 must not appear in gromacs_writer.py defaults (must use comb-rule=2 for AMBER convention)."""
-        source = Path("quickice/output/gromacs_writer.py").read_text()
+        """comb-rule 1 must not appear in any quickice/output/*.py defaults (must use comb-rule=2 for AMBER convention)."""
+        source = _all_output_sources()
         # Check that no line has "1               1" (nbfunc=1 comb-rule=1)
         # or "1  1" patterns in [defaults] sections
         buggy_pattern = re.compile(r'1\s+1\s+yes\s+0\.5\s+0\.8333')

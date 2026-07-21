@@ -76,12 +76,29 @@ def _data_dir() -> Path:
     return Path(quickice.__file__).parent / "data"
 
 
-def _count_tip4p_ice_alpha_defs() -> int:
-    """Count ``TIP4P_ICE_ALPHA = <value>`` assignments in gromacs_writer.py.
+def _all_output_sources() -> str:
+    """Concatenate all quickice/output/*.py source files for source-text grep.
 
-    UNIT-03 requires EXACTLY ONE definition. (Pre-refactor there were two.)
+    After the Phase 48.1 Wave 1 split, the constants (TIP4P_ICE_ALPHA,
+    ION_ATOMTYPES, etc.) live in _constants.py (re-exported through _shared.py),
+    not in gromacs_writer.py. Scanning ALL sibling .py files ensures the
+    UNIT-03/UNIT-05 source-text invariants hold regardless of which file the
+    constants live in. Uses Path("quickice/output").glob("*.py") so future
+    waves that add more sibling modules are automatically covered.
     """
-    src = Path(gwm.__file__).read_text()
+    output_dir = Path("quickice/output")
+    return "\n".join(p.read_text() for p in sorted(output_dir.glob("*.py")))
+
+
+def _count_tip4p_ice_alpha_defs() -> int:
+    """Count ``TIP4P_ICE_ALPHA = <value>`` assignments across quickice/output/*.py.
+
+    UNIT-03 requires EXACTLY ONE definition. (Pre-refactor there were two in
+    gromacs_writer.py.) After the Phase 48.1 Wave 1 split, the single
+    definition lives in _constants.py; the re-exports in _shared.py and
+    gromacs_writer.py use ``import`` syntax (no ``=``), so they don't match.
+    """
+    src = _all_output_sources()
     return len(re.findall(r"^TIP4P_ICE_ALPHA\s*=\s*", src, re.M))
 
 
@@ -125,7 +142,7 @@ def _ion_atomtypes_has_clarifying_comment() -> bool:
     """UNIT-05: ION_ATOMTYPES must carry a comment explaining the [atomtypes]
     charge=0.0 placeholder convention (vs the real ±0.85 in [moleculetype]
     [atoms])."""
-    src = Path(gwm.__file__).read_text()
+    src = _all_output_sources()
     # Find the ION_ATOMTYPES block and check for the convention explanation.
     block = re.search(
         r"# Madrid2019 ion atomtype parameters.*?ION_ATOMTYPES\s*[:=].*?\}",
@@ -363,7 +380,7 @@ class TestUNIT05:
         NA_CHARGE/CL_CHARGE."""
         # If someone "consolidated" them, ION_ATOMTYPES would reference
         # NA_CHARGE/CL_CHARGE. Verify it does NOT.
-        src = Path(gwm.__file__).read_text()
+        src = _all_output_sources()
         # Extract the ION_ATOMTYPES block.
         block = re.search(
             r"ION_ATOMTYPES\s*[:=].*?\{[^}]*\}",
