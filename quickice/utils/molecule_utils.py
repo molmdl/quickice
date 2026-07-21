@@ -2,6 +2,8 @@
 
 This module provides consolidated utility functions for:
 - Counting atoms in guest molecules (supports Me, CH4, THF, H2)
+- Identifying guest molecule types from atom names (mixed hydrates)
+- Separating mixed guest atoms into per-type groups (mixed hydrates)
 
 These functions were consolidated from duplicate implementations across:
 - quickice/structure_generation/modes/pocket.py
@@ -12,10 +14,89 @@ These functions were consolidated from duplicate implementations across:
 - quickice/structure_generation/ion_inserter.py
 """
 
+import numpy as np
+
 # Guest molecule atom counts — single source of truth for explicit guest_type lookup.
 # These mirror the values in quickice.structure_generation.types.MOLECULE_TYPE_INFO.
 CH4_ATOMS_PER_MOLECULE: int = 5   # All-atom methane: C + 4H
 THF_ATOMS_PER_MOLECULE: int = 13  # Tetrahydrofuran: O + 2CA + 2CB + 8H
+
+
+def identify_guest_type(
+    atom_names: list[str],
+    start: int,
+    guest_descriptors: list | None = None,
+) -> str | None:
+    """Identify the guest molecule type from atom names at ``start``.
+
+    Used for MIXED-guest hydrates where multiple guest types coexist (e.g.
+    CH4 in small cages + THF in large cages). For single-guest hydrates the
+    caller already knows the type; this function is only needed when
+    ``guest_type_counts`` has more than one entry and the per-molecule type
+    must be detected from atom names.
+
+    Detection order (first match wins):
+    1. Exact prefix match against each ``GuestDescriptor.atom_labels`` —
+       the most reliable path (metadata-driven, matches what GenIce2 emits).
+    2. Heuristic type detection mirroring the count path in
+       ``count_guest_atoms``: C-first or H-first with the 1C+4H pattern →
+       ``"ch4"``; O-first → ``"thf"``. Robust for the two built-in guests
+       QuickIce supports, and tolerant of GenIce2 atom reordering
+       (H-first vs C-first methane).
+
+    Args:
+        atom_names: Full list of atom names from the candidate.
+        start: Starting index of the molecule to identify.
+        guest_descriptors: Optional list of ``GuestDescriptor`` objects
+            (from ``Candidate.metadata["guest_descriptors"]``). Each carries
+            ``mol_type``, ``atom_labels`` and ``atom_count`` for one guest
+            type. When supplied, exact ``atom_labels`` prefix match is tried
+            first (handles custom guests the heuristic cannot identify).
+
+    Returns:
+        The guest ``mol_type`` string (e.g. ``"ch4"``, ``"thf"``, custom
+        slug) or ``None`` if the type cannot be determined.
+    """
+    if start >= len(atom_names):
+        return None
+
+    # 1. Exact prefix match against guest_descriptors' atom_labels.
+    # This handles built-in AND custom guests uniformly when the
+    # descriptor list is available (always populated by to_candidate()).
+    if guest_descriptors:
+        for desc in guest_descriptors:
+            labels = list(getattr(desc, "atom_labels", []) or [])
+            n = len(labels)
+            if n == 0 or start + n > len(atom_names):
+                continue
+            if list(atom_names[start:start + n]) == labels:
+                return getattr(desc, "mol_type", None)
+
+    # 2. Heuristic type detection (mirrors count_guest_atoms logic).
+    # Robust for the two built-in guests (ch4, thf) and tolerant of
+    # GenIce2 atom reordering. Returns None for unknown patterns so the
+    # caller can fall back to the heuristic count.
+    sample = atom_names[start:min(start + 15, len(atom_names))]
+    if not sample:
+        return None
+    first_atom = sample[0]
+
+    # Built-in guests never start with water atom names.
+    if first_atom in ("OW", "HW1", "HW2", "MW"):
+        return None
+
+    # CH4: C-first or H-first with the 1C + 4H pattern.
+    if first_atom == "C" or (first_atom == "H" and len(sample) >= 5):
+        c_count = sum(1 for a in sample if a == "C")
+        h_count = sum(1 for a in sample if a == "H")
+        if c_count >= 1 and h_count >= 4 and (c_count + h_count) >= 5:
+            return "ch4"
+
+    # THF: O-first (GenIce2 emits O, CA, CA, CB, CB, H×8).
+    if first_atom == "O":
+        return "thf"
+
+    return None
 
 
 def count_guest_atoms(
@@ -156,4 +237,94 @@ def count_guest_atoms(
 
     # Default: treat as 1 atom guest
     return 1
+
+
+def separate_guests_by_type(
+    guest_positions: "np.ndarray",
+    guest_atom_names: list[str],
+    guest_atom_counts: dict[str, int],
+    guest_descriptors: list | None = None,
+) -> list[dict]:
+    """Separate mixed guest atoms into per-type groups.
+
+    Walks ``guest_atom_names`` molecule-by-molecule (using
+    ``identify_guest_type`` + ``guest_atom_counts`` to determine each
+    molecule's stride) and groups atoms by ``mol_type``. Required for
+    MIXED cage-occupancy hydrates (e.g. CH4 in small cages + THF in large
+    cages) because ``tile_structure`` validates ``len(positions) %
+    atoms_per_molecule == 0`` and does molecule-level PBC wrapping — both
+    assume a SINGLE uniform atoms-per-molecule, which is violated when
+    CH4 (5 atoms) and THF (13 atoms) coexist (184 total atoms is divisible
+    by neither 5 nor 13).
+
+    Callers tile each returned group SEPARATELY with its own
+    ``atoms_per_molecule`` and concatenate the results.
+
+    Args:
+        guest_positions: (N, 3) array of ALL guest atom positions (from
+            ``candidate.positions[guest_indices]``).
+        guest_atom_names: Full list of guest atom names (from
+            ``[candidate.atom_names[i] for i in guest_indices]``).
+        guest_atom_counts: ``{mol_type: atom_count}`` dict from
+            ``Candidate.metadata["guest_atom_counts"]``.
+        guest_descriptors: List of ``GuestDescriptor`` objects from
+            ``Candidate.metadata["guest_descriptors"]`` (used by
+            ``identify_guest_type`` for exact atom_labels matching).
+
+    Returns:
+        List of dicts (one per guest type), each with keys:
+            - ``mol_type``: guest type string (e.g. "ch4", "thf")
+            - ``positions``: (N_type, 3) array of this type's atoms
+            - ``atom_names``: full list of this type's atom names
+            - ``atom_names_pattern``: one molecule's atom names (for
+              replication after tiling)
+            - ``nmolecules``: number of molecules of this type
+            - ``atoms_per_mol``: atoms per molecule of this type
+    """
+    groups: dict[str, dict] = {}
+    i = 0
+    n = len(guest_atom_names)
+    while i < n:
+        mol_type = identify_guest_type(guest_atom_names, i, guest_descriptors)
+        if mol_type is not None and mol_type in guest_atom_counts:
+            atoms_per_mol = guest_atom_counts[mol_type]
+        else:
+            # Unknown type: fall back to the heuristic count.
+            atoms_per_mol = count_guest_atoms(guest_atom_names, i, guest_type=None)
+
+        if atoms_per_mol <= 0 or i + atoms_per_mol > n:
+            # Cannot make progress — stop to avoid a silent infinite loop.
+            break
+
+        if mol_type is None:
+            mol_type = "_unknown_{}".format(atoms_per_mol)
+
+        if mol_type not in groups:
+            groups[mol_type] = {
+                "mol_type": mol_type,
+                "positions": [],
+                "atom_names": [],
+                "atom_names_pattern": list(guest_atom_names[i:i + atoms_per_mol]),
+                "nmolecules": 0,
+                "atoms_per_mol": atoms_per_mol,
+            }
+
+        groups[mol_type]["positions"].append(
+            guest_positions[i:i + atoms_per_mol]
+        )
+        groups[mol_type]["atom_names"].extend(
+            guest_atom_names[i:i + atoms_per_mol]
+        )
+        groups[mol_type]["nmolecules"] += 1
+        i += atoms_per_mol
+
+    # Convert per-molecule position lists to stacked arrays.
+    result = []
+    for info in groups.values():
+        if info["positions"]:
+            info["positions"] = np.vstack(info["positions"])
+        else:
+            info["positions"] = np.zeros((0, 3), dtype=float)
+        result.append(info)
+    return result
 

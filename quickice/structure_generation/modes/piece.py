@@ -12,7 +12,11 @@ This module also handles hydrate->interface conversion:
 
 import numpy as np
 
-from quickice.utils.molecule_utils import count_guest_atoms
+from quickice.utils.molecule_utils import (
+    count_guest_atoms,
+    identify_guest_type,
+    separate_guests_by_type,
+)
 from quickice.structure_generation.types import Candidate, InterfaceConfig, InterfaceStructure, detect_atoms_per_molecule
 from quickice.structure_generation.errors import InterfaceGenerationError
 from quickice.structure_generation.water_filler import (
@@ -28,34 +32,49 @@ from quickice.structure_generation.overlap_resolver import (
 from quickice.phase_mapping.water_density import water_density_gcm3
 
 
-def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None, guest_atom_count: int | None = None) -> tuple[list[int], list[int]]:
+def _detect_guest_atoms(
+    atom_names: list[str],
+    atoms_per_mol: int = 4,
+    guest_type: str | None = None,
+    guest_atom_count: int | None = None,
+    guest_atom_counts: dict[str, int] | None = None,
+    guest_descriptors: list | None = None,
+) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
     For hydrate candidates:
     - Water framework atoms: OW, HW1, HW2, MW (TIP4P pattern)
     - Guest atoms: anything else (Me, C, H, etc.)
+
+    Mixed-guest hydrates (Phase 45-14): when ``guest_atom_counts`` has >1
+    entry, per-molecule type detection via ``identify_guest_type`` is used
+    instead of the single ``guest_type`` (which would miscount other types —
+    e.g. guest_type='ch4' returns 5 for THF's 13 atoms → IndexError).
     
     Args:
         atom_names: List of atom names from candidate
         atoms_per_mol: Expected atoms per molecule (4 for TIP4P/hydrate)
-        guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
-            bypasses heuristic detection in count_guest_atoms for correct, explicit
-            identification. When None, falls back to heuristic atom-name matching.
-        guest_atom_count: NEW (44.1) explicit atom count for custom (non-ch4/thf)
-            guests. Threaded to count_guest_atoms so custom ethanol (9 atoms) is
-            counted correctly instead of falling through the ch4/thf heuristic
-            (which miscounts custom atoms -> IndexError). Ignored for ch4/thf/None.
+        guest_type: Explicit guest molecule type ("ch4" or "thf"). IGNORED for
+            mixed hydrates (len(guest_atom_counts) > 1).
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests.
+        guest_atom_counts: NEW (45-14) full dict {mol_type: atom_count}. When
+            it has >1 entry, per-molecule type detection is used.
+        guest_descriptors: NEW (45-14) list of GuestDescriptor objects for
+            identify_guest_type exact-prefix matching.
     
     Returns:
         Tuple of (water_framework_atom_indices, guest_atom_indices) as lists
     """
     water_indices = []
     guest_indices = []
-    
+
+    is_mixed = guest_atom_counts is not None and len(guest_atom_counts) > 1
+
     i = 0
-    while i < len(atom_names):
+    n = len(atom_names)
+    while i < n:
         # Check first atom of each molecule
-        if i + atoms_per_mol <= len(atom_names):
+        if i + atoms_per_mol <= n:
             first_atom = atom_names[i]
             # Water framework: first atom is OW (TIP4P water oxygen)
             if first_atom == "OW":
@@ -63,36 +82,53 @@ def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_typ
                 i += atoms_per_mol
             else:
                 # This is a guest molecule (united-atom CH4 'Me', all-atom CH4 'C', etc.)
-                # Guest can be 1 atom (Me), 5 atoms (CH4 all-atom), or more (THF)
-                # Detect based on atom type
-                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type, guest_atom_count=guest_atom_count)
-                
+                if is_mixed:
+                    mol_type = identify_guest_type(atom_names, i, guest_descriptors)
+                    if (mol_type is not None and guest_atom_counts
+                            and mol_type in guest_atom_counts):
+                        guest_atoms = guest_atom_counts[mol_type]
+                    else:
+                        guest_atoms = count_guest_atoms(atom_names, i, guest_type=None)
+                else:
+                    guest_atoms = count_guest_atoms(
+                        atom_names, i,
+                        guest_type=guest_type, guest_atom_count=guest_atom_count,
+                    )
+
                 # SAFEGUARD: Check if the detected "guest" is actually a water molecule
                 # that was misidentified due to counting errors
                 if guest_atoms > 0:
-                    end_idx = min(i + guest_atoms, len(atom_names))
+                    end_idx = min(i + guest_atoms, n)
                     has_ow = any(atom_names[j] == "OW" for j in range(i, end_idx))
-                    
+
                     if has_ow:
                         # This is actually a water molecule - add to water_indices
                         water_indices.extend(range(i, end_idx))
                         i = end_idx
                     else:
-                        # Legitimate guest - add to guest_indices
-                        guest_indices.extend(range(i, i + guest_atoms))
-                        i += guest_atoms
+                        # Legitimate guest - add to guest_indices.
+                        # FIX (45-14): use end_idx (clamped) to avoid OOB.
+                        guest_indices.extend(range(i, end_idx))
+                        i = end_idx
                 else:
                     # No atoms detected - skip 1 to avoid infinite loop
                     i += 1
         else:
             # Not enough atoms for full molecule - treat remaining as guest
-            guest_indices.extend(range(i, len(atom_names)))
-            i = len(atom_names)
-    
+            guest_indices.extend(range(i, n))
+            i = n
+
     return water_indices, guest_indices
 
 
-def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None, guest_atom_count: int | None = None) -> int:
+def _count_guest_molecules(
+    atom_names: list[str],
+    guest_indices: list[int],
+    guest_type: str | None = None,
+    guest_atom_count: int | None = None,
+    guest_atom_counts: dict[str, int] | None = None,
+    guest_descriptors: list | None = None,
+) -> int:
     """Count the number of distinct guest molecules from guest atom indices.
     
     The guest_indices list contains all atom indices belonging to guests.
@@ -102,25 +138,38 @@ def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], gues
     Args:
         atom_names: Full list of atom names (for counting atoms per molecule)
         guest_indices: List of atom indices belonging to guests
-        guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
-            bypasses heuristic detection in count_guest_atoms.
-        guest_atom_count: NEW (44.1) explicit atom count for custom guests,
-            threaded to count_guest_atoms so the per-molecule stride is correct.
+        guest_type: Explicit guest molecule type. IGNORED for mixed hydrates.
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests.
+        guest_atom_counts: NEW (45-14) full dict {mol_type: atom_count}.
+        guest_descriptors: NEW (45-14) list of GuestDescriptor objects.
     
     Returns:
         Number of distinct guest molecules
     """
     if not guest_indices:
         return 0
-    
+
+    is_mixed = guest_atom_counts is not None and len(guest_atom_counts) > 1
+
     count = 0
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type, guest_atom_count=guest_atom_count)
+        if is_mixed:
+            mol_type = identify_guest_type(atom_names, atom_idx, guest_descriptors)
+            if (mol_type is not None and guest_atom_counts
+                    and mol_type in guest_atom_counts):
+                atoms_in_mol = guest_atom_counts[mol_type]
+            else:
+                atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=None)
+        else:
+            atoms_in_mol = count_guest_atoms(
+                atom_names, atom_idx,
+                guest_type=guest_type, guest_atom_count=guest_atom_count,
+            )
         count += 1
         i += atoms_in_mol
-    
+
     return count
 
 
@@ -217,10 +266,18 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         guest_atom_counts = candidate.metadata.get("guest_atom_counts", {})
         _guest_atom_count = guest_atom_counts.get(_guest_type) if _guest_type else None
 
+        # NEW (45-14): for MIXED hydrates pass the full guest_atom_counts dict +
+        # guest_descriptors so _detect_guest_atoms / _count_guest_molecules can
+        # detect each molecule's type via identify_guest_type. Single-guest
+        # hydrates keep the existing path (is_mixed=False, backward compatible).
+        _guest_descriptors = candidate.metadata.get("guest_descriptors", [])
+
         # Extract guest atoms from candidate positions
         # Water framework = OW-based, Guest = anything else (Me, C, etc.)
         water_indices, guest_indices = _detect_guest_atoms(
-            candidate.atom_names, atoms_per_mol, guest_type=_guest_type, guest_atom_count=_guest_atom_count
+            candidate.atom_names, atoms_per_mol,
+            guest_type=_guest_type, guest_atom_count=_guest_atom_count,
+            guest_atom_counts=guest_atom_counts, guest_descriptors=_guest_descriptors,
         )
         
         if guest_indices:
@@ -232,7 +289,11 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
             # Each unique starting index is a different molecule
             # Since _detect_guest_atoms returns consecutive atom indices per molecule,
             # we count how many distinct molecules by counting the starts
-            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type, guest_atom_count=_guest_atom_count)
+            guest_nmolecules = _count_guest_molecules(
+                candidate.atom_names, guest_indices,
+                guest_type=_guest_type, guest_atom_count=_guest_atom_count,
+                guest_atom_counts=guest_atom_counts, guest_descriptors=_guest_descriptors,
+            )
             
             # Translate guest to box center (same as ice)
             guest_center = np.mean(guest_positions, axis=0)

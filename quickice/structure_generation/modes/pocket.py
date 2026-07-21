@@ -13,7 +13,11 @@ For hydrate->interface conversion:
 
 import numpy as np
 
-from quickice.utils.molecule_utils import count_guest_atoms
+from quickice.utils.molecule_utils import (
+    count_guest_atoms,
+    identify_guest_type,
+    separate_guests_by_type,
+)
 
 # Ice atom names template (GenIce: 3 atoms per molecule)
 # Memory note: Creates O(n) list for n molecules (~240KB for 10k molecules).
@@ -21,83 +25,126 @@ from quickice.utils.molecule_utils import count_guest_atoms
 ICE_ATOM_NAMES_TEMPLATE = ["O", "H", "H"]
 
 
-def _detect_guest_atoms(atom_names: list[str], atoms_per_mol: int = 4, guest_type: str | None = None, guest_atom_count: int | None = None) -> tuple[list[int], list[int]]:
+def _detect_guest_atoms(
+    atom_names: list[str],
+    atoms_per_mol: int = 4,
+    guest_type: str | None = None,
+    guest_atom_count: int | None = None,
+    guest_atom_counts: dict[str, int] | None = None,
+    guest_descriptors: list | None = None,
+) -> tuple[list[int], list[int]]:
     """Detect indices of guest molecules vs water framework in candidate positions.
     
     For hydrate candidates:
     - Water framework atoms: OW, HW1, HW2, MW (TIP4P pattern)
     - Guest atoms: anything else (Me, C, H, etc.)
+
+    Mixed-guest hydrates (Phase 45-14): when ``guest_atom_counts`` has >1
+    entry, per-molecule type detection via ``identify_guest_type`` is used
+    instead of the single ``guest_type`` (which would miscount other types —
+    e.g. guest_type='ch4' returns 5 for THF's 13 atoms → IndexError).
     
     Args:
         atom_names: List of atom names from candidate
         atoms_per_mol: Expected atoms per molecule (4 for TIP4P/hydrate)
         guest_type: Explicit guest molecule type ("ch4" or "thf"). When provided,
-            bypasses heuristic detection in count_guest_atoms for correct, explicit
-            identification. When None, falls back to heuristic atom-name matching.
-        guest_atom_count: NEW (44.1) explicit atom count for custom (non-ch4/thf)
-            guests. Threaded to count_guest_atoms so custom ethanol (9 atoms) is
-            counted correctly instead of falling through the ch4/thf heuristic
-            (which miscounts custom atoms -> IndexError). Ignored for ch4/thf/None.
+            bypasses heuristic detection in count_guest_atoms. IGNORED for
+            mixed hydrates (len(guest_atom_counts) > 1).
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests.
+        guest_atom_counts: NEW (45-14) full dict {mol_type: atom_count}. When
+            it has >1 entry, per-molecule type detection is used.
+        guest_descriptors: NEW (45-14) list of GuestDescriptor objects for
+            identify_guest_type exact-prefix matching.
     """
     water_indices = []
     guest_indices = []
-    
+
+    is_mixed = guest_atom_counts is not None and len(guest_atom_counts) > 1
+
     i = 0
-    while i < len(atom_names):
-        if i + atoms_per_mol <= len(atom_names):
+    n = len(atom_names)
+    while i < n:
+        if i + atoms_per_mol <= n:
             first_atom = atom_names[i]
             if first_atom == "OW":
                 water_indices.extend(range(i, i + atoms_per_mol))
                 i += atoms_per_mol
             else:
-                guest_atoms = count_guest_atoms(atom_names, i, guest_type=guest_type, guest_atom_count=guest_atom_count)
-                
-                # SAFEGUARD: Check if the detected "guest" is actually a water molecule
-                # that was misidentified due to counting errors
+                if is_mixed:
+                    mol_type = identify_guest_type(atom_names, i, guest_descriptors)
+                    if (mol_type is not None and guest_atom_counts
+                            and mol_type in guest_atom_counts):
+                        guest_atoms = guest_atom_counts[mol_type]
+                    else:
+                        guest_atoms = count_guest_atoms(atom_names, i, guest_type=None)
+                else:
+                    guest_atoms = count_guest_atoms(
+                        atom_names, i,
+                        guest_type=guest_type, guest_atom_count=guest_atom_count,
+                    )
+
                 if guest_atoms > 0:
-                    end_idx = min(i + guest_atoms, len(atom_names))
+                    end_idx = min(i + guest_atoms, n)
                     has_ow = any(atom_names[j] == "OW" for j in range(i, end_idx))
-                    
+
                     if has_ow:
-                        # This is actually a water molecule - add to water_indices
                         water_indices.extend(range(i, end_idx))
                         i = end_idx
                     else:
-                        # Legitimate guest - add to guest_indices
-                        guest_indices.extend(range(i, i + guest_atoms))
-                        i += guest_atoms
+                        # FIX (45-14): use end_idx (clamped) to avoid OOB.
+                        guest_indices.extend(range(i, end_idx))
+                        i = end_idx
                 else:
-                    # No atoms detected - skip 1 to avoid infinite loop
                     i += 1
         else:
-            guest_indices.extend(range(i, len(atom_names)))
-            i = len(atom_names)
-    
+            guest_indices.extend(range(i, n))
+            i = n
+
     return water_indices, guest_indices
 
 
-def _count_guest_molecules(atom_names: list[str], guest_indices: list[int], guest_type: str | None = None, guest_atom_count: int | None = None) -> int:
+def _count_guest_molecules(
+    atom_names: list[str],
+    guest_indices: list[int],
+    guest_type: str | None = None,
+    guest_atom_count: int | None = None,
+    guest_atom_counts: dict[str, int] | None = None,
+    guest_descriptors: list | None = None,
+) -> int:
     """Count the number of distinct guest molecules from guest atom indices.
     
     Args:
         atom_names: Full list of atom names from candidate
         guest_indices: Indices of guest atoms (from _detect_guest_atoms)
-        guest_type: Explicit guest molecule type ("ch4" or "thf") threaded to
-            count_guest_atoms. When None, falls back to heuristic.
-        guest_atom_count: NEW (44.1) explicit atom count for custom guests,
-            threaded to count_guest_atoms so the per-molecule stride is correct.
+        guest_type: Explicit guest molecule type. IGNORED for mixed hydrates.
+        guest_atom_count: NEW (44.1) explicit atom count for custom guests.
+        guest_atom_counts: NEW (45-14) full dict {mol_type: atom_count}.
+        guest_descriptors: NEW (45-14) list of GuestDescriptor objects.
     """
     if not guest_indices:
         return 0
-    
+
+    is_mixed = guest_atom_counts is not None and len(guest_atom_counts) > 1
+
     count = 0
     i = 0
     while i < len(guest_indices):
         atom_idx = guest_indices[i]
-        atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=guest_type, guest_atom_count=guest_atom_count)
+        if is_mixed:
+            mol_type = identify_guest_type(atom_names, atom_idx, guest_descriptors)
+            if (mol_type is not None and guest_atom_counts
+                    and mol_type in guest_atom_counts):
+                atoms_in_mol = guest_atom_counts[mol_type]
+            else:
+                atoms_in_mol = count_guest_atoms(atom_names, atom_idx, guest_type=None)
+        else:
+            atoms_in_mol = count_guest_atoms(
+                atom_names, atom_idx,
+                guest_type=guest_type, guest_atom_count=guest_atom_count,
+            )
         count += 1
         i += atoms_in_mol
-    
+
     return count
 
 
@@ -178,15 +225,27 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         guest_atom_counts = candidate.metadata.get("guest_atom_counts", {})
         _guest_atom_count = guest_atom_counts.get(_guest_type) if _guest_type else None
 
+        # NEW (45-14): for MIXED hydrates pass the full guest_atom_counts dict +
+        # guest_descriptors so _detect_guest_atoms / _count_guest_molecules can
+        # detect each molecule's type via identify_guest_type. Single-guest
+        # hydrates keep the existing path (is_mixed=False, backward compatible).
+        _guest_descriptors = candidate.metadata.get("guest_descriptors", [])
+
         # Extract guest atoms from candidate positions
         water_indices, guest_indices = _detect_guest_atoms(
-            candidate.atom_names, atoms_per_mol, guest_type=_guest_type, guest_atom_count=_guest_atom_count
+            candidate.atom_names, atoms_per_mol,
+            guest_type=_guest_type, guest_atom_count=_guest_atom_count,
+            guest_atom_counts=guest_atom_counts, guest_descriptors=_guest_descriptors,
         )
         
         if guest_indices:
             raw_guest_positions = candidate.positions[guest_indices].copy()
             guest_atom_names = [candidate.atom_names[i] for i in guest_indices]
-            guest_nmolecules = _count_guest_molecules(candidate.atom_names, guest_indices, guest_type=_guest_type, guest_atom_count=_guest_atom_count)
+            guest_nmolecules = _count_guest_molecules(
+                candidate.atom_names, guest_indices,
+                guest_type=_guest_type, guest_atom_count=_guest_atom_count,
+                guest_atom_counts=guest_atom_counts, guest_descriptors=_guest_descriptors,
+            )
             
             # For tiling, use ONLY water-framework atoms
             water_framework_positions = candidate.positions[water_indices]
@@ -363,119 +422,189 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
     if is_hydrate and raw_guest_positions is not None and len(raw_guest_positions) > 0:
         # Store initial guest molecule count BEFORE tiling
         original_guest_nmolecules = guest_nmolecules
-        
+
         # Tile guests in pocket region
         pocket_dims = np.array([2 * radius, 2 * radius, 2 * radius])
         guest_cell_dims = get_cell_extent(candidate.cell)
-        
-        # Determine atoms per GUEST molecule (not water framework)
-        # NEW (44.1): prefer the explicit guest_atom_count threaded from candidate
-        # metadata (44.1-02) for custom guests whose first atom is not Me/C/O
-        # (e.g. ethanol starts with "H" -> heuristic below defaults to 1, which
-        # fragments multi-atom guests and miscounts molecules). Falls back to the
-        # first-atom heuristic for built-in guests. Byte-identical for ch4 (5)
-        # and thf (13) since the metadata carries the same values the heuristic
-        # would produce.
-        if _guest_atom_count is not None:
-            guest_atoms_per_mol = _guest_atom_count
-        elif guest_atom_names[0] == "Me":
-            guest_atoms_per_mol = 1
-        elif guest_atom_names[0] == "C":
-            if len(guest_atom_names) >= 2 and guest_atom_names[1] == "O":
-                guest_atoms_per_mol = 3  # CO2
-            else:
-                guest_atoms_per_mol = 5  # CH4
-        elif guest_atom_names[0] == "O":
-            # THF or similar - calculate atoms per guest molecule
-            # guest_atom_names contains all guest atoms, need to divide by number of molecules
-            if original_guest_nmolecules > 0:
-                guest_atoms_per_mol = len(guest_atom_names) // original_guest_nmolecules
-            else:
-                # Fallback: THF typically has 13 atoms
-                guest_atoms_per_mol = 13
-        else:
-            guest_atoms_per_mol = 1
-        
+
         # FIX: Guests should be in ICE region, NOT in water cavity!
         # Tile guests in full box (to be with ICE), then remove ones inside cavity
         # Use full box dimensions (same as ice tiling)
         box_guest_dims = box_dims
-        
-        # FIX: Use filter_molecules=False for guests because GenIce2 outputs complete molecules
-        # already positioned in cage locations. Filtering removes guests that span PBC boundaries.
-        tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
-            raw_guest_positions,
-            guest_cell_dims,
-            box_guest_dims,
-            atoms_per_molecule=guest_atoms_per_mol,
-            cell_matrix=cell_matrix,
-            filter_molecules=False  # Don't filter guests - they're already complete molecules
-        )
-        
-        # Remove guests inside cavity (keep ONLY guests in ice region, outside cavity)
-        if len(tilable_guest_positions) > 0 and config.pocket_diameter > 0:
-            # Find guest O atoms (first atom of each guest molecule)
-            if guest_atoms_per_mol > 0:
-                guest_o_idx = np.arange(0, len(tilable_guest_positions), guest_atoms_per_mol)
-                guest_o_positions = tilable_guest_positions[guest_o_idx]
-                
-                # Calculate distances from center — shape-aware criterion
+
+        # Phase 45-14: MIXED hydrate (guest_type_counts has >1 entry). tile_structure
+        # validates len(positions) % atoms_per_molecule == 0 and does molecule-level
+        # PBC wrapping — both assume a SINGLE uniform atoms-per-molecule. CH4 (5) +
+        # THF (13) = 184 atoms is divisible by neither, so a single tile_structure
+        # call would raise ValueError. Fix: separate by type, tile each separately,
+        # then remove per-type molecules inside the cavity and concatenate.
+        is_mixed = (guest_atom_counts is not None and len(guest_atom_counts) > 1)
+
+        if is_mixed:
+            separated = separate_guests_by_type(
+                raw_guest_positions, guest_atom_names,
+                guest_atom_counts, _guest_descriptors,
+            )
+            all_kept_parts = []
+            all_kept_names = []
+            tiled_guest_nmolecules = 0
+
+            for info in separated:
+                apm = info["atoms_per_mol"]
+                pat = info["atom_names_pattern"]
+                src_pos = info["positions"]
+
+                # FIX: Use filter_molecules=False — GenIce2 outputs complete molecules
+                # already positioned in cage locations.
+                type_pos, type_nmols = tile_structure(
+                    src_pos, guest_cell_dims, box_guest_dims,
+                    atoms_per_molecule=apm, cell_matrix=cell_matrix,
+                    filter_molecules=False,
+                )
+                if len(type_pos) == 0:
+                    continue
+
+                # Remove guests inside cavity (keep ONLY guests in ice region).
+                # Guest O atoms: every apm-th atom (first atom of each molecule).
+                guest_o_idx = np.arange(0, len(type_pos), apm)
+                guest_o_positions = type_pos[guest_o_idx]
+
                 if config.pocket_shape == "sphere":
-                    # Spherical cavity: Euclidean distance from center
                     distances = np.linalg.norm(guest_o_positions - center, axis=1)
                     outside_mask = distances >= radius
                 elif config.pocket_shape == "cubic":
-                    # Cubic cavity: max of |dx|, |dy|, |dz| from center
-                    # Guest is inside cubic cavity if ALL |dx|, |dy|, |dz| < radius
-                    # Keep guests OUTSIDE cubic cavity (at least one |d| >= radius)
                     dx = np.abs(guest_o_positions[:, 0] - center[0])
                     dy = np.abs(guest_o_positions[:, 1] - center[1])
                     dz = np.abs(guest_o_positions[:, 2] - center[2])
                     outside_mask = ~((dx < radius) & (dy < radius) & (dz < radius))
                 else:
-                    # Unknown shape should have been caught earlier, but handle defensively
                     distances = np.linalg.norm(guest_o_positions - center, axis=1)
                     outside_mask = distances >= radius
-                
+
                 if not np.any(outside_mask):
-                    # No guests outside cavity - tile more aggressively
-                    tilable_guest_positions = None
-                    tiled_guest_nmolecules = 0
+                    continue
+
+                keep_mols = np.where(outside_mask)[0]
+                for mol_idx in keep_mols:
+                    start = mol_idx * apm
+                    end = start + apm
+                    if end <= len(type_pos):
+                        all_kept_parts.append(type_pos[start:end])
+                kept_nmols = len(keep_mols)
+                all_kept_names.extend(pat * kept_nmols)
+                tiled_guest_nmolecules += kept_nmols
+
+            if all_kept_parts:
+                tilable_guest_positions = np.vstack(all_kept_parts)
+            else:
+                tilable_guest_positions = None
+                tiled_guest_nmolecules = 0
+            processed_guest_atom_names = all_kept_names
+        else:
+            # Single guest type: existing behavior (unchanged for regression safety).
+            # Determine atoms per GUEST molecule (not water framework)
+            # NEW (44.1): prefer the explicit guest_atom_count threaded from candidate
+            # metadata (44.1-02) for custom guests whose first atom is not Me/C/O
+            # (e.g. ethanol starts with "H" -> heuristic below defaults to 1, which
+            # fragments multi-atom guests and miscounts molecules). Falls back to the
+            # first-atom heuristic for built-in guests. Byte-identical for ch4 (5)
+            # and thf (13) since the metadata carries the same values the heuristic
+            # would produce.
+            if _guest_atom_count is not None:
+                guest_atoms_per_mol = _guest_atom_count
+            elif guest_atom_names[0] == "Me":
+                guest_atoms_per_mol = 1
+            elif guest_atom_names[0] == "C":
+                if len(guest_atom_names) >= 2 and guest_atom_names[1] == "O":
+                    guest_atoms_per_mol = 3  # CO2
                 else:
-                    # Filter to keep only outside-cavity guests
-                    # For each kept molecule, keep all its atoms
-                    keep_mols = np.where(outside_mask)[0]
-                    new_positions = []
-                    for mol_idx in keep_mols:
-                        start = mol_idx * guest_atoms_per_mol
-                        end = start + guest_atoms_per_mol
-                        if end <= len(tilable_guest_positions):
-                            new_positions.append(tilable_guest_positions[start:end])
-                    
-                    if new_positions:
-                        tilable_guest_positions = np.vstack(new_positions)
-                        tiled_guest_nmolecules = len(keep_mols)
+                    guest_atoms_per_mol = 5  # CH4
+            elif guest_atom_names[0] == "O":
+                # THF or similar - calculate atoms per guest molecule
+                # guest_atom_names contains all guest atoms, need to divide by number of molecules
+                if original_guest_nmolecules > 0:
+                    guest_atoms_per_mol = len(guest_atom_names) // original_guest_nmolecules
+                else:
+                    # Fallback: THF typically has 13 atoms
+                    guest_atoms_per_mol = 13
+            else:
+                guest_atoms_per_mol = 1
+
+            # FIX: Use filter_molecules=False for guests because GenIce2 outputs complete molecules
+            # already positioned in cage locations. Filtering removes guests that span PBC boundaries.
+            tilable_guest_positions, tiled_guest_nmolecules = tile_structure(
+                raw_guest_positions,
+                guest_cell_dims,
+                box_guest_dims,
+                atoms_per_molecule=guest_atoms_per_mol,
+                cell_matrix=cell_matrix,
+                filter_molecules=False  # Don't filter guests - they're already complete molecules
+            )
+
+            # Remove guests inside cavity (keep ONLY guests in ice region, outside cavity)
+            if len(tilable_guest_positions) > 0 and config.pocket_diameter > 0:
+                # Find guest O atoms (first atom of each guest molecule)
+                if guest_atoms_per_mol > 0:
+                    guest_o_idx = np.arange(0, len(tilable_guest_positions), guest_atoms_per_mol)
+                    guest_o_positions = tilable_guest_positions[guest_o_idx]
+
+                    # Calculate distances from center — shape-aware criterion
+                    if config.pocket_shape == "sphere":
+                        # Spherical cavity: Euclidean distance from center
+                        distances = np.linalg.norm(guest_o_positions - center, axis=1)
+                        outside_mask = distances >= radius
+                    elif config.pocket_shape == "cubic":
+                        # Cubic cavity: max of |dx|, |dy|, |dz| from center
+                        # Guest is inside cubic cavity if ALL |dx|, |dy|, |dz| < radius
+                        # Keep guests OUTSIDE cubic cavity (at least one |d| >= radius)
+                        dx = np.abs(guest_o_positions[:, 0] - center[0])
+                        dy = np.abs(guest_o_positions[:, 1] - center[1])
+                        dz = np.abs(guest_o_positions[:, 2] - center[2])
+                        outside_mask = ~((dx < radius) & (dy < radius) & (dz < radius))
                     else:
+                        # Unknown shape should have been caught earlier, but handle defensively
+                        distances = np.linalg.norm(guest_o_positions - center, axis=1)
+                        outside_mask = distances >= radius
+
+                    if not np.any(outside_mask):
+                        # No guests outside cavity - tile more aggressively
                         tilable_guest_positions = None
                         tiled_guest_nmolecules = 0
-        
+                    else:
+                        # Filter to keep only outside-cavity guests
+                        # For each kept molecule, keep all its atoms
+                        keep_mols = np.where(outside_mask)[0]
+                        new_positions = []
+                        for mol_idx in keep_mols:
+                            start = mol_idx * guest_atoms_per_mol
+                            end = start + guest_atoms_per_mol
+                            if end <= len(tilable_guest_positions):
+                                new_positions.append(tilable_guest_positions[start:end])
+
+                        if new_positions:
+                            tilable_guest_positions = np.vstack(new_positions)
+                            tiled_guest_nmolecules = len(keep_mols)
+                        else:
+                            tilable_guest_positions = None
+                            tiled_guest_nmolecules = 0
+
+            # FIX: Tile the guest atom names to match the tiled molecule count
+            if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
+                tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
+                processed_guest_atom_names = guest_atom_names * tiling_factor
+                remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
+                if remainder > 0:
+                    atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
+                    if atoms_per_guest > 0:
+                        processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
+            else:
+                processed_guest_atom_names = []
+
         if tilable_guest_positions is not None and len(tilable_guest_positions) > 0:
             processed_guest_positions = tilable_guest_positions
         else:
             processed_guest_positions = None
-        
-        # FIX: Tile the guest atom names to match the tiled molecule count
-        if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
-            tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
-            processed_guest_atom_names = guest_atom_names * tiling_factor
-            remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
-            if remainder > 0:
-                atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
-                if atoms_per_guest > 0:
-                    processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
-        else:
-            processed_guest_atom_names = []
-        
+
         guest_nmolecules = tiled_guest_nmolecules
 
     # === GUEST-WATER OVERLAP FIX ===
