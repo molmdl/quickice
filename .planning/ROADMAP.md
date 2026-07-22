@@ -332,12 +332,14 @@ Last remaining scancode item (FRAG-03 + TD-01 from `.planning/scancode-fixes/PLA
 
 #### Phase 48.2: Group and cleanup tests: regroup scancode/e2e files, dedup fixtures, drop legacy names (INSERTED)
 
-**Goal:** [Urgent work - to be planned] — regroup the 137-file test suite into feature-organized subdirectories, dedup fixtures and overlapping helper logic, fix naming/casing inconsistencies, and drop legacy/migration scaffolding now that the underlying work has shipped
+**Goal:** The SAME ~1854 tests collect and pass after reorganization, with `tests/` root decluttered (17 scancode + 3 CLI files moved into feature subdirectories), legacy `phase_48_1_` scaffolding naming dropped, and the `sh`→`sH` casing outlier fixed — no production code changes, no new tests, no conftest edits
 **Depends on:** Phase 48.1 (test cleanup includes post-refactor hygiene — dropping the `phase_48_1_` prefix requires 48.1 to be complete; the scancode regression tests are organized post-scancode-work)
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 48.2 to break down)
+- [ ] 48.2-01-PLAN.md — Move 17 scancode tests → tests/scancode/ (fix 13 location-sensitive `__file__` paths across 7 files)
+- [ ] 48.2-02-PLAN.md — Move 3 root CLI tests → tests/test_cli/ (fix test_cli_pipeline.py e2e_export_helpers + ETOH data paths)
+- [ ] 48.2-03-PLAN.md — Drop phase_48_1_ prefix, fix sH casing, relocate 2 helper tests to test_output/ (atomic capture-baseline import update) + phase-level slow full-suite gate
 
 **Details:**
 Test-suite hygiene phase discovered mid-milestone after Phase 48.1 (gromacs_writer split) completion. The test suite grew to **1847 tests across 137 files** (116 root + 4 in `tests/test_cli/` + 17 in `tests/test_output/`) through v4.7 + scancode + phase-48.1 work, with significant root-level clutter and several concrete cleanup opportunities verified by codebase exploration:
