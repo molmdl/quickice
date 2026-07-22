@@ -18,7 +18,7 @@ Reference inline code locations (post-48.1-02 gromacs_writer.py):
   - write_solute_gro_file:       lines 2398-2827 (sol-ice, sol-water, guest,
                                                    custom, solute, box)
 
-The 14 byte-equivalence tests in test_phase_48_1_gro_top_byte_equivalence.py
+The 14 byte-equivalence tests in test_gro_top_byte_equivalence.py
 gate the END-TO-END writer output. These unit tests gate the HELPER output in
 isolation — together they form a two-layer safety net so that when plans
 48.1-04/05/06 swap inline code for helper calls, any divergence is caught

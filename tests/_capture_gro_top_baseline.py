@@ -3,7 +3,7 @@
 This is a standalone script (NOT a test_*.py file — pytest does not collect
 it) that captures the authoritative SHA256 baselines for all 7 GROMACS
 export paths from the CURRENT (pre-refactor) source. It mirrors the
-synthetic fixtures in ``tests/test_phase_48_1_gro_top_byte_equivalence.py``
+synthetic fixtures in ``tests/test_gro_top_byte_equivalence.py``
 (deterministic, no GenIce2) and writes:
 
 - ``.planning/phases/48.1-.../baseline_shas.json`` — the authoritative
@@ -14,13 +14,13 @@ synthetic fixtures in ``tests/test_phase_48_1_gro_top_byte_equivalence.py``
 
 Usage::
 
-    python -m tests._phase_48_1_capture_baseline
+    python -m tests._capture_gro_top_baseline
     # or
-    python tests/_phase_48_1_capture_baseline.py
+    python tests/_capture_gro_top_baseline.py
 
 Run ONCE to capture the pre-refactor baseline (Task 2/GREEN of plan
 48.1-01). The byte-equivalence tests in
-``tests/test_phase_48_1_gro_top_byte_equivalence.py`` will then PASS
+``tests/test_gro_top_byte_equivalence.py`` will then PASS
 against this baseline. Subsequent waves (48.1-02 .. 48.1-14) re-run the
 tests to verify byte-identical output after each refactor step.
 
@@ -73,7 +73,7 @@ from e2e_export_helpers import ETOH_GRO, ETOH_ITP  # noqa: E402
 # encapsulate the exact writer calls + ITP staging that the byte-equivalence
 # tests verify. Also import the synthetic-position helpers so this script
 # builds the SAME synthetic fixtures the test fixtures build.
-from test_phase_48_1_gro_top_byte_equivalence import (  # noqa: E402
+from test_gro_top_byte_equivalence import (  # noqa: E402
     BASELINE_DIR,
     BASELINE_SHAS_PATH,
     _file_sha256,
