@@ -11,7 +11,7 @@
 - ✅ **v3.5 Interface Enhancements** - Phases 22-27 (shipped 2026-04-13)
 - ✅ **v4.0 Molecule Insertion** - Phases 28-31.2 (shipped 2026-05-01)
 - ✅ **v4.5 Solute & Custom Molecule** - Phases 32-37.2 (shipped 2026-06-27)
-- 🚧 **v4.7 Extended Hydrate Generation** - Phases 38-48 (in progress)
+- ✅ **v4.7 Extended Hydrate Generation** - Phases 38-48.2 (shipped 2026-07-22)
 
 ## Overview
 
@@ -19,7 +19,7 @@ v4.7 extends QuickIce's hydrate generation from 3 lattices with 2 guest types (s
 
 ## Phases
 
-### 🚧 v4.7 Extended Hydrate Generation (In Progress)
+### ✅ v4.7 Extended Hydrate Generation (Complete — shipped 2026-07-22)
 
 **Milestone Goal:** Extend hydrate generation with filled ices, custom guest molecules via GenIce2 bridge, mixed cage occupancy, and depol mode — with metadata-driven pipeline and valid GROMACS export
 

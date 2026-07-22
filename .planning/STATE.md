@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Generate ready-to-use initial models and topologies for GROMACS for the simulation of ice, hydrates, solutes, and custom molecules in water
 
-**Current focus:** v4.7 Extended Hydrate Generation — Phases 38-47 ALL COMPLETE + Phase 46 verified-by-code. Phase 47 (Testing & Validation) COMPLETE 1/1 plan (47-05 closes TEST-08 — CLI hydrate-branch grompp rc=0 for c2te@3x3x3 + ice1hte@4x4x4). 53/61 requirements complete. Remaining: 48-01 (external docs) + 48-02 (in-app help restructure) only. CLI-02 deferred by design (GUI-only for v4.7).
+**Current focus:** v4.7 Extended Hydrate Generation — MILESTONE COMPLETE (all phases 38-48.2 shipped 2026-07-22). Phase 48.2 (test-suite hygiene) COMPLETE 3/3 plans: 48.2-01 (17 scancode → tests/scancode/), 48.2-02 (3 CLI → tests/test_cli/), 48.2-03 (drop phase_48_1_ prefix + sH casing + 2 helpers → tests/test_output/). 1854 tests collect unchanged across the whole phase; 23 files removed from tests/ root. Phase goal VERIFIED 19/19 must-haves passed (VERIFICATION.md). CLI-02 deferred by design (GUI-only for v4.7). Deferred 48.2 follow-ups: full e2e grouping (42 files), fixture dedup + delete dead conftest fixtures, moving committed baselines out of .planning/.
 
 **Tech stack:**
 - Python 3.14, PySide6 6.10.2, VTK 9.5.2
