@@ -330,10 +330,53 @@ Last remaining scancode item (FRAG-03 + TD-01 from `.planning/scancode-fixes/PLA
 - comb-rule=2 preserved in all `.top` files (AGENTS.md)
 - All inserters return NEW structure objects (V-17 fix preserved)
 
+#### Phase 48.2: Group and cleanup tests: regroup scancode/e2e files, dedup fixtures, drop legacy names (INSERTED)
+
+**Goal:** [Urgent work - to be planned] — regroup the 137-file test suite into feature-organized subdirectories, dedup fixtures and overlapping helper logic, fix naming/casing inconsistencies, and drop legacy/migration scaffolding now that the underlying work has shipped
+**Depends on:** Phase 48.1 (test cleanup includes post-refactor hygiene — dropping the `phase_48_1_` prefix requires 48.1 to be complete; the scancode regression tests are organized post-scancode-work)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 48.2 to break down)
+
+**Details:**
+Test-suite hygiene phase discovered mid-milestone after Phase 48.1 (gromacs_writer split) completion. The test suite grew to **1847 tests across 137 files** (116 root + 4 in `tests/test_cli/` + 17 in `tests/test_output/`) through v4.7 + scancode + phase-48.1 work, with significant root-level clutter and several concrete cleanup opportunities verified by codebase exploration:
+
+**High-value, low-risk regrouping:**
+1. Move 17 `test_scancode_bugs_*.py` → `tests/scancode/` subdirectory (declutters root; matches `test_cli/` + `test_output/` precedent; self-contained regression guards with zero semantic risk).
+2. Move 3 root CLI test files into `tests/test_cli/` (`test_cli_integration.py`, `test_cli_pipeline.py`, `test_integration_v35.py` — all already use the `run_quickice` conftest helper).
+3. Optionally group the 42 `test_e2e_*.py` files by feature into `tests/e2e/{custom_guest,lattice,mixed,sh,triclinic,export}/` subdirectories.
+
+**Deduplication & dead-code removal:**
+4. Delete dead conftest fixtures `hydrate_sI_thf_candidate` + `hydrate_sII_ch4_candidate` (`tests/conftest.py:86,101` — zero usages).
+5. Dedup `_hydrate_*_candidate()` functions: defined in BOTH `tests/conftest.py` (fixtures) AND `tests/e2e_export_helpers.py:307-335` (plain functions); 7+ test files import the FUNCTIONS. Plus a third copy in `test_e2e_workflow_chains.py:115,129`. Pick one source of truth.
+
+**Naming/casing fixes:**
+6. Rename the two confused ion scancode files: `test_scancode_bugs_ion.py` → `test_scancode_bugs_ion_tree_rebuild.py` (TREE-01/PERF-01); `test_scancode_bugs_ion_inserter.py` → `test_scancode_bugs_ion_alternation.py` (CRIT-02/SUSP-01). They have identical docstrings today.
+7. Fix `sH`/`sh` casing inconsistency: `test_e2e_sH_*.py` (uppercase) vs `test_e2e_sh_cage_occupancy.py` (lowercase).
+8. Relabel misleading "E2E" docstrings in `tests/test_output/test_gromacs_export_*.py` (they're writer-level integration tests with synthetic fixtures, not full-pipeline e2e).
+
+**Post-48.1 refactor hygiene:**
+9. Drop the `phase_48_1_` prefix from the 3 test files (`test_phase_48_1_gro_format_helpers.py`, `test_phase_48_1_gro_top_byte_equivalence.py`, `test_phase_48_1_top_defaults_helper.py`) and move to `tests/test_output/` alongside other writer tests.
+10. Move `_phase_48_1_capture_baseline.py` (a one-shot migration script with `main()`, not collected by pytest) to `scripts/` or delete (its baselines are committed to `.planning/phases/48.1-.../baseline_shas.json`).
+
+**Constraints to preserve (DO NOT break):**
+- `@gmx_skipif` markers (~60 tests across 23 files) must stay — gating on GROMACS availability.
+- Deprecated-alias tests are intentional backward-compat guards — KEEP: `test_single_dict_deprecated_warns` (Phase 42-03), `--guest` legacy-alias guards in `test_cli/test_mixed_cage_cli.py`, `test_deprecated_flags_mentioned` in `test_help_dialog.py`.
+- CLI/GUI e2e sibling pairs stay split (6 pairs: `_cli` / `_gui` siblings test distinct code paths `quickice.cli` vs `quickice.gui` — separate failure isolation; do NOT merge via parametrization).
+- Collection safety: 1847 tests / 0 collection errors today — preserve after every move/rename.
+- `e2e_export_helpers.py` is imported by relative path (`from e2e_export_helpers import ...`) — moving e2e files into subdirs requires either keeping `e2e_export_helpers.py` in `tests/` + adding `tests/` to sys.path, OR moving the helper alongside and updating imports. `_phase_48_1_capture_baseline.py` already manipulates `sys.path` (lines 46-52) — follow that pattern.
+
+**Scope notes:**
+- This is a pure-test-reorganization phase — NO production code changes (zero risk to GROMACS output / physics).
+- The cleanup is post-refactor hygiene: makes most sense after 48.1 lands (the `phase_48_1_` prefix drop in #9 is meaningless before 48.1 completes) and after the scancode work that produced the 17 `test_scancode_bugs_*` files.
+- Small-files consolidation is LOW-VALUE — leave cohesive 1-2 test files (`test_ion_hydrate_fix.py`, `test_solute_ion_molecule_index.py`, etc.) alone unless they logically belong to an existing nearby file.
+- Phase 48.1's PR branch `refactor/frag03-split-gromacs-writer` is separate from this work; this phase is on `main`.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1**
+Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1** → **48.2**
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -350,8 +393,11 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
+| 48.2. Group and cleanup tests (INSERTED) | v4.7 | 0/0 | 🚧 Not started | — |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
+
+**Phase 48.2 (INSERTED, not started):** Test-suite hygiene phase discovered after 48.1 completion — regroup the 137-file / 1847-test suite into feature-organized subdirectories, dedup fixtures and overlapping helper logic, fix naming/casing inconsistencies, and drop post-refactor scaffolding (the `phase_48_1_` prefix, the one-shot `_phase_48_1_capture_baseline.py` migration script). Pure test reorganization — NO production code changes. Not yet planned — run `/gsd-plan-phase 48.2` to break down.
 
 ## Dependency Graph
 
@@ -393,9 +439,17 @@ Phase 47: Testing & Validation  Phase 45: CLI
       ▼
 Phase 48: Documentation
   (14 plans: 8 external docs + 3 in-app help + 1 tooltip + 1 version bump + 1 verification)
+      │
+      ▼
+Phase 48.1 (INSERTED)
+  (split gromacs_writer.py + dedup GRO writers — FRAG-03/TD-01)
+      │
+      ▼
+Phase 48.2 (INSERTED)
+  (group + cleanup tests — post-refactor hygiene)
 ```
 
-*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42).
+*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42). Phase 48.1 (INSERTED) is the gromacs_writer.py split + GRO-writer dedup refactor (FRAG-03/TD-01) — executed after Phase 48 on a PR branch. Phase 48.2 (INSERTED) is test-suite hygiene (regroup scancode/e2e files, dedup fixtures, drop legacy names) — executes after 48.1 since several cleanup items (dropping the `phase_48_1_` prefix, organizing the 17 scancode regression files) are post-refactor hygiene.
 
 ---
 
