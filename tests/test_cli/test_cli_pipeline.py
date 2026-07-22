@@ -24,13 +24,13 @@ import pytest
 from tests.conftest import run_quickice, gmx_skipif
 
 # Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from e2e_export_helpers import run_gmx_grompp, MDP_PATH
 
 # Custom molecule data paths
-ETOH_GRO = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.gro")
-ETOH_ITP = str(Path(__file__).parent.parent / "quickice" / "data" / "custom" / "etoh.itp")
+ETOH_GRO = str(Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom" / "etoh.gro")
+ETOH_ITP = str(Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom" / "etoh.itp")
 
 
 def make_temp_output_dir() -> str:
