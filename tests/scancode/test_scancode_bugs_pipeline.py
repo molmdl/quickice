@@ -116,7 +116,7 @@ class TestCRIT04StrippedAssert:
             [sys.executable, "-O", "-c", code],
             capture_output=True,
             text=True,
-            cwd=str(Path(__file__).resolve().parents[1]),
+            cwd=str(Path(__file__).resolve().parents[2]),
         )
         assert result.returncode == 0, (
             f"subprocess exited {result.returncode}; "

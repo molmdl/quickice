@@ -234,7 +234,7 @@ class TestIonInserterBuildMoleculeIndexRobustness:
         TIP4P-family ice (first atom "OW"). For 3-atom GenIce ice it raises
         ValueError rather than silently miscounting with the 4-atom divisor
         (e.g. 300 atoms -> 75 mols instead of 100); that 3-atom raise is
-        covered by tests/test_scancode_bugs_ion_inserter.py. This test
+        covered by tests/scancode/test_scancode_bugs_ion_alternation.py. This test
         therefore uses a 4-atom TIP4P-family interface (hydrate slab, atom
         names start with "OW") to exercise the PRESERVED 4-atom compute
         fallback path.

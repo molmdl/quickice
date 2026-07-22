@@ -39,7 +39,7 @@ from quickice.structure_generation.types import MoleculeIndex
 # Path to the writer source — used for static regression guards that prevent
 # reintroducing the ad-hoc ``type('obj', (object,), {...})()`` pattern.
 GROMACS_WRITER_PATH = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parents[2]
     / "quickice" / "output" / "gromacs_writer.py"
 )
 
@@ -61,7 +61,7 @@ def _all_output_writer_source() -> str:
     ``tests/test_tip4p_ice_lj_values.py:104-108`` and
     ``tests/test_scancode_bugs_constants.py:86-90``.
     """
-    output_dir = Path(__file__).resolve().parent.parent / "quickice" / "output"
+    output_dir = Path(__file__).resolve().parents[2] / "quickice" / "output"
     return "\n".join(p.read_text() for p in sorted(output_dir.glob("*.py")))
 
 
@@ -287,7 +287,7 @@ from quickice.structure_generation.itp_parser import parse_itp_file
 # Path to canonical custom-molecule test data (used by the wider custom-
 # molecule test suite — non-conflicting atoms: hc/c3/h1/oh/ho).
 CUSTOM_DATA_DIR = (
-    Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
+    Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom"
 )
 ETOH_ITP = CUSTOM_DATA_DIR / "etoh.itp"
 ETOH_GRO = CUSTOM_DATA_DIR / "etoh.gro"

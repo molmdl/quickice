@@ -15,7 +15,7 @@ import pytest
 from pathlib import Path
 
 # Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.output.gromacs_writer import (
     compute_mw_position,

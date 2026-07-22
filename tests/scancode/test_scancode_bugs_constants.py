@@ -33,7 +33,7 @@ import numpy as np
 import pytest
 
 # Make tests/ importable for e2e_export_helpers (conftest import is unreliable).
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tests.conftest import gmx_skipif
 

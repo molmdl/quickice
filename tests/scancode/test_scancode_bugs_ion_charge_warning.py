@@ -39,7 +39,7 @@ class TestITPChargeParsing:
 
     def test_na_single_itp_parses_charge(self):
         """na_single.itp (single Na+ ion) should have charge +0.85."""
-        na_itp = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom" / "test_invalid" / "na_single.itp"
+        na_itp = Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom" / "test_invalid" / "na_single.itp"
         if not na_itp.exists():
             pytest.skip("na_single.itp data file not found")
 
@@ -49,7 +49,7 @@ class TestITPChargeParsing:
 
     def test_ch4_itp_parses_neutral_charge(self):
         """ch4.itp (methane) should have net charge ~0.0."""
-        ch4_itp = Path(__file__).resolve().parent.parent / "quickice" / "data" / "ch4.itp"
+        ch4_itp = Path(__file__).resolve().parents[2] / "quickice" / "data" / "ch4.itp"
         if not ch4_itp.exists():
             pytest.skip("ch4.itp data file not found")
 
@@ -59,7 +59,7 @@ class TestITPChargeParsing:
 
     def test_tip4p_ice_itp_parses_neutral_charge(self):
         """tip4p-ice.itp should have net charge ~0.0."""
-        tip4p_itp = Path(__file__).resolve().parent.parent / "quickice" / "data" / "tip4p-ice.itp"
+        tip4p_itp = Path(__file__).resolve().parents[2] / "quickice" / "data" / "tip4p-ice.itp"
         if not tip4p_itp.exists():
             pytest.skip("tip4p-ice.itp data file not found")
 

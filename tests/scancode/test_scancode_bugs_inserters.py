@@ -33,7 +33,7 @@ from quickice.structure_generation.solute_inserter import SoluteInserter
 
 # ── Source file paths for static analysis ──────────────────────────────────────
 
-_INSERTER_DIR = Path(__file__).parent.parent / "quickice" / "structure_generation"
+_INSERTER_DIR = Path(__file__).resolve().parents[2] / "quickice" / "structure_generation"
 _CUSTOM_INSERTER_SRC = _INSERTER_DIR / "custom_molecule_inserter.py"
 _SOLUTE_INSERTER_SRC = _INSERTER_DIR / "solute_inserter.py"
 
@@ -123,7 +123,7 @@ class TestRNG01:
     @pytest.fixture
     def custom_config(self):
         """Create a CustomMoleculeConfig for testing."""
-        data_dir = Path(__file__).parent.parent / "quickice" / "data" / "custom"
+        data_dir = Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom"
         gro_path = data_dir / "etoh.gro"
         itp_path = data_dir / "etoh.itp"
         return CustomMoleculeConfig(

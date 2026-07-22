@@ -59,7 +59,7 @@ import numpy as np
 import pytest
 
 # Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.output.gromacs_writer import (
     wrap_positions_into_box,
@@ -547,7 +547,7 @@ class TestCRIT01RealSHydrateExport:
 
 
 @pytest.mark.skipif(
-    not (Path(__file__).parent / "em.mdp").exists(),
+    not (Path(__file__).resolve().parent.parent / "em.mdp").exists(),
     reason="em.mdp not found in tests/ — required for gmx grompp dry-run",
 )
 class TestCRIT01GromppDryRun:
