@@ -338,7 +338,7 @@ Last remaining scancode item (FRAG-03 + TD-01 from `.planning/scancode-fixes/PLA
 
 Plans:
 - [x] 48.2-01-PLAN.md — Move 17 scancode tests → tests/scancode/ (fix 13 location-sensitive `__file__` paths across 7 files) ✓ 2026-07-22 commit f900fda7
-- [ ] 48.2-02-PLAN.md — Move 3 root CLI tests → tests/test_cli/ (fix test_cli_pipeline.py e2e_export_helpers + ETOH data paths)
+- [x] 48.2-02-PLAN.md — Move 3 root CLI tests → tests/test_cli/ (fix test_cli_pipeline.py e2e_export_helpers + ETOH data paths) ✓ 2026-07-22 commit f30ee1cb
 - [ ] 48.2-03-PLAN.md — Drop phase_48_1_ prefix, fix sH casing, relocate 2 helper tests to test_output/ (atomic capture-baseline import update) + phase-level slow full-suite gate
 
 **Details:**
@@ -395,7 +395,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 47. Testing & Validation | v4.7 | 1/1 (7 of 8 test reqs done in 39-05/40/41/42 + 47-05 closes TEST-08) | ✓ Complete | 2026-07-12 |
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
-| 48.2. Group and cleanup tests (INSERTED) | v4.7 | 1/3 | 🚧 In progress | 2026-07-22 |
+| 48.2. Group and cleanup tests (INSERTED) | v4.7 | 2/3 | 🚧 In progress | 2026-07-22 |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
