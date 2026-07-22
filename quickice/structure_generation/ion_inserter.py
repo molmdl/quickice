@@ -22,6 +22,7 @@ from quickice.structure_generation.types import (
     WATER_VOLUME_NM3,
     detect_atoms_per_molecule,
 )
+from quickice.utils.molecule_utils import iter_guest_molecules
 
 
 # Ion parameters from Madrid2019_085 (Zeron et al., J. Chem. Phys. 2019)
@@ -172,17 +173,58 @@ class IonInserter:
                 current_idx += water_atoms_per_mol
 
         # Add guest molecules (comes AFTER water in positions array)
-        # Use guest_atom_count to determine guest region size
+        # Use guest_atom_count to determine guest region size.
+        #
+        # Phase 45-15: MIXED hydrates (e.g. CH4 in small cages + THF in large
+        # cages) have DIFFERENT atoms-per-molecule (CH4=5, THF=13). The old
+        # ``guest_atom_count // guest_mols`` floors to the AVERAGE (6624//864=7)
+        # and assigns that single count to EVERY guest entry — corrupting
+        # every per-molecule slice (THF atoms under a CH4_H resname, garbage
+        # GUE/H2_H resnames from misidentification on wrong-sized slices) and
+        # silently dropping the remainder (864*7=6048 < 6624). This is the
+        # root cause of THF being mangled in the ion->export flow.
+        #
+        # Fix: walk the guest region molecule-by-molecule via
+        # ``iter_guest_molecules`` (identify_guest_type + count, descriptor-
+        # driven for custom guests with a heuristic fallback for built-in
+        # ch4/thf) and build a per-molecule index with the CORRECT count.
+        # Fall back to the uniform divisor ONLY when the walk cannot exactly
+        # consume the guest region or produce the expected molecule count
+        # (guards against heuristic miscounts on unsupported guests) — this
+        # keeps single-guest behavior byte-identical (no regression: for
+        # all-CH4 the walk yields N entries of 5 summing to guest_atom_count,
+        # exactly matching the uniform ``guest_atom_count // guest_mols`` = 5).
         if guest_mols > 0 and guest_atom_count > 0:
-            # Calculate atoms per guest molecule from actual counts
-            guest_atoms_per_mol = guest_atom_count // guest_mols if guest_mols > 0 else 5
-            for i in range(guest_mols):
-                mol_index.append(MoleculeIndex(
-                    start_idx=current_idx,
-                    count=guest_atoms_per_mol,
-                    mol_type="guest"
-                ))
-                current_idx += guest_atoms_per_mol
+            atom_names = getattr(structure, 'atom_names', None)
+            descriptors = getattr(structure, 'guest_descriptors', None) or []
+            gac = getattr(structure, 'guest_atom_counts', None) or {}
+            guest_entries: list[MoleculeIndex] = []
+            if atom_names:
+                for (ms, mc, _mt) in iter_guest_molecules(
+                    atom_names, current_idx, guest_atom_count, descriptors, gac
+                ):
+                    guest_entries.append(MoleculeIndex(
+                        start_idx=ms, count=mc, mol_type="guest"
+                    ))
+            if (guest_entries
+                    and len(guest_entries) == guest_mols
+                    and sum(m.count for m in guest_entries) == guest_atom_count):
+                mol_index.extend(guest_entries)
+                current_idx += guest_atom_count
+            else:
+                # Fallback: single uniform atoms-per-molecule (original
+                # behavior). Reached for single-guest without descriptors when
+                # the heuristic miscounts, or for unsupported guest patterns.
+                guest_atoms_per_mol = (
+                    guest_atom_count // guest_mols if guest_mols > 0 else 5
+                )
+                for i in range(guest_mols):
+                    mol_index.append(MoleculeIndex(
+                        start_idx=current_idx,
+                        count=guest_atoms_per_mol,
+                        mol_type="guest"
+                    ))
+                    current_idx += guest_atoms_per_mol
 
         return mol_index
     

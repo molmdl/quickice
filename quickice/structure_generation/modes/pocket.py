@@ -753,5 +753,10 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
         mode="pocket",
         report=report,
         guest_atom_count=guest_atom_count,
-        guest_nmolecules=guest_nmolecules
+        guest_nmolecules=guest_nmolecules,
+        # Phase 45-15: propagate TYPE-LEVEL (tiling-invariant) guest metadata
+        # so downstream ion/export can walk mixed-guest (CH4+THF) regions
+        # per-molecule. See slab.py for the rationale.
+        guest_descriptors=candidate.metadata.get("guest_descriptors", []),
+        guest_atom_counts=candidate.metadata.get("guest_atom_counts", {}),
     )

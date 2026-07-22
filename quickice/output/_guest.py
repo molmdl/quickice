@@ -279,3 +279,49 @@ def detect_guest_type_from_atoms(atom_names: list[str]) -> str | None:
         return "ch4"
     
     return None
+
+
+def detect_guest_type_runs(
+    molecule_index,
+    atom_names,
+):
+    """Detect guest types across a structure's molecule_index, run-length encoded.
+
+    Walks the ``mol_type == "guest"`` entries of ``molecule_index`` in order,
+    detects each molecule's type from its atom-name slice
+    (``detect_guest_type_from_atoms``), and returns:
+
+    - ``runs``: list of ``(guest_type, count)`` run-length-encoded in molecule
+      order. GROMACS ``[ molecules ]`` requires consecutive same-type
+      molecules, so a mixed layout like ``[CH4][THF][CH4][THF]`` produces 4
+      runs — NOT a single grouped total. This is what the writer must emit.
+    - ``distinct_types``: ordered list of distinct detected guest types
+      (first-appearance order, deduped) for ``#include`` directives (each
+      type's ``{type}_hydrate.itp`` is included once).
+
+    Reliable for built-in ch4/thf because each guest molecule_index entry
+    carries the CORRECT per-molecule count (post Phase 45-15 ion-inserter
+    fix), so the slice passed to ``detect_guest_type_from_atoms`` is exactly
+    one molecule — no neighbor contamination. ``guest_type`` may be ``None``
+    for an unidentifiable molecule (the writer falls back to a placeholder
+    residue name for that run).
+
+    Returns ``([], [])`` when there are no guest entries or ``atom_names`` is
+    ``None``.
+    """
+    if not molecule_index or atom_names is None:
+        return [], []
+    runs: list[tuple] = []  # (guest_type, count)
+    distinct: list = []
+    for mol in molecule_index:
+        if getattr(mol, "mol_type", None) != "guest":
+            continue
+        names = atom_names[mol.start_idx:mol.start_idx + mol.count]
+        gtype = detect_guest_type_from_atoms(names)
+        if runs and runs[-1][0] == gtype:
+            runs[-1] = (gtype, runs[-1][1] + 1)
+        else:
+            runs.append((gtype, 1))
+        if gtype not in distinct:
+            distinct.append(gtype)
+    return runs, distinct

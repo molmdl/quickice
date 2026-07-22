@@ -409,6 +409,18 @@ class InterfaceStructure:
     guest_atom_count: int = 0
     molecule_index: list = field(default_factory=list)
     guest_nmolecules: int = 0
+    # Per-type guest metadata (Phase 45-15): TYPE-LEVEL (tiling-invariant)
+    # descriptors + per-type atom counts, populated by the interface modes
+    # from ``candidate.metadata``. Carried on the InterfaceStructure so the
+    # downstream ion inserter / export writers can walk MIXED-guest regions
+    # (e.g. CH4=5 + THF=13 atoms/molecule) per-molecule instead of assuming a
+    # single uniform atoms-per-molecule — the bug behind THF being mangled in
+    # the ion->export flow (``guest_atom_count // guest_mols`` floors to 7 for
+    # a 5/13 mixture, corrupting every guest slice and dropping the remainder).
+    # Empty defaults keep backward compatibility for structures built without
+    # them (single-guest / pre-45-15 paths).
+    guest_descriptors: list = field(default_factory=list)
+    guest_atom_counts: dict = field(default_factory=dict)
     # Solute attributes (populated when solute insertion targets this interface)
     solute_type: str = ""
     solute_positions: np.ndarray | None = None

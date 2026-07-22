@@ -54,7 +54,7 @@ from quickice.output._itp import (
 # Re-export guest helpers
 from quickice.output._guest import (
     reorder_guest_atoms, get_guest_residue_name, get_hydrate_guest_residue_name,
-    _get_molecule_atoms, detect_guest_type_from_atoms,
+    _get_molecule_atoms, detect_guest_type_from_atoms, detect_guest_type_runs,
 )
 # Re-export TIP4P helpers
 from quickice.output._tip4p import get_tip4p_itp_path, compute_mw_position
@@ -161,7 +161,7 @@ __all__ = [
     "validate_gro_residue_name",
     # Guest helpers
     "reorder_guest_atoms", "get_guest_residue_name", "get_hydrate_guest_residue_name",
-    "_get_molecule_atoms", "detect_guest_type_from_atoms",
+    "_get_molecule_atoms", "detect_guest_type_from_atoms", "detect_guest_type_runs",
     # TIP4P helpers
     "get_tip4p_itp_path", "compute_mw_position",
     # TOP [defaults] block helper (Wave 2e — plan 48.1-07)

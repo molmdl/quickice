@@ -239,6 +239,58 @@ def count_guest_atoms(
     return 1
 
 
+def iter_guest_molecules(
+    atom_names: list[str],
+    start: int,
+    total_atoms: int,
+    guest_descriptors: list | None = None,
+    guest_atom_counts: dict[str, int] | None = None,
+):
+    """Walk a guest region molecule-by-molecule, yielding ``(start, count, type)``.
+
+    For MIXED-guest hydrates (e.g. CH4 in small cages + THF in large cages)
+    the guests have DIFFERENT atoms-per-molecule (CH4=5, THF=13). A single
+    uniform divisor ``total_atoms // n_mols`` floors to the average
+    (``6624 // 864 = 7``), which corrupts every per-molecule slice and
+    silently drops the remainder (``864 * 7 = 6048`` vs ``6624`` actual) —
+    the root cause of THF being mangled in the ion->export flow. This walker
+    identifies each molecule's type at its boundary (via
+    :func:`identify_guest_type`, descriptor-driven for custom guests with a
+    heuristic fallback for the built-in ch4/thf) and resolves its atom count,
+    so callers build a correct per-molecule index.
+
+    Resolution order for the count:
+        1. ``guest_atom_counts[mol_type]`` when the type was identified and the
+           per-type dict carries it (handles built-in AND custom uniformly).
+        2. ``count_guest_atoms(atom_names, i, guest_type=mol_type)`` when the
+           type was identified but no dict was supplied (explicit 5/13 for
+           ch4/thf).
+        3. ``count_guest_atoms(atom_names, i)`` heuristic when the type could
+           not be identified.
+
+    Yields:
+        ``(mol_start, mol_count, mol_type)`` tuples. ``mol_type`` may be
+        ``None`` if the heuristic could not identify the molecule.
+
+    Stops at ``start + total_atoms``. A non-positive count is coerced to 1
+    (last-resort advance) to guarantee termination on unidentifiable atoms.
+    """
+    end = start + total_atoms
+    i = start
+    while i < end:
+        mol_type = identify_guest_type(atom_names, i, guest_descriptors)
+        if mol_type is not None and guest_atom_counts and mol_type in guest_atom_counts:
+            count = guest_atom_counts[mol_type]
+        elif mol_type is not None:
+            count = count_guest_atoms(atom_names, i, guest_type=mol_type)
+        else:
+            count = count_guest_atoms(atom_names, i)
+        if count <= 0:
+            count = 1  # last-resort advance; prevents infinite loop
+        yield (i, count, mol_type)
+        i += count
+
+
 def separate_guests_by_type(
     guest_positions: "np.ndarray",
     guest_atom_names: list[str],

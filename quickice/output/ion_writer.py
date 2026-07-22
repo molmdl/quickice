@@ -44,6 +44,7 @@ from quickice.output._shared import (
     compute_mw_position,
     reorder_guest_atoms,
     detect_guest_type_from_atoms,
+    detect_guest_type_runs,
     get_hydrate_guest_residue_name,
     _write_top_defaults,
     _write_atomtypes_block,
@@ -550,6 +551,16 @@ def write_ion_top_file(
     # Detect guest type from atom names (for including correct .itp and residue name)
     guest_type = None
     guest_res_name = "GUE"  # Fallback
+    # Phase 45-15: built-in mixed hydrates (CH4 in small + THF in large cages)
+    # carry MULTIPLE guest types. ``guest_runs`` is the run-length-encoded
+    # list of ``(guest_type, count)`` in molecule order (GROMACS [molecules]
+    # requires consecutive same-type runs — a [CH4][THF][CH4][THF] layout emits
+    # 4 lines, not a single grouped total). ``distinct_guest_types`` is the
+    # ordered deduped list for #include directives (each type's
+    # ``{type}_hydrate.itp`` included once). Empty for the custom-guest path
+    # (which uses a single ``guest_res_name`` from custom_guest_info).
+    guest_runs: list[tuple] = []
+    distinct_guest_types: list = []
     # Custom-guest branch is opt-in (mirror write_interface_top_file:1536-1603,
     # plans 41-05 / 44.1-09 / 44.1-11 / 44.1-13). When active, the residue name
     # comes from custom_guest_info (e.g. "MOL_H") and the custom ITP is
@@ -583,17 +594,20 @@ def write_ion_top_file(
             ci_mol = next(iter(custom_by_moltype.values()))
         guest_res_name = ci_mol["residue_name"]
     elif guest_count > 0 and ion_structure.guest_atom_count > 0:
-        # Built-in path: detect guest type from atom names of first guest
-        # Get atom names for the first guest molecule to detect type
-        # Find the first guest molecule in molecule_index
-        for mol in ion_structure.molecule_index:
-            if mol.mol_type == "guest":
-                start = mol.start_idx
-                mol_atom_names = ion_structure.atom_names[start:start + mol.count]
-                guest_type = detect_guest_type_from_atoms(mol_atom_names)
-                if guest_type:
-                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
-                break
+        # Built-in path. Phase 45-15: detect EACH guest molecule's type from
+        # its atom-name slice and run-length encode by consecutive same-type
+        # molecules. Each molecule_index entry now carries the CORRECT
+        # per-molecule count (post ion-inserter fix), so the slice is exactly
+        # one molecule — no neighbor contamination, detection is reliable.
+        # The single-guest path (all-CH4) yields one run, byte-identical to
+        # before; a mixed [CH4][THF][CH4][THF] layout yields 4 runs.
+        guest_runs, distinct_guest_types = detect_guest_type_runs(
+            ion_structure.molecule_index, ion_structure.atom_names
+        )
+        guest_type = distinct_guest_types[0] if distinct_guest_types else None
+        guest_res_name = (
+            get_hydrate_guest_residue_name(guest_type) if guest_type else "GUE"
+        )
 
     # Parse custom molecule moleculetype name from ITP file (Bug 2 fix)
     # GROMACS requires [molecules] name to match ITP [moleculetype] name
@@ -611,9 +625,12 @@ def write_ion_top_file(
             custom_mol_name = ion_structure.custom_molecule_moleculetype
 
     # Determine which GAFF2 atomtype sets are needed (Bug 1 fix)
-    needs_ch4_atomtypes = (guest_count > 0 and guest_type == "ch4") or \
+    # Phase 45-15: a mixed built-in hydrate needs BOTH ch4 and thf atomtype
+    # sets (one per distinct guest type). Membership in distinct_guest_types
+    # replaces the old single-``guest_type`` equality check.
+    needs_ch4_atomtypes = ("ch4" in distinct_guest_types) or \
                           (has_solutes and ion_structure.solute_type.upper() == "CH4")
-    needs_thf_atomtypes = (guest_count > 0 and guest_type == "thf") or \
+    needs_thf_atomtypes = ("thf" in distinct_guest_types) or \
                           (has_solutes and ion_structure.solute_type.upper() == "THF")
 
     with open(filepath, 'w') as f:
@@ -739,10 +756,15 @@ def write_ion_top_file(
                 if ci.get("itp_path"):
                     f.write(f'#include "{Path(ci["itp_path"]).name}"\n')
         elif guest_count > 0:
-            if guest_type:
-                # Include the hydrate-specific .itp file based on guest type
-                # Ion tab guests come from hydrate cages, use hydrate ITP
-                f.write(f'#include "{guest_type}_hydrate.itp"\n')
+            # Phase 45-15: include EACH distinct built-in guest type's
+            # hydrate .itp (mixed CH4+THF needs both ch4_hydrate.itp and
+            # thf_hydrate.itp). Single-guest yields one #include (unchanged).
+            # The matching {type}_hydrate.itp files are staged into the
+            # export dir by _stage_hydrate_guest_itps (which now stages ALL
+            # distinct built-in types, not just the first).
+            if distinct_guest_types:
+                for _gt in distinct_guest_types:
+                    f.write(f'#include "{_gt}_hydrate.itp"\n')
             else:
                 # Fallback to generic guest.itp
                 f.write('#include "guest.itp"\n')
@@ -785,7 +807,21 @@ def write_ion_top_file(
             f.write(f"SOL              {sol_count}\n")
 
         if guest_count > 0:
-            f.write(f"{guest_res_name:<17s}{guest_count}\n")
+            # Phase 45-15: write one [molecules] line per consecutive
+            # same-type guest RUN (run-length encoded), matching the .gro
+            # molecule order. GROMACS groups CONSECUTIVE atoms by [molecules]
+            # entries, so a mixed [CH4][THF][CH4][THF] layout in the .gro
+            # requires 4 [molecules] lines — NOT a single grouped total.
+            # The custom-guest path (custom_active) emits a single line with
+            # the caller-supplied guest_res_name (unchanged).
+            if custom_active or not guest_runs:
+                f.write(f"{guest_res_name:<17s}{guest_count}\n")
+            else:
+                for _gt, _cnt in guest_runs:
+                    _res = (
+                        get_hydrate_guest_residue_name(_gt) if _gt else "GUE"
+                    )
+                    f.write(f"{_res:<17s}{_cnt}\n")
 
         if has_custom:
             # custom_mol_name computed from ITP file above (Bug 2 fix)

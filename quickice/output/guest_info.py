@@ -128,6 +128,54 @@ def _detect_builtin_guest_type(structure, detect_from_atoms) -> str | None:
     return None
 
 
+def _detect_builtin_guest_types(structure, detect_from_atoms) -> list:
+    """Detect ALL distinct built-in guest types in a structure (plural).
+
+    Phase 45-15 plural counterpart of :func:`_detect_builtin_guest_type` for
+    MIXED built-in hydrates (CH4 in small + THF in large cages). Walks the
+    ``mol_type == "guest"`` entries of ``structure.molecule_index``, detects
+    each molecule's type from its atom-name slice, and returns the ordered
+    deduped list of distinct types (first-appearance order).
+
+    Reliable for built-in ch4/thf because each molecule_index entry carries
+    the CORRECT per-molecule count (post Phase 45-15 ion-inserter fix), so
+    the slice is exactly one molecule — no neighbor contamination.
+
+    Falls back to the singular heuristic
+    (``guest_atom_count // guest_nmolecules >= 10`` -> ``"thf"`` else
+    ``"ch4"``) when no molecule_index is available, returning a 1-element
+    list (the single-guest case). Returns ``[]`` if no guest is detected.
+
+    Args:
+        structure: Any structure with ``molecule_index``, ``atom_names``,
+            ``guest_nmolecules`` and ``guest_atom_count`` attributes, or None.
+        detect_from_atoms: :func:`detect_guest_type_from_atoms` (lazy-imported
+            by the caller to keep this module's top level light).
+
+    Returns:
+        Ordered list of distinct guest type strings (e.g. ``["ch4", "thf"]``).
+    """
+    if structure is None:
+        return []
+    molecule_index = getattr(structure, "molecule_index", None)
+    atom_names = getattr(structure, "atom_names", None)
+    guest_atom_count = getattr(structure, "guest_atom_count", 0)
+    found: list = []
+    if molecule_index and atom_names is not None:
+        for mol in molecule_index:
+            if getattr(mol, "mol_type", None) != "guest":
+                continue
+            names = atom_names[mol.start_idx:mol.start_idx + mol.count]
+            gtype = detect_from_atoms(names)
+            if gtype and gtype not in found:
+                found.append(gtype)
+    if found:
+        return found
+    # Fallback: single-guest heuristic (no molecule_index / no guest entries).
+    single = _detect_builtin_guest_type(structure, detect_from_atoms)
+    return [single] if single else []
+
+
 def _stage_hydrate_guest_itps(
     output_dir,
     hydrate_config,
@@ -285,34 +333,41 @@ def _stage_hydrate_guest_itps(
             dest_path.write_text(transformed)
             itp_files[dest_name] = str(dest_path)
     else:
-        # Built-in path: detect the built-in guest_type and copy the bundled
-        # {guest_type}_hydrate.itp (mirror export.py:181-187 built-in path).
+        # Built-in path: detect ALL distinct built-in guest_types and copy
+        # each bundled {guest_type}_hydrate.itp (mirror export.py:181-187
+        # built-in path, extended in Phase 45-15 for mixed hydrates).
+        # Phase 45-15: a mixed built-in hydrate (CH4 in small + THF in large
+        # cages) needs BOTH ch4_hydrate.itp and thf_hydrate.itp staged — the
+        # old single-_detect_builtin_guest_type call staged only the FIRST
+        # detected type, so thf_hydrate.itp was missing and grompp would fail
+        # on the #include "thf_hydrate.itp" the writer now emits.
         # Detection tries the structure first (matches existing export.py
         # behavior for real exports where the structure carries ch4/thf
         # molecule_index entries), then falls back to the config's
         # cage_guest_assignments (config-driven — handles the structure=None
         # test case and the IonStructure which has no interface_structure ref).
-        guest_type = _detect_builtin_guest_type(
+        guest_types = _detect_builtin_guest_types(
             structure, detect_guest_type_from_atoms
         )
-        if guest_type is None and hydrate_config is not None:
+        if not guest_types and hydrate_config is not None:
             for assignment in (
                 getattr(hydrate_config, "cage_guest_assignments", {}) or {}
             ).values():
                 if not getattr(assignment, "is_custom_guest", False):
-                    guest_type = assignment.guest_type
-                    break
-        if guest_type is None:
+                    if assignment.guest_type not in guest_types:
+                        guest_types.append(assignment.guest_type)
+        if not guest_types:
             # No built-in guest detected — nothing to stage.
             return None, {}
         # The bundled _hydrate.itp is pre-transformed (moleculetype "CH4_H",
         # [atoms] resname "CH4_H"); shutil.copy is the same as the existing
         # export.py built-in path (transform_guest_itp would be idempotent here
         # but the copy matches the existing behavior exactly).
-        src_itp_path = _bundled_hydrate_guest_itp_path(guest_type)
-        dest_name = f"{guest_type}_hydrate.itp"
-        dest_path = output_dir / dest_name
-        shutil.copy(src_itp_path, dest_path)
-        itp_files[dest_name] = str(dest_path)
+        for guest_type in guest_types:
+            src_itp_path = _bundled_hydrate_guest_itp_path(guest_type)
+            dest_name = f"{guest_type}_hydrate.itp"
+            dest_path = output_dir / dest_name
+            shutil.copy(src_itp_path, dest_path)
+            itp_files[dest_name] = str(dest_path)
 
     return custom_guest_info, itp_files

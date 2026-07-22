@@ -448,5 +448,10 @@ def assemble_piece(candidate: Candidate, config: InterfaceConfig) -> InterfaceSt
         mode="piece",
         report=report,
         guest_atom_count=guest_atom_count,  # Guest atoms (default 0)
-        guest_nmolecules=guest_nmolecules  # Guest molecule count (default 0)
+        guest_nmolecules=guest_nmolecules,  # Guest molecule count (default 0)
+        # Phase 45-15: propagate TYPE-LEVEL (tiling-invariant) guest metadata
+        # so downstream ion/export can walk mixed-guest (CH4+THF) regions
+        # per-molecule. See slab.py for the rationale.
+        guest_descriptors=candidate.metadata.get("guest_descriptors", []),
+        guest_atom_counts=candidate.metadata.get("guest_atom_counts", {}),
     )
