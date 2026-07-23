@@ -305,7 +305,9 @@ class QuickReferenceDialog(QDialog):
         #    QScrollArea for independent scrolling; matches the _make_page pattern).
         refs_label = QLabel(
             "• Click phase regions in diagram to see scientific references\n"
-            "• GenIce2 repository: https://github.com/genice-dev/GenIce2\n"
+            "• GenIce2 repository: https://github.com/genice-dev/GenIce2 — DOI: 10.1002/jcc.25077\n"
+            "• spglib (crystal symmetry detection) — DOI: 10.1080/27660400.2024.2384822\n"
+            "• Madrid2019 ion parameters (Na⁺/Cl⁻ ±0.85e) — DOI: 10.1063/1.5121392\n"
             "• IAPWS (water standards): https://www.iapws.org"
         )
         refs_label.setOpenExternalLinks(True)
@@ -318,11 +320,11 @@ class QuickReferenceDialog(QDialog):
             "• Actual molecule count may differ from requested to satisfy\n"
             "  crystal structure symmetry constraints\n"
             "• GROMACS export generates .gro, .top, and .itp files\n"
-            "• TIP4P-ICE water model used for GROMACS compatibility\n"
+            "• TIP4P-ICE water model used for GROMACS compatibility (Abascal et al. 2005, DOI: 10.1063/1.1931662)\n"
             "• GROMACS export uses candidate selected in left viewport dropdown\n"
             "• Interface GROMACS export uses same TIP4P-ICE model for both ice and water\n"
-            "• Ice Ih density uses IAPWS R10-06(2009) for temperature-dependent accuracy\n"
-            "• Water density for interfaces uses IAPWS-95 formulation"
+            "• Ice Ih density uses IAPWS R10-06(2009) for temperature-dependent accuracy (https://www.iapws.org/release/Ice-2009.html)\n"
+            "• Water density for interfaces uses IAPWS-95 formulation (https://www.iapws.org/relguide/IAPWS-95.html)"
         )
         notes_label.setWordWrap(True)
         notes_label.setTextInteractionFlags(
