@@ -7,7 +7,7 @@ The `quickice-gui` binary supports both CLI and GUI modes.
 | Platform | Command |
 |----------|---------|
 | Source install | `python -m quickice [options]` |
-| Binary (Linux/macOS) | `quickice-gui [options]` |
+| Binary (Linux) | `quickice-gui [options]` |
 | Binary (Windows) | `quickice-gui.exe [options]` |
 
 Windows users: append `.exe` to the binary name. All flags are identical across platforms.
@@ -34,7 +34,7 @@ Launcher scripts are included in the distribution so you can open the GUI with a
 
 | Platform | File | Note |
 |----------|------|------|
-| Linux/macOS | `QuickIce.sh` | May need `chmod +x` first; some file managers open `.sh` in a text editor by default — right-click → Run instead |
+| Linux | `QuickIce.sh` | May need `chmod +x` first; some file managers open `.sh` in a text editor by default — right-click → Run instead |
 | Windows | `QuickIce.bat` | Double-click directly |
 
 These scripts live at the top level of the extracted package, next to the `quickice-gui/` folder, and simply pass `--gui` to the binary.
