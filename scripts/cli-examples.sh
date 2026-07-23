@@ -50,10 +50,10 @@ set -e
 # Skip phase diagram generation
 # python -m quickice -T 250 -P 0.1 -N 96 --no-diagram
 
-# Reproducible generation with custom seed
+# Reproducible generation (pipeline mode; --seed is ignored in ice-only mode)
 # python -m quickice -T 250 -P 0.1 -N 96 --seed 12345
 
-# Prevent output overwrite
+# Prevent output overwrite (pipeline mode only; --no-overwrite is a no-op in ice-only mode — files are overwritten)
 # python -m quickice -T 250 -P 0.1 -N 96 --no-overwrite
 
 # ==============================================================================
