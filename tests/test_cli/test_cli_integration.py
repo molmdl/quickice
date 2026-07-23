@@ -3,6 +3,7 @@
 Tests the full CLI flow using the unified entry point (python -m quickice).
 """
 
+from quickice import __version__
 from tests.conftest import run_quickice
 
 
@@ -285,4 +286,4 @@ class TestHelpAndVersion:
         
         # --version causes argparse to exit with 0
         assert returncode == 0
-        assert "4.5.0" in stdout
+        assert __version__ in stdout
