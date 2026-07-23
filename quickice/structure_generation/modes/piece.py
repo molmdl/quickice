@@ -10,6 +10,8 @@ This module also handles hydrate->interface conversion:
 - Preserves guest molecules in InterfaceStructure for rendering/export
 """
 
+import logging
+
 import numpy as np
 
 from quickice.utils.molecule_utils import (
@@ -30,6 +32,8 @@ from quickice.structure_generation.overlap_resolver import (
     filter_atom_names,
 )
 from quickice.phase_mapping.water_density import water_density_gcm3
+
+logger = logging.getLogger(__name__)
 
 
 def _detect_guest_atoms(
