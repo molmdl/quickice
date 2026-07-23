@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
-from quickice.structure_generation.types import CustomMoleculeConfig, WATER_VOLUME_NM3
+from quickice.structure_generation.types import CustomMoleculeConfig, WATER_ATOMS_PER_MOLECULE, WATER_VOLUME_NM3
 from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
 from quickice.gui.view import HelpIcon
 from quickice.gui.custom_molecule_viewer import CustomMoleculeViewerWidget
@@ -1217,7 +1217,7 @@ class CustomMoleculePanel(QWidget):
             self.calculated_concentration_label.setText("-- mol/L")
             return
         
-        water_nmolecules = water_count // 4
+        water_nmolecules = water_count // WATER_ATOMS_PER_MOLECULE
         liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
         
         # Calculate concentration from count
@@ -1240,7 +1240,7 @@ class CustomMoleculePanel(QWidget):
             self.calculated_count_label.setText("-- molecules")
             return
         
-        water_nmolecules = water_count // 4
+        water_nmolecules = water_count // WATER_ATOMS_PER_MOLECULE
         liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
         
         # Calculate count from concentration
@@ -1293,7 +1293,7 @@ class CustomMoleculePanel(QWidget):
                 
                 # Get liquid volume
                 water_count = getattr(self._interface_structure, 'water_atom_count', 0) if self._interface_structure else 0
-                water_nmolecules = water_count // 4
+                water_nmolecules = water_count // WATER_ATOMS_PER_MOLECULE
                 liquid_volume_nm3 = water_nmolecules * WATER_VOLUME_NM3
                 
                 molecule_count = CustomMoleculeInserter.calculate_molecule_count(
