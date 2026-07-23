@@ -183,7 +183,8 @@ class IonPanel(QWidget):
             "For drinking water: <0.05 M.\n"
             "\n"
             "Ion model: Madrid2019 (Na⁺/Cl⁻ charges ±0.85e).\n"
-            "Ref: Zeron et al., J. Chem. Phys. 151, 134504 (2019)."
+            "Ref: Zeron et al., J. Chem. Phys. 151, 134504 (2019).\n"
+            "DOI: https://doi.org/10.1063/1.5121392"
         ))
         conc_row.addStretch()
 
