@@ -9,9 +9,11 @@ The QuickIce GUI provides an intuitive visual interface for:
 - Real-time 3D molecular structure visualization
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, PNG, SVG)
+- Hydrate generation with built-in and custom guests (Tab 1)
 - Interface Construction for ice-water systems (Tab 2)
 - Custom molecule upload and insertion (Tab 3)
 - Solute molecule insertion (Tab 4)
+- Ion insertion (Na⁺/Cl⁻) (Tab 5)
 
 ## Getting Started
 
@@ -19,6 +21,12 @@ The QuickIce GUI provides an intuitive visual interface for:
 
 ```bash
 python -m quickice.gui
+```
+
+Alternatively, use the unified entry point (requires PySide6 + a display; documented in [README](../README.md) and handled in `entry.py`):
+
+```bash
+python -m quickice --gui
 ```
 
 For the usage of the binary distribution, see [README_bin.md](README_bin.md).
@@ -85,9 +93,9 @@ The input panel contains three text fields for thermodynamic parameters:
 
 ### Molecule Count
 
-- Range: 4-100,000 molecules
+- Range: 4-216 molecules
 - Purpose: Controls simulation cell size
-- Validation: Must be integer, error shown if > 100,000
+- Validation: Must be integer, error shown if > 216 (100,000 is the CLI limit; the GUI enforces 4-216 per validators.py)
 
 ### Help Tooltips
 
@@ -202,7 +210,9 @@ The File menu provides multiple export formats:
 
 QuickIce v4.0 added interface construction; v4.5 added solute and custom molecule insertion; v4.7 adds extended hydrate generation with filled ices, custom guests, mixed cage occupancy, and depol mode, with direct GROMACS export for molecular dynamics simulations.
 
-**Menu Path:** File → Export for GROMACS (Ctrl+G)
+**Menu Path:** File → Export Current Tab for GROMACS... (Ctrl+S)
+
+For ice-only export: File → Export As → Export Ice... (Ctrl+G)
 
 **Exported Files:**
 - `.gro` — GROMACS coordinate file with 4-point water (O, H1, H2, MW)
@@ -389,7 +399,7 @@ Click "Refresh candidates" to sync after generating new candidates in Tab 0.
 ### Source Selection
 
 The **Source** dropdown at the top of Tab 2 picks which structure to build the
-interface from (defined in `quickice/gui/interface_panel.py:258`):
+interface from (defined in `quickice/gui/interface_panel.py:253-254`):
 
 | Source | When to use |
 |--------|-------------|
@@ -672,9 +682,10 @@ The custom molecule viewer displays:
 *(Both Ctrl+S and Ctrl+M export from Tab 3 — Ctrl+S is the unified shortcut that exports from the currently active tab, Ctrl+M is the Tab 3-specific shortcut. They produce identical output when Tab 3 is active.)*
 
 Exported files:
-- `interface_with_custom.gro` — Coordinates with custom molecules
-- `interface_with_custom.top` — Topology with custom moleculetype
-- `custom_molecule.itp` — Your provided .itp file (bundled to output)
+- `custom_system_{moleculetype}_{N}molecules.gro` — Coordinates with custom molecules
+- `custom_system_{moleculetype}_{N}molecules.top` — Topology with custom moleculetype
+- `<your_itp_filename>.itp` — Your provided .itp file (atomtypes commented out, bundled to output)
+- `tip4p-ice.itp` — TIP4P-ICE water model (bundled to output)
 
 Custom molecules appear after SOL in the [ molecules ] section with names like `CUSTOM_MOL_1`.
 
@@ -876,9 +887,10 @@ The system enforces charge neutrality:
 **File → Export Ions for GROMACS (Ctrl+J)**
 
 Exported files:
-- `interface_with_ions.gro` — Coordinates with ions
-- `interface_with_ions.top` — Topology with Na⁺/Cl⁻
+- `ions_{N}na_{N}cl.gro` — Coordinates with ions (or `ions_{N}na_{N}cl_with_{N}{solute}.gro` when solutes present)
+- `ions_{N}na_{N}cl.top` — Topology with Na⁺/Cl⁻
 - `ion.itp` — Madrid2019 ion parameters
+- `tip4p-ice.itp` — TIP4P-ICE water model (bundled to output)
 
 The water model remains TIP4P-ICE for compatibility with ice simulations.
 
