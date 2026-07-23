@@ -14,7 +14,7 @@
 #   --custom-count INT   Number of custom molecules for random placement (default: 5)
 #   --temperature FLOAT  Temperature in K (default: 260)
 #   --pressure FLOAT     Pressure in MPa (default: 0.1)
-#   --lattice-type TYPE  Hydrate lattice: sI, sII, sH (default: sI)
+#   --lattice-type TYPE  Hydrate lattice: sI, sII, sH (default: sI; only orthogonal lattices are interface-compatible here — filled ices c0te/c1te/etc. and v4.7 flags --cage-guest/--depol require `python -m quickice` directly)
 #   --guest TYPE         Guest molecule: CH4, THF (default: CH4)
 #   --output DIR         Output directory (default: hydrate-custom-ion-output)
 #   -h, --help           Show this help message
@@ -102,7 +102,7 @@ while [ $# -gt 0 ]; do
             echo "  --custom-count INT     Number of custom molecules (default: 5)"
             echo "  --temperature FLOAT    Temperature in K (default: 260)"
             echo "  --pressure FLOAT       Pressure in MPa (default: 0.1)"
-            echo "  --lattice-type TYPE    Hydrate lattice: sI, sII, sH (default: sI)"
+            echo "  --lattice-type TYPE    Hydrate lattice: sI, sII, sH (default: sI; only orthogonal lattices are interface-compatible here — filled ices c0te/c1te/etc. and v4.7 flags --cage-guest/--depol require \`python -m quickice\` directly)"
             echo "  --guest TYPE           Guest molecule: CH4, THF (default: CH4)"
             echo "  --output DIR           Output directory (default: hydrate-custom-ion-output)"
             echo "  -h, --help             Show this help message"
