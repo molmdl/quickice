@@ -102,9 +102,9 @@ echo "=== Results ==="
 for r in "${results[@]}"; do
   color=""
   case "$r" in
-    *: PASS) color="\033[32m" ;;
-    *: FAIL) color="\033[31m" ;;
-    *: SKIP) color="\033[33m" ;;
+    *": PASS") color="\033[32m" ;;
+    *": FAIL") color="\033[31m" ;;
+    *": SKIP") color="\033[33m" ;;
   esac
   printf "${color}%-55s %s\033[0m\n" "${r%%:*}" "${r##*: }"
 done

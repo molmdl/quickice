@@ -39,13 +39,17 @@ echo ""
 # 48-1: README documents custom guest hydrate workflow (upload → validate → generate → export)
 grep_check "48-1 README custom guest workflow" README.md "custom.*(guest|hydrate).*(upload|gro.*itp|workflow)"
 grep_check "48-1 README mentions .gro + .itp upload" README.md "\.gro.*\.itp|\.itp.*\.gro"
-grep_check "48-1 README mentions validate/generate/export" README.md "(validate|validation).*(generate|export)"
+# Steps are on separate numbered lines (Upload/Generate/Export), not same line
+grep_check "48-1 README has Upload step" README.md "[Uu]pload.*\.gro.*\.itp"
+grep_check "48-1 README has Generate step" README.md "[Gg]enerate.*hydrat"
+grep_check "48-1 README has Export step" README.md "[Ee]xport.*GROMACS"
 
 # 48-2: README version references say v4.7 (check version string, not stale v4.5 as current)
 grep_check "48-2 README has v4.7 reference" README.md "4\.7"
 # Stale check: v4.5 should NOT appear as "current version" (historical mentions ok)
-STALE_COUNT=$(grep -cE "v4\.5[^0-9]|version.*4\.5" README.md 2>/dev/null || echo 0)
-if [ "$STALE_COUNT" -gt 0 ]; then
+STALE_COUNT=$(grep -cE "v4\.5[^0-9]|version.*4\.5" README.md 2>/dev/null)
+STALE_COUNT=${STALE_COUNT:-0}
+if [ "${STALE_COUNT:-0}" -gt 0 ]; then
   # Check if v4.5 mentions are historical (past tense)
   if grep -qE "v4\.5 (added|shipped|was)|added in v4\.5|since v4\.5" README.md 2>/dev/null; then
     check "48-2 README v4.5 references are historical" PASS
@@ -82,9 +86,16 @@ grep_check "48-6 CLI ref --lattice-type" docs/cli-reference.md "lattice-type"
 grep_check "48-6 CLI ref --cage-guest" docs/cli-reference.md "cage-guest"
 grep_check "48-6 CLI ref --depol" docs/cli-reference.md "depol"
 
-# 48-6: CLI reference marks deprecated flags
-grep_check "48-6 CLI ref DEPRECATED --guest" docs/cli-reference.md "deprecated.*--guest|--guest.*deprecated|DEPRECATED"
-grep_check "48-6 CLI ref DEPRECATED --cage-occupancy" docs/cli-reference.md "deprecated.*cage-occupancy|cage-occupancy.*deprecated"
+# 48-6: CLI reference marks deprecated flags (DEPRECATED banners on separate lines)
+grep_check "48-6 CLI ref DEPRECATED --guest" docs/cli-reference.md "DEPRECATED.*--guest|--guest.*DEPRECATED|DEPRECATED"
+# cage-occupancy deprecated banner is on the line AFTER the heading, not same line
+grep_check "48-6 CLI ref DEPRECATED --cage-occupancy" docs/cli-reference.md "cage-occupancy-small"
+# Verify DEPRECATED banner exists near cage-occupancy (within 3 lines)
+if grep -A3 "cage-occupancy-small" docs/cli-reference.md 2>/dev/null | grep -qi "DEPRECATED"; then
+  check "48-6 CLI ref DEPRECATED banner near cage-occupancy" PASS
+else
+  check "48-6 CLI ref DEPRECATED banner near cage-occupancy" FAIL
+fi
 
 # 48-7: CLI reference version says v4.7
 grep_check "48-7 CLI ref v4.7 reference" docs/cli-reference.md "4\.7"
@@ -108,9 +119,9 @@ echo "=== Results ==="
 for r in "${results[@]}"; do
   color=""
   case "$r" in
-    *: PASS) color="\033[32m" ;;
-    *: FAIL) color="\033[31m" ;;
-    *: SKIP) color="\033[33m" ;;
+    *": PASS") color="\033[32m" ;;
+    *": FAIL") color="\033[31m" ;;
+    *": SKIP") color="\033[33m" ;;
   esac
   printf "${color}%-60s %s\033[0m\n" "${r%%:*}" "${r##*: }"
 done

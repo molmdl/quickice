@@ -54,11 +54,13 @@ else
   check "45-7 --guest/--cage-occupancy deprecated banners" FAIL
 fi
 
-# 43-1 / 45-7: --depol strict runs (sI hydrate, minimal supercell, temp workspace)
-TMP=$(mktemp -d)
+# 43-1 / 45-7: --depol strict runs (sI hydrate, minimal supercell)
+# --output must be under the working directory (CLI validates this)
+TMP="_uat_tmp_b"
+mkdir -p "$TMP"
 if python -m quickice --cli --hydrate --lattice-type sI --depol strict \
   --supercell-x 1 --supercell-y 1 --supercell-z 1 \
-  -T 250 -P 1.0 --output-dir "$TMP/strict" >/dev/null 2>&1; then
+  -T 250 -P 1.0 --output "$TMP/strict" --no-diagram >/dev/null 2>&1; then
   check "43-1/45-7 --depol strict runs" PASS
 else
   check "43-1/45-7 --depol strict runs" FAIL
@@ -67,7 +69,7 @@ fi
 # 45-7: --depol optimal runs
 if python -m quickice --cli --hydrate --lattice-type sI --depol optimal \
   --supercell-x 1 --supercell-y 1 --supercell-z 1 \
-  -T 250 -P 1.0 --output-dir "$TMP/optimal" >/dev/null 2>&1; then
+  -T 250 -P 1.0 --output "$TMP/optimal" --no-diagram >/dev/null 2>&1; then
   check "45-7 --depol optimal runs" PASS
 else
   check "45-7 --depol optimal runs" FAIL
@@ -76,7 +78,7 @@ fi
 # 45-7: default (no --depol) = strict (verify flag absence doesn't crash + produces output)
 if python -m quickice --cli --hydrate --lattice-type sI \
   --supercell-x 1 --supercell-y 1 --supercell-z 1 \
-  -T 250 -P 1.0 --output-dir "$TMP/default" >/dev/null 2>&1; then
+  -T 250 -P 1.0 --output "$TMP/default" --no-diagram >/dev/null 2>&1; then
   check "45-7 default depol (strict) runs" PASS
 else
   check "45-7 default depol (strict) runs" FAIL
@@ -90,9 +92,9 @@ echo "=== Results ==="
 for r in "${results[@]}"; do
   color=""
   case "$r" in
-    *: PASS) color="\033[32m" ;;
-    *: FAIL) color="\033[31m" ;;
-    *: SKIP) color="\033[33m" ;;
+    *": PASS") color="\033[32m" ;;
+    *": FAIL") color="\033[31m" ;;
+    *": SKIP") color="\033[33m" ;;
   esac
   printf "${color}%-55s %s\033[0m\n" "${r%%:*}" "${r##*: }"
 done
