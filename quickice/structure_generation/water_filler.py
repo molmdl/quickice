@@ -17,6 +17,7 @@ import numpy as np
 
 from quickice.structure_generation.cell_utils import is_cell_orthogonal
 from quickice.structure_generation.gro_parser import parse_gro_file
+from quickice.structure_generation.types import WATER_ATOMS_PER_MOLECULE
 
 
 # === Triclinic Cell Utilities ===
@@ -128,9 +129,6 @@ def wrap_positions_triclinic(
     
     return wrapped
 
-
-# Number of atoms per TIP4P water molecule (OW, HW1, HW2, MW)
-ATOMS_PER_WATER_MOLECULE = 4
 
 # Water atom names template for ONE molecule
 WATER_ATOM_NAMES_TEMPLATE = ["OW", "HW1", "HW2", "MW"]
@@ -660,7 +658,7 @@ def fill_region_with_water(
     # Tile water into the target region
     tiled_positions, n_molecules = tile_structure(
         scaled_positions, scaled_box, region_dims,
-        atoms_per_molecule=ATOMS_PER_WATER_MOLECULE
+        atoms_per_molecule=WATER_ATOMS_PER_MOLECULE
     )
 
     if n_molecules == 0:
@@ -669,7 +667,7 @@ def fill_region_with_water(
     # Replicate atom names for each tile copy
     # The tile_structure function filters atoms, so we need to know
     # how many complete molecules we have
-    n_atoms = n_molecules * ATOMS_PER_WATER_MOLECULE
+    n_atoms = n_molecules * WATER_ATOMS_PER_MOLECULE
 
     # Trim positions to exact molecule boundaries (in case of rounding)
     tiled_positions = tiled_positions[:n_atoms]
