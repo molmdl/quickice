@@ -588,15 +588,25 @@ def assemble_pocket(candidate: Candidate, config: InterfaceConfig) -> InterfaceS
                             tilable_guest_positions = None
                             tiled_guest_nmolecules = 0
 
-            # FIX: Tile the guest atom names to match the tiled molecule count
+            # FIX: Compute guest atom names based on ACTUAL tiled positions.
+            # Ported from slab.py:704-722 (fix-plan T-S1). Previous approach used
+            # tiling_factor which assumes tile_structure() returns exactly
+            # (tiling_factor * original_guest_nmolecules) molecules; deriving the
+            # count from the actual positions length is robust and keeps pocket
+            # consistent with slab.py. NOTE: pocket uses filter_molecules=False
+            # (line 541) so tile_structure() does not filter here in the normal
+            # single-guest path -- this is a consistency/latent fix, not an active
+            # bug. Uses tilable_guest_positions (not processed_guest_positions)
+            # because processed_guest_positions is assigned later (line 604) and
+            # may be None; inside this guard tilable_guest_positions is non-None.
             if original_guest_nmolecules > 0 and tiled_guest_nmolecules > 0:
-                tiling_factor = tiled_guest_nmolecules // original_guest_nmolecules
-                processed_guest_atom_names = guest_atom_names * tiling_factor
-                remainder = tiled_guest_nmolecules - (tiling_factor * original_guest_nmolecules)
-                if remainder > 0:
-                    atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules if original_guest_nmolecules > 0 else 0
-                    if atoms_per_guest > 0:
-                        processed_guest_atom_names.extend(guest_atom_names[:atoms_per_guest * remainder])
+                atoms_per_guest = len(guest_atom_names) // original_guest_nmolecules
+                if atoms_per_guest > 0:
+                    actual_guest_nmolecules = len(tilable_guest_positions) // atoms_per_guest
+                    guest_pattern = guest_atom_names[:atoms_per_guest]
+                    processed_guest_atom_names = guest_pattern * actual_guest_nmolecules
+                else:
+                    processed_guest_atom_names = []
             else:
                 processed_guest_atom_names = []
 
