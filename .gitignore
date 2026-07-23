@@ -213,3 +213,4 @@ tmp/
 
 # Output files
 output/
+*mdout.mdp
