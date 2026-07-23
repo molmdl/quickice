@@ -332,7 +332,7 @@ def custom_guest_module(guest_type: str, module: types.ModuleType):
         The ``sys.modules`` key (``genice2.molecules.<guest_type>``).
 
     Raises:
-        AssertionError: If the key is already present in ``sys.modules``
+        RuntimeError: If the key is already present in ``sys.modules``
             (stale state from a previous un-cleaned-up registration).
 
     Example:
@@ -343,7 +343,8 @@ def custom_guest_module(guest_type: str, module: types.ModuleType):
         >>> # key removed from sys.modules here
     """
     key = f"genice2.molecules.{guest_type}"
-    assert key not in sys.modules, f"{key} already registered (stale state?)"
+    if key in sys.modules:
+        raise RuntimeError(f"{key} already registered (stale state?)")
     sys.modules[key] = module
     logger.debug("Registered custom guest module '%s' in sys.modules.", key)
     try:
