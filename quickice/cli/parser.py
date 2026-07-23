@@ -1,8 +1,8 @@
 """CLI argument parser for QuickIce.
 
 This module defines the command-line interface using argparse with validators
-for temperature, pressure, molecule count, and v4.5 pipeline flags (hydrate,
-custom molecule, solute, ion insertion).
+for temperature, pressure, molecule count, and v4.7 pipeline flags (hydrate,
+custom molecule, solute, ion insertion; plus v4.7 hydrate flags --cage-guest and --depol).
 """
 
 import argparse
@@ -448,7 +448,7 @@ def validate_interface_args(args: argparse.Namespace, parser: argparse.ArgumentP
 
 
 def validate_pipeline_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
-    """Validate v4.5 pipeline arguments after parsing.
+    """Validate v4.7 pipeline arguments after parsing.
     
     Performs cross-flag validation for hydrate, custom molecule, solute,
     and ion insertion flags. Raises SystemExit via parser.error() if
