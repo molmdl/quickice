@@ -16,6 +16,7 @@ from quickice.structure_generation.types import (
     HydrateStructure,
     HydrateLatticeInfo,
     MoleculeIndex,
+    WATER_ATOMS_PER_MOLECULE,
     GuestDescriptor,
     HYDRATE_LATTICES,
     GUEST_MOLECULES,
@@ -323,7 +324,7 @@ class HydrateStructureGenerator:
         except Exception as e:
             raise RuntimeError(
                 f"GenIce2 failed to generate structure: {e}"
-            )
+            ) from e
     
     def _parse_gro_result(self, gro_string: str) -> tuple:
         """Parse GRO format string from GenIce2."""
@@ -697,10 +698,10 @@ class HydrateStructureGenerator:
                 
                 # 3. Check for water (TIP4P: OW, HW1, HW2, MW)
                 if atom == "OW" and i + 3 < len(atom_names):
-                    next_atoms = atom_names[i:i+4]
+                    next_atoms = atom_names[i:i+WATER_ATOMS_PER_MOLECULE]
                     if next_atoms[1] == "HW1" and next_atoms[2] == "HW2" and next_atoms[3] == "MW":
-                        molecule_index.append(MoleculeIndex(i, 4, "water"))
-                        i += 4
+                        molecule_index.append(MoleculeIndex(i, WATER_ATOMS_PER_MOLECULE, "water"))
+                        i += WATER_ATOMS_PER_MOLECULE
                         continue
                 
                 # 4. Check for 3-site water (O, H, H)
@@ -776,10 +777,10 @@ class HydrateStructureGenerator:
             
             # Check for water (TIP4P: OW, HW1, HW2, MW)
             if atom == "OW" and i + 3 < len(atom_names):
-                next_atoms = atom_names[i:i+4]
+                next_atoms = atom_names[i:i+WATER_ATOMS_PER_MOLECULE]
                 if next_atoms[1] == "HW1" and next_atoms[2] == "HW2" and next_atoms[3] == "MW":
-                    molecule_index.append(MoleculeIndex(i, 4, "water"))
-                    i += 4
+                    molecule_index.append(MoleculeIndex(i, WATER_ATOMS_PER_MOLECULE, "water"))
+                    i += WATER_ATOMS_PER_MOLECULE
                     continue
             
             # Check for 3-site water (O, H, H)
