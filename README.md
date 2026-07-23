@@ -13,7 +13,7 @@ A portable GUI application for generating ice structures, ice-water interfaces, 
 
 QuickIce v4.7 provides a 6-tab GUI workflow for generating molecular dynamics starting structures:
 
-- **Ice Generation** — 11 ice polymorphs from thermodynamic conditions
+- **Ice Generation** — 8 ice polymorphs from thermodynamic conditions
 - **Hydrate Generation** — 10 lattice types (sI, sII, sH, filled ices, water-only) with built-in and custom guest molecules
 - **Interface Construction** — Ice-water boundaries for surface studies
 - **Custom Molecule Upload** — User-provided molecules in liquid phase
@@ -23,7 +23,7 @@ QuickIce v4.7 provides a 6-tab GUI workflow for generating molecular dynamics st
 All exports are GROMACS-ready with TIP4P-ICE water model and bundled force field parameters.
 
 **Key Features:**
-- Interactive phase diagram with 11 ice polymorphs
+- Interactive phase diagram with 12 ice polymorphs
 - Real-time 3D molecular visualization (VTK)
 - Side-by-side candidate comparison
 - Multiple export formats (PDB, GROMACS .gro/.top/.itp, PNG, SVG)
@@ -113,7 +113,7 @@ QuickIce uses `python -m quickice` as the unified entry point:
 
 Generate ice crystal structures from thermodynamic conditions:
 
-- **11 ice polymorphs** — Ih, Ic, II, III, V, VI, VII, VIII, IX, XV, X
+- **8 ice polymorphs** — Ih, Ic, II, III, V, VI, VII, VIII (the diagram also detects Ice IX, X, XI, XV)
 - **Interactive phase diagram** — Click to select T/P conditions
 - **10 ranked candidates** — Energy-based ranking with diversity
 - **Real-time 3D viewer** — Ball-and-stick, stick, VDW styles
@@ -208,7 +208,7 @@ Press **Ctrl+S** from any tab to export the current structure:
 | Tab 0 | Ice GROMACS | .gro, .top, tip4p-ice.itp |
 | Tab 1 | Hydrate GROMACS | .gro, .top, tip4p-ice.itp, ch4_hydrate.itp/thf_hydrate.itp |
 | Tab 2 | Interface GROMACS | .gro, .top, tip4p-ice.itp |
-| Tab 3 | Custom Molecule GROMACS | .gro, .top, tip4p-ice.itp, custom.itp |
+| Tab 3 | Custom Molecule GROMACS | .gro, .top, tip4p-ice.itp, <user_itp_name>.itp |
 | Tab 4 | Solute GROMACS | .gro, .top, tip4p-ice.itp, ch4_liquid.itp/thf_liquid.itp |
 | Tab 5 | Ion GROMACS | .gro, .top, tip4p-ice.itp, ion.itp |
 
@@ -252,7 +252,7 @@ QuickIce distinguishes between phase detection and structure generation capabili
 
 ### Phase Detection (12 phases)
 
-The interactive phase diagram can identify 11 ice polymorphs based on temperature and pressure conditions:
+The interactive phase diagram can identify 12 ice polymorphs based on temperature and pressure conditions:
 
 | Phase | Crystal System | Pressure Range | Temperature Range |
 |-------|----------------|----------------|-------------------|
@@ -316,9 +316,11 @@ Key limitations:
 | `numpy` | Numerical operations |
 | `scipy` | Scientific computing |
 | `vtk` | 3D molecular visualization |
+| `matplotlib` | Phase diagram rendering (PNG/SVG) |
 | `PySide6` | GUI framework |
 | `genice2` | Ice structure generation |
 | `genice-core` | GenIce core algorithms |
+| `spglib` | Crystal symmetry detection / structure validation |
 | `pytest` | Testing framework |
 
 ## References
