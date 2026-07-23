@@ -1,6 +1,6 @@
-"""CLI pipeline for QuickIce v4.5.
+"""CLI pipeline for QuickIce v4.7.
 
-Orchestrates the ice → interface → custom → solute → ion → export
+Orchestrates the source → interface → custom → solute → ion → export
 workflow via ordered step execution with fail-fast semantics.
 
 No GUI imports — this module works without PySide6/VTK.
@@ -131,7 +131,7 @@ def _parse_cage_guest_args(args, lattice_type: str) -> dict:
 
 
 class CLIPipeline:
-    """CLI pipeline orchestrator for QuickIce v4.5 generation workflows.
+    """CLI pipeline orchestrator for QuickIce v4.7 generation workflows.
 
     Runs ordered steps (source → interface → custom → solute → ion → export)
     with fail-fast semantics: the first failing step stops execution and
