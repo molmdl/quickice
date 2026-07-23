@@ -388,6 +388,14 @@ QuickIce GUI, Version [version you use], https://github.com/molmdl/quickice (acc
 - The Madrid2019 ion model (±0.85e charges) was parameterized for TIP4P/2005 water. QuickIce uses these parameters with TIP4P-ICE water, which is common practice but technically a force field combination.
 - Zeron et al. (2019). J. Chem. Phys. 151, 134504. DOI: 10.1063/1.5121392
 
+### Teeratchanan & Hermann (2015)
+- Teeratchanan, P. & Hermann, A. (2015). Computational phase diagrams of noble gas hydrates under pressure. The Journal of Chemical Physics, 143(15), 154507.
+- DOI: https://doi.org/10.1063/1.4933371
+
+### Smirnov & Stegailov (2013)
+- Smirnov, G. S. & Stegailov, V. V. (2013). Toward Determination of the New Hydrogen Hydrate Clathrate Structures. The Journal of Physical Chemistry Letters, 4(21), 3560–3564.
+- DOI: https://doi.org/10.1021/jz401669d
+
 ## Testing
 
 ```bash

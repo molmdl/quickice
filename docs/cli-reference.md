@@ -581,8 +581,6 @@ Hydrate lattice type. Determines the cage structure and guest molecule arrangeme
 | `16` | Ice XVI (empty sII framework) | `small`, `large` | No | No |
 | `17` | Ice XVII (ultralow density) | — (no cages) | Yes | No |
 
-<!-- TODO: DOI pending user verification — Teeratchanan 2015 (filled ices c0te/c1te/c2te/ice1hte) and Smirnov 2013 (sTprime) citations need user-verified DOIs before publication. Do NOT fabricate. -->
-
 **Required with:** `--hydrate`
 
 **Notes:**
@@ -1371,7 +1369,7 @@ Verified citations mirrored from the project's `README.md` References. (No DOIs 
 - **Madrid2019 ion parameters** — Zeron et al. (2019), J. Chem. Phys. 151, 134504, DOI: https://doi.org/10.1063/1.5121392
 - **spglib** — "Spglib: a software library for crystal symmetry search", Sci. Technol. Adv. Mater., Meth. 4, 2384822 (2024), DOI: https://doi.org/10.1080/27660400.2024.2384822 — Repository: https://github.com/atztogo/spglib
 - **TIP4P-ICE** — Abascal et al. (2005), J. Chem. Phys. 122(23), 234511, DOI: https://doi.org/10.1063/1.1931662
-- **Teeratchanan 2015** — Filled-ice lattices `c0te`, `c1te`, `c2te`, `ice1hte`. <!-- TODO: DOI pending user verification — full citation and DOI needed before publication. -->
-- **Smirnov 2013** — Filled-ice lattice `sTprime`. <!-- TODO: DOI pending user verification — full citation and DOI needed before publication. -->
+- **Teeratchanan 2015** — Filled-ice lattices `c0te`, `c1te`, `c2te`, `ice1hte`. Teeratchanan, P. & Hermann, A. (2015), "Computational phase diagrams of noble gas hydrates under pressure", J. Chem. Phys. 143(15), 154507, DOI: https://doi.org/10.1063/1.4933371
+- **Smirnov 2013** — Filled-ice lattice `sTprime`. Smirnov, G. S. & Stegailov, V. V. (2013), "Toward Determination of the New Hydrogen Hydrate Clathrate Structures", J. Phys. Chem. Lett. 4(21), 3560–3564, DOI: https://doi.org/10.1021/jz401669d
 
 
