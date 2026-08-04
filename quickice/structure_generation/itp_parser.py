@@ -31,6 +31,11 @@ class ITPMoleculeInfo:
             MW, NA, CL) which would cause a duplicate-atomtype error in
             ``gmx grompp``. This is DISTINCT from ``atom_types`` (which are
             the types REFERENCED by each atom in the [ atoms ] section).
+        atom_resname: Residue name from the [ atoms ] section (column 4,
+            field index 3) of the first atom data line. Empty string when
+            no [ atoms ] data lines are parseable. Used by
+            validate_custom_guest_files to check ITP/GRO residue name
+            consistency (UAT-F Issue 1 fix).
     """
     molecule_name: str
     atom_count: int
@@ -39,6 +44,7 @@ class ITPMoleculeInfo:
     charges: List[float]
     has_atomtypes_section: bool
     atomtype_names: List[str] = field(default_factory=list)
+    atom_resname: str = ""
 
 
 def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
@@ -120,6 +126,7 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
     atom_types = []
     atom_names = []
     charges = []
+    atom_resname = ""
     for line in atom_lines:
         fields = line.split()
         if len(fields) >= 5:
@@ -128,6 +135,12 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
             # Format: Index type residue resname atom cgnr charge mass
             atom_types.append(fields[1])
             atom_names.append(fields[4])
+            # Resname is column 4 (field index 3) — extract from the first
+            # parseable atom line (all atoms in a moleculetype share the
+            # same resname). Used by validate_custom_guest_files for ITP/GRO
+            # residue name consistency check (UAT-F Issue 1 fix).
+            if not atom_resname:
+                atom_resname = fields[3]
             # Charge is seventh column (index 6) if present
             if len(fields) >= 7:
                 try:
@@ -193,6 +206,7 @@ def parse_itp_file(filepath: Path) -> ITPMoleculeInfo:
         charges=charges,
         has_atomtypes_section=has_atomtypes,
         atomtype_names=atomtype_names,
+        atom_resname=atom_resname,
     )
 
 

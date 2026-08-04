@@ -43,6 +43,7 @@ ETOH_MISMATCH_GRO = INVALID_DIR / "etoh_mismatch.gro"
 NOT_A_GRO = INVALID_DIR / "not_a_gro.txt"
 ETOH_COMBRULE1_ITP = INVALID_DIR / "etoh_combrule1.itp"
 ETOH_NO_ATOMTYPES_ITP = INVALID_DIR / "etoh_no_atomtypes.itp"
+ETOH_LONG_NAME_ITP = INVALID_DIR / "etoh_long_name.itp"
 
 # Ethanol atoms (9) used to synthesize GRO fixtures with arbitrary resnames.
 ETOH_ATOMS = [
@@ -187,6 +188,39 @@ class TestValidateCustomGuestFiles:
         assert len(r.warnings) > 0
         assert any("atomtypes" in w.lower() for w in r.warnings), (
             f"expected atomtypes warning, got {r.warnings}"
+        )
+
+    def test_validate_rejects_itp_resname_mismatch(self):
+        """ITP [atoms] resname mismatch with GRO resname is rejected (UAT-F Issue 1).
+
+        etoh_long_name.itp has [atoms] resname 'ETHANOL' (6 chars) which does
+        NOT match the GRO residue name 'MOL'. The valid etoh.itp has [atoms]
+        resname 'MOL' matching the GRO. QuickIce overwrites the ITP resname
+        with the _H suffix at export (transform_guest_itp), but a mismatch
+        indicates the wrong ITP was uploaded for this GRO — reject at
+        validation time with a specific, user-facing error message.
+        """
+        r = validate_custom_guest_files(ETOH_GRO, ETOH_LONG_NAME_ITP, "etoh_custom")
+        assert r.is_valid is False
+        assert any("does not match" in e and "ETHANOL" in e and "MOL" in e
+                   for e in r.errors), (
+            f"expected ITP/GRO resname mismatch error mentioning ETHANOL and MOL, "
+            f"got {r.errors}"
+        )
+
+    def test_validate_accepts_matching_itp_resname(self):
+        """Valid etoh.itp has [atoms] resname 'MOL' matching GRO 'MOL' — no false positive.
+
+        Regression guard for the UAT-F Issue 1 fix: the valid etoh.itp's
+        [atoms] resname ('MOL') matches the GRO residue name ('MOL'), so the
+        mismatch check must NOT reject it. The [ moleculetype ] name ('etoh',
+        4 chars) differs from the GRO resname ('MOL') but that is NOT checked
+        (it is overwritten by transform_guest_itp to 'MOL_H' at export).
+        """
+        r = validate_custom_guest_files(ETOH_GRO, ETOH_ITP, "etoh_custom")
+        assert r.is_valid is True, (
+            f"valid etoh pair should pass (no false positive from resname check), "
+            f"got errors: {r.errors}"
         )
 
     def test_validate_rejects_bad_guest_type(self):

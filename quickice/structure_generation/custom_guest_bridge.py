@@ -260,6 +260,26 @@ def validate_custom_guest_files(
             f"Use a residue name of 3 chars or fewer (e.g. 'MOL')."
         )
 
+    # 4b. ITP [atoms] resname consistency with GRO residue name (UAT-F Issue 1
+    #     fix). The ITP's [atoms] resname (column 4) should match the GRO
+    #     residue name — QuickIce overwrites it with the _H suffix at export
+    #     (transform_guest_itp), but a mismatch suggests the user uploaded the
+    #     wrong ITP for this GRO. The valid etoh.itp has [atoms] resname "MOL"
+    #     matching etoh.gro's "MOL"; the invalid etoh_long_name.itp has
+    #     "ETHANOL" (6 chars) which mismatches "MOL". This mirrors the custom
+    #     molecule validator (molecule_validator.py:177-205) which checks
+    #     ITP/GRO residue name consistency. BLOCKING error per UAT-F decision.
+    itp_atom_resname = getattr(itp_info, "atom_resname", "")
+    if resname and itp_atom_resname and itp_atom_resname != resname:
+        errors.append(
+            f"ITP [ atoms ] resname '{itp_atom_resname}' does not match "
+            f"GRO residue name '{resname}'. The ITP's [ atoms ] resname "
+            f"should match the GRO residue name (QuickIce appends the '_H' "
+            f"hydrate suffix at export, but a mismatch indicates the wrong "
+            f"ITP was uploaded for this GRO). Use an ITP whose [ atoms ] "
+            f"resname matches the GRO residue name."
+        )
+
     # 5. comb-rule == 2 when [ defaults ] is present. Absent is accepted
     #    (the main .top supplies comb-rule=2). Exact message per success
     #    criteria #3.
