@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 43-depol-mode
 source: [43-01-SUMMARY.md, 43-02-SUMMARY.md]
 started: 2026-07-23T12:00:00Z
@@ -8,19 +8,14 @@ updated: 2026-07-23T19:00:00Z
 
 ## Current Test
 
-number: 1
-name: Select depol mode (strict/optimal) in Hydrate tab
-expected: |
-  Open the QuickIce GUI, go to the Hydrate tab. A depol mode dropdown (QComboBox) should be
-  present with two options: "strict" and "optimal". The default selection should be "strict".
-awaiting: user response (interactive — Workflow F)
+[all script-runnable tests complete — 2 pass, 1 skipped (GUI) via Workflow B]
 
 ## Tests
 
 ### 1. Select depol mode (strict/optimal) in Hydrate tab
 expected: Open the QuickIce GUI, go to the Hydrate tab. A depol mode dropdown (QComboBox) should be present with "strict" and "optimal". Default should be "strict". Switching should not crash.
-result: [pending]
-note: Interactive — Workflow F (GUI dropdown). CLI --depol {strict,optimal} flag verified in Workflow B (present with strict/optimal choices).
+result: skipped
+reason: Requires GUI + human verification (headless environment). CLI --depol {strict,optimal} flag verified in Workflow B (present with strict/optimal choices).
 
 ### 2. Depol mode passed through to GenIce2 generate_ice() call
 expected: Generate a hydrate with depol mode "optimal". The depol mode should be passed through to GenIce2 generate_ice() call.
@@ -37,8 +32,8 @@ verified: Workflow B — CLI default (no --depol flag) runs as strict (exit 0) �
 total: 3
 passed: 2
 issues: 0
-pending: 1
-skipped: 0
+pending: 0
+skipped: 1
 
 ## Gaps
 

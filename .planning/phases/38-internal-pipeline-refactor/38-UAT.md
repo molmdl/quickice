@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 38-internal-pipeline-refactor
 source: [38-01-SUMMARY.md, 38-02-SUMMARY.md, 38-03-SUMMARY.md, 38-04-SUMMARY.md]
 started: 2026-07-23T12:00:00Z
