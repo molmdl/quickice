@@ -8,7 +8,7 @@ updated: 2026-07-23T19:00:00Z
 
 ## Current Test
 
-[2 pass, 1 issue (major), 1 skipped (GUI cage rows) — issue on test 2 (long name silently ignored)]
+[3 pass, 1 issue (major) — tests 1+3+4 pass via Workflow F, test 2 has issue]
 
 ## Tests
 
@@ -29,8 +29,8 @@ verified: |
 
 ### 3. Cage-type guest assignment controls for mixed occupancy
 expected: In the Hydrate tab, select a multi-cage lattice. Per-cage-type rows should appear with QComboBox + QDoubleSpinBox for each cage type. Changing lattice should rebuild rows.
-result: skipped
-reason: Requires GUI + human verification (headless environment). CLI --cage-guest flag verified in Workflow B.
+result: pass
+verified: Workflow F (user GUI verification) — sI shows 2 rows with QComboBox + QDoubleSpinBox, sH shows 3, c0te shows 1, sTprime shows 0. Rows rebuild on lattice change.
 
 ### 4. Depol mode dropdown with strict as default
 expected: In the Hydrate tab, a depol mode dropdown should be present with "strict" and "optimal". Default should be "strict".
@@ -40,10 +40,10 @@ verified: Workflow F (user GUI verification) — depol dropdown present with str
 ## Summary
 
 total: 4
-passed: 2
+passed: 3
 issues: 1
 pending: 0
-skipped: 1
+skipped: 0
 
 ## Gaps
 
