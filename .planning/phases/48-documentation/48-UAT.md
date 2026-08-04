@@ -34,16 +34,16 @@ verified: Workflow D — GRO/ITP guide has comb-rule=2, residue ≤3 chars, _H s
 
 ### 5. In-app help updated for v4.7 and restructured with TOC navigation
 expected: Open the QuickIce GUI help dialog. Should be QStackedWidget + QListWidget TOC with 4 new v4.7 content pages. Tooltips on Hydrate panel. Version 4.7.0.
-result: skipped
-reason: Requires GUI + human verification (headless environment). Version string 4.7.0 verified in Workflow D. Help dialog structure (QStackedWidget + QListWidget) verified by test_help_dialog.py in pytest suite (passes).
+result: pass
+verified: Workflow H (user GUI verification) — QStackedWidget + QListWidget TOC confirmed, 4 new v4.7 content pages present, TOC navigation works, tooltips on Hydrate per-cage controls. Version string displays in code/CLI (4.7.0, verified Workflow D) — not shown in GUI but accepted as OK.
 
 ## Summary
 
 total: 5
-passed: 4
+passed: 5
 issues: 0
 pending: 0
-skipped: 1
+skipped: 0
 
 ## Gaps
 
