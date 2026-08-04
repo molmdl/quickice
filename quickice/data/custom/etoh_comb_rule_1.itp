@@ -1,0 +1,42 @@
+; Invalid test file: comb-rule=1 (should be 2 for Lorentz-Berthelot / AMBER-GAFF2)
+; Generated from etoh.itp for UAT Workflow F test 6
+; Expected: QuickIce rejects with "comb-rule=1 rejected, must be Lorentz-Berthelot (comb-rule=2)" error
+
+[ defaults ]
+; nbfunc  comb-rule  gen-pairs  fudgeLJ  fudgeQQ
+1               1               yes             0.5     0.8333
+
+[ atomtypes ]
+; name   at.num      mass       charge   ptype     sigma (nm)    epsilon (kJ/mol)
+hc           1     1.007941    0.000000    A      2.600177E-01    8.702720E-02
+c3           6    12.010736    0.000000    A      3.397710E-01    4.510352E-01
+h1           1     1.007941    0.000000    A      2.421997E-01    8.702720E-02
+oh           8    15.999405    0.000000    A      3.242871E-01    3.891120E-01
+ho           1     1.007941    0.000000    A      5.379246E-02    1.966480E-02
+
+[ moleculetype ]
+; name          nrexcl
+etoh       3
+
+[ atoms ]
+;  Index   type   residue  resname   atom         cgnr     charge       mass
+      1     hc         1      MOL     H              1    0.05772791    1.007941
+      2     c3         1      MOL     C              2   -0.21810187   12.010736
+      3     hc         1      MOL     H              3    0.05772791    1.007941
+      4     hc         1      MOL     H              4    0.05772791    1.007941
+      5     c3         1      MOL     C              5    0.44154766   12.010736
+      6     h1         1      MOL     H              6   -0.06149731    1.007941
+      7     h1         1      MOL     H              7   -0.06149731    1.007941
+      8     oh         1      MOL     O              8   -0.67288368   15.999405
+      9     ho         1      MOL     H              9    0.39924876    1.007941
+
+[ bonds ]
+;  atom_i   atom_j  functype      r0 (nm)    k (kJ/mol/nm^2)
+      1        2         1        0.109620     2.889052E+05     ; H-C
+      2        3         1        0.109620     2.889052E+05     ; C-H
+      2        4         1        0.109620     2.889052E+05     ; C-H
+      2        5         1        0.153540     1.915352E+05     ; C-C
+      5        6         1        0.109690     2.880433E+05     ; C-H
+      5        7         1        0.109690     2.880433E+05     ; C-H
+      5        8         1        0.142420     2.386135E+05     ; C-O
+      8        9         1        0.097250     4.481148E+05     ; O-H

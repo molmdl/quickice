@@ -14,8 +14,8 @@ updated: 2026-07-23T19:00:00Z
 
 ### 1. Select new lattice types in Hydrate tab
 expected: Open the QuickIce GUI, go to the Hydrate tab. The lattice type dropdown should include all 7 new lattice types: C0, C1, C2, Ih, sT', Ice XVI, Ice XVII. Selecting each new type should not crash and should update the cage info display.
-result: skipped
-reason: Requires GUI + human verification (headless environment). CLI --lattice-type choices verified in Workflow B (all 10 types present).
+result: pass
+verified: Workflow F (user GUI verification) — lattice dropdown lists all 10 types, clicking each works, no crash, cage info updates
 
 ### 2. Triclinic filled ices blocked for interface generation with clear error
 expected: In the GUI, generate a hydrate with a triclinic filled ice (C0/c0te or C1/c1te), then move to the Interface tab and attempt to generate an interface structure. A clear error message should be displayed.
@@ -29,16 +29,16 @@ verified: Workflow C — test_hydrate_lattice_types.py passed (157 parametrized 
 
 ### 4. sT' and Ice XVII generate water-only with guest UI disabled
 expected: In the GUI Hydrate tab, select sT' (sTprime) or Ice XVII (17). The guest controls should be disabled. Generate the structure and verify it contains only water molecules.
-result: skipped
-reason: Requires GUI + human verification (headless environment). CLI --lattice-type sTprime/17 accepted (Workflow B).
+result: pass
+verified: Workflow F (user GUI verification) — sTprime/17 selected, guest controls disabled/grayed, generates water-only
 
 ## Summary
 
 total: 4
-passed: 2
+passed: 4
 issues: 0
 pending: 0
-skipped: 2
+skipped: 0
 
 ## Gaps
 
