@@ -8,7 +8,7 @@ updated: 2026-07-23T19:00:00Z
 
 ## Current Test
 
-[all script-runnable tests complete — 4 pass, 1 skipped (GUI) via Workflow D]
+[all 5 tests complete — 5 pass via Workflows D+H]
 
 ## Tests
 
