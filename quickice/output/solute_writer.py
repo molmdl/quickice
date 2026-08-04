@@ -483,6 +483,7 @@ def write_solute_top_file(
     solute_structure: "SoluteStructure",
     filepath: str,
     custom_guest_info: list[dict] | None = None,
+    custom_molecule_itp_name: str | None = None,
 ) -> None:
     """Write GROMACS topology file for solute structure.
 
@@ -732,10 +733,15 @@ def write_solute_top_file(
         elif guest_count > 0 and guest_type:
             f.write(f'#include "{guest_type}_hydrate.itp"\n')
 
-        # Include custom molecule ITP if custom molecules present
+        # Include custom molecule ITP if custom molecules present.
+        # custom_molecule_itp_name (UAT-F Issue 2 fix): when the custom molecule
+        # ITP basename collides with a cage-guest ITP basename (both "etoh.itp"),
+        # the exporter renames the staged copy to "{stem}_L.itp" (mirroring the
+        # built-in _H/_L convention) and passes the renamed name here. When
+        # None (no collision), the basename from custom_itp_path is used.
         if has_custom and solute_structure.custom_itp_path:
             from pathlib import Path as FilePath
-            custom_itp_name = FilePath(solute_structure.custom_itp_path).name
+            custom_itp_name = custom_molecule_itp_name or FilePath(solute_structure.custom_itp_path).name
             f.write(f'#include "{custom_itp_name}"\n')
 
         # Include solute ITP (liquid solutes use _liquid.itp)

@@ -103,6 +103,49 @@ def _remember_export_dir(parent, filepath: str) -> None:
         parent._last_export_dir = Path(filepath).parent
 
 
+def _resolve_custom_molecule_itp_name(
+    custom_itp_source_path, staged_guest_itps
+):
+    """Resolve the custom molecule ITP filename, renaming on basename collision.
+
+    UAT-F Issue 2 fix: when the custom molecule ITP basename collides with a
+    cage-guest ITP basename (both ``etoh.itp``), the staged copies would
+    overwrite each other and the .top would have duplicate ``#include`` lines
+    causing ``gmx grompp`` to fail with "moleculetype redefined". This helper
+    detects the collision and renames the custom molecule ITP copy to
+    ``{stem}_L{suffix}`` (e.g. ``etoh_L.itp``), mirroring the built-in ``_H``
+    (hydrate cage guest) / ``_L`` (liquid solute) convention used by
+    ``ch4_hydrate.itp`` / ``ch4_liquid.itp``. The cage-guest ITP (staged by
+    ``_stage_hydrate_guest_itps`` as ``etoh.itp`` with moleculetype ``MOL_H``)
+    keeps its original basename; only the custom molecule copy is renamed.
+
+    Args:
+        custom_itp_source_path: Path or str to the custom molecule's source
+            ``.itp`` file (``structure.custom_itp_path`` or
+            ``custom_structure.itp_path``).
+        staged_guest_itps: ``dict[str, str]`` of staged cage-guest ITP filenames
+            -> their staged full paths (the second return value of
+            ``_stage_hydrate_guest_itps``). When empty or the custom molecule
+            basename is NOT in it, no collision -> no rename.
+
+    Returns:
+        ``(dest_filename, itp_name_for_include)`` where:
+        - ``dest_filename``: The filename to stage the custom molecule ITP as
+          (e.g. ``"etoh_L.itp"`` on collision, or the original basename).
+        - ``itp_name_for_include``: The name to pass to the writer's
+          ``custom_molecule_itp_name`` kwarg for the ``#include`` statement.
+          ``None`` when no rename is needed (the writer uses the basename from
+          the structure's ``itp_path`` / ``custom_itp_path``).
+    """
+    src_path = Path(custom_itp_source_path)
+    original_name = src_path.name
+    if staged_guest_itps and original_name in staged_guest_itps:
+        # Collision: rename to {stem}_L{suffix} mirroring the _H/_L convention.
+        renamed_name = f"{src_path.stem}_L{src_path.suffix}"
+        return renamed_name, renamed_name
+    return original_name, None
+
+
 class SoluteGROMACSExporter:
     """Handle GROMACS file export for solute structures.
     
@@ -193,11 +236,31 @@ class SoluteGROMACSExporter:
             # filesystem. Matches the InterfaceGROMACSExporter wiring (44.1-09).
             from quickice.output.guest_info import _stage_hydrate_guest_itps
             _iface = getattr(solute_structure, 'interface_structure', solute_structure)
-            custom_guest_info, _staged_guest_itps = _stage_hydrate_guest_itps(
+            custom_guest_info, staged_guest_itps = _stage_hydrate_guest_itps(
                 path.parent, hydrate_config, _iface,
                 guest_atom_count=getattr(_iface, 'guest_atom_count', 0),
                 guest_nmolecules=getattr(_iface, 'guest_nmolecules', 0),
             )
+
+            # UAT-F Issue 2 fix: detect custom molecule ITP basename collision
+            # with cage-guest ITPs. When both share basename "etoh.itp", the
+            # custom molecule copy would overwrite the cage-guest copy and the
+            # .top would have duplicate #include lines -> grompp "moleculetype
+            # redefined". Resolve the renamed name ({stem}_L.itp, mirroring
+            # the _H/_L convention) BEFORE the writer call so the writer emits
+            # the correct #include.
+            has_custom_mol = (
+                solute_structure.custom_molecule_count > 0
+                and solute_structure.custom_molecule_positions is not None
+                and solute_structure.custom_itp_path
+                and Path(solute_structure.custom_itp_path).exists()
+            )
+            cm_dest_name = None
+            cm_itp_name_for_include = None
+            if has_custom_mol:
+                cm_dest_name, cm_itp_name_for_include = _resolve_custom_molecule_itp_name(
+                    solute_structure.custom_itp_path, staged_guest_itps
+                )
 
             # Write .gro file using dedicated solute writer
             from quickice.output.gromacs_writer import write_solute_gro_file
@@ -208,7 +271,9 @@ class SoluteGROMACSExporter:
             # Write .top file using dedicated solute writer
             from quickice.output.gromacs_writer import write_solute_top_file
             write_solute_top_file(
-                solute_structure, str(top_path), custom_guest_info=custom_guest_info
+                solute_structure, str(top_path),
+                custom_guest_info=custom_guest_info,
+                custom_molecule_itp_name=cm_itp_name_for_include,
             )
             
             # Copy water topology file (tip4p-ice.itp) for water molecules
@@ -241,16 +306,19 @@ class SoluteGROMACSExporter:
                 solute_itp_dest.write_text(modified_content)
                 logger.info(f"Solute ITP copied with atomtypes commented: {solute_itp_dest}")
             
-            # Copy custom molecule .itp file if custom molecules are present
-            if solute_structure.custom_molecule_count > 0 and solute_structure.custom_molecule_positions is not None:
-                if solute_structure.custom_itp_path and Path(solute_structure.custom_itp_path).exists():
-                    from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
-                    custom_itp_source = Path(solute_structure.custom_itp_path)
-                    custom_itp_dest = path.with_name(custom_itp_source.name)
-                    itp_content = custom_itp_source.read_text()
-                    modified_content = comment_out_atomtypes_in_itp(itp_content)
-                    custom_itp_dest.write_text(modified_content)
-                    logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
+            # Copy custom molecule .itp file if custom molecules are present.
+            # Uses cm_dest_name from the collision resolution above (UAT-F
+            # Issue 2): when the basename collides with a cage-guest ITP, the
+            # copy is staged as {stem}_L.itp to avoid overwriting the cage-guest
+            # ITP and to match the #include the writer already emitted.
+            if has_custom_mol:
+                from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                custom_itp_source = Path(solute_structure.custom_itp_path)
+                custom_itp_dest = path.with_name(cm_dest_name)
+                itp_content = custom_itp_source.read_text()
+                modified_content = comment_out_atomtypes_in_itp(itp_content)
+                custom_itp_dest.write_text(modified_content)
+                logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
             return True
         except Exception as e:
@@ -359,11 +427,26 @@ class CustomMoleculeGROMACSExporter:
             # and the 44.1-11 SoluteGROMACSExporter pattern (which uses
             # interface_structure because SoluteStructure delegates to it).
             from quickice.output.guest_info import _stage_hydrate_guest_itps
-            custom_guest_info, _staged_guest_itps = _stage_hydrate_guest_itps(
+            custom_guest_info, staged_guest_itps = _stage_hydrate_guest_itps(
                 path.parent, hydrate_config, custom_structure,
                 guest_atom_count=getattr(custom_structure, 'guest_atom_count', 0),
                 guest_nmolecules=getattr(custom_structure, 'guest_nmolecules', 0),
             )
+
+            # UAT-F Issue 2 fix: detect custom molecule ITP basename collision
+            # with cage-guest ITPs (both "etoh.itp"). Resolve the renamed name
+            # ({stem}_L.itp, mirroring the _H/_L convention) BEFORE the writer
+            # call so the writer emits the correct #include.
+            has_custom_mol = (
+                custom_structure.itp_path is not None
+                and Path(custom_structure.itp_path).exists()
+            )
+            cm_dest_name = None
+            cm_itp_name_for_include = None
+            if has_custom_mol:
+                cm_dest_name, cm_itp_name_for_include = _resolve_custom_molecule_itp_name(
+                    custom_structure.itp_path, staged_guest_itps
+                )
 
             # Write .gro file with complete system
             from quickice.output.gromacs_writer import (
@@ -375,15 +458,21 @@ class CustomMoleculeGROMACSExporter:
                 custom_structure, str(path), custom_guest_info=custom_guest_info
             )
             write_custom_molecule_top_file(
-                custom_structure, str(top_path), custom_guest_info=custom_guest_info
+                custom_structure, str(top_path),
+                custom_guest_info=custom_guest_info,
+                custom_molecule_itp_name=cm_itp_name_for_include,
             )
             
-            # Copy custom .itp file to output directory
+            # Copy custom .itp file to output directory.
+            # Uses cm_dest_name from the collision resolution above (UAT-F
+            # Issue 2): when the basename collides with a cage-guest ITP, the
+            # copy is staged as {stem}_L.itp to avoid overwriting the cage-guest
+            # ITP and to match the #include the writer already emitted.
             # Read, modify, and write ITP file with atomtypes commented out
             from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
             itp_content = custom_structure.itp_path.read_text()
             modified_content = comment_out_atomtypes_in_itp(itp_content)
-            custom_itp_dest = path.with_name(custom_structure.itp_path.name)
+            custom_itp_dest = path.with_name(cm_dest_name or custom_structure.itp_path.name)
             custom_itp_dest.write_text(modified_content)
             
             logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
@@ -510,11 +599,28 @@ class IonGROMACSExporter:
             # 44.1-11 helper regression fix (recover guest_nmolecules from
             # molecule_index) is ALREADY in place — inherited by this plan.
             from quickice.output.guest_info import _stage_hydrate_guest_itps
-            custom_guest_info, _staged_guest_itps = _stage_hydrate_guest_itps(
+            custom_guest_info, staged_guest_itps = _stage_hydrate_guest_itps(
                 path.parent, hydrate_config, ion_structure,
                 guest_atom_count=getattr(ion_structure, 'guest_atom_count', 0),
                 guest_nmolecules=getattr(ion_structure, 'guest_nmolecules', 0),
             )
+
+            # UAT-F Issue 2 fix: detect custom molecule ITP basename collision
+            # with cage-guest ITPs (both "etoh.itp"). Resolve the renamed name
+            # ({stem}_L.itp, mirroring the _H/_L convention) BEFORE the writer
+            # call so the writer emits the correct #include.
+            has_custom_mol = (
+                ion_structure.custom_molecule_count > 0
+                and ion_structure.custom_molecule_positions is not None
+                and ion_structure.custom_itp_path
+                and Path(ion_structure.custom_itp_path).exists()
+            )
+            cm_dest_name = None
+            cm_itp_name_for_include = None
+            if has_custom_mol:
+                cm_dest_name, cm_itp_name_for_include = _resolve_custom_molecule_itp_name(
+                    ion_structure.custom_itp_path, staged_guest_itps
+                )
 
             # Write .gro file
             from quickice.output.gromacs_writer import write_ion_gro_file
@@ -525,7 +631,9 @@ class IonGROMACSExporter:
             # Write .top file
             from quickice.output.gromacs_writer import write_ion_top_file
             write_ion_top_file(
-                ion_structure, str(top_path), custom_guest_info=custom_guest_info
+                ion_structure, str(top_path),
+                custom_guest_info=custom_guest_info,
+                custom_molecule_itp_name=cm_itp_name_for_include,
             )
             
             # Create ion.itp with ion parameters (named ion.itp to match .top references)
@@ -567,19 +675,22 @@ class IonGROMACSExporter:
                     
                     logger.info(f"Solute ITP copied with atomtypes commented: {solute_itp_dest}")
             
-            # Copy custom molecule .itp file if custom molecules are present
-            if ion_structure.custom_molecule_count > 0 and ion_structure.custom_molecule_positions is not None:
-                if ion_structure.custom_itp_path and Path(ion_structure.custom_itp_path).exists():
-                    custom_itp_source = Path(ion_structure.custom_itp_path)
-                    custom_itp_dest = path.with_name(custom_itp_source.name)
-                    
-                    # Read, modify, and write ITP file with atomtypes commented out
-                    from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
-                    itp_content = custom_itp_source.read_text()
-                    modified_content = comment_out_atomtypes_in_itp(itp_content)
-                    custom_itp_dest.write_text(modified_content)
-                    
-                    logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
+            # Copy custom molecule .itp file if custom molecules are present.
+            # Uses cm_dest_name from the collision resolution above (UAT-F
+            # Issue 2): when the basename collides with a cage-guest ITP, the
+            # copy is staged as {stem}_L.itp to avoid overwriting the cage-guest
+            # ITP and to match the #include the writer already emitted.
+            if has_custom_mol:
+                custom_itp_source = Path(ion_structure.custom_itp_path)
+                custom_itp_dest = path.with_name(cm_dest_name)
+                
+                # Read, modify, and write ITP file with atomtypes commented out
+                from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
+                itp_content = custom_itp_source.read_text()
+                modified_content = comment_out_atomtypes_in_itp(itp_content)
+                custom_itp_dest.write_text(modified_content)
+                
+                logger.info(f"Custom ITP copied with atomtypes commented: {custom_itp_dest}")
             
             return True
         except Exception as e:
