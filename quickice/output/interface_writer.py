@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from quickice.structure_generation.types import InterfaceStructure
-from quickice.utils.molecule_utils import count_guest_atoms
+from quickice.utils.molecule_utils import count_guest_atoms, iter_guest_molecules
 
 from quickice.output._shared import (
     validate_gro_residue_name,
@@ -257,37 +257,144 @@ def write_interface_gro_file(
                     # (one entry for the interface path); a multi-element list is
                     # tolerated but only the matching mol_type is consumed. ----
                     custom_by_moltype = {ci["mol_type"]: ci for ci in custom_guest_info}
-                    # Find the matching molecule_index entry's mol_type so we can
-                    # resolve the residue name + chunk size for the (single) guest
-                    # stream carried by this interface.
-                    guest_index_entry = next(
-                        (m for m in iface.molecule_index
-                         if m.mol_type in custom_by_moltype),
-                        None,
+                    # Issue 3 follow-up (interface writer, mirror 29085047
+                    # ion_writer fix): detect the MIXED built-in+custom cage-guest
+                    # case. The interface path has NO molecule_index (slab/piece
+                    # builders don't populate it — they set guest_descriptors +
+                    # guest_atom_counts instead), so the single-stride walk below
+                    # uses `guest_atom_count // guest_nmolecules` which is the
+                    # FLOOR of the average (e.g. 152//24=6 for sII 2:1 CH4+ethanol)
+                    # — misaligning 5-atom CH4 guests and labeling ALL guests MOL_H.
+                    # Detect via the type-level guest_atom_counts dict
+                    # (authoritative — set by slab/piece from candidate.metadata):
+                    # when a built-in (ch4/thf/co2/h2) AND a custom cage guest
+                    # coexist, walk per-molecule via iter_guest_molecules
+                    # (descriptor atom_labels matching — RELIABLE for ch4 vs
+                    # etoh_mix, unlike detect_guest_type_from_atoms which
+                    # misidentifies ethanol as ch4). The pure single-custom path
+                    # (no built-in in guest_atom_counts) stays byte-identical —
+                    # the new code only activates when BOTH are present.
+                    _BUILTIN_HYDRATE_TYPES = ("ch4", "thf", "co2", "h2")
+                    _iface_guest_atom_counts = (
+                        getattr(iface, "guest_atom_counts", None) or {}
                     )
-                    if guest_index_entry is not None:
-                        ci = custom_by_moltype[guest_index_entry.mol_type]
+                    _has_builtin_cage_guest = any(
+                        t in _BUILTIN_HYDRATE_TYPES
+                        for t in _iface_guest_atom_counts
+                    )
+                    if _has_builtin_cage_guest:
+                        # MIXED built-in+custom: walk per-molecule via
+                        # iter_guest_molecules. Built-in ch4 -> CH4_H +
+                        # reorder_guest_atoms (GenIce2 emits H-first; ITP is
+                        # C-first); custom ethanol -> MOL_H + NO reorder
+                        # (custom atoms already in ITP order). Mirrors the
+                        # ion_writer GRO mixed branch (29085047), adapted to the
+                        # interface's descriptor-driven walker (no molecule_index).
+                        mol_idx = 0
+                        for (mol_start, mol_count, mol_type) in iter_guest_molecules(
+                            guest_atom_names, 0, iface.guest_atom_count,
+                            getattr(iface, "guest_descriptors", None),
+                            _iface_guest_atom_counts,
+                        ):
+                            mol_end = mol_start + mol_count
+                            mol_atom_names = list(
+                                guest_atom_names[mol_start:mol_end]
+                            )
+                            mol_positions = wrapped_positions[
+                                guest_start + mol_start:guest_start + mol_end
+                            ]
+                            res_num = (
+                                iface.ice_nmolecules
+                                + iface.water_nmolecules
+                                + mol_idx + 1
+                            ) % 100000
+                            if mol_type in _BUILTIN_HYDRATE_TYPES:
+                                # Built-in cage guest in a mixed hydrate — use the
+                                # built-in hydrate residue name (CH4_H/THF_H/...)
+                                # + reorder to ITP canonical order. Same logic as
+                                # the built-in branch below, keyed on the
+                                # per-molecule mol_type (reliable) instead of
+                                # detect_guest_type_from_atoms (which misidentifies
+                                # ethanol as ch4).
+                                guest_res_name = get_hydrate_guest_residue_name(
+                                    mol_type
+                                )
+                                validate_gro_residue_name(
+                                    guest_res_name,
+                                    context="Interface built-in guest (mixed) GRO residue name",
+                                )
+                                if mol_type in ("ch4", "thf"):
+                                    mol_atom_names, reorder_mapping = (
+                                        reorder_guest_atoms(mol_atom_names, mol_type)
+                                    )
+                                    if reorder_mapping is not None:
+                                        mol_positions = [
+                                            mol_positions[i]
+                                            for i in reorder_mapping
+                                        ]
+                            elif mol_type in custom_by_moltype:
+                                # Custom cage guest — caller-supplied residue name
+                                # (e.g. "MOL_H"). NO reorder (custom atoms already
+                                # in ITP canonical order; mirrors the single-custom
+                                # path and the ion/solute custom branches).
+                                guest_res_name = custom_by_moltype[mol_type][
+                                    "residue_name"
+                                ]
+                                validate_gro_residue_name(
+                                    guest_res_name,
+                                    context="Interface custom guest (mixed) GRO residue name",
+                                )
+                            else:
+                                # Fallback: unidentified mol_type (e.g. heuristic
+                                # returned None). Fall back to the first/only
+                                # custom_guest_info entry — preserves the
+                                # single-custom byte-identity for edge cases where
+                                # the descriptor did not match.
+                                ci_fallback = next(iter(custom_by_moltype.values()))
+                                guest_res_name = ci_fallback["residue_name"]
+                                validate_gro_residue_name(
+                                    guest_res_name,
+                                    context="Interface guest (fallback) GRO residue name",
+                                )
+                            _format_guest_molecule(
+                                lines, mol_atom_names, mol_positions,
+                                res_num, guest_res_name, atom_num_counter,
+                            )
+                            mol_idx += 1
                     else:
-                        # No molecule_index entry matches a custom mol_type —
-                        # fall back to the first/only entry (defensive; the
-                        # caller is expected to keep molecule_index consistent
-                        # with custom_guest_info).
-                        ci = next(iter(custom_by_moltype.values()))
-                    guest_res_name = ci["residue_name"]
-                    validate_gro_residue_name(guest_res_name, context="Custom guest GRO residue name")
-                    atoms_per_mol = (guest_index_entry.count
-                                     if guest_index_entry is not None
-                                     else iface.guest_atom_count // max(iface.guest_nmolecules, 1))
-                    for mol_idx in range(iface.guest_nmolecules):
-                        mol_start = mol_idx * atoms_per_mol
-                        mol_end = mol_start + atoms_per_mol
-                        mol_atom_names = guest_atom_names[mol_start:mol_end]
-                        mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
-                        res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
-                        _format_guest_molecule(
-                            lines, mol_atom_names, mol_positions,
-                            res_num, guest_res_name, atom_num_counter,
+                        # Pure single-custom (NO built-in cage guests): existing
+                        # path, byte-identical to before the mixed-case fix.
+                        # Find the matching molecule_index entry's mol_type so we
+                        # can resolve the residue name + chunk size for the (single)
+                        # guest stream carried by this interface.
+                        guest_index_entry = next(
+                            (m for m in iface.molecule_index
+                             if m.mol_type in custom_by_moltype),
+                            None,
                         )
+                        if guest_index_entry is not None:
+                            ci = custom_by_moltype[guest_index_entry.mol_type]
+                        else:
+                            # No molecule_index entry matches a custom mol_type —
+                            # fall back to the first/only entry (defensive; the
+                            # caller is expected to keep molecule_index consistent
+                            # with custom_guest_info).
+                            ci = next(iter(custom_by_moltype.values()))
+                        guest_res_name = ci["residue_name"]
+                        validate_gro_residue_name(guest_res_name, context="Custom guest GRO residue name")
+                        atoms_per_mol = (guest_index_entry.count
+                                         if guest_index_entry is not None
+                                         else iface.guest_atom_count // max(iface.guest_nmolecules, 1))
+                        for mol_idx in range(iface.guest_nmolecules):
+                            mol_start = mol_idx * atoms_per_mol
+                            mol_end = mol_start + atoms_per_mol
+                            mol_atom_names = guest_atom_names[mol_start:mol_end]
+                            mol_positions = wrapped_positions[guest_start + mol_start:guest_start + mol_end]
+                            res_num = (iface.ice_nmolecules + iface.water_nmolecules + mol_idx + 1) % 100000
+                            _format_guest_molecule(
+                                lines, mol_atom_names, mol_positions,
+                                res_num, guest_res_name, atom_num_counter,
+                            )
                 else:
                     # ---- existing path: built-in hydrate / real interface structures (UNCHANGED) ----
                     # Determine guest type by analyzing all atom names
@@ -412,6 +519,59 @@ def write_interface_top_file(
         {ci["mol_type"]: ci for ci in custom_guest_info}
         if custom_active else {}
     )
+
+    # Issue 3 follow-up (interface writer, mirror 29085047 ion_writer fix):
+    # detect the MIXED built-in+custom cage-guest case. The interface path has
+    # NO molecule_index (slab/piece builders set guest_descriptors +
+    # guest_atom_counts instead), so detect via the type-level guest_atom_counts
+    # dict (authoritative — set by slab/piece from candidate.metadata). When a
+    # built-in (ch4/thf/co2/h2) AND a custom cage guest coexist, the .gro
+    # contains BOTH CH4_H (built-in) and MOL_H (custom) residues, so the .top
+    # must declare BOTH in [molecules] (run-length encoded in molecule order),
+    # #include BOTH the built-in {type}_hydrate.itp AND the custom ITP, and
+    # write BOTH atomtypes blocks. detect_guest_type_from_atoms CANNOT
+    # distinguish CH4 from ethanol (both have C+H), so the per-molecule
+    # mol_type from iter_guest_molecules (descriptor atom_labels matching —
+    # RELIABLE) drives the [molecules] run-length encoding. The pure
+    # single-custom path (no built-in in guest_atom_counts) and the pure-built-
+    # in path (custom_active is False) stay byte-identical — the new code only
+    # activates when BOTH are present.
+    _BUILTIN_HYDRATE_TYPES = ("ch4", "thf", "co2", "h2")
+    _iface_guest_atom_counts = getattr(iface, "guest_atom_counts", None) or {}
+    distinct_builtin_types: list[str] = [
+        t for t in _BUILTIN_HYDRATE_TYPES
+        if t in _iface_guest_atom_counts
+    ]
+    mixed_builtin_custom = (
+        custom_active and len(distinct_builtin_types) > 0
+    )
+    # Run-length-encoded (resname, count) guest runs in molecule order, for the
+    # [molecules] section. Built for the MIXED case only (walks the guest region
+    # via iter_guest_molecules, the same walker the GRO mixed branch uses, so
+    # the runs EXACTLY match the .gro molecule layout — GROMACS groups
+    # consecutive .gro atoms by [molecules] entries). Empty for the pure
+    # single-custom and pure-built-in paths (those emit a single line).
+    guest_runs: list[tuple[str, int]] = []
+    if mixed_builtin_custom:
+        _guest_start = iface.ice_atom_count + iface.water_atom_count
+        _guest_atom_names = iface.atom_names[_guest_start:_guest_start + iface.guest_atom_count]
+        for (_ms, _mc, _mt) in iter_guest_molecules(
+            _guest_atom_names, 0, iface.guest_atom_count,
+            getattr(iface, "guest_descriptors", None),
+            _iface_guest_atom_counts,
+        ):
+            if _mt in _BUILTIN_HYDRATE_TYPES:
+                _res = get_hydrate_guest_residue_name(_mt)
+            elif _mt in custom_by_moltype:
+                _res = custom_by_moltype[_mt]["residue_name"]
+            else:
+                # Fallback: unidentified mol_type — first custom (preserves the
+                # single-custom byte-identity for edge cases).
+                _res = next(iter(custom_by_moltype.values()))["residue_name"]
+            if guest_runs and guest_runs[-1][0] == _res:
+                guest_runs[-1] = (_res, guest_runs[-1][1] + 1)
+            else:
+                guest_runs.append((_res, 1))
     
     with open(filepath, 'w') as f:
         # Header
@@ -465,6 +625,36 @@ def write_interface_top_file(
                         _written_atomtypes,
                         f"custom guest {ci['mol_type']} atom types",
                     )
+            # Issue 3 follow-up: MIXED built-in+custom cage assignment (CH4
+            # built-in small + ethanol custom large). The .gro has BOTH CH4_H
+            # (5-atom) and MOL_H (9-atom) residues; the .top must define the
+            # atomtypes for BOTH (the built-in CH4 atomtypes for CH4_H, the
+            # custom ethanol atomtypes for MOL_H). The custom block above wrote
+            # the custom atomtypes; this writes the built-in atomtypes blocks
+            # for each coexisting built-in type. Pure single-custom
+            # (distinct_builtin_types is empty) -> no built-in atomtypes
+            # written (byte-identical to the old custom_active path).
+            for _bt in distinct_builtin_types:
+                if _bt == "ch4":
+                    _write_atomtypes_block(
+                        f, CH4_ATOMTYPE_NAMES,
+                        "CH4 atom types (GAFF2)", _written_atomtypes,
+                    )
+                elif _bt == "thf":
+                    _write_atomtypes_block(
+                        f, THF_ATOMTYPE_NAMES,
+                        "THF atom types (GAFF2)", _written_atomtypes,
+                    )
+                elif _bt == "co2":
+                    _write_atomtypes_block(
+                        f, CO2_ATOMTYPE_NAMES,
+                        "CO2 atom types (GAFF2)", _written_atomtypes,
+                    )
+                elif _bt == "h2":
+                    _write_atomtypes_block(
+                        f, H2_ATOMTYPE_NAMES,
+                        "H2 atom types (GAFF2)", _written_atomtypes,
+                    )
         elif iface.guest_atom_count > 0 and guest_type:
             if guest_type == "ch4":
                 _write_atomtypes_block(f, CH4_ATOMTYPE_NAMES,
@@ -500,6 +690,17 @@ def write_interface_top_file(
             for ci in custom_guest_info:
                 if ci.get("itp_path"):
                     f.write(f'#include "{Path(ci["itp_path"]).name}"\n')
+            # Issue 3 follow-up: MIXED built-in+custom cage assignment (CH4
+            # built-in small + ethanol custom large). The .gro contains BOTH
+            # CH4_H (built-in) and MOL_H (custom) residues; the .top must
+            # #include BOTH the custom ITP (etoh.itp, for MOL_H, included above)
+            # AND the built-in {type}_hydrate.itp (ch4_hydrate.itp, for CH4_H).
+            # Staged by _stage_hydrate_guest_itps (config-driven — stages
+            # built-in ITPs in the custom path too, per the 29085047 fix). Pure
+            # single-custom (distinct_builtin_types is empty) -> no built-in
+            # #include (byte-identical to the old custom_active path).
+            for _bt in distinct_builtin_types:
+                f.write(f'#include "{_bt}_hydrate.itp"\n')
         elif iface.guest_nmolecules > 0 and guest_type:
             # Include the correct .itp file based on detected guest type
             # Interface guests come from hydrate cages, use hydrate-specific ITP
@@ -525,7 +726,19 @@ def write_interface_top_file(
         
         # Guest molecules (after all SOL in .gro file)
         if iface.guest_nmolecules > 0:
-            if custom_active:
+            if mixed_builtin_custom:
+                # Issue 3 follow-up: MIXED built-in+custom — write one
+                # [molecules] line per consecutive same-type guest RUN (run-length
+                # encoded as (resname, count) in molecule order), matching the
+                # .gro molecule layout. GROMACS groups CONSECUTIVE .gro atoms by
+                # [molecules] entries, so a mixed [CH4_H][MOL_H] layout in the
+                # .gro requires 2+ [molecules] lines — NOT a single grouped
+                # total. ``guest_runs`` was pre-resolved to resname strings
+                # (built-in CH4_H/THF_H or custom MOL_H) via iter_guest_molecules
+                # (the same walker the GRO mixed branch uses), so emit directly.
+                for _res, _cnt in guest_runs:
+                    f.write(f"{_res:<10s} {_cnt}\n")
+            elif custom_active:
                 # P3: custom guest residue name from custom_by_moltype (e.g.
                 # "MOL_H") — does NOT call get_hydrate_guest_residue_name
                 # (which would fall through to UNK for unknown mol_type).
