@@ -170,18 +170,30 @@ def write_solute_gro_file(
             )))
 
     # Pass 2: guest molecules (if present in interface)
+    # Issue 3 (molh-atom-drop-origin): the ion inserter now labels cage guests
+    # by their specific mol_type (ch4/thf/etoh_mix/...) instead of the generic
+    # "guest". The ion inserter MUTATES the source interface's molecule_index
+    # (ion_inserter.py:331, a pre-existing V-17 fragility) when it is empty, so
+    # the solute writer may see a molecule_index with ch4/thf mol_types (via
+    # solute.interface_structure shared with the ion source). Collect ALL
+    # cage-guest mol_types here: generic "guest" (fallback) + built-in
+    # ch4/thf/co2/h2 + custom (when opted in). The old `mol_type == "guest"`
+    # filter would miss the ch4/thf entries -> 0 cage guests in the solute
+    # export -> .top missing CH4_H -> grompp failure.
+    _BUILTIN_CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
     if interface.guest_atom_count > 0 and interface.guest_nmolecules > 0:
         if interface.molecule_index:
             for mol in interface.molecule_index:
-                if mol.mol_type == "guest":
+                if mol.mol_type in _BUILTIN_CAGE_GUEST_MOL_TYPES:
                     ordered_mols.append(("guest", mol))
                 elif custom_active and mol.mol_type in custom_by_moltype:
-                    # Custom guest mol_type (e.g. "etoh_e2e") — collect when the
+                    # Custom guest mol_type (e.g. "etoh_mix") — collect when the
                     # caller opted in via custom_guest_info. The built-in path
                     # (custom_guest_info is None -> custom_active is False) only
-                    # collects literal "guest" entries, preserving byte-identical
-                    # behavior for ch4/thf. Mirrors write_interface_gro_file's
-                    # `m.mol_type in custom_by_moltype` lookup (plan 41-04).
+                    # collects built-in + literal "guest" entries, preserving
+                    # byte-identical behavior for ch4/thf. Mirrors
+                    # write_interface_gro_file's `m.mol_type in custom_by_moltype`
+                    # lookup (plan 41-04).
                     ordered_mols.append(("guest", mol))
         else:
             # Build guest entries from counts when molecule_index is empty
@@ -529,12 +541,23 @@ def write_solute_top_file(
     # Count molecules by type from interface's molecule_index
     # FALLBACK: When molecule_index is empty (real GenIce2 data), use
     # ice_nmolecules + water_nmolecules from the interface structure
+    # Issue 3 (molh-atom-drop-origin): the ion inserter now labels cage guests
+    # by their specific mol_type (ch4/thf/...) instead of the generic "guest",
+    # and MUTATES the source interface's molecule_index (ion_inserter.py:331).
+    # So the solute writer may see a molecule_index with ch4/thf mol_types
+    # (via solute.interface_structure shared with the ion source). Count ALL
+    # cage-guest mol_types here (generic "guest" + built-in ch4/thf/co2/h2).
+    # Custom guest mol_types are counted after custom_by_moltype is built.
+    _BUILTIN_CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
     if interface.molecule_index:
         sol_count = sum(1 for m in interface.molecule_index if m.mol_type in ("water", "ice"))
-        guest_count = sum(1 for m in interface.molecule_index if m.mol_type == "guest")
+        builtin_guest_count = sum(
+            1 for m in interface.molecule_index
+            if m.mol_type in _BUILTIN_CAGE_GUEST_MOL_TYPES
+        )
     else:
         sol_count = interface.ice_nmolecules + interface.water_nmolecules
-        guest_count = interface.guest_nmolecules if interface.guest_nmolecules > 0 else 0
+        builtin_guest_count = interface.guest_nmolecules if interface.guest_nmolecules > 0 else 0
 
     # Check for custom molecules (propagated from custom tab)
     has_custom = (solute_structure.custom_molecule_count > 0 and
@@ -557,7 +580,6 @@ def write_solute_top_file(
     custom_active = (
         custom_guest_info is not None
         and len(custom_guest_info) > 0
-        and guest_count > 0
         and interface.guest_atom_count > 0
         and interface.guest_nmolecules > 0
     )
@@ -565,6 +587,15 @@ def write_solute_top_file(
         {ci["mol_type"]: ci for ci in custom_guest_info}
         if custom_active else {}
     )
+    # Issue 3: count ALL cage guests (built-in + custom). Custom guest
+    # mol_types (e.g. etoh_mix) are counted via custom_by_moltype.
+    custom_guest_count = sum(
+        1 for m in interface.molecule_index
+        if m.mol_type in custom_by_moltype
+    ) if interface.molecule_index else 0
+    guest_count = builtin_guest_count + custom_guest_count
+    # Refine custom_active: only active if there are actually cage guests.
+    custom_active = custom_active and guest_count > 0
     if custom_active:
         # Resolve the custom residue name via the matching molecule_index
         # entry's mol_type (fall back to the first/only custom_guest_info
@@ -582,8 +613,18 @@ def write_solute_top_file(
         guest_res_name = ci_mol["residue_name"]
     elif guest_count > 0 and interface.guest_atom_count > 0:
         if interface.molecule_index:
+            # Issue 3: the ion inserter now labels built-in cage guests by
+            # their specific mol_type (ch4/thf/...). Use the mol_type DIRECTLY
+            # for built-in types (reliable — avoids detect_guest_type_from_atoms
+            # which would misidentify custom ethanol as ch4); fall back to atom
+            # detection only for the generic "guest" label (ion inserter
+            # fallback path, descriptors absent).
             for mol in interface.molecule_index:
-                if mol.mol_type == "guest":
+                if mol.mol_type in ("ch4", "thf", "co2", "h2"):
+                    guest_type = mol.mol_type
+                    guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                    break
+                elif mol.mol_type == "guest":
                     start = mol.start_idx
                     mol_atom_names = interface.atom_names[start:start + mol.count]
                     guest_type = detect_guest_type_from_atoms(mol_atom_names)

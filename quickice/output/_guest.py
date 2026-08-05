@@ -287,9 +287,8 @@ def detect_guest_type_runs(
 ):
     """Detect guest types across a structure's molecule_index, run-length encoded.
 
-    Walks the ``mol_type == "guest"`` entries of ``molecule_index`` in order,
-    detects each molecule's type from its atom-name slice
-    (``detect_guest_type_from_atoms``), and returns:
+    Walks the cage-guest entries of ``molecule_index`` in order, determines each
+    molecule's type, and returns:
 
     - ``runs``: list of ``(guest_type, count)`` run-length-encoded in molecule
       order. GROMACS ``[ molecules ]`` requires consecutive same-type
@@ -299,25 +298,49 @@ def detect_guest_type_runs(
       (first-appearance order, deduped) for ``#include`` directives (each
       type's ``{type}_hydrate.itp`` is included once).
 
-    Reliable for built-in ch4/thf because each guest molecule_index entry
-    carries the CORRECT per-molecule count (post Phase 45-15 ion-inserter
-    fix), so the slice passed to ``detect_guest_type_from_atoms`` is exactly
-    one molecule — no neighbor contamination. ``guest_type`` may be ``None``
-    for an unidentifiable molecule (the writer falls back to a placeholder
-    residue name for that run).
+    Type resolution per molecule (Issue 3 / molh-atom-drop-origin):
+    - ``mol_type == "guest"`` (generic fallback label): detect the type from
+      the atom-name slice via ``detect_guest_type_from_atoms``. Reliable for
+      built-in ch4/thf because each molecule_index entry carries the CORRECT
+      per-molecule count (post Phase 45-15 ion-inserter fix), so the slice is
+      exactly one molecule — no neighbor contamination.
+    - ``mol_type`` is a specific built-in (``"ch4"``/``"thf"``/``"co2"``/``"h2"``):
+      use the mol_type DIRECTLY. The ion inserter now labels cage guests by
+      their specific type (from ``iter_guest_molecules`` descriptor matching),
+      so atom-name detection is no longer needed for these — and detection
+      would MISIDENTIFY custom ethanol as ch4 (both have C+H), so using the
+      mol_type directly is the RELIABLE path. Byte-identical to the old
+      atom-detected result for built-in guests (the detected type matches
+      the mol_type).
+    - Any other ``mol_type`` (custom guest, water, ice, ion, solute, custom
+      molecule): skipped — not a built-in cage guest.
 
-    Returns ``([], [])`` when there are no guest entries or ``atom_names`` is
-    ``None``.
+    ``guest_type`` may be ``None`` for an unidentifiable "guest" molecule (the
+    writer falls back to a placeholder residue name for that run).
+
+    Returns ``([], [])`` when there are no built-in cage-guest entries or
+    ``atom_names`` is ``None``.
     """
     if not molecule_index or atom_names is None:
         return [], []
     runs: list[tuple] = []  # (guest_type, count)
     distinct: list = []
     for mol in molecule_index:
-        if getattr(mol, "mol_type", None) != "guest":
+        mt = getattr(mol, "mol_type", None)
+        if mt == "guest":
+            # Generic fallback label — detect the built-in type from atoms.
+            names = atom_names[mol.start_idx:mol.start_idx + mol.count]
+            gtype = detect_guest_type_from_atoms(names)
+        elif mt in ("ch4", "thf", "co2", "h2"):
+            # Specific built-in type (descriptor-driven ion inserter path) —
+            # use directly. Avoids detect_guest_type_from_atoms which would
+            # misidentify custom ethanol (C+H+O) as ch4 (C+H, _get_molecule_atoms
+            # grabs only the first 5 atoms and misses the O).
+            gtype = mt
+        else:
+            # Custom guest / water / ice / ion / solute / custom-molecule —
+            # not a built-in cage guest; skip.
             continue
-        names = atom_names[mol.start_idx:mol.start_idx + mol.count]
-        gtype = detect_guest_type_from_atoms(names)
         if runs and runs[-1][0] == gtype:
             runs[-1] = (gtype, runs[-1][1] + 1)
         else:

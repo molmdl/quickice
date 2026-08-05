@@ -139,16 +139,24 @@ def write_ion_gro_file(
         if mol.mol_type in ("ice", "water"):
             ordered_mols.append(("sol", mol))
     # Pass 2: guest molecules
+    # Issue 3 (molh-atom-drop-origin): the ion inserter now labels cage guests
+    # by their specific mol_type (ch4/thf/etoh_mix/...) instead of the generic
+    # "guest" (iter_guest_molecules descriptor matching — RELIABLE for ch4 vs
+    # custom ethanol, unlike detect_guest_type_from_atoms which misidentifies
+    # ethanol as ch4). Collect ALL cage-guest mol_types here: the generic
+    # "guest" (fallback path), the built-in ch4/thf/co2/h2, AND the custom
+    # guest mol_types (when the caller opted in via custom_guest_info). The
+    # built-in path (custom_guest_info is None -> custom_active is False) only
+    # collects literal "guest" + built-in entries, preserving byte-identical
+    # behavior for ch4/thf. Mirrors write_solute_gro_file's
+    # `m.mol_type in custom_by_moltype` lookup (plan 41-04).
+    _BUILTIN_CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
     for mol in ion_structure.molecule_index:
-        if mol.mol_type == "guest":
+        if mol.mol_type in _BUILTIN_CAGE_GUEST_MOL_TYPES:
             ordered_mols.append(("guest", mol))
         elif custom_active and mol.mol_type in custom_by_moltype:
-            # Custom guest mol_type (e.g. "etoh_e2e") — collect when the
-            # caller opted in via custom_guest_info. The built-in path
-            # (custom_guest_info is None -> custom_active is False) only
-            # collects literal "guest" entries, preserving byte-identical
-            # behavior for ch4/thf. Mirrors write_solute_gro_file's
-            # `m.mol_type in custom_by_moltype` lookup (plan 41-04).
+            # Custom guest mol_type (e.g. "etoh_mix") — collect when the
+            # caller opted in via custom_guest_info.
             ordered_mols.append(("guest", mol))
     # Pass 3: custom molecules (if present)
     # Note: custom molecules are stored separately, not in molecule_index
@@ -349,17 +357,76 @@ def write_ion_gro_file(
                         # the solute/custom-molecule writers' fallback for
                         # synthetic 'guest' entries when molecule_index lacks the
                         # real mol_type).
+                        #
+                        # Issue 3 (molh-atom-drop-origin): MIXED built-in+custom
+                        # cage assignment (CH4 built-in small + ethanol custom
+                        # large). The ion inserter now labels cage guests by their
+                        # specific mol_type (ch4/etoh_mix). Resolve the residue
+                        # name PER-MOLECULE so built-in ch4 -> CH4_H (with
+                        # reorder_guest_atoms to the ITP canonical order) and
+                        # custom ethanol -> MOL_H (NO reorder — custom atoms are
+                        # already in ITP order). The old code fell back to the
+                        # first custom_guest_info entry for ANY mol_type not in
+                        # custom_by_moltype (including the generic "guest" and
+                        # built-in ch4), so ALL cage guests got MOL_H and the
+                        # 864 CH4 (5-atom) cage guests were labeled MOL_H while
+                        # the .top #included etoh.itp (9 atoms/MOL_H) -> grompp
+                        # atom-count mismatch. detect_guest_type_from_atoms
+                        # CANNOT distinguish CH4 from ethanol (both have C+H;
+                        # _get_molecule_atoms grabs only the first 5 atoms and
+                        # misses the O -> returns "ch4" for ethanol), so the
+                        # per-molecule mol_type from iter_guest_molecules
+                        # (descriptor atom_labels matching — RELIABLE) is the
+                        # only correct discriminator.
                         ci = custom_by_moltype.get(mol.mol_type)
-                        if ci is None:
-                            ci = next(iter(custom_by_moltype.values()))
-                        guest_res_name = ci["residue_name"]
-                        validate_gro_residue_name(
-                            guest_res_name,
-                            context="Ion custom guest GRO residue name",
-                        )
-                        # No reorder — custom guest atoms are already in ITP
-                        # canonical order (the interface / solute / custom-molecule
-                        # writers' custom branches also skip reorder_guest_atoms).
+                        if mol.mol_type in ("ch4", "thf", "co2", "h2"):
+                            # Built-in cage guest in a mixed built-in+custom
+                            # hydrate — use the built-in hydrate residue name
+                            # (CH4_H/THF_H/...) + reorder to ITP canonical order
+                            # (GenIce2 emits ch4 H-first; ITP defines C-first).
+                            # This is the SAME logic as the built-in path below
+                            # (detect_guest_type_from_atoms + reorder), but keyed
+                            # on the per-molecule mol_type (reliable) instead of
+                            # atom-name detection (which misidentifies ethanol).
+                            guest_type = mol.mol_type
+                            guest_res_name = get_hydrate_guest_residue_name(guest_type)
+                            validate_gro_residue_name(
+                                guest_res_name,
+                                context="Ion built-in guest (mixed) GRO residue name",
+                            )
+                            reorder_mapping = None
+                            if guest_type in ["ch4", "thf"]:
+                                mol_atom_names, reorder_mapping = reorder_guest_atoms(
+                                    mol_atom_names, guest_type
+                                )
+                                if reorder_mapping is not None:
+                                    mol_positions = [mol_positions[i] for i in reorder_mapping]
+                        elif ci is not None:
+                            # Custom cage guest — use the caller-supplied
+                            # residue name (e.g. "MOL_H"). NO reorder — custom
+                            # guest atoms are already in ITP canonical order
+                            # (the interface/solute/custom-molecule writers'
+                            # custom branches also skip reorder_guest_atoms).
+                            guest_res_name = ci["residue_name"]
+                            validate_gro_residue_name(
+                                guest_res_name,
+                                context="Ion custom guest GRO residue name",
+                            )
+                        else:
+                            # Fallback: literal "guest" mol_type (ion inserter
+                            # fallback path, descriptors absent) or an unknown
+                            # mol_type not in custom_by_moltype. Fall back to
+                            # the first/only custom_guest_info entry — preserves
+                            # the single-custom-guest byte-identical behavior
+                            # (the ion inserter fallback labels all cage guests
+                            # "guest" when descriptors are absent, and the
+                            # single-custom path has only custom guests).
+                            ci_fallback = next(iter(custom_by_moltype.values()))
+                            guest_res_name = ci_fallback["residue_name"]
+                            validate_gro_residue_name(
+                                guest_res_name,
+                                context="Ion custom guest (fallback) GRO residue name",
+                            )
                     else:
                         # Built-in path: detect guest type and get residue name
                         # (byte-identical to before custom_guest_info).
@@ -537,7 +604,21 @@ def write_ion_top_file(
     # Count molecules by type across ENTIRE molecule_index
     # This ensures proper grouping (all SOL together, not stuttering)
     sol_count = sum(1 for m in ion_structure.molecule_index if m.mol_type in ("water", "ice"))
-    guest_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "guest")
+    # Issue 3 (molh-atom-drop-origin): the ion inserter now labels cage guests
+    # by their specific mol_type (ch4/thf/etoh_mix/...) instead of the generic
+    # "guest". Count ALL cage-guest mol_types here: the generic "guest" (ion
+    # inserter fallback path), the built-in ch4/thf/co2/h2, AND custom guest
+    # mol_types (resolved against custom_by_moltype below once custom_active
+    # is known). The old `mol_type == "guest"` filter would miss the ch4/thf
+    # entries the ion inserter now produces, undercounting cage guests and
+    # skipping the guest section entirely -> grompp atom-count mismatch.
+    _BUILTIN_CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
+    # Custom guest mol_types are not known until custom_active is resolved
+    # below; count them after custom_by_moltype is built.
+    builtin_guest_count = sum(
+        1 for m in ion_structure.molecule_index
+        if m.mol_type in _BUILTIN_CAGE_GUEST_MOL_TYPES
+    )
     na_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "na")
     cl_count = sum(1 for m in ion_structure.molecule_index if m.mol_type == "cl")
     
@@ -552,14 +633,16 @@ def write_ion_top_file(
     # Detect guest type from atom names (for including correct .itp and residue name)
     guest_type = None
     guest_res_name = "GUE"  # Fallback
-    # Phase 45-15: built-in mixed hydrates (CH4 in small + THF in large cages)
-    # carry MULTIPLE guest types. ``guest_runs`` is the run-length-encoded
-    # list of ``(guest_type, count)`` in molecule order (GROMACS [molecules]
-    # requires consecutive same-type runs — a [CH4][THF][CH4][THF] layout emits
-    # 4 lines, not a single grouped total). ``distinct_guest_types`` is the
-    # ordered deduped list for #include directives (each type's
-    # ``{type}_hydrate.itp`` included once). Empty for the custom-guest path
-    # (which uses a single ``guest_res_name`` from custom_guest_info).
+    # Phase 45-15 + Issue 3 (molh-atom-drop-origin): ``guest_runs`` is the
+    # run-length-encoded list of ``(resname, count)`` in molecule order
+    # (GROMACS [molecules] requires consecutive same-type runs — a
+    # [CH4][THF][CH4][THF] layout emits 4 lines, not a single grouped total).
+    # Resolved to RESNAME strings (not guest_types) so the [molecules]
+    # writer emits them directly — unifies the built-in and mixed-custom
+    # write paths. ``distinct_guest_types`` is the ordered deduped list of
+    # BUILT-IN guest types (e.g. ["ch4"]) for #include directives (each
+    # type's ``{type}_hydrate.itp`` included once) and atomtype blocks.
+    # Empty for the pure single-custom path (no built-in cage guests).
     guest_runs: list[tuple] = []
     distinct_guest_types: list = []
     # Custom-guest branch is opt-in (mirror write_interface_top_file:1536-1603,
@@ -571,44 +654,110 @@ def write_ion_top_file(
     custom_active = (
         custom_guest_info is not None
         and len(custom_guest_info) > 0
-        and guest_count > 0
         and ion_structure.guest_atom_count > 0
     )
     custom_by_moltype = (
         {ci["mol_type"]: ci for ci in custom_guest_info}
         if custom_active else {}
     )
+    # Issue 3: count ALL cage guests (built-in + custom). The ion inserter
+    # now labels cage guests by their specific mol_type (ch4/thf/etoh_mix/...);
+    # the old `mol_type == "guest"` filter would miss the ch4/thf/etoh_mix
+    # entries. ``builtin_guest_count`` was computed above (before
+    # custom_by_moltype was known); add the custom-guest count now.
+    custom_guest_count = sum(
+        1 for m in ion_structure.molecule_index
+        if m.mol_type in custom_by_moltype
+    )
+    guest_count = builtin_guest_count + custom_guest_count
+    # Refine custom_active: only active if there are actually cage guests in
+    # the molecule_index (matches the old `guest_count > 0` gate condition).
+    custom_active = custom_active and guest_count > 0
+
     if custom_active:
-        # Resolve the custom residue name via the matching molecule_index
-        # entry's mol_type (fall back to the first/only custom_guest_info
-        # entry — defensive, matches the interface/solute/custom-molecule
-        # writers' fallback when molecule_index lacks a match or uses the
-        # literal "guest" mol_type).
-        guest_index_entry = next(
-            (m for m in ion_structure.molecule_index
-             if m.mol_type in custom_by_moltype),
-            None,
-        )
-        if guest_index_entry is not None:
-            ci_mol = custom_by_moltype[guest_index_entry.mol_type]
+        # Detect which BUILT-IN cage guest types coexist with the custom
+        # guests (the MIXED built-in+custom case — e.g. CH4 built-in small +
+        # ethanol custom large). The ion inserter labels built-in guests
+        # ch4/thf/...; collect the distinct types in molecule order for
+        # #include + atomtype blocks. Empty for the pure single-custom path.
+        for m in ion_structure.molecule_index:
+            if m.mol_type in ("ch4", "thf", "co2", "h2"):
+                if m.mol_type not in distinct_guest_types:
+                    distinct_guest_types.append(m.mol_type)
+
+        if distinct_guest_types:
+            # MIXED built-in+custom: run-length encode the [molecules] section
+            # by per-molecule RESIDUE NAME, keyed on ``mol.mol_type`` (NOT
+            # detect_guest_type_from_atoms, which misidentifies ethanol as
+            # ch4 because _get_molecule_atoms grabs only the first 5 atoms
+            # C+4H and misses the O). Built-in ch4 -> CH4_H; custom ethanol
+            # -> MOL_H.
+            # The .gro writes guests in molecule_index order (Pass 2), so the
+            # runs here match the .gro layout (GROMACS groups CONSECUTIVE
+            # atoms by [molecules] entries).
+            for m in ion_structure.molecule_index:
+                if m.mol_type in ("ch4", "thf", "co2", "h2"):
+                    _res = get_hydrate_guest_residue_name(m.mol_type)
+                elif m.mol_type in custom_by_moltype:
+                    _res = custom_by_moltype[m.mol_type]["residue_name"]
+                elif m.mol_type == "guest":
+                    # Generic "guest" fallback (ion inserter fallback path,
+                    # descriptors absent) — fall back to first custom
+                    # (preserves single-custom byte-identity when the
+                    # inserter labeled "guest").
+                    _res = next(iter(custom_by_moltype.values()))["residue_name"]
+                else:
+                    continue
+                if guest_runs and guest_runs[-1][0] == _res:
+                    guest_runs[-1] = (_res, guest_runs[-1][1] + 1)
+                else:
+                    guest_runs.append((_res, 1))
+            # guest_res_name for the header / fallback: first run's resname.
+            guest_res_name = (
+                guest_runs[0][0] if guest_runs
+                else next(iter(custom_by_moltype.values()))["residue_name"]
+            )
+            guest_type = (
+                distinct_guest_types[0] if distinct_guest_types else None
+            )
         else:
-            ci_mol = next(iter(custom_by_moltype.values()))
-        guest_res_name = ci_mol["residue_name"]
+            # Pure single-custom (NO built-in cage guests): single MOL_H run.
+            # Byte-identical to the old custom_active path. Resolve the
+            # custom residue name via the matching molecule_index entry's
+            # mol_type (fall back to the first/only custom_guest_info entry
+            # — defensive, matches the interface/solute/custom-molecule
+            # writers' fallback when molecule_index lacks a match or uses
+            # the literal "guest" mol_type).
+            guest_index_entry = next(
+                (m for m in ion_structure.molecule_index
+                 if m.mol_type in custom_by_moltype),
+                None,
+            )
+            if guest_index_entry is not None:
+                ci_mol = custom_by_moltype[guest_index_entry.mol_type]
+            else:
+                ci_mol = next(iter(custom_by_moltype.values()))
+            guest_res_name = ci_mol["residue_name"]
+            # guest_runs stays [] -> [molecules] writes single MOL_H line.
     elif guest_count > 0 and ion_structure.guest_atom_count > 0:
-        # Built-in path. Phase 45-15: detect EACH guest molecule's type from
-        # its atom-name slice and run-length encode by consecutive same-type
-        # molecules. Each molecule_index entry now carries the CORRECT
-        # per-molecule count (post ion-inserter fix), so the slice is exactly
-        # one molecule — no neighbor contamination, detection is reliable.
-        # The single-guest path (all-CH4) yields one run, byte-identical to
-        # before; a mixed [CH4][THF][CH4][THF] layout yields 4 runs.
-        guest_runs, distinct_guest_types = detect_guest_type_runs(
+        # Built-in path. Phase 45-15: detect EACH guest molecule's type and
+        # run-length encode by consecutive same-type molecules. Issue 3:
+        # ``detect_guest_type_runs`` now handles the per-molecule mol_types
+        # the ion inserter produces (ch4/thf directly, "guest" via atom-name
+        # detection) — byte-identical to before (the detected type matches
+        # the mol_type for built-in guests). Resolve runs to RESNAME strings
+        # so the [molecules] writer emits them directly (unified with the
+        # mixed-custom path).
+        _type_runs, distinct_guest_types = detect_guest_type_runs(
             ion_structure.molecule_index, ion_structure.atom_names
         )
         guest_type = distinct_guest_types[0] if distinct_guest_types else None
         guest_res_name = (
             get_hydrate_guest_residue_name(guest_type) if guest_type else "GUE"
         )
+        for _gt, _cnt in _type_runs:
+            _res = get_hydrate_guest_residue_name(_gt) if _gt else "GUE"
+            guest_runs.append((_res, _cnt))
 
     # Parse custom molecule moleculetype name from ITP file (Bug 2 fix)
     # GROMACS requires [molecules] name to match ITP [moleculetype] name
@@ -756,6 +905,17 @@ def write_ion_top_file(
             for ci in custom_guest_info:
                 if ci.get("itp_path"):
                     f.write(f'#include "{Path(ci["itp_path"]).name}"\n')
+            # Issue 3 (molh-atom-drop-origin): MIXED built-in+custom cage
+            # assignment (CH4 built-in small + ethanol custom large). The
+            # .gro contains BOTH CH4_H (built-in, 5-atom) and MOL_H (custom,
+            # 9-atom) residues; the .top must #include BOTH the custom ITP
+            # (etoh.itp, for MOL_H) AND the built-in {type}_hydrate.itp
+            # (ch4_hydrate.itp, for CH4_H). Staged by
+            # _stage_hydrate_guest_itps (which now stages built-in ITPs in
+            # the custom path too). Pure single-custom (distinct_guest_types
+            # is empty) -> no built-in #include (byte-identical to old).
+            for _gt in distinct_guest_types:
+                f.write(f'#include "{_gt}_hydrate.itp"\n')
         elif guest_count > 0:
             # Phase 45-15: include EACH distinct built-in guest type's
             # hydrate .itp (mixed CH4+THF needs both ch4_hydrate.itp and
@@ -812,21 +972,21 @@ def write_ion_top_file(
             f.write(f"SOL              {sol_count}\n")
 
         if guest_count > 0:
-            # Phase 45-15: write one [molecules] line per consecutive
-            # same-type guest RUN (run-length encoded), matching the .gro
-            # molecule order. GROMACS groups CONSECUTIVE atoms by [molecules]
-            # entries, so a mixed [CH4][THF][CH4][THF] layout in the .gro
-            # requires 4 [molecules] lines — NOT a single grouped total.
-            # The custom-guest path (custom_active) emits a single line with
-            # the caller-supplied guest_res_name (unchanged).
-            if custom_active or not guest_runs:
-                f.write(f"{guest_res_name:<17s}{guest_count}\n")
-            else:
-                for _gt, _cnt in guest_runs:
-                    _res = (
-                        get_hydrate_guest_residue_name(_gt) if _gt else "GUE"
-                    )
+            # Phase 45-15 + Issue 3: write one [molecules] line per consecutive
+            # same-type guest RUN (run-length encoded as ``(resname, count)``),
+            # matching the .gro molecule order. GROMACS groups CONSECUTIVE
+            # atoms by [molecules] entries, so a mixed [CH4_H][MOL_H] layout
+            # in the .gro requires 2 [molecules] lines — NOT a single grouped
+            # total. ``guest_runs`` is pre-resolved to resname strings (built-
+            # in CH4_H/THF_H or custom MOL_H), so emit directly.
+            # The pure single-custom path has ``guest_runs == []`` -> fall
+            # back to the single ``guest_res_name`` line (byte-identical to
+            # the old custom_active behavior).
+            if guest_runs:
+                for _res, _cnt in guest_runs:
                     f.write(f"{_res:<17s}{_cnt}\n")
+            else:
+                f.write(f"{guest_res_name:<17s}{guest_count}\n")
 
         if has_custom:
             # custom_mol_name computed from ITP file above (Bug 2 fix)

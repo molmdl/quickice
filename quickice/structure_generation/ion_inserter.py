@@ -200,11 +200,29 @@ class IonInserter:
             gac = getattr(structure, 'guest_atom_counts', None) or {}
             guest_entries: list[MoleculeIndex] = []
             if atom_names:
+                # Issue 3 (molh-atom-drop-origin): preserve the per-molecule
+                # ``mol_type`` yielded by ``iter_guest_molecules`` (descriptor
+                # ``atom_labels`` matching — RELIABLE for ch4 vs custom ethanol,
+                # unlike ``detect_guest_type_from_atoms`` which misidentifies
+                # ethanol as ch4 because ``_get_molecule_atoms`` only grabs the
+                # first 5 atoms (C+4H) and never sees the O). The writers use
+                # this per-molecule mol_type to resolve the residue name
+                # PER-MOLECULE in the mixed built-in+custom case (CH4_H for
+                # built-in ch4, MOL_H for custom ethanol) instead of falling
+                # back to the first custom_guest_info entry for ALL cage
+                # guests. ``_mt`` is None only when the heuristic cannot
+                # identify the molecule; the fallback path below (line 214+)
+                # handles that by labeling as "guest". For the mixed-built-in
+                # case (CH4+THF, no custom) ``_mt`` is "ch4"/"thf" — the
+                # writers' built-in path + the updated ``detect_guest_type_runs``
+                # use this directly (byte-identical output, since the detected
+                # type matches the mol_type for built-in guests).
                 for (ms, mc, _mt) in iter_guest_molecules(
                     atom_names, current_idx, guest_atom_count, descriptors, gac
                 ):
                     guest_entries.append(MoleculeIndex(
-                        start_idx=ms, count=mc, mol_type="guest"
+                        start_idx=ms, count=mc,
+                        mol_type=_mt if _mt is not None else "guest",
                     ))
             if (guest_entries
                     and len(guest_entries) == guest_mols
@@ -468,20 +486,30 @@ class IonInserter:
         #
         # For hydrate structures:
         # - Hydrate water framework is labeled as "ice" in InterfaceStructure
-        # - Guest molecules are labeled as "guest"
+        # - Guest molecules are labeled as "guest" (fallback) OR by their
+        #   specific type (ch4/thf/etoh_mix/...) since Issue 3 — the ion
+        #   inserter's _build_molecule_index_from_structure now preserves the
+        #   per-molecule mol_type from iter_guest_molecules.
         # - Liquid water is labeled as "water"
-        # So checking only ice+guest correctly excludes liquid water while
-        # protecting the hydrate framework.
+        # So checking ice + ALL cage-guest mol_types correctly excludes liquid
+        # water while protecting the hydrate framework (ice + cage guests).
         #
         # Also exclude MW (massless virtual site) atoms from overlap checking.
         # MW atoms are virtual interaction sites in TIP4P water models (TIP4P-ICE, TIP4P-Ew, etc.)
         # They have mass=0 and are used for electrostatic calculations only.
         # Including them in overlap checking causes false positives because MW atoms are
         # placed very close (~0.015 nm) to oxygen atoms by design.
-        # Vectorized MW filtering: build boolean mask from molecule_index
+        # Vectorized MW filtering: build boolean mask from molecule_index.
+        # Issue 3: include ALL cage-guest mol_types (generic "guest" fallback +
+        # built-in ch4/thf/co2/h2 + any other non-water/non-ice/non-ion/
+        # non-solute/non-custom-molecule type), NOT just literal "guest" —
+        # otherwise ions could be placed overlapping with cage guests.
+        _NON_FRAMEWORK_MOL_TYPES = {
+            "water", "na", "cl", "solute", "custom",
+        }
         slices = []
         for mol in structure.molecule_index:
-            if mol.mol_type in ("ice", "guest"):
+            if mol.mol_type == "ice" or mol.mol_type not in _NON_FRAMEWORK_MOL_TYPES:
                 start = mol.start_idx
                 end = start + mol.count
                 names = np.array(structure.atom_names[start:end])

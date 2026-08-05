@@ -154,11 +154,22 @@ def mixed_sii_ion_export(tmp_path_factory):
 
     # The ion molecule_index guest entries must have CORRECT per-molecule
     # counts (5 for CH4, 13 for THF), NOT a single uniform average (7).
-    g_counts = sorted({m.count for m in ion.molecule_index if m.mol_type == "guest"})
+    # Issue 3 (molh-atom-drop-origin): the ion inserter now labels cage guests
+    # by their specific mol_type (ch4/thf) instead of the generic "guest", so
+    # count ALL cage-guest mol_types here (generic "guest" fallback + built-in
+    # ch4/thf/co2/h2). The mixed CH4+THF case yields mol_types ch4+thf.
+    _CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
+    g_counts = sorted({
+        m.count for m in ion.molecule_index
+        if m.mol_type in _CAGE_GUEST_MOL_TYPES
+    })
     assert g_counts == [5, 13], (
         f"mixed-guest molecule_index must have counts 5 and 13, got {g_counts}"
     )
-    assert sum(m.count for m in ion.molecule_index if m.mol_type == "guest") == 6624, (
+    assert sum(
+        m.count for m in ion.molecule_index
+        if m.mol_type in _CAGE_GUEST_MOL_TYPES
+    ) == 6624, (
         "no guest atoms may be dropped (864 mols * 7 = 6048 was the bug)"
     )
 
@@ -266,7 +277,14 @@ def test_single_guest_si_all_ch4_ion_export_unchanged(tmp_path_factory):
     ion = insert_ions(iface, 0.5, None, seed=42)
 
     # All guest entries must be CH4 (count 5).
-    g_counts = sorted({m.count for m in ion.molecule_index if m.mol_type == "guest"})
+    # Issue 3: the ion inserter now labels cage guests by their specific
+    # mol_type (ch4) instead of the generic "guest", so count ALL cage-guest
+    # mol_types here.
+    _CAGE_GUEST_MOL_TYPES = ("guest", "ch4", "thf", "co2", "h2")
+    g_counts = sorted({
+        m.count for m in ion.molecule_index
+        if m.mol_type in _CAGE_GUEST_MOL_TYPES
+    })
     assert g_counts == [5], f"single-CH4 guests must all have count 5, got {g_counts}"
 
     tmp = tmp_path_factory.mktemp("single_ch4_ion_export")

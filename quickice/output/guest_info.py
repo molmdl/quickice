@@ -133,13 +133,18 @@ def _detect_builtin_guest_types(structure, detect_from_atoms) -> list:
 
     Phase 45-15 plural counterpart of :func:`_detect_builtin_guest_type` for
     MIXED built-in hydrates (CH4 in small + THF in large cages). Walks the
-    ``mol_type == "guest"`` entries of ``structure.molecule_index``, detects
-    each molecule's type from its atom-name slice, and returns the ordered
-    deduped list of distinct types (first-appearance order).
+    cage-guest entries of ``structure.molecule_index``, determines each
+    molecule's type, and returns the ordered deduped list of distinct types
+    (first-appearance order).
 
-    Reliable for built-in ch4/thf because each molecule_index entry carries
-    the CORRECT per-molecule count (post Phase 45-15 ion-inserter fix), so
-    the slice is exactly one molecule — no neighbor contamination.
+    Type resolution per molecule (Issue 3 / molh-atom-drop-origin):
+    - ``mol_type == "guest"`` (generic fallback label): detect the type from
+      the atom-name slice. Reliable for built-in ch4/thf because each
+      molecule_index entry carries the CORRECT per-molecule count.
+    - ``mol_type`` is a specific built-in (``"ch4"``/``"thf"``/``"co2"``/``"h2"``):
+      use the mol_type DIRECTLY. The ion inserter now labels cage guests by
+      their specific type (from ``iter_guest_molecules`` descriptor matching).
+    - Any other ``mol_type`` (custom guest, water, ice, ion, ...): skipped.
 
     Falls back to the singular heuristic
     (``guest_atom_count // guest_nmolecules >= 10`` -> ``"thf"`` else
@@ -163,10 +168,14 @@ def _detect_builtin_guest_types(structure, detect_from_atoms) -> list:
     found: list = []
     if molecule_index and atom_names is not None:
         for mol in molecule_index:
-            if getattr(mol, "mol_type", None) != "guest":
+            mt = getattr(mol, "mol_type", None)
+            if mt == "guest":
+                names = atom_names[mol.start_idx:mol.start_idx + mol.count]
+                gtype = detect_from_atoms(names)
+            elif mt in ("ch4", "thf", "co2", "h2"):
+                gtype = mt
+            else:
                 continue
-            names = atom_names[mol.start_idx:mol.start_idx + mol.count]
-            gtype = detect_from_atoms(names)
             if gtype and gtype not in found:
                 found.append(gtype)
     if found:
@@ -285,8 +294,21 @@ def _stage_hydrate_guest_itps(
     ):
         _mi = getattr(structure, "molecule_index", None)
         if _mi:
+            # Issue 3: the ion inserter now labels cage guests by their
+            # specific mol_type (ch4/thf/etoh_mix/...) instead of the generic
+            # "guest", so count ALL cage-guest mol_types here (the generic
+            # "guest" fallback label + the specific built-in types). Custom
+            # guest mol_types are also cage guests (e.g. etoh_mix) — they are
+            # NOT in the molecule_index as "custom" (that mol_type is reserved
+            # for the Custom tab's custom MOLECULES, a different concept from
+            # custom cage GUESTS).
             _mi_guest_count = sum(
-                1 for m in _mi if getattr(m, "mol_type", "") == "guest"
+                1 for m in _mi
+                if getattr(m, "mol_type", "") == "guest"
+                or getattr(m, "mol_type", "") in ("ch4", "thf", "co2", "h2")
+                or getattr(m, "mol_type", "") not in (
+                    "water", "ice", "custom", "solute", "na", "cl",
+                )
             )
             if _mi_guest_count > 0:
                 guest_nmolecules = _mi_guest_count
@@ -331,6 +353,40 @@ def _stage_hydrate_guest_itps(
             dest_name = src_itp_path.name
             dest_path = output_dir / dest_name
             dest_path.write_text(transformed)
+            itp_files[dest_name] = str(dest_path)
+
+        # Issue 3 (molh-atom-drop-origin): MIXED built-in+custom cage
+        # assignment (e.g. CH4 built-in in small cages + ethanol custom in
+        # large cages). The .top #includes BOTH the custom ITP (etoh.itp,
+        # for the MOL_H large-cage guests) AND the built-in
+        # {type}_hydrate.itp (ch4_hydrate.itp, for the CH4_H small-cage
+        # guests). The old custom path staged ONLY the custom ITP, so
+        # ch4_hydrate.itp was missing and grompp failed on the #include.
+        # Stage the built-in ITPs here too, driven by the config's
+        # cage_guest_assignments (the authoritative source of which built-in
+        # types are present). When the config has NO built-in assignments
+        # (pure single-custom), no built-in ITPs are staged — byte-identical
+        # to the old behavior.
+        builtin_types: list[str] = []
+        if hydrate_config is not None:
+            for assignment in (
+                getattr(hydrate_config, "cage_guest_assignments", {}) or {}
+            ).values():
+                if not getattr(assignment, "is_custom_guest", False):
+                    if assignment.guest_type not in builtin_types:
+                        builtin_types.append(assignment.guest_type)
+        # Fallback: detect built-in types from the structure's molecule_index
+        # when the config is None (defensive — the structure may carry
+        # per-molecule mol_types from the ion inserter).
+        if not builtin_types and structure is not None:
+            builtin_types = _detect_builtin_guest_types(
+                structure, detect_guest_type_from_atoms
+            )
+        for guest_type in builtin_types:
+            src_itp_path = _bundled_hydrate_guest_itp_path(guest_type)
+            dest_name = f"{guest_type}_hydrate.itp"
+            dest_path = output_dir / dest_name
+            shutil.copy(src_itp_path, dest_path)
             itp_files[dest_name] = str(dest_path)
     else:
         # Built-in path: detect ALL distinct built-in guest_types and copy
