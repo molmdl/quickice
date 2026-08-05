@@ -426,6 +426,82 @@ class TestAssembleSlabCustomGuestNoCrash:
         )
 
 
+class TestToCandidateGuestAtomCountsAuthoritative:
+    """Regression: to_candidate guest_atom_counts must come from the actual
+    molecule_index, not the (possibly wrong) config.guest_atom_count.
+
+    Bug (sii-top-gro-mol-count-mismatch): a user-entered
+    HydrateConfig.guest_atom_count that mismatches the guest .gro atom count
+    (e.g. 6 entered for a 9-atom ethanol .gro) used to propagate verbatim into
+    candidate.metadata["guest_atom_counts"]. The hydrate generator's
+    _build_molecule_index groups cage guests by GenIce2 residue sequence
+    number, so the molecule_index carries the REAL per-molecule atom count
+    (9). Downstream slab/ion modes use guest_atom_counts[mol_type] as the
+    per-molecule stride (count_guest_atoms returns it directly), so a wrong
+    value (6) fragmented the real 9-atom guests into 6-atom groups, producing
+    a .gro whose cage-guest molecules have 6 atoms while the .top #includes
+    the 9-atom ITP -> gmx grompp coordinate/topology atom-count mismatch.
+
+    Fix: to_candidate derives guest_atom_counts from the authoritative
+    molecule_index. This test pins that fix.
+    """
+
+    def test_wrong_config_guest_atom_count_does_not_fragment_guests(self):
+        """A wrong config.guest_atom_count must NOT reach the candidate metadata
+        or fragment guest molecules in the slab.
+
+        The 9-atom etoh.gro is generated with guest_atom_count=6 (wrong). The
+        hydrate molecule_index still carries 9 (residue grouping reads the
+        .gro). to_candidate must propagate 9 (not 6) into guest_atom_counts, and
+        the slab must report 9 atoms/molecule.
+        """
+        gen = HydrateStructureGenerator()
+        # WRONG guest_atom_count (6) for the 9-atom etoh.gro. validate_custom_
+        # guest_files checks .gro vs .itp (both 9) but NOT config.guest_atom_count,
+        # so this slips through — the test pins that to_candidate corrects it.
+        config = HydrateConfig(
+            lattice_type="sII",
+            guest_type="etoh_wrongcount",
+            guest_residue_name=_GUEST_RESIDUE_NAME,
+            guest_gro_path=_GUEST_GRO_PATH,
+            guest_itp_path=_GUEST_ITP_PATH,
+            guest_atom_labels=list(_GUEST_ATOM_LABELS),
+            guest_atom_count=6,  # WRONG — etoh.gro has 9 atoms
+            supercell_x=1, supercell_y=1, supercell_z=1,
+        )
+        hydrate = gen.generate(config)
+
+        # The hydrate molecule_index is authoritative (residue grouping reads
+        # the .gro): guest entries carry the real 9-atom count, NOT 6.
+        guest_counts = {m.count for m in hydrate.molecule_index
+                        if m.mol_type == "etoh_wrongcount"}
+        assert guest_counts == {9}, (
+            f"hydrate molecule_index guest counts should be {{9}} (from .gro), "
+            f"got {guest_counts}"
+        )
+
+        candidate = hydrate.to_candidate()
+
+        # guest_atom_counts must come from the molecule_index (9), NOT the
+        # config (6). This is the core fix.
+        assert candidate.metadata["guest_atom_counts"].get("etoh_wrongcount") == 9, (
+            f"to_candidate guest_atom_counts must be authoritative (9 from "
+            f"molecule_index), not the wrong config value (6). Got "
+            f"{candidate.metadata['guest_atom_counts']}"
+        )
+
+        iface = assemble_slab(candidate, TestAssembleSlabCustomGuestNoCrash._slab_config())
+
+        assert iface.guest_nmolecules > 0
+        # 9 atoms per molecule (NOT 6) — the stride must not fragment the
+        # 9-atom ethanol into 6-atom groups.
+        assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
+            f"slab guest_atom_count={iface.guest_atom_count} != 9 * "
+            f"guest_nmolecules={9 * iface.guest_nmolecules} — the wrong config "
+            f"guest_atom_count (6) fragmented the 9-atom guests"
+        )
+
+
 class TestAssemblePocketCustomGuestNoCrash:
     """Verify assemble_pocket succeeds for a custom guest hydrate (44.1-06).
 

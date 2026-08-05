@@ -1160,6 +1160,54 @@ class HydrateLatticeInfo:
         )
 
 
+def _derive_guest_atom_counts(
+    molecule_index: list[MoleculeIndex],
+    guest_descriptors: list[GuestDescriptor],
+) -> dict[str, int]:
+    """Build the ``guest_atom_counts`` metadata dict authoritatively.
+
+    Returns a ``{mol_type: atom_count}`` lookup used downstream by
+    :func:`quickice.utils.molecule_utils.count_guest_atoms` /
+    :func:`iter_guest_molecules` as the per-molecule stride for walking the
+    guest region. A WRONG stride fragments the real guest molecules (e.g.
+    grouping 9-atom ethanol into 6-atom groups), which produces a .gro whose
+    cage-guest molecules have the wrong atom count while the .top #includes
+    the full ITP -> ``gmx grompp`` coordinate/topology mismatch.
+
+    The hydrate generator's ``_build_molecule_index`` groups cage guests by
+    GenIce2 residue sequence number, so each guest ``MoleculeIndex.count`` is
+    the REAL per-molecule atom count read from the guest .gro (independent of
+    the user-entered ``HydrateConfig.guest_atom_count``). That makes the
+    molecule_index the authoritative source — use it. ``guest_descriptors``
+    (config-derived) is only a fallback for mol_types absent from the index
+    (defensive — keeps the built-in / empty-index path byte-identical).
+
+    Args:
+        molecule_index: The hydrate's molecule_index (guest entries carry the
+            real per-molecule atom count via residue grouping).
+        guest_descriptors: Per-type guest descriptors from the config (the
+            legacy source of atom_count; used only as a fallback).
+
+    Returns:
+        ``{mol_type: atom_count}`` with atom_count taken from the molecule_index
+        where available, else from guest_descriptors.
+    """
+    counts: dict[str, int] = {}
+    # Authoritative: first MoleculeIndex.count seen for each non-water mol_type.
+    # Guest entries of a single type share one count (residue grouping yields the
+    # exact per-molecule atom count); mixed types each carry their own count.
+    for m in molecule_index:
+        if m.mol_type != "water" and m.mol_type not in counts and m.count > 0:
+            counts[m.mol_type] = m.count
+    # Fallback for mol_types present in descriptors but not in molecule_index
+    # (e.g. an empty/legacy molecule_index). Never overrides an authoritative
+    # value already taken from the index.
+    for gd in guest_descriptors:
+        if gd.mol_type not in counts and gd.atom_count:
+            counts[gd.mol_type] = gd.atom_count
+    return counts
+
+
 @dataclass
 class HydrateStructure:
     """Result of hydrate structure generation.
@@ -1271,9 +1319,28 @@ class HydrateStructure:
                 # NEW (44.1): fast lookup mol_type -> atom_count for
                 # count_guest_atoms. For built-in ch4/thf this is populated by
                 # the generator with the correct atom_count (ch4=5, thf=13).
-                "guest_atom_counts": {
-                    gd.mol_type: gd.atom_count
-                    for gd in self.guest_descriptors
-                },
+                #
+                # BUGFIX (sii-top-gro-mol-count-mismatch): derive from the
+                # ACTUAL molecule_index (authoritative — the hydrate
+                # generator's _build_molecule_index groups guests by residue
+                # sequence number, so each guest MoleculeIndex.count is the
+                # real per-molecule atom count read from the .gro via GenIce2).
+                # The previous implementation used guest_descriptors[].atom_count,
+                # which comes from the user-entered HydrateConfig.guest_atom_count
+                # and can be WRONG (e.g. 6 entered for a 9-atom ethanol .gro).
+                # validate_custom_guest_files checks .gro vs .itp atom counts but
+                # NOT against config.guest_atom_count, so a wrong config value
+                # slipped through and propagated here. Downstream slab/ion modes
+                # use guest_atom_counts[mol_type] as the per-molecule stride
+                # (count_guest_atoms returns it directly), so a wrong value
+                # fragments the real 9-atom guests into 6-atom groups,
+                # producing a .gro whose MOL_H molecules have 6 atoms while the
+                # .top #includes a 9-atom ITP -> gmx grompp coordinate/topology
+                # atom-count mismatch. Falling back to guest_descriptors only
+                # for mol_types absent from molecule_index (defensive — keeps
+                # the built-in path byte-identical when the index is empty).
+                "guest_atom_counts": _derive_guest_atom_counts(
+                    self.molecule_index, self.guest_descriptors
+                ),
             }
         )
