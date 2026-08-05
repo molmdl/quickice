@@ -8,7 +8,7 @@ updated: 2026-07-23T19:00:00Z
 
 ## Current Test
 
-[3 pass, 1 issue (major) — tests 1+3+4 pass via Workflow F, test 2 has issue]
+[4/4 pass — Issue 1 fixed (commit 0baf0043)]
 
 ## Tests
 
@@ -19,13 +19,8 @@ verified: Workflow F (user GUI verification) — dropdown lists all 10 types, se
 
 ### 2. Upload custom guest .gro+.itp pair with validation feedback
 expected: In the Hydrate tab, use the custom guest upload panel to select a .gro and .itp file pair. If invalid, a specific validation error message should be displayed.
-result: issue
-reported: "long residue name upload (etoh_long_name.itp, 'ETHANOL' 6 chars) showed no validation error, generation proceeded, but export had no MOL — custom guest silently ignored, fell back to built-in CH4 only"
-severity: major
-verified: |
-  Workflow F (user GUI verification) — uploaded etoh_long_name.itp.
-  No validation error at upload. Export .top [molecules] = SOL+CH4_H only (no MOL_H).
-  Comb-rule=1 upload (test 6) correctly rejected. Only the long-name validation is broken.
+result: pass
+verified: Workflow F (user GUI verification, post-fix) — long residue name (etoh_long_name.itp, "ETHANOL" 6 chars) now correctly blocked with validation error. Comb-rule=1 (etoh_comb_rule_1.itp) correctly rejected. Fix: commit 0baf0043.
 
 ### 3. Cage-type guest assignment controls for mixed occupancy
 expected: In the Hydrate tab, select a multi-cage lattice. Per-cage-type rows should appear with QComboBox + QDoubleSpinBox for each cage type. Changing lattice should rebuild rows.
@@ -40,19 +35,11 @@ verified: Workflow F (user GUI verification) — depol dropdown present with str
 ## Summary
 
 total: 4
-passed: 3
-issues: 1
+passed: 4
+issues: 0
 pending: 0
 skipped: 0
 
 ## Gaps
 
-- truth: "Upload custom guest .gro+.itp pair with validation feedback"
-  status: failed
-  reason: "User reported: long residue name upload (etoh_long_name.itp, 'ETHANOL' 6 chars) showed no validation error, generation proceeded, but export had no MOL — custom guest silently ignored, fell back to built-in CH4 only"
-  severity: major
-  test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+[none]
