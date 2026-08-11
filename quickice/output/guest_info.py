@@ -389,29 +389,45 @@ def _stage_hydrate_guest_itps(
             shutil.copy(src_itp_path, dest_path)
             itp_files[dest_name] = str(dest_path)
     else:
-        # Built-in path: detect ALL distinct built-in guest_types and copy
-        # each bundled {guest_type}_hydrate.itp (mirror export.py:181-187
-        # built-in path, extended in Phase 45-15 for mixed hydrates).
+        # Built-in path: stage each bundled {guest_type}_hydrate.itp for every
+        # distinct built-in guest type present (mirror export.py:181-187 built-in
+        # path, extended in Phase 45-15 for mixed hydrates).
+        #
         # Phase 45-15: a mixed built-in hydrate (CH4 in small + THF in large
         # cages) needs BOTH ch4_hydrate.itp and thf_hydrate.itp staged — the
         # old single-_detect_builtin_guest_type call staged only the FIRST
         # detected type, so thf_hydrate.itp was missing and grompp would fail
         # on the #include "thf_hydrate.itp" the writer now emits.
-        # Detection tries the structure first (matches existing export.py
-        # behavior for real exports where the structure carries ch4/thf
-        # molecule_index entries), then falls back to the config's
-        # cage_guest_assignments (config-driven — handles the structure=None
-        # test case and the IonStructure which has no interface_structure ref).
-        guest_types = _detect_builtin_guest_types(
-            structure, detect_guest_type_from_atoms
-        )
-        if not guest_types and hydrate_config is not None:
+        #
+        # Issue 3 (sii-mixed-gui-export-regression): the config's
+        # ``cage_guest_assignments`` is the AUTHORITATIVE source of which
+        # built-in types are present. Structure-based detection
+        # (``_detect_builtin_guest_types``) is UNRELIABLE for the interface
+        # slab path: ``structure.molecule_index`` is EMPTY (slab/piece/pocket
+        # builders don't populate it) and the atom-name fallback
+        # (``detect_guest_type_from_atoms``) walks the FIRST guest region
+        # slice only, returning a SINGLE type (ch4) for mixed CH4+THF. The old
+        # gate ``if not guest_types:`` was satisfied by the single detected
+        # ch4, so the config-driven thf staging was SKIPPED. Fix: stage
+        # built-in types from the config FIRST (when available), and use
+        # structure detection ONLY as a fallback when the config is None
+        # (defensive — the structure may carry per-molecule mol_types from the
+        # ion inserter). Mirrors the custom-mixed path (lines 370-390).
+        guest_types: list[str] = []
+        if hydrate_config is not None:
             for assignment in (
                 getattr(hydrate_config, "cage_guest_assignments", {}) or {}
             ).values():
                 if not getattr(assignment, "is_custom_guest", False):
                     if assignment.guest_type not in guest_types:
                         guest_types.append(assignment.guest_type)
+        # Fallback: detect built-in types from the structure's molecule_index
+        # when the config is None (defensive — the structure may carry
+        # per-molecule mol_types from the ion inserter).
+        if not guest_types and structure is not None:
+            guest_types = _detect_builtin_guest_types(
+                structure, detect_guest_type_from_atoms
+            )
         if not guest_types:
             # No built-in guest detected — nothing to stage.
             return None, {}
