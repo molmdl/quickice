@@ -593,69 +593,32 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         ice_mol.AppendBond(o_idx, h1_idx, 1)
         ice_mol.AppendBond(o_idx, h2_idx, 1)
     
-    # Add guest bonds (distance-based, within same molecule only)
-    # Use molecule_index to correctly identify each guest molecule's boundaries
-    # This is the same approach used in hydrate_renderer.py for guest molecules
-    if guest_indices and iface.molecule_index:
-        # Build mapping from global position index to guest_mol atom index
-        # guest_mol contains atoms in order: guest_start, guest_start+1, ..., guest_end-1
-        # (excluding any skipped atoms like MW, but guests don't have MW)
-        # guest_indices[i] = i for simple cases
-        
-        # Iterate through molecule_index to find guest molecules
-        for mol in iface.molecule_index:
-            if mol.mol_type == "water":
-                continue  # Skip water molecules
-            
-            # Get the global atom indices for this guest molecule
-            mol_start_global = mol.start_idx
-            mol_end_global = mol_start_global + mol.count
-            
-            # Convert global indices to guest_mol indices
-            # guest_mol contains atoms from guest_start to guest_end
-            # mol_start_global should be >= guest_start and < guest_end
-            if mol_start_global < guest_start or mol_end_global > guest_end:
-                continue  # This molecule is not in the guest range
-            
-            # Calculate guest_mol indices (relative to guest_start)
-            mol_start = mol_start_global - guest_start
-            mol_end = mol_end_global - guest_start
-            
+    # Add guest bonds (distance-based, within same molecule only).
+    # Per-molecule boundaries are resolved by _build_guest_molecule_boundaries:
+    #   1. iface.molecule_index (authoritative, when populated)
+    #   2. iface.guest_descriptors (metadata-driven, robust for MIXED guests
+    #      like CH4=5 + THF=13 — fixes THF cage-guest bonds in the Custom Molecule
+    #      / Solute / Ion viewers, which receive a slab InterfaceStructure whose
+    #      molecule_index is empty but whose guest_descriptors IS populated)
+    #   3. _count_guest_atoms_for_rendering heuristic (last-resort fallback)
+    # This mirrors the per-molecule approach in hydrate_renderer.create_guest_actor
+    # (which works for THF cage guests in the Hydrate tab).
+    if guest_indices:
+        boundaries = _build_guest_molecule_boundaries(
+            iface, guest_start, guest_end, actual_guest_nmolecules
+        )
+        for mol_start, mol_end in boundaries:
             # Add bonds within this molecule using distance detection
             for i in range(mol_start, mol_end):
                 for j in range(i + 1, mol_end):
                     # Distance-based bond detection (threshold: 0.16 nm)
                     dist = np.linalg.norm(
-                        np.array(iface.positions[guest_start + i]) - 
+                        np.array(iface.positions[guest_start + i]) -
                         np.array(iface.positions[guest_start + j])
                     )
                     if dist < 0.16:  # Covalent bond threshold
                         guest_mol.AppendBond(guest_indices[i], guest_indices[j], 1)
-    
-    # Fallback for backward compatibility: if molecule_index is empty, use old method
-    elif guest_indices and actual_guest_nmolecules > 0:
-        guest_atom_names = iface.atom_names[guest_start:guest_end]
-        
-        # Group atoms by molecule (legacy method - may not work for complex guests)
-        mol_start = 0
-        for mol_idx in range(actual_guest_nmolecules):
-            # Count atoms in this guest molecule
-            guest_atoms = _count_guest_atoms_for_rendering(guest_atom_names, mol_start)
-            mol_end = mol_start + guest_atoms
-            
-            # Add bonds within this molecule
-            for i in range(mol_start, mol_end):
-                for j in range(i + 1, mol_end):
-                    # Distance-based bond detection (threshold: 0.16 nm)
-                    dist = np.linalg.norm(
-                        np.array(iface.positions[guest_start + i]) - 
-                        np.array(iface.positions[guest_start + j])
-                    )
-                    if dist < 0.16:  # Covalent bond threshold
-                        guest_mol.AppendBond(guest_indices[i], guest_indices[j], 1)
-            
-            mol_start = mol_end
-    
+
     # Add bonds for water molecules
     # Water uses 4 atoms per molecule (OW, HW1, HW2, MW) but MW is skipped
     # So we have 3 visible atoms per molecule in water_indices
@@ -751,9 +714,129 @@ def _count_guest_atoms_for_rendering(atom_names: list[str], start: int) -> int:
         
         # Single H atom (fallback)
         return 1
-    
+
     # Default: treat as 1 atom guest
     return 1
+
+
+def _build_guest_molecule_boundaries(
+    iface,
+    guest_start: int,
+    guest_end: int,
+    guest_nmolecules: int,
+) -> list[tuple[int, int]]:
+    """Resolve per-molecule (start, end) boundaries for guest bond detection.
+
+    Returns index pairs RELATIVE to ``guest_start`` (0-based into the guest
+    region). The bond loop in :func:`interface_to_vtk_molecules` uses these to
+    detect bonds ONLY within each molecule (no cross-molecule bonds), mirroring
+    the per-molecule approach in ``hydrate_renderer.create_guest_actor`` (which
+    works for THF cage guests).
+
+    Resolution order — first source with a usable result wins:
+
+    1. ``iface.molecule_index`` — authoritative per-molecule entries populated by
+       some generators (e.g. the hydrate candidate). Filtered to the guest range
+       and excluding water. Used when present.
+    2. ``iface.guest_descriptors`` — TYPE-LEVEL metadata (``mol_type`` +
+       ``atom_labels`` + ``atom_count``) populated by the interface modes
+       (slab/pocket/piece) and carried on the InterfaceStructure. Each guest
+       molecule is identified by matching its ``atom_names`` slice against the
+       descriptors' ``atom_labels``. This is the metadata-driven approach used
+       by ``hydrate_generator.py`` and is ROBUST for MIXED guests (e.g. CH4=5 +
+       THF=13), unlike the first-atom heuristic which miscounts at THF->CH4
+       transitions (the "O"-first branch stops only at the next "O"/"OW", not at
+       "C", so it over-counts THF as 15 and destroys the following CH4). This
+       fixes THF cage-guest bonds in the Custom Molecule / Solute / Ion viewers,
+       which receive a slab InterfaceStructure whose ``molecule_index`` is empty
+       (slab.py does not populate it) but whose ``guest_descriptors`` IS populated.
+    3. Heuristic :func:`_count_guest_atoms_for_rendering` — last-resort
+       first-atom-name guess. Kept for backward compatibility with structures
+       that carry neither ``molecule_index`` nor ``guest_descriptors``. Fragile
+       for mixed guests (see #2).
+
+    Args:
+        iface: InterfaceStructure (or compatible) with ``atom_names`` and
+            optionally ``molecule_index`` / ``guest_descriptors``.
+        guest_start: Global index of the first guest atom.
+        guest_end: Global index one past the last guest atom.
+        guest_nmolecules: Number of guest molecules (heuristic path only).
+
+    Returns:
+        List of ``(mol_start, mol_end)`` pairs relative to ``guest_start``.
+        Empty if there are no guest atoms.
+    """
+    if guest_end <= guest_start:
+        return []
+
+    # 1) Authoritative molecule_index (filter to guest range, exclude water).
+    molecule_index = getattr(iface, "molecule_index", None)
+    if molecule_index:
+        boundaries: list[tuple[int, int]] = []
+        for mol in molecule_index:
+            if getattr(mol, "mol_type", "") == "water":
+                continue
+            mol_start_global = mol.start_idx
+            mol_end_global = mol_start_global + mol.count
+            if mol_start_global < guest_start or mol_end_global > guest_end:
+                continue  # Not in the guest region (e.g. ice entry)
+            boundaries.append((mol_start_global - guest_start,
+                                mol_end_global - guest_start))
+        if boundaries:
+            return boundaries
+
+    # 2) guest_descriptors — metadata-driven per-molecule identification.
+    #    Matches each molecule's atom_names slice against the descriptors'
+    #    atom_labels. Robust for mixed guests (CH4=5 + THF=13).
+    guest_descriptors = getattr(iface, "guest_descriptors", None)
+    if guest_descriptors:
+        guest_names = iface.atom_names[guest_start:guest_end]
+        # (atom_labels_as_list, atom_count) per descriptor; order-independent
+        # matching (first match wins at each position).
+        label_options = [
+            (list(d.atom_labels), d.atom_count)
+            for d in guest_descriptors
+            if getattr(d, "atom_labels", None)
+        ]
+        if label_options:
+            boundaries = []
+            i = 0
+            n = len(guest_names)
+            while i < n:
+                matched_len = None
+                for labels, count in label_options:
+                    if guest_names[i:i + len(labels)] == labels:
+                        matched_len = len(labels)
+                        break
+                if matched_len is None:
+                    # Unknown atom sequence — cannot reliably identify the
+                    # molecule boundary. Bail out and fall through to the
+                    # heuristic (which degrades gracefully for single-type
+                    # guests) rather than emitting a wrong boundary.
+                    break
+                boundaries.append((i, i + matched_len))
+                i += matched_len
+            if boundaries and i == n:
+                # Fully consumed the guest region with descriptor matches.
+                return boundaries
+            # Partial match (mismatch encountered) — fall through to heuristic.
+
+    # 3) Heuristic fallback (first-atom-name based).
+    if guest_nmolecules > 0:
+        guest_names = iface.atom_names[guest_start:guest_end]
+        boundaries = []
+        mol_start = 0
+        for _ in range(guest_nmolecules):
+            if mol_start >= len(guest_names):
+                break
+            guest_atoms = _count_guest_atoms_for_rendering(guest_names, mol_start)
+            if guest_atoms <= 0:
+                break
+            boundaries.append((mol_start, mol_start + guest_atoms))
+            mol_start += guest_atoms
+        return boundaries
+
+    return []
 
 
 def create_bond_lines_actor(
