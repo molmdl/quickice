@@ -39,6 +39,14 @@ MIN_SEPARATION = 0.3  # 3 Å
 # to place the 4 hydrogens at tetrahedral positions around the carbon.
 CH4_CH_BOND_LENGTH_NM = 0.109620  # nm
 
+# Mol-types that are NOT cage guests (used to identify cage-guest entries by
+# exclusion). Cage guests use the generic "guest" fallback OR a specific
+# built-in (ch4/thf/co2/h2) OR a custom slug (etoh_mix). Custom MOLECULES
+# (Custom tab) use mol_type "custom" — a DIFFERENT concept from custom cage
+# GUESTS. Mirrors custom_molecule_inserter._NON_GUEST_MOL_TYPES and
+# ion_inserter._NON_FRAMEWORK_MOL_TYPES.
+_NON_GUEST_MOL_TYPES = {"ice", "water", "custom", "solute", "na", "cl"}
+
 
 class SoluteInserter:
     """Handles concentration-based solute insertion into liquid water regions.
@@ -120,10 +128,17 @@ class SoluteInserter:
             if guest_nmolecules > 0:
                 return guest_nmolecules
 
-        # Last resort: derive from molecule_index guest entries
+        # Last resort: derive from molecule_index cage-guest entries.
+        # Issue 1/4: count ALL cage-guest mol_types (generic "guest" fallback +
+        # specific built-in ch4/thf/co2/h2 + custom slug etoh_mix), NOT just
+        # literal "guest" — the upstream inserters now label cage guests by
+        # their specific type via iter_guest_molecules.
         molecule_index = getattr(structure, 'molecule_index', [])
         if molecule_index:
-            guest_count = sum(1 for m in molecule_index if m.mol_type == "guest")
+            guest_count = sum(
+                1 for m in molecule_index
+                if m.mol_type not in _NON_GUEST_MOL_TYPES
+            )
             if guest_count > 0:
                 return guest_count
 
@@ -538,6 +553,13 @@ class SoluteInserter:
                 guest_atom_count=structure.guest_atom_count,
                 molecule_index=getattr(structure, 'molecule_index', []),
                 guest_nmolecules=self._resolve_guest_nmolecules(structure),
+                # CRITICAL (Issue 1/4 regression): preserve type-level guest
+                # metadata so the downstream ion inserter's iter_guest_molecules
+                # walk can identify mixed cage guests (CH4 vs THF/ethanol)
+                # per-molecule. Dropping these defaults them to empty -> the
+                # walk falls back to uniform "guest" with a wrong stride.
+                guest_descriptors=getattr(structure, 'guest_descriptors', []),
+                guest_atom_counts=getattr(structure, 'guest_atom_counts', {}),
             )
             
             # Set custom molecule attributes on the NEW interface (not the input)
@@ -661,8 +683,16 @@ class SoluteInserter:
             
             # Add guest molecules with shifted indices
             # current_idx already accounts for removed water atoms
+            # Issue 1/4: copy ALL cage-guest mol_types (generic "guest" fallback
+            # + specific built-in ch4/thf/co2/h2 + custom slug etoh_mix), NOT
+            # just literal "guest" — the upstream custom_molecule_inserter now
+            # labels cage guests by their specific type via iter_guest_molecules.
+            # Dropping specific-type entries here would lose the per-molecule
+            # identity, forcing the ion inserter's rebuild (or the export
+            # writer's detect_guest_type_from_atoms) to re-guess — which
+            # misidentifies custom ethanol (C+O -> "thf").
             for mol in structure.molecule_index:
-                if mol.mol_type == "guest":
+                if mol.mol_type not in _NON_GUEST_MOL_TYPES:
                     new_molecule_index.append(MoleculeIndex(
                         start_idx=current_idx,
                         count=mol.count,
@@ -704,6 +734,13 @@ class SoluteInserter:
             guest_atom_count=structure.guest_atom_count,
             molecule_index=new_molecule_index,
             guest_nmolecules=self._resolve_guest_nmolecules(structure),
+            # CRITICAL (Issue 1/4 regression): preserve type-level guest
+            # metadata so the downstream ion inserter's iter_guest_molecules
+            # walk can identify mixed cage guests (CH4 vs THF/ethanol)
+            # per-molecule. Dropping these defaults them to empty -> the
+            # walk falls back to uniform "guest" with a wrong stride.
+            guest_descriptors=getattr(structure, 'guest_descriptors', []),
+            guest_atom_counts=getattr(structure, 'guest_atom_counts', {}),
         )
         
         # Preserve custom molecule attributes if present in input structure

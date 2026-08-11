@@ -75,6 +75,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# Mol-types that are NOT cage guests (exclusion-based identification). Cage
+# guests use the generic "guest" fallback OR a specific built-in (ch4/thf/
+# co2/h2) OR a custom slug (etoh_mix/etoh_e2e). Custom MOLECULES (Custom tab)
+# use mol_type "custom" — a DIFFERENT concept from custom cage GUESTS. Mirrors
+# custom_molecule_inserter._NON_GUEST_MOL_TYPES and ion_inserter's
+# _NON_FRAMEWORK_MOL_TYPES. Used to identify cage-guest entries in a
+# molecule_index by exclusion (robust for any custom slug without needing a
+# custom_by_moltype lookup).
+_NON_GUEST_MOL_TYPES = {"ice", "water", "custom", "solute", "na", "cl"}
+
+
 def write_custom_molecule_gro_file(
     custom_structure: "CustomMoleculeStructure",
     filepath: str,
@@ -143,7 +154,12 @@ def write_custom_molecule_gro_file(
     # Pass 2: Guest molecules (if present)
     if custom_structure.guest_atom_count > 0:
         for mol in custom_structure.molecule_index:
-            if mol.mol_type == "guest":
+            # Issue 1/4: accept ALL cage-guest mol_types (generic "guest"
+            # fallback + specific built-in ch4/thf/co2/h2 + custom slug
+            # etoh_mix/etoh_e2e), NOT just literal "guest" — the upstream
+            # inserters now label cage guests by their specific type via
+            # iter_guest_molecules.
+            if mol.mol_type not in _NON_GUEST_MOL_TYPES:
                 ordered_mols.append(("guest", mol))
     
     # Pass 3: Custom molecules
@@ -250,18 +266,33 @@ def write_custom_molecule_gro_file(
             mol_atom_names = custom_structure.atom_names[mol.start_idx:mol.start_idx + mol.count]
             mol_positions = wrapped_positions[mol.start_idx:mol.start_idx + mol.count]
 
-            if custom_active:
+            # Issue 1/4: resolve residue name per-molecule. Specific built-in
+            # mol_types (ch4/thf/co2/h2) take priority — use the built-in
+            # residue name + reorder_guest_atoms directly (reliable, no
+            # detect_guest_type_from_atoms which misidentifies custom ethanol
+            # as ch4/thf because it samples only the first few atoms). Custom
+            # cage-guest mol_types (etoh_mix/etoh_e2e) use custom_by_moltype.
+            # The generic "guest" fallback uses detect_guest_type_from_atoms
+            # (built-in) or the custom_by_moltype fallback (custom).
+            if mol.mol_type in ("ch4", "thf", "co2", "h2"):
+                guest_res_name = get_hydrate_guest_residue_name(mol.mol_type)
+                validate_gro_residue_name(
+                    guest_res_name,
+                    context="Custom molecule system built-in guest GRO residue name",
+                )
+                # Reorder guest atoms to match .itp canonical order
+                if mol.mol_type in ("ch4", "thf"):
+                    mol_atom_names, reorder_mapping = reorder_guest_atoms(
+                        mol_atom_names, mol.mol_type
+                    )
+                    if reorder_mapping is not None:
+                        mol_positions = [mol_positions[i] for i in reorder_mapping]
+            elif custom_active:
                 # P3 / EXPORT-05 custom guest (mirror write_solute_gro_file
                 # custom branch, plans 41-04 / 44.1-09 / 44.1-11): use the
                 # caller-supplied residue name (e.g. "MOL_H") from
                 # custom_guest_info instead of detect_guest_type_from_atoms
-                # (which returns None for custom guests like ethanol). The
-                # custom molecule inserter builds molecule_index with literal
-                # mol_type == "guest" (NOT the custom guest's mol_type like
-                # "etoh_e2e"), so resolve via the matching custom_by_moltype
-                # entry with a fallback to the first/only entry (defensive —
-                # matches the solute writer's fallback for synthetic 'guest'
-                # entries built when molecule_index lacks the real mol_type).
+                # (which returns None for custom guests like ethanol).
                 ci = custom_by_moltype.get(mol.mol_type)
                 if ci is None:
                     ci = next(iter(custom_by_moltype.values()))
@@ -281,7 +312,6 @@ def write_custom_molecule_gro_file(
                     guest_res_name = get_hydrate_guest_residue_name(guest_type)
                     validate_gro_residue_name(guest_res_name, context="Custom molecule system guest residue name")
                     # Reorder guest atoms to match .itp canonical order
-                    reorder_mapping = None
                     if guest_type in ["ch4", "thf"]:
                         mol_atom_names, reorder_mapping = reorder_guest_atoms(mol_atom_names, guest_type)
                         if reorder_mapping is not None:
@@ -381,7 +411,14 @@ def write_custom_molecule_top_file(
 
     # Count molecules by type
     sol_count = sum(1 for m in custom_structure.molecule_index if m.mol_type in ("water", "ice"))
-    guest_count = sum(1 for m in custom_structure.molecule_index if m.mol_type == "guest")
+    # Issue 1/4: count ALL cage-guest mol_types (generic "guest" fallback +
+    # specific built-in ch4/thf/co2/h2 + custom slug etoh_mix/etoh_e2e), NOT
+    # just literal "guest" — the upstream inserters now label cage guests by
+    # their specific type via iter_guest_molecules.
+    guest_count = sum(
+        1 for m in custom_structure.molecule_index
+        if m.mol_type not in _NON_GUEST_MOL_TYPES
+    )
     custom_count = custom_structure.custom_molecule_count
     
     # Detect guest type from atom names (for including correct .itp and residue name)
@@ -406,12 +443,12 @@ def write_custom_molecule_top_file(
     )
     if custom_active:
         # Resolve the custom residue name via the matching molecule_index
-        # entry's mol_type. The custom molecule inserter builds molecule_index
-        # with literal mol_type == "guest" (NOT the custom guest's mol_type
-        # like "etoh_e2e"), so fall back to the first/only custom_guest_info
-        # entry (defensive — matches the solute writer's fallback for
-        # synthetic 'guest' entries when molecule_index lacks the real
-        # mol_type).
+        # entry's mol_type. Issue 1/4: the upstream inserters now label cage
+        # guests by their specific type (etoh_mix/etoh_e2e) via
+        # iter_guest_molecules, so the custom_by_moltype lookup finds the
+        # matching entry directly. Fall back to the first/only entry when the
+        # mol_type is the generic "guest" (legacy molecule_index without
+        # per-molecule types).
         guest_index_entry = next(
             (m for m in custom_structure.molecule_index
              if m.mol_type in custom_by_moltype),
@@ -423,13 +460,19 @@ def write_custom_molecule_top_file(
             ci_mol = next(iter(custom_by_moltype.values()))
         guest_res_name = ci_mol["residue_name"]
     elif guest_count > 0 and custom_structure.guest_atom_count > 0:
-        # Built-in path: detect guest type from atom names of first guest
-        # Get atom names for the first guest molecule to detect type
+        # Built-in path: detect guest type from first cage guest.
+        # Issue 1/4: accept ALL cage-guest mol_types (not just "guest") and
+        # use the specific mol_type directly when it's a built-in (ch4/thf/
+        # co2/h2) — more reliable than detect_guest_type_from_atoms which
+        # misidentifies custom ethanol as ch4/thf.
         for mol in custom_structure.molecule_index:
-            if mol.mol_type == "guest":
-                start = mol.start_idx
-                mol_atom_names = custom_structure.atom_names[start:start + mol.count]
-                guest_type = detect_guest_type_from_atoms(mol_atom_names)
+            if mol.mol_type not in _NON_GUEST_MOL_TYPES:
+                if mol.mol_type in ("ch4", "thf", "co2", "h2"):
+                    guest_type = mol.mol_type
+                else:
+                    start = mol.start_idx
+                    mol_atom_names = custom_structure.atom_names[start:start + mol.count]
+                    guest_type = detect_guest_type_from_atoms(mol_atom_names)
                 if guest_type:
                     guest_res_name = get_hydrate_guest_residue_name(guest_type)
                 break

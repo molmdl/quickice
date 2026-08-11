@@ -19,6 +19,7 @@ from quickice.structure_generation.types import (
     CustomMoleculeConfig,
     CustomMoleculeStructure,
     InterfaceStructure,
+    MoleculeIndex,
     PlacementValidationResult,
     WATER_ATOMS_PER_MOLECULE,
 )
@@ -26,9 +27,18 @@ from quickice.structure_generation.moleculetype_registry import MoleculetypeRegi
 from quickice.structure_generation.gro_parser import parse_gro_file
 from quickice.structure_generation.itp_parser import parse_itp_file
 from quickice.structure_generation.ion_inserter import AVOGADRO
+from quickice.utils.molecule_utils import iter_guest_molecules
 
 
 logger = logging.getLogger(__name__)
+
+
+# Mol_types that are NOT cage guests (used to identify cage-guest entries in a
+# molecule_index by exclusion). Cage guests use the generic "guest" fallback
+# label OR a specific built-in (ch4/thf/co2/h2) OR a custom slug (etoh_mix).
+# Custom MOLECULES (Custom tab) use mol_type "custom" — a DIFFERENT concept
+# from custom cage GUESTS. Mirrors ion_inserter._NON_FRAMEWORK_MOL_TYPES.
+_NON_GUEST_MOL_TYPES = {"ice", "water", "custom", "solute", "na", "cl"}
 
 
 class InsertionError(Exception):
@@ -371,7 +381,67 @@ class CustomMoleculeInserter:
         # avoids Python-loop overhead. Output is byte-equivalent to the loop.
         dists, _ = existing_tree.query(positions, k=1)
         return bool(np.any(dists < min_separation))
-    
+
+    @staticmethod
+    def _build_guest_molecule_entries(
+        atom_names: list[str],
+        guest_start_idx: int,
+        guest_atom_count: int,
+        guest_nmolecules: int,
+        guest_descriptors: list | None,
+        guest_atom_counts: dict | None,
+    ) -> list[MoleculeIndex]:
+        """Build per-molecule guest molecule_index entries (mixed-guest aware).
+
+        Mirrors ``ion_inserter._build_molecule_index_from_structure``'s guest
+        section (Phase 45-15). Walks the guest region molecule-by-molecule via
+        ``iter_guest_molecules`` (descriptor-driven type identification +
+        heuristic fallback), building entries with the CORRECT per-molecule
+        ``mol_type`` (ch4/thf/etoh_mix/...) and ``count`` (5/13/9/...) instead
+        of the uniform floor-of-average stride that misaligns mixed cage
+        guests (CH4+THF: 9936//1296=7 -> 7-atom slices -> "h2" misid).
+
+        Falls back to the uniform stride (mol_type="guest") when the walk
+        cannot exactly consume the guest region (guard: len==nmols and
+        sum==atom_count) — preserving byte-identical behavior for single-guest
+        paths where the heuristic miscounts. When descriptors ARE present
+        (mixed hydrates), the walk yields specific mol_types the writers use
+        DIRECTLY (avoiding ``detect_guest_type_from_atoms`` which misidentifies
+        custom ethanol as ch4/thf because it only samples the first few atoms).
+        """
+        descriptors = guest_descriptors or []
+        gac = guest_atom_counts or {}
+        guest_entries: list[MoleculeIndex] = []
+        if atom_names:
+            for (ms, mc, _mt) in iter_guest_molecules(
+                atom_names, guest_start_idx, guest_atom_count, descriptors, gac
+            ):
+                guest_entries.append(MoleculeIndex(
+                    start_idx=ms, count=mc,
+                    mol_type=_mt if _mt is not None else "guest",
+                ))
+        if (guest_entries
+                and len(guest_entries) == guest_nmolecules
+                and sum(m.count for m in guest_entries) == guest_atom_count):
+            return guest_entries
+        # Fallback: uniform stride (original behavior). Reached for single-guest
+        # without descriptors when the heuristic miscounts, or unsupported
+        # guest patterns. Byte-identical to the pre-fix code for those paths.
+        if guest_nmolecules <= 0:
+            return []
+        atoms_per_guest = guest_atom_count // guest_nmolecules
+        current_idx = guest_start_idx
+        fallback: list[MoleculeIndex] = []
+        for _ in range(guest_nmolecules):
+            fallback.append(MoleculeIndex(
+                start_idx=current_idx,
+                count=atoms_per_guest,
+                mol_type="guest",
+            ))
+            current_idx += atoms_per_guest
+        return fallback
+
+
     def _remove_overlapping_water(
         self,
         structure: InterfaceStructure,
@@ -520,30 +590,48 @@ class CustomMoleculeInserter:
             shift = water_atom_count - new_water_atom_count
             guest_entries_found = False
             if hasattr(structure, 'molecule_index'):
+                # Issue 1/4: copy ALL cage-guest mol_types (generic "guest"
+                # fallback + specific built-in ch4/thf/co2/h2 + custom slug
+                # etoh_mix), NOT just literal "guest" — the upstream
+                # iter_guest_molecules walk now labels cage guests by their
+                # specific type. Preserving mol_type keeps the per-molecule
+                # identity through the water-removal rebuild.
                 for mol_idx in structure.molecule_index:
-                    if mol_idx.mol_type == "guest":
+                    if mol_idx.mol_type not in _NON_GUEST_MOL_TYPES:
                         new_molecule_index.append(MoleculeIndex(
                             start_idx=mol_idx.start_idx - shift,
                             count=mol_idx.count,
-                            mol_type="guest"
+                            mol_type=mol_idx.mol_type,
                         ))
                         guest_entries_found = True
             
             if not guest_entries_found:
-                # molecule_index is empty but guests exist — build from counts
+                # molecule_index is empty but guests exist — build per-molecule
+                # entries via iter_guest_molecules (descriptor-driven for mixed
+                # guests: CH4=5, THF=13, ethanol=9) instead of the uniform
+                # floor-of-average stride. Mirrors
+                # ion_inserter._build_molecule_index_from_structure.
                 guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
                 if guest_nmolecules > 0:
-                    atoms_per_guest = guest_atom_count // guest_nmolecules
-                    current_idx = ice_atom_count + new_water_atom_count
-                    for _ in range(guest_nmolecules):
-                        new_molecule_index.append(MoleculeIndex(
-                            start_idx=current_idx,
-                            count=atoms_per_guest,
-                            mol_type="guest"
-                        ))
-                        current_idx += atoms_per_guest
+                    new_molecule_index.extend(self._build_guest_molecule_entries(
+                        new_atom_names,
+                        ice_atom_count + new_water_atom_count,
+                        guest_atom_count,
+                        guest_nmolecules,
+                        getattr(structure, 'guest_descriptors', None),
+                        getattr(structure, 'guest_atom_counts', None),
+                    ))
         
         # Create new InterfaceStructure
+        # CRITICAL (Issue 1/4 regression, sii-mixed-gui-export-regression): the
+        # type-level guest metadata (guest_descriptors + guest_atom_counts) is
+        # tiling-invariant and MUST be preserved when the water region is
+        # rebuilt. The slab/piece/pocket modes populate these from
+        # candidate.metadata; dropping them here leaves the downstream ion
+        # inserter's iter_guest_molecules walk with empty descriptors -> the
+        # walk falls back to uniform "guest" labeling with a wrong (floor-of-
+        # average) stride, misaligning mixed CH4+THF/ethanol cage guests and
+        # producing 6-atom fragments / "h2" misidentification in the export.
         return InterfaceStructure(
             positions=new_positions,
             atom_names=new_atom_names,
@@ -556,7 +644,9 @@ class CustomMoleculeInserter:
             molecule_index=new_molecule_index if new_molecule_index else None,
             mode=getattr(structure, 'mode', 'slab'),
             report=getattr(structure, 'report', ''),
-            guest_nmolecules=getattr(structure, 'guest_nmolecules', 0)
+            guest_nmolecules=getattr(structure, 'guest_nmolecules', 0),
+            guest_descriptors=getattr(structure, 'guest_descriptors', []),
+            guest_atom_counts=getattr(structure, 'guest_atom_counts', {}),
         )
     
     def place_random(
@@ -790,24 +880,28 @@ class CustomMoleculeInserter:
             # guest_atom_count > 0, so we must build entries from guest_nmolecules
             guest_entries_found = False
             if hasattr(structure, 'molecule_index'):
+                # Issue 1/4: copy ALL cage-guest mol_types (not just "guest")
+                # so per-molecule types from iter_guest_molecules survive.
                 for mol_idx in structure.molecule_index:
-                    if mol_idx.mol_type == "guest":
+                    if mol_idx.mol_type not in _NON_GUEST_MOL_TYPES:
                         complete_molecule_index.append(mol_idx)
                         guest_entries_found = True
             
             if not guest_entries_found:
-                # molecule_index is empty but guests exist — build from counts
+                # molecule_index is empty but guests exist — build per-molecule
+                # entries via iter_guest_molecules (descriptor-driven for mixed
+                # guests) instead of the uniform floor-of-average stride.
+                # Mirrors ion_inserter._build_molecule_index_from_structure.
                 guest_nmolecules = getattr(structure, 'guest_nmolecules', 0)
                 if guest_nmolecules > 0:
-                    atoms_per_guest = guest_atom_count // guest_nmolecules
-                    current_idx = ice_atom_count + water_atom_count
-                    for _ in range(guest_nmolecules):
-                        complete_molecule_index.append(MoleculeIndex(
-                            start_idx=current_idx,
-                            count=atoms_per_guest,
-                            mol_type="guest"
-                        ))
-                        current_idx += atoms_per_guest
+                    complete_molecule_index.extend(self._build_guest_molecule_entries(
+                        modified_structure.atom_names,
+                        ice_atom_count + water_atom_count,
+                        guest_atom_count,
+                        guest_nmolecules,
+                        getattr(modified_structure, 'guest_descriptors', None),
+                        getattr(modified_structure, 'guest_atom_counts', None),
+                    ))
         
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
@@ -1000,24 +1094,28 @@ class CustomMoleculeInserter:
         if guest_atom_count > 0:
             guest_entries_found = False
             if hasattr(modified_structure, 'molecule_index'):
+                # Issue 1/4: copy ALL cage-guest mol_types (not just "guest")
+                # so per-molecule types from iter_guest_molecules survive.
                 for mol_idx in modified_structure.molecule_index:
-                    if mol_idx.mol_type == "guest":
+                    if mol_idx.mol_type not in _NON_GUEST_MOL_TYPES:
                         complete_molecule_index.append(mol_idx)
                         guest_entries_found = True
             
             if not guest_entries_found:
-                # molecule_index is empty but guests exist — build from counts
+                # molecule_index is empty but guests exist — build per-molecule
+                # entries via iter_guest_molecules (descriptor-driven for mixed
+                # guests) instead of the uniform floor-of-average stride.
+                # Mirrors ion_inserter._build_molecule_index_from_structure.
                 guest_nmolecules = getattr(modified_structure, 'guest_nmolecules', 0)
                 if guest_nmolecules > 0:
-                    atoms_per_guest = guest_atom_count // guest_nmolecules
-                    current_idx = ice_atom_count + water_atom_count
-                    for _ in range(guest_nmolecules):
-                        complete_molecule_index.append(MoleculeIndex(
-                            start_idx=current_idx,
-                            count=atoms_per_guest,
-                            mol_type="guest"
-                        ))
-                        current_idx += atoms_per_guest
+                    complete_molecule_index.extend(self._build_guest_molecule_entries(
+                        modified_structure.atom_names,
+                        ice_atom_count + water_atom_count,
+                        guest_atom_count,
+                        guest_nmolecules,
+                        getattr(modified_structure, 'guest_descriptors', None),
+                        getattr(modified_structure, 'guest_atom_counts', None),
+                    ))
         
         # Custom molecules
         current_idx = ice_atom_count + water_atom_count + guest_atom_count
