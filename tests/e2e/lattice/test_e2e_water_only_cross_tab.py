@@ -29,9 +29,9 @@ context for the custom-molecule inserter to interact with -- it inserts in
 the water region, same as any lattice. Focus on solute/ion which are the
 Pitfall 3 risk.
 
-This MIRRORS ``tests/test_e2e_lattice_cross_tab_gui.py`` (45-04, the 4-GUI-
+This MIRRORS ``tests/e2e/lattice/test_e2e_lattice_cross_tab_gui.py`` (45-04, the 4-GUI-
 exporter template) for the GUI half and
-``tests/test_e2e_lattice_cross_tab_cli.py`` (45-05, the 3-CLI-branch
+``tests/e2e/lattice/test_e2e_lattice_cross_tab_cli.py`` (45-05, the 3-CLI-branch
 template) for the CLI half, but with the water-only-specific assertions:
   - ``guest_nmolecules == 0`` and ``guest_atom_count == 0`` on the interface
     (KEY water-only verification at fixture time).
@@ -553,7 +553,7 @@ def _make_cli_pipeline(output_dir, hydrate, downstream_attr, downstream_struct):
     picks that branch. All other ``_*_result`` stay at their ``__init__``
     default of ``None``.
 
-    Mirrors the helper in ``tests/test_e2e_lattice_cross_tab_cli.py``
+    Mirrors the helper in ``tests/e2e/lattice/test_e2e_lattice_cross_tab_cli.py``
     (the 45-05 template, lines 207-221).
     """
     pipe = CLIPipeline(args=SimpleNamespace())

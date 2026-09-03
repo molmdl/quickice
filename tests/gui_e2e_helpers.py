@@ -83,7 +83,7 @@ def patch_gui_modals():
     """Patch the COMPLETE Blocker-2 modal catalog (research §3, table).
 
     Patch the USING module's namespace, never ``PySide6.QtWidgets`` directly
-    (repo Pattern B — e.g. tests/test_e2e_custom_guest_cross_tab_gui.py).
+    (repo Pattern B — e.g. tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_gui.py).
 
     Catalog (each entry = a probe-verified hang source if missed):
     - ``quickice.gui.main_window.QMessageBox``: ``information`` is the

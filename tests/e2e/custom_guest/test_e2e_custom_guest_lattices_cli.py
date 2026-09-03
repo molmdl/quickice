@@ -10,9 +10,9 @@ downstream CLI export branches (``CLIPipeline._run_export_step`` called with
 export-branch invocation). The ``_custom_result`` branch was NEVER run for
 non-sI lattices before this plan (45-VERIFICATION Gap 1, CLI half — G1).
 
-MIRRORS ``tests/test_e2e_custom_guest_cross_tab_cli.py`` (the 44.1-20
+MIRRORS ``tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_cli.py`` (the 44.1-20
 template) but swaps sI -> parametrized 4 lattices. 48.3-11 mirrors 48.3-10
-(the GUI half, ``test_e2e_custom_guest_lattices_gui.py``) on the CLI side:
+(the GUI half, ``tests/e2e/custom_guest/test_e2e_custom_guest_lattices_gui.py``) on the CLI side:
 the module fixture builds the 3 downstream inserter structures per lattice
 (fresh ``assemble_slab`` interface per inserter — the ion inserter mutates
 ``molecule_index``, 44.1-19 discipline) and adds 12 parametrized

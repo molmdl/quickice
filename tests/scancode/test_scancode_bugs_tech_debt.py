@@ -299,8 +299,8 @@ ETOH_ATOM_COUNT = 9  # Ethanol has 9 atoms
 def _write_minimal_gro(path: Path, atom_count: int, residue_name: str = "MOL") -> None:
     """Write a minimal valid GRO file with the given atom count.
 
-    Mirrors ``tests/test_e2e_custom_molecule.py::write_minimal_gro`` so the
-    TD-07 tests can build GRO files that match the ITP atom counts.
+    Mirrors ``tests/e2e/custom_guest/test_custom_molecule_inserter.py::write_minimal_gro``
+    so the TD-07 tests can build GRO files that match the ITP atom counts.
     """
     import numpy as np
 

@@ -26,7 +26,7 @@ What is exercised (plan 48.3-14, G2 of RESEARCH-INVENTORY §4):
      "Custom Molecule") → ion (source = "Solute"), fresh interface per inserter.
   4. All 4 GUI exporters (interface / solute / custom-molecule / ion) with
      ``hydrate_config`` threaded and ``QFileDialog``/``QMessageBox`` patched
-     (Pattern B, per tests/test_e2e_custom_guest_cross_tab_gui.py).
+     (Pattern B, per tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_gui.py).
 
 Collision-specific asserts (the UAT-F fix surface, ``quickice/gui/export.py``):
 

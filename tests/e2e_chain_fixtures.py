@@ -12,13 +12,14 @@ namespace are resolved by pytest normally and keep their declared module
 scope (one instantiation per consuming module, exactly as when each file
 owned its own def).
 
-Consumers (extracted clusters):
-- ``custom_guest_chains`` <- tests/test_e2e_custom_guest_lattices_cli.py (48.3-11)
-                           + tests/test_e2e_custom_guest_lattices_gui.py (48.3-10)
-- ``lattice_chains``      <- tests/test_e2e_lattice_interface_cli.py (45-02)
-                           + tests/test_e2e_lattice_interface_gui.py (45-01)
+Consumers (extracted clusters; paths post-48.3-21..24 e2e regrouping —
+pre-regroup root-level locations remain git-history traceable):
+- ``custom_guest_chains`` <- tests/e2e/custom_guest/test_e2e_custom_guest_lattices_cli.py (48.3-11)
+                           + tests/e2e/custom_guest/test_e2e_custom_guest_lattices_gui.py (48.3-10)
+- ``lattice_chains``      <- tests/e2e/interface/test_e2e_lattice_interface_cli.py (45-02)
+                           + tests/e2e/interface/test_e2e_lattice_interface_gui.py (45-01)
 - ``filled_ice_hydrates`` <- tests/e2e/hydrate/test_e2e_filled_ice_cli_hydrate_grompp.py (47-05)
-                           + tests/test_e2e_mixed_filled_ice_gui.py (45-14)
+                           + tests/e2e/lattice/test_e2e_mixed_filled_ice_gui.py (45-14)
 
 Divergent same-name sibling fixtures (measured similarity 0.04-0.31:
 ``cross_tab_lattice_chains_cli/_gui``, ``blocking_triclinic_hydrates`` /

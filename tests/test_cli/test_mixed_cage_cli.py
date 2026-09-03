@@ -31,7 +31,8 @@ export paths can EMIT mixed output differs by branch:
   slab built via ``assemble_slab``) IS mixed-capable since b278a9ed:
   ``write_interface_top_file`` detects 2+ built-in types via the slab's
   ``guest_atom_counts`` + ``guest_descriptors`` and run-length encodes BOTH
-  guests (covered by tests/test_e2e_mixed_builtin_interface_export.py,
+  guests (covered by
+  tests/e2e/lattice/test_e2e_mixed_builtin_interface_export.py,
   48.3-05).
 - The CLI HYDRATE branch (``_run_export_step`` with only ``_hydrate_result``)
   is NOT: its InterfaceStructure wrapper (pipeline.py) does not thread
@@ -97,7 +98,8 @@ from tests.e2e_export_helpers import (  # noqa: E402
 def mixed_builtin_sii_hydrate():
     """Module-scoped mixed built-in (CH4 small + THF large) sII hydrate.
 
-    Mirrors the fixture of tests/test_e2e_mixed_builtin_interface_export.py
+    Mirrors the fixture of
+    tests/e2e/lattice/test_e2e_mixed_builtin_interface_export.py
     (48.3-05): ``cage_guest_assignments`` places BUILT-IN ch4 in the small
     cages and BUILT-IN thf in the large cages (occupancy 100% both). The
     GenIce2 call is amortized module-wide (AGENTS.md convention). Returns
@@ -305,10 +307,10 @@ def test_mixed_cli_hydrate_branch_pins_single_guest_stream(
       (topology counts 24x5-atom CH4_H; coordinates carry 184 guest atoms).
 
     Mixed built-in export is GUI-only (multi-molecule writers via
-    ``HydrateGROMACSExporter`` — tests/test_e2e_mixed_lattice_gui.py,
-    tests/test_e2e_mixed_ion_export.py) and the CLI INTERFACE branch is
+    ``HydrateGROMACSExporter`` — tests/e2e/lattice/test_e2e_mixed_lattice_gui.py,
+    tests/e2e/solute_ion/test_e2e_mixed_ion_export.py) and the CLI INTERFACE branch is
     mixed-capable when the slab carries descriptor metadata (b278a9ed —
-    tests/test_e2e_mixed_builtin_interface_export.py, 48.3-05). This test PINS
+    tests/e2e/lattice/test_e2e_mixed_builtin_interface_export.py, 48.3-05). This test PINS
     the hydrate-branch limitation so silent behavior drift fails here: if the
     wrapper ever threads the metadata (or the writers go mixed), THF_H appears
     and every single-stream assertion below flips. Do NOT 'fix' this test to

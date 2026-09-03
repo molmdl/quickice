@@ -47,7 +47,7 @@ derives a FRESH slab interface via ``to_candidate`` + ``assemble_slab``
 (44.1-19 discipline — build a fresh interface per export leg; exporters may
 mutate structure state). Box >= 3 nm shortest vector (grompp PBC rule:
 cutoff 1.0 < half the shortest box vector — STATE [41-10]); the proven sII
-mixed-slab box from tests/test_e2e_custom_guest_mixed_cage_interface.py is
+mixed-slab box from tests/e2e/custom_guest/test_e2e_custom_guest_mixed_cage_interface.py is
 reused.
 
 ``QT_QPA_PLATFORM=offscreen`` is required for the GUI leg (headless machine);
@@ -87,8 +87,8 @@ from quickice.structure_generation.types import (  # noqa: E402
 )
 
 
-# Proven sII mixed-slab box (mirrors tests/test_e2e_custom_guest_mixed_cage_
-# interface.py): shortest box vector 5.13629 nm > 2 * rcoulomb = 2.0 nm
+# Proven sII mixed-slab box (mirrors tests/e2e/custom_guest/test_e2e_custom_
+# guest_mixed_cage_interface.py): shortest box vector 5.13629 nm > 2 * rcoulomb = 2.0 nm
 # (grompp PBC rule — STATE [41-10]).
 _SLAB_BOX_KWARGS = dict(
     box_x=5.13629,
@@ -226,8 +226,8 @@ def _parse_top_molecule_runs(top_path):
     ``parse_top_molecules`` collapses repeated runs by overwrite (last wins),
     but the mixed interface .top run-length encodes the guest region TWICE
     (bottom + top guest layers: CH4_H, THF_H, CH4_H, THF_H) — molecule totals
-    need the ordered runs. Mirrors tests/test_e2e_custom_guest_mixed_cage_
-    interface.py:_parse_top_molecules_runs.
+    need the ordered runs. Mirrors tests/e2e/custom_guest/test_e2e_custom_
+    guest_mixed_cage_interface.py:_parse_top_molecules_runs.
     """
     runs = []
     in_mol = False
@@ -385,7 +385,7 @@ def test_mixed_interface_cli_branch_declares_both_guests_grompp(
 ):
     """CLI leg: mixed built-in CH4+THF slab through the CLIPipeline
     ``_run_export_step`` interface branch declares BOTH guest types +
-    grompp rc 0 (Pattern 4 — tests/test_e2e_custom_guest_cross_tab_cli.py).
+    grompp rc 0 (Pattern 4 — tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_cli.py).
 
     ``_hydrate_result`` carries ``.config`` (the real CLI flow: the source
     step persists it and ``_run_export_step`` reads

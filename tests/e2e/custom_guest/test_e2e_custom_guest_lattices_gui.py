@@ -10,7 +10,7 @@ GUI exports (Solute / Custom-Molecule / Ion —
 ``_stage_hydrate_guest_itps`` builds ``custom_guest_info`` with ``MOL_H`` +
 stages the transformed ``etoh.itp``).
 
-MIRRORS ``tests/test_e2e_custom_guest_cross_tab_gui.py`` (the 44.1-19 template)
+MIRRORS ``tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_gui.py`` (the 44.1-19 template)
 but swaps sI -> parametrized 4 lattices. 48.3-10 extends the module fixture to
 build the 3 downstream inserter structures per lattice (fresh ``assemble_slab``
 interface per inserter — the ion inserter mutates ``iface.molecule_index``) and
