@@ -383,10 +383,11 @@ Test-suite hygiene phase discovered mid-milestone after Phase 48.1 (gromacs_writ
 
 Plans:
 - [x] 48.3-01-PLAN.md — Capture phase baselines (collect count + test IDs + e2e subset) + GATES.md
-- [ ] 48.3-02-PLAN.md — Decisions D1/D2 (custom-residue fix-vs-relax; mixed built-in CLI scope) — checkpoint
-- [ ] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
+- [x] 48.3-02-PLAN.md — Decisions D1/D2 (custom-residue fix-vs-relax; mixed built-in CLI scope) — checkpoint
+  (D1=option-a fix-the-flow implemented: CustomMoleculeInserter registers ITP [moleculetype] name; D2=option-a pin-and-document → 48.3-07 Task 3; DECISIONS.md committed)
+- [x] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
 - [ ] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
-- [ ] 48.3-05-PLAN.md — G3: mixed CH4+THF interface export regression (b278a9ed) GUI + CLI
+- [x] 48.3-05-PLAN.md — G3: mixed CH4+THF interface export regression (b278a9ed) GUI + CLI
 - [x] 48.3-06-PLAN.md — Convert 54 sys.path hacks → package-absolute imports (pre-move enabler)
 - [ ] 48.3-07-PLAN.md — CLI: grompp-validate existing subprocess workflows + GAP-8 follow-through
 - [ ] 48.3-08-PLAN.md — CLI Tier-A subprocess prefix matrix (custom step, CSV, concentration, auto-chain, hydrate prefixes, ice-only)
