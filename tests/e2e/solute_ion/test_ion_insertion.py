@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from pathlib import Path
 
+import quickice
 from quickice.structure_generation.ion_inserter import IonInserter, AVOGADRO
 from quickice.structure_generation.solute_inserter import SoluteInserter
 from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
@@ -34,7 +35,7 @@ from quickice.structure_generation.types import (
 
 # ── Test data paths ──────────────────────────────────────────────────────────
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
+DATA_DIR = Path(quickice.__file__).parent / "data" / "custom"
 ETOH_GRO = DATA_DIR / "etoh.gro"
 ETOH_ITP = DATA_DIR / "etoh.itp"
 

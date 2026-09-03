@@ -14,6 +14,7 @@ import pytest
 from pathlib import Path
 from scipy.spatial import cKDTree
 
+import quickice
 from quickice.structure_generation.solute_inserter import SoluteInserter, AVOGADRO
 from quickice.structure_generation.custom_molecule_inserter import CustomMoleculeInserter
 from quickice.structure_generation.interface_builder import generate_interface
@@ -32,7 +33,7 @@ from quickice.structure_generation.moleculetype_registry import MoleculetypeRegi
 
 # ── Test data paths ──────────────────────────────────────────────────────────
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
+DATA_DIR = Path(quickice.__file__).parent / "data" / "custom"
 ETOH_GRO = DATA_DIR / "etoh.gro"
 ETOH_ITP = DATA_DIR / "etoh.itp"
 ETOH_ATOM_COUNT = 9  # Ethanol has 9 atoms
