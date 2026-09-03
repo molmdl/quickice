@@ -162,6 +162,60 @@ def _release_pipeline_output(handler, pipeline_logger, orig_level):
     pipeline_logger.setLevel(orig_level)
 
 
+def _export_step(ws, step_name, structure, attr, hydrate=None):
+    """44.1-20 ``_assert_step_output`` export pattern, isolated per step.
+
+    Builds a FRESH ``CLIPipeline`` with ``_output_dir`` = ``ws`` and the
+    SINGLE ``_<step>_result`` the export priority needs (ion > solute >
+    custom > interface > hydrate > ice; ``hydrate`` optionally pre-set for
+    the custom-guest cgi threading), then calls ``_run_export_step()``.
+    This pins each export branch in isolation with the REAL step-produced
+    structure — the thing 44.1-20 deliberately avoided by calling the
+    generators directly.
+
+    Args:
+        ws: Per-step output directory (created here — ``execute()`` is the
+            only caller that mkdirs, ``_run_export_step`` does not).
+        step_name: ``"interface"``/``"custom"``/``"solute"``/``"ion"``.
+        structure: The step's result structure to export.
+        attr: The ``CLIPipeline`` attribute name (e.g. ``"_solute_result"``).
+        hydrate: Optional hydrate result (carries ``.config``) to pre-set on
+            ``_hydrate_result`` for the cgi-threading path.
+
+    Returns:
+        (rc, pipe) — the ``_run_export_step`` return code and the pipe.
+    """
+    ws.mkdir(parents=True, exist_ok=True)
+    pipe = CLIPipeline(args=SimpleNamespace())
+    pipe._output_dir = ws
+    if hydrate is not None:
+        pipe._hydrate_result = hydrate
+    setattr(pipe, attr, structure)
+    rc = pipe._run_export_step()
+    return rc, pipe
+
+
+def _assert_export_files(ws, step_name):
+    """Assert exported files exist + are consistent; return species views.
+
+    Copies ``em.mdp`` in (for the later grompp test), runs
+    ``assert_itp_completeness`` + ``assert_gro_top_consistent`` (always-on,
+    gmx-free), and returns ``(top_molecules, gro_residues)`` for species
+    assertions.
+    """
+    gro = ws / f"{step_name}.gro"
+    top = ws / f"{step_name}.top"
+    assert gro.exists(), f"{step_name}.gro not written to {ws}"
+    assert top.exists(), f"{step_name}.top not written to {ws}"
+    assert (ws / "tip4p-ice.itp").exists(), (
+        f"tip4p-ice.itp not staged for the {step_name} export"
+    )
+    shutil.copy(MDP_PATH, ws / "em.mdp")
+    assert_itp_completeness(str(top), ws)
+    assert_gro_top_consistent(str(gro), str(top))
+    return parse_top_molecules(str(top)), set(parse_gro_residue_names(str(gro)))
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Module fixtures — the REAL step chain, run ONCE, amortized across tests
 # ══════════════════════════════════════════════════════════════════════════════
@@ -180,6 +234,7 @@ def step_chain(tmp_path_factory):
         pipe      — the pipeline instance after all 5 steps
         args      — the parsed namespace (defaults intact for the pin tests)
         rcs       — {step_name: rc} for all 5 steps in execution order
+        exports   — {step_name: SimpleNamespace(ws, rc)} per-step exports
         progress  — captured ``[PROGRESS]`` stderr text
         logs      — captured ``quickice.cli.pipeline`` INFO records
     """
@@ -221,10 +276,37 @@ def step_chain(tmp_path_factory):
         finally:
             _release_pipeline_output(handler, pl_logger, orig_level)
 
+        # Per-step exports (44.1-20 _assert_step_output pattern): each step's
+        # structure exported via _run_export_step into its own isolated
+        # subdir with the priority branch isolated to that single result.
+        exports_root = tmp_path_factory.mktemp("step_chain_exports")
+        exports = {}
+        for step_name, attr in STEP_ATTRS:
+            structure = getattr(pipe, attr)
+            assert structure is not None, (
+                f"chain broke before the {step_name} export: rcs={rcs}"
+            )
+            export_rc, _ = _export_step(
+                exports_root / step_name, step_name, structure, attr
+            )
+            exports[step_name] = SimpleNamespace(
+                ws=exports_root / step_name, rc=export_rc
+            )
+
+        # execute()-equivalent final export on the REAL instance: with ALL
+        # step results populated, the priority selection (ion > solute >
+        # custom > interface) must pick the ion result — what a real full-
+        # chain invocation writes as ion.gro/ion.top.
+        final_ws = pipe._output_dir
+        final_ws.mkdir(parents=True, exist_ok=True)
+        final_export_rc = pipe._run_export_step()
+
         return SimpleNamespace(
             pipe=pipe,
             args=args,
             rcs=rcs,
+            exports=exports,
+            final_export=SimpleNamespace(ws=final_ws, rc=final_export_rc),
             progress=progress_buf.getvalue(),
             logs=log_buf.getvalue(),
         )
@@ -245,6 +327,8 @@ def hydrate_variant(tmp_path_factory):
         pipe         — the pipeline instance after both steps
         source_rc    — rc of _run_source_step
         interface_rc — rc of _run_interface_step
+        export       — SimpleNamespace(ws, rc) interface export (fresh pipe,
+                       priority-isolated, CH4_H cage-guest path)
         progress     — captured ``[PROGRESS]`` stderr text
     """
     args = get_arguments([
@@ -263,10 +347,23 @@ def hydrate_variant(tmp_path_factory):
     finally:
         _release_pipeline_output(handler, pl_logger, orig_level)
 
+    # Export the hydrate-derived interface (CH4_H cage guests) through
+    # _run_export_step — the guest-ITP staging path driven by the REAL
+    # source+interface step wiring (44.1-20 drives it from a hand-built slab).
+    export_ws = tmp_path_factory.mktemp("hydrate_variant_iface_export")
+    export_rc, _ = _export_step(
+        export_ws,
+        "interface",
+        pipe._interface_result,
+        "_interface_result",
+        hydrate=pipe._hydrate_result,
+    )
+
     return SimpleNamespace(
         pipe=pipe,
         source_rc=source_rc,
         interface_rc=interface_rc,
+        export=SimpleNamespace(ws=export_ws, rc=export_rc),
         progress=progress_buf.getvalue(),
         logs=log_buf.getvalue(),
     )
@@ -328,6 +425,123 @@ class TestSequentialStepChain:
         assert (ion.na_count + ion.cl_count) > 0, (
             "0.15 M NaCl in a 36 nm3 water region must place ions"
         )
+
+    def test_solute_auto_chain_upgrade_pins(self, step_chain):
+        """Auto-chain observable (in-process only): default --solute-source
+        'interface' is upgraded to 'custom' because ``_custom_result`` exists
+        (pipeline.py:659-664 — logged via logger.info, invisible to
+        subprocess tests; the report_progress line names the resolved source).
+
+        The structural observable — the custom molecule surviving into the
+        exported solute output — is asserted in
+        ``test_per_step_export_consistency_and_species``.
+        """
+        # Precondition: the flag was left at its argparse default.
+        assert step_chain.args.solute_source == "interface"
+        # The upgrade decision itself (logger.info, pipeline.py:661-664).
+        assert (
+            "Auto-chaining: --solute-source upgraded from "
+            "'interface' to 'custom'" in step_chain.logs
+        ), f"auto-chain log record not found in: {step_chain.logs!r}"
+        # report_progress names the resolved source (pipeline.py:683-687).
+        assert "(source=custom)" in step_chain.progress, (
+            f"solute progress line must name the upgraded source; got: "
+            f"{step_chain.progress!r}"
+        )
+
+    def test_ion_auto_chain_upgrade_pins(self, step_chain):
+        """Auto-chain observable (in-process only): default --ion-source
+        'interface' is upgraded to 'solute' — the most downstream result
+        (pipeline.py:741-753, logger.info only).
+
+        The output observable (custom AND solute species in the exported
+        ion.gro) is asserted in ``test_per_step_export_consistency_and_species``.
+        """
+        assert step_chain.args.ion_source == "interface"
+        assert (
+            "Auto-chaining: --ion-source upgraded from "
+            "'interface' to 'solute'" in step_chain.logs
+        ), f"auto-chain log record not found in: {step_chain.logs!r}"
+
+    def test_per_step_export_consistency_and_species(self, step_chain):
+        """Per-step exports: file consistency + species content.
+
+        THE auto-chain output observables (impossible to assert in
+        subprocess black-box tests):
+        - the exported solute output carries the custom molecule
+          ('etoh' residue + [molecules] entry) — that IS the
+          solute-source auto-upgrade observable (pipeline.py:659-664 logs
+          only), and
+        - the exported ion output contains BOTH the custom ('etoh') and
+          the solute ('CH4_L') species (pipeline.py:741-753 auto-upgrade).
+        """
+        exports = step_chain.exports
+        for step_name, _attr in STEP_ATTRS:
+            assert exports[step_name].rc == 0, (
+                f"_run_export_step failed for the {step_name} step"
+            )
+        custom_name = step_chain.pipe._custom_result.moleculetype_name  # "etoh" (D1)
+
+        # 1) Interface export: plain ice-water slab (no cage guests) → SOL only.
+        mols, residues = _assert_export_files(exports["interface"].ws, "interface")
+        assert "SOL" in mols and "SOL" in residues
+
+        # 2) Custom export: SOL + etoh.
+        mols, residues = _assert_export_files(exports["custom"].ws, "custom")
+        assert custom_name in mols, f"custom molecule missing from [molecules]: {mols}"
+        assert custom_name in residues, (
+            f"custom residue missing from custom.gro: {sorted(residues)}"
+        )
+
+        # 3) Solute export: SOL + etoh + CH4_L — the custom molecule SURVIVING
+        #    the solute step is the auto-upgrade observable.
+        mols, residues = _assert_export_files(exports["solute"].ws, "solute")
+        assert custom_name in mols and custom_name in residues, (
+            f"auto-chain regression: custom molecule dropped from the solute "
+            f"export (molecules={mols}, residues={sorted(residues)})"
+        )
+        assert "CH4_L" in mols and "CH4_L" in residues
+
+        # 4) Ion export: SOL + etoh + CH4_L (+ NA/CL) — BOTH upstream species
+        #    survive into the ion output.
+        mols, residues = _assert_export_files(exports["ion"].ws, "ion")
+        assert custom_name in mols and custom_name in residues, (
+            f"auto-chain regression: custom molecule dropped from the ion "
+            f"export (molecules={mols}, residues={sorted(residues)})"
+        )
+        assert "CH4_L" in mols and "CH4_L" in residues
+        ion = step_chain.pipe._ion_result
+        if ion.na_count > 0:
+            assert "NA" in mols and "NA" in residues
+        if ion.cl_count > 0:
+            assert "CL" in mols and "CL" in residues
+
+        # 5) Final export on the REAL instance (execute()-equivalent): with
+        #    ALL results populated, priority (ion > solute > custom >
+        #    interface) must select the ion result.
+        assert step_chain.final_export.rc == 0
+        assert (step_chain.final_export.ws / "ion.gro").exists(), (
+            "priority selection must pick the ion result on a fully "
+            "populated instance (execute() writes ion.gro/ion.top)"
+        )
+        assert (step_chain.final_export.ws / "ion.top").exists()
+
+    @gmx_skipif
+    def test_per_step_export_grompp(self, step_chain):
+        """Every per-step export passes ``gmx grompp`` (rc == 0).
+
+        44.1-20-style per-step grompp validation WITH the real step wiring —
+        the subprocess tests grompp only 2 black-box runs and never a chain
+        containing the custom step (research GAP 2).
+        """
+        for step_name, _attr in STEP_ATTRS:
+            ws = step_chain.exports[step_name].ws
+            rc, stderr = run_gmx_grompp(
+                ws, gro_file=f"{step_name}.gro", top_file=f"{step_name}.top"
+            )
+            assert rc == 0, (
+                f"gmx grompp failed for the {step_name} step export:\n{stderr[-800:]}"
+            )
 
     def test_duck_typed_attribute_flow(self, step_chain):
         """CP-01 duck-typing: solute carries custom attrs; ion carries solute+custom.
@@ -407,3 +621,67 @@ class TestHydrateSourceVariant:
         # Progress observables (verbatim from pipeline.py:385-394).
         assert "Generated sI hydrate" in hv.progress
         assert "Hydrate converted to ice candidate" in hv.progress
+
+    @gmx_skipif
+    def test_hydrate_variant_interface_export_grompp(self, hydrate_variant):
+        """The hydrate-derived interface export passes ``gmx grompp``.
+
+        The interface export branch (guest ITP staging via the
+        ``_detect_guest_type`` fallback, CH4_H residues) driven by the REAL
+        ``_run_source_step`` hydrate branch + ``_run_interface_step`` wiring
+        — 44.1-20 covers the same export from a hand-built slab instead.
+        """
+        hv = hydrate_variant
+        assert hv.export.rc == 0, "interface export of the hydrate-derived slab failed"
+        mols, residues = _assert_export_files(hv.export.ws, "interface")
+        assert "SOL" in mols and "SOL" in residues
+        assert "CH4_H" in mols, f"CH4_H missing from [molecules]: {mols}"
+        assert "CH4_H" in residues, (
+            f"CH4_H residue missing from interface.gro: {sorted(residues)}"
+        )
+        rc, stderr = run_gmx_grompp(
+            hv.export.ws, gro_file="interface.gro", top_file="interface.top"
+        )
+        assert rc == 0, (
+            f"gmx grompp failed for the hydrate-variant interface export:\n"
+            f"{stderr[-800:]}"
+        )
+
+
+class TestStepOrderingGuard:
+    """Negative spot-check: step order is enforced with a clear message."""
+
+    def test_custom_step_before_interface_fails_cleanly(self, custom_inputs, capsys):
+        """``_run_custom_step`` without an interface result → rc 1 + clear message.
+
+        The custom step REQUIRES the interface result (pipeline.py:549-555):
+        with ``_interface_result`` still None it must fail fast with rc 1 and
+        the actionable message read verbatim from pipeline.py:552-555 (not
+        invented here): "No interface structure available. Run --interface
+        step before custom molecule insertion."
+        """
+        staged_gro, staged_itp = custom_inputs
+        args = get_arguments([
+            "-T", "270", "-P", "0.1",
+            *SLAB_FLAGS,
+            "--custom-gro", str(staged_gro),
+            "--custom-itp", str(staged_itp),
+            "--custom-placement", "random",
+            "--custom-count", "2",
+            "--seed", "42",
+            "--output", "output",
+        ])
+        pipe = CLIPipeline(args=args)
+        assert pipe._interface_result is None  # the step-ordering precondition
+
+        rc = pipe._run_custom_step()
+        assert rc == 1, "custom step before the interface step must fail with rc 1"
+        assert pipe._custom_result is None, (
+            "a failed custom step must not populate _custom_result"
+        )
+
+        err = capsys.readouterr().err
+        assert "No interface structure available" in err, (
+            f"expected the pipeline.py:552-555 message on stderr, got: {err!r}"
+        )
+        assert "Run --interface step before custom molecule insertion" in err
