@@ -1,0 +1,2 @@
+# gmx: /data/nglokwan/ompi_plumed-gmx/plumed-gromacs2023.5-gpu/bin/gmx
+1890 tests collected in 1.39s
