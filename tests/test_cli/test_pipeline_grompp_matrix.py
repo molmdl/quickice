@@ -59,6 +59,7 @@ from tests.e2e_export_helpers import (
     assert_gro_top_consistent,
     assert_itp_completeness,
     make_temp_output_dir,
+    parse_gro_atom_count,
     parse_gro_residue_names,
     parse_top_molecules,
     run_gmx_grompp,
@@ -163,6 +164,22 @@ def _validate_export(out_dir: Path, gro_file: str, top_file: str,
     assert grompp_rc == 0, (
         f"gmx grompp failed on {gro_file}:\n{grompp_stderr[-800:]}"
     )
+
+
+def _count_custom_molecules(gro_path: str, template_gro: str) -> int:
+    """Count custom ('etoh') molecules in an exported .gro file.
+
+    The atoms-per-molecule divisor comes from the template GRO itself (9 for
+    the bundled etoh) — never hardcoded, so the helper follows the template.
+    """
+    atoms_per_molecule = parse_gro_atom_count(template_gro)
+    residues = parse_gro_residue_names(gro_path)
+    custom_atoms = sum(1 for r in residues if r.lower() == "etoh")
+    assert custom_atoms % atoms_per_molecule == 0, (
+        f"custom atom count {custom_atoms} is not a whole multiple of the "
+        f"template's {atoms_per_molecule} atoms/molecule — corrupted export"
+    )
+    return custom_atoms // atoms_per_molecule
 
 
 # ── Custom-chain rows (GAP 2 / 5 / 6) ────────────────────────────────────────
@@ -336,5 +353,161 @@ class TestCustomChainMatrix:
             )
             residues = parse_gro_residue_names(str(out / "ion.gro"))
             assert "etoh" in residues
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+
+# ── CSV placement + concentration rows (GAP 3 / 4) ───────────────────────────
+# The positions CSV and the custom input files live INSIDE the CWD tmp/
+# workspace: _parse_positions_csv (pipeline.py:280-287) applies the same
+# SEC-04 CWD containment as the custom gro/itp inputs.
+
+
+class TestCsvPlacementAndConcentrationMatrix:
+    """The two ZERO-coverage custom flags get happy-path grompp coverage."""
+
+    def test_r10_csv_placement_grompp(self):
+        """R10 (GAP 3): --custom-placement custom with a valid 6-column
+        positions CSV places exactly N molecules and passes grompp.
+
+        The CSV rows (x, y, z, alpha, beta, gamma) sit inside the slab water
+        layer (z ∈ [1.5, 3.5] nm) with ≥1 nm COM spacing; a '#' comment line
+        exercises the comment-skipping branch of _parse_positions_csv.
+        place_custom performs NO overlap rejection (SUSP-06, user
+        responsibility) — it removes overlapping WATER molecules instead.
+        """
+        workspace = Path(make_temp_output_dir())
+        try:
+            gro, itp = _copy_etoh_inputs(workspace)
+            n_positions = 4
+            csv_path = workspace / "positions.csv"
+            csv_lines = [
+                "# x, y, z, alpha, beta, gamma (nm, degrees ZXZ)",
+                f"0.5,0.5,{WATER_Z_MID},0,0,0",
+                f"1.5,0.5,{WATER_Z_MID},0,0,0",
+                f"2.5,0.5,{WATER_Z_MID},0,0,0",
+                f"1.5,1.5,{WATER_Z_MID},0,0,0",
+            ]
+            csv_path.write_text("\n".join(csv_lines) + "\n")
+
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--custom-gro", gro, "--custom-itp", itp,
+                "--custom-placement", "custom",
+                "--custom-positions-file", str(csv_path),
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            _validate_export(out, "custom.gro", "custom.top")
+
+            # Exactly N custom molecules placed — the CSV row count is the
+            # count contract (not the concentration math).
+            placed = _count_custom_molecules(str(out / "custom.gro"), gro)
+            assert placed == n_positions, (
+                f"expected exactly {n_positions} custom molecules from the "
+                f"CSV rows, exported {placed}"
+            )
+            molecules = parse_top_molecules(str(out / "custom.top"))
+            assert molecules.get("etoh") == n_positions, (
+                f".top [molecules] should declare {n_positions} etoh, "
+                f"got {molecules}"
+            )
+            assert molecules.get("SOL", 0) > 0
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r11_custom_concentration_grompp(self):
+        """R11 (GAP 4): --custom-concentration 0.05 (NO --custom-count)
+        derives the molecule count from the liquid volume.
+
+        The expected count is recomputed INDEPENDENTLY in this test with the
+        MODULE CONSTANTS (WATER_VOLUME_NM3 from quickice.structure_generation.
+        types + AVOGADRO from ion_inserter — never hardcode 0.0299), using
+        the water molecule count the interface step itself reports on stderr
+        ('[PROGRESS] Interface: <ice> ice + <water> water molecules') — the
+        same number pipeline.py:565-572 reads from the interface result.
+        """
+        workspace = Path(make_temp_output_dir())
+        try:
+            gro, itp = _copy_etoh_inputs(workspace)
+            concentration = 0.05
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--custom-gro", gro, "--custom-itp", itp,
+                "--custom-placement", "random",
+                "--custom-concentration", str(concentration),
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+
+            # Independent expected-count computation (pipeline.py:565-572).
+            match = re.search(
+                r"Interface: (\d+) ice \+ (\d+) water molecules", stderr
+            )
+            assert match, (
+                f"interface progress line missing from stderr — cannot "
+                f"recompute the concentration count:\n{stderr[-500:]}"
+            )
+            water_nmolecules = int(match.group(2))
+            expected_count = int(round(
+                concentration * water_nmolecules * WATER_VOLUME_NM3 * 1e-24
+                * AVOGADRO
+            ))
+            assert expected_count >= 1, (
+                f"concentration {concentration} should derive at least 1 "
+                f"molecule for {water_nmolecules} waters, got "
+                f"{expected_count} — use R11b for the rounds-to-0 edge"
+            )
+
+            out = workspace / "out"
+            _validate_export(out, "custom.gro", "custom.top")
+            placed = _count_custom_molecules(str(out / "custom.gro"), gro)
+            assert placed == expected_count, (
+                f"concentration-derived count mismatch: pipeline placed "
+                f"{placed}, independent computation says {expected_count} "
+                f"(water_nmolecules={water_nmolecules}, "
+                f"WATER_VOLUME_NM3={WATER_VOLUME_NM3}, AVOGADRO={AVOGADRO})"
+            )
+            molecules = parse_top_molecules(str(out / "custom.top"))
+            assert molecules.get("etoh") == expected_count
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r11b_tiny_concentration_rounds_to_zero_pins_graceful_failure(self):
+        """R11b edge: concentration so low the derived count rounds to 0.
+
+        PINNED behavior (read from pipeline.py:565-572 + CustomMoleculeConfig
+        validation before writing this test): the count formula
+        ``int(round(conc * V * 1e-24 * AVOGADRO))`` yields 0, and
+        CustomMoleculeConfig.__post_init__ rejects ``molecule_count=0``
+        ('molecule_count must be >= 1, got 0') — so the custom step fails
+        GRACEFULLY: rc == 1, '[PROGRESS] Custom step failed: bad config'
+        on stderr, no export written.
+        """
+        workspace = Path(make_temp_output_dir())
+        try:
+            gro, itp = _copy_etoh_inputs(workspace)
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--custom-gro", gro, "--custom-itp", itp,
+                "--custom-placement", "random",
+                "--custom-concentration", "0.0001",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 1, (
+                f"tiny concentration should fail gracefully with rc 1 "
+                f"(count rounds to 0 → CustomMoleculeConfig rejects it), "
+                f"got rc {rc}\nstderr tail:\n{stderr[-500:]}"
+            )
+            assert "Custom step failed" in stderr
+            assert "molecule_count must be >= 1" in stderr
+            out = workspace / "out"
+            assert not (out / "custom.gro").exists(), (
+                "no custom.gro should be exported when the custom step failed"
+            )
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
