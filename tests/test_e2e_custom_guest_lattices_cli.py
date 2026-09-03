@@ -64,10 +64,6 @@ from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
 )
 from quickice.structure_generation.modes.slab import assemble_slab  # noqa: E402
-from quickice.structure_generation.types import (  # noqa: E402
-    HydrateConfig,
-    InterfaceConfig,
-)
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
 from quickice.structure_generation.custom_molecule_inserter import (  # noqa: E402
     CustomMoleculeInserter,
@@ -461,3 +457,312 @@ def test_custom_guest_lattice_cli_interface_export_grompp(
     # 4. Shared assertions: files exist, SOL + MOL_H (not GUE), transformed
     #    etoh.itp staged, file consistency, grompp rc == 0.
     _assert_custom_cli_export(ws, "interface")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Downstream CLI export branches (custom / solute / ion) × 4 non-sI lattices
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _assert_mol_h_count_parity(
+    gro_path, top_path, expected_molecules, atoms_per_guest, ctx
+):
+    """Assert MOL_H molecule-count parity: .top [molecules] == .gro residues
+    == slab-truncated guest count.
+
+    THE standing regression guard for the UAT Issue 3 config-vs-structure
+    count desync class (slab truncation + config-derived counts): a
+    config-derived guest count in ``.top [molecules]`` (full-lattice guest
+    count, e.g. ``MOL_H 864``) diverging from the slab-truncated ``.gro``
+    residue count (e.g. ``MOL_H 576``). The writers must derive the MOL_H
+    count from the STRUCTURE (slab-truncated ``guest_nmolecules``), never
+    from a config-derived value. Asserted in EVERY downstream export case.
+
+    The .gro molecule count is derived from ATOM-level residue entries
+    (``parse_gro_residue_names`` yields one entry PER ATOM) divided by the
+    atoms-per-molecule (``config.guest_atom_count`` — the molecular formula
+    size from the config, NOT a config-derived molecule count). Divisibility
+    is asserted so partial/mangled molecules cannot pass.
+
+    Args:
+        gro_path: Exported ``.gro`` file path.
+        top_path: Exported ``.top`` file path.
+        expected_molecules: Slab-truncated guest molecule count
+            (``iface.guest_nmolecules`` — the shared slab truth; all 3
+            per-inserter interfaces are deterministic-identical, seed=42).
+        atoms_per_guest: Atoms per cage-guest molecule
+            (``config.guest_atom_count`` == 9 for ethanol).
+        ctx: ``"{lattice_type}/{branch_id}"`` for failure messages.
+    """
+    top_count = parse_top_molecules(str(top_path)).get("MOL_H", 0)
+    gro_atoms = parse_gro_residue_names(str(gro_path)).count("MOL_H")
+    assert top_count > 0, (
+        f"[{ctx}] MOL_H missing or zero in .top [molecules] "
+        f"(cage guest dropped from the downstream export)"
+    )
+    assert gro_atoms > 0, (
+        f"[{ctx}] MOL_H residues missing in .gro "
+        f"(cage guest dropped from the downstream export)"
+    )
+    assert gro_atoms % atoms_per_guest == 0, (
+        f"[{ctx}] MOL_H atom count {gro_atoms} not divisible by "
+        f"atoms-per-molecule {atoms_per_guest} -- partial/mangled guest "
+        f"molecules in .gro"
+    )
+    gro_count = gro_atoms // atoms_per_guest
+    assert top_count == gro_count == expected_molecules, (
+        f"[{ctx}] MOL_H molecule-count desync (UAT Issue 3 signature): "
+        f".top [molecules]={top_count}, .gro MOL_H molecules={gro_count} "
+        f"({gro_atoms} atoms // {atoms_per_guest}), "
+        f"slab-truncated guest_nmolecules={expected_molecules} -- "
+        f"writers must derive counts from the structure, not the config"
+    )
+
+
+def _assert_cli_downstream_export(
+    ws, step_name, chain, expected_molecules, extra_expected_itps, ctx
+):
+    """Assert a downstream CLI export (custom / solute / ion branch) is
+    grompp-valid with correct custom-guest staging.
+
+    Checks (per the plan's must-haves):
+      1. ``{step_name}.gro`` + ``{step_name}.top`` files exist.
+      2. ``tip4p-ice.itp`` (always) + ``etoh.itp`` staged AND the staged
+         copy is the TRANSFORMED one (moleculetype ``MOL_H``) + branch-
+         specific ITPs exist (``cmet.itp`` / ``ch4_liquid.itp`` /
+         ``ion.itp``).
+      3. ``.top [molecules]`` contains the expected molecules (no ``GUE``);
+         NA / CL asserted conditionally for the ion branch (only when
+         ions were placed).
+      4. ``.gro`` residues contain the expected molecules (no ``GUE``);
+         NA / CL conditional for the ion branch.
+      5. MOL_H count parity (``_assert_mol_h_count_parity`` — the UAT
+         Issue 3 desync guard).
+      6. File consistency: ``assert_itp_completeness`` +
+         ``assert_gro_top_consistent`` (always).
+      7. ``gmx grompp`` exits 0 (when gmx on PATH).
+    """
+    gro_path = ws / f"{step_name}.gro"
+    top_path = ws / f"{step_name}.top"
+
+    # 1. Files written by _run_export_step (writers + ITP staging).
+    assert gro_path.exists(), f"[{ctx}] {step_name}.gro not written: {gro_path}"
+    assert top_path.exists(), f"[{ctx}] {step_name}.top not written: {top_path}"
+
+    # 2. Always-staged ITPs: tip4p-ice.itp (water model) + etoh.itp (custom
+    #    cage guest, staged by the 44.1-17 custom-guest block in
+    #    copy_itp_files_for_structure). The staged etoh.itp must be the
+    #    TRANSFORMED copy (moleculetype MOL_H), not the raw source ITP
+    #    (moleculetype etoh). Prerequisite for grompp: .top [molecules]
+    #    lists MOL_H -> #include'd ITP must define MOL_H.
+    assert (ws / "tip4p-ice.itp").exists(), (
+        f"[{ctx}] water ITP (tip4p-ice.itp) not staged"
+    )
+    etoh_path = ws / "etoh.itp"
+    assert etoh_path.exists(), (
+        f"[{ctx}] custom guest ITP (etoh.itp) not staged by "
+        f"copy_itp_files_for_structure (44.1-17 custom-guest block)"
+    )
+    staged_etoh = etoh_path.read_text()
+    assert "MOL_H" in staged_etoh, (
+        f"[{ctx}] staged etoh.itp is missing the MOL_H moleculetype -- "
+        f"transform_guest_itp was not applied by copy_itp_files_for_structure"
+    )
+    for itp in extra_expected_itps:
+        assert (ws / itp).exists(), (
+            f"[{ctx}] expected ITP '{itp}' not staged/copied for the "
+            f"{step_name} branch"
+        )
+
+    # 3. .top [molecules]: expected molecules + #include of etoh.itp (the
+    #    cage guest ITP); GUE must NEVER appear (would mean custom_guest_info
+    #    was NOT threaded to the writers).
+    top_text = top_path.read_text()
+    assert '#include "etoh.itp"' in top_text, (
+        f"[{ctx}] {step_name}.top does not #include etoh.itp (cage guest "
+        f"molecule definition missing): {top_text!r}"
+    )
+    mols = parse_top_molecules(str(top_path))
+    for mol in expected_molecules:
+        assert mol in mols, f"[{ctx}] expected '{mol}' in [molecules], got {mols}"
+    assert "GUE" not in mols, (
+        f"[{ctx}] GUE must NOT appear in [molecules] (custom_guest_info not "
+        f"threaded): {mols}"
+    )
+    # Ion branch: NA / CL asserted conditionally (only when ions were placed).
+    if step_name == "ion":
+        if chain.ion.na_count > 0:
+            assert "NA" in mols, f"[{ctx}] expected NA in [molecules] (na_count>0), got {mols}"
+        if chain.ion.cl_count > 0:
+            assert "CL" in mols, f"[{ctx}] expected CL in [molecules] (cl_count>0), got {mols}"
+
+    # 4. .gro residues: expected molecules; GUE must NEVER appear.
+    gro_res = set(parse_gro_residue_names(str(gro_path)))
+    for mol in expected_molecules:
+        assert mol in gro_res, f"[{ctx}] expected '{mol}' in .gro residues, got {gro_res}"
+    assert "GUE" not in gro_res, (
+        f"[{ctx}] GUE must NOT appear in .gro residues (custom_guest_info "
+        f"not threaded): {gro_res}"
+    )
+    if step_name == "ion":
+        if chain.ion.na_count > 0:
+            assert "NA" in gro_res, f"[{ctx}] expected NA in .gro residues (na_count>0), got {gro_res}"
+        if chain.ion.cl_count > 0:
+            assert "CL" in gro_res, f"[{ctx}] expected CL in .gro residues (cl_count>0), got {gro_res}"
+
+    # 5. MOL_H count parity (ALWAYS) -- the UAT Issue 3 desync regression
+    #    guard: .top [molecules] count == .gro residue-molecule count ==
+    #    slab-truncated guest_nmolecules.
+    _assert_mol_h_count_parity(
+        gro_path,
+        top_path,
+        chain.iface.guest_nmolecules,
+        chain.config.guest_atom_count,
+        ctx,
+    )
+
+    # 6. Stage the MDP for grompp + run file-consistency assertions (always
+    #    run -- catches _H suffix + missing-molecule bugs even without gmx).
+    shutil.copy(MDP_PATH, ws / "em.mdp")
+    assert_itp_completeness(str(top_path), ws)
+    assert_gro_top_consistent(str(gro_path), str(top_path))
+
+    # 7. Run gmx grompp -- must exit 0 (topology self-consistent + sim-ready).
+    #    The test is @gmx_skipif so this block only runs when gmx IS on PATH;
+    #    the shutil.which guard is a harmless defensive check matching the
+    #    file's existing convention.
+    if shutil.which("gmx"):
+        exit_code, stderr = run_gmx_grompp(
+            ws, gro_file=f"{step_name}.gro", top_file=f"{step_name}.top"
+        )
+        assert exit_code == 0, (
+            f"[{ctx}] gmx grompp failed (CLI {step_name} branch, custom "
+            f"ethanol guest):\n{stderr}"
+        )
+
+
+# Each case: (branch_id, result_attr, expected_molecules, extra_expected_itps)
+# - branch_id: the ``custom_guest_chains`` structure attribute + the
+#   ``_run_export_step`` branch basename (``custom.gro`` / ``solute.gro`` /
+#   ``ion.gro``).
+# - result_attr: the ``CLIPipeline`` attribute set for the Pattern-4
+#   export-branch invocation (ion > solute > custom > interface priority; one
+#   ``_*_result`` per ``_run_export_step`` call).
+# - expected_molecules: subset that MUST appear in ``.top [molecules]`` +
+#   ``.gro`` residues (SOL + MOL_H always; plus branch-specific molecules).
+#   The custom branch is the ONLY one carrying the liquid custom molecule
+#   ``MOL`` (the cmet-renamed etoh copy; the solute/ion chains are built from
+#   custom-free interfaces). ``CH4_L`` appears in solute + ion because the
+#   ion chain is built from the SOLUTE (real cross-tab flow, Tab 3 -> Tab 4,
+#   CP-01) so the IonStructure carries the CH4 solutes.
+# - extra_expected_itps: ITPs the CLI export stages beyond the always-present
+#   tip4p-ice.itp + etoh.itp (MOL_H). ``cmet.itp`` = the custom molecule ITP
+#   basename (copied with [atomtypes] commented by the custom branch);
+#   ``ch4_liquid.itp`` = CH4 solutes (solute branch / ion-from-solute chain);
+#   ``ion.itp`` = generated by the ion branch.
+#
+# NOTE: this is the CLI-side mirror of 48.3-10's ``_DOWNSTREAM_EXPORT_CASES``
+# (GUI exporters); the function name carries the ``_cli_`` infix so the
+# path-stripped GATE-IDs never collide with the GUI file's.
+_DOWNSTREAM_BRANCH_CASES = [
+    pytest.param(
+        "custom",
+        "_custom_result",
+        {"SOL", "MOL_H", "MOL"},
+        ("etoh.itp", "cmet.itp"),
+        id="custom",
+    ),
+    pytest.param(
+        "solute",
+        "_solute_result",
+        {"SOL", "MOL_H", "CH4_L"},
+        ("etoh.itp", "ch4_liquid.itp"),
+        id="solute",
+    ),
+    pytest.param(
+        "ion",
+        "_ion_result",
+        {"SOL", "MOL_H", "CH4_L"},  # NA / CL asserted conditionally below
+        ("etoh.itp", "ch4_liquid.itp", "ion.itp"),
+        id="ion",
+    ),
+]
+
+
+@gmx_skipif
+@pytest.mark.parametrize(
+    "branch_id,result_attr,expected_molecules,extra_expected_itps",
+    _DOWNSTREAM_BRANCH_CASES,
+)
+@pytest.mark.parametrize("lattice_type", list(_LATTICES))
+def test_custom_guest_lattice_cli_downstream_export_grompp(
+    custom_guest_chains,
+    tmp_path,
+    lattice_type,
+    branch_id,
+    result_attr,
+    expected_molecules,
+    extra_expected_itps,
+):
+    """gmx grompp exits 0 on a custom ethanol guest hydrate with each of the 4
+    non-sI lattices (sII, c2te, ice1hte, 16) exported via EACH of the 3
+    downstream CLI export branches (custom / solute / ion), invoked as the
+    Pattern-4 export-branch call (``CLIPipeline._run_export_step`` with ONE
+    ``_<branch>_result`` set — priority selection ion > solute > custom >
+    interface picks that branch).
+
+    Phase 48.3 plan 48.3-11: closes the CLI half of Gap 1 (G1) — the
+    ``_custom_result`` branch was NEVER run for non-sI lattices before this
+    plan (45-VERIFICATION). Mirrors 48.3-10's GUI downstream tests
+    (``test_e2e_custom_guest_lattices_gui.py``) and the 44.1-20 template's
+    Pattern-4 invocation (``_make_cli_pipeline`` + one ``_result`` set per
+    ``_run_export_step`` call, ``_output_dir`` to a tmp_path subdir —
+    in-process, so tmp_path is allowed and stays Qt-free).
+
+    Flow (each of the 12 parametrized cases):
+      1. ``ws = tmp_path / lattice_type`` (pytest gives each parametrized
+         invocation its own ``tmp_path``).
+      2. ``pipe = _make_cli_pipeline(ws, chain.hydrate, result_attr,
+         structure)`` -- ``hydrate`` carries the CUSTOM ``.config`` so
+         ``_run_export_step`` builds ``cgi`` via
+         ``_build_custom_guest_info`` and threads
+         ``custom_guest_info=cgi`` to the per-branch writers.
+      3. ``code = pipe._run_export_step()`` -- assert ``code == 0``.
+      4. ``_assert_cli_downstream_export`` -- files + staged ITPs exist
+         (transformed ``etoh.itp`` with moleculetype ``MOL_H`` +
+         branch-specific ITPs); expected molecules in ``.top [molecules]``
+         + ``.gro`` residues (no ``GUE``; NA/CL conditional for ion);
+         ``_assert_mol_h_count_parity`` (the UAT Issue 3 desync guard);
+         ``assert_itp_completeness`` + ``assert_gro_top_consistent``
+         (always); ``gmx grompp`` rc == 0 (when gmx present).
+
+    Key assertion: for each lattice × branch, the CLI export stages the
+    transformed ``etoh.itp`` (moleculetype ``MOL_H``) + the ``.top``
+    references ``MOL_H`` (not ``GUE``) + the MOL_H molecule count agrees
+    between ``.top [molecules]`` and the ``.gro`` residues (== the
+    slab-truncated ``guest_nmolecules``) + ``gmx grompp`` exits 0.
+    """
+    chain = custom_guest_chains[lattice_type]
+    structure = getattr(chain, branch_id)
+    ctx = f"{lattice_type}/{branch_id}"
+    ws = tmp_path / lattice_type
+    ws.mkdir()
+
+    # 2. Construct the CLI pipeline with _hydrate_result=chain.hydrate (carries
+    #    .config) + exactly ONE downstream _result set so _run_export_step's
+    #    priority selection picks this branch (Pattern-4 invocation).
+    pipe = _make_cli_pipeline(ws, chain.hydrate, result_attr, structure)
+
+    # 3. Run the export step — must succeed (writers + ITP staging).
+    code = pipe._run_export_step()
+    assert code == 0, (
+        f"[{ctx}] _run_export_step should succeed for the {branch_id} "
+        f"branch with a custom cage guest"
+    )
+
+    # 4. Shared assertions: files + staged ITPs, expected molecules in .top
+    #    [molecules] + .gro residues (no GUE), MOL_H count parity, file
+    #    consistency, grompp rc == 0.
+    _assert_cli_downstream_export(
+        ws, branch_id, chain, expected_molecules, extra_expected_itps, ctx
+    )
