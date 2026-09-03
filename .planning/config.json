@@ -8,19 +8,19 @@
     "active_profile": "balanced",
     "presets": {
       "quality": {
-        "planning": "synthetic/hf:zai-org/GLM-5",
-        "execution": "synthetic/hf:zai-org/GLM-5",
-        "verification": "synthetic/hf:zai-org/GLM-5"
+        "planning": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "execution": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "verification": "synthetic/hf:zai-org/GLM-5.3-Flash"
       },
       "balanced": {
-        "planning": "synthetic/hf:zai-org/GLM-5",
-        "execution": "synthetic/hf:zai-org/GLM-5",
-        "verification": "synthetic/hf:zai-org/GLM-5"
+        "planning": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "execution": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "verification": "synthetic/hf:zai-org/GLM-5.3-Flash"
       },
       "budget": {
-        "planning": "opencode/big-pickle",
-        "execution": "opencode/big-pickle",
-        "verification": "opencode/big-pickle"
+        "planning": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "execution": "synthetic/hf:zai-org/GLM-5.3-Flash",
+        "verification": "synthetic/hf:zai-org/GLM-5.3-Flash"
       }
     },
     "custom_overrides": {
