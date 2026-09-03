@@ -382,7 +382,7 @@ Test-suite hygiene phase discovered mid-milestone after Phase 48.1 (gromacs_writ
 **Plans:** 25 plans in 8 waves
 
 Plans:
-- [ ] 48.3-01-PLAN.md — Capture phase baselines (collect count + test IDs + e2e subset) + GATES.md
+- [x] 48.3-01-PLAN.md — Capture phase baselines (collect count + test IDs + e2e subset) + GATES.md
 - [ ] 48.3-02-PLAN.md — Decisions D1/D2 (custom-residue fix-vs-relax; mixed built-in CLI scope) — checkpoint
 - [ ] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
 - [ ] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
@@ -436,7 +436,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
 | 48.2. Group and cleanup tests (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-07-22 |
-| 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 0/25 (planned: 8 waves) | 🔄 Planned | — |
+| 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 1/25 (planned: 8 waves) | 🔄 In progress | — |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
