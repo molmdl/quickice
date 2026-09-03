@@ -97,7 +97,7 @@ _ALL_LATTICES = ("sII", "c2te", "ice1hte", "16")
 
 
 @pytest.fixture(scope="module")
-def lattice_chains():
+def cross_tab_lattice_chains_gui():
     """Module-scoped: build the full chain (hydrate -> fresh iface per
     inserter -> solute / custom / ion) for EACH of the 4 new guest-bearing
     lattice types ONCE, amortizing the GenIce2 + assemble_slab calls
@@ -367,7 +367,7 @@ def _assert_lattice_export(ws, gro_name, top_name, lattice_type):
 
 @gmx_skipif
 @pytest.mark.parametrize("lattice_type", list(_ALL_LATTICES))
-def test_lattice_cross_tab_gui_grompp(tmp_path, lattice_chains, lattice_type):
+def test_lattice_cross_tab_gui_grompp(tmp_path, cross_tab_lattice_chains_gui, lattice_type):
     """gmx grompp exits 0 on the FULL GUI cross-tab chain (Interface -> Solute
     -> Custom Molecule -> Ion -> Export) for each of the 4 new guest-bearing
     lattice types (sII / c2te / ice1hte / 16), all with built-in
@@ -397,7 +397,7 @@ def test_lattice_cross_tab_gui_grompp(tmp_path, lattice_chains, lattice_type):
     ``iface.molecule_index`` does NOT cross-contaminate the solute / custom
     exporters' interface references.
     """
-    chain = lattice_chains[lattice_type]
+    chain = cross_tab_lattice_chains_gui[lattice_type]
 
     # -- 1. Interface exporter (Interface tab) -------------------------------
     ws = tmp_path / "interface"

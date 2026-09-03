@@ -58,7 +58,7 @@ TRICLINIC_HYDRATE_PHASES = {"hydrate_c0te", "hydrate_c1te"}
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
-def triclinic_hydrates():
+def blocking_triclinic_hydrates():
     """Build c0te + c1te hydrate chains once per module (amortize GenIce2).
 
     Triclinic blocking is at the INTERFACE step, not generation — both
@@ -92,7 +92,7 @@ def triclinic_hydrates():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lattice_type", ["c0te", "c1te"])
-def test_cli_run_interface_step_blocks_triclinic(triclinic_hydrates, lattice_type):
+def test_cli_run_interface_step_blocks_triclinic(blocking_triclinic_hydrates, lattice_type):
     """CLI ``_run_interface_step`` returns non-zero for triclinic filled ice.
 
     The CLI pipeline catches ``InterfaceGenerationError`` at pipeline.py:441-444
@@ -100,7 +100,7 @@ def test_cli_run_interface_step_blocks_triclinic(triclinic_hydrates, lattice_typ
     not just ``validate_interface_config`` directly (which is what
     ``test_triclinic_blocking.py`` covers).
     """
-    chain = triclinic_hydrates[lattice_type]
+    chain = blocking_triclinic_hydrates[lattice_type]
 
     # Construct CLIPipeline with an empty args namespace
     pipe = CLIPipeline(args=SimpleNamespace())
@@ -146,7 +146,7 @@ def test_cli_run_interface_step_blocks_triclinic(triclinic_hydrates, lattice_typ
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lattice_type", ["c0te", "c1te"])
-def test_gui_interface_worker_blocks_triclinic(triclinic_hydrates, lattice_type):
+def test_gui_interface_worker_blocks_triclinic(blocking_triclinic_hydrates, lattice_type):
     """GUI ``InterfaceGenerationWorker`` emits error signal for triclinic filled ice.
 
     The GUI worker (workers.py:146, 200, 215-218) catches
@@ -169,7 +169,7 @@ def test_gui_interface_worker_blocks_triclinic(triclinic_hydrates, lattice_type)
     # QApplication instance (singleton — reuse if one already exists)
     app = QApplication.instance() or QApplication(sys.argv)
 
-    chain = triclinic_hydrates[lattice_type]
+    chain = blocking_triclinic_hydrates[lattice_type]
     config = InterfaceConfig(
         mode="slab",
         box_x=3.0,

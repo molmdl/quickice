@@ -93,7 +93,7 @@ _ALL_LATTICES = ("sII", "c2te", "ice1hte", "16")
 
 
 @pytest.fixture(scope="module")
-def lattice_chains():
+def cross_tab_lattice_chains_cli():
     """Module-scope fixture: the full CLI chain built ONCE for EACH of the 4
     new guest-bearing lattice types, amortizing the GenIce2 + assemble_slab +
     inserter calls (~1-5s each) across all parametrized export cases (per
@@ -347,7 +347,7 @@ def _assert_step_output(ws, step_name, hydrate, structure, attr,
 
 @gmx_skipif
 @pytest.mark.parametrize("lattice_type", list(_ALL_LATTICES))
-def test_lattice_cross_tab_cli_grompp(tmp_path, lattice_chains, lattice_type):
+def test_lattice_cross_tab_cli_grompp(tmp_path, cross_tab_lattice_chains_cli, lattice_type):
     """gmx grompp exits 0 on the FULL CLI cross-tab chain (Interface -> Solute
     -> Ion -> Export) for each of the 4 new guest-bearing lattice types
     (sII / c2te / ice1hte / 16), all with built-in ``guest_type="ch4"`` (NOT
@@ -383,7 +383,7 @@ def test_lattice_cross_tab_cli_grompp(tmp_path, lattice_chains, lattice_type):
     non-triclinic guest lattices (Pitfall 1 only affects the triclinic filled
     ices c0te/c1te, which are blocked and covered by separate plans).
     """
-    chain = lattice_chains[lattice_type]
+    chain = cross_tab_lattice_chains_cli[lattice_type]
 
     # 1) Interface export (SOL + CH4_H; tip4p-ice.itp + ch4_hydrate.itp).
     _assert_step_output(

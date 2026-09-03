@@ -63,7 +63,7 @@ from tests.e2e_export_helpers import (  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def triclinic_hydrates():
+def triclinic_hydrate_exports():
     """Module-scoped: generate c0te + c1te hydrate structures at 4x4x4
     supercell ONCE, amortizing the expensive GenIce2 calls (~5-15s each)
     across all parametrized CLI + GUI export cases.
@@ -170,7 +170,7 @@ def _assert_hydrate_export(ws, gro_name, top_name):
 @pytest.mark.parametrize("lattice_type", ["c0te", "c1te"])
 @gmx_skipif
 def test_triclinic_hydrate_cli_export_grompp(
-    tmp_path, triclinic_hydrates, lattice_type
+    tmp_path, triclinic_hydrate_exports, lattice_type
 ):
     """CLI ``_run_export_step`` hydrate branch produces grompp-valid output
     for c0te/c1te @ 4x4x4 supercell.
@@ -189,7 +189,7 @@ def test_triclinic_hydrate_cli_export_grompp(
     ``guest_type="ch4"``) so ``copy_itp_files_for_structure`` resolves the
     built-in ch4 guest -> ``ch4_hydrate.itp`` (pre-transformed).
     """
-    chain = triclinic_hydrates[lattice_type]
+    chain = triclinic_hydrate_exports[lattice_type]
     ws = tmp_path / "cli"
     ws.mkdir()
 
@@ -214,7 +214,7 @@ def test_triclinic_hydrate_cli_export_grompp(
 @pytest.mark.parametrize("lattice_type", ["c0te", "c1te"])
 @gmx_skipif
 def test_triclinic_hydrate_gui_export_grompp(
-    tmp_path, triclinic_hydrates, lattice_type
+    tmp_path, triclinic_hydrate_exports, lattice_type
 ):
     """GUI ``HydrateGROMACSExporter.export_hydrate`` produces grompp-valid
     output for c0te/c1te @ 4x4x4 supercell.
@@ -230,7 +230,7 @@ def test_triclinic_hydrate_gui_export_grompp(
     top level — keeps PySide6 out of the CLI test's import path per
     AGENTS.md: PySide6/VTK/GenIce2 are imported inside function bodies).
     """
-    chain = triclinic_hydrates[lattice_type]
+    chain = triclinic_hydrate_exports[lattice_type]
     ws = tmp_path / "gui"
     ws.mkdir()
     gro_path = ws / "output.gro"

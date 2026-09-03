@@ -12,7 +12,7 @@ construction, and ``_assert_sH_export`` is a strict superset of the old
 ``_assert_sH_interface_export`` -- it adds the staged-ITP content checks).
 This file therefore now ALSO covers the interface export for sH (previously
 split across two files) -- one less redundant sH GenIce2 chain (~10s saved
-per e2e run). The sH_chain sibling-fixture cluster is resolved: this file
+per e2e run). The sH_cross_tab_chain sibling-fixture cluster is resolved: this file
 is the single consumer left.
 
 sH specifics (ported from the absorbed 45-03 file): the sH medium
@@ -116,7 +116,7 @@ from tests.e2e_export_helpers import (  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def sH_chain():
+def sH_cross_tab_chain():
     """Module-scoped: build the FULL sH chain (hydrate -> 4x fresh slab ->
     solute / custom / ion-from-interface / ion-from-solute) ONCE, amortizing
     the SLOW GenIce2 sH generation + 4x ``assemble_slab`` + 4 inserters
@@ -467,7 +467,7 @@ def _make_cli_pipeline(output_dir, hydrate, downstream_attr, downstream_struct):
 
 
 @gmx_skipif
-def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
+def test_sH_cross_tab_gui_grompp(tmp_path, sH_cross_tab_chain):
     """gmx grompp exits 0 on the FULL GUI cross-tab chain (Interface -> Solute
     -> Custom Molecule -> Ion -> Export) for sH with built-in
     ``guest_type="ch4"`` and ``hydrate_config=None`` (the built-in ch4 path).
@@ -513,7 +513,7 @@ def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
     ), patch("quickice.gui.export.QMessageBox"):
         exporter = InterfaceGROMACSExporter(parent_widget=None)
         ok = exporter.export_interface_gromacs(
-            sH_chain.iface, hydrate_config=None
+            sH_cross_tab_chain.iface, hydrate_config=None
         )
         assert ok is True, (
             "sH: export_interface_gromacs returned False -- QFileDialog mock "
@@ -532,7 +532,7 @@ def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
     ), patch("quickice.gui.export.QMessageBox"):
         exporter = SoluteGROMACSExporter(parent_widget=None)
         ok = exporter.export_solute_gromacs(
-            sH_chain.solute, hydrate_config=None
+            sH_cross_tab_chain.solute, hydrate_config=None
         )
         assert ok is True, (
             "sH: export_solute_gromacs returned False -- QFileDialog mock "
@@ -555,7 +555,7 @@ def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
     ), patch("quickice.gui.export.QMessageBox"):
         exporter = CustomMoleculeGROMACSExporter(parent_widget=None)
         ok = exporter.export_custom_molecule_gromacs(
-            sH_chain.custom, hydrate_config=None
+            sH_cross_tab_chain.custom, hydrate_config=None
         )
         assert ok is True, (
             "sH: export_custom_molecule_gromacs returned False -- QFileDialog "
@@ -579,7 +579,7 @@ def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
     ), patch("quickice.gui.export.QMessageBox"):
         exporter = IonGROMACSExporter(parent_widget=None)
         ok = exporter.export_ion_gromacs(
-            sH_chain.ion, hydrate_config=None
+            sH_cross_tab_chain.ion, hydrate_config=None
         )
         assert ok is True, (
             "sH: export_ion_gromacs returned False -- QFileDialog mock may "
@@ -596,7 +596,7 @@ def test_sH_cross_tab_gui_grompp(tmp_path, sH_chain):
 
 
 @gmx_skipif
-def test_sH_cross_tab_cli_grompp(tmp_path, sH_chain):
+def test_sH_cross_tab_cli_grompp(tmp_path, sH_cross_tab_chain):
     """gmx grompp exits 0 on the FULL CLI cross-tab chain (Interface -> Solute
     -> Ion -> Export) for sH with built-in ``guest_type="ch4"`` (NOT custom).
 
@@ -632,7 +632,7 @@ def test_sH_cross_tab_cli_grompp(tmp_path, sH_chain):
     No ``QFileDialog`` mocking is needed -- the CLI pipeline writes files
     directly to ``self._output_dir`` (no dialog).
     """
-    hydrate = sH_chain.hydrate
+    hydrate = sH_cross_tab_chain.hydrate
 
     # 1) Interface export (SOL + CH4_H; tip4p-ice.itp + ch4_hydrate.itp).
     # _run_export_step writes to self._output_dir / f"{step_name}.gro" but
@@ -642,7 +642,7 @@ def test_sH_cross_tab_cli_grompp(tmp_path, sH_chain):
     ws = tmp_path / "interface"
     ws.mkdir(parents=True, exist_ok=True)
     pipe = _make_cli_pipeline(
-        ws, hydrate, "_interface_result", sH_chain.iface
+        ws, hydrate, "_interface_result", sH_cross_tab_chain.iface
     )
     code = pipe._run_export_step()
     assert code == 0, (
@@ -656,7 +656,7 @@ def test_sH_cross_tab_cli_grompp(tmp_path, sH_chain):
     ws = tmp_path / "solute"
     ws.mkdir(parents=True, exist_ok=True)
     pipe = _make_cli_pipeline(
-        ws, hydrate, "_solute_result", sH_chain.solute
+        ws, hydrate, "_solute_result", sH_cross_tab_chain.solute
     )
     code = pipe._run_export_step()
     assert code == 0, (
@@ -674,14 +674,14 @@ def test_sH_cross_tab_cli_grompp(tmp_path, sH_chain):
     #    interface directly). Only assert the ion species actually placed
     #    (Na+ and/or Cl-).
     ion_extras = []
-    if sH_chain.ion_cli.na_count > 0:
+    if sH_cross_tab_chain.ion_cli.na_count > 0:
         ion_extras.append("NA")
-    if sH_chain.ion_cli.cl_count > 0:
+    if sH_cross_tab_chain.ion_cli.cl_count > 0:
         ion_extras.append("CL")
     ws = tmp_path / "ion"
     ws.mkdir(parents=True, exist_ok=True)
     pipe = _make_cli_pipeline(
-        ws, hydrate, "_ion_result", sH_chain.ion_cli
+        ws, hydrate, "_ion_result", sH_cross_tab_chain.ion_cli
     )
     code = pipe._run_export_step()
     assert code == 0, (
