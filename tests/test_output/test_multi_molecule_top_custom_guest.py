@@ -17,15 +17,12 @@ residue-name branch and the atomtypes merge.
 """
 
 import re
-import sys
 from pathlib import Path
 
 from quickice.output.gromacs_writer import write_multi_molecule_top_file
 from quickice.structure_generation.types import MoleculeIndex
 
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from e2e_export_helpers import parse_top_molecules, parse_top_includes  # noqa: E402
+from tests.e2e_export_helpers import parse_top_molecules, parse_top_includes  # noqa: E402
 
 
 # Real etoh.itp fixture (cwd-independent absolute path; same convention as

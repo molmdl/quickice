@@ -14,7 +14,6 @@ for the atomtypes merge) but is kept on the dict for a single consistent API
 across plans 41-02..41-05.
 """
 
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,9 +22,7 @@ from quickice.output.gromacs_writer import write_multi_molecule_gro_file
 from quickice.structure_generation.types import MoleculeIndex
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from e2e_export_helpers import parse_gro_residue_names  # noqa: E402
+from tests.e2e_export_helpers import parse_gro_residue_names  # noqa: E402
 
 
 # ── Synthetic custom-guest system (no GenIce2) ──────────────────────────────

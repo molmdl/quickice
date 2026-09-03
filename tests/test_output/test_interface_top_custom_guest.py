@@ -27,7 +27,6 @@ The built-in ch4 path (no `custom_guest_info`) must remain byte-unchanged:
 """
 
 import re
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -36,9 +35,7 @@ import pytest
 from quickice.output.gromacs_writer import write_interface_top_file
 from quickice.structure_generation.types import InterfaceStructure, MoleculeIndex
 
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from e2e_export_helpers import parse_top_molecules, parse_top_includes  # noqa: E402
+from tests.e2e_export_helpers import parse_top_molecules, parse_top_includes  # noqa: E402
 
 
 # ── Synthetic custom-guest InterfaceStructure (no GenIce2) ──────────────────

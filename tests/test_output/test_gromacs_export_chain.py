@@ -37,14 +37,10 @@ Fixtures from conftest.py:
     - mock_save_dialog: factory -> (save_path, dialog_patch, mb_patch)
 """
 
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.gui.export import (
     InterfaceGROMACSExporter,
@@ -63,7 +59,7 @@ from quickice.structure_generation.moleculetype_registry import MoleculetypeRegi
 from quickice.structure_generation.ion_inserter import IonInserter
 from quickice.structure_generation.types import IonConfig
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_gro_residue_names,
     parse_gro_atom_count,
     parse_top_molecules,

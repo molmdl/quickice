@@ -24,14 +24,10 @@ Helpers:
 """
 
 import re
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.structure_generation.types import (
@@ -41,7 +37,7 @@ from quickice.structure_generation.types import (
     MoleculeIndex,
 )
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_gro_residue_names,
     parse_top_molecules,
     parse_top_includes,

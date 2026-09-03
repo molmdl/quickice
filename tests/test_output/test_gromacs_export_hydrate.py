@@ -21,17 +21,13 @@ Fixtures from conftest.py:
     - mock_cancel_dialog: factory → (dialog_patch, mb_patch)
 """
 
-import sys
 from pathlib import Path
 
 import pytest
 
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_gro_residue_names,
     parse_gro_atom_count,
     parse_top_molecules,
