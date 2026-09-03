@@ -8,6 +8,10 @@ from quickice.structure_generation.types import Candidate
 
 @pytest.fixture
 def ice_ih_candidate():
+    # INTENTIONAL module-local override of tests/conftest.py::ice_ih_candidate
+    # (48.3-20): different scope (function vs module) + SYNTHETIC minimal
+    # hexagonal cell for symmetry assertions — NOT the conftest's real
+    # GenIce2 96-molecule generation; do not "re-unify" with the conftest.
     """Create a simple Ice Ih candidate for testing.
     
     Ice Ih has space group P6_3/mmc (#194) in hexagonal setting.

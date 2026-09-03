@@ -54,238 +54,28 @@ shortest box vector" rule).
 """
 
 import shutil
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from tests.conftest import gmx_skipif  # noqa: E402
-from quickice.structure_generation.hydrate_generator import (  # noqa: E402
-    HydrateStructureGenerator,
-)
-from quickice.structure_generation.modes.slab import assemble_slab  # noqa: E402
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
-from quickice.structure_generation.custom_molecule_inserter import (  # noqa: E402
-    CustomMoleculeInserter,
-)
-from quickice.structure_generation.types import (  # noqa: E402
-    CustomMoleculeConfig,
-    HydrateConfig,
-    InterfaceConfig,
-)
 from tests.e2e_export_helpers import (  # noqa: E402
-    _insert_ions_from_solute,
-    _insert_solutes,
     run_gmx_grompp,
     MDP_PATH,
-    ETOH_GRO,
-    ETOH_ITP,
     parse_top_molecules,
     parse_gro_residue_names,
     assert_itp_completeness,
     assert_gro_top_consistent,
 )
+from tests.e2e_chain_fixtures import (  # noqa: E402
+    CUSTOM_GUEST_LATTICES,
+    custom_guest_chains,
+)
 
 
-# The 4 non-sI lattices that support custom guests (have cages). sTprime/17 are
-# water-only (no cages -> custom guest is N/A); c0te/c1te are triclinic BLOCKED
-# at the interface tab (see 45-08/45-09 for hydrate-only export); sH is
-# triclinic-but-allowed and also supports custom guests (covered separately —
-# huge guest count, Pitfall 5). This plan's scope is the 4 orthorhombic /
-# sII-family lattices explicitly named in the plan.
-_LATTICES = ("sII", "c2te", "ice1hte", "16")
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Module-scoped fixture: build hydrate (GenIce2) + slab interface ONCE per
-# lattice, amortize across the parametrized export cases.
-# ══════════════════════════════════════════════════════════════════════════════
-
-
-@pytest.fixture(scope="module")
-def custom_guest_chains(tmp_path_factory):
-    """Build the custom-ethanol-guest hydrate + slab interfaces + the 3
-    downstream inserter structures ONCE per lattice.
-
-    Amortizes the GenIce2 generation (``HydrateStructureGenerator.generate``)
-    across the 4 interface + 12 downstream parametrized export cases (per
-    AGENTS.md testing guidance — GenIce2 is ~3-5s per lattice).  Each lattice
-    builds an independent ``HydrateConfig`` (same custom ethanol guest,
-    different ``lattice_type``) -> gen -> candidate -> ``assemble_slab``.
-
-    48.3-11 (44.1-19 discipline, generate-once-derive-many): the candidate is
-    generated ONCE per lattice, then a FRESH ``assemble_slab`` interface is
-    derived PER inserter (``seed=42`` -> deterministic identical slabs).  The
-    ion inserter mutates ``iface.molecule_index`` when it is empty (real
-    GenIce2 data, ``ion_inserter.py:259`` — ``structure.molecule_index =
-    mol_index``), so each inserter gets its own interface to avoid
-    cross-contaminating the interface exporter's reference.  The ion chain
-    follows the REAL cross-tab data flow (Tab 3 -> Tab 4, CP-01):
-    ``_insert_ions_from_solute`` operates on ``solute.interface_structure``
-    (duck-typed solute attributes attached); the resulting molecule_index
-    mutation is contained to the solute-dedicated interface and is the
-    DESIGNED-FOR scenario in ``write_solute_gro_file`` (per-molecule
-    ``mol_type`` guest resolution, solute_writer.py "Issue 3" comment block).
-
-    All inserters return NEW structures (V-17 compliant).
-
-    Box 3x3x8 nm: shortest vector 3.0 nm > 2 * cutoff (1.0 nm) for the grompp
-    PBC rule (``rcoulomb=rvdw=1.0`` nm in ``em.mdp``). Deterministic
-    (``seed=42``).
-
-    MIRRORS the 44.1-20 template's custom ethanol config (lines 95-106),
-    swapping ``lattice_type``. Use ETOH_GRO/ETOH_ITP absolute paths from
-    e2e_export_helpers (CWD-independent). ``guest_residue_name="MOL"`` (3 chars)
-    so the _H suffix yields ``"MOL_H"`` (5 chars, passes the GRO fixed-width
-    limit).
-
-    The liquid custom molecule uses a RENAMED COPY (cmet.gro/cmet.itp,
-    moleculetype "MOL") to avoid the etoh.itp filename collision between the
-    cage guest (staged as MOL_H via etoh.itp) and the custom molecule (copied
-    with atomtypes commented).  Same workaround as plans 44.1-13 / 48.3-10.
-    The cmet rename is intentional HERE; the SAME-basename (etoh.itp vs
-    etoh.itp) collision scenario is plan 48.3-14's job, do not conflate.  The
-    renamed copy lives in a module-scoped temp dir (the inserter needs the
-    files to exist at fixture-setup time; function-scoped tmp_path is not yet
-    available) and is shared across lattices (content is lattice-independent;
-    the CLI staging copies into each case's own workspace without mutating
-    the source).
-
-    Returns a dict keyed by ``lattice_type`` ->
-    ``SimpleNamespace(hydrate=hydrate, iface=iface, config=config,
-    solute=solute, custom=custom, ion=ion)``.  The ``hydrate`` carries
-    ``.config`` (the custom HydrateConfig) so the CLI ``_run_export_step`` can
-    read it via ``self._hydrate_result.config`` to build ``custom_guest_info``.
-    """
-    # Renamed custom-molecule copy (cmet.gro/cmet.itp, moleculetype "MOL") —
-    # avoids the etoh.itp basename collision with the cage-guest staging.
-    cm_dir = tmp_path_factory.mktemp("custom_molecule_data")
-    cmet_gro = cm_dir / "cmet.gro"
-    cmet_itp = cm_dir / "cmet.itp"
-    shutil.copy(ETOH_GRO, cmet_gro)
-    cmet_lines = ETOH_ITP.read_text().splitlines(keepends=True)
-    _in_moltype = False
-    for i, line in enumerate(cmet_lines):
-        if "[ moleculetype ]" in line:
-            _in_moltype = True
-        elif _in_moltype and line.strip() and not line.strip().startswith(";"):
-            # First non-comment, non-empty line after [ moleculetype ] is the
-            # moleculetype name ("etoh       3"); rename "etoh" -> "MOL".
-            cmet_lines[i] = line.replace("etoh", "MOL", 1)
-            break
-    cmet_itp.write_text("".join(cmet_lines))
-
-    chains = {}
-    for lattice_type in _LATTICES:
-        gen = HydrateStructureGenerator()
-        config = HydrateConfig(
-            lattice_type=lattice_type,
-            guest_type="etoh_e2e",
-            guest_residue_name="MOL",
-            guest_gro_path=str(ETOH_GRO),
-            guest_itp_path=str(ETOH_ITP),
-            guest_atom_labels=["H", "C", "H", "H", "C", "H", "H", "O", "H"],
-            guest_atom_count=9,
-            supercell_x=1,
-            supercell_y=1,
-            supercell_z=1,
-        )
-        hydrate = gen.generate(config)
-        candidate = hydrate.to_candidate()
-
-        # Fresh slab interface PER inserter from the shared candidate
-        # (generate-once-derive-many, seed=42 -> deterministic identical).
-        def _make_iface():
-            return assemble_slab(
-                candidate,
-                InterfaceConfig(
-                    mode="slab",
-                    box_x=3.0,
-                    box_y=3.0,
-                    box_z=8.0,
-                    seed=42,
-                    ice_thickness=2.0,
-                    water_thickness=4.0,
-                ),
-            )
-
-        iface = _make_iface()  # interface exporter (never mutated)
-        iface_solute = _make_iface()  # solute inserter + ion chain
-        iface_custom = _make_iface()  # custom molecule inserter
-
-        # Custom ethanol placed in cages (count varies by lattice — do NOT
-        # assert exact counts, only > 0 + 9 * nmolecules consistency, the
-        # 44.1-05 fix threading guest_atom_count through the slab detector).
-        assert iface.guest_nmolecules > 0, (
-            f"[{lattice_type}] custom ethanol slab should have guests"
-        )
-        assert iface.guest_atom_count == 9 * iface.guest_nmolecules, (
-            f"[{lattice_type}] guest_atom_count={iface.guest_atom_count} != "
-            f"9 * guest_nmolecules={9 * iface.guest_nmolecules}"
-        )
-
-        # SoluteStructure: CH4 solutes placed in the water region.
-        # SoluteInserter creates its own registry internally; it does NOT
-        # mutate the source interface (only reads via getattr).
-        solute = _insert_solutes(
-            iface_solute, solute_type="CH4", concentration=0.3
-        )
-        assert solute.n_molecules > 0, (
-            f"[{lattice_type}] solute inserter should place CH4 molecules"
-        )
-        assert solute.interface_structure is not None, (
-            f"[{lattice_type}] SoluteStructure.interface_structure must be "
-            f"populated for staging + ion chaining"
-        )
-
-        # CustomMoleculeStructure: 1 cmet (renamed etoh) molecule in the
-        # water region. After 48.3-02 D1 the inserter registers the ITP
-        # moleculetype name ("MOL", <=5 chars) so .gro residues + .top
-        # [molecules] agree strictly.
-        cm_config = CustomMoleculeConfig(
-            placement_mode="random",
-            gro_path=cmet_gro,
-            itp_path=cmet_itp,
-            molecule_count=1,
-        )
-        inserter = CustomMoleculeInserter(cm_config, seed=42)
-        custom = inserter.place_random(iface_custom, 1)
-        assert custom.custom_molecule_count > 0, (
-            f"[{lattice_type}] custom molecule inserter should place 1 "
-            f"molecule in the water region"
-        )
-        assert custom.guest_atom_count > 0, (
-            f"[{lattice_type}] CustomMoleculeStructure.guest_atom_count must "
-            f"be propagated from the interface for the custom-guest staging "
-            f"gate"
-        )
-
-        # IonStructure: Na+ / Cl- in the water region, built from the SOLUTE
-        # (real cross-tab flow Tab 3 -> Tab 4 via _solute_to_ion_source /
-        # BUG I5 workaround).  NOTE: replace_water_with_ions mutates
-        # iface_solute.molecule_index (ion_inserter.py:259) when the
-        # interface has no molecule_index (real GenIce2 data) — contained to
-        # the solute-dedicated interface (see fixture docstring).
-        ion = _insert_ions_from_solute(solute, concentration=0.15)
-        assert (ion.na_count > 0 or ion.cl_count > 0), (
-            f"[{lattice_type}] ion inserter should place Na+ / Cl- ions"
-        )
-        assert ion.guest_atom_count > 0, (
-            f"[{lattice_type}] IonStructure.guest_atom_count must be "
-            f"propagated from the interface for the custom-guest staging "
-            f"block"
-        )
-        assert ion.guest_nmolecules > 0, (
-            f"[{lattice_type}] IonStructure.guest_nmolecules must be "
-            f"propagated from the interface for the custom-guest staging "
-            f"block"
-        )
-
-        chains[lattice_type] = SimpleNamespace(
-            hydrate=hydrate, iface=iface, config=config,
-            solute=solute, custom=custom, ion=ion,
-        )
-    yield chains
+# The 4 non-sI custom-guest lattices under test (canonical set defined in
+# tests/e2e_chain_fixtures.py and shared with the fixture + GUI sibling).
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -403,7 +193,7 @@ def _assert_custom_cli_export(ws, step_name):
 
 
 @gmx_skipif
-@pytest.mark.parametrize("lattice_type", list(_LATTICES))
+@pytest.mark.parametrize("lattice_type", list(CUSTOM_GUEST_LATTICES))
 def test_custom_guest_lattice_cli_interface_export_grompp(
     custom_guest_chains, tmp_path, lattice_type
 ):
@@ -694,7 +484,7 @@ _DOWNSTREAM_BRANCH_CASES = [
     "branch_id,result_attr,expected_molecules,extra_expected_itps",
     _DOWNSTREAM_BRANCH_CASES,
 )
-@pytest.mark.parametrize("lattice_type", list(_LATTICES))
+@pytest.mark.parametrize("lattice_type", list(CUSTOM_GUEST_LATTICES))
 def test_custom_guest_lattice_cli_downstream_export_grompp(
     custom_guest_chains,
     tmp_path,

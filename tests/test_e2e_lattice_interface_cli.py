@@ -35,7 +35,8 @@ resulting hydrate has ``guest_nmolecules == 0``.
 
 Module-scoped fixture amortizes the GenIce2 + ``assemble_slab`` calls
 (~1-5s per lattice) across all parametrized cases (per AGENTS.md testing
-guidance). Identical fixture to 45-01 (each test module owns its own).
+guidance). The fixture is SHARED with 45-01 via ``tests/e2e_chain_fixtures.py``
+(48.3-20: line-diff-verified identical bodies, one extracted definition).
 
 No ``QFileDialog`` / ``QMessageBox`` patching is needed -- the CLI pipeline
 writes files directly to ``self._output_dir`` (no dialog).
@@ -62,20 +63,11 @@ Pitfalls avoided (45-RESEARCH.md):
 """
 
 import shutil
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
-from quickice.structure_generation.hydrate_generator import (  # noqa: E402
-    HydrateStructureGenerator,
-)
-from quickice.structure_generation.modes.slab import assemble_slab  # noqa: E402
-from quickice.structure_generation.types import (  # noqa: E402
-    HydrateConfig,
-    InterfaceConfig,
-)
 from tests.conftest import gmx_skipif  # noqa: E402
 from tests.e2e_export_helpers import (  # noqa: E402
     MDP_PATH,
@@ -85,69 +77,18 @@ from tests.e2e_export_helpers import (  # noqa: E402
     parse_top_molecules,
     parse_gro_residue_names,
 )
+from tests.e2e_chain_fixtures import (  # noqa: E402
+    INTERFACE_LATTICES,
+    INTERFACE_LATTICES_WITH_GUESTS,
+    INTERFACE_LATTICES_WATER_ONLY,
+    lattice_chains,
+)
 
 
 # -- Lattice classification ---------------------------------------------------
 
-# Lattices WITH cage guests (built-in ch4). Water-only lattices ignore the
-# guest_type="ch4" in the generator (the water-only skip in
-# hydrate_generator.py drops cages entirely), so the resulting hydrate has
-# guest_nmolecules == 0.
-_LATTICES_WITH_GUESTS = frozenset(("sII", "c2te", "ice1hte", "16"))
-_LATTICES_WATER_ONLY = frozenset(("sTprime", "17"))
-_ALL_LATTICES = ("sII", "c2te", "ice1hte", "sTprime", "16", "17")
-
-
-# -- Module-scoped fixture: build chains for ALL 6 lattices ONCE -------------
-
-
-@pytest.fixture(scope="module")
-def lattice_chains():
-    """Module-scoped: build the hydrate -> interface chain for EACH of the 6
-    non-blocked new lattice types ONCE, amortizing the GenIce2 + assemble_slab
-    calls (~1-5s each) across all parametrized export cases.
-
-    For water-only lattices (sTprime, 17) ``guest_type="ch4"`` is ignored by
-    the generator (the water-only skip drops cages), so the resulting hydrate
-    has ``guest_nmolecules == 0``.
-
-    Returns ``dict {lattice_type: SimpleNamespace}`` where each namespace
-    carries ``hydrate`` (with ``.config``), ``iface`` (the assembled slab
-    interface), and ``config`` (the ``HydrateConfig`` used). The CLI
-    ``_run_export_step`` reads ``hydrate_config = getattr(
-    self._hydrate_result, "config", None)`` so the chain MUST carry the
-    hydrate (with ``.config``) -- NOT just the interface.
-    """
-    chains = {}
-    for lattice_type in _ALL_LATTICES:
-        gen = HydrateStructureGenerator()
-        config = HydrateConfig(
-            lattice_type=lattice_type,
-            guest_type="ch4",
-            supercell_x=1,
-            supercell_y=1,
-            supercell_z=1,
-        )
-        hydrate = gen.generate(config)
-        candidate = hydrate.to_candidate()
-        iface = assemble_slab(
-            candidate,
-            InterfaceConfig(
-                mode="slab",
-                box_x=3.0,
-                box_y=3.0,
-                box_z=8.0,
-                seed=42,
-                ice_thickness=2.0,
-                water_thickness=4.0,
-            ),
-        )
-        chains[lattice_type] = SimpleNamespace(
-            hydrate=hydrate,
-            iface=iface,
-            config=config,
-        )
-    yield chains
+# Lattice classification constants (canonical sets defined in
+# tests/e2e_chain_fixtures.py and shared with the fixture + GUI sibling).
 
 
 # -- CLI pipeline helper (Pattern 4) -----------------------------------------
@@ -234,7 +175,7 @@ def _assert_lattice_cli_export(ws, step_name, lattice_type, chain):
     mols = parse_top_molecules(str(top_path))
     gro_res = set(parse_gro_residue_names(str(gro_path)))
 
-    if lattice_type in _LATTICES_WITH_GUESTS:
+    if lattice_type in INTERFACE_LATTICES_WITH_GUESTS:
         # Built-in ch4 guest: residue CH4_H staged + referenced.
         assert (ws / "ch4_hydrate.itp").exists(), (
             f"{lattice_type}: built-in guest ITP ch4_hydrate.itp not staged"
@@ -260,7 +201,7 @@ def _assert_lattice_cli_export(ws, step_name, lattice_type, chain):
         assert "MOL_H" not in mols, (
             f"{lattice_type}: MOL_H in [molecules] (custom path leaked): {mols}"
         )
-    elif lattice_type in _LATTICES_WATER_ONLY:
+    elif lattice_type in INTERFACE_LATTICES_WATER_ONLY:
         # Water-only: no guest residue / guest ITP at all; SOL present.
         assert "CH4_H" not in mols, (
             f"{lattice_type} (water-only): CH4_H in [molecules]: {mols}"
@@ -297,7 +238,7 @@ def _assert_lattice_cli_export(ws, step_name, lattice_type, chain):
 
 
 @gmx_skipif
-@pytest.mark.parametrize("lattice_type", list(_ALL_LATTICES))
+@pytest.mark.parametrize("lattice_type", list(INTERFACE_LATTICES))
 def test_lattice_interface_cli_export_grompp(
     tmp_path, lattice_chains, lattice_type
 ):

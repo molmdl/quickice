@@ -61,19 +61,10 @@ file-consistency assertions still run before the grompp branch).
 """
 
 import shutil
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from quickice.structure_generation.hydrate_generator import (  # noqa: E402
-    HydrateStructureGenerator,
-)
-from quickice.structure_generation.types import (  # noqa: E402
-    CageGuestAssignment,
-    HydrateConfig,
-    HYDRATE_LATTICES,
-)
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
 from tests.conftest import gmx_skipif  # noqa: E402
 from tests.e2e_export_helpers import (  # noqa: E402
@@ -84,88 +75,15 @@ from tests.e2e_export_helpers import (  # noqa: E402
     assert_itp_completeness,
     assert_gro_top_consistent,
 )
+from tests.e2e_chain_fixtures import (  # noqa: E402
+    FILLED_ICE_SUPERCELLS,
+    filled_ice_hydrates,
+)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Per-lattice supercell sizes (Pitfall 1 — empirically verified minimums)
-# ══════════════════════════════════════════════════════════════════════════════
-
-# c2te 1x1x1 shortest = 0.88 nm, 2x2x2 = 1.76 nm, 3x3x3 = 2.65 nm (PASSES).
-# ice1hte 1x1x1 shortest = 0.69 nm, 2x2x2 = 1.38 nm, 3x3x3 = 2.07 nm (FAILS
-#   — GROMACS's check is stricter than the simple vector-length test for
-#   non-orthogonal cells), 4x4x4 = 2.76 nm (PASSES).
-# Using per-lattice minimums minimizes atom count while ensuring grompp rc=0.
-_FILLED_ICE_SUPERCELLS = {
-    "c2te": (3, 3, 3),
-    "ice1hte": (4, 4, 4),
-}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Module-scoped fixture: build c2te + ice1hte hydrate structures ONCE
-# ══════════════════════════════════════════════════════════════════════════════
-
-
-@pytest.fixture(scope="module")
-def filled_ice_hydrates():
-    """Module-scoped: generate c2te + ice1hte hydrate structures with built-in
-    CH4 in the single "small" cage ONCE, amortizing the GenIce2 calls across
-    both parametrized CLI export cases.
-
-    CRITICAL (Pitfall 2 — cage key): c2te/ice1hte have
-    ``cage_type_map = {"small": "Ne1"}`` — a SINGLE key. The ``cages`` display
-    dict uses the human-readable key "guest" (the cage NAME), but
-    ``cage_type_map`` (the GenIce2 cage ID mapping used for guest placement
-    via ``parse_guest``) uses "small". The ``cage_guest_assignments`` dict
-    MUST use "small" as the key (matching ``cage_type_map``) — using "guest"
-    produces 0 guests because the hydrate generator's ``_run_via_api``
-    skips cage keys not present in ``cage_type_map`` (warning:
-    "cage_key 'guest' not in cage_type_map").
-
-    Per-lattice supercell sizes (Pitfall 1 — empirically verified):
-      - c2te 3x3x3: shortest = 2.65 nm > 2.0 nm -> grompp rc=0
-      - ice1hte 4x4x4: shortest = 2.76 nm > 2.0 nm -> grompp rc=0
-    The plan's suggested 2x2x2 fails for BOTH (c2te=1.76 nm, ice1hte=1.38 nm —
-    both < 2.0 nm); ice1hte even fails at 3x3x3 (2.07 nm) due to GROMACS's
-    stricter non-orthogonal cell check.
-
-    Returns ``dict {"c2te": SimpleNamespace(hydrate=..., config=...),
-    "ice1hte": SimpleNamespace(hydrate=..., config=...)}`` where each
-    namespace carries the ``HydrateStructure`` + the ``HydrateConfig`` used
-    to generate it (the CLI hydrate branch reads ``hydrate.config`` for ITP
-    staging via ``copy_itp_files_for_structure``).
-    """
-    chains = {}
-    for lattice_type in ("c2te", "ice1hte"):
-        gen = HydrateStructureGenerator()
-        nx, ny, nz = _FILLED_ICE_SUPERCELLS[lattice_type]
-        config = HydrateConfig(
-            lattice_type=lattice_type,
-            guest_type="ch4",  # primary (legacy) — ch4 is built-in
-            cage_guest_assignments={
-                # "small" matches cage_type_map key (NOT "guest" — the cages
-                # display dict uses "guest", but cage_type_map uses "small").
-                "small": CageGuestAssignment(
-                    guest_type="ch4", occupancy=100.0
-                ),
-            },
-            supercell_x=nx,  # Pitfall 1: per-lattice minimum supercell.
-            supercell_y=ny,
-            supercell_z=nz,
-        )
-        hydrate = gen.generate(config)
-        # Sanity: filled-ice single cage should place CH4 guests.
-        assert hydrate.guest_count > 0, (
-            f"{lattice_type} filled-ice should have cage guests, "
-            f"got guest_count={hydrate.guest_count} (check cage key — "
-            f"cage_type_map={HYDRATE_LATTICES[lattice_type]['cage_type_map']})"
-        )
-        chains[lattice_type] = SimpleNamespace(
-            hydrate=hydrate, config=config
-        )
-    yield chains
-
-
+# Supercell sizes for the filled-ice lattices: canonical dict
+# FILLED_ICE_SUPERCELLS in tests/e2e_chain_fixtures.py (shared with the
+# fixture + GUI sibling).
 # ══════════════════════════════════════════════════════════════════════════════
 # Shared assertion helper (filled-ice CLI hydrate export)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -284,7 +202,7 @@ def test_filled_ice_cli_hydrate_export_grompp(
     code = pipe._run_export_step()
     assert code == 0, (
         f"_run_export_step failed (rc={code}) for the hydrate branch "
-        f"({lattice_type} {_FILLED_ICE_SUPERCELLS[lattice_type]})"
+        f"({lattice_type} {FILLED_ICE_SUPERCELLS[lattice_type]})"
     )
 
     # The hydrate branch writes hydrate.gro / hydrate.top to _output_dir.
