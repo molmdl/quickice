@@ -643,11 +643,27 @@ class TestChainF6GmxValidation:
 
     3 ITPs: tip4p-ice.itp, ch4_liquid.itp, ion.itp
     Tests Bug 1 fix: CH4 solute atomtypes (c3, hc) must be in TOP [atomtypes].
+
+    48.3-19 provenance: this IS "Scenario 9: Ion from Solute Export" from the
+    deleted tests/test_e2e_ion_export.py (TestIonFromSolute) — the chain whose
+    BUG I5 workaround is MANDATORY. The ion_export file was a no-grompp
+    file-parsing duplicate of this chain; its unique regression asserts are
+    preserved here (solute metadata after the workaround + charge neutrality,
+    both below).
     """
 
     @pytest.fixture(autouse=True)
     def _build_chain(self, interface_slab):
+        # CRITICAL: Uses _insert_ions_from_solute() which applies the BUG I5
+        # workaround (_solute_to_ion_source). Without this workaround,
+        # IonInserter raises AttributeError: 'InterfaceStructure' object has
+        # no attribute 'solute_type'.
+        # (Provenance: 48.3-19 merge of tests/test_e2e_ion_export.py
+        # TestIonFromSolute — "Ion from Solute Export (BUG I5 workaround
+        # MANDATORY)"; _insert_ions_from_solute in e2e_export_helpers applies
+        # the _solute_to_ion_source workaround.)
         solute = _insert_solutes(interface_slab, solute_type='CH4', concentration=0.3)
+        # CRITICAL: Uses BUG I5 workaround
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
 
     def test_gmx_grompp_succeeds(self, gmx_workspace):
@@ -713,8 +729,10 @@ class TestChainF6GmxValidation:
         assert self.ion.custom_molecule_count == 0, (
             f"F6 should have no custom molecules, got {self.ion.custom_molecule_count}"
         )
-        # test_solute_preserved: solute metadata preserved in IonStructure after
-        # the BUG I5 workaround
+        # test_solute_preserved + test_solute_info_preserved (48.3-19: from
+        # tests/test_e2e_ion_export.py TestIonFromSolute): solute metadata is
+        # preserved in IonStructure after the BUG I5 workaround — solute_type
+        # "CH4" and solute_n_molecules > 0 survive _solute_to_ion_source
         assert self.ion.solute_type == "CH4", (
             f"IonStructure.solute_type should be 'CH4', got '{self.ion.solute_type}'"
         )
@@ -739,6 +757,8 @@ class TestChainF7GmxValidation:
 
     @pytest.fixture(autouse=True)
     def _build_chain(self, interface_slab):
+        # Same BUG I5 workaround as F6 (THF variant): _insert_ions_from_solute
+        # applies _solute_to_ion_source so IonInserter can read solute_type.
         solute = _insert_solutes(interface_slab, solute_type='THF', concentration=0.3)
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
 
@@ -1171,6 +1191,12 @@ class TestChainF2GmxValidation:
         )
         assert self.ion.solute_n_molecules == 0, (
             f"solute_n_molecules should be 0, got {self.ion.solute_n_molecules}"
+        )
+        # test_custom_molecule_count_preserved (48.3-19: from
+        # tests/test_e2e_ion_export.py TestIonFromCustom — F2 IS the
+        # Interface→Custom→Ion chain): custom count survives ion insertion
+        assert self.ion.custom_molecule_count > 0, (
+            "IonStructure should have custom_molecule_count > 0"
         )
 
 
@@ -1850,6 +1876,146 @@ class TestSoluteGmxValidation:
         assert exit_code == 0, f"gmx grompp failed for solute-only:\n{stderr[-500:]}"
         molecules = parse_top_molecules(top_path)
         assert "SOL" in molecules
+
+        # ── Ported deep asserts (48.3-19: tests/test_e2e_solute_export.py
+        # TestSoluteFromInterface) ──
+        # test_gro_sol_before_solute_residues: SOL before CH4_L, no interleaving
+        # (CH4_L = registry.get_gromacs_name("liquid_CH4"), exactly 5 chars)
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_L"])
+        # test_gro_atom_count_matches_header + test_atom_conservation:
+        # header == ice*4 + water*4 + n_molecules*5 (CH4 = 5 atoms per molecule).
+        # water_nmolecules comes from the SOLUTE's interface_structure because
+        # SoluteInserter removes overlapping water molecules; the writer uses
+        # ice_nmolecules/water_nmolecules fallback when molecule_index is empty.
+        _assert_gro_header_matches_lines(gro_path)
+        header_count = parse_gro_atom_count(gro_path)
+        solute_iface = self.solute.interface_structure
+        expected = (
+            solute_iface.ice_nmolecules * 4
+            + solute_iface.water_nmolecules * 4
+            + self.solute.n_molecules * 5
+        )
+        assert header_count == expected, (
+            f"Expected {expected} atoms "
+            f"(ice={solute_iface.ice_nmolecules}*4 + "
+            f"water={solute_iface.water_nmolecules}*4 + "
+            f"solute={self.solute.n_molecules}*5), got {header_count}"
+        )
+        # test_top_molecules_section: SOL == ice+water, CH4_L == n_molecules
+        expected_sol = solute_iface.ice_nmolecules + solute_iface.water_nmolecules
+        assert molecules["SOL"] == expected_sol, (
+            f"Expected SOL count {expected_sol}, got {molecules['SOL']}"
+        )
+        assert molecules["CH4_L"] == self.solute.n_molecules, (
+            f"Expected CH4_L count {self.solute.n_molecules}, got {molecules['CH4_L']}"
+        )
+        # test_top_includes_tip4p_ice_and_solute_itp: tip4p-ice.itp +
+        # ch4_liquid.itp
+        includes = parse_top_includes(top_path)
+        assert "tip4p-ice.itp" in includes, "Should include tip4p-ice.itp"
+        assert "ch4_liquid.itp" in includes, (
+            f"Should include ch4_liquid.itp, got {includes}"
+        )
+        # test_solute_positions_pbc_wrapped (regression B NEW-01/11)
+        _assert_solute_positions_pbc_wrapped(gro_path)
+
+    def test_solute_from_custom_grompp(self, interface_slab, gmx_workspace):
+        """Interface→Custom→Solute(CH4) via write_solute_* passes gmx grompp.
+
+        48.3-19 NEW focused chain: the 7 writer-file tests of
+        tests/test_e2e_solute_export.py::TestSoluteFromCustom (deleted by
+        48.3-19) were the ONLY coverage of write_solute_gro_file /
+        write_solute_top_file on a CustomMoleculeStructure source — their deep
+        asserts are ported below (provenance comments name the source test).
+        """
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        solute = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
+
+        gro_path = str(gmx_workspace / "solute_custom.gro")
+        top_path = str(gmx_workspace / "solute_custom.top")
+        write_solute_gro_file(solute, gro_path)
+        write_solute_top_file(solute, top_path)
+        shutil.copy(MDP_PATH, gmx_workspace / "em.mdp")
+        _stage_itp_files(top_path, gmx_workspace)
+        assert_itp_completeness(top_path, gmx_workspace)
+        exit_code, stderr = run_gmx_grompp(
+            gmx_workspace, gro_file="solute_custom.gro", top_file="solute_custom.top"
+        )
+        assert exit_code == 0, f"gmx grompp failed for solute-from-custom:\n{stderr[-500:]}"
+
+        # test_gro_sol_before_custom_before_solute: SOL → etoh → CH4_L, no
+        # interleaving. Custom .gro residue IS the ITP moleculetype name "etoh"
+        # (48.3-02 D1), matching TOP [molecules] strictly.
+        mol_name = custom.moleculetype_name
+        _assert_residue_ordering(gro_path, ["SOL", mol_name, "CH4_L"])
+
+        # test_gro_atom_count_matches_header + test_atom_conservation:
+        # SOL atoms (molecule_index-aware, ice 3→4 expansion) + custom atoms
+        # + solute molecules * 5 (CH4)
+        _assert_gro_header_matches_lines(gro_path)
+        header_count = parse_gro_atom_count(gro_path)
+        solute_iface = solute.interface_structure
+        if solute_iface.molecule_index:
+            sol_atoms = sum(
+                4 if m.mol_type == "ice" else m.count
+                for m in solute_iface.molecule_index
+                if m.mol_type in ("ice", "water")
+            )
+            sol_mols = sum(
+                1 for m in solute_iface.molecule_index
+                if m.mol_type in ("ice", "water")
+            )
+        else:
+            sol_atoms = (
+                solute_iface.ice_nmolecules * 4 + solute_iface.water_nmolecules * 4
+            )
+            sol_mols = solute_iface.ice_nmolecules + solute_iface.water_nmolecules
+        expected = (
+            sol_atoms + solute.custom_molecule_atom_count + solute.n_molecules * 5
+        )
+        assert header_count == expected, (
+            f"Expected {expected} atoms (SOL={sol_atoms} + "
+            f"custom={solute.custom_molecule_atom_count} + "
+            f"solute={solute.n_molecules}*5), got {header_count}"
+        )
+
+        # test_top_molecules_section: SOL, etoh, CH4_L count parity
+        molecules = parse_top_molecules(top_path)
+        assert molecules["SOL"] == sol_mols, (
+            f"Expected SOL count {sol_mols}, got {molecules['SOL']}"
+        )
+        assert molecules[mol_name] == solute.custom_molecule_count, (
+            f"Expected {mol_name} count {solute.custom_molecule_count}, "
+            f"got {molecules[mol_name]}"
+        )
+        assert molecules["CH4_L"] == solute.n_molecules, (
+            f"Expected CH4_L count {solute.n_molecules}, got {molecules['CH4_L']}"
+        )
+
+        # test_top_includes_all_itps: tip4p-ice.itp, custom ITP (ORIGINAL
+        # filename), ch4_liquid.itp — IN ORDER (tip4p-ice < custom < solute)
+        includes = parse_top_includes(top_path)
+        assert "tip4p-ice.itp" in includes, "Should include tip4p-ice.itp"
+        custom_itp_name = Path(solute.custom_itp_path).name
+        assert custom_itp_name in includes, (
+            f"Should include {custom_itp_name}, got {includes}"
+        )
+        assert "ch4_liquid.itp" in includes, (
+            f"Should include ch4_liquid.itp, got {includes}"
+        )
+        tip4p_idx = includes.index("tip4p-ice.itp")
+        custom_idx = includes.index(custom_itp_name)
+        solute_idx = includes.index("ch4_liquid.itp")
+        assert tip4p_idx < custom_idx < solute_idx, (
+            f"ITP ordering: tip4p-ice({tip4p_idx}) < custom({custom_idx}) "
+            f"< solute({solute_idx})"
+        )
+
+        # test_custom_molecule_count_preserved: custom count survives solute
+        # insertion
+        assert solute.custom_molecule_count == 3, (
+            f"Expected custom_molecule_count=3, got {solute.custom_molecule_count}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

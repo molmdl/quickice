@@ -20,9 +20,11 @@ This file grows across the two atomic commits (one per TD). The tests
 present at each commit exercise ONLY the fix landed by that commit.
 
 Behavioral regression for TD-ADHOC is also covered by the existing
-end-to-end GRO writer suites (``test_e2e_ion_export.py`` exercises the
-``write_ion_gro_file`` sites; ``test_e2e_solute_export.py`` exercises the
-``write_solute_gro_file`` sites) — those suites call the 7 refactored
+end-to-end grompp-backed writer suites (``tests/test_e2e_gmx_validation.py``
+exercises the ``write_ion_gro_file`` / ``write_solute_gro_file`` sites via the
+F1-F7 chains and the solute-only chain; 48.3-19 consolidated the former
+``test_e2e_ion_export.py`` / ``test_e2e_solute_export.py`` writer files into
+it) — those suites call the 7 refactored
 sites and must continue to pass unchanged.
 """
 
