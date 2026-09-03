@@ -9,6 +9,7 @@ Import with: from e2e_export_helpers import ...
 """
 
 import numpy as np
+import tempfile
 from collections import namedtuple
 from pathlib import Path
 
@@ -633,3 +634,28 @@ def run_gmx_grompp(workspace: Path, gro_file: str = "struct.gro",
     )
     
     return result.returncode, result.stderr
+
+
+def make_temp_output_dir() -> str:
+    """Create a temporary output directory for a pipeline test.
+
+    The directory is created UNDER the current working directory (``<cwd>/tmp/``)
+    rather than under the system temp dir (``/tmp``). This is required because
+    ``CLIPipeline.execute`` (SAFE-05) rejects ``--output`` paths that resolve
+    outside the working directory, mirroring the input-path containment checks
+    at pipeline.py:242-249 and :494-509. ``<cwd>/tmp/`` is ignored by
+    ``.gitignore`` (the ``tmp/`` entry). Each caller cleans up its own subdir
+    via ``shutil.rmtree(outdir, ignore_errors=True)``.
+
+    Hoisted (plan 48.3-08) from the local def in
+    ``tests/test_cli/test_cli_pipeline.py:36`` (which keeps its own copy) so
+    the Tier-A subprocess prefix matrix
+    (``tests/test_cli/test_pipeline_grompp_matrix.py``) reuses the identical
+    SAFE-05-compatible pattern instead of reimplementing it.
+
+    Returns:
+        Path to the temporary directory (under ``<cwd>/tmp/``).
+    """
+    tmp_base = Path.cwd() / "tmp"
+    tmp_base.mkdir(parents=True, exist_ok=True)
+    return tempfile.mkdtemp(prefix="test_cli_pipeline_", dir=str(tmp_base))
