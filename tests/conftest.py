@@ -7,10 +7,30 @@ structures (not synthetic), enabling genuine end-to-end pipeline testing.
 IMPORTANT: No qtbot or QApplication fixture — these tests are API-only, no GUI.
 """
 
+import os
+
+# ── Session-start headless guard ─────────────────────────────────────────────
+# Enforce QT_QPA_PLATFORM=offscreen at session start, BEFORE any test module
+# (or conftest import chain) can import PySide6/VTK. Without a platform,
+# QApplication creation segfaults (C-level) on this headless machine
+# (48.3 RESEARCH-INFRA §3.5). setdefault — an explicit user-set platform
+# still wins.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import shutil
 
 import pytest
 import numpy as np
+
+
+# ── Pytest configuration ──────────────────────────────────────────────────────
+
+def pytest_configure(config):
+    """Register custom markers so pytest does not emit unknown-mark warnings."""
+    config.addinivalue_line("markers", "slow: long-running tests")
+    config.addinivalue_line("markers", "e2e: end-to-end tests via the real pipeline surface")
+    config.addinivalue_line("markers", "gui: tests that instantiate QApplication/VTK widgets")
+    config.addinivalue_line("markers", "cli: subprocess CLI tests")
 
 
 # ── GROMACS availability marker ───────────────────────────────────────────────
@@ -56,15 +76,6 @@ def ice_ih_candidate():
     return candidates[0]
 
 
-@pytest.fixture(scope="module")
-def ice_ic_candidate():
-    """Generate Ice Ic candidate at 100 K, 0.1 MPa with 96 target molecules."""
-    phase_info = lookup_phase(100, 0.1)
-    gen = IceStructureGenerator(phase_info, 96)
-    candidates = gen.generate_all(1)
-    return candidates[0]
-
-
 # ── Hydrate fixtures ──────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="module")
@@ -73,36 +84,6 @@ def hydrate_sI_ch4_candidate():
     gen = HydrateStructureGenerator()
     config = HydrateConfig(
         lattice_type="sI",
-        guest_type="ch4",
-        supercell_x=1,
-        supercell_y=1,
-        supercell_z=1,
-    )
-    structure = gen.generate(config)
-    return structure.to_candidate()
-
-
-@pytest.fixture(scope="module")
-def hydrate_sI_thf_candidate():
-    """Generate Hydrate sI + THF structure and convert to Candidate."""
-    gen = HydrateStructureGenerator()
-    config = HydrateConfig(
-        lattice_type="sI",
-        guest_type="thf",
-        supercell_x=1,
-        supercell_y=1,
-        supercell_z=1,
-    )
-    structure = gen.generate(config)
-    return structure.to_candidate()
-
-
-@pytest.fixture(scope="module")
-def hydrate_sII_ch4_candidate():
-    """Generate Hydrate sII + CH4 structure and convert to Candidate."""
-    gen = HydrateStructureGenerator()
-    config = HydrateConfig(
-        lattice_type="sII",
         guest_type="ch4",
         supercell_x=1,
         supercell_y=1,
