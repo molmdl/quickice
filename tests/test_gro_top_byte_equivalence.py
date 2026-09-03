@@ -79,12 +79,12 @@ from tests.e2e_export_helpers import (  # noqa: E402
 
 # ── Baseline paths ────────────────────────────────────────────────────────────
 
-BASELINE_DIR = Path(
-    ".planning/phases/48.1-split-gromacs-writer-dedup-gro-writers/snapshots/baseline"
-)
-BASELINE_SHAS_PATH = Path(
-    ".planning/phases/48.1-split-gromacs-writer-dedup-gro-writers/baseline_shas.json"
-)
+# __file__-relative (48.3-18): baselines live with the tests so loading is
+# CWD-independent — the old `Path(".planning/...")` form only worked when
+# pytest ran from the project root. Byte contract (26 file SHAs) unchanged.
+_BASELINES_ROOT = Path(__file__).resolve().parent / "_baselines"
+BASELINE_DIR = _BASELINES_ROOT / "snapshots" / "baseline"
+BASELINE_SHAS_PATH = _BASELINES_ROOT / "baseline_shas.json"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

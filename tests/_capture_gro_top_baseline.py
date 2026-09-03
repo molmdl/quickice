@@ -6,11 +6,15 @@ export paths from the CURRENT (pre-refactor) source. It mirrors the
 synthetic fixtures in ``tests/test_gro_top_byte_equivalence.py``
 (deterministic, no GenIce2) and writes:
 
-- ``.planning/phases/48.1-.../baseline_shas.json`` — the authoritative
+- ``tests/_baselines/baseline_shas.json`` — the authoritative
   SHA256 baseline (committed to the repo; loaded by the byte-equivalence
   tests to assert byte-identical output across all subsequent waves).
-- ``.planning/phases/48.1-.../snapshots/baseline/<path_name>/`` — the
+- ``tests/_baselines/snapshots/baseline/<path_name>/`` — the
   actual reference files (.gro/.top/.itp) for manual inspection.
+
+(Relocated from ``.planning/phases/48.1-.../`` by plan 48.3-18: test
+fixtures are not planning documents, and the load path is now
+``__file__``-relative so it works from any CWD.)
 
 Usage::
 
