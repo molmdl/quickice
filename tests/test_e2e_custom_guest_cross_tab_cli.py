@@ -30,15 +30,10 @@ repo convention for grompp's PBC "cut-off longer than half the shortest box
 vector" rule -- rcoulomb=rvdw=1.0 nm in em.mdp, so 3.0 > 2*1.0).
 """
 
-import sys
 import shutil
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
@@ -50,7 +45,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     InterfaceConfig,
 )
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     _insert_solutes,
     _insert_ions_from_solute,
     run_gmx_grompp,

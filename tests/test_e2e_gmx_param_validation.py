@@ -14,14 +14,10 @@ Uses pytest.mark.parametrize with ChainParams NamedTuple for systematic coverage
 in ~150 lines vs ~800 lines for 27 individual classes.
 """
 
-import sys
 import shutil
 import pytest
 from pathlib import Path
 from typing import NamedTuple, Optional
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif
 
@@ -37,7 +33,7 @@ from quickice.output.gromacs_writer import (
 )
 from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_top_molecules,
     parse_gro_residue_names,
     _insert_custom_molecules,

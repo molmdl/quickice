@@ -24,15 +24,10 @@ references ``MOL_H`` (not ``GUE``) + ``#include`` the transformed
 present).  Marked ``@gmx_skipif`` so CI without gmx still runs file-consistency.
 """
 
-import sys
 import shutil
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
@@ -53,7 +48,7 @@ from quickice.gui.export import (  # noqa: E402
     IonGROMACSExporter,
     SoluteGROMACSExporter,
 )
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     ETOH_GRO,
     ETOH_ITP,
     MDP_PATH,

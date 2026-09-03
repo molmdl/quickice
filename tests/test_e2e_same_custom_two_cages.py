@@ -41,13 +41,9 @@ Plan: 44.1-21 (wave 4). Depends on 44.1-01 (engine relaxation),
 """
 
 import shutil
-import sys
 from pathlib import Path
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.output.gromacs_writer import (  # noqa: E402
@@ -64,7 +60,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     HydrateConfig,
     InterfaceConfig,
 )
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     _stage_custom_guest_itp,
     _stage_itp_files,
     assert_gro_top_consistent,

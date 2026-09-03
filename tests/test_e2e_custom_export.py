@@ -13,14 +13,9 @@ Scenario 4: Custom Molecule Export
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
 
-import sys
 import pytest
 import numpy as np
 from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-# (avoids conftest.py import which is unreliable in pytest)
-sys.path.insert(0, str(Path(__file__).parent))
 
 from quickice.output.gromacs_writer import (
     write_custom_molecule_gro_file,
@@ -28,7 +23,7 @@ from quickice.output.gromacs_writer import (
 )
 
 # Import parsing helpers from the shared module (NOT from conftest)
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     _insert_custom_molecules,
     parse_gro_residue_names,
     parse_gro_atom_count,

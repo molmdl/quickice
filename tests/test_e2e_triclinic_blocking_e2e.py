@@ -31,13 +31,9 @@ needed.
 
 import os
 import sys
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,

@@ -15,15 +15,9 @@ transform/overwrite contract that the grompp e2e tests rely on.
 """
 
 import re
-import sys
-from pathlib import Path
-
 import pytest
 
-# Make the sibling e2e_export_helpers module importable (it is NOT a package).
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     ETOH_ITP,
     _stage_custom_guest_itp,
     _stage_itp_files,

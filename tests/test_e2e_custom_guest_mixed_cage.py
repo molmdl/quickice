@@ -49,16 +49,11 @@ previously-working single-custom path (only MOL_H, no CH4_H, byte-identical).
 The mixed-built-in CH4+THF path is covered by ``test_e2e_mixed_ion_export.py``.
 """
 
-import sys
 import shutil
-from pathlib import Path
 from collections import Counter, defaultdict
 from unittest.mock import patch
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
@@ -71,7 +66,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     InterfaceConfig,
 )
 from quickice.gui.export import IonGROMACSExporter  # noqa: E402
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     ETOH_GRO,
     ETOH_ITP,
     MDP_PATH,

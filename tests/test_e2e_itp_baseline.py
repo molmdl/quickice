@@ -8,19 +8,15 @@ If any ITP file is missing or corrupted, ALL exports that reference it
 will produce invalid GROMACS files. This catches data directory issues early.
 """
 
-import sys
 import re
 import pytest
 from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 import quickice
 
 from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 
-from e2e_export_helpers import check_itp_has_moleculetype
+from tests.e2e_export_helpers import check_itp_has_moleculetype
 
 
 # ── Data directory ───────────────────────────────────────────────────────────

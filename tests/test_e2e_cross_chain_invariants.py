@@ -18,18 +18,12 @@ CRITICAL NOTES from prior plans:
 - F6/F7 use _insert_ions_from_solute() with BUG I5 workaround
 - THF has 13 atoms, CH4 has 5 atoms, ethanol has 9 atoms
 - ion.itp must be generated to tmp_path before write_ion_top_file
-- Use sys.path.insert(0, ...) for e2e_export_helpers import (established pattern)
 - SOL counts should come from ion.molecule_index (not original interface counts)
 """
 
-import sys
 import pytest
 import numpy as np
 from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-# (avoids conftest.py import which is unreliable in pytest)
-sys.path.insert(0, str(Path(__file__).parent))
 
 from quickice.output.gromacs_writer import (
     write_ion_gro_file,
@@ -40,7 +34,7 @@ from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 
 # Import parsing helpers and chain-building helpers from the shared module
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_gro_residue_names,
     parse_gro_atom_count,
     parse_top_molecules,

@@ -233,9 +233,6 @@ from pathlib import Path
 
 import numpy as np
 
-# Add tests/ directory to sys.path for e2e_export_helpers import.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.output.gromacs_writer import (  # noqa: E402
     write_multi_molecule_gro_file,
@@ -243,7 +240,7 @@ from quickice.output.gromacs_writer import (  # noqa: E402
 )
 from quickice.structure_generation.types import MoleculeIndex  # noqa: E402
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry  # noqa: E402
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     _stage_itp_files,
     _stage_custom_guest_itp,
     run_gmx_grompp,

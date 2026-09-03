@@ -23,16 +23,12 @@ repo convention (call writers directly + ``_stage_itp_files`` +
 ``gmx`` IS on PATH so this test runs (not skipped).
 """
 
-import sys
 import shutil
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.output.gromacs_writer import (  # noqa: E402
@@ -58,7 +54,7 @@ from quickice.gui.export import (  # noqa: E402
     IonGROMACSExporter,
     SoluteGROMACSExporter,
 )
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     _stage_itp_files,
     _stage_custom_guest_itp,
     _insert_solutes,

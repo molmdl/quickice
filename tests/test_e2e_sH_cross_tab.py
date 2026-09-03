@@ -54,16 +54,12 @@ c0te/c1te), and the 3x3x8 slab box satisfies the cut-off rule.
 """
 
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
@@ -85,7 +81,7 @@ from quickice.gui.export import (  # noqa: E402
 )
 from quickice.cli.pipeline import CLIPipeline  # noqa: E402
 from tests.conftest import gmx_skipif  # noqa: E402
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     _insert_solutes,
     _insert_ions,
     _insert_ions_from_solute,

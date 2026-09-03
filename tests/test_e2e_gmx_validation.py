@@ -14,13 +14,9 @@ Tests cover:
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
 
-import sys
 import shutil
 import pytest
 from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif
 
@@ -41,7 +37,7 @@ from quickice.phase_mapping.lookup import lookup_phase
 from quickice.structure_generation.generator import IceStructureGenerator
 from quickice.structure_generation.types import InterfaceConfig
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     parse_top_includes,
     parse_top_molecules,
     parse_gro_residue_names,
