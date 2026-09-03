@@ -63,10 +63,10 @@ class ModalMocks:
             (information / warning / critical capture calls; question → Yes).
         export: MagicMock replacing ``quickice.gui.export.QMessageBox``
             (whole class — overwrite prompts, export error dialogs).
-        export_file_dialog: MagicMock replacing
-            ``quickice.gui.export.QFileDialog.getSaveFileName``. Set
-            ``.return_value = (path, filter)`` per export to route the save
-            dialog; default ``("", "")`` = user cancelled.
+        export_file_dialog: MagicMock replacing the
+            ``quickice.gui.export.QFileDialog`` class. Set
+            ``.getSaveFileName.return_value = (path, filter)`` per export to
+            route the save dialog; default ``("", "")`` = user cancelled.
         panel: MagicMock replacing
             ``quickice.gui.custom_molecule_panel.QMessageBox`` (question → Yes
             for the generic-residue proceed path; warning captured).
@@ -95,9 +95,10 @@ def patch_gui_modals():
       Custom Molecules Found" re-insertion path).
     - ``quickice.gui.export.QMessageBox``: whole class (exporter-side
       dialogs; question → Yes for overwrite prompts).
-    - ``quickice.gui.export.QFileDialog.getSaveFileName``: exactly one call
-      per export (the ``.gro``); ``.top``/``.itp`` paths derive from the stem.
-      Parametrize via the returned mock's ``return_value``.
+    - ``quickice.gui.export.QFileDialog``: whole class in the export module's
+      namespace. Exactly one ``getSaveFileName`` call per export (the
+      ``.gro``); ``.top``/``.itp`` paths derive from the stem. Parametrize
+      via ``.getSaveFileName.return_value`` on the returned mock.
     - ``quickice.gui.custom_molecule_panel.QMessageBox``: ``question`` → Yes
       (generic-residue-name dialog for the realistic unrenamed etoh upload —
       the D1 proceed path); ``warning`` captured.
@@ -124,7 +125,7 @@ def patch_gui_modals():
     with patch.object(main_window_mod, "QMessageBox") as mw_qmb, \
             patch.object(export_mod, "QMessageBox") as export_qmb, \
             patch.object(custom_molecule_panel_mod, "QMessageBox") as panel_qmb, \
-            patch.object(export_mod.QFileDialog, "getSaveFileName") as export_fd:
+            patch.object(export_mod, "QFileDialog") as export_qfd:
         # question → Yes: the flow-under-test must always proceed
         # (overwrite prompts, residue-mismatch proceed, re-insertion prompt).
         mw_qmb.question.return_value = yes
@@ -132,12 +133,13 @@ def patch_gui_modals():
         panel_qmb.question.return_value = yes
         # Default save dialog = user cancelled ("", "") so an unparametrized
         # export fails fast with "no files exported" instead of writing to a
-        # surprise location. Tests set .return_value per export case.
-        export_fd.return_value = ("", "")
+        # surprise location. Tests set
+        # .export_file_dialog.getSaveFileName.return_value per export case.
+        export_qfd.getSaveFileName.return_value = ("", "")
 
         mocks.main_window = mw_qmb
         mocks.export = export_qmb
-        mocks.export_file_dialog = export_fd
+        mocks.export_file_dialog = export_qfd
         mocks.panel = panel_qmb
         yield mocks
 
