@@ -1,23 +1,23 @@
 Actual cost is lower with the synthetic coding plan
-Large dataset detected (2020 sessions). This may take a while...
+Large dataset detected (2052 sessions). This may take a while...
 ┌────────────────────────────────────────────────────────┐
 │                       OVERVIEW                         │
 ├────────────────────────────────────────────────────────┤
-│Sessions                                          2,020 │
-│Messages                                         62,691 │
-│Days                                                139 │
+│Sessions                                          2,052 │
+│Messages                                         64,540 │
+│Days                                                162 │
 └────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                    COST & TOKENS                       │
 ├────────────────────────────────────────────────────────┤
-│Total Cost                                     $3330.67 │
-│Avg Cost/Day                                     $23.96 │
-│Avg Tokens/Session                                 1.9M │
+│Total Cost                                     $3342.14 │
+│Avg Cost/Day                                     $20.63 │
+│Avg Tokens/Session                                 2.0M │
 │Median Tokens/Session                              1.2M │
-│Input                                            404.0M │
-│Output                                            27.8M │
-│Cache Read                                      3369.1M │
+│Input                                            419.0M │
+│Output                                            29.2M │
+│Cache Read                                      3583.0M │
 │Cache Write                                        6.5M │
 └────────────────────────────────────────────────────────┘
 
@@ -72,6 +72,14 @@ Large dataset detected (2020 sessions). This may take a while...
 │  Cache Write                                         0 │
 │  Cost                                         $10.0363 │
 ├────────────────────────────────────────────────────────┤
+│ synthetic/hf:zai-org/GLM-5.3-Flash                     │
+│  Messages                                        1,814 │
+│  Input Tokens                                    14.9M │
+│  Output Tokens                                    1.4M │
+│  Cache Read                                     213.8M │
+│  Cache Write                                         0 │
+│  Cost                                         $11.4785 │
+├────────────────────────────────────────────────────────┤
 │ openrouter/z-ai/glm-5.1                                │
 │  Messages                                          984 │
 │  Input Tokens                                     9.9M │
@@ -112,22 +120,30 @@ Large dataset detected (2020 sessions). This may take a while...
 │  Cache Write                                         0 │
 │  Cost                                          $0.3739 │
 ├────────────────────────────────────────────────────────┤
-└────────────────────────────────────────────────────────┘
+│ github-copilot/claude-sonnet-4.6                       │
+│  Messages                                            1 │
+│  Input Tokens                                        0 │
+│  Output Tokens                                       0 │
+│  Cache Read                                          0 │
+│  Cache Write                                         0 │
+│  Cost                                          $0.0000 │
+├────────────────────────────────────────────────────────┤
+[1A└────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────┐
 │                      TOOL USAGE                        │
 ├────────────────────────────────────────────────────────┤
-│ bash               ████████████████████ 34919 (42.2%)  │
-│ read               █████████████        23917 (28.9%)  │
-│ edit               █████                9462 (11.4%)   │
-│ grep               ██                   4750 ( 5.7%)   │
-│ glob               █                    2945 ( 3.6%)   │
-│ write              █                    2714 ( 3.3%)   │
-│ task               █                    1719 ( 2.1%)   │
+│ bash               ████████████████████ 36353 (42.8%)  │
+│ read               █████████████        24224 (28.5%)  │
+│ edit               █████                9775 (11.5%)   │
+│ grep               ██                   4773 ( 5.6%)   │
+│ glob               █                    2952 ( 3.5%)   │
+│ write              █                    2785 ( 3.3%)   │
+│ task               █                    1748 ( 2.1%)   │
 │ webfetch           █                    1000 ( 1.2%)   │
-│ question           █                    804 ( 1.0%)    │
+│ question           █                    806 ( 0.9%)    │
 │ todowrite          █                    336 ( 0.4%)    │
-│ invalid            █                    119 ( 0.1%)    │
+│ invalid            █                    125 ( 0.1%)    │
 │ websearch          █                     15 ( 0.0%)    │
 │ codesearch         █                      5 ( 0.0%)    │
 │ skill              █                      1 ( 0.0%)    │
