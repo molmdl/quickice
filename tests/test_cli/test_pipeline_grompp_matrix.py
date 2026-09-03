@@ -511,3 +511,247 @@ class TestCsvPlacementAndConcentrationMatrix:
             )
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
+
+
+# ── Prefix-upgrade rows (GAP 9) + hydrate-only (GAP 7) + depol (G7) ─────────
+# Rows R2/R3 upgrade the file-existence-only subprocess tests in
+# test_cli_pipeline.py to full grompp validation. Rows R13-R15 exercise the
+# hydrate→interface source path (HydrateStructure.to_candidate() → slab);
+# R12 covers the hydrate→InterfaceStructure export wrapper for the DEFAULT
+# lattice (sI) — previously grompp-validated only for c2te/ice1hte/c0te/c1te.
+
+
+class TestHydratePrefixMatrix:
+    """Legitimate invocation prefixes hydrate/interface × solute/ion."""
+
+    def test_r2_interface_solute_grompp(self):
+        """R2: interface+solute — solute.gro/solute.top pass grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--solute-type", "CH4", "--solute-concentration", "0.5",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ch4_liquid.itp").exists()
+            _validate_export(out, "solute.gro", "solute.top")
+            molecules = parse_top_molecules(str(out / "solute.top"))
+            assert molecules.get("SOL", 0) > 0
+            assert molecules.get("CH4_L", 0) > 0, "solute missing from solute.top"
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r3_interface_ion_grompp(self):
+        """R3: interface+ion — ion.gro/ion.top pass grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--ion-concentration", "0.15",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ion.itp").exists()
+            _validate_export(out, "ion.gro", "ion.top")
+            molecules = parse_top_molecules(str(out / "ion.top"))
+            assert molecules.get("SOL", 0) > 0
+            residues = parse_gro_residue_names(str(out / "ion.gro"))
+            assert "NA" in residues and "CL" in residues, (
+                f"ion residues missing from ion.gro: {sorted(set(residues))}"
+            )
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r12_hydrate_only_sI_grompp(self):
+        """R12 (GAP 7): hydrate-only default sI — hydrate.gro/hydrate.top
+        pass grompp.
+
+        Exercises the export branch that wraps HydrateStructure in an
+        InterfaceStructure (ice_atom_count=0, _validate_hydrate_atom_counts)
+        for the MOST COMMON lattice — previously grompp-validated only for
+        c2te/ice1hte (47-05) and c0te/c1te (45-07). Uses the small-cutoff
+        MDP: the sI 1×1×1 cell is 1.20 nm, below the 2.0 nm the shared
+        em.mdp cutoffs require.
+        """
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ch4_hydrate.itp").exists(), "guest ITP not staged"
+            assert (out / "tip4p-ice.itp").exists()
+            _validate_export(out, "hydrate.gro", "hydrate.top", small_mdp=True)
+            molecules = parse_top_molecules(str(out / "hydrate.top"))
+            assert molecules.get("SOL", 0) > 0
+            assert molecules.get("CH4_H", 0) > 0, (
+                f"hydrate guests missing from hydrate.top: {molecules}"
+            )
+            residues = parse_gro_residue_names(str(out / "hydrate.gro"))
+            assert "CH4_H" in residues
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r13_hydrate_interface_grompp(self):
+        """R13: hydrate+interface — the to_candidate() source path exports
+        interface.gro/interface.top (CH4_H guests) that pass grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
+                *SLAB,
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ch4_hydrate.itp").exists()
+            _validate_export(out, "interface.gro", "interface.top")
+            molecules = parse_top_molecules(str(out / "interface.top"))
+            assert molecules.get("SOL", 0) > 0
+            assert molecules.get("CH4_H", 0) > 0
+            residues = parse_gro_residue_names(str(out / "interface.gro"))
+            assert "CH4_H" in residues
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r14_hydrate_interface_solute_grompp(self):
+        """R14: hydrate+interface+solute — solute export with BOTH the
+        hydrate guest ITP (ch4_hydrate.itp) and the liquid solute ITP
+        (ch4_liquid.itp) staged, passing grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
+                *SLAB,
+                "--solute-type", "CH4", "--solute-concentration", "0.5",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ch4_hydrate.itp").exists(), (
+                "FIX #11 regression: ch4_hydrate.itp missing from "
+                "hydrate+interface+solute output"
+            )
+            assert (out / "ch4_liquid.itp").exists()
+            _validate_export(out, "solute.gro", "solute.top")
+            molecules = parse_top_molecules(str(out / "solute.top"))
+            assert molecules.get("CH4_H", 0) > 0
+            assert molecules.get("CH4_L", 0) > 0
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_r15_hydrate_interface_ion_grompp(self):
+        """R15: hydrate+interface+ion — ion export carrying the hydrate
+        guests through the ion writer's guest path, passing grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                "-T", "270", "-P", "0.1",
+                "--hydrate", "--lattice-type", "sI", "--guest", "CH4",
+                *SLAB,
+                "--ion-concentration", "0.15",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+            assert (out / "ch4_hydrate.itp").exists()
+            assert (out / "ion.itp").exists()
+            _validate_export(out, "ion.gro", "ion.top")
+            molecules = parse_top_molecules(str(out / "ion.top"))
+            assert molecules.get("CH4_H", 0) > 0
+            assert molecules.get("SOL", 0) > 0
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_depol_optimal_interface_ion_grompp(self):
+        """Depol row (G7): interface+ion with --depol optimal — rc 0 and
+        grompp rc 0. Do NOT assert output divergence from strict: GenIce2
+        2.2.13.1 produces IDENTICAL output for strict and optimal
+        (45-RESEARCH Pitfall 1); this row only proves the flag is accepted
+        without corrupting the pipeline run."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                *TP, *SLAB,
+                "--ion-concentration", "0.15",
+                "--depol", "optimal",
+                "-o", str(workspace / "out"),
+                timeout=120,
+            )
+            assert rc == 0, f"CLI pipeline failed:\n{stderr[-500:]}"
+            _validate_export(workspace / "out", "ion.gro", "ion.top")
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+
+# ── Ice-only workflow (GAP 10) — separate main.py code path ──────────────────
+# R16 is NOT CLIPipeline: with no pipeline flags, main.py runs the ice-only
+# workflow (lookup_phase → generate_candidates(10) → rank → optional --gromacs
+# export → PDB + optional diagram). Pinned --no-diagram behavior: main.py:163
+# passes generate_diagram=not args.no_diagram to output_ranked_candidates, so
+# the matplotlib phase-diagram step is skipped (that call is exception-guarded
+# anyway, orchestrator.py:118-125, but skipping keeps the row fast and
+# deterministic). The 96-molecule ice_ih cell's minimum box vector (~1.47 nm)
+# is too small for the shared em.mdp (needs > 2.0 nm) → small-cutoff MDP.
+
+
+class TestIceOnlyGromacs:
+    """The ice-only workflow's --gromacs export (main.py path, not pipeline)."""
+
+    def test_r16_ice_only_gromacs_export_grompp(self):
+        """R16 (GAP 10): ice-only --gromacs run exports {phase}_{rank}.gro +
+        {phase}.top + tip4p-ice.itp and the export passes grompp."""
+        workspace = Path(make_temp_output_dir())
+        try:
+            rc, _, stderr = run_quickice(
+                "-T", "250", "-P", "0.1", "-N", "96",
+                "--gromacs", "--no-diagram",
+                "-o", str(workspace / "out"),
+                timeout=300,
+            )
+            assert rc == 0, f"ice-only workflow failed:\n{stderr[-500:]}"
+            out = workspace / "out"
+
+            gro_files = sorted(out.glob("*.gro"))
+            assert gro_files, "no {phase}_{rank}.gro exported"
+            for gro in gro_files:
+                assert re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)*_\d+\.gro", gro.name), (
+                    f"exported .gro does not follow {{phase}}_{{rank}}.gro "
+                    f"naming: {gro.name}"
+                )
+            tops = list(out.glob("*.top"))
+            assert len(tops) == 1, (
+                f"exactly one '<phase>.top' expected, got "
+                f"{[t.name for t in tops]}"
+            )
+            assert (out / "tip4p-ice.itp").exists(), "tip4p-ice.itp not staged"
+
+            top_file = tops[0].name
+            assert_itp_completeness(str(out / top_file), out)
+            assert_gro_top_consistent(str(gro_files[0]), str(out / top_file))
+            (out / "em.mdp").write_text(SMALL_CUTOFF_MDP)
+            grompp_rc, grompp_stderr = run_gmx_grompp(
+                out, gro_file=gro_files[0].name, top_file=top_file
+            )
+            assert grompp_rc == 0, (
+                f"gmx grompp failed on {gro_files[0].name}:\n"
+                f"{grompp_stderr[-800:]}"
+            )
+            molecules = parse_top_molecules(str(out / top_file))
+            assert molecules.get("SOL", 0) > 0
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
