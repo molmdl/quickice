@@ -98,17 +98,60 @@ class CustomMoleculeInserter:
         )
         
         # Parse ITP file to get molecule charge (for charge warning in Ion tab)
+        # and the [moleculetype] name (for gro/top name reconciliation, 48.3-02)
         self.molecule_charge = 0.0
+        self.itp_moleculetype_name: str | None = None
         try:
             itp_info = parse_itp_file(config.itp_path)
             self.molecule_charge = sum(itp_info.charges)
+            self.itp_moleculetype_name = itp_info.molecule_name
         except (ValueError, FileNotFoundError, OSError):
             # If ITP parsing fails, default to 0.0 charge (neutral)
             logger.warning(f"Could not parse ITP file for charge: {config.itp_path}")
-        
+
         # Residue name will be determined during placement
-        # (from ITP if override accepted, else from GRO)
+        # (ITP [moleculetype] name when usable as a GRO residue name,
+        #  else the registry default — see _register_custom_moleculetype)
         self.residue_name = None
+
+    def _register_custom_moleculetype(self) -> str:
+        """Register the custom molecule in the MoleculetypeRegistry.
+
+        Prefers the ITP [moleculetype] name so the exported .gro residue
+        names and the .top [molecules] entry AGREE (the strict
+        ``assert_gro_top_consistent`` invariant; 48.3-02 D1 fix). The
+        CustomMoleculePanel residue-mismatch dialog's proceed ("Yes") path
+        is the GUI flow that leads here for mismatched uploads — it blocks
+        progress on "No", so by insertion time the ITP name is the accepted
+        name. Falls back to the registry default ("MOL") when the ITP name
+        is unusable as a GRO residue name:
+
+        - ITP unparseable (no moleculetype name available)
+        - name longer than 5 chars (GRO fixed-width residue-name limit;
+          strict gro/top agreement is impossible in .gro format for such
+          names — grompp remains the authority there)
+        - name reserved (register_custom_molecule raises ValueError)
+
+        Returns:
+            Registered moleculetype name for the custom molecule.
+        """
+        itp_name = self.itp_moleculetype_name
+        if itp_name and len(itp_name) <= 5:
+            try:
+                return self.registry.register_custom_molecule(itp_name)
+            except ValueError as e:
+                logger.warning(
+                    f"ITP moleculetype name '{itp_name}' not usable "
+                    f"({e}); using registry default for GRO residue name"
+                )
+        elif itp_name:
+            logger.warning(
+                f"ITP moleculetype name '{itp_name}' exceeds the 5-char GRO "
+                f"residue-name limit; using registry default for GRO residue "
+                f"name (strict .gro/.top name agreement is impossible for "
+                f"such names — grompp matches by atom counts)"
+            )
+        return self.registry.register_custom_molecule()
         
         logger.info(
             f"Loaded custom molecule template from {config.gro_path.name}: "
@@ -921,8 +964,9 @@ class CustomMoleculeInserter:
         
         complete_atom_names = list(modified_structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
         
-        # Register with MoleculetypeRegistry
-        moleculetype_name = self.registry.register_custom_molecule()
+        # Register with MoleculetypeRegistry (ITP [moleculetype] name when
+        # usable, so .gro residues and .top [molecules] agree — 48.3-02 D1)
+        moleculetype_name = self._register_custom_moleculetype()
         
         logger.info(
             f"Random placement complete: {n_molecules} custom molecules, "
@@ -1135,8 +1179,9 @@ class CustomMoleculeInserter:
         
         complete_atom_names = list(modified_structure.atom_names[:ice_atom_count + water_atom_count + guest_atom_count]) + placed_atom_names
         
-        # Register with MoleculetypeRegistry
-        moleculetype_name = self.registry.register_custom_molecule()
+        # Register with MoleculetypeRegistry (ITP [moleculetype] name when
+        # usable, so .gro residues and .top [molecules] agree — 48.3-02 D1)
+        moleculetype_name = self._register_custom_moleculetype()
         
         n_molecules = len(positions)
         
