@@ -11,6 +11,12 @@ Tests cover:
   - F2 (Interface→Custom→Ion, 3 ITPs, no solute)
   - F1+THF, F3+THF, F4+CH4 cross-combinations (dedup validation)
 
+48.3-15 consolidation batch A: the deep file-level asserts from the writer-direct
+files tests/test_e2e_chain_export_1.py (F1-F4, 26 tests), test_e2e_chain_export_2.py
+(F5-F7, 21 tests) and test_e2e_cross_chain_invariants.py (4 tests) were ported INTO
+these grompp-backed chains (see the _assert_* helpers below) and the source files
+deleted — same asserts, strictly stronger validation (file asserts + grompp).
+
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
 
@@ -41,6 +47,8 @@ from tests.e2e_export_helpers import (
     parse_top_includes,
     parse_top_molecules,
     parse_gro_residue_names,
+    parse_gro_atom_count,
+    assert_gro_residue_ordering,
     _insert_custom_molecules,
     _insert_solutes,
     _insert_ions,
@@ -68,6 +76,178 @@ def gmx_workspace(request):
     workspace = base / request.node.name.replace("::", "_")
     workspace.mkdir(parents=True, exist_ok=True)
     yield workspace
+
+
+# ── Ported deep-file asserts (48.3-15 consolidation batch A) ─────────────────
+# tests/test_e2e_chain_export_1.py (F1-F4, 26 tests), tests/test_e2e_chain_export_2.py
+# (F5-F7, 21 tests) and tests/test_e2e_cross_chain_invariants.py (4 tests) validated
+# the SAME F1-F7 writer chains by file-parsing only (no grompp — P3). 48.3-15 ports
+# their UNIQUE deep asserts into these grompp-backed chains and deletes the sources:
+# same asserts, strictly stronger validation (file asserts + gmx grompp).
+# Dropped as subsumed (no port needed): the per-chain test_itp_files_valid checks
+# (ITP existence + [moleculetype] presence are implied by _stage_itp_files +
+# assert_itp_completeness + grompp failing on a missing/malformed ITP) and the
+# trivial "CH4_H" != "CH4_L" string compares (their TOP-presence half is subsumed
+# by _assert_top_molecule_counts).
+
+
+def _assert_residue_ordering(gro_path, expected_order):
+    """Assert .gro residues are EXACTLY expected_order (as a set) and non-interleaved.
+
+    Ported from test_e2e_chain_export_1/2.py::test_gro_residue_ordering (F1-F7).
+    write_ion_gro_file molecule order: SOL -> guest -> custom -> solute -> NA -> CL.
+    The exact-set assert also covers the F2 negative assert ("no solute residues").
+    """
+    residue_names = parse_gro_residue_names(gro_path)
+    unique_names = set(residue_names)
+    expected_set = set(expected_order)
+    assert unique_names == expected_set, (
+        f"GRO residues should be exactly {sorted(expected_set)}, got {sorted(unique_names)}"
+    )
+    assert_gro_residue_ordering(residue_names, expected_order)
+
+
+def _assert_atom_conservation(gro_path, ion, solute_atoms_per_mol=None):
+    """GRO header atom count == atom lines == conservation arithmetic from the ion structure.
+
+    Ported from test_e2e_chain_export_1.py::test_gro_atom_count_matches_header +
+    ::test_atom_conservation (F1) and test_e2e_chain_export_2.py
+    ::test_gro_atom_count_matches_header + ::test_atom_conservation_and_charge_neutrality
+    (F5-F7).
+
+    Writer accounting (write_ion_gro_file ordered_mols, ion_writer.py:199-218):
+    - SOL section: 4 atoms per ice molecule (3 input atoms + added MW virtual
+      site) and mol.count (4) per water molecule
+    - guest section: mol.count per guest molecule_index entry
+    - custom section: custom_molecule_atom_count atoms from
+      custom_molecule_positions (molecule_index 'custom' entries are NOT
+      written here — skipped to avoid double counting)
+    - solute section: per solute_molecule_indices (start, end) spans
+    - NA/CL: 1 atom per ion entry
+    """
+    header_count = parse_gro_atom_count(gro_path)
+    residue_names = parse_gro_residue_names(gro_path)
+    assert header_count == len(residue_names), (
+        f"GRO header says {header_count} atoms but found {len(residue_names)} atom lines"
+    )
+
+    # molecule_index conservation: index entries sum to positions rows
+    total_from_index = sum(m.count for m in ion.molecule_index)
+    assert total_from_index == ion.positions.shape[0], (
+        f"Atom conservation: molecule_index sums to {total_from_index} "
+        f"but positions has {ion.positions.shape[0]} rows"
+    )
+
+    expected = 0
+    for m in ion.molecule_index:
+        if m.mol_type == "ice":
+            expected += 4  # 3 input atoms -> 4 output atoms (OW, HW1, HW2, MW)
+        elif m.mol_type in ("na", "cl"):
+            expected += 1
+        elif m.mol_type == "custom":
+            continue  # written once by the custom section, not from molecule_index
+        else:
+            expected += m.count  # water + guest entries written as-is
+    expected += ion.custom_molecule_atom_count
+    solute_atoms = (
+        sum(end - start for start, end in ion.solute_molecule_indices)
+        if ion.solute_molecule_indices
+        else 0
+    )
+    if solute_atoms_per_mol is not None and ion.solute_molecule_indices:
+        for start, end in ion.solute_molecule_indices:
+            assert end - start == solute_atoms_per_mol, (
+                f"Solute molecule should have {solute_atoms_per_mol} atoms per molecule, "
+                f"got {end - start}"
+            )
+    expected += solute_atoms
+    assert header_count == expected, (
+        f"Atom conservation: expected {expected} atoms "
+        f"(molecule_index-derived {total_from_index} with ice MW normalisation "
+        f"+ custom {ion.custom_molecule_atom_count} + solute {solute_atoms}), "
+        f"got {header_count}"
+    )
+
+    # Charge neutrality: NaCl inserts ion pairs (F5-F7 source asserts).
+    assert ion.na_count == ion.cl_count, (
+        f"Charge neutrality: na_count ({ion.na_count}) should equal cl_count ({ion.cl_count})"
+    )
+
+
+def _assert_top_molecule_counts(top_path, ion):
+    """[molecules] count-parity asserts ported from test_e2e_chain_export_1/2.py
+    ::test_top_molecules_section (F1-F7).
+
+    - SOL == ice+water molecule_index entries (ions replace water AFTER indexing)
+    - NA == ion.na_count, CL == ion.cl_count
+    - custom (when present): [moleculetype] count == custom_molecule_count
+    - solute (when present): [<SOLUTE>_L] count == solute_n_molecules
+    - hydrate guest (when present): guest ITP name present with count > 0
+    """
+    molecules = parse_top_molecules(top_path)
+
+    expected_sol = sum(
+        1 for m in ion.molecule_index if m.mol_type in ("ice", "water")
+    )
+    assert molecules.get("SOL") == expected_sol, (
+        f"Expected SOL count {expected_sol} (ice+water molecule_index entries), "
+        f"got {molecules.get('SOL')} in [molecules]"
+    )
+    assert molecules.get("NA") == ion.na_count, (
+        f"Expected NA count {ion.na_count}, got {molecules.get('NA')}"
+    )
+    assert molecules.get("CL") == ion.cl_count, (
+        f"Expected CL count {ion.cl_count}, got {molecules.get('CL')}"
+    )
+
+    if ion.custom_molecule_count > 0:
+        custom_name = ion.custom_molecule_moleculetype
+        assert molecules.get(custom_name) == ion.custom_molecule_count, (
+            f"Expected custom moleculetype '{custom_name}' count "
+            f"{ion.custom_molecule_count}, got {molecules.get(custom_name)}"
+        )
+
+    if ion.solute_n_molecules > 0:
+        solute_name = f"{ion.solute_type.upper()}_L"
+        assert molecules.get(solute_name) == ion.solute_n_molecules, (
+            f"Expected solute moleculetype '{solute_name}' count "
+            f"{ion.solute_n_molecules}, got {molecules.get(solute_name)}"
+        )
+
+    # Hydrate guest (F3/F4 family): TOP name may be the registry "X_H" ITP name or
+    # the older bare "CH4"/"THF" fallback — accept either (provenance: chain_export_1
+    # F3/F4 test_top_molecules_section guest_key logic).
+    if ion.guest_nmolecules > 0 or ion.guest_atom_count > 0:
+        guest_key = next(
+            (k for k in molecules if k.endswith("_H") or k in ("CH4", "THF")),
+            None,
+        )
+        assert guest_key is not None, (
+            f"TOP should list the hydrate guest molecule, got {list(molecules.keys())}"
+        )
+        assert molecules[guest_key] > 0, (
+            f"Hydrate guest count should be > 0, got {molecules[guest_key]}"
+        )
+
+
+def _assert_top_includes(top_path, expected, forbidden=(), exact_count=None):
+    """#include asserts ported from test_e2e_chain_export_1/2.py::test_top_includes.
+
+    Args:
+        expected: ITP filenames that MUST be #included.
+        forbidden: ITP filenames that must NOT be #included (F2 negative asserts).
+        exact_count: Exact number of #include lines where a source asserted it
+            (F5 == 2, F6/F7 == 3; F1 == 4 via the cross-chain invariant port).
+    """
+    includes = parse_top_includes(top_path)
+    for name in expected:
+        assert name in includes, f"TOP should include {name}, got {includes}"
+    for name in forbidden:
+        assert name not in includes, f"TOP should NOT include {name}, got {includes}"
+    if exact_count is not None:
+        assert len(includes) == exact_count, (
+            f"Chain should have exactly {exact_count} ITPs, got {len(includes)}: {includes}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -470,6 +650,32 @@ class TestChainF1GmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_1.py TestChainF1) ──
+        # test_gro_residue_ordering: SOL→etoh→CH4_L→NA→CL (5 molecule types, no
+        # interleaving). NOTE (48.3-02 D1): custom GRO residue IS the ITP
+        # moleculetype name "etoh", so .gro and .top agree strictly.
+        _assert_residue_ordering(gro_path, ["SOL", "etoh", "CH4_L", "NA", "CL"])
+        # test_gro_atom_count_matches_header + test_atom_conservation:
+        # header == atom lines == molecule_index + custom atoms + CH4 solute (5/mol)
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        # test_top_molecules_section: SOL/etoh/CH4_L/NA/CL count parity
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes: tip4p-ice + etoh + ch4_liquid + ion (exact 4 pinned by
+        # the cross-chain ITP-monotonicity port)
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "etoh.itp", "ch4_liquid.itp", "ion.itp"],
+            exact_count=4,
+        )
+        # test_custom_and_solute_preserved: custom + solute metadata survive in
+        # IonStructure across the chain
+        assert self.ion.custom_molecule_count > 0, (
+            "IonStructure should have custom_molecule_count > 0"
+        )
+        assert self.ion.solute_n_molecules > 0, (
+            "IonStructure should have solute_n_molecules > 0"
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3: Hydrate→Interface→Solute→Ion (4 ITPs)
@@ -537,6 +743,26 @@ class TestChainF3GmxValidation:
                     f"Expected residue '{key}' in .gro for F3, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_1.py TestChainF3) ──
+        # test_gro_residue_ordering: KEY P0 test — CH4_H (hydrate guest) and CH4_L
+        # (liquid solute) coexist, ordered SOL→CH4_H→CH4_L→NA→CL without interleaving.
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_H", "CH4_L", "NA", "CL"])
+        # test_gro_atom_count_matches_header (CH4 solute = 5 atoms per molecule)
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        # test_top_molecules_section + test_registry_distinguishes_ch4_h_ch4_l:
+        # guest (CH4_H/CH4) AND solute (CH4_L) both present with count parity
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes: tip4p-ice + ch4_hydrate + ch4_liquid + ion
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "ch4_hydrate.itp", "ch4_liquid.itp", "ion.itp"]
+        )
+        # test_guest_count_preserved: guest molecules preserved because the chain
+        # goes through InterfaceStructure (not CustomMoleculeStructure, which drops
+        # guest_nmolecules)
+        assert self.ion.guest_nmolecules > 0, (
+            f"guest_nmolecules should be > 0, got {self.ion.guest_nmolecules}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -610,6 +836,27 @@ class TestChainF4GmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_1.py TestChainF4) ──
+        # test_gro_residue_ordering: SOL→THF_H→etoh→THF_L→NA→CL (6 molecule types)
+        _assert_residue_ordering(gro_path, ["SOL", "THF_H", "etoh", "THF_L", "NA", "CL"])
+        # test_gro_atom_count_matches_header (THF solute = 13 atoms per molecule)
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=13)
+        # test_top_molecules_section + test_registry_distinguishes_thf_h_thf_l:
+        # guest (THF_H/THF) AND solute (THF_L) both present with count parity
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes: 5 ITPs — tip4p-ice + thf_hydrate + etoh + thf_liquid + ion
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "thf_hydrate.itp", "etoh.itp", "thf_liquid.itp", "ion.itp"],
+        )
+        # test_guest_atom_count_positive (KNOWN LIMITATION): guest_nmolecules may be 0
+        # after passing through CustomMoleculeStructure (field doesn't exist on that
+        # type); guest_atom_count IS preserved, so we check that instead.
+        assert self.ion.guest_atom_count > 0, (
+            f"guest_atom_count should be > 0 (guest atoms are preserved), "
+            f"got {self.ion.guest_atom_count}"
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F2: Interface→Custom→Ion (3 ITPs, Bug 2+3 without solute atomtypes)
@@ -674,6 +921,29 @@ class TestChainF2GmxValidation:
                     f"Expected residue '{key}' in .gro for F2, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_1.py TestChainF2) ──
+        # test_gro_residue_ordering: SOL→etoh→NA→CL (no solutes — exact set also
+        # covers the source's negative "CH4_L not in residues" assert)
+        _assert_residue_ordering(gro_path, ["SOL", "etoh", "NA", "CL"])
+        # test_gro_atom_count_matches_header
+        _assert_atom_conservation(gro_path, self.ion)
+        # test_top_molecules_section: SOL/etoh/NA/CL count parity
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes: 3 ITPs, and NO solute or guest ITP (negative asserts)
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "etoh.itp", "ion.itp"],
+            forbidden=["ch4_liquid.itp", "ch4_hydrate.itp"],
+            exact_count=3,
+        )
+        # test_no_solute_attributes: F2 doesn't use solutes
+        assert self.ion.solute_type == "", (
+            f"solute_type should be empty, got '{self.ion.solute_type}'"
+        )
+        assert self.ion.solute_n_molecules == 0, (
+            f"solute_n_molecules should be 0, got {self.ion.solute_n_molecules}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
