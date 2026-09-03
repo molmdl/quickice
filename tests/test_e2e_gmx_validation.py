@@ -17,6 +17,19 @@ files tests/test_e2e_chain_export_1.py (F1-F4, 26 tests), test_e2e_chain_export_
 these grompp-backed chains (see the _assert_* helpers below) and the source files
 deleted — same asserts, strictly stronger validation (file asserts + grompp).
 
+48.3-19 consolidation batch B: the four single-structure writer files
+tests/test_e2e_ice_interface_export.py (16), test_e2e_custom_export.py (7),
+test_e2e_solute_export.py (15) and test_e2e_ion_export.py (20, holds the unique
+BUG I5 regression asserts) validated the SAME writer flows by file-parsing only
+(no grompp — P3). 48.3-19 ports their UNIQUE deep asserts into these
+grompp-backed chains (ice/interface/hydrate/custom/solute chains + F2/F6
+provenance + one new focused custom→solute grompp chain) and deletes the
+sources — same asserts, strictly stronger validation. Bundled-ITP
+existence/[moleculetype] checks were NOT ported: tests/test_e2e_itp_baseline.py
+already covers every bundled ITP, and staged ITPs are validated by
+_stage_itp_files + assert_itp_completeness + grompp failing on a missing or
+malformed ITP (same drop rationale as 48.3-15).
+
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
 
@@ -37,6 +50,7 @@ from quickice.output.gromacs_writer import (
     write_custom_molecule_top_file,
     write_solute_gro_file,
     write_solute_top_file,
+    get_hydrate_guest_residue_name,
 )
 from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 from quickice.phase_mapping.lookup import lookup_phase
@@ -250,6 +264,77 @@ def _assert_top_includes(top_path, expected, forbidden=(), exact_count=None):
         )
 
 
+# ── Ported deep-file asserts (48.3-19 consolidation batch B) ─────────────────
+# tests/test_e2e_ice_interface_export.py (16), tests/test_e2e_custom_export.py (7),
+# tests/test_e2e_solute_export.py (15) and tests/test_e2e_ion_export.py (20)
+# validated the single-structure writer flows by file-parsing only (no grompp —
+# P3). 48.3-19 ports their UNIQUE deep asserts into the grompp-backed chains below
+# and deletes the sources. Dropped as subsumed (no port needed):
+# - the per-chain test_itp_files_valid / test_*_itp_has_moleculetype bundled-ITP
+#   checks: tests/test_e2e_itp_baseline.py already covers every bundled ITP
+#   (existence + [moleculetype]), and staged ITPs are validated by
+#   _stage_itp_files + assert_itp_completeness + grompp (48.3-15 rationale).
+# - intra-file duplicates of the atom-count check (test_atom_conservation bodies
+#   that repeat test_gro_atom_count_matches_header arithmetic).
+# The BUG I5 regression asserts from ion_export were ported into the F6 chain
+# (Interface→Solute→Ion, the same Scenario 9 chain) with the original
+# "BUG I5" (space) spelling preserved so provenance greps match source history.
+
+
+def _assert_gro_header_matches_lines(gro_path):
+    """GRO header atom count == actual atom lines.
+
+    Ported from the 4 single-structure writer files' test_gro_atom_count_matches_header
+    (48.3-19): every writer-file test opened with this consistency check.
+    """
+    header_count = parse_gro_atom_count(gro_path)
+    residue_names = parse_gro_residue_names(gro_path)
+    assert header_count == len(residue_names), (
+        f"GRO header says {header_count} atoms but found {len(residue_names)} atom lines"
+    )
+
+
+def _assert_solute_positions_pbc_wrapped(gro_path):
+    """Solute atom positions must be within PBC box in GRO output.
+
+    Ported from test_e2e_solute_export.py::TestSoluteFromInterface
+    ::test_solute_positions_pbc_wrapped (deleted by 48.3-19).
+
+    Regression test for B NEW-01/11: write_solute_gro_file did not
+    PBC-wrap solute_structure.positions, producing invalid GRO files.
+    Solute positions are a SEPARATE array from interface.positions,
+    so wrap_molecules_into_box does NOT cover them.
+    """
+    with open(gro_path) as f:
+        lines = f.readlines()
+
+    # Skip title (line 0), atom count (line 1), and box (last line)
+    atom_lines = lines[2:-1]
+
+    # Extract box dimensions from last line
+    box_line = lines[-1].strip().split()
+    box_x, box_y, box_z = float(box_line[0]), float(box_line[1]), float(box_line[2])
+
+    # Find solute atoms (CH4_L or THF_L residue)
+    solute_positions = []
+    for line in atom_lines:
+        res_name = line[5:10].strip()
+        if res_name in ("CH4_L", "THF_L", "CH4_P"):
+            x = float(line[20:28])
+            y = float(line[28:36])
+            z = float(line[36:44])
+            solute_positions.append((x, y, z))
+
+    assert len(solute_positions) > 0, "No solute atoms found in GRO output"
+
+    # All solute positions must be within [0, box_dim + 0.01)
+    tolerance = 0.01  # nm — float precision tolerance at boundaries
+    for x, y, z in solute_positions:
+        assert -tolerance <= x < box_x + tolerance, f"Solute x={x} outside PBC [0, {box_x})"
+        assert -tolerance <= y < box_y + tolerance, f"Solute y={y} outside PBC [0, {box_y})"
+        assert -tolerance <= z < box_z + tolerance, f"Solute z={z} outside PBC [0, {box_z})"
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Ice Candidate (inline [moleculetype], no ITPs needed)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -323,6 +408,39 @@ class TestIceCandidateGmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-19: tests/test_e2e_ice_interface_export.py
+        # TestIceCandidateExport) ──
+        # test_gro_only_sol_residues: ice candidate GRO has ONLY SOL residues
+        assert unique_residues == {"SOL"}, (
+            f"Ice candidate GRO should have only SOL residues, got {unique_residues}"
+        )
+        # test_gro_atom_count_matches_header + test_atom_conservation:
+        # header == lines == nmolecules * 4 (TIP4P-ICE 3→4 expansion: OW, HW1,
+        # HW2, MW virtual site)
+        _assert_gro_header_matches_lines(gro_path)
+        header_count = parse_gro_atom_count(gro_path)
+        assert header_count == candidate.nmolecules * 4, (
+            f"Expected {candidate.nmolecules * 4} atoms "
+            f"(nmolecules={candidate.nmolecules} * 4), got {header_count}"
+        )
+        # test_top_molecules_section: [molecules] SOL == nmolecules
+        assert molecules["SOL"] == candidate.nmolecules, (
+            f"Expected SOL count {candidate.nmolecules}, got {molecules['SOL']}"
+        )
+        # test_top_has_moleculetype_inline: write_top_file writes the SOL
+        # molecule definition INLINE (no #include directives) and never
+        # references a hydrate ITP for plain ice
+        with open(top_path) as f:
+            top_content = f.read()
+        assert "[ moleculetype ]" in top_content, (
+            "Ice TOP should have [ moleculetype ] section inline"
+        )
+        guest_refs = [line for line in top_content.split('\n')
+                      if 'hydrate' in line.lower() and '#include' in line]
+        assert len(guest_refs) == 0, (
+            f"Ice candidate should not reference hydrate ITPs, got {guest_refs}"
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Interface (requires tip4p-ice.itp)
@@ -391,6 +509,41 @@ class TestInterfaceGmxValidation:
                     f"Expected residue '{key}' in .gro for interface, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-19: tests/test_e2e_ice_interface_export.py
+        # TestInterfaceExport — interface WITHOUT guests) ──
+        # test_gro_only_sol_residues: interface (no guests) GRO has ONLY SOL
+        # residues (ice + water both SOL)
+        assert unique_residues == {"SOL"}, (
+            f"Interface (no guests) GRO should have only SOL residues, "
+            f"got {unique_residues}"
+        )
+        # test_gro_atom_count_matches_header: header == lines ==
+        # ice*4 + water*4 (ice uses TIP4P-ICE 3→4 expansion, water already 4)
+        _assert_gro_header_matches_lines(gro_path)
+        header_count = parse_gro_atom_count(gro_path)
+        assert header_count == (
+            interface_slab.ice_nmolecules * 4 + interface_slab.water_nmolecules * 4
+        ), (
+            f"Expected {interface_slab.ice_nmolecules * 4 + interface_slab.water_nmolecules * 4} atoms "
+            f"(ice={interface_slab.ice_nmolecules}*4 + "
+            f"water={interface_slab.water_nmolecules}*4), got {header_count}"
+        )
+        # test_top_molecules_section: combined SOL count for ice + water
+        expected_sol = interface_slab.ice_nmolecules + interface_slab.water_nmolecules
+        assert molecules["SOL"] == expected_sol, (
+            f"Expected SOL count {expected_sol} "
+            f"(ice={interface_slab.ice_nmolecules} + "
+            f"water={interface_slab.water_nmolecules}), got {molecules['SOL']}"
+        )
+        # test_top_includes_tip4p_ice_only: only tip4p-ice.itp (no guest ITP
+        # for non-hydrate interface)
+        includes = parse_top_includes(top_path)
+        assert "tip4p-ice.itp" in includes, "Should include tip4p-ice.itp"
+        guest_itps = [inc for inc in includes if "hydrate" in inc]
+        assert len(guest_itps) == 0, (
+            f"Interface without guests should not include hydrate ITPs, got {guest_itps}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1555,6 +1708,40 @@ class TestHydrateGmxValidation:
         residue_names = parse_gro_residue_names(gro_path)
         assert "SOL" in set(residue_names)
 
+        # ── Ported deep asserts (48.3-19: tests/test_e2e_ice_interface_export.py
+        # TestInterfaceHydrateExport — interface writer WITH hydrate guests) ──
+        # test_gro_sol_before_guest_residues + test_no_sol_guest_interleaving:
+        # SOL before guest residues, no interleaving (after any guest residue
+        # type appears, no SOL may follow)
+        unique_names = set(residue_names)
+        guest_names = unique_names - {"SOL"}
+        assert len(guest_names) > 0, (
+            f"Hydrate interface should have guest residues, got only {unique_names}"
+        )
+        expected_order = ["SOL"] + sorted(guest_names)
+        assert_gro_residue_ordering(residue_names, expected_order)
+        # test_gro_atom_count_matches_header
+        _assert_gro_header_matches_lines(gro_path)
+        # test_top_molecules_section: SOL == ice+water and guest count ==
+        # guest_nmolecules (guest residue name from the hydrate ITP — CH4_H)
+        expected_sol = self.iface.ice_nmolecules + self.iface.water_nmolecules
+        assert molecules["SOL"] == expected_sol, (
+            f"Expected SOL count {expected_sol}, got {molecules['SOL']}"
+        )
+        guest_res_name = get_hydrate_guest_residue_name("ch4")
+        assert guest_res_name in molecules, (
+            f"Expected guest molecule '{guest_res_name}' in [molecules], "
+            f"got {list(molecules.keys())}"
+        )
+        assert molecules[guest_res_name] == self.iface.guest_nmolecules, (
+            f"Expected {guest_res_name} count {self.iface.guest_nmolecules}, "
+            f"got {molecules[guest_res_name]}"
+        )
+        # test_top_includes_hydrate_itp: tip4p-ice.itp + ch4_hydrate.itp
+        includes = parse_top_includes(top_path)
+        assert "tip4p-ice.itp" in includes, "Should include tip4p-ice.itp"
+        assert "ch4_hydrate.itp" in includes, "Should include ch4_hydrate.itp for CH4 guests"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Custom molecule-only (Interface→Custom, no Solute/Ion steps)
@@ -1587,6 +1774,48 @@ class TestCustomMoleculeGmxValidation:
         assert exit_code == 0, f"gmx grompp failed for custom-only:\n{stderr[-500:]}"
         molecules = parse_top_molecules(top_path)
         assert "SOL" in molecules
+
+        # ── Ported deep asserts (48.3-19: tests/test_e2e_custom_export.py
+        # TestCustomMoleculeExport) ──
+        # test_gro_sol_before_custom_residues: SOL before the custom molecule
+        # residue with no interleaving; the .gro residue IS the ITP
+        # moleculetype name "etoh" (48.3-02 D1), matching [molecules] strictly
+        mol_name = self.custom.moleculetype_name
+        _assert_residue_ordering(gro_path, ["SOL", mol_name])
+        # test_gro_atom_count_matches_header + test_atom_conservation:
+        # header == molecule_index arithmetic (ice 3→4 expansion, water as-is)
+        # + custom_molecule_atom_count
+        _assert_gro_header_matches_lines(gro_path)
+        header_count = parse_gro_atom_count(gro_path)
+        sol_atoms = sum(
+            4 if m.mol_type == "ice" else m.count
+            for m in self.custom.molecule_index if m.mol_type in ("ice", "water")
+        )
+        expected = sol_atoms + self.custom.custom_molecule_atom_count
+        assert header_count == expected, (
+            f"Expected {expected} atoms (sol={sol_atoms} + "
+            f"custom={self.custom.custom_molecule_atom_count}), got {header_count}"
+        )
+        # test_top_molecules_section: SOL == ice+water index entries and the
+        # custom molecule count under the ITP moleculetype name
+        sol_count = sum(
+            1 for m in self.custom.molecule_index if m.mol_type in ("ice", "water")
+        )
+        assert molecules["SOL"] == sol_count, (
+            f"Expected SOL count {sol_count}, got {molecules['SOL']}"
+        )
+        assert molecules[mol_name] == self.custom.custom_molecule_count, (
+            f"Expected {mol_name} count {self.custom.custom_molecule_count}, "
+            f"got {molecules[mol_name]}"
+        )
+        # test_top_includes_tip4p_ice_and_custom_itp: tip4p-ice.itp + the
+        # custom ITP under its ORIGINAL filename
+        includes = parse_top_includes(top_path)
+        assert "tip4p-ice.itp" in includes, "Should include tip4p-ice.itp"
+        custom_itp_name = self.custom.itp_path.name
+        assert custom_itp_name in includes, (
+            f"Should include {custom_itp_name}, got {includes}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
