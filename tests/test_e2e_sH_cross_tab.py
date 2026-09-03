@@ -4,6 +4,22 @@ Plan 45-06 (Wave 2). Proves that sH (triclinic-but-allowed, ~4480 guests
 through the 3x3x8 nm slab) passes ``gmx grompp`` (rc=0) through the FULL GUI
 + CLI tab chain.
 
+Absorbs tests/test_e2e_sH_interface_export.py (45-03; deleted by 48.3-17):
+its 2 interface-only tests were strict subsets of this file's GUI interface
+leg + CLI interface branch (identical ``InterfaceGROMACSExporter`` /
+``_run_export_step`` call sites, identical deterministic seed=42 fixture
+construction, and ``_assert_sH_export`` is a strict superset of the old
+``_assert_sH_interface_export`` -- it adds the staged-ITP content checks).
+This file therefore now ALSO covers the interface export for sH (previously
+split across two files) -- one less redundant sH GenIce2 chain (~10s saved
+per e2e run). The sH_chain sibling-fixture cluster is resolved: this file
+is the single consumer left.
+
+sH specifics (ported from the absorbed 45-03 file): the sH medium
+cage_type_map key "12_1" (fixed in 42-00) is routed -- all 3 cage types
+(small+medium+large) produce guests. Without the 42-00 fix, medium cages
+would be unreachable (0 medium guests).
+
 Purpose: sH is separated from the fast lattices (45-04/05, which cover
 sII/c2te/ice1hte/16) because it is SLOW -- the sH unit cell is small, so the
 3x3x8 nm slab tiles it many times, producing ~4480 cage guests + ~50k
@@ -196,8 +212,18 @@ def sH_chain():
 
     # sH produces a LARGE guest count (~4480 through the 3x3x8 slab) -- do
     # NOT assert exact count (version-dependent); assert > 0 only (Pitfall 5).
+    # Provenance (ported from the absorbed tests/test_e2e_sH_interface_export
+    # .py, 45-03): sH is a guest lattice (not water-only) -- the slab MUST
+    # have cage guests. sH has 3 cage types (small + medium + large), all
+    # routed; the medium cage_type_map key "12_1" was fixed in 42-00 (before
+    # that fix, medium cages were unreachable -> 0 medium guests). Do NOT
+    # assert the exact count -- version-dependent (Pitfall 5: ~4480 guests
+    # through the 3x3x8 slab).
     assert iface.guest_nmolecules > 0, (
-        "sH interface slab should have built-in ch4 cage guests"
+        "sH interface slab should have cage guests (small+medium+large all "
+        "routed) -- guest_nmolecules == 0 indicates the medium cage_type_map "
+        "key '12_1' (42-00 fix) regressed or the water-only skip fired "
+        "erroneously"
     )
     assert iface_solute.guest_nmolecules > 0, (
         "sH solute-source slab should have built-in ch4 cage guests"
