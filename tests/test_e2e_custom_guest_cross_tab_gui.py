@@ -477,7 +477,8 @@ def test_custom_guest_gui_full_chain_grompp(
 # -- the GUI hydrate-tab export writers used by ``quickice/gui/hydrate_export
 # .py``) which NO cross-tab/builtin file touches, with a legacy single-dict
 # ``custom_guest_info`` (the deprecated-wrap contract; list-form + registry is
-# covered by test_e2e_mixed_cage_occupancy.py's mixed grompp test).
+# covered by test_e2e_custom_guest_mixed_cage.py's mixed grompp test --
+# re-homed from test_e2e_mixed_cage_occupancy.py by 48.3-17).
 # ══════════════════════════════════════════════════════════════════════════════
 
 

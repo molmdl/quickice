@@ -47,23 +47,40 @@ asserts GROMACS consistency:
 A single-custom-ethanol regression guard verifies the fix does not break the
 previously-working single-custom path (only MOL_H, no CH4_H, byte-identical).
 The mixed-built-in CH4+THF path is covered by ``test_e2e_mixed_ion_export.py``.
+
+Also hosts the mixed-occupancy GUI multi-molecule writers grompp test
+(``test_mixed_gui_grompp_passes``, 42-05 MIXED-04 provenance) ported from
+tests/test_e2e_mixed_cage_occupancy.py by 48.3-17 (that file was renamed to
+tests/test_hydrate_mixed_placement.py for its 4 GenIce2 placement siblings) --
+same concern: mixed cage export + grompp (list-form ``custom_guest_info`` +
+registry writers-direct path, no GenIce2).
 """
 
 import shutil
 from collections import Counter, defaultdict
+from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from tests.conftest import gmx_skipif  # noqa: E402
+from quickice.output.gromacs_writer import (  # noqa: E402
+    write_multi_molecule_gro_file,
+    write_multi_molecule_top_file,
+)
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
 )
 from quickice.structure_generation.modes.slab import assemble_slab  # noqa: E402
+from quickice.structure_generation.moleculetype_registry import (  # noqa: E402
+    MoleculetypeRegistry,
+)
 from quickice.structure_generation.types import (  # noqa: E402
     CageGuestAssignment,
     HydrateConfig,
     InterfaceConfig,
+    MoleculeIndex,
 )
 from quickice.gui.export import IonGROMACSExporter  # noqa: E402
 from tests.e2e_export_helpers import (  # noqa: E402
@@ -72,8 +89,13 @@ from tests.e2e_export_helpers import (  # noqa: E402
     MDP_PATH,
     _insert_ions,
     _insert_solutes,
+    _stage_custom_guest_itp,
+    _stage_itp_files,
+    assert_gro_top_consistent,
+    assert_itp_completeness,
     parse_gro_residue_names,
     parse_top_includes,
+    parse_top_molecules,
     run_gmx_grompp,
 )
 
@@ -473,3 +495,160 @@ def test_single_custom_ethanol_no_builtin_still_only_mol_h(tmp_path_factory):
     shutil.copy(MDP_PATH, tmp / "em.mdp")
     rc, stderr = run_gmx_grompp(tmp, gro_file="ions.gro", top_file="ions.top")
     assert rc == 0, f"single-custom grompp failed:\n{stderr}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 42-05: GUI mixed-guest grompp e2e (MIXED-04, GUI path)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Ported verbatim from tests/test_e2e_mixed_cage_occupancy.py by 48.3-17
+# (that file was renamed to tests/test_hydrate_mixed_placement.py for its 4
+# GenIce2 placement siblings; this writers-direct grompp test shares THIS
+# file's concern: mixed cage export + grompp).
+#
+# Proves ``gmx grompp`` exits 0 on a mixed hydrate (built-in CH4 + custom
+# ethanol) exported via the GUI multi-molecule writers
+# (``write_multi_molecule_gro_file`` + ``write_multi_molecule_top_file`` with a
+# ``custom_guest_info`` LIST + ``MoleculetypeRegistry``), with ITPs staged via
+# ``_stage_itp_files`` + ``_stage_custom_guest_itp``.  Closes MIXED-04 for the
+# GUI path (the CLI half is plan 42-07).
+#
+# Pattern: synthetic 2-water + 1-CH4 + 1-ethanol system (22 atoms, no GenIce2,
+# <1s) → write_multi_molecule_* (custom_guest_info list + registry) → stage
+# ITPs → assert_itp_completeness + assert_gro_top_consistent → run_gmx_grompp
+# (exit 0).  Mirrors the 41-10 single-custom-guest pattern, extended to mixed
+# occupancy (built-in CH4 via registry + custom ethanol via custom_guest_info
+# fire in the SAME .gro/.top).
+
+
+@gmx_skipif
+def test_mixed_gui_grompp_passes(tmp_path):
+    """gmx grompp exits 0 on a mixed hydrate (CH4 + custom ethanol) exported
+    via the GUI multi-molecule writers (write_multi_molecule_gro_file +
+    write_multi_molecule_top_file with a custom_guest_info LIST + registry).
+
+    Builds a tiny synthetic 2-water + 1-CH4 + 1-ethanol system IN MEMORY
+    (no GenIce2 — fast, deterministic): 8 water atoms + 5 CH4 atoms + 9
+    ethanol atoms = 22 atoms.  Stages tip4p-ice.itp + ch4_hydrate.itp +
+    the transformed etoh.itp (moleculetype MOL_H), then runs gmx grompp.
+
+    The built-in CH4 resolves via the registry (hydrate_CH4 -> "CH4_H"); the
+    custom ethanol resolves via custom_guest_info (etoh_mix -> "MOL_H").
+    Both fire in the SAME .gro/.top — the defining property of mixed cage
+    occupancy (MIXED-04, GUI path).
+    """
+    # Synthetic 2-water + 1-CH4 + 1-ethanol system (22 atoms total).
+    # molecule_index start indices (per plan, "adjust start indices
+    # carefully — water 0-7, ch4 8-12, etoh 13-21"):
+    #   water 1: atoms 0-3   (start=0,  count=4)
+    #   water 2: atoms 4-7   (start=4,  count=4)
+    #   CH4:     atoms 8-12  (start=8,  count=5)
+    #   ethanol: atoms 13-21 (start=13, count=9)
+    positions = np.zeros((22, 3))
+    # Water (8 atoms: 2 × OW,HW1,HW2,MW)
+    for i in range(8):
+        positions[i] = [0.01 * (i + 1), 0.01 * (i + 1), 0.01 * (i + 1)]
+    # CH4 (5 atoms: C,H,H,H,H) — built-in, handled by registry
+    for i in range(5):
+        positions[8 + i] = [0.1 + 0.01 * i, 0.1, 0.1]
+    # Ethanol (9 atoms: H,C,H,H,C,H,H,O,H) — custom, handled by custom_guest_info
+    for i in range(9):
+        positions[13 + i] = [0.2 + 0.01 * i, 0.2, 0.2]
+
+    atom_names = [
+        # water mol 1
+        "OW", "HW1", "HW2", "MW",
+        # water mol 2
+        "OW", "HW1", "HW2", "MW",
+        # CH4 guest (built-in)
+        "C", "H", "H", "H", "H",
+        # ethanol guest (custom, matches etoh.itp [ atoms ] order)
+        "H", "C", "H", "H", "C", "H", "H", "O", "H",
+    ]
+
+    # Box must exceed 2*cutoff (rcoulomb=rvdw=1.0 nm in em.mdp); 3.0 nm gives a
+    # comfortable margin (STATE [41-10] lesson: grompp rejects box exactly at
+    # 2*cutoff; cutoff 1.0 nm < half the shortest box vector must be strict).
+    cell = np.eye(3) * 3.0
+
+    molecule_index = [
+        MoleculeIndex(0, 4, "water"),
+        MoleculeIndex(4, 4, "water"),
+        MoleculeIndex(8, 5, "ch4"),        # built-in -> registry -> "CH4_H"
+        MoleculeIndex(13, 9, "etoh_mix"),  # custom -> custom_guest_info -> "MOL_H"
+    ]
+
+    # Registry with the built-in CH4 registered (hydrate_CH4 -> "CH4_H").
+    registry = MoleculetypeRegistry()
+    registry.register_hydrate_guest("CH4")
+
+    # custom_guest_info LIST (Phase 42 API): one entry per custom guest.
+    # ch4 is built-in so NOT in the list — the registry handles it.
+    custom_guest_info = [
+        {
+            "mol_type": "etoh_mix",
+            "residue_name": "MOL_H",
+            "itp_path": Path(ETOH_ITP),
+        }
+    ]
+    # itp_files maps mol_type -> itp filename so the writer emits the correct
+    # #include for each guest (ch4 -> ch4_hydrate.itp, etoh_mix -> etoh.itp).
+    itp_files = {
+        "ch4": "ch4_hydrate.itp",
+        "etoh_mix": "etoh.itp",
+    }
+
+    ws = tmp_path
+    gro = ws / "hydrate.gro"
+    top = ws / "hydrate.top"
+    write_multi_molecule_gro_file(
+        positions,
+        molecule_index,
+        cell,
+        str(gro),
+        "mixed guest hydrate",
+        atom_names=atom_names,
+        registry=registry,
+        custom_guest_info=custom_guest_info,
+    )
+    write_multi_molecule_top_file(
+        molecule_index,
+        str(top),
+        "mixed guest hydrate",
+        itp_files=itp_files,
+        registry=registry,
+        custom_guest_info=custom_guest_info,
+    )
+
+    # Stage MDP + ITPs (repo convention: writers don't copy ITPs; staging does).
+    # _stage_itp_files stages tip4p-ice.itp + ch4_hydrate.itp + etoh.itp
+    # (etoh under-transformed: moleculetype 'etoh', atomtypes commented out).
+    # _stage_custom_guest_itp overwrites etoh.itp with the fully-transformed
+    # copy (moleculetype 'MOL_H', [atoms] resname 'MOL_H') — the prerequisite
+    # for gmx grompp to succeed.
+    shutil.copy(MDP_PATH, ws / "em.mdp")
+    _stage_itp_files(str(top), ws)
+    _stage_custom_guest_itp(ws, Path(ETOH_ITP), "MOL")
+
+    # All #include'd ITPs present in the workspace.
+    assert_itp_completeness(str(top), ws)
+    # GRO residues <-> TOP [molecules] cross-check.
+    assert_gro_top_consistent(str(gro), str(top))
+
+    # Run gmx grompp — must exit 0 (topology is self-consistent + simulation-ready).
+    exit_code, stderr = run_gmx_grompp(
+        ws, gro_file="hydrate.gro", top_file="hydrate.top"
+    )
+    assert exit_code == 0, f"gmx grompp failed (mixed GUI):\n{stderr}"
+
+    # .top [molecules] lists SOL + CH4_H + MOL_H (the mixed-occupancy signature).
+    mols = parse_top_molecules(str(top))
+    assert "SOL" in mols and "CH4_H" in mols and "MOL_H" in mols, (
+        f"expected SOL + CH4_H + MOL_H in [molecules], got {mols}"
+    )
+
+    # .gro residues contain SOL + CH4_H + MOL_H.
+    gro_res = set(parse_gro_residue_names(str(gro)))
+    assert {"SOL", "CH4_H", "MOL_H"}.issubset(gro_res), (
+        f"expected SOL + CH4_H + MOL_H in .gro residues, got {gro_res}"
+    )
