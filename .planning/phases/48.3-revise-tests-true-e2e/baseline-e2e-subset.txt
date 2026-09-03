@@ -1,0 +1,14 @@
+# Baseline: e2e subset gate (GATE-SUBSET) — captured 2026-09-03, phase 48.3 plan 01
+# Command (from project root, conda env quickice):
+#   QT_QPA_PLATFORM=offscreen python -m pytest tests/test_e2e_*.py tests/test_gro_top_byte_equivalence.py -q
+# Files matched: 44 test_e2e_*.py + tests/test_gro_top_byte_equivalence.py (45 files total)
+# gmx: /data/nglokwan/ompi_plumed-gmx/plumed-gromacs2023.5-gpu/bin/gmx (2023.5)
+
+Elapsed wall time (shell): 71s
+
+--- tail of pytest output ---
+  /share/home/nglokwan/miniconda3/envs/quickice/lib/python3.14/site-packages/genice2/genice.py:639: DeprecationWarning: The 'warn' method is deprecated, use 'warning' instead
+    logger.warn("Use of 'cages' in a lattice-plugin is deprecated.")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+414 passed, 13 warnings in 69.41s (0:01:09)
