@@ -387,7 +387,7 @@ Plans:
 - [ ] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
 - [ ] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
 - [ ] 48.3-05-PLAN.md — G3: mixed CH4+THF interface export regression (b278a9ed) GUI + CLI
-- [ ] 48.3-06-PLAN.md — Convert 54 sys.path hacks → package-absolute imports (pre-move enabler)
+- [x] 48.3-06-PLAN.md — Convert 54 sys.path hacks → package-absolute imports (pre-move enabler)
 - [ ] 48.3-07-PLAN.md — CLI: grompp-validate existing subprocess workflows + GAP-8 follow-through
 - [ ] 48.3-08-PLAN.md — CLI Tier-A subprocess prefix matrix (custom step, CSV, concentration, auto-chain, hydrate prefixes, ice-only)
 - [ ] 48.3-09-PLAN.md — CLI Tier-B step-wiring chain (sequential _run_*_step + per-step grompp)
