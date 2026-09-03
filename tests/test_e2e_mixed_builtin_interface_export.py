@@ -75,6 +75,7 @@ from tests.e2e_export_helpers import (
     parse_top_molecules,
     run_gmx_grompp,
 )
+from quickice.cli.pipeline import CLIPipeline  # noqa: E402
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
 )
@@ -211,4 +212,202 @@ def test_mixed_slab_fixture_has_both_builtin_guest_types(
     assert shortest >= 3.0, (
         f"slab box shortest vector {shortest} nm < 3.0 nm — grompp would "
         f"fatal-error with 'cut-off longer than half the shortest box vector'"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Task 2: shared mixed-export assertions + GUI leg + CLI leg
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _parse_top_molecule_runs(top_path):
+    """Return ordered ``[(molname, count), ...]`` from .top ``[ molecules ]``.
+
+    ``parse_top_molecules`` collapses repeated runs by overwrite (last wins),
+    but the mixed interface .top run-length encodes the guest region TWICE
+    (bottom + top guest layers: CH4_H, THF_H, CH4_H, THF_H) — molecule totals
+    need the ordered runs. Mirrors tests/test_e2e_custom_guest_mixed_cage_
+    interface.py:_parse_top_molecules_runs.
+    """
+    runs = []
+    in_mol = False
+    for line in Path(top_path).read_text().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("["):
+            in_mol = stripped == "[ molecules ]"
+            continue
+        if in_mol and stripped and not stripped.startswith(";") \
+                and not stripped.startswith("#"):
+            parts = stripped.split()
+            runs.append((parts[0], int(parts[1])))
+    return runs
+
+
+def _assert_mixed_builtin_export(gro_path, top_path, ws):
+    """Assert the b278a9ed mixed built-in interface-export contract.
+
+    BOTH legs (GUI exporter + CLI interface branch) must produce:
+      1. .top ``[ molecules ]`` declaring BOTH CH4_H and THF_H (with the sII
+         small:large 16:8 = 2:1 molecule ratio — mislabeling/stride bugs
+         break the ratio or drop THF_H entirely);
+      2. BOTH ``ch4_hydrate.itp`` + ``thf_hydrate.itp`` ``#include``d AND
+         staged in the export directory (the CLI-leg staging gap class);
+      3. .gro residues containing BOTH CH4_H + THF_H (the pre-b278a9ed
+         single-detect pass mislabeled ALL guests CH4_H — asserting BOTH
+         names catches that class at the file level, no grompp needed);
+      4. ``assert_itp_completeness`` + ``assert_gro_top_consistent`` passing
+         (always — file-level, grompp-independent);
+      5. ``gmx grompp`` rc == 0 (only when gmx is on PATH — established
+         convention; file asserts above run regardless).
+    """
+    # 1) .top [molecules]: BOTH CH4_H + THF_H declared, no garbage names.
+    mols = parse_top_molecules(str(top_path))
+    assert "CH4_H" in mols, (
+        f"CH4_H missing from .top [molecules]: {mols}"
+    )
+    assert "THF_H" in mols, (
+        f"THF_H missing from .top [molecules] — b278a9ed single-detect "
+        f"mislabeling class (ALL guests labeled CH4_H): {mols}"
+    )
+    assert "GUE" not in mols and "UNK" not in mols, (
+        f"garbage resname in .top [molecules]: {mols}"
+    )
+    runs = _parse_top_molecule_runs(top_path)
+    n_ch4 = sum(count for name, count in runs if name == "CH4_H")
+    n_thf = sum(count for name, count in runs if name == "THF_H")
+    assert n_ch4 > 0 and n_thf > 0, (
+        f"both guest types must have nonzero molecule totals, got "
+        f"CH4_H={n_ch4} THF_H={n_thf} from runs={runs}"
+    )
+    assert n_ch4 == 2 * n_thf, (
+        f"CH4:THF molecule ratio {n_ch4}:{n_thf} != 2:1 (sII small:large "
+        f"cage ratio 16:8) — stride/mislabeling bug class"
+    )
+
+    # 2) BOTH ITPs #included + staged (the CLI-leg gap: .top referenced the
+    #    ITPs but the CLI staging copied neither).
+    includes = parse_top_includes(str(top_path))
+    assert "ch4_hydrate.itp" in includes, (
+        f".top must #include ch4_hydrate.itp (built-in CH4_H), got {includes}"
+    )
+    assert "thf_hydrate.itp" in includes, (
+        f".top must #include thf_hydrate.itp (built-in THF_H), got {includes}"
+    )
+    assert (ws / "ch4_hydrate.itp").exists(), (
+        "ch4_hydrate.itp not staged in the export directory"
+    )
+    assert (ws / "thf_hydrate.itp").exists(), (
+        "thf_hydrate.itp not staged in the export directory — b278a9ed "
+        "staging gap class (single-type detection stages neither ITP)"
+    )
+    assert (ws / "tip4p-ice.itp").exists(), (
+        "tip4p-ice.itp (water ITP) not staged in the export directory"
+    )
+
+    # 3) .gro residues contain BOTH guest names (mislabeling class).
+    gro_res = set(parse_gro_residue_names(str(gro_path)))
+    assert "CH4_H" in gro_res, (
+        f"CH4_H missing from .gro residues: {sorted(gro_res)}"
+    )
+    assert "THF_H" in gro_res, (
+        f"THF_H missing from .gro residues — b278a9ed single-detect "
+        f"mislabeling class (ALL guests labeled CH4_H): {sorted(gro_res)}"
+    )
+    assert "GUE" not in gro_res, (
+        f"garbage residue name GUE in .gro: {sorted(gro_res)}"
+    )
+
+    # 4) File-level consistency (always — catches the bug class without
+    #    grompp: missing ITPs, GRO/TOP residue-name mismatch, atom-count
+    #    header mismatch).
+    assert_itp_completeness(str(top_path), ws)
+    assert_gro_top_consistent(str(gro_path), str(top_path))
+
+    # 5) grompp (only when gmx is on PATH — file asserts above run regardless).
+    if shutil.which("gmx"):
+        shutil.copy(MDP_PATH, ws / "em.mdp")
+        rc, stderr = run_gmx_grompp(
+            ws,
+            gro_file=Path(gro_path).name,
+            top_file=Path(top_path).name,
+        )
+        assert rc == 0, (
+            f"gmx grompp failed on mixed built-in CH4+THF interface export "
+            f"({Path(gro_path).name}):\n{stderr}"
+        )
+
+
+@gmx_skipif
+def test_mixed_interface_gui_export_declares_both_guests_grompp(
+    tmp_path, mixed_builtin_sii_hydrate
+):
+    """GUI leg: mixed built-in CH4+THF slab through InterfaceGROMACSExporter
+    (the INTERFACE tab path) declares BOTH guest types + grompp rc 0.
+
+    Mirrors the real UAT flow (main_window.py:1795-1797 passes the hydrate
+    config): ``QFileDialog.getSaveFileName`` patched in the USING module's
+    namespace (``quickice.gui.export`` — Pattern B) + ``QMessageBox`` patched
+    to suppress error dialogs. ``hydrate_config=None`` would NOT exercise the
+    mixed path (the config's ``cage_guest_assignments`` is the authoritative
+    built-in staging source post-b278a9ed) — the real config is passed.
+    """
+    ws = tmp_path / "gui_leg"
+    ws.mkdir()
+    gro_path = ws / "iface_gui.gro"
+    # The exporter derives: top = path.with_name(path.stem + '.top')
+    top_path = ws / "iface_gui.top"
+
+    iface = _fresh_mixed_slab(mixed_builtin_sii_hydrate.hydrate)
+
+    # Lazy import: keeps PySide6 out of the module-top import path (AGENTS.md).
+    from quickice.gui.export import InterfaceGROMACSExporter
+
+    with patch(
+        "quickice.gui.export.QFileDialog.getSaveFileName",
+        return_value=(str(gro_path), "GRO Files (*.gro)"),
+    ), patch("quickice.gui.export.QMessageBox"):
+        exporter = InterfaceGROMACSExporter(parent_widget=None)
+        ok = exporter.export_interface_gromacs(
+            iface, hydrate_config=mixed_builtin_sii_hydrate.config
+        )
+        assert ok is True, (
+            "InterfaceGROMACSExporter.export_interface_gromacs returned "
+            "False — QFileDialog mock may not have been picked up, or "
+            "staging raised"
+        )
+
+    _assert_mixed_builtin_export(gro_path, top_path, ws)
+
+
+@gmx_skipif
+def test_mixed_interface_cli_branch_declares_both_guests_grompp(
+    tmp_path, mixed_builtin_sii_hydrate
+):
+    """CLI leg: mixed built-in CH4+THF slab through the CLIPipeline
+    ``_run_export_step`` interface branch declares BOTH guest types +
+    grompp rc 0 (Pattern 4 — tests/test_e2e_custom_guest_cross_tab_cli.py).
+
+    ``_hydrate_result`` carries ``.config`` (the real CLI flow: the source
+    step persists it and ``_run_export_step`` reads
+    ``self._hydrate_result.config`` for guest ITP staging). This is the leg
+    that exposed the 48.3-05 staging gap: pre-fix, the CLI staged NEITHER
+    guest ITP (``_detect_guest_type`` returned None for the mixed slab) while
+    the .top ``#include``d both -> grompp "File not found".
+    """
+    ws = tmp_path / "cli_leg"
+    ws.mkdir()  # _run_export_step does NOT create the dir (Pattern 4 note)
+
+    iface = _fresh_mixed_slab(mixed_builtin_sii_hydrate.hydrate)
+
+    pipe = CLIPipeline(args=SimpleNamespace())
+    pipe._output_dir = ws
+    pipe._hydrate_result = mixed_builtin_sii_hydrate.hydrate  # carries .config
+    pipe._interface_result = iface
+    code = pipe._run_export_step()
+    assert code == 0, (
+        "_run_export_step should succeed for the interface branch"
+    )
+
+    _assert_mixed_builtin_export(
+        ws / "interface.gro", ws / "interface.top", ws
     )
