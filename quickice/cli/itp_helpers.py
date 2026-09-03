@@ -355,16 +355,44 @@ def copy_itp_files_for_structure(
                     )
                     if itp_name:
                         copied.append(itp_name)
-        # Interface step: tip4p-ice.itp + guest ITP if guests present
+        # Interface step: tip4p-ice.itp + guest ITP(s) if guests present.
         guest_atom_count = getattr(structure, "guest_atom_count", 0)
         if guest_atom_count > 0:
-            guest_type = _detect_guest_type(structure)
-            if guest_type is not None:
-                itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
-                if itp_name:
-                    copied.append(itp_name)
+            # 48.3-05 (b278a9ed follow-up): MIXED built-in cage assignments
+            # (CH4 in small cages + THF in large cages) must stage EVERY
+            # distinct built-in {type}_hydrate.itp. The single-type
+            # _detect_guest_type heuristic below returns None for mixed
+            # interface slabs (slab builders leave molecule_index empty, and
+            # the average atoms/guest falls BETWEEN the ch4=5 and thf=13
+            # thresholds — e.g. 9936/1296 = 7.67 for 2:1 CH4:THF), so nothing
+            # was staged while write_interface_top_file (b278a9ed) #includes
+            # BOTH ch4_hydrate.itp and thf_hydrate.itp -> grompp fatal
+            # "File not found". The hydrate config's cage_guest_assignments
+            # is the authoritative source of which built-in types are
+            # present (mirrors guest_info._stage_hydrate_guest_itps,
+            # b278a9ed); structure-based single-type detection is kept ONLY
+            # as the fallback for config-less runs (cross-tab flows).
+            builtin_types: list[str] = []
+            if hydrate_config is not None:
+                for assignment in (
+                    getattr(hydrate_config, "cage_guest_assignments", {}) or {}
+                ).values():
+                    if not getattr(assignment, "is_custom_guest", False):
+                        if assignment.guest_type not in builtin_types:
+                            builtin_types.append(assignment.guest_type)
+            if builtin_types:
+                for guest_type in builtin_types:
+                    itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
+                    if itp_name:
+                        copied.append(itp_name)
             else:
-                logger.warning("Interface has guests but type could not be detected")
+                guest_type = _detect_guest_type(structure)
+                if guest_type is not None:
+                    itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
+                    if itp_name:
+                        copied.append(itp_name)
+                else:
+                    logger.warning("Interface has guests but type could not be detected")
 
     elif step_name == "custom":
         # Custom guest ITP staging (44.1-17): mirror the hydrate branch.
