@@ -67,13 +67,13 @@ from quickice.structure_generation.types import (  # noqa: E402
     MoleculeIndex,
     SoluteStructure,
 )
-from e2e_export_helpers import ETOH_GRO, ETOH_ITP  # noqa: E402
+from tests.e2e_export_helpers import ETOH_GRO, ETOH_ITP  # noqa: E402
 
 # Import the per-path export runners + helpers from the test module — they
 # encapsulate the exact writer calls + ITP staging that the byte-equivalence
 # tests verify. Also import the synthetic-position helpers so this script
 # builds the SAME synthetic fixtures the test fixtures build.
-from test_gro_top_byte_equivalence import (  # noqa: E402
+from tests.test_gro_top_byte_equivalence import (  # noqa: E402
     BASELINE_DIR,
     BASELINE_SHAS_PATH,
     _file_sha256,
