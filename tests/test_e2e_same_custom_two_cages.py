@@ -191,7 +191,7 @@ def test_same_custom_two_cages_full_chain_grompp(tmp_path):
 
     Box size: 3.0 × 3.0 × 8.0 nm so grompp's PBC rule (cutoff 1.0 nm < half the
     shortest box vector = 1.5 nm) is satisfied — matches the repo's
-    interface-test box convention (see test_e2e_custom_guest_gui_grompp.py).
+    interface-test box convention (e.g. test_e2e_custom_guest_cross_tab_gui.py).
     """
     # ── 1. Build the 2-cage config (same etoh_e2e in BOTH cages) ─────────────
     config = _build_two_cage_config()

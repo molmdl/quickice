@@ -5,11 +5,22 @@ workflow for a custom ethanol guest through ALL 4 GROMACS exporters
 (interface -> solute -> custom-molecule -> ion) called with
 ``hydrate_config``, asserting grompp-valid output at every step.
 
-This complements the per-exporter tests in
-``tests/test_e2e_custom_guest_gui_grompp.py`` (plans 44.1-09 / 11 / 13 / 15),
-each of which independently builds its own hydrate + interface.  This file
-builds the hydrate (GenIce2) ONCE via a module-scoped fixture, then derives a
-fresh interface per inserter (the ion inserter mutates
+Plan 48.3-16 ABSORBED the per-exporter tests of
+``tests/test_e2e_custom_guest_gui_grompp.py`` (plans 44.1-09 / 11 / 13 / 15,
+each of which independently built its own hydrate + interface): the 4
+per-exporter tests exercised the SAME 4 exporter classes with the SAME
+deterministic build (seed=42) as the 4 parametrized cases below, and every
+one of their asserts is present here (this file adds the ``#include``
+assert they lacked), so they were subsumed and the file deleted.  The one
+genuinely-not-subsumed test was PORTED: ``test_custom_guest_gui_grompp_passes``
+(41-10) exercises the GUI multi-molecule writers
+(``write_multi_molecule_gro_file`` + ``write_multi_molecule_top_file`` — the
+GUI hydrate-tab export writers, ``quickice/gui/hydrate_export.py``) which NO
+cross-tab/builtin file touches, so it survives below under its new name
+``test_custom_guest_hydrate_writers_grompp_passes``.
+
+This file builds the hydrate (GenIce2) ONCE via a module-scoped fixture, then
+derives a fresh interface per inserter (the ion inserter mutates
 ``iface.molecule_index`` at ``ion_inserter.py:259``, so each inserter gets its
 own unmutated interface to avoid cross-contaminating the solute exporter's
 ``interface_structure.molecule_index`` reference), then runs each exporter
@@ -25,11 +36,17 @@ present).  Marked ``@gmx_skipif`` so CI without gmx still runs file-consistency.
 """
 
 import shutil
+from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from tests.conftest import gmx_skipif  # noqa: E402
+from quickice.output.gromacs_writer import (  # noqa: E402
+    write_multi_molecule_gro_file,
+    write_multi_molecule_top_file,
+)
 from quickice.structure_generation.hydrate_generator import (  # noqa: E402
     HydrateStructureGenerator,
 )
@@ -41,6 +58,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     CustomMoleculeConfig,
     HydrateConfig,
     InterfaceConfig,
+    MoleculeIndex,
 )
 from quickice.gui.export import (  # noqa: E402
     CustomMoleculeGROMACSExporter,
@@ -54,6 +72,8 @@ from tests.e2e_export_helpers import (  # noqa: E402
     MDP_PATH,
     _insert_ions,
     _insert_solutes,
+    _stage_custom_guest_itp,
+    _stage_itp_files,
     assert_gro_top_consistent,
     assert_itp_completeness,
     parse_gro_residue_names,
@@ -281,12 +301,13 @@ def test_custom_guest_gui_full_chain_grompp(
     the 4 GUI exporters (interface / solute / custom-molecule / ion) called
     with ``hydrate_config``.
 
-    Phase 44.1 GUI INTEGRATION acceptance test (plan 44.1-19).  The per-
-    exporter tests in ``tests/test_e2e_custom_guest_gui_grompp.py`` (plans
-    44.1-09 / 11 / 13 / 15) each independently build their own hydrate +
-    interface; this test builds the hydrate (GenIce2) ONCE via a module-scoped
-    fixture (amortizing the GenIce2 call across the 4 parametrized cases), then
-    runs each exporter end-to-end via QFileDialog mocking.
+    Phase 44.1 GUI INTEGRATION acceptance test (plan 44.1-19).  The 44.1-era
+    per-exporter tests (plans 44.1-09 / 11 / 13 / 15, formerly in
+    ``tests/test_e2e_custom_guest_gui_grompp.py``, absorbed by plan 48.3-16)
+    each independently built their own hydrate + interface; this test builds
+    the hydrate (GenIce2) ONCE via a module-scoped fixture (amortizing the
+    GenIce2 call across the 4 parametrized cases), then runs each exporter
+    end-to-end via QFileDialog mocking.
 
     Flow (each parametrized case):
       1. ``exporter = {ExporterClass}(parent_widget=None)``.
@@ -443,4 +464,103 @@ def test_custom_guest_gui_full_chain_grompp(
     assert "guest.itp" not in includes, (
         f"[{exporter_id}] .top must NOT #include the non-existent "
         f"'guest.itp' (custom_guest_info not threaded), got {includes}"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Ported from tests/test_e2e_custom_guest_gui_grompp.py (plan 41-10, EXPORT-06
+# GUI half; absorbed by plan 48.3-16).  Formerly ``test_custom_guest_gui_
+# grompp_passes`` -- renamed on port so the retired module name disappears
+# from test IDs while the coverage survives.  NOT subsumed by the 4
+# parametrized exporter cases above: it exercises the GUI multi-molecule
+# writers (``write_multi_molecule_gro_file`` + ``write_multi_molecule_top_file``
+# -- the GUI hydrate-tab export writers used by ``quickice/gui/hydrate_export
+# .py``) which NO cross-tab/builtin file touches, with a legacy single-dict
+# ``custom_guest_info`` (the deprecated-wrap contract; list-form + registry is
+# covered by test_e2e_mixed_cage_occupancy.py's mixed grompp test).
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+def test_custom_guest_hydrate_writers_grompp_passes(tmp_path):
+    """gmx grompp exits 0 on a custom ethanol guest hydrate exported via the
+    GUI multi-molecule writers (write_multi_molecule_gro_file +
+    write_multi_molecule_top_file with custom_guest_info).
+
+    Builds a tiny synthetic 2-water + 1-custom-ethanol-guest system IN MEMORY
+    (no GenIce2 — fast, deterministic): 8 water atoms + 9 ethanol atoms = 17
+    atoms.  Stages tip4p-ice.itp + the transformed etoh.itp (moleculetype
+    MOL_H), then runs gmx grompp.
+    """
+    # Synthetic 2-water + 1-ethanol-guest system (17 atoms total).
+    positions = np.zeros((17, 3))
+    positions[:, 0] = np.linspace(0.01, 0.17, 17)
+    atom_names = [
+        "OW", "HW1", "HW2", "MW",  # water 1
+        "OW", "HW1", "HW2", "MW",  # water 2
+        "H", "C", "H", "H", "C", "H", "H", "O", "H",  # ethanol (9 atoms)
+    ]
+    # Box must exceed 2*cutoff (rcoulomb=rvdw=1.0 nm in em.mdp); 3.0 nm gives a
+    # comfortable margin and matches the repo's interface-test box convention.
+    cell = np.eye(3) * 3.0
+    molecule_index = [
+        MoleculeIndex(0, 4, "water"),
+        MoleculeIndex(4, 4, "water"),
+        MoleculeIndex(8, 9, "etoh_e2e"),  # custom guest mol_type
+    ]
+    cgi = {
+        "mol_type": "etoh_e2e",
+        "residue_name": "MOL_H",
+        "itp_path": Path("quickice/data/custom/etoh.itp"),
+    }
+    itp_files = {"etoh_e2e": "etoh.itp"}
+
+    ws = tmp_path
+    gro = ws / "hydrate.gro"
+    top = ws / "hydrate.top"
+    write_multi_molecule_gro_file(
+        positions,
+        molecule_index,
+        cell,
+        str(gro),
+        "custom guest hydrate",
+        atom_names=atom_names,
+        custom_guest_info=cgi,
+    )
+    write_multi_molecule_top_file(
+        molecule_index,
+        str(top),
+        "custom guest hydrate",
+        itp_files=itp_files,
+        custom_guest_info=cgi,
+    )
+
+    # Stage MDP + ITPs (repo convention: writers don't copy ITPs; staging does)
+    shutil.copy(MDP_PATH, ws / "em.mdp")
+    _stage_itp_files(str(top), ws)  # tip4p-ice.itp + etoh.itp (etoh under-transformed)
+    _stage_custom_guest_itp(  # overwrite etoh.itp -> moleculetype MOL_H
+        ws, Path("quickice/data/custom/etoh.itp"), "MOL"
+    )
+
+    # All #include'd ITPs present in the workspace.
+    assert_itp_completeness(str(top), ws)
+    # GRO residues <-> TOP [molecules] cross-check.
+    assert_gro_top_consistent(str(gro), str(top))
+
+    # Run gmx grompp — must exit 0 (topology is self-consistent + simulation-ready).
+    exit_code, stderr = run_gmx_grompp(
+        ws, gro_file="hydrate.gro", top_file="hydrate.top"
+    )
+    assert exit_code == 0, f"gmx grompp failed (GUI custom guest):\n{stderr}"
+
+    # .top [molecules] lists SOL + MOL_H.
+    mols = parse_top_molecules(str(top))
+    assert "SOL" in mols and "MOL_H" in mols, (
+        f"expected SOL + MOL_H in [molecules], got {mols}"
+    )
+
+    # .gro residues contain SOL + MOL_H.
+    gro_res = set(parse_gro_residue_names(str(gro)))
+    assert "SOL" in gro_res and "MOL_H" in gro_res, (
+        f"expected SOL + MOL_H in .gro residues, got {gro_res}"
     )
