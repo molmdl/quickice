@@ -1131,7 +1131,19 @@ class CustomMoleculeInserter:
             water_mol_count = water_atom_count // WATER_ATOMS_PER_MOLECULE
             current_idx = ice_atom_count
             for _ in range(water_mol_count):
-                complete_molecule_index.append(MoleculeIndex(current_idx, current_idx + WATER_ATOMS_PER_MOLECULE, "water"))
+                # Keyword args (MoleculeIndex is (start_idx, count, mol_type)):
+                # this line previously passed `current_idx + WATER_ATOMS_PER_MOLECULE`
+                # POSITIONALLY, so every water entry got count=<absolute index + 4>
+                # (e.g. 10372 for the first water of a 3×3×5 slab) instead of 4.
+                # Downstream that corrupted the custom.gro header (writer sums
+                # mol.count → garbage atom count) AND wrap_molecules_into_box /
+                # the writer's water slicing treated ~10k atoms as one molecule.
+                # Mirrors the correct keyword-arg block in place_random above.
+                complete_molecule_index.append(MoleculeIndex(
+                    start_idx=current_idx,
+                    count=WATER_ATOMS_PER_MOLECULE,
+                    mol_type="water"
+                ))
                 current_idx += WATER_ATOMS_PER_MOLECULE
         
         # Guest molecules
