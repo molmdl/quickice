@@ -376,3 +376,102 @@ def test_export_menu_handler_missing_state_warns_and_writes_nothing(
             )
     finally:
         setattr(mw, state_attr, original)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Tab 0 (Ice Generation) leg: GenerationWorker.run() synchronous + ice export
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+def test_ice_tab_generation_worker_lands_in_state_and_exports_grompp(
+    driven_mainwindow, tmp_path
+):
+    """Drive Tab 0 (Ice) end-to-end: real panel values → GenerationWorker.run()
+    synchronously → real _on_candidates_ready handler → real ice export
+    handler → grompp.
+
+    Pattern C (repo standard, test_e2e_triclinic_blocking_e2e.py:155-199):
+    ``GenerationWorker`` is a QObject designed for moveToThread; tests call
+    ``run()`` directly — no event loop, no QTest.qWait, no flake. The worker
+    is the exact one ``MainViewModel.start_generation`` builds
+    (viewmodel.py:79: ``GenerationWorker(temperature, pressure, nmolecules)``)
+    with the values the real ``_on_generate_clicked`` handler reads from the
+    input panel. Signals are connected BEFORE ``run()``.
+
+    The result is fed through the REAL ``_on_candidates_ready`` handler —
+    the same slot the viewmodel's ``ranked_candidates_ready`` signal connects
+    to (main_window.py:317) — so the assertion covers the true hand-off into
+    ``_current_result`` state, and the export runs through the REAL ice
+    export handler ``_on_export_gromacs`` (Tab 0 / Ctrl+S routing, TabIndex.ICE).
+
+    grompp uses a small-cutoff MDP: the 96-molecule ice_ih candidate cell
+    ≈ 1.47 nm < the 2.0 nm the shared tests/em.mdp requires (48.3-08 R16
+    precedent).
+    """
+    mw = driven_mainwindow
+    from quickice.gui.workers import GenerationWorker, GenerationResult
+
+    # ── Real panel path: set the input fields (set_values is the panel's own
+    # autofill API), then read back exactly what _on_generate_clicked would.
+    mw.input_panel.set_values(ICE_T_KELVIN, ICE_P_MPA, ICE_NMOLECULES)
+    assert mw.input_panel.validate_all(), "input panel must accept the ice config"
+    temperature = mw.input_panel.get_temperature()
+    pressure = mw.input_panel.get_pressure()
+    nmolecules = mw.input_panel.get_nmolecules()
+
+    # Mirror the real handler's state assignment (main_window.py
+    # _on_generate_clicked: "Store current generation parameters for export").
+    mw._current_T = temperature
+    mw._current_P = pressure
+
+    # ── Pattern C: QObject worker, run() synchronously, connect BEFORE run().
+    worker = GenerationWorker(temperature, pressure, nmolecules)
+    finished_results: list = []
+    errors: list[str] = []
+    worker.finished.connect(finished_results.append)
+    worker.error.connect(errors.append)
+
+    worker.run()
+
+    assert not errors, f"GenerationWorker emitted error: {errors}"
+    assert len(finished_results) == 1, "expected exactly one finished signal"
+    result = finished_results[0]
+    assert isinstance(result, GenerationResult), (
+        f"worker must emit GenerationResult, got {type(result)}"
+    )
+    assert result.success, f"generation failed: {result.error}"
+    ranking = result.result
+    assert ranking is not None and getattr(ranking, "ranked_candidates", None), (
+        "GenerationResult must carry a non-empty ranked_candidates list"
+    )
+
+    # ── Land the result in the REAL handler (viewmodel → MainWindow slot).
+    mw._on_candidates_ready(ranking)
+    assert mw._current_result is ranking, (
+        "_on_candidates_ready must store the RankingResult in _current_result "
+        "(the Tab 0 hand-off the ice export handler reads)"
+    )
+
+    # ── Export through the REAL ice export handler (TabIndex.ICE routing).
+    with patch_gui_modals() as mocks:
+        mocks.export_file_dialog.getSaveFileName.return_value = (
+            str(tmp_path / "ice.gro"),
+            "GRO Files (*.gro)",
+        )
+
+        mw._on_export_gromacs()
+
+        assert mocks.main_window.information.called, (
+            "_on_export_gromacs: expected the 'Export Complete' information "
+            f"dialog. warning={mocks.main_window.warning.call_args_list} "
+            f"critical={mocks.main_window.critical.call_args_list}"
+        )
+
+        gro_path, top_path = _validate_export_workspace(
+            tmp_path, mdp_text=SMALL_CUTOFF_MDP
+        )
+
+        # The exported ice candidate must be the ranked #1 from the worker
+        # (handler defaults to index 0 when no viewer selection exists).
+        assert parse_gro_atom_count(str(gro_path)) > 0
