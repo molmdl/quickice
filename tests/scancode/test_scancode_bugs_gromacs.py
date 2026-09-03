@@ -8,15 +8,8 @@ Each test class verifies that its respective bug is fixed and cannot regress.
 """
 
 import re
-import sys
-
 import numpy as np
 import pytest
-from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from quickice.output.gromacs_writer import (
     compute_mw_position,
     write_gro_file,
@@ -41,7 +34,7 @@ from quickice.structure_generation.types import (
     MoleculeIndex as MoleculeIndexType,
 )
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     _insert_custom_molecules,
     _insert_ions,
     _insert_ions_from_solute,
@@ -503,7 +496,7 @@ class TestDEDUP01:
         THF solute provides os/c5/hc/h1. The atomtype "hc" must appear
         exactly once in the [ atomtypes ] section.
         """
-        from e2e_export_helpers import (
+        from tests.e2e_export_helpers import (
             _hydrate_sI_ch4_candidate,
             _make_slab_interface,
         )
@@ -536,7 +529,7 @@ class TestDEDUP01:
         self, interface_slab, tmp_path
     ):
         """write_solute_top_file: CH4 hydrate guest + THF solute → no duplicate 'hc'."""
-        from e2e_export_helpers import (
+        from tests.e2e_export_helpers import (
             _hydrate_sI_ch4_candidate,
             _make_slab_interface,
         )
@@ -567,7 +560,7 @@ class TestDEDUP01:
         the custom molecule (etoh) may share atomtype names (like "hc").
         Verify no duplicates even in this simpler case.
         """
-        from e2e_export_helpers import (
+        from tests.e2e_export_helpers import (
             _hydrate_sI_ch4_candidate,
             _make_slab_interface,
         )

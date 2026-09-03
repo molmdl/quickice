@@ -51,15 +51,11 @@ These tests:
      triclinic topology still processes.
 """
 
-import sys
 import shutil
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quickice.output.gromacs_writer import (
     wrap_positions_into_box,
@@ -74,7 +70,7 @@ from quickice.structure_generation.types import (
     WATER_ATOMS_PER_MOLECULE,
 )
 
-from e2e_export_helpers import run_gmx_grompp, _stage_itp_files, MDP_PATH
+from tests.e2e_export_helpers import run_gmx_grompp, _stage_itp_files, MDP_PATH
 
 
 # ══════════════════════════════════════════════════════════════════════════════

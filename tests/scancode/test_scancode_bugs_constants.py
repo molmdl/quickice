@@ -26,14 +26,10 @@ mols, phase_id="ice_ih"):
 import hashlib
 import re
 import shutil
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Make tests/ importable for e2e_export_helpers (conftest import is unreliable).
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tests.conftest import gmx_skipif
 
@@ -492,7 +488,7 @@ def test_gmx_grompp_constants_refactor(ice_ih_candidate, tmp_path):
     sections are internally consistent (no value drift introduced by the
     constants extraction).
     """
-    from e2e_export_helpers import run_gmx_grompp
+    from tests.e2e_export_helpers import run_gmx_grompp
 
     # Custom small-cutoff em.mdp — the ice_ih 96-mol cell min box is ~1.47 nm,
     # so a 0.65 nm cutoff (needs box >= 1.3 nm) fits and exercises the full
