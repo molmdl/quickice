@@ -18,6 +18,7 @@ import unittest.mock
 
 import pytest
 
+from quickice import __version__
 from tests.conftest import run_quickice
 
 
@@ -64,7 +65,7 @@ class TestHelpAndVersion:
     def test_version_shows_version(self):
         """--version → version string in stdout."""
         rc, stdout, stderr = run_quickice("--version")
-        assert "4.5.0" in stdout
+        assert __version__ in stdout
 
 
 # ── --cli and pipeline flags → CLI mode ───────────────────────────────────────
