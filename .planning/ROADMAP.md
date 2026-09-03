@@ -375,10 +375,50 @@ Test-suite hygiene phase discovered mid-milestone after Phase 48.1 (gromacs_writ
 - Small-files consolidation is LOW-VALUE — leave cohesive 1-2 test files (`test_ion_hydrate_fix.py`, `test_solute_ion_molecule_index.py`, etc.) alone unless they logically belong to an existing nearby file.
 - Phase 48.1's PR branch `refactor/frag03-split-gromacs-writer` is separate from this work; this phase is on `main`.
 
+#### Phase 48.3: Revise Tests for True E2E Before User Test (INSERTED)
+
+**Goal:** Completely revise the test suite and e2e tests for both GUI and CLI so that a passing e2e is a real pass of the workflow — headless e2e tests catch middle-stage bugs before the user's manual full-workflow test
+**Depends on:** Phase 48.2 (test-suite reorg baseline: 1854 tests across 137 files in feature-organized subdirectories)
+**Plans:** 25 plans in 8 waves
+
+Plans:
+- [ ] 48.3-01-PLAN.md — Capture phase baselines (collect count + test IDs + e2e subset) + GATES.md
+- [ ] 48.3-02-PLAN.md — Decisions D1/D2 (custom-residue fix-vs-relax; mixed built-in CLI scope) — checkpoint
+- [ ] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
+- [ ] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
+- [ ] 48.3-05-PLAN.md — G3: mixed CH4+THF interface export regression (b278a9ed) GUI + CLI
+- [ ] 48.3-06-PLAN.md — Convert 54 sys.path hacks → package-absolute imports (pre-move enabler)
+- [ ] 48.3-07-PLAN.md — CLI: grompp-validate existing subprocess workflows + GAP-8 follow-through
+- [ ] 48.3-08-PLAN.md — CLI Tier-A subprocess prefix matrix (custom step, CSV, concentration, auto-chain, hydrate prefixes, ice-only)
+- [ ] 48.3-09-PLAN.md — CLI Tier-B step-wiring chain (sequential _run_*_step + per-step grompp)
+- [ ] 48.3-10-PLAN.md — G1 GUI: custom guest × non-sI lattices × all downstream exporters
+- [ ] 48.3-11-PLAN.md — G1 CLI: custom guest × non-sI lattices × all export branches
+- [ ] 48.3-12-PLAN.md — G4: pocket + piece export grompp coverage (GUI + CLI)
+- [ ] 48.3-13-PLAN.md — G5: GUI e2e helpers + MainWindow-driven full-chain test (flagship)
+- [ ] 48.3-14-PLAN.md — G2: same-basename collision e2e (etoh as cage guest AND liquid custom)
+- [ ] 48.3-15-PLAN.md — Merge F1–F7 chain family (chain_export_1/2 + invariants) into grompp-backed suite
+- [ ] 48.3-16-PLAN.md — Absorb 44.1 per-exporter grompp files into cross-tab siblings
+- [ ] 48.3-17-PLAN.md — Merge sH interface export + split mixed_cage_occupancy
+- [ ] 48.3-18-PLAN.md — Move byte-eq baselines out of .planning/ → tests/_baselines/
+- [ ] 48.3-19-PLAN.md — Merge single-structure writer files (ice/interface/custom/solute/ion) into grompp-backed suite
+- [ ] 48.3-20-PLAN.md — Sibling fixture clusters: extract near-copies + rename divergents + e2e/ scaffolding
+- [ ] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/
+- [ ] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
+- [ ] 48.3-23-PLAN.md — Group e2e batch C: interface/ + solute_ion/
+- [ ] 48.3-24-PLAN.md — Group e2e batch D: custom_guest/ + lattice/ (root e2e count → 0)
+- [ ] 48.3-25-PLAN.md — Final consolidation: e2e gate + full-suite gate + true-e2e audit + human-verify checkpoint
+
+**Details:**
+Inserted 2026-09-03 at user request (URGENT — before the next manual full-workflow acceptance test). User rationale: as the software grows more complicated, a full manual e2e test is getting tedious, and bugs found in the middle stage force the full test to be re-run after every fix. In theory, many of those bugs should be found and fixed with headless e2e tests BEFORE the user tests — their repeated discovery during manual testing indicates the current tests are not sufficient and not efficient. The aim of this phase is to completely revise the test suite and e2e tests for both GUI and CLI, to ensure a passing e2e is a real pass of the workflow. User accepts a large plan count for this revision — even up to 100 plans to execute is OK.
+
+May fold in the deferred Phase 48.2 follow-ups (full e2e grouping of 42 files, fixture dedup + dead conftest fixture deletion, moving committed baselines out of .planning/) where they serve the revision goal.
+
+Not planned yet — run /gsd-plan-phase 48.3 to break down.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1** → **48.2**
+Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1** → **48.2** → **48.3**
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -396,6 +436,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
 | 48.2. Group and cleanup tests (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-07-22 |
+| 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 0/25 (planned: 8 waves) | 🔄 Planned | — |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
@@ -449,9 +490,13 @@ Phase 48.1 (INSERTED)
       ▼
 Phase 48.2 (INSERTED)
   (group + cleanup tests — post-refactor hygiene)
+      │
+      ▼
+Phase 48.3 (INSERTED)
+  (revise tests for true e2e — GUI + CLI, before user acceptance test)
 ```
 
-*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42). Phase 48.1 (INSERTED) is the gromacs_writer.py split + GRO-writer dedup refactor (FRAG-03/TD-01) — executed after Phase 48 on a PR branch. Phase 48.2 (INSERTED) is test-suite hygiene (regroup scancode/e2e files, dedup fixtures, drop legacy names) — executes after 48.1 since several cleanup items (dropping the `phase_48_1_` prefix, organizing the 17 scancode regression files) are post-refactor hygiene.
+*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42). Phase 48.1 (INSERTED) is the gromacs_writer.py split + GRO-writer dedup refactor (FRAG-03/TD-01) — executed after Phase 48 on a PR branch. Phase 48.2 (INSERTED) is test-suite hygiene (regroup scancode/e2e files, dedup fixtures, drop legacy names) — executes after 48.1 since several cleanup items (dropping the `phase_48_1_` prefix, organizing the 17 scancode regression files) are post-refactor hygiene. Phase 48.3 (INSERTED) is a complete revision of the test suite and e2e tests for both GUI and CLI so that a passing e2e is a real pass of the workflow — executes after 48.2, before the next manual full-workflow acceptance test.
 
 ---
 
