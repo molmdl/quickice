@@ -9,9 +9,19 @@ Tests the complete source dropdown workflow:
 Follows testing pattern from tests/test_custom_molecule.py.
 """
 
+import os
+import sys
+
+# Ensure offscreen platform for headless environments.
+# This is set via QT_QPA_PLATFORM=offscreen env var at runtime;
+# the import below is a safety net if the env var is not set (48.3-03:
+# makes this file self-sufficient headless like test_hydrate_panel.py /
+# test_help_dialog.py; the session guard in tests/conftest.py is the
+# project-wide enforcement).
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pytest
 from PySide6.QtWidgets import QApplication
-import sys
 
 from quickice.gui.ion_panel import IonPanel
 
