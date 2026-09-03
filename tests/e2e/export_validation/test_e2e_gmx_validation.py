@@ -25,8 +25,9 @@ BUG I5 regression asserts) validated the SAME writer flows by file-parsing only
 grompp-backed chains (ice/interface/hydrate/custom/solute chains + F2/F6
 provenance + one new focused custom→solute grompp chain) and deletes the
 sources — same asserts, strictly stronger validation. Bundled-ITP
-existence/[moleculetype] checks were NOT ported: tests/test_e2e_itp_baseline.py
-already covers every bundled ITP, and staged ITPs are validated by
+existence/[moleculetype] checks were NOT ported:
+tests/e2e/export_validation/test_itp_baseline_data.py already covers every
+bundled ITP, and staged ITPs are validated by
 _stage_itp_files + assert_itp_completeness + grompp failing on a missing or
 malformed ITP (same drop rationale as 48.3-15).
 
@@ -34,6 +35,7 @@ Uses conftest.py fixtures for real GenIce2-generated structures.
 """
 
 import shutil
+import quickice
 import pytest
 from pathlib import Path
 
@@ -86,7 +88,9 @@ def gmx_workspace(request):
     Each test gets its own subdirectory named after the test.
     Files persist after test run for debugging.
     """
-    base = Path(__file__).parent.parent / "tmp" / "e2e-gmx-validation"
+    # Repo-root-anchored via the quickice package (48.3-21 move): the persistent
+    # debug workspace stays under <root>/tmp/ regardless of this file's location.
+    base = Path(quickice.__file__).resolve().parent.parent / "tmp" / "e2e-gmx-validation"
     workspace = base / request.node.name.replace("::", "_")
     workspace.mkdir(parents=True, exist_ok=True)
     yield workspace
@@ -271,8 +275,9 @@ def _assert_top_includes(top_path, expected, forbidden=(), exact_count=None):
 # P3). 48.3-19 ports their UNIQUE deep asserts into the grompp-backed chains below
 # and deletes the sources. Dropped as subsumed (no port needed):
 # - the per-chain test_itp_files_valid / test_*_itp_has_moleculetype bundled-ITP
-#   checks: tests/test_e2e_itp_baseline.py already covers every bundled ITP
-#   (existence + [moleculetype]), and staged ITPs are validated by
+#   checks: tests/e2e/export_validation/test_itp_baseline_data.py already
+#   covers every bundled ITP (existence + [moleculetype]), and staged ITPs
+#   are validated by
 #   _stage_itp_files + assert_itp_completeness + grompp (48.3-15 rationale).
 # - intra-file duplicates of the atom-count check (test_atom_conservation bodies
 #   that repeat test_gro_atom_count_matches_header arithmetic).

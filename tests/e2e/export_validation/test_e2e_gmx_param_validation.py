@@ -15,6 +15,7 @@ in ~150 lines vs ~800 lines for 27 individual classes.
 """
 
 import shutil
+import quickice
 import pytest
 from pathlib import Path
 from typing import NamedTuple, Optional
@@ -210,7 +211,9 @@ def gmx_workspace(request):
     Each test gets its own subdirectory named after the test.
     Files persist after test run for debugging.
     """
-    base = Path(__file__).parent.parent / "tmp" / "e2e-gmx-validation"
+    # Repo-root-anchored via the quickice package (48.3-21 move): the persistent
+    # debug workspace stays under <root>/tmp/ regardless of this file's location.
+    base = Path(quickice.__file__).resolve().parent.parent / "tmp" / "e2e-gmx-validation"
     workspace = base / request.node.name.replace("::", "_")
     workspace.mkdir(parents=True, exist_ok=True)
     yield workspace

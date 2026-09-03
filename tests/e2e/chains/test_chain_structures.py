@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 from pathlib import Path
 
+import quickice
 from quickice.phase_mapping.lookup import lookup_phase
 from quickice.structure_generation.generator import IceStructureGenerator
 from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
@@ -37,7 +38,10 @@ from quickice.structure_generation.types import (
 
 # ── Test data paths ──────────────────────────────────────────────────────────
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "quickice" / "data" / "custom"
+# Package-anchored (48.3-21 move): quickice/data/ lives INSIDE the quickice
+# package, so anchor via quickice.__file__ — survives any future relocation of
+# this test file (the old __file__-relative form broke on the e2e regrouping).
+DATA_DIR = Path(quickice.__file__).parent / "data" / "custom"
 ETOH_GRO = DATA_DIR / "etoh.gro"
 ETOH_ITP = DATA_DIR / "etoh.itp"
 

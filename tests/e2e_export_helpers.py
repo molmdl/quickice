@@ -234,7 +234,8 @@ def assert_gro_residue_ordering(residue_names: list[str], expected_order: list[s
 
 
 # ── Chain-building helpers ───────────────────────────────────────────────────
-# COPIED from test_e2e_workflow_chains.py (lines 37-169)
+# COPIED from tests/e2e/chains/test_chain_structures.py (lines 37-169 of its
+# pre-48.3-21 root-level version; file renamed+moved by 48.3-21).
 # Do NOT import from that file — import from e2e_export_helpers instead.
 
 def _liquid_volume_nm3(structure) -> float:
