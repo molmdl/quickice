@@ -24,7 +24,6 @@ These are pure-Python tests (no ``gmx`` dependency, no GenIce2 calls);
 ``tests/test_cli/test_itp_helpers_custom_guest.py``.
 """
 
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -39,10 +38,9 @@ from quickice.structure_generation.types import (
     MoleculeIndex,
 )
 
-# Make tests/e2e_export_helpers.py importable (no test_ prefix → not auto-collected).
+# Anchor for cwd-independent fixture data paths (tests/ directory).
 _TESTS_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_TESTS_DIR))
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     parse_gro_residue_names,
     parse_top_molecules,
     parse_top_includes,

@@ -38,16 +38,11 @@ validated by test 3; the CLI export path itself (``_run_export_step`` →
 existing 41-08 tests (``test_run_export_step_*``).
 """
 
-import sys
 import shutil
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Make tests/e2e_export_helpers.py importable (no test_ prefix → not auto-collected).
-_TESTS_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_TESTS_DIR))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.cli.parser import create_parser  # noqa: E402
@@ -65,7 +60,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     MoleculeIndex,
 )
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry  # noqa: E402
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     ETOH_ITP,
     MDP_PATH,
     _stage_itp_files,

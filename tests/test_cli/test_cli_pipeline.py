@@ -15,7 +15,6 @@ timeouts for pipeline steps that involve GenIce2 generation.
 
 import os
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 
@@ -23,10 +22,7 @@ import pytest
 
 from tests.conftest import run_quickice, gmx_skipif
 
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from e2e_export_helpers import run_gmx_grompp, MDP_PATH
+from tests.e2e_export_helpers import run_gmx_grompp, MDP_PATH
 
 # Custom molecule data paths
 ETOH_GRO = str(Path(__file__).resolve().parents[2] / "quickice" / "data" / "custom" / "etoh.gro")
