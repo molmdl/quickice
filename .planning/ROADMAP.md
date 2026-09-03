@@ -403,7 +403,7 @@ Plans:
 - [ ] 48.3-18-PLAN.md — Move byte-eq baselines out of .planning/ → tests/_baselines/
 - [x] 48.3-19-PLAN.md — Merge single-structure writer files (ice/interface/custom/solute/ion) into grompp-backed suite
 - [x] 48.3-20-PLAN.md — Sibling fixture clusters: extract near-copies + rename divergents + e2e/ scaffolding ✓ DONE 2026-09-03
-- [ ] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/
+- [x] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/ ✓ DONE 2026-09-03
 - [ ] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
 - [ ] 48.3-23-PLAN.md — Group e2e batch C: interface/ + solute_ion/
 - [ ] 48.3-24-PLAN.md — Group e2e batch D: custom_guest/ + lattice/ (root e2e count → 0)
