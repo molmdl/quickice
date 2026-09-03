@@ -9,7 +9,7 @@ mixed-export home above.
 
 Provenance note: the 48.3-17 plan cited "42-00 provenance" for this file —
 42-00 is actually the sH large-cage placement regression
-(tests/test_e2e_sH_cage_occupancy.py, empirical GenIce2 sH counts). This
+(tests/e2e/hydrate/test_sH_cage_occupancy.py, empirical GenIce2 sH counts). This
 file's provenance is Phase 42 plan 42-02 (multi-guest _build_molecule_index
 + mixed sI occupancy). Recorded so the provenance chain stays grep-able and
 un-confused; the placement asserts are unchanged.
@@ -32,7 +32,8 @@ Covers:
       assignment (2 entries: small=ch4, large=etoh_mix).
 
 Uses a UNIQUE guest_type ("etoh_mix") to avoid sys.modules key collisions
-with other test modules (test_e2e_custom_guest_hydrate.py uses "etoh_e2e").
+with other test modules (tests/e2e/hydrate/test_custom_guest_hydrate_generation.py
+uses "etoh_e2e").
 Module-scoped fixture amortizes the ~3-5s GenIce2 call.
 """
 
@@ -50,7 +51,7 @@ from quickice.structure_generation.types import (
 
 # Unique guest_type for this test module — avoids sys.modules key collisions
 # with other test modules that register custom guests (e.g.
-# test_e2e_custom_guest_hydrate.py uses "etoh_e2e").
+# tests/e2e/hydrate/test_custom_guest_hydrate_generation.py uses "etoh_e2e").
 _GUEST_TYPE_CUSTOM = "etoh_mix"
 _GUEST_RESIDUE_NAME = "MOL"
 _GUEST_GRO_PATH = "quickice/data/custom/etoh.gro"

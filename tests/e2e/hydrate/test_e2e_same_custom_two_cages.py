@@ -72,7 +72,7 @@ from tests.e2e_export_helpers import (  # noqa: E402
 )
 
 
-# ── Shared custom-guest metadata (same as tests/test_e2e_custom_guest_hydrate.py)
+# ── Shared custom-guest metadata (same as tests/e2e/hydrate/test_custom_guest_hydrate_generation.py)
 _GUEST_TYPE = "etoh_e2e"
 _GUEST_RESIDUE_NAME = "MOL"
 _GUEST_GRO_PATH = "quickice/data/custom/etoh.gro"

@@ -17,7 +17,7 @@ Consumers (extracted clusters):
                            + tests/test_e2e_custom_guest_lattices_gui.py (48.3-10)
 - ``lattice_chains``      <- tests/test_e2e_lattice_interface_cli.py (45-02)
                            + tests/test_e2e_lattice_interface_gui.py (45-01)
-- ``filled_ice_hydrates`` <- tests/test_e2e_filled_ice_cli_hydrate_grompp.py (47-05)
+- ``filled_ice_hydrates`` <- tests/e2e/hydrate/test_e2e_filled_ice_cli_hydrate_grompp.py (47-05)
                            + tests/test_e2e_mixed_filled_ice_gui.py (45-14)
 
 Divergent same-name sibling fixtures (measured similarity 0.04-0.31:
