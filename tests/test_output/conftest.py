@@ -1,4 +1,6 @@
-"""Shared conftest.py for E2E export tests.
+"""Shared conftest.py for exporter tests (synthetic hand-built structures —
+writer-level, not real-chain e2e; real-chain e2e coverage lives in
+tests/test_e2e_gmx_validation.py and the cross-tab files).
 
 Provides all structure fixtures, mock dialog fixtures, and chain dependency
 fixtures needed by plans 01-08 of the e2e-export-test phase.

@@ -1,4 +1,6 @@
-"""E2E tests for GROMACSExporter (Tab 0 — Ice).
+"""Exporter unit tests for GROMACSExporter (Tab 0 — Ice) with synthetic
+hand-built structures (no GenIce2, no grompp) — real-chain e2e coverage
+lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Tests the simplest exporter to validate the QFileDialog/QMessageBox mock
 pattern that all subsequent export tests will follow.

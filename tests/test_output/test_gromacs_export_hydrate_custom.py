@@ -1,4 +1,6 @@
-"""E2E GUI export test for a CUSTOM guest hydrate (plan 41-06).
+"""GUI export unit test for a CUSTOM guest hydrate (plan 41-06) with a
+synthetic hand-built structure (no GenIce2, no grompp) — real-chain e2e
+coverage lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Verifies HydrateGROMACSExporter.export_hydrate branches on
 ``config.is_custom_guest`` and:

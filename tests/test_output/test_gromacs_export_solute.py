@@ -1,4 +1,6 @@
-"""E2E tests for SoluteGROMACSExporter (Tab 4 — Solute).
+"""Exporter unit tests for SoluteGROMACSExporter (Tab 4 — Solute) with
+synthetic hand-built structures (no GenIce2, no grompp) — real-chain e2e
+coverage lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Tests the solute exporter with conditional ITP logic:
 - Base files: .gro, .top, tip4p-ice.itp, {solute}_liquid.itp (atomtypes commented)

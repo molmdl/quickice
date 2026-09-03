@@ -1,4 +1,6 @@
-"""E2E tests for HydrateGROMACSExporter (Tab 1 — Hydrate).
+"""Exporter unit tests for HydrateGROMACSExporter (Tab 1 — Hydrate) with
+synthetic hand-built structures (no GenIce2, no grompp) — real-chain e2e
+coverage lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Tests the hydrate-specific GROMACS exporter which differs from all other
 exporters in two key ways:

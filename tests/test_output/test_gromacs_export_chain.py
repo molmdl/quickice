@@ -1,4 +1,8 @@
-"""E2E chain tests proving the incremental export pipeline works.
+"""Writer-level chain integration tests proving the incremental export
+pipeline works, with synthetic hand-built structures (no GenIce2, no
+grompp) — this is NOT the main e2e: real-chain e2e coverage lives in
+tests/test_e2e_gmx_validation.py, tests/test_e2e_chain_export_*.py,
+and the cross-tab files.
 
 Tests the FULL chain: Interface → Custom Molecule → Solute → Ion.
 Each level carries forward data from the previous level, and the export
@@ -240,7 +244,8 @@ class TestFullExportChain:
     def test_full_chain_interface_custom_solute_ion(
         self, interface_with_ch4_guests, mock_save_dialog
     ):
-        """THE main E2E test: full chain produces ALL cumulative ITP files.
+        """Full chain produces ALL cumulative ITP files (writer-level —
+        see module docstring for the real e2e entry points).
 
         Builds the complete chain:
         1. InterfaceStructure with CH4 guests → export

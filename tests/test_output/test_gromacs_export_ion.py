@@ -1,4 +1,6 @@
-"""E2E tests for IonGROMACSExporter (Tab 5 — Ion).
+"""Exporter unit tests for IonGROMACSExporter (Tab 5 — Ion) with synthetic
+hand-built structures (no GenIce2, no grompp) — real-chain e2e coverage
+lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Tests the ion exporter — the most complex exporter in the pipeline:
 - Base files: .gro, .top, tip4p-ice.itp, ion.itp (GENERATED, not copied)

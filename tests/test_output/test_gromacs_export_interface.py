@@ -1,4 +1,6 @@
-"""E2E tests for InterfaceGROMACSExporter (Tab 2 — Interface).
+"""Exporter unit tests for InterfaceGROMACSExporter (Tab 2 — Interface) with
+synthetic hand-built structures (no GenIce2, no grompp) — real-chain e2e
+coverage lives in tests/test_e2e_gmx_validation.py and the cross-tab files.
 
 Tests the interface exporter with conditional guest ITP logic:
 - No guests → no guest ITP file (only tip4p-ice.itp)

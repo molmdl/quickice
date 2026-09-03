@@ -1,4 +1,7 @@
-"""E2E tests for CustomMoleculeGROMACSExporter (Tab 3 — Custom Molecule).
+"""Exporter unit tests for CustomMoleculeGROMACSExporter (Tab 3 — Custom
+Molecule) with synthetic hand-built structures (no GenIce2, no grompp) —
+real-chain e2e coverage lives in tests/test_e2e_gmx_validation.py and the
+cross-tab files.
 
 Tests the custom-molecule-specific GROMACS exporter which differs from other
 exporters in two key ways:
