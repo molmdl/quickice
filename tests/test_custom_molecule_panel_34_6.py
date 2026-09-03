@@ -13,13 +13,26 @@ Tests the Phase 34.6 fixes and enhancements:
 10. Molecule index tracking across all molecule types
 
 Follows testing pattern from tests/test_custom_molecule.py and tests/test_ion_source_dropdown.py.
+
+Headless note (48.3-03): panel construction is safe under
+QT_QPA_PLATFORM=offscreen (verified empirically in bare python AND a minimal
+pytest test). What deadlocked these tests at C level was the MODAL
+QMessageBox that CustomMoleculePanel._validate_files() pops for the etoh
+generic-residue mismatch (MOL vs etoh) — dialog exec() blocks forever with
+no user to click. Tests that trigger validation therefore mock the dialog
+layer (unittest.mock.patch on quickice.gui.custom_molecule_panel.QMessageBox)
+and keep their real assertions against a live panel instance. See 48.3
+RESEARCH-INFRA §3.5 (the research's VTK-lifecycle attribution was
+LOW-confidence and is corrected here) and the ROADMAP TEST-06 precedent for
+the headless-VTK caveat.
 """
 
 import pytest
 from pathlib import Path
 import numpy as np
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 import sys
+import unittest.mock
 
 from quickice.structure_generation.itp_parser import parse_itp_file
 from quickice.structure_generation.molecule_validator import validate_custom_molecule
@@ -125,8 +138,16 @@ class TestCustomMoleculePanelPhase34_6:
         from quickice.structure_generation.itp_parser import parse_itp_file
         panel.itp_info = parse_itp_file(self.etoh_itp)
         
-        # Validate files
-        panel._validate_files()
+        # Validate files.
+        # Headless root cause (48.3-03): _validate_files() pops a MODAL
+        # QMessageBox.question for the etoh generic-residue mismatch (MOL vs
+        # etoh); dialog exec() blocks forever with no user. Mock the dialog
+        # to auto-accept ("Yes") so the real panel logic below still runs.
+        with unittest.mock.patch(
+            "quickice.gui.custom_molecule_panel.QMessageBox.question",
+            return_value=QMessageBox.Yes,
+        ):
+            panel._validate_files()
         
         # Verify validation succeeded
         assert panel.validation_result is not None, \
@@ -265,8 +286,14 @@ class TestCustomMoleculePanelPhase34_6:
         panel.itp_path = self.etoh_itp
         panel.itp_info = parse_itp_file(self.etoh_itp)
         
-        # Step 3: Validate files
-        panel._validate_files()
+        # Step 3: Validate files.
+        # Headless root cause (48.3-03): same modal QMessageBox.question as
+        # test_button_state_persistence — mock to auto-accept ("Yes").
+        with unittest.mock.patch(
+            "quickice.gui.custom_molecule_panel.QMessageBox.question",
+            return_value=QMessageBox.Yes,
+        ):
+            panel._validate_files()
         
         # Verify validation succeeded with generic residue name
         assert panel.validation_result.is_valid, \
@@ -766,8 +793,19 @@ class TestCustomMoleculeValidationGaps:
         panel.itp_path = self.etoh_no_atomtypes_itp
         panel.itp_info = parse_itp_file(self.etoh_no_atomtypes_itp)
         
-        # Validate files — should have warnings about missing atomtypes
-        panel._validate_files()
+        # Validate files — should have warnings about missing atomtypes.
+        # Headless root cause (48.3-03): _validate_files() pops the residue
+        # mismatch QMessageBox.question (MOL vs etoh) and then a modal
+        # QMessageBox.warning for the remaining atomtypes warning; modal
+        # exec() blocks forever headless. Mock both dialogs (auto-accept)
+        # so the real panel logic runs.
+        with unittest.mock.patch(
+            "quickice.gui.custom_molecule_panel.QMessageBox.question",
+            return_value=QMessageBox.Yes,
+        ), unittest.mock.patch(
+            "quickice.gui.custom_molecule_panel.QMessageBox.warning"
+        ):
+            panel._validate_files()
         
         assert panel.validation_result is not None
         assert panel.validation_result.is_valid
@@ -794,7 +832,18 @@ class TestCustomMoleculeValidationGaps:
         panel.itp_path = self.etoh_itp
         panel.itp_info = parse_itp_file(self.etoh_itp)
         
-        panel._validate_files()
+        # Headless (48.3-03): the mismatch dialog itself would block forever
+        # (modal exec() with no user). Patch it, then assert it WAS offered —
+        # mock_question.called directly proves the dialog path fired, which is
+        # this test's namesake behavior.
+        with unittest.mock.patch(
+            "quickice.gui.custom_molecule_panel.QMessageBox.question",
+            return_value=QMessageBox.Yes,
+        ) as mock_question:
+            panel._validate_files()
+        
+        assert mock_question.called, \
+            "Residue mismatch dialog (QMessageBox.question) should have been offered"
         
         assert panel.validation_result is not None
         assert panel.validation_result.residue_name_mismatch, \
