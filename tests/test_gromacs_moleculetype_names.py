@@ -18,13 +18,8 @@ Test coverage:
 """
 
 import re
-import sys
-
 import pytest
 from pathlib import Path
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from quickice.output.gromacs_writer import (
     write_top_file,
@@ -41,7 +36,7 @@ from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.types import MoleculeIndex as MoleculeIndexType
 
-from e2e_export_helpers import (
+from tests.e2e_export_helpers import (
     _insert_custom_molecules,
     _insert_ions,
     _insert_solutes,

@@ -18,13 +18,7 @@ populated ``guest_descriptors`` gets correct per-molecule bond detection.
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-import sys
-from pathlib import Path
 from types import SimpleNamespace
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-# (established pattern — avoids conftest.py import which is unreliable in pytest)
-sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
 
@@ -165,7 +159,7 @@ def sii_mixed_slab():
     The slab InterfaceStructure has EMPTY molecule_index but POPULATED
     guest_descriptors (the exact condition that triggered the viewer bug).
     """
-    from e2e_export_helpers import _make_slab_interface
+    from tests.e2e_export_helpers import _make_slab_interface
     from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
     from quickice.structure_generation.types import HydrateConfig, CageGuestAssignment
 

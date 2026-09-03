@@ -39,14 +39,10 @@ Test structure
 import hashlib
 import json
 import shutil
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
-
-# Add tests/ directory to sys.path for e2e_export_helpers import
-sys.path.insert(0, str(Path(__file__).parent))
 
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.output.gromacs_writer import (  # noqa: E402
@@ -70,7 +66,7 @@ from quickice.structure_generation.types import (  # noqa: E402
     InterfaceStructure,
     MoleculeIndex,
 )
-from e2e_export_helpers import (  # noqa: E402
+from tests.e2e_export_helpers import (  # noqa: E402
     ETOH_GRO,
     ETOH_ITP,
     MDP_PATH,

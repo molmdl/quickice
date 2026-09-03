@@ -16,17 +16,11 @@ Test classes:
 - TestPERF02MemoryImprovement: Verify no 27x memory allocation for orthorhombic
 """
 
-import sys
 import tracemalloc
 
 import numpy as np
 import pytest
-from pathlib import Path
-
 from scipy.spatial import cKDTree
-
-# Add tests/ directory to sys.path for helper imports
-sys.path.insert(0, str(Path(__file__).parent))
 
 from quickice.ranking.scorer import _calculate_oo_distances_pbc, _is_orthorhombic
 
