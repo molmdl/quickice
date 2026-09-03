@@ -184,17 +184,21 @@ def _assert_gro_box_pbc_rule(gro_path, mode):
     """Assert the exported .gro box line itself satisfies the grompp PBC rule.
 
     The fixture asserts the structure cell; this asserts what grompp ACTUALLY
-    reads (the .gro box vectors written by the writer). GRO box line is either
-    3 values (v1x v2y v3z, orthogonal) or 9 values (full matrix); the shortest
-    box vector is the min of the diagonal entries.
+    reads (the .gro box vectors written by the writer). The writer
+    (_write_gro_box_vectors, _gro_format.py:329) emits the GROMACS 9-value
+    format: the three DIAGONAL elements first (v1x v2y v3z), then the 6
+    off-diagonal elements in GROMACS order (v1y v1z v2x v2z v3x v3y). A
+    3-value line is the orthogonal diagonal-only format. Either way the
+    diagonal is the first 3 values; the shortest box vector is their min.
     """
     with open(gro_path) as f:
         lines = f.read().splitlines()
     box_values = [float(v) for v in lines[-1].split()]
-    if len(box_values) >= 9:
-        diag = [box_values[0], box_values[4], box_values[8]]
-    else:
-        diag = box_values[:3]
+    assert len(box_values) in (3, 9), (
+        f"[{mode}] unexpected .gro box line format "
+        f"({len(box_values)} values): {lines[-1]!r}"
+    )
+    diag = box_values[:3]
     shortest = min(diag)
     assert shortest > GROMPP_PBC_MIN_SHORTEST_VECTOR_NM, (
         f"[{mode}] exported .gro box shortest vector {shortest:.3f} nm "
@@ -302,4 +306,79 @@ def test_pocket_piece_fixture_smoke(pocket_piece_fixtures, mode):
     )
     assert iface.ice_nmolecules > 0 and iface.water_nmolecules > 0, (
         f"{mode} interface should have both ice and water phases"
+    )
+
+
+# ── Task 2: GUI exporter leg (Pattern B) ─────────────────────────────────────
+
+
+@gmx_skipif
+@pytest.mark.parametrize("mode", MODES)
+def test_pocket_piece_gui_interface_export_grompp(pocket_piece_fixtures, tmp_path, mode):
+    """GUI leg: pocket/piece interface export via InterfaceGROMACSExporter
+    passes gmx grompp (closes the GUI half of G4).
+
+    Pattern B: ``quickice.gui.export.QFileDialog.getSaveFileName`` +
+    ``QMessageBox`` are patched in the USING module's namespace so the exporter
+    runs end-to-end headless (under QT_QPA_PLATFORM=offscreen an unpatched
+    getSaveFileName returns ("", "") and the exporter would silently no-op).
+    The exporter stages the built-in guest ITP via ``_stage_hydrate_guest_itps``
+    (hydrate_config from the fixture, mirroring the real Hydrate-tab ->
+    Interface-tab hand-off; for built-in ch4 the helper copies the bundled
+    pre-transformed ch4_hydrate.itp), then writes .gro + .top + tip4p-ice.itp.
+    A FRESH interface is built for this leg from the module-scoped candidate.
+    """
+    fixture = pocket_piece_fixtures
+    iface = fixture["factories"][mode]()  # fresh interface for this leg
+
+    gro_path = tmp_path / f"interface_{mode}.gro"
+    top_path = tmp_path / f"interface_{mode}.top"  # derived from stem by the exporter
+    with patch(
+        "quickice.gui.export.QFileDialog.getSaveFileName",
+        return_value=(str(gro_path), "GRO Files (*.gro)"),
+    ), patch("quickice.gui.export.QMessageBox"):
+        exporter = InterfaceGROMACSExporter(parent_widget=None)
+        ok = exporter.export_interface_gromacs(iface, hydrate_config=fixture["config"])
+        assert ok is True, (
+            f"[{mode}] export_interface_gromacs returned False -- export "
+            f"failed (QFileDialog mock may not have been picked up, or "
+            f"staging raised)"
+        )
+
+    _assert_pocket_piece_export(tmp_path, gro_path, top_path, mode)
+
+
+# ── Task 2: CLI interface branch leg (Pattern 4) ─────────────────────────────
+
+
+@gmx_skipif
+@pytest.mark.parametrize("mode", MODES)
+def test_pocket_piece_cli_interface_export_grompp(pocket_piece_fixtures, tmp_path, mode):
+    """CLI leg: pocket/piece interface export via CLIPipeline._run_export_step's
+    interface branch passes gmx grompp (closes the CLI half of G4).
+
+    Pattern 4 (established by test_e2e_custom_guest_cross_tab_cli.py): build a
+    ``CLIPipeline`` in-process, set ``_hydrate_result`` (carries ``.config``)
+    + ``_interface_result`` so the priority selection (ion > solute > custom >
+    interface > hydrate > ice) picks the INTERFACE branch, and export into a
+    per-test tmp_path subdir (mkdir'd here — only ``CLIPipeline.execute``
+    creates the output dir, ``_run_export_step`` does not). The ITP staging
+    goes through ``copy_itp_files_for_structure`` (built-in ch4 detected via
+    the atom-count heuristic: guest_atom_count / guest_nmolecules == 5 ->
+    ch4_hydrate.itp). A FRESH interface is built for this leg.
+    """
+    fixture = pocket_piece_fixtures
+    iface = fixture["factories"][mode]()  # fresh interface for this leg
+
+    ws = tmp_path / mode
+    ws.mkdir(parents=True, exist_ok=True)
+    pipe = CLIPipeline(args=SimpleNamespace())
+    pipe._output_dir = ws
+    pipe._hydrate_result = fixture["hydrate"]
+    pipe._interface_result = iface
+    code = pipe._run_export_step()
+    assert code == 0, f"[{mode}] _run_export_step should succeed for the interface branch"
+
+    _assert_pocket_piece_export(
+        ws, ws / "interface.gro", ws / "interface.top", mode
     )
