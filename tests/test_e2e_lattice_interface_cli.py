@@ -160,7 +160,7 @@ def _make_cli_pipeline(output_dir, hydrate, downstream_attr, downstream_struct):
 
     All other ``_*_result`` stay at their ``__init__`` default of ``None``.
     Mirrors the helper in ``tests/test_e2e_builtin_cross_tab_regression.py``
-    (lines 373-385) and ``tests/test_e2e_custom_guest_cli_grompp.py``.
+    (lines 373-385).
 
     Args:
         output_dir: Workspace directory (``Path``) where the CLI pipeline

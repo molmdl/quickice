@@ -372,7 +372,6 @@ def _make_cli_pipeline(output_dir, hydrate, downstream_attr, downstream_struct):
     so the ``_run_export_step`` priority selection picks that branch.
 
     All other ``_*_result`` stay at their ``__init__`` default of ``None``.
-    Mirrors the helper in ``tests/test_e2e_custom_guest_cli_grompp.py``.
     """
     pipe = CLIPipeline(args=SimpleNamespace())
     pipe._output_dir = output_dir

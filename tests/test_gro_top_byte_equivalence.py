@@ -166,7 +166,7 @@ def _ethanol_9atom(cx: float, cy: float, cz: float) -> list[list[float]]:
     """Build a 9-atom ethanol molecule (H, C, H, H, C, H, H, O, H) near (cx, cy, cz).
 
     Atom order matches the etoh.gro/etoh.itp convention used by the custom guest
-    fixture in tests/test_e2e_custom_guest_cli_grompp.py (9 atoms). Positions
+    fixtures (9 atoms). Positions
     are approximate — grompp uses the ITP bond/angle definitions, not the
     exact .gro geometry.
     """
@@ -462,8 +462,8 @@ def solute_structure(interface_structure):
 
 
 # ── Synthetic custom-guest InterfaceStructure (no GenIce2, fast) ──────────────
-# Mirrors tests/test_e2e_custom_guest_cli_grompp.py:82-117 pattern:
-# 2 water + 1 ethanol (17 atoms), cell 3.0 nm (satisfies grompp PBC rule:
+# Mirrors the synthetic custom-guest fixture pattern (2 water + 1 ethanol,
+# 17 atoms), cell 3.0 nm (satisfies grompp PBC rule:
 # 1.0 nm cutoff < half shortest box vector = 1.5 nm).
 
 _CG_ATOM_NAMES = [
@@ -662,7 +662,7 @@ def _export_custom_guest(
     .top [molecules] MOL_H entry. _stage_itp_files only comments out
     [atomtypes] (under-transformed), so we additionally call
     _stage_custom_guest_itp to overwrite etoh.itp with the fully-transformed
-    copy. This mirrors the pattern in tests/test_e2e_custom_guest_cli_grompp.py.
+    copy (same pattern as test_e2e_same_custom_two_cages.py).
     """
     write_interface_gro_file(
         interface_with_custom_guest,

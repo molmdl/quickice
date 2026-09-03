@@ -1,10 +1,14 @@
 """Full CLI cross-tab e2e grompp chain for a custom guest hydrate.
 
-Plan 44.1-20: the CLI integration acceptance test for Phase 44.1. Unlike the
-per-branch tests in ``tests/test_e2e_custom_guest_cli_grompp.py`` (44.1-17)
-which exercise each export branch (interface / custom / solute / ion) in
-ISOLATION from a shared interface, this test runs the FULL CLI workflow chain
-for a custom ethanol guest:
+Plan 44.1-20: the CLI integration acceptance test for Phase 44.1. The
+per-branch tests that formerly lived in
+``tests/test_e2e_custom_guest_cli_grompp.py`` (44.1-17) exercising each export
+branch (interface / custom / solute / ion) in ISOLATION from a shared
+interface were ABSORBED by plan 48.3-16 (their asserts survive in this file's
+per-step exports, ``test_e2e_builtin_cross_tab_regression.py``'s CLI branch
+isolation, and ``test_e2e_custom_guest_lattices_cli.py``'s per-branch grompp
+matrix). This test runs the FULL CLI workflow chain for a custom ethanol
+guest:
 
     hydrate generate (sI custom ethanol)
       -> to_candidate -> assemble_slab (interface)
@@ -83,8 +87,7 @@ def _full_chain_structures():
     Returns ``(hydrate, iface, solute, ion)``. ``hydrate`` carries ``.config``
     (the HydrateConfig the CLI reads via ``self._hydrate_result.config`` to
     build ``custom_guest_info``). Uses ABSOLUTE ``guest_gro_path`` /
-    ``guest_itp_path`` (via ETOH_GRO/ETOH_ITP) so ITP staging is CWD-independent,
-    matching the convention in ``test_e2e_custom_guest_cli_grompp.py``.
+    ``guest_itp_path`` (via ETOH_GRO/ETOH_ITP) so ITP staging is CWD-independent.
     """
     gen = HydrateStructureGenerator()
     config = HydrateConfig(
