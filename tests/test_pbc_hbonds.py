@@ -54,8 +54,10 @@ class TestPBCDistance:
 
 
 # Module-level fixtures for sharing across test classes
+# NOTE: intentionally NOT named `simple_candidate` — this 2-water body DIVERGES from
+# tests/test_output/conftest.py's unrelated same-name fixture (out of scope at tests/ root; unique name avoids confusion).
 @pytest.fixture
-def simple_candidate():
+def simple_candidate_pbc():
     """Create a simple candidate with two water molecules."""
     # Two water molecules in a 2 nm box
     # Molecule 1: O at origin, H1 and H2 nearby
@@ -125,9 +127,9 @@ def pbc_candidate():
 class TestHydrogenBondDetection:
     """Test hydrogen bond detection with PBC."""
     
-    def test_detect_hbonds_simple(self, simple_candidate):
+    def test_detect_hbonds_simple(self, simple_candidate_pbc):
         """Test basic H-bond detection."""
-        hbonds = detect_hydrogen_bonds(simple_candidate, max_distance=0.25)
+        hbonds = detect_hydrogen_bonds(simple_candidate_pbc, max_distance=0.25)
         
         # Should detect H-bonds between molecules
         # H1 of mol 1 (at 0.1) is 0.9 nm from O2 - too far

@@ -15,8 +15,10 @@ from quickice.ranking import (
 )
 
 
+# NOTE: intentionally NOT named `simple_candidate` — this 4-water body DIVERGES from
+# tests/test_output/conftest.py's unrelated same-name fixture (out of scope at tests/ root; unique name avoids confusion).
 @pytest.fixture
-def simple_candidate():
+def simple_candidate_ranking():
     """Create a simple candidate for testing.
     
     Creates a 1nm cubic cell with 4 water molecules.
@@ -290,15 +292,15 @@ class TestNormalizeScores:
 class TestEnergyScore:
     """Tests for energy_score function."""
     
-    def test_energy_score_returns_float(self, simple_candidate):
+    def test_energy_score_returns_float(self, simple_candidate_ranking):
         """Test that energy_score returns a float."""
-        result = energy_score(simple_candidate)
+        result = energy_score(simple_candidate_ranking)
         
         assert isinstance(result, float)
     
-    def test_energy_score_lower_better(self, simple_candidate, ideal_candidate):
+    def test_energy_score_lower_better(self, simple_candidate_ranking, ideal_candidate):
         """Test that better H-bond geometry gives lower score."""
-        score_simple = energy_score(simple_candidate)
+        score_simple = energy_score(simple_candidate_ranking)
         score_ideal = energy_score(ideal_candidate)
         
         # Ideal candidate should have lower (better) energy score
@@ -321,9 +323,9 @@ class TestEnergyScore:
         # No O-O pairs within cutoff -> infinity
         assert score == float('inf')
     
-    def test_energy_score_positive(self, simple_candidate):
+    def test_energy_score_positive(self, simple_candidate_ranking):
         """Test that energy score is always non-negative."""
-        score = energy_score(simple_candidate)
+        score = energy_score(simple_candidate_ranking)
         
         assert score >= 0
 
@@ -335,9 +337,9 @@ class TestEnergyScore:
 class TestDensityScore:
     """Tests for density_score function."""
     
-    def test_density_score_returns_float(self, simple_candidate):
+    def test_density_score_returns_float(self, simple_candidate_ranking):
         """Test that density_score returns a float."""
-        result = density_score(simple_candidate)
+        result = density_score(simple_candidate_ranking)
         
         assert isinstance(result, float)
     
@@ -377,9 +379,9 @@ class TestDensityScore:
         # (4 molecules in 1 nm³ = ~1.2 g/cm³)
         assert score_ih < score_other
     
-    def test_density_score_uses_metadata(self, simple_candidate):
+    def test_density_score_uses_metadata(self, simple_candidate_ranking):
         """Test that density_score reads density from candidate.metadata."""
-        score = density_score(simple_candidate)
+        score = density_score(simple_candidate_ranking)
         
         # Should use the metadata density value
         assert isinstance(score, float)
@@ -460,9 +462,9 @@ class TestDensityScore:
 class TestDiversityScore:
     """Tests for diversity_score function."""
     
-    def test_diversity_score_returns_float(self, simple_candidate, candidate_set):
+    def test_diversity_score_returns_float(self, simple_candidate_ranking, candidate_set):
         """Test that diversity_score returns a float."""
-        result = diversity_score(simple_candidate, candidate_set)
+        result = diversity_score(simple_candidate_ranking, candidate_set)
         
         assert isinstance(result, float)
     

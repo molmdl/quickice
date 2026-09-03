@@ -118,8 +118,10 @@ def tmp_top(tmp_path):
     return str(tmp_path / "test.top")
 
 
+# NOTE: intentionally NOT named `simple_candidate`/`simple_interface` — these bodies DIVERGE from
+# tests/test_output/conftest.py's unrelated same-name fixtures (out of scope at tests/ root; unique names avoid confusion).
 @pytest.fixture
-def simple_candidate():
+def simple_candidate_tip4p():
     """Minimal Candidate for write_top_file (ice-only)."""
     positions = np.array([
         [0.0, 0.0, 0.0],   # O
@@ -140,7 +142,7 @@ def simple_candidate():
 
 
 @pytest.fixture
-def simple_interface():
+def simple_interface_tip4p():
     """Minimal InterfaceStructure for write_interface_top_file."""
     positions = np.zeros((4, 3))
     atom_names = ["OW", "HW1", "HW2", "MW"]
@@ -199,8 +201,8 @@ class TestTIP4PIceConstants:
 class TestWriteTopFileLJValues:
     """Regression test: LJ values in write_top_file output."""
 
-    def test_ow_sigma_in_output(self, simple_candidate, tmp_top):
-        write_top_file(simple_candidate, tmp_top)
+    def test_ow_sigma_in_output(self, simple_candidate_tip4p, tmp_top):
+        write_top_file(simple_candidate_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         atomtypes = _parse_atomtypes(top_text)
         assert "OW_ice" in atomtypes, "OW_ice not found in [atomtypes]"
@@ -209,8 +211,8 @@ class TestWriteTopFileLJValues:
         # Must be < 1.0 nm (catches unit errors)
         assert 0.01 < sigma < 1.0, f"OW_ice sigma={sigma} nm outside physical range"
 
-    def test_ow_epsilon_in_output(self, simple_candidate, tmp_top):
-        write_top_file(simple_candidate, tmp_top)
+    def test_ow_epsilon_in_output(self, simple_candidate_tip4p, tmp_top):
+        write_top_file(simple_candidate_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         atomtypes = _parse_atomtypes(top_text)
         epsilon = atomtypes["OW_ice"]["epsilon"]
@@ -218,27 +220,27 @@ class TestWriteTopFileLJValues:
         # Must be < 10.0 kJ/mol (catches unit errors)
         assert 0.001 < epsilon < 10.0, f"OW_ice epsilon={epsilon} kJ/mol outside physical range"
 
-    def test_hw_no_lj(self, simple_candidate, tmp_top):
+    def test_hw_no_lj(self, simple_candidate_tip4p, tmp_top):
         """Hydrogen atoms have zero LJ parameters."""
-        write_top_file(simple_candidate, tmp_top)
+        write_top_file(simple_candidate_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         atomtypes = _parse_atomtypes(top_text)
         if "HW_ice" in atomtypes:
             assert atomtypes["HW_ice"]["sigma"] == 0.0
             assert atomtypes["HW_ice"]["epsilon"] == 0.0
 
-    def test_defaults_comb_rule_2(self, simple_candidate, tmp_top):
+    def test_defaults_comb_rule_2(self, simple_candidate_tip4p, tmp_top):
         """comb-rule must be 2 (Lorentz-Berthelot, AMBER/GAFF2 convention)."""
-        write_top_file(simple_candidate, tmp_top)
+        write_top_file(simple_candidate_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         defaults = _parse_defaults(top_text)
         assert defaults.get("comb_rule") == 2, (
             f"comb_rule={defaults.get('comb_rule')} must be 2 (Lorentz-Berthelot, AMBER convention)"
         )
 
-    def test_defaults_fudge_values(self, simple_candidate, tmp_top):
+    def test_defaults_fudge_values(self, simple_candidate_tip4p, tmp_top):
         """fudgeLJ=0.5, fudgeQQ=0.8333 (Amber defaults)."""
-        write_top_file(simple_candidate, tmp_top)
+        write_top_file(simple_candidate_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         defaults = _parse_defaults(top_text)
         assert abs(defaults.get("fudgeLJ", 0) - 0.5) < 0.001
@@ -252,22 +254,22 @@ class TestWriteTopFileLJValues:
 class TestWriteInterfaceTopFileLJValues:
     """Regression test: LJ values in write_interface_top_file output."""
 
-    def test_ow_sigma_in_interface_top(self, simple_interface, tmp_top):
-        write_interface_top_file(simple_interface, tmp_top)
+    def test_ow_sigma_in_interface_top(self, simple_interface_tip4p, tmp_top):
+        write_interface_top_file(simple_interface_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         atomtypes = _parse_atomtypes(top_text)
         assert "OW_ice" in atomtypes
         assert 0.01 < atomtypes["OW_ice"]["sigma"] < 1.0
 
-    def test_ow_epsilon_in_interface_top(self, simple_interface, tmp_top):
-        write_interface_top_file(simple_interface, tmp_top)
+    def test_ow_epsilon_in_interface_top(self, simple_interface_tip4p, tmp_top):
+        write_interface_top_file(simple_interface_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         atomtypes = _parse_atomtypes(top_text)
         assert 0.001 < atomtypes["OW_ice"]["epsilon"] < 10.0
 
-    def test_comb_rule_2_in_interface_top(self, simple_interface, tmp_top):
+    def test_comb_rule_2_in_interface_top(self, simple_interface_tip4p, tmp_top):
         """comb-rule must be 2 (Lorentz-Berthelot, AMBER/GAFF2 convention)."""
-        write_interface_top_file(simple_interface, tmp_top)
+        write_interface_top_file(simple_interface_tip4p, tmp_top)
         top_text = Path(tmp_top).read_text()
         defaults = _parse_defaults(top_text)
         assert defaults.get("comb_rule") == 2, (

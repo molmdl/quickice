@@ -11,8 +11,10 @@ from quickice.ranking.types import RankedCandidate, RankingResult
 from quickice.output.pdb_writer import write_pdb_with_cryst1, write_ranked_candidates
 
 
+# NOTE: intentionally NOT named `simple_candidate` — this 2-water body DIVERGES from
+# tests/test_output/conftest.py's same-name fixture (1 ice molecule, 3 atoms). Never merge.
 @pytest.fixture
-def simple_candidate():
+def simple_candidate_pdb():
     """Create a simple candidate for testing.
     
     Cell vectors in nm (will be converted to Angstrom):
@@ -88,23 +90,23 @@ def triclinic_candidate():
 
 
 @pytest.fixture
-def ranking_result(simple_candidate):
+def ranking_result(simple_candidate_pdb):
     """Create a ranking result with multiple ranked candidates."""
     candidates = []
     
     # Create 12 candidates with different ranks
     for i in range(12):
         # Offset positions slightly for each candidate
-        positions = simple_candidate.positions + i * 0.01
+        positions = simple_candidate_pdb.positions + i * 0.01
         
         candidate = Candidate(
             positions=positions,
-            atom_names=simple_candidate.atom_names.copy(),
-            cell=simple_candidate.cell.copy(),
-            nmolecules=simple_candidate.nmolecules,
-            phase_id=simple_candidate.phase_id,
-            seed=simple_candidate.seed + i,
-            metadata=simple_candidate.metadata.copy()
+            atom_names=simple_candidate_pdb.atom_names.copy(),
+            cell=simple_candidate_pdb.cell.copy(),
+            nmolecules=simple_candidate_pdb.nmolecules,
+            phase_id=simple_candidate_pdb.phase_id,
+            seed=simple_candidate_pdb.seed + i,
+            metadata=simple_candidate_pdb.metadata.copy()
         )
         
         ranked = RankedCandidate(
@@ -127,13 +129,13 @@ def ranking_result(simple_candidate):
 class TestWritePdbWithCryst1:
     """Tests for write_pdb_with_cryst1 function."""
     
-    def test_creates_valid_pdb_file(self, simple_candidate):
+    def test_creates_valid_pdb_file(self, simple_candidate_pdb):
         """Test that function creates a valid PDB file."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             # Check file was created
             assert Path(filepath).exists()
@@ -148,13 +150,13 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_cryst1_record_contains_cell_parameters(self, simple_candidate):
+    def test_cryst1_record_contains_cell_parameters(self, simple_candidate_pdb):
         """Test that CRYST1 record contains a, b, c, alpha, beta, gamma in Angstrom."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             with open(filepath, 'r') as f:
                 lines = f.readlines()
@@ -193,13 +195,13 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_coordinates_converted_from_nm_to_angstrom(self, simple_candidate):
+    def test_coordinates_converted_from_nm_to_angstrom(self, simple_candidate_pdb):
         """Test that coordinates are converted from nm to Angstrom (multiply by 10.0)."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             with open(filepath, 'r') as f:
                 lines = f.readlines()
@@ -226,13 +228,13 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_atom_records_follow_pdb_format(self, simple_candidate):
+    def test_atom_records_follow_pdb_format(self, simple_candidate_pdb):
         """Test that ATOM records follow PDB format specification."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             with open(filepath, 'r') as f:
                 lines = f.readlines()
@@ -259,13 +261,13 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_uses_hetatm_for_water_molecules(self, simple_candidate):
+    def test_uses_hetatm_for_water_molecules(self, simple_candidate_pdb):
         """Test that HETATM is used for water molecules (standard for non-standard residues)."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             with open(filepath, 'r') as f:
                 content = f.read()
@@ -275,13 +277,13 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_element_column_right_justified(self, simple_candidate):
+    def test_element_column_right_justified(self, simple_candidate_pdb):
         """Test that element symbol is right-justified in columns 77-78."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
         
         try:
-            write_pdb_with_cryst1(simple_candidate, filepath)
+            write_pdb_with_cryst1(simple_candidate_pdb, filepath)
             
             with open(filepath, 'r') as f:
                 lines = f.readlines()
@@ -334,7 +336,7 @@ class TestWritePdbWithCryst1:
         finally:
             Path(filepath).unlink(missing_ok=True)
     
-    def test_residue_numbering_increments_per_molecule(self, simple_candidate):
+    def test_residue_numbering_increments_per_molecule(self, simple_candidate_pdb):
         """Test that residue numbers increment for each water molecule."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
             filepath = f.name
@@ -354,7 +356,7 @@ class TestWritePdbWithCryst1:
             candidate = Candidate(
                 positions=positions,
                 atom_names=atom_names,
-                cell=simple_candidate.cell.copy(),
+                cell=simple_candidate_pdb.cell.copy(),
                 nmolecules=2,
                 phase_id="test_phase",
                 seed=1,
