@@ -180,7 +180,7 @@ def _expected_gro_residues(params: ChainParams) -> set[str]:
     # Hydrate guest (GRO residue name, no asterisk)
     keys.add(_HYDRATE_GUEST[params.hydrate_type][1])
     if params.has_custom:
-        keys.add("MOL")  # GRO residue name for custom molecule
+        keys.add("etoh")  # GRO residue name == ITP moleculetype (48.3-02 D1)
     if params.solute_type == "CH4":
         keys.add("CH4_L")
     if params.solute_type == "THF":

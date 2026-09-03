@@ -14,7 +14,7 @@ Implementation: Build chains inline, use same interface_slab fixture for F5/F6/F
 F3 uses inline hydrate candidate generation: _hydrate_sI_ch4_candidate() + _make_slab_interface()
 
 CRITICAL NOTES from prior plans:
-- Custom molecule GRO residue name is "MOL", TOP [molecules] uses ITP name "etoh"
+- Custom molecule GRO residue name IS the ITP name "etoh" (48.3-02 D1), matching TOP [molecules]
 - F6/F7 use _insert_ions_from_solute() with BUG I5 workaround
 - THF has 13 atoms, CH4 has 5 atoms, ethanol has 9 atoms
 - ion.itp must be generated to tmp_path before write_ion_top_file
@@ -237,7 +237,7 @@ class TestCrossChainInvariants:
 
         F5: 3 types (SOL, NA, CL)
         F6: 4 types (SOL, CH4_L, NA, CL)
-        F1: 5 types (SOL, MOL, CH4_L, NA, CL)
+        F1: 5 types (SOL, etoh, CH4_L, NA, CL)
 
         Assert: len(f5_molecules) < len(f6_molecules) < len(f1_molecules)
         """
@@ -267,7 +267,7 @@ class TestCrossChainInvariants:
             f"F6 should have 4 molecule types (SOL,CH4_L,NA,CL), got {f6_types}: {f6_result['molecules']}"
         )
         assert f1_types == 5, (
-            f"F1 should have 5 molecule types (SOL,MOL,CH4_L,NA,CL), got {f1_types}: {f1_result['molecules']}"
+            f"F1 should have 5 molecule types (SOL,etoh,CH4_L,NA,CL), got {f1_types}: {f1_result['molecules']}"
         )
 
         assert f5_types < f6_types < f1_types, (

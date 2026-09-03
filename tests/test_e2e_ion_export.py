@@ -200,14 +200,14 @@ class TestIonFromInterface:
 class TestIonFromCustom:
     """Validate Ion from Custom export via write_ion_gro_file / write_ion_top_file.
 
-    Ion from Custom has SOL, then MOL (custom molecule), then NA, then CL.
+    Ion from Custom has SOL, then etoh (custom molecule), then NA, then CL.
     GRO atom count = ice*4 + water*4 + custom_atoms + na_count + cl_count.
     TOP [molecules] = {"SOL": ice+water, "etoh": n_custom, "NA": na_count, "CL": cl_count}
     TOP #include = ["tip4p-ice.itp", "etoh.itp", "ion.itp"]
     """
 
     def test_gro_sol_before_custom_before_na_before_cl(self, interface_slab, tmp_path):
-        """GRO file has SOL before MOL (custom) before NA before CL."""
+        """GRO file has SOL before etoh (custom) before NA before CL."""
         custom = _insert_custom_molecules(interface_slab, n_molecules=3)
         ion = _insert_ions(custom, concentration=0.15)
 
@@ -218,12 +218,12 @@ class TestIonFromCustom:
         unique_names = set(residue_names)
 
         assert "SOL" in unique_names, "Should have SOL residues"
-        assert "MOL" in unique_names, "Should have MOL (custom) residues"
+        assert "etoh" in unique_names, "Should have etoh (custom, ITP moleculetype) residues"
         assert "NA" in unique_names, "Should have NA residues"
         assert "CL" in unique_names, "Should have CL residues"
 
-        # Verify ordering: SOL → MOL → NA → CL
-        assert_gro_residue_ordering(residue_names, ["SOL", "MOL", "NA", "CL"])
+        # Verify ordering: SOL → etoh → NA → CL
+        assert_gro_residue_ordering(residue_names, ["SOL", "etoh", "NA", "CL"])
 
     def test_gro_atom_count_matches_header(self, interface_slab, tmp_path):
         """GRO atom count header matches actual atom lines."""
@@ -242,7 +242,7 @@ class TestIonFromCustom:
         )
 
     def test_top_molecules_section(self, interface_slab, tmp_path):
-        """TOP [molecules] section has SOL, MOL, NA, CL counts."""
+        """TOP [molecules] section has SOL, etoh, NA, CL counts."""
         custom = _insert_custom_molecules(interface_slab, n_molecules=3)
         ion = _insert_ions(custom, concentration=0.15)
 

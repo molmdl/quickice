@@ -456,7 +456,7 @@ class TestChainF1GmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "MOL", "CH4_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "etoh", "CH4_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -596,7 +596,7 @@ class TestChainF4GmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "THF_H", "MOL", "THF_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "THF_H", "etoh", "THF_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -661,7 +661,7 @@ class TestChainF2GmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "MOL", "NA", "CL"}
+        expected_gro_keys = {"SOL", "etoh", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -727,7 +727,7 @@ class TestChainF1ThfGmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "MOL", "THF_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "etoh", "THF_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -865,7 +865,7 @@ class TestChainF4Ch4GmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "THF_H", "MOL", "CH4_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "THF_H", "etoh", "CH4_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -939,7 +939,7 @@ class TestChainF4Ch4HydrateGmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "CH4_H", "MOL", "CH4_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "CH4_H", "etoh", "CH4_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")
@@ -1074,7 +1074,7 @@ class TestChainF4SIIGmxValidation:
         # Assert expected residue names in .gro
         residue_names = parse_gro_residue_names(gro_path)
         unique_residues = set(residue_names)
-        expected_gro_keys = {"SOL", "THF_H", "MOL", "THF_L", "NA", "CL"}
+        expected_gro_keys = {"SOL", "THF_H", "etoh", "THF_L", "NA", "CL"}
         for key in expected_gro_keys:
             if key.endswith("*"):
                 base = key.rstrip("*")

@@ -6,10 +6,10 @@ correctly. Each chain accumulates molecule types through multiple insertion
 steps, producing unique combinations not covered by single-structure tests.
 
 Chain descriptions:
-  F1: Interface → Custom → Solute → Ion  (5 molecule types: SOL, MOL, CH4_L, NA, CL)
-  F2: Interface → Custom → Ion           (4 molecule types: SOL, MOL, NA, CL)
+  F1: Interface → Custom → Solute → Ion  (5 molecule types: SOL, etoh, CH4_L, NA, CL)
+  F2: Interface → Custom → Ion           (4 molecule types: SOL, etoh, NA, CL)
   F3: Hydrate → Interface → Solute → Ion (5 molecule types: SOL, CH4_H, CH4_L, NA, CL)
-  F4: Hydrate → Interface → Custom → Solute → Ion  (6 molecule types: SOL, THF_H, MOL, THF_L, NA, CL)
+  F4: Hydrate → Interface → Custom → Solute → Ion  (6 molecule types: SOL, THF_H, etoh, THF_L, NA, CL)
 
 Uses conftest.py fixtures for real GenIce2-generated structures.
 """
@@ -61,12 +61,13 @@ def _get_data_dir() -> Path:
 class TestChainF1:
     """Validate F1 chain: Interface → Custom → Solute → Ion.
 
-    5 molecule types in GRO: SOL → MOL → CH4_L → NA → CL
+    5 molecule types in GRO: SOL → etoh → CH4_L → NA → CL
     TOP [molecules]: SOL, etoh, CH4_L, NA, CL
     TOP #include: tip4p-ice.itp, etoh.itp, ch4_liquid.itp, ion.itp
 
-    NOTE: GRO residue name is "MOL" (from registry moleculetype_name),
-    but TOP [molecules] uses ITP moleculetype name "etoh" (Bug 2 fix).
+    NOTE (48.3-02 D1): the custom molecule's GRO residue name IS the ITP
+    moleculetype name "etoh" (CustomMoleculeInserter registers the ITP
+    name), so .gro residues and .top [molecules] agree strictly.
     """
 
     @pytest.fixture(autouse=True)
@@ -81,7 +82,7 @@ class TestChainF1:
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
 
     def test_gro_residue_ordering(self, tmp_path):
-        """GRO file has SOL → MOL → CH4_L → NA → CL ordering (5 molecule types)."""
+        """GRO file has SOL → etoh → CH4_L → NA → CL ordering (5 molecule types)."""
         gro_path = str(tmp_path / "chain_f1.gro")
         write_ion_gro_file(self.ion, gro_path)
 
@@ -89,13 +90,13 @@ class TestChainF1:
         unique_names = set(residue_names)
 
         assert "SOL" in unique_names, "Should have SOL residues"
-        assert "MOL" in unique_names, "Should have MOL (custom) residues"
+        assert "etoh" in unique_names, "Should have etoh (custom, ITP moleculetype) residues"
         assert "CH4_L" in unique_names, "Should have CH4_L (solute) residues"
         assert "NA" in unique_names, "Should have NA residues"
         assert "CL" in unique_names, "Should have CL residues"
 
-        # Verify ordering: SOL → MOL → CH4_L → NA → CL
-        assert_gro_residue_ordering(residue_names, ["SOL", "MOL", "CH4_L", "NA", "CL"])
+        # Verify ordering: SOL → etoh → CH4_L → NA → CL
+        assert_gro_residue_ordering(residue_names, ["SOL", "etoh", "CH4_L", "NA", "CL"])
 
     def test_gro_atom_count_matches_header(self, tmp_path):
         """GRO atom count header matches actual atom lines and molecule_index."""
@@ -111,7 +112,7 @@ class TestChainF1:
         )
 
     def test_top_molecules_section(self, tmp_path):
-        """TOP [molecules] section has SOL, MOL, CH4_L, NA, CL with correct counts."""
+        """TOP [molecules] section has SOL, etoh, CH4_L, NA, CL with correct counts."""
         # Generate ion.itp before writing top file
         write_ion_itp(tmp_path / "ion.itp", self.ion.na_count, self.ion.cl_count)
 
@@ -226,13 +227,13 @@ class TestChainF1:
 class TestChainF2:
     """Validate F2 chain: Interface → Custom → Ion.
 
-    4 molecule types in GRO: SOL → MOL → NA → CL (no solutes)
+    4 molecule types in GRO: SOL → etoh → NA → CL (no solutes)
     TOP [molecules]: SOL, etoh, NA, CL
     TOP #include: tip4p-ice.itp, etoh.itp, ion.itp
 
     NOTE: F2 uses _insert_ions() directly (no BUG I5 workaround needed,
     since custom→ion doesn't go through SoluteStructure).
-    GRO residue is "MOL" but TOP [molecules] uses ITP name "etoh".
+    GRO residue and TOP [molecules] both use the ITP name "etoh" (48.3-02 D1).
     """
 
     @pytest.fixture(autouse=True)
@@ -242,7 +243,7 @@ class TestChainF2:
         self.ion = _insert_ions(custom, concentration=0.15)
 
     def test_gro_residue_ordering(self, tmp_path):
-        """GRO file has SOL → MOL → NA → CL ordering (no solutes)."""
+        """GRO file has SOL → etoh → NA → CL ordering (no solutes)."""
         gro_path = str(tmp_path / "chain_f2.gro")
         write_ion_gro_file(self.ion, gro_path)
 
@@ -250,13 +251,13 @@ class TestChainF2:
         unique_names = set(residue_names)
 
         assert "SOL" in unique_names, "Should have SOL residues"
-        assert "MOL" in unique_names, "Should have MOL (custom) residues"
+        assert "etoh" in unique_names, "Should have etoh (custom, ITP moleculetype) residues"
         assert "NA" in unique_names, "Should have NA residues"
         assert "CL" in unique_names, "Should have CL residues"
         assert "CH4_L" not in unique_names, "Should NOT have solute residues"
 
-        # Verify ordering: SOL → MOL → NA → CL
-        assert_gro_residue_ordering(residue_names, ["SOL", "MOL", "NA", "CL"])
+        # Verify ordering: SOL → etoh → NA → CL
+        assert_gro_residue_ordering(residue_names, ["SOL", "etoh", "NA", "CL"])
 
     def test_gro_atom_count_matches_header(self, tmp_path):
         """GRO atom count header matches actual atom lines."""
@@ -272,7 +273,7 @@ class TestChainF2:
         )
 
     def test_top_molecules_section(self, tmp_path):
-        """TOP [molecules] section has SOL, MOL, NA, CL (no solutes)."""
+        """TOP [molecules] section has SOL, etoh, NA, CL (no solutes)."""
         write_ion_itp(tmp_path / "ion.itp", self.ion.na_count, self.ion.cl_count)
 
         top_path = str(tmp_path / "chain_f2.top")
@@ -492,7 +493,7 @@ class TestChainF3:
 class TestChainF4:
     """Validate F4 chain: Hydrate → Interface → Custom → Solute → Ion.
 
-    6 molecule types in GRO: SOL → THF_H → MOL → THF_L → NA → CL
+    6 molecule types in GRO: SOL → THF_H → etoh → THF_L → NA → CL
     TOP [molecules]: SOL, THF_H (or THF), etoh, THF_L, NA, CL
     TOP #include: tip4p-ice.itp, thf_hydrate.itp, etoh.itp, thf_liquid.itp, ion.itp
 
@@ -519,7 +520,7 @@ class TestChainF4:
         self.ion = _insert_ions_from_solute(solute, concentration=0.15)
 
     def test_gro_residue_ordering(self, tmp_path):
-        """GRO file has SOL → THF_H → MOL → THF_L → NA → CL (6 molecule types)."""
+        """GRO file has SOL → THF_H → etoh → THF_L → NA → CL (6 molecule types)."""
         gro_path = str(tmp_path / "chain_f4.gro")
         write_ion_gro_file(self.ion, gro_path)
 
@@ -528,14 +529,14 @@ class TestChainF4:
 
         assert "SOL" in unique_names, "Should have SOL residues"
         assert "THF_H" in unique_names, "Should have THF_H (hydrate guest) residues"
-        assert "MOL" in unique_names, "Should have MOL (custom) residues"
+        assert "etoh" in unique_names, "Should have etoh (custom, ITP moleculetype) residues"
         assert "THF_L" in unique_names, "Should have THF_L (liquid solute) residues"
         assert "NA" in unique_names, "Should have NA residues"
         assert "CL" in unique_names, "Should have CL residues"
 
-        # Verify ordering: SOL → THF_H → MOL → THF_L → NA → CL
+        # Verify ordering: SOL → THF_H → etoh → THF_L → NA → CL
         assert_gro_residue_ordering(
-            residue_names, ["SOL", "THF_H", "MOL", "THF_L", "NA", "CL"]
+            residue_names, ["SOL", "THF_H", "etoh", "THF_L", "NA", "CL"]
         )
 
     def test_gro_atom_count_matches_header(self, tmp_path):
@@ -552,7 +553,7 @@ class TestChainF4:
         )
 
     def test_top_molecules_section(self, tmp_path):
-        """TOP [molecules] section has SOL, THF_H, MOL, THF_L, NA, CL (6 entries)."""
+        """TOP [molecules] section has SOL, THF_H, etoh, THF_L, NA, CL (6 entries)."""
         write_ion_itp(tmp_path / "ion.itp", self.ion.na_count, self.ion.cl_count)
 
         top_path = str(tmp_path / "chain_f4.top")

@@ -57,9 +57,9 @@ class TestCustomMoleculeExport:
     """Validate Custom Molecule export via write_custom_molecule_gro_file / write_custom_molecule_top_file.
 
     Custom molecule system has SOL (ice+water) + custom residue molecules.
-    The moleculetype_name comes from MoleculetypeRegistry.register_custom_molecule()
-    which defaults to "MOL" (the GRO residue name), but the TOP [molecules]
-    section now uses the ITP moleculetype name "etoh" (Bug 2 fix).
+    The moleculetype_name comes from CustomMoleculeInserter registering the
+    ITP [moleculetype] name (48.3-02 D1: "etoh" for etoh.itp), so the .gro
+    residues and the TOP [molecules] section agree strictly.
 
     GRO residue ordering: SOL before custom residue (no interleaving).
     GRO atom count = ice_nmolecules*4 + water_nmolecules*4 + custom_molecule_count*atoms_per_mol.
@@ -71,8 +71,8 @@ class TestCustomMoleculeExport:
     def _build_custom(self, interface_slab):
         """Build custom molecule structure for all tests in this class."""
         self.custom = _insert_custom_molecules(interface_slab, n_molecules=3)
-        self.mol_name = self.custom.moleculetype_name  # "MOL" from registry (GRO residue name)
-        self.top_mol_name = "etoh"  # ITP moleculetype name (TOP [molecules] name, Bug 2 fix)
+        self.mol_name = self.custom.moleculetype_name  # ITP moleculetype name (48.3-02 D1)
+        self.top_mol_name = "etoh"  # ITP moleculetype name (TOP [molecules] name)
 
     def test_gro_sol_before_custom_residues(self, tmp_path):
         """GRO file has SOL residues before custom molecule residues with no interleaving."""

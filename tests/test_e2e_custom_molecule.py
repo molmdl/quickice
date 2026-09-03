@@ -597,8 +597,10 @@ class TestCustomMoleculeEdgeCases:
     def test_custom_molecule_moleculetype_registration(self, interface_slab):
         """After place_random(), moleculetype_name should be registered in the registry.
 
-        CustomMoleculeInserter registers each placed molecule type with
-        MoleculetypeRegistry, producing a name like "CUSTOM_MOL_1".
+        CustomMoleculeInserter registers the custom molecule under the ITP
+        [moleculetype] name when usable as a GRO residue name (48.3-02 D1:
+        keeps .gro residues and .top [molecules] in strict agreement), so
+        etoh.itp (moleculetype "etoh") yields "etoh".
         """
         config = CustomMoleculeConfig(
             placement_mode="random",
@@ -611,8 +613,9 @@ class TestCustomMoleculeEdgeCases:
 
         # moleculetype_name should be set
         assert custom.moleculetype_name, "moleculetype_name should not be empty"
-        assert "CUSTOM" in custom.moleculetype_name.upper() or "MOL" in custom.moleculetype_name.upper(), (
-            f"Expected moleculetype name containing CUSTOM/MOL, got '{custom.moleculetype_name}'"
+        assert custom.moleculetype_name == "etoh", (
+            f"Expected ITP moleculetype name 'etoh' (48.3-02 D1 reconciliation), "
+            f"got '{custom.moleculetype_name}'"
         )
 
         # Registry should have the registered type

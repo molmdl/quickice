@@ -85,12 +85,18 @@ class TestValidInputs:
         assert "Molecules: 4" in stdout
     
     def test_boundary_nmolecules_max(self):
-        """Large nmolecules (1000) should be accepted and complete in reasonable time."""
+        """Large nmolecules (1000) should be accepted and complete in reasonable time.
+
+        timeout=60 (run_quickice default) — the 1000-molecule pipeline takes
+        ~11s wall on the dev machine; the previous hardcoded 10s was a
+        load-boundary flake (passed in 48.3-03's GATE-FULL, failed in
+        isolation minutes later; 48.3-02 measured 11.1s rc=0).
+        """
         returncode, stdout, stderr = run_quickice(
             "--temperature", "273",
             "--pressure", "0.1",
             "--nmolecules", "1000",
-            timeout=10
+            timeout=60
         )
         
         assert returncode == 0
