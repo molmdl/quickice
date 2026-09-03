@@ -401,7 +401,7 @@ Plans:
 - [ ] 48.3-16-PLAN.md — Absorb 44.1 per-exporter grompp files into cross-tab siblings
 - [ ] 48.3-17-PLAN.md — Merge sH interface export + split mixed_cage_occupancy
 - [ ] 48.3-18-PLAN.md — Move byte-eq baselines out of .planning/ → tests/_baselines/
-- [ ] 48.3-19-PLAN.md — Merge single-structure writer files (ice/interface/custom/solute/ion) into grompp-backed suite
+- [x] 48.3-19-PLAN.md — Merge single-structure writer files (ice/interface/custom/solute/ion) into grompp-backed suite
 - [ ] 48.3-20-PLAN.md — Sibling fixture clusters: extract near-copies + rename divergents + e2e/ scaffolding
 - [ ] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/
 - [ ] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
