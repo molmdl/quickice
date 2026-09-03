@@ -23,23 +23,34 @@ Covers the Phase 42 CLI surface for mixed cage occupancy:
    (extracted in plan 42-07), builds a ``HydrateConfig``, and asserts the
    per-cage ``guest_type`` and ``occupancy`` round-trip correctly.
 
-Note (deviation from plan's literal text): the plan's Task 2 suggests testing
-the mixed built-in grompp via the CLI interface writers (``write_interface_*``).
-However, those writers carry a single guest stream and use
-``detect_guest_type_from_atoms`` to pick ONE guest type for the whole guest
-region — they cannot emit a mixed ``[molecules]`` block with both ``CH4_H``
-and ``THF_H``. The multi-molecule writers (used by the GUI
-``HydrateGROMACSExporter``) DO handle mixed built-in via ``molecule_index`` +
-``registry`` (per-``mol_type`` resolution), so test 1 uses them to validate
-the mixed built-in grompp outcome that the CLI ``--cage-guest`` feature
-enables. The CLI parser/pipeline building of ``cage_guest_assignments`` is
-validated by test 3; the CLI export path itself (``_run_export_step`` →
-``write_interface_*``) remains single-guest-stream and is covered by the
-existing 41-08 tests (``test_run_export_step_*``).
+Note (updated 48.3-07; original deviation note from plan 42-07): the CLI
+``--cage-guest`` flag builds mixed ``cage_guest_assignments``, but which CLI
+export paths can EMIT mixed output differs by branch:
+
+- The CLI INTERFACE branch (``_run_export_step`` with ``_interface_result``,
+  slab built via ``assemble_slab``) IS mixed-capable since b278a9ed:
+  ``write_interface_top_file`` detects 2+ built-in types via the slab's
+  ``guest_atom_counts`` + ``guest_descriptors`` and run-length encodes BOTH
+  guests (covered by tests/test_e2e_mixed_builtin_interface_export.py,
+  48.3-05).
+- The CLI HYDRATE branch (``_run_export_step`` with only ``_hydrate_result``)
+  is NOT: its InterfaceStructure wrapper (pipeline.py) does not thread
+  ``guest_atom_counts``/``guest_descriptors``, so the writers fall back to
+  the single ``detect_guest_type_from_atoms`` pass (45-RESEARCH Pitfall 2)
+  and label ALL guests with ONE residue name. Test 2 below PINS that
+  limitation (decision D2 = pin-and-document, 48.3-DECISIONS.md).
+- The multi-molecule writers (used by the GUI ``HydrateGROMACSExporter``)
+  handle mixed built-in via ``molecule_index`` + ``registry``
+  (per-``mol_type`` resolution) — test 1 uses them to validate the mixed
+  built-in grompp outcome that the CLI ``--cage-guest`` feature enables.
+
+The CLI parser/pipeline building of ``cage_guest_assignments`` is validated
+by test 4 (and the legacy aliases by test 5).
 """
 
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -47,8 +58,12 @@ import pytest
 from tests.conftest import gmx_skipif  # noqa: E402
 from quickice.cli.parser import create_parser  # noqa: E402
 from quickice.cli.pipeline import (  # noqa: E402
+    CLIPipeline,
     _build_custom_guest_info,
     _parse_cage_guest_args,
+)
+from quickice.structure_generation.hydrate_generator import (  # noqa: E402
+    HydrateStructureGenerator,
 )
 from quickice.output.gromacs_writer import (  # noqa: E402
     write_multi_molecule_gro_file,
@@ -67,6 +82,7 @@ from tests.e2e_export_helpers import (  # noqa: E402
     assert_gro_top_consistent,
     assert_itp_completeness,
     parse_gro_residue_names,
+    parse_top_includes,
     parse_top_molecules,
     run_gmx_grompp,
 )
@@ -75,6 +91,44 @@ from tests.e2e_export_helpers import (  # noqa: E402
 # ══════════════════════════════════════════════════════════════════════════════
 # Test 1: CLI mixed built-in (CH4 + THF) grompp e2e
 # ══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(scope="module")
+def mixed_builtin_sii_hydrate():
+    """Module-scoped mixed built-in (CH4 small + THF large) sII hydrate.
+
+    Mirrors the fixture of tests/test_e2e_mixed_builtin_interface_export.py
+    (48.3-05): ``cage_guest_assignments`` places BUILT-IN ch4 in the small
+    cages and BUILT-IN thf in the large cages (occupancy 100% both). The
+    GenIce2 call is amortized module-wide (AGENTS.md convention). Returns
+    ``SimpleNamespace(hydrate=..., config=...)`` — ``config`` is the
+    ``HydrateConfig`` the real CLI source step persists on
+    ``self._hydrate_result.config``.
+    """
+    gen = HydrateStructureGenerator()
+    config = HydrateConfig(
+        lattice_type="sII",
+        guest_type="ch4",  # primary (legacy) field — ch4 is built-in
+        cage_guest_assignments={
+            "small": CageGuestAssignment(guest_type="ch4", occupancy=100.0),
+            "large": CageGuestAssignment(guest_type="thf", occupancy=100.0),
+        },
+        supercell_x=1,
+        supercell_y=1,
+        supercell_z=1,
+    )
+    hydrate = gen.generate(config)
+    # Sanity: mixed built-in must place BOTH guest types.
+    assert hydrate.guest_count > 0, (
+        f"mixed built-in sII should have cage guests, got "
+        f"guest_count={hydrate.guest_count}"
+    )
+    mol_types = {m.mol_type for m in hydrate.molecule_index}
+    assert "ch4" in mol_types and "thf" in mol_types, (
+        f"mixed built-in sII should place BOTH ch4 + thf, got "
+        f"mol_types={mol_types}"
+    )
+    return SimpleNamespace(hydrate=hydrate, config=config)
 
 
 @gmx_skipif
@@ -215,7 +269,155 @@ def test_mixed_cli_built_in_grompp(tmp_path):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Test 2: _build_custom_guest_info returns list[dict] | None (Phase 42 API)
+# Test 2: D2 PIN — CLI hydrate branch carries a SINGLE guest stream
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@gmx_skipif
+def test_mixed_cli_hydrate_branch_pins_single_guest_stream(
+    tmp_path, mixed_builtin_sii_hydrate
+):
+    """DESIGN LIMITATION — PIN TEST (decision D2 = option-a pin-and-document,
+    .planning/phases/48.3-revise-tests-true-e2e/48.3-DECISIONS.md).
+
+    The CLI write_interface_* writers carry a single guest stream:
+    ``detect_guest_type_from_atoms`` picks ONE guest type for the whole guest
+    region (45-RESEARCH Pitfall 2). The CLI HYDRATE export branch
+    (``CLIPipeline._run_export_step`` with only ``_hydrate_result`` set) always
+    hits that single-stream fallback because its InterfaceStructure wrapper
+    (pipeline.py hydrate branch) does NOT thread ``guest_atom_counts`` /
+    ``guest_descriptors``. Its ITP staging likewise resolves only the legacy
+    ``config.guest_type`` ("ch4") and stages ONE guest ITP.
+
+    Pinned behavior for a mixed built-in CH4+THF hydrate (empirically verified
+    2026-09-03, matching the 48.3-05 discovery):
+
+    - ``_run_export_step`` exits 0 — the limitation is SILENT;
+    - ``hydrate.top`` ``[molecules]`` declares ``SOL + CH4_H`` only (all 24
+      guests — 16 CH4 + 8 THF — collapse into one CH4_H run; THF_H absent);
+    - ``hydrate.top`` ``#include``s only ``ch4_hydrate.itp``; only
+      ``ch4_hydrate.itp`` is staged (``thf_hydrate.itp`` never staged);
+    - all 184 guest atoms in ``hydrate.gro`` are labeled ``CH4_H``
+      (16x5 + 8x13 = 184; THF_H absent, no GUE);
+    - ``assert_itp_completeness`` + ``assert_gro_top_consistent`` still PASS
+      (name-consistency holds — the atom-COUNT gap is invisible at file level);
+    - ``gmx grompp`` FAILS with the coordinate/topology atom-count mismatch
+      (topology counts 24x5-atom CH4_H; coordinates carry 184 guest atoms).
+
+    Mixed built-in export is GUI-only (multi-molecule writers via
+    ``HydrateGROMACSExporter`` — tests/test_e2e_mixed_lattice_gui.py,
+    tests/test_e2e_mixed_ion_export.py) and the CLI INTERFACE branch is
+    mixed-capable when the slab carries descriptor metadata (b278a9ed —
+    tests/test_e2e_mixed_builtin_interface_export.py, 48.3-05). This test PINS
+    the hydrate-branch limitation so silent behavior drift fails here: if the
+    wrapper ever threads the metadata (or the writers go mixed), THF_H appears
+    and every single-stream assertion below flips. Do NOT 'fix' this test to
+    expect mixed output — update it consciously alongside the metadata-
+    threading fix instead (and re-pin the new behavior). No production-writer
+    changes belong to this test.
+
+    Pattern 4 (in-process ``_run_export_step``, mirrors
+    tests/test_e2e_mixed_builtin_interface_export.py): ``tmp_path`` is safe
+    here — SAFE-05 governs subprocess ``--output`` args, not in-process
+    writer output dirs.
+    """
+    ws = tmp_path / "hydrate_branch_pin"
+    ws.mkdir()  # _run_export_step does NOT create the dir (Pattern 4 note)
+
+    ns = mixed_builtin_sii_hydrate
+    pipe = CLIPipeline(args=SimpleNamespace())
+    pipe._output_dir = ws
+    pipe._hydrate_result = ns.hydrate  # carries .config (mixed assignments)
+    # _ion_result/_solute_result/_custom_result/_interface_result stay None
+    # -> export priority selects the HYDRATE branch (ion > solute > custom >
+    # interface > hydrate > ice).
+    code = pipe._run_export_step()
+    assert code == 0, (
+        "the limitation is SILENT: _run_export_step must exit 0 even though "
+        "the export is single-guest-stream (that is what is pinned)"
+    )
+
+    gro_path = ws / "hydrate.gro"
+    top_path = ws / "hydrate.top"
+    assert gro_path.exists(), "hydrate.gro not written"
+    assert top_path.exists(), "hydrate.top not written"
+
+    # 1) .top [molecules]: SINGLE guest stream — exactly CH4_H, THF_H absent.
+    mols = parse_top_molecules(str(top_path))
+    assert "SOL" in mols, f"water framework missing from [molecules]: {mols}"
+    assert "CH4_H" in mols, (
+        f"CH4_H missing from .top [molecules]: {mols}"
+    )
+    assert "THF_H" not in mols, (
+        f"THF_H found in .top [molecules] — the single-guest-stream "
+        f"limitation has changed (mixed output?). Update this pin test "
+        f"CONSCIOUSLY (see docstring): {mols}"
+    )
+    guest_names = {name for name in mols if name != "SOL"}
+    assert guest_names == {"CH4_H"}, (
+        f"exactly ONE guest stream expected (CH4_H), got {guest_names}"
+    )
+
+    # 2) .top #includes: only the single guest ITP.
+    includes = parse_top_includes(str(top_path))
+    assert "ch4_hydrate.itp" in includes, (
+        f"ch4_hydrate.itp not #included: {includes}"
+    )
+    assert "thf_hydrate.itp" not in includes, (
+        f"thf_hydrate.itp #included — single-stream limitation changed "
+        f"(update this pin test consciously): {includes}"
+    )
+
+    # 3) Staging: only ch4_hydrate.itp staged (thf never staged — the
+    #    hydrate branch resolves the legacy config.guest_type only).
+    assert (ws / "ch4_hydrate.itp").exists(), (
+        "ch4_hydrate.itp not staged in the export directory"
+    )
+    assert not (ws / "thf_hydrate.itp").exists(), (
+        "thf_hydrate.itp staged — hydrate-branch staging changed (update "
+        "this pin test consciously)"
+    )
+    assert (ws / "tip4p-ice.itp").exists(), (
+        "tip4p-ice.itp (water ITP) not staged in the export directory"
+    )
+
+    # 4) .gro residues: ALL guests labeled CH4_H (THF_H absent, no GUE).
+    gro_res = set(parse_gro_residue_names(str(gro_path)))
+    assert "CH4_H" in gro_res, (
+        f"CH4_H missing from .gro residues: {sorted(gro_res)}"
+    )
+    guest_res = gro_res - {"SOL"}
+    assert guest_res == {"CH4_H"}, (
+        f"exactly ONE guest residue name expected (CH4_H), got "
+        f"{sorted(guest_res)} — single-stream limitation changed (update "
+        f"this pin test consciously)"
+    )
+
+    # 5) File-level consistency checks PASS (the limitation is invisible to
+    #    them — residue NAMES agree; only the atom COUNTS are wrong).
+    assert_itp_completeness(str(top_path), ws)
+    assert_gro_top_consistent(str(gro_path), str(top_path))
+
+    # 6) grompp FAILS with the atom-count mismatch (the grompp-invalid
+    #    consequence of the single stream). If this flips to rc == 0, the
+    #    export became mixed/metadata-threaded — update the pin consciously.
+    shutil.copy(MDP_PATH, ws / "em.mdp")
+    exit_code, gmx_stderr = run_gmx_grompp(
+        ws, gro_file="hydrate.gro", top_file="hydrate.top"
+    )
+    assert exit_code != 0, (
+        "gmx grompp unexpectedly PASSED on the single-guest-stream hydrate "
+        "export — the atom-count mismatch is gone, i.e. the export behavior "
+        "changed. Update this pin test consciously (see docstring)."
+    )
+    assert "does not match topology" in gmx_stderr, (
+        f"expected the coordinate/topology atom-count mismatch fatal error, "
+        f"got:\n{gmx_stderr[-500:]}"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Test 3: _build_custom_guest_info returns list[dict] | None (Phase 42 API)
 # ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -277,7 +479,7 @@ def test_build_custom_guest_info_returns_list():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Test 3: --cage-guest flag builds correct cage_guest_assignments
+# Test 4: --cage-guest flag builds correct cage_guest_assignments
 # ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -358,7 +560,7 @@ def test_cage_guest_flag_builds_assignments():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Test 4: legacy --guest/--cage-occupancy-* still work (deprecated aliases)
+# Test 5: legacy --guest/--cage-occupancy-* still work (deprecated aliases)
 # ══════════════════════════════════════════════════════════════════════════════
 
 
