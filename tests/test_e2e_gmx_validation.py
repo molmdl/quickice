@@ -454,6 +454,30 @@ class TestChainF5GmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_2.py TestChainF5) ──
+        # test_gro_sol_before_na_before_cl: exactly 3 molecule types (SOL, NA, CL),
+        # non-interleaved
+        _assert_residue_ordering(gro_path, ["SOL", "NA", "CL"])
+        # test_gro_atom_count_matches_header + test_atom_conservation_and_charge_neutrality:
+        # header == lines == ice*4 + water*4 + na + cl, molecule_index == positions,
+        # na_count == cl_count
+        _assert_atom_conservation(gro_path, self.ion)
+        # test_top_molecules_section: SOL/NA/CL count parity
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes_minimal_itps: exactly 2 ITPs (minimal chain)
+        _assert_top_includes(top_path, ["tip4p-ice.itp", "ion.itp"], exact_count=2)
+        # test_no_guests_custom_solutes: F5 has no guests, no custom molecules, no solutes
+        assert self.ion.custom_molecule_count == 0, (
+            f"F5 should have no custom molecules, got {self.ion.custom_molecule_count}"
+        )
+        assert self.ion.solute_n_molecules == 0, (
+            f"F5 should have no solutes, got {self.ion.solute_n_molecules}"
+        )
+        guest_count = sum(
+            1 for m in self.ion.molecule_index if m.mol_type == "guest"
+        )
+        assert guest_count == 0, f"F5 should have no guests, got {guest_count}"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F6: Interface→Solute(CH4)→Ion (3 ITPs, Bug 1 fix)
@@ -518,6 +542,34 @@ class TestChainF6GmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_2.py TestChainF6) ──
+        # test_gro_sol_before_ch4l_before_na_before_cl: exactly 4 molecule types,
+        # SOL→CH4_L→NA→CL non-interleaved
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_L", "NA", "CL"])
+        # test_gro_atom_count_matches_header + test_atom_conservation_and_charge_neutrality
+        # (CH4 solute = 5 atoms per molecule)
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        # test_top_molecules_section: SOL/CH4_L/NA/CL count parity
+        # (CH4_L == solute_n_molecules)
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes_three_itps: exactly 3 ITPs
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "ch4_liquid.itp", "ion.itp"], exact_count=3
+        )
+        # test_no_custom_molecules
+        assert self.ion.custom_molecule_count == 0, (
+            f"F6 should have no custom molecules, got {self.ion.custom_molecule_count}"
+        )
+        # test_solute_preserved: solute metadata preserved in IonStructure after
+        # the BUG I5 workaround
+        assert self.ion.solute_type == "CH4", (
+            f"IonStructure.solute_type should be 'CH4', got '{self.ion.solute_type}'"
+        )
+        assert self.ion.solute_n_molecules > 0, (
+            f"IonStructure.solute_n_molecules should be > 0, "
+            f"got {self.ion.solute_n_molecules}"
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F7: Interface→Solute(THF)→Ion (3 ITPs, Bug 1 fix)
@@ -581,6 +633,29 @@ class TestChainF7GmxValidation:
                     f"Expected residue '{key}' in .gro for F7, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15: tests/test_e2e_chain_export_2.py TestChainF7) ──
+        # test_gro_sol_before_thfl_before_na_before_cl: exactly 4 molecule types,
+        # SOL→THF_L→NA→CL non-interleaved (THF_L = 5 chars, fits GRO limit)
+        _assert_residue_ordering(gro_path, ["SOL", "THF_L", "NA", "CL"])
+        # test_gro_atom_count_matches_header + test_atom_conservation_and_charge_neutrality
+        # + test_thf_atom_count_per_molecule (THF solute = 13 atoms per molecule)
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=13)
+        # test_top_molecules_section: SOL/THF_L/NA/CL count parity
+        # (THF_L == solute_n_molecules)
+        _assert_top_molecule_counts(top_path, self.ion)
+        # test_top_includes_three_itps: exactly 3 ITPs
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "thf_liquid.itp", "ion.itp"], exact_count=3
+        )
+        # test_solute_preserved_thf: solute metadata preserved with THF type
+        assert self.ion.solute_type == "THF", (
+            f"IonStructure.solute_type should be 'THF', got '{self.ion.solute_type}'"
+        )
+        assert self.ion.solute_n_molecules > 0, (
+            f"IonStructure.solute_n_molecules should be > 0, "
+            f"got {self.ion.solute_n_molecules}"
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1011,6 +1086,14 @@ class TestChainF1ThfGmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "etoh", "THF_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=13)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "etoh.itp", "thf_liquid.itp", "ion.itp"]
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3+THF: Hydrate sI-CH4→Interface→Solute(THF)→Ion (4 ITPs)
@@ -1077,6 +1160,14 @@ class TestChainF3ThfGmxValidation:
                     f"Expected residue '{key}' in .gro for F3+THF, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_H", "THF_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=13)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "ch4_hydrate.itp", "thf_liquid.itp", "ion.itp"]
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1148,6 +1239,15 @@ class TestChainF4Ch4GmxValidation:
                     f"Expected residue '{key}' in .gro for F4+CH4, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "THF_H", "etoh", "CH4_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "thf_hydrate.itp", "etoh.itp", "ch4_liquid.itp", "ion.itp"],
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1223,6 +1323,15 @@ class TestChainF4Ch4HydrateGmxValidation:
                     f"got: {sorted(unique_residues)}"
                 )
 
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_H", "etoh", "CH4_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "ch4_hydrate.itp", "etoh.itp", "ch4_liquid.itp", "ion.itp"],
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # F3-sII: Hydrate sII-CH4→Interface→Solute(CH4)→Ion (4 ITPs)
@@ -1289,6 +1398,14 @@ class TestChainF3SIIGmxValidation:
                     f"Expected residue '{key}' in .gro for F3-sII, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "CH4_H", "CH4_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=5)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path, ["tip4p-ice.itp", "ch4_hydrate.itp", "ch4_liquid.itp", "ion.itp"]
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1357,6 +1474,15 @@ class TestChainF4SIIGmxValidation:
                     f"Expected residue '{key}' in .gro for F4-sII, "
                     f"got: {sorted(unique_residues)}"
                 )
+
+        # ── Ported deep asserts (48.3-15 helper set applied to all F-chains) ──
+        _assert_residue_ordering(gro_path, ["SOL", "THF_H", "etoh", "THF_L", "NA", "CL"])
+        _assert_atom_conservation(gro_path, self.ion, solute_atoms_per_mol=13)
+        _assert_top_molecule_counts(top_path, self.ion)
+        _assert_top_includes(
+            top_path,
+            ["tip4p-ice.itp", "thf_hydrate.itp", "etoh.itp", "thf_liquid.itp", "ion.itp"],
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1495,3 +1621,134 @@ class TestSoluteGmxValidation:
         assert exit_code == 0, f"gmx grompp failed for solute-only:\n{stderr[-500:]}"
         molecules = parse_top_molecules(top_path)
         assert "SOL" in molecules
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Cross-chain invariants (48.3-15: ported from tests/test_e2e_cross_chain_invariants.py)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _assert_cross_chain_invariants(chains):
+    """Cross-chain monotonicity + preservation invariants over exported chain TOPs.
+
+    Ported from tests/test_e2e_cross_chain_invariants.py (deleted by 48.3-15):
+    1. test_itp_count_increases_with_chain_depth: F5(2) < F6(3) < F1(4) ITP counts
+    2. test_molecule_type_count_increases_with_chain_depth: F5(3) < F6(4) < F1(5)
+    3. test_base_atom_count_preserved_across_chains: ICE molecule count identical
+       across chains built from the SAME interface (total SOL differs — ion
+       replacement targets liquid water — but ICE is the crystalline invariant
+       no pipeline step modifies)
+    4. test_hydrate_chain_adds_guest_itp: F3 includes ch4_hydrate.itp, F5 does not
+
+    Args:
+        chains: dict name -> {'top_path': str, 'ion': IonStructure} with keys
+            'f5', 'f6', 'f1', 'f3'.
+    """
+    includes = {name: parse_top_includes(c["top_path"]) for name, c in chains.items()}
+    molecules = {name: parse_top_molecules(c["top_path"]) for name, c in chains.items()}
+
+    # 1. ITP count increases with chain depth
+    f5_itps, f6_itps, f1_itps = (
+        len(includes["f5"]),
+        len(includes["f6"]),
+        len(includes["f1"]),
+    )
+    assert f5_itps == 2, f"F5 should have 2 ITPs, got {f5_itps}: {includes['f5']}"
+    assert f6_itps == 3, f"F6 should have 3 ITPs, got {f6_itps}: {includes['f6']}"
+    assert f1_itps == 4, f"F1 should have 4 ITPs, got {f1_itps}: {includes['f1']}"
+    assert f5_itps < f6_itps < f1_itps, (
+        f"ITP count should increase with chain depth: "
+        f"F5={f5_itps} < F6={f6_itps} < F1={f1_itps}"
+    )
+
+    # 2. Molecule-type count increases with chain depth
+    f5_types, f6_types, f1_types = (
+        len(molecules["f5"]),
+        len(molecules["f6"]),
+        len(molecules["f1"]),
+    )
+    assert f5_types == 3, (
+        f"F5 should have 3 molecule types (SOL,NA,CL), got {f5_types}: {molecules['f5']}"
+    )
+    assert f6_types == 4, (
+        f"F6 should have 4 molecule types (SOL,CH4_L,NA,CL), got {f6_types}: "
+        f"{molecules['f6']}"
+    )
+    assert f1_types == 5, (
+        f"F1 should have 5 molecule types (SOL,etoh,CH4_L,NA,CL), got {f1_types}: "
+        f"{molecules['f1']}"
+    )
+    assert f5_types < f6_types < f1_types, (
+        f"Molecule type count should increase with chain depth: "
+        f"F5={f5_types} < F6={f6_types} < F1={f1_types}"
+    )
+
+    # 3. ICE molecule count preserved across chains from the same interface
+    for name in ("f5", "f1"):
+        sol = molecules[name].get("SOL", 0)
+        ice_water = sum(
+            1 for m in chains[name]["ion"].molecule_index
+            if m.mol_type in ("ice", "water")
+        )
+        assert sol == ice_water, (
+            f"{name.upper()} TOP SOL count ({sol}) should match ice+water "
+            f"molecule_index count ({ice_water})"
+        )
+        assert sol > 0, f"{name.upper()} should have SOL molecules"
+    f5_ice = sum(
+        1 for m in chains["f5"]["ion"].molecule_index if m.mol_type == "ice"
+    )
+    f1_ice = sum(
+        1 for m in chains["f1"]["ion"].molecule_index if m.mol_type == "ice"
+    )
+    assert f5_ice == f1_ice, (
+        f"Ice molecule count should be preserved across chains from same interface: "
+        f"F5={f5_ice}, F1={f1_ice}"
+    )
+
+    # 4. Hydrate chain adds the guest ITP; non-hydrate chains lack it
+    assert "ch4_hydrate.itp" in includes["f3"], (
+        f"F3 (hydrate chain) should include ch4_hydrate.itp, got {includes['f3']}"
+    )
+    assert "ch4_hydrate.itp" not in includes["f5"], (
+        f"F5 (no hydrate) should NOT include ch4_hydrate.itp, got {includes['f5']}"
+    )
+
+
+class TestCrossChainInvariants:
+    """Cross-chain invariants over full F-chain outputs (48.3-15 port).
+
+    The 4 monotonicity/preservation asserts from
+    tests/test_e2e_cross_chain_invariants.py (deleted by 48.3-15) compare ACROSS
+    chains — they have no single-chain home — so they run in this focused test
+    via _assert_cross_chain_invariants. Pure file-parse asserts (no grompp): this
+    class is intentionally NOT @gmx_skipif-gated so the ported coverage still runs
+    on machines without GROMACS (the same chain shapes are grompp-validated by
+    the per-chain classes above).
+    """
+
+    def test_cross_chain_invariants(self, interface_slab, tmp_path):
+        """F5(2)<F6(3)<F1(4) ITPs, F5(3)<F6(4)<F1(5) types, ICE preserved, F3 guest ITP."""
+        # F5: Interface→Ion (minimal chain)
+        f5 = _insert_ions(interface_slab, concentration=0.15)
+        # F6: Interface→Solute(CH4)→Ion
+        solute6 = _insert_solutes(interface_slab, solute_type='CH4', concentration=0.3)
+        f6 = _insert_ions_from_solute(solute6, concentration=0.15)
+        # F1: Interface→Custom→Solute(CH4)→Ion
+        custom = _insert_custom_molecules(interface_slab, n_molecules=3)
+        solute1 = _insert_solutes(custom, solute_type='CH4', concentration=0.3)
+        f1 = _insert_ions_from_solute(solute1, concentration=0.15)
+        # F3: Hydrate(sI-CH4)→Interface(slab)→Solute(CH4)→Ion (inline hydrate)
+        hydrate = _hydrate_sI_ch4_candidate()
+        interface3 = _make_slab_interface(hydrate)
+        solute3 = _insert_solutes(interface3, solute_type='CH4', concentration=0.3)
+        f3 = _insert_ions_from_solute(solute3, concentration=0.15)
+
+        chains = {}
+        for name, ion in (("f5", f5), ("f6", f6), ("f1", f1), ("f3", f3)):
+            write_ion_itp(tmp_path / f"{name}_ion.itp", ion.na_count, ion.cl_count)
+            top_path = str(tmp_path / f"{name}.top")
+            write_ion_top_file(ion, top_path)
+            chains[name] = {"top_path": top_path, "ion": ion}
+
+        _assert_cross_chain_invariants(chains)

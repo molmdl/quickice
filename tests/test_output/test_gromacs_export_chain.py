@@ -1,8 +1,8 @@
 """Writer-level chain integration tests proving the incremental export
 pipeline works, with synthetic hand-built structures (no GenIce2, no
 grompp) — this is NOT the main e2e: real-chain e2e coverage lives in
-tests/test_e2e_gmx_validation.py, tests/test_e2e_chain_export_*.py,
-and the cross-tab files.
+tests/test_e2e_gmx_validation.py (which absorbed the former
+tests/test_e2e_chain_export_*.py files, 48.3-15) and the cross-tab files.
 
 Tests the FULL chain: Interface → Custom Molecule → Solute → Ion.
 Each level carries forward data from the previous level, and the export
