@@ -311,7 +311,7 @@ class TestPipelineProgressReporting:
 
 
 # ---------------------------------------------------------------------------
-# Basic workflow tests (subprocess, 30-60s each)
+# Basic workflow tests (subprocess, ~1-2s each incl. grompp; measured 2026-09-03)
 # ---------------------------------------------------------------------------
 
 
@@ -517,7 +517,7 @@ class TestPipelineBasicWorkflows:
 
 
 # ---------------------------------------------------------------------------
-# Advanced workflow tests (subprocess, 60-120s each)
+# Advanced workflow tests (subprocess, ~1-2s each incl. grompp; measured 2026-09-03)
 # ---------------------------------------------------------------------------
 
 
@@ -935,7 +935,7 @@ class TestPipelineExportCorrectness:
 
 
 # ---------------------------------------------------------------------------
-# Grompp validation tests (subprocess, 60-120s each)
+# Grompp validation tests (subprocess, ~1-2s each incl. grompp; measured 2026-09-03)
 # ---------------------------------------------------------------------------
 
 
