@@ -51,7 +51,8 @@ The mixed-built-in CH4+THF path is covered by ``test_e2e_mixed_ion_export.py``.
 Also hosts the mixed-occupancy GUI multi-molecule writers grompp test
 (``test_mixed_gui_grompp_passes``, 42-05 MIXED-04 provenance) ported from
 tests/test_e2e_mixed_cage_occupancy.py by 48.3-17 (that file was renamed to
-tests/test_hydrate_mixed_placement.py for its 4 GenIce2 placement siblings) --
+tests/e2e/hydrate/test_hydrate_mixed_placement.py for its 4 GenIce2 placement
+siblings) --
 same concern: mixed cage export + grompp (list-form ``custom_guest_info`` +
 registry writers-direct path, no GenIce2).
 """
@@ -502,9 +503,9 @@ def test_single_custom_ethanol_no_builtin_still_only_mol_h(tmp_path_factory):
 # ══════════════════════════════════════════════════════════════════════════════
 #
 # Ported verbatim from tests/test_e2e_mixed_cage_occupancy.py by 48.3-17
-# (that file was renamed to tests/test_hydrate_mixed_placement.py for its 4
-# GenIce2 placement siblings; this writers-direct grompp test shares THIS
-# file's concern: mixed cage export + grompp).
+# (that file was renamed to tests/e2e/hydrate/test_hydrate_mixed_placement.py
+# for its 4 GenIce2 placement siblings; this writers-direct grompp test shares
+# THIS file's concern: mixed cage export + grompp).
 #
 # Proves ``gmx grompp`` exits 0 on a mixed hydrate (built-in CH4 + custom
 # ethanol) exported via the GUI multi-molecule writers
