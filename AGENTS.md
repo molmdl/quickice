@@ -9,11 +9,11 @@
 ## Run Commands
 
 ```bash
-pytest                          # All tests (~1007)
+pytest                          # All tests (~1846)
 pytest tests/test_foo.py        # Single file
 pytest -k "test_pbc"            # Match by name
 pytest -x                       # Stop on first failure
-pytest --timeout=120            # With timeout (if pytest-timeout installed)
+pytest --timeout=120            # SIGALRM-based only — CANNOT interrupt C-level hangs; use an external `timeout` guard instead (see Testing)
 pytest --cov=quickice --cov-report=term-missing   # Coverage
 ```
 
@@ -53,10 +53,13 @@ MainWindow stores results as `_current_*_result` attributes. Duck-typing sets ru
 ## Testing
 
 - **pytest** with default discovery (no `pytest.ini` or `pyproject.toml`).
-- Test files: `test_*.py` (unit), `test_e2e_*.py` (e2e), `test_scancode_bugs_*.py` (regression).
+- Test files: `test_*.py` (unit), `tests/e2e/<feature>/test_e2e_*.py` (e2e), `test_scancode_bugs_*.py` (regression).
 - Non-collected helpers: no `test_` prefix (e.g., `e2e_export_helpers.py`).
 - GROMACS-dependent tests use `@gmx_skipif` marker (skip if `gmx` not on PATH).
-- Module-scoped fixtures amortize expensive GenIce2 calls (~3-5s each).
+- Module-scoped fixtures amortize GenIce2 calls — measured ~17ms (ice_ih 96-mol), ~60ms (sH 2³), ~360ms (sII 3³) per call; amortization is still conventional but no longer load-bearing for runtime.
+- **True e2e definition:** an e2e test builds structures via real generators/inserters, exports through a real pipeline surface (GUI exporter / `_run_export_step` / subprocess / MainWindow handlers), and asserts `gmx grompp` rc==0 when gmx is present. Files live in `tests/e2e/<feature>/`.
+- **Full suite:** runs in ~4-5 min headless (`QT_QPA_PLATFORM=offscreen timeout 900 python -m pytest -q` — GATE-FULL in `.planning/phases/48.3-revise-tests-true-e2e/GATES.md`); always use an external `timeout` guard — never rely on pytest-timeout for C-level hangs.
+- **Headless GUI:** `QT_QPA_PLATFORM=offscreen` is enforced at session start by `tests/conftest.py`. MainWindow-level tests want a localhost `DISPLAY` (e.g. `DISPLAY=localhost:11.0`) so `is_vtk_available()` returns False (SSH-X11 heuristic in `quickice/gui/vtk_utils.py`).
 - `tmp_path` for temp files (auto-cleaned); `gmx_workspace` for persistent GROMACS debugging.
 
 ## Lazy Imports
