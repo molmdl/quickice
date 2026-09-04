@@ -386,35 +386,35 @@ Plans:
 - [x] 48.3-02-PLAN.md — Decisions D1/D2 (custom-residue fix-vs-relax; mixed built-in CLI scope) — checkpoint
   (D1=option-a fix-the-flow implemented: CustomMoleculeInserter registers ITP [moleculetype] name; D2=option-a pin-and-document → 48.3-07 Task 3; DECISIONS.md committed)
 - [x] 48.3-03-PLAN.md — Restore full-suite runnability (offscreen session guard, panel hang fix, stale version assertion)
-- [ ] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
+- [x] 48.3-04-PLAN.md — Fixture dedup (simple_candidate/simple_interface) + test_output E2E docstring relabels
 - [x] 48.3-05-PLAN.md — G3: mixed CH4+THF interface export regression (b278a9ed) GUI + CLI
 - [x] 48.3-06-PLAN.md — Convert 54 sys.path hacks → package-absolute imports (pre-move enabler)
-- [ ] 48.3-07-PLAN.md — CLI: grompp-validate existing subprocess workflows + GAP-8 follow-through
-- [ ] 48.3-08-PLAN.md — CLI Tier-A subprocess prefix matrix (custom step, CSV, concentration, auto-chain, hydrate prefixes, ice-only)
-- [ ] 48.3-09-PLAN.md — CLI Tier-B step-wiring chain (sequential _run_*_step + per-step grompp)
-- [ ] 48.3-10-PLAN.md — G1 GUI: custom guest × non-sI lattices × all downstream exporters
-- [ ] 48.3-11-PLAN.md — G1 CLI: custom guest × non-sI lattices × all export branches
-- [ ] 48.3-12-PLAN.md — G4: pocket + piece export grompp coverage (GUI + CLI)
-- [ ] 48.3-13-PLAN.md — G5: GUI e2e helpers + MainWindow-driven full-chain test (flagship)
-- [ ] 48.3-14-PLAN.md — G2: same-basename collision e2e (etoh as cage guest AND liquid custom)
-- [ ] 48.3-15-PLAN.md — Merge F1–F7 chain family (chain_export_1/2 + invariants) into grompp-backed suite
-- [ ] 48.3-16-PLAN.md — Absorb 44.1 per-exporter grompp files into cross-tab siblings
-- [ ] 48.3-17-PLAN.md — Merge sH interface export + split mixed_cage_occupancy
-- [ ] 48.3-18-PLAN.md — Move byte-eq baselines out of .planning/ → tests/_baselines/
+- [x] 48.3-07-PLAN.md — CLI: grompp-validate existing subprocess workflows + GAP-8 follow-through
+- [x] 48.3-08-PLAN.md — CLI Tier-A subprocess prefix matrix (custom step, CSV, concentration, auto-chain, hydrate prefixes, ice-only)
+- [x] 48.3-09-PLAN.md — CLI Tier-B step-wiring chain (sequential _run_*_step + per-step grompp)
+- [x] 48.3-10-PLAN.md — G1 GUI: custom guest × non-sI lattices × all downstream exporters
+- [x] 48.3-11-PLAN.md — G1 CLI: custom guest × non-sI lattices × all export branches
+- [x] 48.3-12-PLAN.md — G4: pocket + piece export grompp coverage (GUI + CLI)
+- [x] 48.3-13-PLAN.md — G5: GUI e2e helpers + MainWindow-driven full-chain test (flagship)
+- [x] 48.3-14-PLAN.md — G2: same-basename collision e2e (etoh as cage guest AND liquid custom)
+- [x] 48.3-15-PLAN.md — Merge F1–F7 chain family (chain_export_1/2 + invariants) into grompp-backed suite
+- [x] 48.3-16-PLAN.md — Absorb 44.1 per-exporter grompp files into cross-tab siblings
+- [x] 48.3-17-PLAN.md — Merge sH interface export + split mixed_cage_occupancy
+- [x] 48.3-18-PLAN.md — Move byte-eq baselines out of .planning/ → tests/_baselines/
 - [x] 48.3-19-PLAN.md — Merge single-structure writer files (ice/interface/custom/solute/ion) into grompp-backed suite
 - [x] 48.3-20-PLAN.md — Sibling fixture clusters: extract near-copies + rename divergents + e2e/ scaffolding ✓ DONE 2026-09-03
 - [x] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/ ✓ DONE 2026-09-03
-- [ ] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
-- [ ] 48.3-23-PLAN.md — Group e2e batch C: interface/ + solute_ion/
+- [x] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
+- [x] 48.3-23-PLAN.md — Group e2e batch C: interface/ + solute_ion/
 - [x] 48.3-24-PLAN.md — Group e2e batch D: custom_guest/ + lattice/ (root e2e count → 0) ✓ DONE 2026-09-04 (root test_e2e count = 0; 14 files incl. plan-14 G2 straggler)
-- [ ] 48.3-25-PLAN.md — Final consolidation: e2e gate + full-suite gate + true-e2e audit + human-verify checkpoint
+- [x] 48.3-25-PLAN.md — Final consolidation: e2e gate + full-suite gate + true-e2e audit + human-verify checkpoint ✓ DONE 2026-09-04 (GATE-SUBSET 342/0 in 66.76s; GATE-FULL 1844 passed/2 skipped/0 failed in 224.81s exit 0; true-e2e audit allowlist = 1 — triclinic blocking; user approved checkpoint)
 
 **Details:**
 Inserted 2026-09-03 at user request (URGENT — before the next manual full-workflow acceptance test). User rationale: as the software grows more complicated, a full manual e2e test is getting tedious, and bugs found in the middle stage force the full test to be re-run after every fix. In theory, many of those bugs should be found and fixed with headless e2e tests BEFORE the user tests — their repeated discovery during manual testing indicates the current tests are not sufficient and not efficient. The aim of this phase is to completely revise the test suite and e2e tests for both GUI and CLI, to ensure a passing e2e is a real pass of the workflow. User accepts a large plan count for this revision — even up to 100 plans to execute is OK.
 
 May fold in the deferred Phase 48.2 follow-ups (full e2e grouping of 42 files, fixture dedup + dead conftest fixture deletion, moving committed baselines out of .planning/) where they serve the revision goal.
 
-Not planned yet — run /gsd-plan-phase 48.3 to break down.
+Planned 2026-09-03 (25 plans / 8 waves); execution COMPLETE 2026-09-04 (25/25). Final gate report: .planning/phases/48.3-revise-tests-true-e2e/48.3-VERIFICATION.md
 
 ## Progress
 
@@ -437,7 +437,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 48. Documentation | v4.7 | 14/14 (4 waves: 11 Wave-1 + 1 Wave-2 + 1 Wave-3 + 1 Wave-4) | ✓ Complete | 2026-07-14 |
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
 | 48.2. Group and cleanup tests (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-07-22 |
-| 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 1/25 (planned: 8 waves) | 🔄 In progress | — |
+| 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 25/25 | ✓ Complete | 2026-09-04 |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
