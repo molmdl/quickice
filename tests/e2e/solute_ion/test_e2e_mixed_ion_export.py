@@ -28,10 +28,20 @@ sum (count * atoms-per-moleculetype), both built-in guest .itp files must
 be staged + #included, the CH4:THF ratio must match the sII cage ratio
 (16:8 = 2:1), and no garbage resnames (GUE/H2_H) may appear.
 
+48.3-25 true-e2e audit fix: ``_export_to_dir`` now mirrors the FULL
+``InterfaceGROMACSExporter.export_ion_gromacs`` flow (gui/export.py:580-658)
+— the ion writer's .top #includes ``ion.itp`` (ion_writer.py:951) and
+``tip4p-ice.itp`` (ion_writer.py:896), so the export previously staged by
+this test was INCOMPLETE and could not have passed grompp. The missing
+steps (``write_ion_itp`` + ``shutil.copy(get_tip4p_itp_path(), ...)``) are
+added and the complete export is validated with ``gmx grompp`` rc==0 when
+gmx is present.
+
 A single-guest sI all-CH4 regression guard verifies the fix does not break
 the previously-working single-component path.
 """
 
+import shutil
 from pathlib import Path
 from collections import OrderedDict
 
@@ -46,8 +56,14 @@ from quickice.structure_generation.types import (
 )
 from quickice.structure_generation.water_filler import get_cell_extent
 from quickice.structure_generation.ion_inserter import insert_ions
+from quickice.structure_generation.gromacs_ion_export import write_ion_itp
 from quickice.output.guest_info import _stage_hydrate_guest_itps
-from quickice.output.gromacs_writer import write_ion_gro_file, write_ion_top_file
+from quickice.output.gromacs_writer import (
+    get_tip4p_itp_path,
+    write_ion_gro_file,
+    write_ion_top_file,
+)
+from tests.e2e_export_helpers import MDP_PATH, run_gmx_grompp
 
 
 # Per-moleculetype atom counts (GROMACS [molecules] convention).
@@ -68,7 +84,13 @@ def _slab_config(candidate):
 
 
 def _export_to_dir(ion_structure, hydrate_config, tmp_path):
-    """Mirror the GUI export_ion_gromacs flow (stage ITPs + write .gro/.top)."""
+    """Mirror the FULL GUI export_ion_gromacs flow (gui/export.py:580-658).
+
+    Stages guest ITPs (_stage_hydrate_guest_itps) + writes .gro/.top + writes
+    ion.itp + copies tip4p-ice.itp — the ion .top #includes both (ion_writer
+    .py:896/951). Then grompp-validates the complete export dir when gmx is
+    present (48.3-25 true-e2e audit).
+    """
     gro_path = tmp_path / "ions.gro"
     top_path = tmp_path / "ions.top"
     custom_guest_info, _staged = _stage_hydrate_guest_itps(
@@ -78,6 +100,19 @@ def _export_to_dir(ion_structure, hydrate_config, tmp_path):
     )
     write_ion_gro_file(ion_structure, str(gro_path), custom_guest_info=custom_guest_info)
     write_ion_top_file(ion_structure, str(top_path), custom_guest_info=custom_guest_info)
+    # Steps 4-5 of the real flow: ion.itp + tip4p-ice.itp (both #included).
+    write_ion_itp(tmp_path / "ion.itp", ion_structure.na_count, ion_structure.cl_count)
+    shutil.copy(get_tip4p_itp_path(), tmp_path / "tip4p-ice.itp")
+    # Grompp-validate the COMPLETE export (guarded so file-level asserts run
+    # without gmx — 48.3-07/08 convention).
+    if shutil.which("gmx"):
+        shutil.copy(MDP_PATH, tmp_path / "em.mdp")
+        exit_code, stderr = run_gmx_grompp(
+            tmp_path, gro_file="ions.gro", top_file="ions.top"
+        )
+        assert exit_code == 0, (
+            f"gmx grompp failed for ion export in {tmp_path}:\n{stderr[-500:]}"
+        )
     return gro_path, top_path
 
 
