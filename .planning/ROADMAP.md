@@ -406,7 +406,7 @@ Plans:
 - [x] 48.3-21-PLAN.md — Group e2e batch A: chains/ + export_validation/ ✓ DONE 2026-09-03
 - [ ] 48.3-22-PLAN.md — Group e2e batch B: hydrate/
 - [ ] 48.3-23-PLAN.md — Group e2e batch C: interface/ + solute_ion/
-- [ ] 48.3-24-PLAN.md — Group e2e batch D: custom_guest/ + lattice/ (root e2e count → 0)
+- [x] 48.3-24-PLAN.md — Group e2e batch D: custom_guest/ + lattice/ (root e2e count → 0) ✓ DONE 2026-09-04 (root test_e2e count = 0; 14 files incl. plan-14 G2 straggler)
 - [ ] 48.3-25-PLAN.md — Final consolidation: e2e gate + full-suite gate + true-e2e audit + human-verify checkpoint
 
 **Details:**
