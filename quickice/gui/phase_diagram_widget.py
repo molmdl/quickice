@@ -1,662 +1,74 @@
 """Interactive phase diagram widget for QuickIce GUI.
 
-Provides a matplotlib canvas embedded in PySide6 that displays the ice phase diagram,
-allows users to hover for coordinates, and click to select temperature/pressure conditions.
-Detects the ice phase at the selected point and handles boundary clicks.
+Provides an interactive ice-phase-diagram panel: hover for coordinates,
+click to select temperature/pressure conditions, and detect the ice phase at
+the selected point.
 
 Classes:
-    PhaseDiagramCanvas: Matplotlib canvas with phase diagram rendering
-    PhaseDetector: Helper for detecting phase at given T,P
     PhaseDiagramPanel: Complete widget with canvas and info panel
+
+Startup-performance note (slow-gui-startup fix): the matplotlib/shapely-heavy
+classes (PhaseDiagramCanvas, PhaseDetector) live in
+``quickice.gui.phase_diagram_canvas`` and are imported LAZILY. The panel
+builds its canvas after the main window is shown (``QTimer.singleShot(0)``)
+or on first access through :attr:`diagram_canvas`, so importing this module
+at startup costs nothing heavy. See AGENTS.md lazy-import rule.
+
+The canvas signals are re-emitted at panel level
+(``coordinates_selected``/``phase_info_ready``) so callers do NOT need to
+touch ``diagram_canvas`` (which would force eager construction).
 """
 
-import logging
-from typing import Tuple, Optional, Dict, List
-
-import numpy as np
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
-from matplotlib.patches import Polygon
-from shapely.geometry import Point, Polygon as ShapelyPolygon
+from typing import Tuple, Optional
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PySide6.QtCore import Signal, Qt
-
-from quickice.output.phase_diagram import (
-    _build_phase_polygon_from_curves,
-    _sample_melting_curve,
-    PHASE_COLORS,
-    PHASE_LABELS,
-    IAPWS_MELTING_RANGES,
-)
-from quickice.phase_mapping import get_triple_point
-
-logger = logging.getLogger(__name__)
-
-
-class PhaseDetector:
-    """Detects ice phase at given T,P conditions using shapely polygons.
-    
-    Builds phase polygons once at initialization for efficient lookup.
-    Handles boundary detection using shapely's touches() method.
-    """
-    
-    def __init__(self):
-        """Initialize detector by building shapely polygons for all 12 phases."""
-        self._phase_polygons: Dict[str, ShapelyPolygon] = {}
-        
-        # Build polygons for all 12 ice phases
-        phase_ids = [
-            "ice_ih", "ice_ic", "ice_ii", "ice_iii", "ice_v", "ice_vi",
-            "ice_vii", "ice_viii", "ice_xi", "ice_ix", "ice_x", "ice_xv"
-        ]
-        
-        for phase_id in phase_ids:
-            vertices = _build_phase_polygon_from_curves(phase_id)
-            if len(vertices) >= 3:
-                # Vertices are (T, P) in MPa
-                self._phase_polygons[phase_id] = ShapelyPolygon(vertices)
-        
-        # Build vapor polygon using IAPWS saturation curve
-        # Vapor region is BELOW the liquid-vapor saturation curve
-        # The polygon traces: bottom of graph → saturation curve → back along bottom
-        try:
-            from iapws import IAPWS97
-            
-            vapor_vertices = []
-            
-            # Start at bottom-left corner (50 K, P_min)
-            P_min = 0.0001  # Minimum pressure on graph (log scale)
-            vapor_vertices.append((50.0, P_min))
-            
-            # Go along bottom to the triple point temperature
-            vapor_vertices.append((273.16, P_min))
-            
-            # Trace up along the saturation curve from 273.16K to 500K
-            # The saturation curve is the UPPER boundary of the vapor region
-            for T in np.linspace(273.16, 500, 50):
-                try:
-                    st = IAPWS97(T=T, x=0)  # Saturated liquid
-                    vapor_vertices.append((T, st.P))
-                except Exception as e:
-                    logger.warning(f"Could not get saturation pressure at T={T}: {e}")
-            
-            # From the end of saturation curve (500K, P_sat), go down to bottom
-            vapor_vertices.append((500.0, P_min))
-            
-            # Back along bottom to start
-            vapor_vertices.append((50.0, P_min))
-            
-            if len(vapor_vertices) > 3:
-                self._phase_polygons["vapor"] = ShapelyPolygon(vapor_vertices)
-        except ImportError as e:
-            logger.info(f"IAPWS not available, vapor region will not be displayed: {e}")
-    
-    # Tolerance for boundary detection (pressure only)
-    # Uses relative tolerance: 5% of pressure with 0.01 MPa floor
-    #   - At P=0.1 MPa: tolerance = 0.01 MPa (avoids false boundary at low P)
-    #   - At P=100 MPa: tolerance = 5.0 MPa
-    #   - At P=1000 MPa: tolerance = 50.0 MPa (appropriate for high P)
-    BOUNDARY_TOLERANCE_PRESSURE_FRAC = 0.05
-    
-    def detect_phase(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
-        """Detect phase at given temperature and pressure.
-        
-        Args:
-            temperature: Temperature in Kelvin
-            pressure_mpa: Pressure in MPa (polygons use MPa)
-        
-        Returns:
-            Tuple of (phase_name, is_boundary)
-            - phase_name: Short form (e.g., "Ih") or "Multiple phases possible" or "Vapor" or "Liquid"
-            - is_boundary: True if point is on boundary line between phases
-        """
-        point = Point(temperature, pressure_mpa)
-        
-        # Check containment in ice phase polygons first
-        # Use covers() instead of contains() to include boundary points
-        contained_phases: List[str] = []
-        for phase_id, polygon in self._phase_polygons.items():
-            if phase_id == "vapor":
-                continue  # Check vapor separately after ice phases
-            if polygon.covers(point):  # covers() includes boundary points
-                contained_phases.append(phase_id)
-        
-        # If point is inside exactly one ice phase
-        if len(contained_phases) == 1:
-            inside_phase = contained_phases[0]
-            # Check if near boundary of this phase
-            if self._is_near_boundary(point, inside_phase):
-                # Check if any other phase is also nearby (adjacent phase)
-                adjacent_phase = self._find_adjacent_phase(point, inside_phase)
-                if adjacent_phase:
-                    names = [PHASE_LABELS.get(inside_phase, inside_phase),
-                             PHASE_LABELS.get(adjacent_phase, adjacent_phase)]
-                    return f"{names[0]}/{names[1]}", True
-            # Not near boundary or no adjacent phase found
-            phase_short = PHASE_LABELS.get(inside_phase, inside_phase)
-            return phase_short, False
-        
-        # If point is on boundary of multiple phases (covers catches this)
-        if len(contained_phases) >= 2:
-            names = [PHASE_LABELS.get(p, p) for p in contained_phases[:2]]
-            return f"{names[0]}/{names[1]}", True
-        
-        # Check if in vapor region
-        if "vapor" in self._phase_polygons:
-            if self._phase_polygons["vapor"].covers(point):  # covers() includes boundary points
-                return "Vapor", False
-        
-        # Not inside any ice phase - check if near any phase boundary
-        # (This handles points just outside phase regions)
-        near_phase = self._find_nearest_phase(point)
-        if near_phase:
-            phase_short = PHASE_LABELS.get(near_phase, near_phase)
-            return phase_short, False
-        
-        # No match - assume liquid region
-        return "Liquid", False
-    
-    def _check_near_boundary(self, point: Point, inside_phase: Optional[str] = None) -> List[str]:
-        """Check if point is near the boundary of the phase it's inside.
-        
-        Only checks the boundary of the phase the point is inside, not all phases.
-        This prevents false boundary detection at high pressures where adjacent
-        phases are close but the point is clearly inside one phase.
-        
-        Uses fixed tolerance in pressure space (5 MPa) which works well across
-        the entire phase diagram. Logarithmic pressure scale means visual boundary
-        clicks need different treatment than Euclidean distance.
-        
-        Args:
-            point: Shapely Point to check (coordinates are T, P in MPa)
-            inside_phase: The phase the point is inside (only check this phase's boundary)
-        
-        Returns:
-            List of phase IDs that are near the boundary (only the inside_phase if near boundary)
-        """
-        if inside_phase is None:
-            # No phase to check - return empty
-            return []
-        
-        if inside_phase not in self._phase_polygons:
-            return [inside_phase]
-        
-        # Fixed tolerance: 5 MPa in pressure space
-        # This is appropriate because:
-        # 1. Phase diagram uses log(P) scale, so visual "middle" is meaningful
-        # 2. At low P (1 MPa), 5 MPa is significant distance
-        # 3. At high P (10000 MPa), 5 MPa is tiny on log scale
-        # 4. Most phase boundaries are sharp curves, not wide regions
-        tolerance = 5.0  # MPa
-        
-        polygon = self._phase_polygons[inside_phase]
-        
-        # Calculate distance to the boundary of the phase we're inside
-        distance = polygon.boundary.distance(point)
-        
-        if distance < tolerance:
-            # Point is near the boundary of the phase it's inside
-            # Return just this phase - the caller will check if multiple phases
-            # contain the point (handled by covers() in detect_phase)
-            return [inside_phase]
-        
-        # Point is not near boundary - return empty list
-        return []
-    
-    def _is_near_boundary(self, point: Point, phase_id: str, tolerance: float = 10.0) -> bool:
-        """Check if point is near the boundary of a specific phase.
-        
-        Args:
-            point: Shapely Point to check (coordinates are T, P in MPa)
-            phase_id: Phase identifier to check
-            tolerance: Distance tolerance in Euclidean (T, P) space
-        
-        Returns:
-            True if point is within tolerance of the phase boundary
-        """
-        if phase_id not in self._phase_polygons:
-            return False
-        
-        polygon = self._phase_polygons[phase_id]
-        distance = polygon.boundary.distance(point)
-        return distance < tolerance
-    
-    def _find_adjacent_phase(self, point: Point, inside_phase: str) -> Optional[str]:
-        """Find an adjacent phase that the point is also inside or on the boundary of.
-        
-        Used when a point is inside one phase but near its boundary,
-        to detect if we should show "Phase1/Phase2" for boundary clicks.
-        
-        A true boundary click means the point is:
-        1. Near the boundary of the inside_phase (checked by caller via _is_near_boundary)
-        2. AND also inside, on the boundary, or touching another phase
-        
-        Args:
-            point: Shapely Point to check (coordinates are T, P in MPa)
-            inside_phase: The phase the point is inside
-        
-        Returns:
-            Phase ID of adjacent phase if point is also inside/on boundary, else None
-        """
-        for phase_id, polygon in self._phase_polygons.items():
-            if phase_id == inside_phase or phase_id == "vapor":
-                continue
-            
-            # Check if point is also inside or on the boundary of this phase
-            # Using covers() to include boundary points
-            # Using touches() to catch exact boundary/triple point clicks
-            if polygon.covers(point) or polygon.touches(point):
-                return phase_id
-        
-        return None
-    
-    def _find_nearest_phase(self, point: Point) -> Optional[str]:
-        """Find the nearest phase to a point that's not inside any phase.
-        
-        Used for points in the liquid region that might be close to a phase boundary.
-        
-        Args:
-            point: Shapely Point to check (coordinates are T, P in MPa)
-        
-        Returns:
-            Phase ID of nearest phase if within reasonable distance, else None
-        """
-        min_distance = float('inf')
-        nearest_phase = None
-        
-        # Maximum distance to consider a point "near" a phase
-        # This is larger than boundary tolerance because we're outside all phases
-        max_distance = 20.0  # MPa
-        
-        for phase_id, polygon in self._phase_polygons.items():
-            if phase_id == "vapor":
-                continue
-            
-            distance = polygon.distance(point)
-            if distance < min_distance:
-                min_distance = distance
-                nearest_phase = phase_id
-        
-        if min_distance < max_distance:
-            return nearest_phase
-        
-        return None
-
-
-class PhaseDiagramCanvas(FigureCanvasQTAgg):
-    """Interactive matplotlib canvas displaying the ice phase diagram.
-    
-    Renders all 12 ice phases using curve-based boundaries from IAPWS data.
-    Emits signals when user hovers (for coordinate display) or clicks (for phase selection).
-    """
-    
-    # Signal emitted when user clicks on diagram
-    coordinates_selected = Signal(float, float)  # (temperature, pressure)
-    
-    # Signal emitted when phase info is available
-    phase_info_ready = Signal(str, float, float)  # (phase_id, T, P)
-    
-    def __init__(self, parent=None):
-        """Initialize the canvas with phase diagram rendering.
-        
-        Args:
-            parent: Parent widget (optional)
-        """
-        # Create figure with wider aspect ratio for split view
-        # Wider than CLI (12, 10) to fit in 600px wide panel while keeping short height
-        self.fig = Figure(figsize=(14, 8), dpi=100)
-        self.axes = self.fig.add_subplot(111)
-        
-        # Initialize parent
-        super().__init__(self.fig)
-        self.setParent(parent)
-        
-        # Initialize state
-        self._marker = None
-        self._phase_detector = PhaseDetector()
-        
-        # Setup the phase diagram
-        self._setup_diagram()
-        
-        # Connect event handlers
-        self.mpl_connect('motion_notify_event', self._on_hover)
-        self.mpl_connect('button_press_event', self._on_click)
-    
-    def _setup_diagram(self):
-        """Render the complete phase diagram with all 12 phases."""
-        # Set up logarithmic pressure scale (scientific convention)
-        self.axes.set_yscale('log')
-        
-        # Set axis limits
-        self.axes.set_xlim(50, 500)  # Temperature in Kelvin
-        self.axes.set_ylim(0.1, 100000)  # Pressure in MPa (log scale: 0.1 to 100000 MPa)
-        
-        # Labels and title
-        self.axes.set_xlabel("Temperature (K)", fontsize=12, fontweight='bold')
-        self.axes.set_ylabel("Pressure (MPa)", fontsize=12, fontweight='bold')
-        self.axes.set_title("Ice Phase Diagram", fontsize=14, fontweight='bold')
-        
-        # Define phases to plot (in order, back to front for proper layering)
-        phases_to_plot = [
-            "ice_x",      # Highest pressure
-            "ice_viii",
-            "ice_vii",
-            "ice_vi",
-            "ice_xv",     # Ordered VI (rendered after VI)
-            "ice_v",
-            "ice_ii",
-            "ice_ix",     # Ordered III (rendered after II)
-            "ice_iii",
-            "ice_ih",
-            "ice_xi",     # Ordered Ih (rendered after Ih)
-            "ice_ic",     # Metastable
-        ]
-        
-        # Plot each phase region
-        for phase_id in phases_to_plot:
-            self._plot_phase_region(phase_id)
-        
-        # Plot melting curves as lines (on top of filled regions)
-        self._plot_melting_curves()
-        
-        # Plot liquid-vapor boundary
-        self._plot_liquid_vapor_boundary()
-        
-        # Mark triple points
-        self._plot_triple_points()
-        
-        # Add "Liquid" label
-        self.axes.text(
-            340, 50,  # T=340K, P=50 MPa
-            "Liquid",
-            fontsize=12,
-            fontweight='bold',
-            ha='center',
-            va='center',
-            color='black',
-            alpha=0.8,
-            zorder=5,
-        )
-        
-        # Add "Vapor" label
-        # Position: T=460K, P=0.5 MPa (same as CLI, below saturation curve)
-        # At T=460K, P_sat=1.17 MPa, so P=0.5 MPa is in vapor region
-        self.axes.text(
-            460, 0.5,  # T=460K, P=0.5 MPa (same as CLI)
-            "Vapor",
-            fontsize=12,
-            fontweight='bold',
-            ha='center',
-            va='center',
-            color='black',
-            alpha=0.8,
-            zorder=5,
-        )
-        
-        # Add grid
-        self.axes.grid(True, linestyle='--', alpha=0.3, which='both')
-        
-        # Explicit margins to ensure labels are fully visible
-        # Left margin needs to be larger for log-scale y-axis labels
-        self.fig.subplots_adjust(left=0.15, right=0.98, top=0.92, bottom=0.12)
-    
-    def _plot_phase_region(self, phase_id: str):
-        """Plot a single phase region with label at centroid.
-        
-        Args:
-            phase_id: Phase identifier (e.g., "ice_ih")
-        """
-        vertices = _build_phase_polygon_from_curves(phase_id)
-        
-        if len(vertices) < 3:
-            return
-        
-        # Convert vertices to numpy array for plotting
-        plot_vertices = np.array(vertices)
-        
-        # Get phase color
-        color = PHASE_COLORS.get(phase_id, "#CCCCCC")
-        
-        # Create polygon patch
-        poly = Polygon(plot_vertices, closed=True)
-        poly.set_facecolor(color)
-        poly.set_edgecolor("black")
-        poly.set_linewidth(1.5)
-        poly.set_alpha(0.6)
-        self.axes.add_patch(poly)
-        
-        # Add label at centroid using shapely
-        shapely_poly = ShapelyPolygon(vertices)
-        centroid = shapely_poly.centroid
-        label = PHASE_LABELS.get(phase_id, phase_id)
-        
-        self.axes.text(
-            centroid.x, centroid.y,
-            label,
-            fontsize=12,
-            fontweight='bold',
-            ha='center',
-            va='center',
-            color='black',
-            alpha=0.8,
-            zorder=5,
-        )
-    
-    def _plot_melting_curves(self):
-        """Plot melting curves as black lines on top of phase regions."""
-        melting_curves = [
-            ("ice_ih_melting", "#000000"),
-            ("ice_iii_melting", "#333333"),
-            ("ice_v_melting", "#555555"),
-            ("ice_vi_melting", "#777777"),
-            ("ice_vii_melting", "#999999"),
-        ]
-        
-        for curve_name, color in melting_curves:
-            T_curve, P_curve_mpa = _sample_melting_curve(curve_name, n_points=200)
-            
-            if len(T_curve) > 0:
-                # Data is already in MPa
-                self.axes.plot(
-                    T_curve, P_curve_mpa,
-                    color=color,
-                    linewidth=2.0,
-                    linestyle='-',
-                    alpha=0.8,
-                    zorder=7
-                )
-    
-    def _plot_liquid_vapor_boundary(self):
-        """Plot liquid-vapor boundary using IAPWS saturation curve."""
-        try:
-            from iapws import IAPWS97
-            
-            lv_T = np.linspace(273.16, 500, 50)
-            lv_P = []
-            
-            for T in lv_T:
-                try:
-                    st = IAPWS97(T=T, x=0)  # Saturated liquid
-                    # IAPWS returns MPa
-                    lv_P.append(st.P)
-                except Exception as e:
-                    logger.warning(f"Could not get liquid-vapor boundary at T={T}: {e}")
-            
-            if len(lv_P) > 0:
-                lv_T = lv_T[:len(lv_P)]
-                self.axes.plot(
-                    lv_T, lv_P,
-                    color='blue',
-                    linewidth=2.0,
-                    linestyle='-',
-                    alpha=0.8,
-                    zorder=7
-                )
-        except ImportError as e:
-            # IAPWS not available, skip liquid-vapor boundary
-            logger.info(f"IAPWS not available, skipping liquid-vapor boundary: {e}")
-    
-    def _plot_triple_points(self):
-        """Mark triple points on the diagram."""
-        triple_point_names = [
-            ("Ih_III_Liquid", "Ih-III-L"),
-            ("Ih_II_III", "Ih-II-III"),
-            ("II_III_V", "II-III-V"),
-            ("III_V_Liquid", "III-V-L"),
-            ("II_V_VI", "II-V-VI"),
-            ("V_VI_Liquid", "V-VI-L"),
-            ("VI_VII_Liquid", "VI-VII-L"),
-            ("VI_VII_VIII", "VI-VII-VIII"),
-            ("III_IX_Transition", "III-IX"),
-            ("VII_X_Transition", "VII-X"),
-            ("VI_XV_Transition", "VI-XV"),
-            ("VII_VIII_X", "VII-VIII-X"),
-        ]
-        
-        for tp_name, tp_label in triple_point_names:
-            tp_T, tp_P_mpa = get_triple_point(tp_name)
-            # Data is already in MPa
-            
-            self.axes.plot(
-                tp_T, tp_P_mpa,
-                'o',  # Circle marker
-                markersize=4,
-                markerfacecolor='black',
-                markeredgecolor='white',
-                markeredgewidth=0.5,
-                zorder=8,
-            )
-            
-            # Add label
-            if tp_P_mpa < 1.0:
-                # For very low pressure, position label to the right
-                self.axes.text(
-                    tp_T + 5, 0.3,
-                    tp_label,
-                    fontsize=7,
-                    ha='left',
-                    va='center',
-                    color='black',
-                    alpha=0.7,
-                    zorder=8,
-                )
-            else:
-                self.axes.text(
-                    tp_T, tp_P_mpa * 1.15,
-                    tp_label,
-                    fontsize=7,
-                    ha='left',
-                    va='center',
-                    color='black',
-                    alpha=0.7,
-                    zorder=8,
-                )
-    
-    def _on_hover(self, event):
-        """Handle mouse motion for hover tooltip.
-        
-        Note: The actual tooltip/coordinate display is handled by the
-        PhaseDiagramPanel's info_label. This method is a placeholder
-        for potential future enhancements.
-        
-        Args:
-            event: MouseEvent from matplotlib
-        """
-        # Hover is handled by PhaseDiagramPanel via coordinates signal
-        # This placeholder allows future enhancements (e.g., custom tooltips)
-        pass
-    
-    def _on_click(self, event):
-        """Handle mouse click for phase selection.
-        
-        Args:
-            event: MouseEvent from matplotlib
-        """
-        # Check if click is within axes and has valid coordinates
-        if not event.inaxes or event.xdata is None or event.ydata is None:
-            return
-        
-        temperature = event.xdata
-        pressure_mpa = event.ydata  # Already in MPa from axes
-        
-        # Place marker at clicked position
-        self.set_marker(temperature, pressure_mpa)
-        
-        # Emit signal with selected coordinates
-        self.coordinates_selected.emit(temperature, pressure_mpa)
-        
-        # Detect phase at click location and emit phase info
-        phase_name, is_boundary = self._phase_detector.detect_phase(temperature, pressure_mpa)
-        # Use phase_name if available, otherwise "unknown"
-        phase_id = phase_name if phase_name else "unknown"
-        self.phase_info_ready.emit(phase_id, temperature, pressure_mpa)
-    
-    def set_marker(self, temperature: float, pressure: float):
-        """Place a red circle marker at the specified coordinates.
-        
-        Removes any existing marker before placing new one.
-        
-        Args:
-            temperature: Temperature in Kelvin
-            pressure: Pressure in MPa
-        """
-        # Remove existing marker if present
-        if self._marker is not None:
-            self._marker.remove()
-        
-        # Create new marker
-        self._marker, = self.axes.plot(
-            temperature, pressure,
-            'o',  # Circle marker
-            markersize=8,
-            markerfacecolor='red',
-            markeredgecolor='black',
-            markeredgewidth=1.5,
-            zorder=10,  # Place on top
-        )
-        
-        # Redraw
-        self.draw_idle()
-    
-    def detect_phase_at(self, temperature: float, pressure_mpa: float) -> Tuple[Optional[str], bool]:
-        """Detect ice phase at given coordinates.
-        
-        Args:
-            temperature: Temperature in Kelvin
-            pressure_mpa: Pressure in MPa
-        
-        Returns:
-            Tuple of (phase_name, is_boundary) from PhaseDetector
-        """
-        return self._phase_detector.detect_phase(temperature, pressure_mpa)
+from PySide6.QtCore import Signal, Qt, QTimer
 
 
 class PhaseDiagramPanel(QWidget):
     """Complete phase diagram widget with canvas and info panel.
-    
+
     Combines PhaseDiagramCanvas with a QLabel for displaying coordinates
     and phase information. Handles hover events to show live coordinates
     and click events to display selected phase.
+
+    The matplotlib canvas is built LAZILY (slow-gui-startup fix): either
+    right after the main window is shown (via ``QTimer.singleShot(0)``) or
+    on first access of :attr:`diagram_canvas`, whichever comes first.
+    Until then a light placeholder label occupies the canvas area.
+
+    Signals:
+        coordinates_selected: Forwarded from the canvas (temperature, pressure).
+        phase_info_ready: Forwarded from the canvas (phase_id, T, P).
     """
-    
+
+    # Forwarded canvas signals — connect to THESE, not to diagram_canvas.*,
+    # so the canvas is not forced to exist early.
+    coordinates_selected = Signal(float, float)  # (temperature, pressure)
+    phase_info_ready = Signal(str, float, float)  # (phase_id, T, P)
+
     def __init__(self, parent=None):
-        """Initialize the panel with canvas and info label.
-        
+        """Initialize the panel with a placeholder and info label.
+
+        The heavy matplotlib canvas is deferred (see class docstring).
+
         Args:
             parent: Parent widget (optional)
         """
         super().__init__(parent)
-        
+
+        self._diagram_canvas = None
+
         # Create layout
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        
-        # Create canvas
-        self.diagram_canvas = PhaseDiagramCanvas(self)
-        layout.addWidget(self.diagram_canvas)
-        
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(4)
+
+        # Placeholder shown until the canvas is built
+        self._placeholder = QLabel("Loading phase diagram\u2026")
+        self._placeholder.setAlignment(Qt.AlignCenter)
+        self._layout.addWidget(self._placeholder, stretch=1)
+
         # Create info label
         self.info_label = QLabel("Click on diagram to select T, P")
         self.info_label.setStyleSheet(
@@ -666,27 +78,60 @@ class PhaseDiagramPanel(QWidget):
             "border-radius: 3px;"
         )
         self.info_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.info_label)
-        
+        self._layout.addWidget(self.info_label)
+
+        # Build the canvas in the next event-loop iteration — i.e. right
+        # after the main window becomes visible, so it does not delay show().
+        QTimer.singleShot(0, self._ensure_canvas)
+
+    @property
+    def diagram_canvas(self):
+        """The PhaseDiagramCanvas, building it on first access if needed."""
+        self._ensure_canvas()
+        return self._diagram_canvas
+
+    def _ensure_canvas(self):
+        """Create the matplotlib canvas (idempotent).
+
+        Lazy-imports quickice.gui.phase_diagram_canvas (matplotlib + shapely)
+        so the ~0.3 s cost is paid after startup, not before window show.
+        """
+        if self._diagram_canvas is not None:
+            return
+
+        from quickice.gui.phase_diagram_canvas import PhaseDiagramCanvas
+
+        canvas = PhaseDiagramCanvas(self)
+        self._diagram_canvas = canvas
+
+        # Replace placeholder with the real canvas
+        self._layout.replaceWidget(self._placeholder, canvas)
+        self._placeholder.hide()
+        self._placeholder.deleteLater()
+        canvas.show()
+
         # Set crosshair cursor on canvas
-        self.diagram_canvas.setCursor(Qt.CrossCursor)
-        
-        # Connect canvas signals
-        self.diagram_canvas.coordinates_selected.connect(self._on_coordinates_selected)
-        
+        canvas.setCursor(Qt.CrossCursor)
+
+        # Internal handler: update info label on selection
+        canvas.coordinates_selected.connect(self._on_coordinates_selected)
+        # Forwarded panel-level signals (main_window connects to these)
+        canvas.coordinates_selected.connect(self.coordinates_selected)
+        canvas.phase_info_ready.connect(self.phase_info_ready)
+
         # Connect hover event for live coordinate display
-        self.diagram_canvas.mpl_connect('motion_notify_event', self._on_hover)
-    
+        canvas.mpl_connect('motion_notify_event', self._on_hover)
+
     def _on_hover(self, event):
         """Handle hover over canvas to display live coordinates.
-        
+
         Args:
             event: MouseEvent from matplotlib
         """
         if event.inaxes and event.xdata is not None and event.ydata is not None:
             temperature = event.xdata
             pressure = event.ydata
-            
+
             # Update info label with current coordinates
             self.info_label.setText(
                 f"T = {temperature:.1f} K, P = {pressure:.1f} MPa"
@@ -697,20 +142,20 @@ class PhaseDiagramPanel(QWidget):
                 "border: 1px solid #90caf9; "
                 "border-radius: 3px;"
             )
-    
+
     def _on_coordinates_selected(self, temperature: float, pressure: float):
         """Handle coordinate selection from canvas click.
-        
+
         Detects the phase at the selected coordinates and updates
         the info label accordingly.
-        
+
         Args:
             temperature: Temperature in Kelvin
             pressure: Pressure in MPa
         """
         # Detect phase at selected coordinates
         phase_name, is_boundary = self.diagram_canvas.detect_phase_at(temperature, pressure)
-        
+
         # Update info label
         if is_boundary:
             self.info_label.setText(
@@ -753,26 +198,42 @@ class PhaseDiagramPanel(QWidget):
                 "border: 1px solid #ddd; "
                 "border-radius: 3px;"
             )
-    
+
     def set_coordinates(self, temperature: float, pressure: float):
         """Set marker position programmatically from external input.
-        
+
         This creates bidirectional binding: typing in input fields
         updates the diagram marker.
-        
+
         Args:
             temperature: Temperature in Kelvin
             pressure: Pressure in MPa
         """
-        # Set marker on canvas
+        # Set marker on canvas (builds the canvas on demand if needed)
         self.diagram_canvas.set_marker(temperature, pressure)
-        
+
         # Detect phase and update info label
         phase_name, is_boundary = self.diagram_canvas.detect_phase_at(temperature, pressure)
-        
+
         # Reuse the _on_coordinates_selected logic for label update
         self._on_coordinates_selected(temperature, pressure)
 
 
+def __getattr__(name: str):
+    """Lazy backward-compat re-exports (PEP 562).
+
+    ``PhaseDiagramCanvas`` and ``PhaseDetector`` moved to
+    ``quickice.gui.phase_diagram_canvas``; this keeps
+    ``from quickice.gui.phase_diagram_widget import PhaseDiagramCanvas``
+    working without pulling matplotlib into startup.
+    """
+    if name in ("PhaseDiagramCanvas", "PhaseDetector"):
+        from quickice.gui import phase_diagram_canvas
+        value = getattr(phase_diagram_canvas, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 # Convenience exports
-__all__ = ['PhaseDiagramCanvas', 'PhaseDetector', 'PhaseDiagramPanel']
+__all__ = ['PhaseDiagramPanel']
