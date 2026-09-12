@@ -11,24 +11,27 @@ DISPLAY env var for SSH X11 forwarding (indirect rendering) and the
 QUICKICE_FORCE_VTK override; it does NOT import VTK itself (each viewer
 imports its own VTK modules inside ``if is_vtk_available():`` per
 AGENTS.md lazy-import rules).
+
+Startup-performance note (slow-gui-startup fix): ALL heavy imports
+(``vtkmodules``, ``scipy.spatial``, ``quickice.structure_generation.types``)
+are LAZY — inside function bodies or under ``TYPE_CHECKING``. Viewer modules
+import ``is_vtk_available`` from this module at module top level BEFORE their
+``if is_vtk_available():`` guards, so any heavy top-level import here would
+silently defeat those guards and pull VTK/scipy/genice2 into GUI startup
+even when VTK is unusable (headless or SSH X11 forwarding).
 """
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.spatial import cKDTree
-from vtkmodules.all import (
-    vtkMolecule,
-    vtkActor,
-    vtkPolyData,
-    vtkPoints,
-    vtkCellArray,
-    vtkPolyDataMapper,
-    vtkOutlineSource,
-    vtkMatrix3x3,
-)
 
-from quickice.structure_generation.types import Candidate, InterfaceStructure
+if TYPE_CHECKING:
+    from vtkmodules.all import vtkActor, vtkMolecule
+
+    from quickice.structure_generation.types import Candidate, InterfaceStructure
 
 
 def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
@@ -48,6 +51,9 @@ def candidate_to_vtk_molecule(candidate: Candidate) -> vtkMolecule:
         Positions are in nanometers (nm), which is QuickIce's internal unit.
         VTK accepts positions in any consistent unit - nm is maintained.
     """
+    # Lazy import (AGENTS.md): VTK must not load at GUI startup — see module docstring.
+    from vtkmodules.all import vtkMatrix3x3, vtkMolecule
+
     mol = vtkMolecule()
     
     # CRITICAL: Initialize before adding atoms (VTK requirement)
@@ -238,6 +244,9 @@ def detect_hydrogen_bonds(
         Uses periodic boundary conditions (PBC) to correctly detect H-bonds
         that cross box boundaries.
     """
+    # Lazy import (AGENTS.md): scipy must not load at GUI startup — see module docstring.
+    from scipy.spatial import cKDTree
+
     positions = candidate.positions
     nmolecules = candidate.nmolecules
     atom_names = candidate.atom_names
@@ -347,6 +356,15 @@ def create_hbond_actor(
         Uses manual dash creation by splitting each line into segments.
         Dash pattern: 8 segments with alternating on/off (dash length ~0.01 nm).
     """
+    # Lazy import (AGENTS.md): VTK must not load at GUI startup — see module docstring.
+    from vtkmodules.all import (
+        vtkActor,
+        vtkCellArray,
+        vtkPoints,
+        vtkPolyData,
+        vtkPolyDataMapper,
+    )
+
     # Create points and line cells
     points = vtkPoints()
     lines = vtkCellArray()
@@ -419,6 +437,9 @@ def create_unit_cell_actor(cell: np.ndarray) -> vtkActor:
         cells would require a transform, but ice structures are typically
         close to orthogonal.
     """
+    # Lazy import (AGENTS.md): VTK must not load at GUI startup — see module docstring.
+    from vtkmodules.all import vtkActor, vtkOutlineSource, vtkPolyDataMapper
+
     # Calculate cell dimensions (length of each lattice vector)
     # For orthogonal cells, these are simply the box dimensions
     a_len = np.linalg.norm(cell[0])
@@ -477,6 +498,9 @@ def interface_to_vtk_molecules(iface: InterfaceStructure) -> tuple[vtkMolecule, 
         For hydrate ice (4 atoms/mol: OW, HW1, HW2, MW), MW is skipped, so we have
         3 visible atoms per molecule for bonding.
     """
+    # Lazy import (AGENTS.md): VTK must not load at GUI startup — see module docstring.
+    from vtkmodules.all import vtkMolecule
+
     ice_mol = vtkMolecule()
     water_mol = vtkMolecule()
     guest_mol = vtkMolecule() if iface.guest_atom_count > 0 else None
@@ -861,6 +885,15 @@ def create_bond_lines_actor(
         Similar to create_hbond_actor but WITHOUT the dash splitting.
         Used for regular O-H bonds in the interface visualization.
     """
+    # Lazy import (AGENTS.md): VTK must not load at GUI startup — see module docstring.
+    from vtkmodules.all import (
+        vtkActor,
+        vtkCellArray,
+        vtkPoints,
+        vtkPolyData,
+        vtkPolyDataMapper,
+    )
+
     # Create points and line cells
     points = vtkPoints()
     lines = vtkCellArray()
@@ -913,11 +946,11 @@ def create_bond_lines_actor(
 # during the process lifetime, so caching is safe and avoids repeating
 # the string checks on every viewer construction.
 #
-# Per AGENTS.md lazy-import rules, the VTK import itself is NOT done here
-# (this module does import VTK at the top for its conversion utilities,
-# but ``is_vtk_available()`` itself only checks env vars — it does not
-# import VTK). Each viewer imports its own VTK-dependent modules inside
-# an ``if is_vtk_available():`` block.
+# Per AGENTS.md lazy-import rules, this module performs NO heavy imports at
+# module top level (slow-gui-startup fix): the conversion-utility VTK imports
+# live inside the functions that use them, so importing ``is_vtk_available``
+# stays cheap. Each viewer imports its own VTK-dependent modules inside an
+# ``if is_vtk_available():`` block.
 
 _vtk_available_cache: "bool | None" = None
 
