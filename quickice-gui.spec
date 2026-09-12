@@ -40,8 +40,17 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    # console=True is required because the same exe serves both --cli and
+    # --gui modes (CLI needs stdout/stderr in an existing terminal).
+    # hide_console='hide-early' hides the exe-owned console at the earliest
+    # bootloader stage on Windows to minimise the console flash when the GUI
+    # is launched outside a terminal (double-click / QuickIce.bat via start).
+    # NOTE: hide_console only applies when the program OWNS its console; when
+    # launched from an existing console (e.g. plain cmd, or QuickIce.bat
+    # without `start`), this option has no effect -- QuickIce.bat therefore
+    # launches the exe via `start` so the exe owns its console.
     console=True,
-    hide_console='hide-late',
+    hide_console='hide-early',
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
