@@ -33,12 +33,8 @@ from quickice.gui.help_dialog import QuickReferenceDialog
 from quickice.gui.interface_panel import InterfacePanel
 from quickice.gui.hydrate_panel import HydratePanel
 from quickice.gui.hydrate_worker import HydrateWorker
-from quickice.gui.hydrate_renderer import render_hydrate_structure
 from quickice.gui.hydrate_export import HydrateGROMACSExporter
 from quickice.gui.ion_panel import IonPanel
-from quickice.gui.ion_renderer import render_ion_structure  # Used for export if needed
-from quickice.gui.solute_renderer import create_solute_actor
-from quickice.structure_generation.ion_inserter import IonInserter, insert_ions
 from quickice.structure_generation.types import WATER_ATOMS_PER_MOLECULE, WATER_VOLUME_NM3
 from quickice.phase_mapping.lookup import PHASE_METADATA
 from quickice.gui.constants import TabIndex
@@ -319,12 +315,14 @@ class MainWindow(QMainWindow):
         self.cancel_btn.clicked.connect(self._on_cancel_clicked)
         
         # Diagram selection -> input panel
-        self.diagram_panel.diagram_canvas.coordinates_selected.connect(
+        # (panel-level forwarded signals — the matplotlib canvas is built
+        # lazily after window show, so we must NOT touch diagram_canvas here)
+        self.diagram_panel.coordinates_selected.connect(
             self._on_diagram_selected
         )
-        
+
         # Phase info from diagram click
-        self.diagram_panel.diagram_canvas.phase_info_ready.connect(self._on_phase_info)
+        self.diagram_panel.phase_info_ready.connect(self._on_phase_info)
         
         # Input field changes -> diagram marker (bidirectional binding)
         self.input_panel.temp_input.textChanged.connect(self._on_input_changed)
@@ -1069,7 +1067,10 @@ class MainWindow(QMainWindow):
             # Clear any existing solute actors before adding new ones
             if hasattr(self.ion_panel.ion_viewer, '_clear_solute_actors'):
                 self.ion_panel.ion_viewer._clear_solute_actors()
-            
+
+            # Lazy import (AGENTS.md): renderer pulls in vtkmodules — import
+            # only on the render path, never at GUI startup.
+            from quickice.gui.solute_renderer import create_solute_actor
             solute_structure = self._current_solute_result
             solute_actor = create_solute_actor(
                 solute_structure.positions,

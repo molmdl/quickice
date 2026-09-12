@@ -37,8 +37,10 @@ if is_vtk_available():
 
 from quickice.structure_generation.types import CustomMoleculeStructure
 
-# Import renderer function for custom molecules
-from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
+# NOTE: quickice.gui.custom_molecule_renderer is imported LAZILY inside the
+# render methods (AGENTS.md): it imports vtkmodules at top level, and this
+# viewer module is imported at GUI startup even when VTK is unavailable — a
+# top-level renderer import here would defeat the is_vtk_available() guard.
 
 # Import interface utilities (loaded lazily when VTK is available)
 _interface_utils_loaded = False
@@ -482,6 +484,9 @@ class CustomMoleculeViewerWidget(QWidget):
             custom_atom_names = structure.atom_names[custom_start:custom_end]
             
             # Create custom molecule actor using the renderer
+            # Lazy import (AGENTS.md): renderer pulls in vtkmodules — only
+            # import on the render path.
+            from quickice.gui.custom_molecule_renderer import create_custom_molecule_actor
             actor = create_custom_molecule_actor(
                 custom_positions,
                 custom_atom_names,

@@ -37,8 +37,10 @@ if is_vtk_available():
 
 from quickice.structure_generation.types import IonStructure
 
-# Import renderer functions for ions
-from quickice.gui.ion_renderer import render_ion_structure
+# NOTE: quickice.gui.ion_renderer is imported LAZILY inside the render
+# method (AGENTS.md): it imports vtkmodules at top level, and this viewer
+# module is imported at GUI startup even when VTK is unavailable — a
+# top-level renderer import here would defeat the is_vtk_available() guard.
 
 # Import interface utilities (loaded lazily when VTK is available)
 _interface_utils_loaded = False
@@ -407,6 +409,10 @@ class IonViewerWidget(QWidget):
 
         # Store the structure reference
         self._current_ion_structure = structure
+
+        # Lazy import (AGENTS.md): renderer pulls in vtkmodules — only import
+        # on the render path.
+        from quickice.gui.ion_renderer import render_ion_structure
 
         # Render ion structure to get actors
         self._ion_actors = render_ion_structure(structure)

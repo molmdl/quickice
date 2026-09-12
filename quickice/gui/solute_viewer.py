@@ -36,8 +36,10 @@ if is_vtk_available():
 
 from quickice.structure_generation.types import SoluteStructure
 
-# Import renderer functions for solutes
-from quickice.gui.solute_renderer import create_solute_actor
+# NOTE: quickice.gui.solute_renderer is imported LAZILY inside the render
+# method (AGENTS.md): it imports vtkmodules at top level, and this viewer
+# module is imported at GUI startup even when VTK is unavailable — a
+# top-level renderer import here would defeat the is_vtk_available() guard.
 
 # Import interface utilities (loaded lazily when VTK is available)
 _interface_utils_loaded = False
@@ -416,6 +418,9 @@ class SoluteViewerWidget(QWidget):
             logger.info(f"Rendered interface: {interface.ice_nmolecules} ice + {interface.water_nmolecules} water molecules")
 
         # Create solute actor using the renderer
+        # Lazy import (AGENTS.md): renderer pulls in vtkmodules — only import
+        # on the render path.
+        from quickice.gui.solute_renderer import create_solute_actor
         actor = create_solute_actor(
             solute_structure.positions,
             solute_structure.atom_names,

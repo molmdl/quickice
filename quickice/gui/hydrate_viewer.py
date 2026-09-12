@@ -35,8 +35,10 @@ if is_vtk_available():
 
 from quickice.structure_generation.types import HydrateStructure
 
-# Import renderer function
-from quickice.gui.hydrate_renderer import render_hydrate_structure, detect_hbonds_in_hydrate_structure
+# Renderer imports are LAZY (inside render methods) per AGENTS.md: the
+# renderer modules import vtkmodules at top level, and this viewer module is
+# imported at GUI startup even when VTK is unavailable — a top-level
+# renderer import here would defeat the is_vtk_available() guard above.
 
 # Import H-bond actor creator
 from quickice.gui.vtk_utils import create_hbond_actor
@@ -241,7 +243,12 @@ class HydrateViewerWidget(QWidget):
         
         # Store the structure reference
         self._current_structure = structure
-        
+
+        # Lazy import (AGENTS.md): renderer pulls in vtkmodules — only import
+        # on the render path (this method already returned early when VTK is
+        # unavailable).
+        from quickice.gui.hydrate_renderer import render_hydrate_structure, detect_hbonds_in_hydrate_structure
+
         # Render hydrate structure to get actors
         self._hydrate_actors = render_hydrate_structure(structure)
 
@@ -407,7 +414,11 @@ class HydrateViewerWidget(QWidget):
             self._guest_actors = self._hydrate_actors[1:]
             for actor in self._hydrate_actors:
                 self.renderer.AddActor(actor)
-            
+
+            # Lazy import (AGENTS.md): renderer pulls in vtkmodules — only
+            # import on the render path.
+            from quickice.gui.hydrate_renderer import detect_hbonds_in_hydrate_structure
+
             # Re-create H-bond actor
             hbonds = detect_hbonds_in_hydrate_structure(current_structure)
             if hbonds:
