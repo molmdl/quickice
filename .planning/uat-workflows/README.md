@@ -175,7 +175,7 @@ bash .planning/uat-workflows/E-test-refactor.sh
 ```
 
 What it checks:
-1. Phase 48.2-1: `pytest --collect-only` collects 1854 tests, 0 collection errors
+1. Phase 48.2-1: `pytest --collect-only` collects 1846 tests, 0 collection errors
 2. Phase 48.2-2: tests/ root decluttered (0 `test_scancode_*.py` at root, 0 `phase_48_1_` prefixes)
 3. Phase 48.2-2: tests/scancode/ has 18 files; tests/test_cli/ has 8 files; tests/test_output/ has 21 files
 4. Phase 48.1-1: gromacs_writer.py is a thin re-export shim (<120 lines)
@@ -193,7 +193,7 @@ What it checks:
 
 ### Interactive Checklist
 
-- [ ] **48.2-1.** `pytest --collect-only -q` shows "1854 tests collected" with 0 errors
+- [ ] **48.2-1.** `pytest --collect-only -q` shows "1846 tests collected" with 0 errors
 - [ ] **48.1-1.** `quickice/output/gromacs_writer.py` is a thin re-export shim (<120 lines)
 - [ ] **48.1-1.** All 6 per-structure writer modules exist in `quickice/output/`
 - [ ] **48.1-2.** `_gro_format.py` contains the DRY GRO writer helpers

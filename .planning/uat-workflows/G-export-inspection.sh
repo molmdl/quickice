@@ -51,7 +51,7 @@ echo ""
 #   Tested by: test_custom_guest_cli_grompp_passes (asserts MOL_H in [molecules])
 #              test_multi_molecule_top_custom_guest (asserts _H in .top)
 run_pytest "41-1 custom guest _H suffix in .top" \
-  tests/test_e2e_custom_guest_cli_grompp.py::test_custom_guest_cli_grompp_passes \
+  tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_cli.py \
   tests/test_output/test_multi_molecule_top_custom_guest.py \
   tests/test_output/test_interface_top_custom_guest.py
 
@@ -66,7 +66,7 @@ run_pytest "41-2 atomtypes commented + merged + deduped" \
 #   Tested by: test_custom_guest_cli_grompp_passes (asserts MOL_H in .gro residues)
 #              test_multi_molecule_gro_custom_guest (GRO residue name check)
 run_pytest "41-3 custom guest GRO residue ≤5 chars" \
-  tests/test_e2e_custom_guest_cli_grompp.py::test_custom_guest_cli_grompp_passes \
+  tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_cli.py \
   tests/test_output/test_multi_molecule_gro_custom_guest.py \
   tests/test_output/test_interface_gro_custom_guest.py
 

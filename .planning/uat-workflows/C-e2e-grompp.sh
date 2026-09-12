@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Workflow C: E2E Generation & Grompp Validation (Phase 41, 45, 47)
-# Covers: custom guest grompp (GUI+CLI), new lattice grompp, filled-ice CLI hydrate grompp,
-#         mixed occupancy, triclinic blocking, water-only survival.
+# Covers: custom guest grompp (GUI+CLI paths), new lattice grompp,
+#         filled-ice CLI hydrate grompp, mixed occupancy, triclinic blocking, water-only survival.
+#
+# REVISED post-48.3: e2e tests regrouped under tests/e2e/<feature>/;
+# fake-e2e merged into true F-chains (all assert gmx grompp rc==0).
 #
 # Usage:  bash .planning/uat-workflows/C-e2e-grompp.sh
 # Env:    conda env quickice active, gmx on PATH (grompp tests run if gmx available)
@@ -32,7 +35,7 @@ run_pytest_gmx() {
     return
   fi
   local out
-  out=$(python -m pytest "$@" -q --no-header --tb=line 2>&1 | tail -1)
+  out=$(QT_QPA_PLATFORM=offscreen python -m pytest "$@" -q --no-header --tb=line 2>&1 | tail -1)
   if echo "$out" | grep -qE "[0-9]+ passed"; then
     if echo "$out" | grep -qE "failed|[0-9]+ error"; then
       check "$label" FAIL
@@ -46,55 +49,62 @@ run_pytest_gmx() {
   fi
 }
 
-echo "=== Workflow C: E2E Generation & Grompp Validation ==="
+echo "=== Workflow C: E2E Generation & Grompp Validation (post-48.3 paths) ==="
 echo ""
 
 # 41-4: Custom guest GUI grompp (write_multi_molecule_* path)
-run_pytest_gmx "41-4 custom guest GUI grompp" tests/test_e2e_custom_guest_gui_grompp.py
+#   48.3: merged into custom_guest cross-tab F-chain
+run_pytest_gmx "41-4 custom guest GUI grompp" tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_gui.py
 
 # 41-4: Custom guest CLI grompp (write_interface_* path)
-run_pytest_gmx "41-4 custom guest CLI grompp" tests/test_e2e_custom_guest_cli_grompp.py
+run_pytest_gmx "41-4 custom guest CLI grompp" tests/e2e/custom_guest/test_e2e_custom_guest_cross_tab_cli.py
 
 # 47-2: Filled ice generation e2e (structural validation, not gmx-gated)
-if python -m pytest tests/test_hydrate_lattice_types.py -q --no-header --tb=line 2>&1 | tail -1 | grep -qE "passed"; then
+if QT_QPA_PLATFORM=offscreen python -m pytest tests/test_hydrate_lattice_types.py -q --no-header --tb=line 2>&1 | tail -1 | grep -qE "passed"; then
   check "47-2 filled ice generation e2e" PASS
 else
   check "47-2 filled ice generation e2e" FAIL
 fi
 
-# 47-3: Mixed cage occupancy e2e
-if python -m pytest tests/test_e2e_mixed_cage_occupancy.py tests/test_e2e_sH_cage_occupancy.py -q --no-header --tb=line 2>&1 | tail -1 | grep -qE "passed"; then
-  check "47-3 mixed cage occupancy e2e" PASS
-else
-  check "47-3 mixed cage occupancy e2e" FAIL
-fi
+# 47-3: Mixed cage occupancy e2e (custom mixed cage + sH occupancy + mixed placement)
+run_pytest_gmx "47-3 mixed cage occupancy e2e" \
+  tests/e2e/custom_guest/test_e2e_custom_guest_mixed_cage.py \
+  tests/e2e/hydrate/test_sH_cage_occupancy.py \
+  tests/e2e/hydrate/test_hydrate_mixed_placement.py
 
 # 47-4: Filled-ice CLI hydrate-only grompp (c2te@3x3x3, ice1hte@4x4x4)
-run_pytest_gmx "47-4 filled-ice CLI hydrate grompp" tests/test_e2e_filled_ice_cli_hydrate_grompp.py
+run_pytest_gmx "47-4 filled-ice CLI hydrate grompp" tests/e2e/hydrate/test_e2e_filled_ice_cli_hydrate_grompp.py
 
 # 45-1: New lattice types CLI interface export + grompp
-if python -m pytest tests/test_cli/ -q --no-header --tb=line -k "interface or lattice" 2>&1 | tail -1 | grep -qE "passed"; then
-  check "45-1 new lattices CLI interface export" PASS
-else
-  check "45-1 new lattices CLI interface export" FAIL
-fi
+run_pytest_gmx "45-1 new lattices CLI interface export" tests/e2e/interface/test_e2e_lattice_interface_cli.py
+
+# 45-1: New lattice types GUI interface export + grompp
+run_pytest_gmx "45-1 new lattices GUI interface export" tests/e2e/interface/test_e2e_lattice_interface_gui.py
 
 # 45-3: Water-only lattices (sTprime, 17) solute/ion survival
-if python -m pytest tests/ -q --no-header --tb=line -k "water_only or sTprime or water-only" 2>&1 | tail -1 | grep -qE "passed"; then
-  check "45-3 water-only solute/ion survival" PASS
-else
-  check "45-3 water-only solute/ion survival" SKIP
-fi
+run_pytest_gmx "45-3 water-only solute/ion survival" tests/e2e/lattice/test_e2e_water_only_cross_tab.py
 
-# 45-4: Triclinic blocking at CLI interface step (c0te, c1te)
-if python -m pytest tests/ -q --no-header --tb=line -k "triclinic or block" 2>&1 | tail -1 | grep -qE "passed"; then
-  check "45-4 triclinic blocking CLI" PASS
-else
-  check "45-4 triclinic blocking CLI" FAIL
-fi
+# 45-4: Triclinic blocking at CLI interface step + GUI worker (c0te, c1te)
+run_pytest_gmx "45-4 triclinic blocking e2e" tests/e2e/interface/test_e2e_triclinic_blocking_e2e.py
 
-# 45-8: Mixed built-in (CH4+THF) + sII/16 GUI hydrate exporter grompp
-run_pytest_gmx "45-8 mixed built-in GUI hydrate grompp" tests/test_cli/test_mixed_cage_cli.py
+# 45-5: Triclinic hydrate-only export (c0te/c1te) — grompp
+run_pytest_gmx "45-5 triclinic hydrate-only export" tests/e2e/hydrate/test_e2e_triclinic_hydrate_export.py
+
+# 45-8: Mixed built-in (CH4+THF) + new lattices GUI hydrate exporter grompp
+run_pytest_gmx "45-8 mixed built-in + new lattices grompp" \
+  tests/e2e/lattice/test_e2e_mixed_lattice_gui.py \
+  tests/test_cli/test_mixed_cage_cli.py
+
+# 44.1/45-6: Custom guest + non-sI lattices (Issue 3 regression coverage)
+run_pytest_gmx "45-6/Issue3 custom guest + non-sI lattices" \
+  tests/e2e/custom_guest/test_e2e_custom_guest_lattices_gui.py \
+  tests/e2e/custom_guest/test_e2e_custom_guest_lattices_cli.py
+
+# Cross-tab chain regression (built-in guests, all tabs)
+run_pytest_gmx "45-2 cross-tab chain regression" \
+  tests/e2e/chains/test_e2e_builtin_cross_tab_regression.py \
+  tests/e2e/lattice/test_e2e_lattice_cross_tab_gui.py \
+  tests/e2e/lattice/test_e2e_lattice_cross_tab_cli.py
 
 # Print results
 echo ""

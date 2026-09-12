@@ -1,8 +1,8 @@
 # v4.7 UAT Issues Found
 
-**Date:** 2026-08-04 (updated 2026-08-05)
+**Date:** 2026-08-04 (updated 2026-09-12)
 **Source:** UAT Workflow F (GUI interactive testing)
-**Status:** 2 issues found, 1 resolved, 1 open
+**Status:** 4 issues found, all RESOLVED (GUI re-confirmation pending for Issues 3-4)
 
 ---
 
@@ -44,7 +44,7 @@ Commit 520ad042 — rename custom molecule ITP on basename collision to avoid du
 
 ---
 
-## Issue 3: .top molecule count mismatch with .gro for sII custom guest (OPEN)
+## Issue 3: .top molecule count mismatch with .gro for sII custom guest (RESOLVED)
 
 **UAT tests affected:** F-15 (full tab chain, sII variant), F-16, F-18
 **Severity:** major
@@ -92,6 +92,19 @@ Full breakdown:
 ### Root cause (preliminary)
 
 The `.top` [molecules] MOL_H count (864) appears to be derived from the **config** (expected cage count = 32 × 27 = 864 at 100% occupancy), not from the **actual structure** (576 molecules in the .gro). This is the same class of bug as the 42-08 "config/structure desync" issue, but for the sII lattice with custom guest.
+
+### RESOLUTION (2026-09, debug session)
+
+**Status: RESOLVED.** Debug session `.planning/debug/sii-mixed-gui-export-regression.md` (status: resolved) — "hypothesis: CONFIRMED and FIXED. All 3 remaining bugs resolved." Also `.planning/debug/sii-top-gro-mol-count-mismatch.md` (status: resolved).
+
+**Fix commits:**
+- `b990d151` — fix(UAT-F): derive guest_atom_counts from molecule_index, not config (the config/structure desync confirmed)
+- `993a83ed` — test(UAT-F): repro + debug session for SII mixed GUI export regression (`tests/repro_sii_mixed_gui_regression.py`)
+- Additional fixes landed via 48.3 (e.g. `0b5511ef` place_custom water MoleculeIndex count fix)
+
+**Regression coverage:** 48.3 built true-e2e chains covering this bug class — `tests/e2e/custom_guest/test_e2e_custom_guest_lattices_gui.py` / `_cli.py` (custom ethanol + non-sI lattices incl. sII, full tab chain, grompp rc==0). GATE-SUBSET green (342 passed, 2026-09-12 re-run).
+
+**Pending:** GUI re-confirmation (F-15 re-test) — the pytest-level fix is verified; user GUI walkthrough not yet redone post-fix.
 
 Possible causes:
 1. The .top writer uses `config.cage_guest_assignments` to compute the molecule count instead of `structure.molecule_index` or `structure.guest_count`
@@ -162,24 +175,31 @@ This issue may affect all lattices when exported through slab mode with custom g
 | 12 | Custom guest VTK (46) | ✅ pass | Gray (accepted, same as 10) |
 | 13 | Same guest in 2 cages (44.1-1) | ✅ pass | Allowed, Pitfall 6 relaxation works |
 | 14 | Interface tab flow + grompp (44.1-2) | ✅ pass | gmx grompp rc=0 |
-| 15 | Full tab chain + grompp (44.1-3) | ❌ issue | **Issue 3** — sII .top/gro MOL_H count mismatch |
-| 16 | New lattices full tab chain (45-2) | ⏳ deferred | Likely affected by Issue 3 |
-| 17 | Triclinic hydrate-only 4×4×4 (45-5) | ⏳ deferred | May pass (no custom molecule, no slab) |
-| 18 | Custom ethanol + non-sI (45-6) | ⏳ deferred | Likely affected by Issue 3 |
+| 15 | Full tab chain + grompp (44.1-3) | 🔁 re-test | **Issue 3** fixed (b990d151) — pytest coverage green; GUI walkthrough pending |
+| 16 | New lattices full tab chain (45-2) | ⏳ unblocked | Issue 3 fixed; pytest coverage green (lattice cross-tab GUI+CLI) |
+| 17 | Triclinic hydrate-only 4×4×4 (45-5) | ⏳ unblocked | pytest coverage green (test_e2e_triclinic_hydrate_export.py) |
+| 18 | Custom ethanol + non-sI (45-6) | ⏳ unblocked | Issue 3 fixed; pytest coverage green (custom_guest_lattices_gui/cli) |
 
 ### Summary
 
-- **15/18 steps completed** (14 pass, 1 issue)
-- **3 steps deferred** (16-18) — pending Issue 3 resolution
-- **3 issues total** (2 resolved, 1 open)
-- **0 blockers** (workarounds: use hydrate-only export without slab, or use CLI)
+- **15/18 steps completed** (14 pass, 1 issue → fix verified at pytest level)
+- **3 steps unblocked** (16-18) — Issue 3 resolved, GUI walkthrough pending
+- **4 issues total** (all resolved: 0baf0043, 520ad042, b990d151 + sII session companion fixes)
+- **0 blockers**
 
-### Steps to re-test after fix
+### Steps to re-test (GUI)
 
-1. **After Issue 3 fix:** Re-run F step 15 — sII full tab chain export, expect .top MOL_H count = .gro count, gmx grompp rc=0
-2. **After Issue 3 fix:** Re-run F steps 16-18 — complete remaining GUI tests
+1. **F step 15 (re-test):** sII full tab chain export — expect .top MOL_H count = .gro count, gmx grompp rc=0
+2. **F steps 16-18:** complete remaining GUI tests (all now unblocked)
 
 ### Test data for re-test
 
 - F step 15: sII 3×3 hydrate with custom ethanol → slab → custom → solute → ion. Compare .top [molecules] MOL_H count vs .gro MOL_H atom count / 9.
-- F step 17: c0te or c1te at 4×4×4, hydrate-only export (no slab, no custom molecule) — may not be affected by Issue 3.
+- F step 17: c0te or c1te at 4×4×4, hydrate-only export (no slab, no custom molecule).
+- Headless repro (no GUI needed): `QT_QPA_PLATFORM=offscreen python tests/repro_sii_mixed_gui_regression.py` — mimics the exact GUI flow; expect all-green + grompp rc=0.
+
+### Post-48.3 pytest coverage (2026-09-12 verified)
+
+- GATE-SUBSET: `QT_QPA_PLATFORM=offscreen timeout 600 python -m pytest tests/e2e tests/test_gro_top_byte_equivalence.py -q` → **342 passed / 0 failed / 67s**
+- GATE-FULL: `QT_QPA_PLATFORM=offscreen timeout 900 python -m pytest -q` → **1844 passed / 2 skipped / 0 failed / 227s** (full suite now works headless — pre-48.3 hang fixed)
+- True-e2e audit: every `tests/e2e/**/test_e2e_*.py` asserts `gmx grompp` rc==0 (1 allowlist: triclinic blocking, n/a by design)
