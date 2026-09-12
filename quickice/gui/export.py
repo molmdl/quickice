@@ -8,13 +8,15 @@ This module provides exporter classes for saving user work to standard file form
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-from matplotlib.figure import Figure
-from vtkmodules.all import (
-    vtkWindowToImageFilter,
-    vtkPNGWriter,
-    vtkJPEGWriter,
-)
+
+# Lazy heavy imports (slow-gui-startup fix): matplotlib and vtkmodules are
+# imported inside the methods that use them (AGENTS.md lazy-import rule);
+# ``Figure`` is only needed as a type annotation here.
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 from quickice.output.pdb_writer import write_pdb_with_cryst1
 from quickice.ranking.types import RankedCandidate
@@ -901,6 +903,14 @@ class ViewportExporter:
         - ReadFrontBufferOff() for offscreen buffer
         - JPEG quality: 95
         """
+        # Lazy import (AGENTS.md): VTK must not load at GUI startup — only
+        # the viewport-capture path needs these writer classes.
+        from vtkmodules.all import (
+            vtkJPEGWriter,
+            vtkPNGWriter,
+            vtkWindowToImageFilter,
+        )
+
         # Generate default filename with viewport identifier if provided
         if viewport_name:
             bare_filename = f"ice_structure_{viewport_name}.png"

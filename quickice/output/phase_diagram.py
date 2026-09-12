@@ -10,9 +10,7 @@ import logging
 from pathlib import Path
 from typing import Tuple, List
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Polygon
 
 from quickice.phase_mapping import (
     melting_pressure,
@@ -862,10 +860,15 @@ def generate_phase_diagram(
         FileNotFoundError: If phase data files not found
     """
     from shapely.geometry import Polygon as ShapelyPolygon
-    
+
+    # Lazy import (AGENTS.md): matplotlib is heavy (~0.3 s) and must not load
+    # at GUI/CLI startup; only the actual PNG/SVG generation path needs it.
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon
+
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
     
