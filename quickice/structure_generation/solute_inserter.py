@@ -7,13 +7,14 @@ position and rotation while checking for all-atom overlaps.
 All coordinates are in nanometers (nm).
 """
 
+from __future__ import annotations
+
 import logging
 import random
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.spatial import cKDTree
-from scipy.spatial.transform import Rotation
 
 from quickice.structure_generation.types import (
     SoluteConfig,
@@ -26,6 +27,19 @@ from quickice.structure_generation.types import (
 from quickice.structure_generation.moleculetype_registry import MoleculetypeRegistry
 from quickice.structure_generation.itp_parser import parse_itp_file
 from quickice.structure_generation.ion_inserter import AVOGADRO
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree as _cKDTreeType  # noqa: F401
+    from scipy.spatial.transform import Rotation  # noqa: F401 (annotation only)
+
+# Lazily-imported scipy handle (slow-gui-startup fix): scipy.spatial costs
+# ~0.25 s and must NOT load at module import (AGENTS.md lazy-import rule).
+# Call sites use the ``global cKDTree; if cKDTree is None: from scipy.spatial
+# import cKDTree`` prologue. Keeping this a real module attribute (not a
+# function-local import) matters: the scancode TREE regression tests
+# ``patch('quickice.structure_generation.solute_inserter.cKDTree', ...)`` to
+# track rebuild sizes — a function-local import would bypass the patch.
+cKDTree = None
 
 
 logger = logging.getLogger(__name__)
@@ -316,6 +330,9 @@ class SoluteInserter:
         Returns:
             (3, 3) rotation matrix
         """
+        # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+        from scipy.spatial.transform import Rotation
+
         rotation = Rotation.random(random_state=self.rng.randint(0, 2**31 - 1))
         return rotation.as_matrix()
     
@@ -407,6 +424,11 @@ class SoluteInserter:
                 slices.append(np.array(custom_molecule_positions))
         
         if slices:
+            # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+            global cKDTree
+            if cKDTree is None:
+                from scipy.spatial import cKDTree
+
             existing_positions = np.vstack(slices)
             return cKDTree(existing_positions)
         return None
@@ -465,6 +487,11 @@ class SoluteInserter:
             return structure
         
         # Build KDTree from solute atoms
+        # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+        global cKDTree
+        if cKDTree is None:
+            from scipy.spatial import cKDTree
+
         solute_tree = cKDTree(solute_positions)
         
         # Get water molecule boundaries
@@ -1011,6 +1038,11 @@ class SoluteInserter:
                 recent_buffer.append(solute_positions)
                 # Rebuild the small buffer tree (B*A atoms, byte-identical to
                 # the main tree's distance computation).
+                # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+                global cKDTree
+                if cKDTree is None:
+                    from scipy.spatial import cKDTree
+
                 buffer_tree = cKDTree(np.vstack(recent_buffer))
                 
                 # Batch rebuild: merge the buffer into the main tree only when

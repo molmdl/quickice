@@ -9,9 +9,9 @@ All coordinates are in nanometers (nm).
 
 import random
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import (
     IonConfig,
@@ -23,6 +23,18 @@ from quickice.structure_generation.types import (
     detect_atoms_per_molecule,
 )
 from quickice.utils.molecule_utils import iter_guest_molecules
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree as _cKDTreeType  # noqa: F401
+
+# Lazily-imported scipy handle (slow-gui-startup fix): scipy.spatial costs
+# ~0.25 s and must NOT load at module import (AGENTS.md lazy-import rule).
+# Call sites use the ``global cKDTree; if cKDTree is None: from scipy.spatial
+# import cKDTree`` prologue. Keeping this a real module attribute (not a
+# function-local import) matters: the scancode TREE regression tests
+# ``patch('quickice.structure_generation.ion_inserter.cKDTree', ...)`` to
+# track rebuild sizes — a function-local import would bypass the patch.
+cKDTree = None
 
 
 # Ion parameters from Madrid2019_085 (Zeron et al., J. Chem. Phys. 2019)
@@ -298,6 +310,13 @@ class IonInserter:
         Returns:
             New IonStructure with replaced ions
         """
+        # Lazy import (AGENTS.md): scipy.spatial is heavy — not at module top.
+        # Uses the module attribute so mock.patch on it (scancode TREE tests)
+        # keeps working.
+        global cKDTree
+        if cKDTree is None:
+            from scipy.spatial import cKDTree
+
         # Handle structures without molecule_index (e.g., InterfaceStructure)
         # by building one from available metadata
         if not structure.molecule_index:

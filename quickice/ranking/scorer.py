@@ -10,13 +10,21 @@ All functions use heuristic approaches appropriate for "vibe coding" - no actual
 physics simulations are performed.
 """
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 # Note: Counter import removed — diversity_score now uses structural fingerprints
-from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
 from quickice.structure_generation.ion_inserter import AVOGADRO
 from quickice.ranking.types import RankedCandidate, RankingResult, ScoringConfig
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree  # noqa: F401 (annotation/documentation only)
+
+# NOTE (slow-gui-startup fix): scipy.spatial is imported INSIDE the function
+# that uses it — ~0.25 s of import cost must not hit GUI/CLI startup merely
+# because this module was imported (AGENTS.md lazy-import rule).
 
 
 def _is_orthorhombic(cell: np.ndarray, tol: float = 1e-10) -> bool:
@@ -57,6 +65,9 @@ def _calculate_oo_distances_pbc(
     Returns:
         Array of O-O distances within cutoff
     """
+    # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+    from scipy.spatial import cKDTree
+
     # Extract O positions (oxygen atoms by name, works for both TIP3P and TIP4P)
     # TIP3P: 'O', TIP4P: 'OW'
     o_indices = [i for i, name in enumerate(atom_names) if name in ('O', 'OW')]

@@ -7,8 +7,16 @@ and to remove entire overlapping molecules (never partial molecules).
 All coordinates and thresholds are in nanometers (nm).
 """
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from scipy.spatial import cKDTree
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree  # noqa: F401 (annotation/documentation only)
+
+# NOTE (slow-gui-startup fix): scipy.spatial is imported INSIDE the functions
+# that use it — ~0.25 s of import cost must not hit GUI/CLI startup merely
+# because this module was imported (AGENTS.md lazy-import rule).
 
 
 def detect_overlaps(
@@ -77,6 +85,9 @@ def detect_overlaps(
 
     # Build cKDTree with PBC via boxsize parameter
     # CRITICAL: boxsize handles periodic boundaries automatically
+    # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+    from scipy.spatial import cKDTree
+
     box_list = box_dims_nm.tolist()
     ice_tree = cKDTree(ice_o_wrapped, boxsize=box_list)
     water_tree = cKDTree(water_o_wrapped, boxsize=box_list)

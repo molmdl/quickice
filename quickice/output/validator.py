@@ -5,13 +5,19 @@ Provides validation functions for:
 - Atomic overlap detection with periodic boundary conditions
 """
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 import spglib
-from scipy.spatial import cKDTree
 
 from quickice.structure_generation.types import Candidate
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree  # noqa: F401 (annotation/documentation only)
+
+# NOTE (slow-gui-startup fix): scipy.spatial is imported INSIDE
+# check_atomic_overlap() — ~0.25 s of import cost must not hit GUI/CLI
+# startup merely because this module was imported (AGENTS.md lazy-import rule).
 
 
 def validate_space_group(
@@ -124,8 +130,11 @@ def check_atomic_overlap(
                 supercell_positions.append(positions + offset)
     
     supercell_positions = np.vstack(supercell_positions)
-    
+
     # Build KDTree for supercell
+    # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+    from scipy.spatial import cKDTree
+
     tree = cKDTree(supercell_positions)
     
     # Find pairs within min_distance

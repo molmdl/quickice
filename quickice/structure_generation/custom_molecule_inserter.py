@@ -7,13 +7,14 @@ modes: random (with overlap checking) and custom (user-specified positions/rotat
 All coordinates are in nanometers (nm).
 """
 
+from __future__ import annotations
+
 import logging
 import random
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.spatial import cKDTree
-from scipy.spatial.transform import Rotation
 
 from quickice.structure_generation.types import (
     CustomMoleculeConfig,
@@ -28,6 +29,14 @@ from quickice.structure_generation.gro_parser import parse_gro_file
 from quickice.structure_generation.itp_parser import parse_itp_file
 from quickice.structure_generation.ion_inserter import AVOGADRO
 from quickice.utils.molecule_utils import iter_guest_molecules
+
+if TYPE_CHECKING:
+    from scipy.spatial import cKDTree  # noqa: F401 (annotation only)
+    from scipy.spatial.transform import Rotation  # noqa: F401 (annotation only)
+
+# NOTE (slow-gui-startup fix): scipy.spatial is imported INSIDE the methods
+# that use it — ~0.25 s of import cost must not hit GUI/CLI startup merely
+# because this module was imported (AGENTS.md lazy-import rule).
 
 
 logger = logging.getLogger(__name__)
@@ -331,6 +340,9 @@ class CustomMoleculeInserter:
         Returns:
             (3, 3) rotation matrix
         """
+        # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+        from scipy.spatial.transform import Rotation
+
         rotation = Rotation.from_euler('ZXZ', [alpha, beta, gamma], degrees=True)
         return rotation.as_matrix()
     
@@ -395,6 +407,9 @@ class CustomMoleculeInserter:
                 slices.append(np.array(custom_molecule_positions))
         
         if slices:
+            # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+            from scipy.spatial import cKDTree
+
             existing_positions = np.vstack(slices)
             return cKDTree(existing_positions)
         return None
@@ -513,6 +528,9 @@ class CustomMoleculeInserter:
             return structure
         
         # Build KDTree from custom molecule atoms
+        # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+        from scipy.spatial import cKDTree
+
         custom_tree = cKDTree(custom_molecule_positions)
         
         # Get water molecule boundaries
@@ -800,6 +818,9 @@ class CustomMoleculeInserter:
                 ])
                 
                 # Generate random rotation
+                # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+                from scipy.spatial.transform import Rotation
+
                 rotation = Rotation.random(random_state=self.rng.randint(0, 2**31-1))
                 rotation_matrix = rotation.as_matrix()
                 
@@ -847,6 +868,9 @@ class CustomMoleculeInserter:
                 recent_buffer.append(placed_mol)
                 # Rebuild the small buffer tree (B*A atoms, byte-identical
                 # to the main tree's distance computation).
+                # Lazy import (AGENTS.md): scipy is heavy — not at module top.
+                from scipy.spatial import cKDTree
+
                 buffer_tree = cKDTree(np.vstack(recent_buffer))
                 
                 # Batch rebuild: merge the buffer into the main tree only
