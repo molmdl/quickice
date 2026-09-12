@@ -2,111 +2,97 @@
 
 This module provides the mapping layer between QuickIce phase IDs
 and GenIce lattice names, including supercell calculation logic.
+
+Startup-performance note (slow-gui-startup fix): all re-exports are LAZY via
+PEP 562 ``__getattr__``. The eager version of this file imported the full
+chain (generator → genice2 + networkx, interface_builder → water_density →
+iapws, ion_inserter / overlap_resolver → scipy.spatial) whenever ANY
+submodule of this package was imported — including a bare
+``import quickice.structure_generation.types``. That put ~0.5 s of heavy
+imports on both the CLI and GUI startup paths for no benefit. With the lazy
+map below, submodules load on first attribute access instead.
+
+A side effect: names that were listed in ``__all__`` but missing from the
+eager imports (``IonConfig``, ``IonStructure`` — they live in ``types.py``)
+are now actually importable from this package, as ``__all__`` always
+claimed.
 """
 
-from quickice.structure_generation.errors import (
-    StructureGenerationError,
-    UnsupportedPhaseError,
-    InterfaceGenerationError,
-)
-from quickice.structure_generation.mapper import (
-    PHASE_TO_GENICE,
-    UNIT_CELL_MOLECULES,
-    calculate_supercell,
-    get_genice_lattice_name,
-)
-from quickice.structure_generation.types import (
-    Candidate,
-    GenerationResult,
-    InterfaceConfig,
-    InterfaceStructure,
-    HydrateConfig,
-    HydrateLatticeInfo,
-    HydrateStructure,
-    MoleculeIndex,
-    HYDRATE_LATTICES,
-    GUEST_MOLECULES,
-)
-from quickice.structure_generation.generator import (
-    IceStructureGenerator,
-    generate_candidates,
-)
-from quickice.structure_generation.interface_builder import (
-    generate_interface,
-    validate_interface_config,
-)
-from quickice.structure_generation.water_filler import (
-    load_water_template,
-    tile_structure,
-    fill_region_with_water,
-)
-from quickice.structure_generation.hydrate_generator import HydrateStructureGenerator
-from quickice.structure_generation.ion_inserter import IonInserter
-from quickice.structure_generation.overlap_resolver import (
-    detect_overlaps,
-    remove_overlapping_molecules,
-    angstrom_to_nm,
-    nm_to_angstrom,
-)
-from quickice.structure_generation.gro_parser import (
-    parse_gro_string,
-    parse_gro_file,
-)
-from quickice.structure_generation.gromacs_ion_export import (
-    generate_ion_itp,
-    write_ion_itp,
-    get_ion_molecule_section,
-)
-from quickice.structure_generation.cell_utils import is_cell_orthogonal
+import importlib
+from typing import Any
 
-__all__ = [
+# name -> submodule that defines it
+_EXPORT_TO_MODULE = {
     # Types
-    "Candidate",
-    "GenerationResult",
-    "InterfaceConfig",
-    "InterfaceStructure",
-    "HydrateConfig",
-    "HydrateLatticeInfo",
-    "HydrateStructure",
-    "IonConfig",
-    "IonStructure",
-    "IonInserter",
-    "MoleculeIndex",
+    "Candidate": "types",
+    "GenerationResult": "types",
+    "InterfaceConfig": "types",
+    "InterfaceStructure": "types",
+    "HydrateConfig": "types",
+    "HydrateLatticeInfo": "types",
+    "HydrateStructure": "types",
+    "IonConfig": "types",
+    "IonStructure": "types",
+    "MoleculeIndex": "types",
+    "HYDRATE_LATTICES": "types",
+    "GUEST_MOLECULES": "types",
     # Errors
-    "StructureGenerationError",
-    "UnsupportedPhaseError",
-    "InterfaceGenerationError",
-    # Mapper functions
-    "get_genice_lattice_name",
-    "calculate_supercell",
+    "StructureGenerationError": "errors",
+    "UnsupportedPhaseError": "errors",
+    "InterfaceGenerationError": "errors",
+    # Mapper functions and constants
+    "PHASE_TO_GENICE": "mapper",
+    "UNIT_CELL_MOLECULES": "mapper",
+    "get_genice_lattice_name": "mapper",
+    "calculate_supercell": "mapper",
     # Generator
-    "IceStructureGenerator",
-    "generate_candidates",
-    "HydrateStructureGenerator",
+    "IceStructureGenerator": "generator",
+    "generate_candidates": "generator",
+    "HydrateStructureGenerator": "hydrate_generator",
     # Interface generation
-    "generate_interface",
-    "validate_interface_config",
+    "generate_interface": "interface_builder",
+    "validate_interface_config": "interface_builder",
     # Water filling and overlap resolution
-    "load_water_template",
-    "tile_structure",
-    "fill_region_with_water",
-    "detect_overlaps",
-    "remove_overlapping_molecules",
+    "load_water_template": "water_filler",
+    "tile_structure": "water_filler",
+    "fill_region_with_water": "water_filler",
+    "detect_overlaps": "overlap_resolver",
+    "remove_overlapping_molecules": "overlap_resolver",
     # Unit conversion helpers
-    "angstrom_to_nm",
-    "nm_to_angstrom",
+    "angstrom_to_nm": "overlap_resolver",
+    "nm_to_angstrom": "overlap_resolver",
+    # Ion insertion
+    "IonInserter": "ion_inserter",
     # GRO parsing utilities
-    "parse_gro_string",
-    "parse_gro_file",
+    "parse_gro_string": "gro_parser",
+    "parse_gro_file": "gro_parser",
     # Ion export utilities
-    "generate_ion_itp",
-    "write_ion_itp",
-    "get_ion_molecule_section",
-    # Constants
-    "PHASE_TO_GENICE",
-    "UNIT_CELL_MOLECULES",
-    "HYDRATE_LATTICES",
-    "GUEST_MOLECULES",
+    "generate_ion_itp": "gromacs_ion_export",
+    "write_ion_itp": "gromacs_ion_export",
+    "get_ion_molecule_section": "gromacs_ion_export",
     # Cell utilities
-    "is_cell_orthogonal",
-]
+    "is_cell_orthogonal": "cell_utils",
+}
+
+__all__ = sorted(_EXPORT_TO_MODULE)
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562 lazy re-export: load the defining submodule on first access."""
+    try:
+        submodule = _EXPORT_TO_MODULE[name]
+    except KeyError:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}"
+        ) from None
+    module = importlib.import_module(
+        f"{__name__}.{submodule}"
+    )
+    value = getattr(module, name)
+    # Cache on the package so subsequent accesses skip __getattr__.
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_EXPORT_TO_MODULE))
