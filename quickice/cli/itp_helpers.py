@@ -504,11 +504,17 @@ def copy_itp_files_for_structure(
 
         na_count = getattr(structure, "na_count", 0)
         cl_count = getattr(structure, "cl_count", 0)
-        try:
-            write_ion_itp(str(output_dir / "ion.itp"), na_count, cl_count)
-            copied.append("ion.itp")
-        except Exception as e:
-            logger.warning(f"Failed to generate ion.itp: {e}")
+        # Quick-029 bug (a): 0-ion exports must not stage ion.itp — the .top
+        # omits the #include (ion_writer.py same-cond gate) and ion.itp's
+        # [atoms] would reference the never-emitted NA/CL atomtypes.
+        if na_count > 0 or cl_count > 0:
+            try:
+                write_ion_itp(str(output_dir / "ion.itp"), na_count, cl_count)
+                copied.append("ion.itp")
+            except Exception as e:
+                logger.warning(f"Failed to generate ion.itp: {e}")
+        else:
+            logger.info("0 ions — skipping ion.itp generation")
 
         # Solute liquid ITP if solutes present
         solute_type = getattr(structure, "solute_type", "")

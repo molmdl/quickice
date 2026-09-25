@@ -948,7 +948,13 @@ def write_ion_top_file(
             f.write(f'#include "{solute_itp_name}"\n')
 
         # Include ion itp (from ion export - combined NA+CL in single file)
-        f.write('#include "ion.itp"\n\n')
+        # Quick-029 bug (a): skip the include when 0 ions were inserted — the
+        # NA/CL [atomtypes] block above is gated on the counts, so including
+        # ion.itp (whose [atoms] reference NA/CL) is a grompp-fatal orphan
+        # include ("Atomtype NA not found"). Byte-identical when ions present.
+        if na_count > 0 or cl_count > 0:
+            f.write('#include "ion.itp"\n')
+        f.write("\n")
 
         # [ system ] section
         f.write("[ system ]\n")
