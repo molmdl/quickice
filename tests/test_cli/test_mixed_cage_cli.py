@@ -276,47 +276,39 @@ def test_mixed_cli_built_in_grompp(tmp_path):
 
 
 @gmx_skipif
-def test_mixed_cli_hydrate_branch_pins_single_guest_stream(
+def test_mixed_cli_hydrate_branch_mixed_builtin_output(
     tmp_path, mixed_builtin_sii_hydrate
 ):
-    """DESIGN LIMITATION — PIN TEST (decision D2 = option-a pin-and-document,
-    .planning/phases/48.3-revise-tests-true-e2e/48.3-DECISIONS.md).
+    """CLI hydrate-branch mixed built-in output — RE-PINNED after quick-029.
 
-    The CLI write_interface_* writers carry a single guest stream:
-    ``detect_guest_type_from_atoms`` picks ONE guest type for the whole guest
-    region (45-RESEARCH Pitfall 2). The CLI HYDRATE export branch
-    (``CLIPipeline._run_export_step`` with only ``_hydrate_result`` set) always
-    hits that single-stream fallback because its InterfaceStructure wrapper
-    (pipeline.py hydrate branch) does NOT thread ``guest_atom_counts`` /
-    ``guest_descriptors``. Its ITP staging likewise resolves only the legacy
-    ``config.guest_type`` ("ch4") and stages ONE guest ITP.
+    Previously ``test_mixed_cli_hydrate_branch_pins_single_guest_stream``
+    (decision D2 = option-a pin-and-document, 48.3-DECISIONS.md): it pinned
+    the bug (b) limitation (STATE.md 48.3-25 exit audit) — the hydrate
+    branch's InterfaceStructure wrapper never threaded ``guest_atom_counts``
+    / ``guest_descriptors``, so all guests collapsed to CH4_H and grompp
+    fataled on the atom-count mismatch. The pin test's own docstring said:
+    "if the wrapper ever threads the metadata ... update this pin test
+    consciously alongside the metadata-threading fix instead (and re-pin the
+    new behavior)". Quick task 029 Task 2 IS that fix (pipeline.py hydrate
+    branch gains guest_descriptors + guest_atom_counts kwargs; itp_helpers
+    hydrate branch stages every distinct built-in guest ITP via
+    _detect_builtin_guest_types).
 
-    Pinned behavior for a mixed built-in CH4+THF hydrate (empirically verified
-    2026-09-03, matching the 48.3-05 discovery):
+    Re-pinned behavior for a mixed built-in CH4+THF sII 1x1x1 hydrate
+    (16 small + 8 large = 24 guests; 136 waters):
 
-    - ``_run_export_step`` exits 0 — the limitation is SILENT;
-    - ``hydrate.top`` ``[molecules]`` declares ``SOL + CH4_H`` only (all 24
-      guests — 16 CH4 + 8 THF — collapse into one CH4_H run; THF_H absent);
-    - ``hydrate.top`` ``#include``s only ``ch4_hydrate.itp``; only
-      ``ch4_hydrate.itp`` is staged (``thf_hydrate.itp`` never staged);
-    - all 184 guest atoms in ``hydrate.gro`` are labeled ``CH4_H``
-      (16x5 + 8x13 = 184; THF_H absent, no GUE);
-    - ``assert_itp_completeness`` + ``assert_gro_top_consistent`` still PASS
-      (name-consistency holds — the atom-COUNT gap is invisible at file level);
-    - ``gmx grompp`` FAILS with the coordinate/topology atom-count mismatch
-      (topology counts 24x5-atom CH4_H; coordinates carry 184 guest atoms).
+    - ``hydrate.top`` ``[molecules]`` declares ``SOL 136 / CH4_H 16 /
+      THF_H 8`` (per-type runs, no collapse);
+    - ``hydrate.top`` ``#include``s BOTH ``ch4_hydrate.itp`` and
+      ``thf_hydrate.itp``; BOTH are staged;
+    - the .gro residues contain BOTH ``CH4_H`` and ``THF_H``;
+    - file-level consistency holds.
 
-    Mixed built-in export is GUI-only (multi-molecule writers via
-    ``HydrateGROMACSExporter`` — tests/e2e/lattice/test_e2e_mixed_lattice_gui.py,
-    tests/e2e/solute_ion/test_e2e_mixed_ion_export.py) and the CLI INTERFACE branch is
-    mixed-capable when the slab carries descriptor metadata (b278a9ed —
-    tests/e2e/lattice/test_e2e_mixed_builtin_interface_export.py, 48.3-05). This test PINS
-    the hydrate-branch limitation so silent behavior drift fails here: if the
-    wrapper ever threads the metadata (or the writers go mixed), THF_H appears
-    and every single-stream assertion below flips. Do NOT 'fix' this test to
-    expect mixed output — update it consciously alongside the metadata-
-    threading fix instead (and re-pin the new behavior). No production-writer
-    changes belong to this test.
+    grompp is NOT asserted here: sII 1x1x1 (~1.73 nm shortest box vector)
+    is below 2*rcoulomb (filled-ice Pitfall 1), so grompp fatals on the
+    box-size check regardless of content. The grompp rc==0 half of the fix
+    is covered by the true-e2e sibling at 2x2x2:
+    tests/e2e/hydrate/test_e2e_cli_mixed_builtin_hydrate_grompp.py.
 
     Pattern 4 (in-process ``_run_export_step``, mirrors
     tests/test_e2e_mixed_builtin_interface_export.py): ``tmp_path`` is safe
@@ -334,88 +326,59 @@ def test_mixed_cli_hydrate_branch_pins_single_guest_stream(
     # -> export priority selects the HYDRATE branch (ion > solute > custom >
     # interface > hydrate > ice).
     code = pipe._run_export_step()
-    assert code == 0, (
-        "the limitation is SILENT: _run_export_step must exit 0 even though "
-        "the export is single-guest-stream (that is what is pinned)"
-    )
+    assert code == 0, f"_run_export_step (hydrate branch, mixed sII) rc={code}"
 
     gro_path = ws / "hydrate.gro"
     top_path = ws / "hydrate.top"
     assert gro_path.exists(), "hydrate.gro not written"
     assert top_path.exists(), "hydrate.top not written"
 
-    # 1) .top [molecules]: SINGLE guest stream — exactly CH4_H, THF_H absent.
+    # 1) .top [molecules]: per-type runs — CH4_H 16 + THF_H 8 (sII 1x1x1:
+    #    16 small + 8 large); no collapse into a single stream.
     mols = parse_top_molecules(str(top_path))
     assert "SOL" in mols, f"water framework missing from [molecules]: {mols}"
-    assert "CH4_H" in mols, (
-        f"CH4_H missing from .top [molecules]: {mols}"
+    assert mols.get("CH4_H") == 16, (
+        f"[molecules] CH4_H count {mols.get('CH4_H')} != 16: {mols}"
     )
-    assert "THF_H" not in mols, (
-        f"THF_H found in .top [molecules] — the single-guest-stream "
-        f"limitation has changed (mixed output?). Update this pin test "
-        f"CONSCIOUSLY (see docstring): {mols}"
-    )
-    guest_names = {name for name in mols if name != "SOL"}
-    assert guest_names == {"CH4_H"}, (
-        f"exactly ONE guest stream expected (CH4_H), got {guest_names}"
+    assert mols.get("THF_H") == 8, (
+        f"[molecules] THF_H count {mols.get('THF_H')} != 8 — mixed output "
+        f"regressed back to single-stream: {mols}"
     )
 
-    # 2) .top #includes: only the single guest ITP.
+    # 2) .top #includes: BOTH guest ITPs.
     includes = parse_top_includes(str(top_path))
     assert "ch4_hydrate.itp" in includes, (
         f"ch4_hydrate.itp not #included: {includes}"
     )
-    assert "thf_hydrate.itp" not in includes, (
-        f"thf_hydrate.itp #included — single-stream limitation changed "
-        f"(update this pin test consciously): {includes}"
+    assert "thf_hydrate.itp" in includes, (
+        f"thf_hydrate.itp not #included (mixed_include regressed): {includes}"
     )
 
-    # 3) Staging: only ch4_hydrate.itp staged (thf never staged — the
-    #    hydrate branch resolves the legacy config.guest_type only).
+    # 3) Staging: BOTH guest ITPs staged (quick-029 itp_helpers fix stages
+    #    every distinct built-in type via _detect_builtin_guest_types).
     assert (ws / "ch4_hydrate.itp").exists(), (
         "ch4_hydrate.itp not staged in the export directory"
     )
-    assert not (ws / "thf_hydrate.itp").exists(), (
-        "thf_hydrate.itp staged — hydrate-branch staging changed (update "
-        "this pin test consciously)"
+    assert (ws / "thf_hydrate.itp").exists(), (
+        "thf_hydrate.itp not staged in the export directory"
     )
     assert (ws / "tip4p-ice.itp").exists(), (
         "tip4p-ice.itp (water ITP) not staged in the export directory"
     )
 
-    # 4) .gro residues: ALL guests labeled CH4_H (THF_H absent, no GUE).
+    # 4) .gro residues: BOTH guest residue names present (no GUE/UNK).
     gro_res = set(parse_gro_residue_names(str(gro_path)))
     assert "CH4_H" in gro_res, (
         f"CH4_H missing from .gro residues: {sorted(gro_res)}"
     )
-    guest_res = gro_res - {"SOL"}
-    assert guest_res == {"CH4_H"}, (
-        f"exactly ONE guest residue name expected (CH4_H), got "
-        f"{sorted(guest_res)} — single-stream limitation changed (update "
-        f"this pin test consciously)"
+    assert "THF_H" in gro_res, (
+        f"THF_H missing from .gro residues (mixed output regressed to "
+        f"single-stream): {sorted(gro_res)}"
     )
 
-    # 5) File-level consistency checks PASS (the limitation is invisible to
-    #    them — residue NAMES agree; only the atom COUNTS are wrong).
+    # 5) File-level consistency checks PASS.
     assert_itp_completeness(str(top_path), ws)
     assert_gro_top_consistent(str(gro_path), str(top_path))
-
-    # 6) grompp FAILS with the atom-count mismatch (the grompp-invalid
-    #    consequence of the single stream). If this flips to rc == 0, the
-    #    export became mixed/metadata-threaded — update the pin consciously.
-    shutil.copy(MDP_PATH, ws / "em.mdp")
-    exit_code, gmx_stderr = run_gmx_grompp(
-        ws, gro_file="hydrate.gro", top_file="hydrate.top"
-    )
-    assert exit_code != 0, (
-        "gmx grompp unexpectedly PASSED on the single-guest-stream hydrate "
-        "export — the atom-count mismatch is gone, i.e. the export behavior "
-        "changed. Update this pin test consciously (see docstring)."
-    )
-    assert "does not match topology" in gmx_stderr, (
-        f"expected the coordinate/topology atom-count mismatch fatal error, "
-        f"got:\n{gmx_stderr[-500:]}"
-    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

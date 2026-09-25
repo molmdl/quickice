@@ -692,18 +692,21 @@ class TestPipelineAdvancedWorkflows:
             shutil.rmtree(outdir, ignore_errors=True)
 
     def test_pocket_mode_ion(self):
-        """Pocket mode + ion insertion produces ion.gro with ion.itp.
+        """Pocket mode + ion insertion produces grompp-valid ion.gro output.
 
-        Grompp validation is CONDITIONAL here (discovery, 2026-09-03): pocket
-        mode's default thin liquid layer (105 water molecules ≈ 3.1 nm³)
+        Pocket mode's default thin liquid layer (105 water molecules ≈ 3.1 nm³)
         yields < 1 ion pair at 0.15 M (0.15 × 3.1 × 0.6022 ≈ 0.28 → 0), so
-        the export legitimately carries ZERO ions. In that state
-        write_ion_top_file still #includes ion.itp (and the CLI stages it)
-        while emitting NO NA/CL atomtypes → gmx grompp fatals with
-        "Atomtype NA not found" (orphan include, ion.itp line 8). That is a
-        PRODUCTION gap (writers/staging at 0 ions), out of scope for this
-        test-only phase — do NOT mask it by tuning parameters here. When ions
-        ARE placed, grompp must pass (asserted below).
+        the export legitimately carries ZERO ions. Pre-quick-029 this hit a
+        PRODUCTION gap (the "orphan include", ion_writer.py: write_ion_top_file
+        unconditionally #include'd ion.itp while emitting NO NA/CL atomtypes,
+        and the CLI staged it → gmx grompp fatal "Atomtype NA not found",
+        ion.itp line 8). Quick task 029 Task 1 closed that gap: the include
+        AND the ion.itp staging are now both gated on na_count > 0 or
+        cl_count > 0. This test is re-pinned to the FIXED behavior:
+
+        - nonzero ion count → ion.itp staged, #include'd, grompp rc == 0;
+        - zero ion count → NO ion.itp staged, no #include, NO NA/CL in
+          [molecules], and grompp rc == 0 (no orphan include anymore).
         """
         outdir = make_temp_output_dir()
         try:
@@ -720,11 +723,7 @@ class TestPipelineAdvancedWorkflows:
             outpath = Path(outdir)
             assert (outpath / "ion.gro").exists()
             assert (outpath / "ion.top").exists()
-            assert (outpath / "ion.itp").exists()
             assert (outpath / "tip4p-ice.itp").exists()
-            # Grompp-validate the most-downstream export (belt-and-suspenders:
-            # file-level asserts above always run; grompp runs only when gmx
-            # is on PATH — established convention).
             in_molecules = False
             top_mols = set()
             for line in (outpath / "ion.top").read_text().splitlines():
@@ -736,23 +735,33 @@ class TestPipelineAdvancedWorkflows:
                         and not stripped.startswith("#"):
                     top_mols.add(stripped.split()[0])
             if "NA" in top_mols or "CL" in top_mols:
-                # Ions were placed → the topology must be grompp-valid.
-                if shutil.which("gmx"):
-                    shutil.copy(MDP_PATH, outpath / "em.mdp")
-                    exit_code, gmx_stderr = run_gmx_grompp(
-                        outpath, gro_file="ion.gro", top_file="ion.top"
-                    )
-                    assert exit_code == 0, (
-                        f"gmx grompp failed on ion export:\n{gmx_stderr[-500:]}"
-                    )
+                # Ions were placed → ion.itp staged and grompp-valid.
+                assert (outpath / "ion.itp").exists(), (
+                    "ions present in [molecules] but ion.itp not staged"
+                )
             else:
-                # 0-ion export (current default-pocket behavior — see
-                # docstring): pin the zero-ion state so silent drift in
-                # either direction is caught, and skip grompp (orphan
-                # ion.itp #include with no NA/CL atomtypes emitted →
-                # grompp-fatal; production gap documented in 48.3-07-SUMMARY).
-                assert "NA" not in top_mols and "CL" not in top_mols, (
-                    f"unexpected 0-ion export molecules: {top_mols}"
+                # 0-ion export (default-pocket behavior — see docstring):
+                # quick-029 fix — NO orphan ion.itp staged/included. Pin the
+                # zero-ion state so silent drift in either direction is caught.
+                assert not (outpath / "ion.itp").exists(), (
+                    "0-ion export must NOT stage ion.itp (quick-029)"
+                )
+                assert '#include "ion.itp"' not in (
+                    outpath / "ion.top"
+                ).read_text(), (
+                    "0-ion export must NOT #include ion.itp (quick-029)"
+                )
+            # Grompp-validate the most-downstream export (belt-and-suspenders:
+            # file-level asserts above always run; grompp runs only when gmx
+            # is on PATH — established convention). Post-quick-029 BOTH the
+            # ion-present and 0-ion exports are grompp-valid.
+            if shutil.which("gmx"):
+                shutil.copy(MDP_PATH, outpath / "em.mdp")
+                exit_code, gmx_stderr = run_gmx_grompp(
+                    outpath, gro_file="ion.gro", top_file="ion.top"
+                )
+                assert exit_code == 0, (
+                    f"gmx grompp failed on ion export:\n{gmx_stderr[-500:]}"
                 )
         finally:
             shutil.rmtree(outdir, ignore_errors=True)

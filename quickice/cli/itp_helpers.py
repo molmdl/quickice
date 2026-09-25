@@ -331,12 +331,26 @@ def copy_itp_files_for_structure(
             if itp_name:
                 copied.append(itp_name)
         else:
-            guest_type = _resolve_guest_type_for_hydrate_step(structure, args_ref)
-            if guest_type is not None:
+            # Quick-029 bug (b): for MIXED built-in hydrates the .top now
+            # #includes EVERY distinct built-in {type}_hydrate.itp (the
+            # writers' mixed_builtin gates are activated by the threaded
+            # guest metadata), so stage them all. _detect_builtin_guest_types
+            # walks the populated hydrate molecule_index; for a single-guest
+            # ch4 hydrate it returns ["ch4"] -> same staged file as before
+            # (single-guest outcome unchanged).
+            from quickice.output.guest_info import _detect_builtin_guest_types
+            from quickice.output.gromacs_writer import detect_guest_type_from_atoms
+            guest_types = _detect_builtin_guest_types(structure, detect_guest_type_from_atoms)
+            if not guest_types:
+                # config-less / empty-index fallback — preserves the previous
+                # single-type path.
+                _single = _resolve_guest_type_for_hydrate_step(structure, args_ref)
+                guest_types = [_single] if _single else []
+            for guest_type in guest_types:
                 itp_name = _copy_hydrate_guest_itp(output_dir, guest_type)
                 if itp_name:
                     copied.append(itp_name)
-            else:
+            if not guest_types:
                 logger.warning("Hydrate step but no guest type detected — skipping guest ITP")
 
     elif step_name == "interface":

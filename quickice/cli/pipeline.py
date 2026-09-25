@@ -928,6 +928,7 @@ class CLIPipeline:
                 from quickice.structure_generation.types import (
                     InterfaceStructure,
                     WATER_ATOMS_PER_MOLECULE,
+                    _derive_guest_atom_counts,
                 )
                 hydrate = structure
                 water_atom_count = hydrate.water_count * WATER_ATOMS_PER_MOLECULE
@@ -944,6 +945,15 @@ class CLIPipeline:
                 )
                 guest_nmolecules = hydrate.guest_count
                 water_nmolecules = hydrate.water_count
+                # Quick-029 bug (b): thread the per-type guest metadata into
+                # the wrapper (mirrors HydrateStructure.to_candidate()'s
+                # derivation at types.py — same helper, same argument order).
+                # Without it, write_interface_gro/top fall to the single
+                # -stream detect_guest_type_from_atoms path and MIXED built-in
+                # guests (e.g. sII CH4 small + THF large) all collapse to
+                # CH4_H. This activates the writers' existing mixed_builtin
+                # gates (interface_writer.py GRO/TOP).
+                hydrate_descriptors = getattr(hydrate, "guest_descriptors", [])
                 wrapper = InterfaceStructure(
                     positions=hydrate.positions,
                     atom_names=hydrate.atom_names,
@@ -957,6 +967,10 @@ class CLIPipeline:
                     water_nmolecules=water_nmolecules,
                     guest_atom_count=guest_atom_count,
                     guest_nmolecules=guest_nmolecules,
+                    guest_descriptors=hydrate_descriptors,
+                    guest_atom_counts=_derive_guest_atom_counts(
+                        hydrate.molecule_index, hydrate_descriptors
+                    ),
                 )
                 # Thread custom-guest metadata (mol_type, residue_name, itp_path)
                 # to the writers — None for all-built-in hydrate guests (ch4/thf),
