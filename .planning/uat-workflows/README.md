@@ -175,15 +175,15 @@ bash .planning/uat-workflows/E-test-refactor.sh
 ```
 
 What it checks:
-1. Phase 48.2-1: `pytest --collect-only` collects 1846 tests, 0 collection errors
+1. Phase 48.2-1: `pytest --collect-only` collects 1849 tests, 0 collection errors
 2. Phase 48.2-2: tests/ root decluttered (0 `test_scancode_*.py` at root, 0 `phase_48_1_` prefixes)
-3. Phase 48.2-2: tests/scancode/ has 18 files; tests/test_cli/ has 8 files; tests/test_output/ has 21 files
+3. Phase 48.2-2: tests/scancode/ has 18 files; tests/test_cli/ has 10 files; tests/test_output/ has 21 files
 4. Phase 48.1-1: gromacs_writer.py is a thin re-export shim (<120 lines)
 5. Phase 48.1-1: Per-structure writer modules exist (ice_writer, interface_writer, multi_molecule_writer, ion_writer, custom_writer, solute_writer)
 6. Phase 48.1-1: No output module file >800 lines
 7. Phase 48.1-2: _gro_format.py has DRY GRO helpers
 8. Phase 48.1-2: _shared.py has shared constants/helpers + _write_top_defaults
-9. Phase 48.1-3: baseline_shas.json exists (byte-equivalence baselines captured)
+9. Phase 48.1-3: byte-eq contract test passes (tests/test_gro_top_byte_equivalence.py)
 10. Phase 47-1: Custom guest validation unit tests pass
 11. Phase 47-1: _build_molecule_index tests pass
 12. Phase 47-1: sys.modules injection/cleanup tests pass
@@ -193,11 +193,11 @@ What it checks:
 
 ### Interactive Checklist
 
-- [ ] **48.2-1.** `pytest --collect-only -q` shows "1846 tests collected" with 0 errors
+- [ ] **48.2-1.** `pytest --collect-only -q` shows "1849 tests collected" with 0 errors
 - [ ] **48.1-1.** `quickice/output/gromacs_writer.py` is a thin re-export shim (<120 lines)
 - [ ] **48.1-1.** All 6 per-structure writer modules exist in `quickice/output/`
 - [ ] **48.1-2.** `_gro_format.py` contains the DRY GRO writer helpers
-- [ ] **48.1-3.** `.planning/phases/48.1-*/baseline_shas.json` exists
+- [ ] **48.1-3.** `tests/test_gro_top_byte_equivalence.py` exists (byte-eq contract test)
 - [ ] **47-1.** `pytest tests/test_custom_guest_bridge.py` passes (validation + sys.modules)
 - [ ] **48.2-2.** No `test_scancode_*.py` files remain at `tests/` root
 - [ ] **48.2-2.** No `phase_48_1_` prefixes in test file names

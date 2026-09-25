@@ -28,13 +28,13 @@ echo "=== Workflow E: Test Suite & Refactor Integrity ==="
 echo "(RUN_FULL=$RUN_FULL — RUN_FULL=0 runs GATE-SUBSET (~70s), RUN_FULL=1 runs GATE-FULL (~225s))"
 echo ""
 
-# 48.2-1: pytest collects 1846 tests, 0 collection errors (post-48.3 count)
+# 48.2-1: pytest collects 1849 tests, 0 collection errors (post-quick-029 count; 029 added 3 e2e tests)
 COLLECT_OUT=$(python -m pytest --collect-only -q 2>&1 | tail -2)
 COLLECT_COUNT=$(echo "$COLLECT_OUT" | grep -oE "[0-9]+ tests collected" | grep -oE "[0-9]+" || echo "0")
-if [ "$COLLECT_COUNT" -eq 1846 ]; then
-  check "48.2-1 test collection count (1846)" PASS
+if [ "$COLLECT_COUNT" -eq 1849 ]; then
+  check "48.2-1 test collection count (1849)" PASS
 else
-  check "48.2-1 test collection count (got $COLLECT_COUNT, expected 1846)" FAIL
+  check "48.2-1 test collection count (got $COLLECT_COUNT, expected 1849)" FAIL
 fi
 if echo "$COLLECT_OUT" | grep -qiE "error|no tests"; then
   check "48.2-1 collection errors (should be 0)" FAIL
@@ -156,7 +156,7 @@ else
 fi
 
 # 48.1-5 / 48.2-1: Full pytest suite (GATE-FULL)
-# Post-48.3: full suite runs headless in ~4 min (1846 collected, 2 pre-existing skips).
+# Post-48.3: full suite runs headless in ~4 min (1849 collected, 2 pre-existing skips).
 # RUN_FULL=0 (default) → GATE-SUBSET (tests/e2e + byte-eq, ~70s)
 # RUN_FULL=1           → GATE-FULL (entire suite, ~225s)
 if [ "$RUN_FULL" -eq 1 ]; then
