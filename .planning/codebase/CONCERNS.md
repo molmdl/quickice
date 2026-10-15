@@ -5,63 +5,68 @@
 > refreshed in place after the 2026-09-12 audit. Every carried concern was re-verified
 > against current code (post-48.3, post slow-gui-startup/windows-window debug sessions, post quick-029).
 > Resolved items since both prior audits are recorded at the bottom so future audits don't re-flag them.
+> Independently verified 2026-10-15 by a second read-only audit (74 claims checked: 62 confirmed,
+> 12 corrected in place — 7 substantive, 5 line-cite). Key corrected premises: the GUI export path
+> does NOT use `copy_custom_guest_itp` (CLI-only helper); `generator.py:11-12` imports genice2 at
+> module top level (contradicting AGENTS.md's lazy-import invariant); `gmx_skipif` gates 99 usages.
+> New findings from that verification pass are folded in below.
 
 ## Tech Debt
 
 **Large GUI "god-object" files:**
-- Issue: Four modules exceed 1100 lines, concentrating UI construction, state wiring, and export orchestration in single classes. `quickice/gui/main_window.py` (2319 lines) holds all cross-tab `_current_*_result` state, duck-typed attribute propagation, and signal wiring in one `MainWindow` class. `quickice/gui/export.py` (1259 lines) carries ~7 exporter classes (`SoluteGROMACSExporter`, `CustomMoleculeGROMACSExporter`, `IonGROMACSExporter`, `PDBExporter`, `DiagramExporter`, `ViewportExporter`, `GROMACSExporter`). Large core modules follow the same pattern: `quickice/structure_generation/types.py` (1346), `quickice/structure_generation/custom_molecule_inserter.py` (1249), `quickice/structure_generation/solute_inserter.py` (1142), `quickice/output/ion_writer.py` (1014).
+- Issue: Four modules exceed 1100 lines, concentrating UI construction, state wiring, and export orchestration in single classes. `quickice/gui/main_window.py` (2319 lines) holds all cross-tab `_current_*_result` state, duck-typed attribute propagation, and signal wiring in one `MainWindow` class. `quickice/gui/export.py` (1259 lines) carries 8 exporter classes (`SoluteGROMACSExporter` `:151`, `CustomMoleculeGROMACSExporter` `:333`, `IonGROMACSExporter` `:508`, `PDBExporter` `:705`, `DiagramExporter` `:786`, `ViewportExporter` `:875`, `GROMACSExporter` `:992`, `InterfaceGROMACSExporter` `:1131` — the 8th was missed by the initial 2026-10-15 audit and caught by verification). Large core modules follow the same pattern: `quickice/structure_generation/types.py` (1346), `quickice/structure_generation/custom_molecule_inserter.py` (1249), `quickice/structure_generation/solute_inserter.py` (1142), `quickice/output/ion_writer.py` (1014).
 - Files: `quickice/gui/main_window.py` (2319), `quickice/gui/custom_molecule_panel.py` (1395), `quickice/gui/export.py` (1259), `quickice/output/phase_diagram.py` (1135)
 - Impact: High cognitive load to modify; cross-cutting changes touch many unrelated sections of one file; hard to test in isolation; merge-conflict-prone.
 - Fix approach: Extract state management (`_current_*_result` + duck-typing propagation) into a dedicated `PipelineState`/controller class; split `export.py` per exporter class into separate modules. Document as a refactor target, not an emergency. (Per AGENTS.md, the `_current_*_result` pattern itself is accepted — extract, don't redesign.)
 
 **Stale-open debug documents + investigation remnants (planning hygiene):**
-- Issue: Seven top-level `.planning/debug/` docs carry open-ish status headers (`analyzed`/`diagnosed`/`verifying`/`investigating`) but their fixes are verifiably in the current code: `custom-mol-concentration-input.md` (concentration mode implemented: `quickice/gui/custom_molecule_panel.py:334-379`), `custom-mol-water-count-missing.md` + `water-replacement-not-happening.md` (display logic exists: `quickice/gui/main_window.py:1391-1412`), `hydrate-custom-solute-visibility.md` (`render_custom_molecules` paths at `quickice/gui/main_window.py:1088-1095, 1224-1225`), `interface-writer-mixed-guest.md` (per-molecule `mol_type` handling landed in `quickice/output/interface_writer.py:258-326`), `molh-atom-drop-origin.md` (`tests/e2e/custom_guest/test_e2e_custom_guest_mixed_cage.py` exists), `gmx-export-issues.md` (fixed long ago; follow-ups live in `resolved/`). One RESOLVED-status doc (`custom-mol-conc-random-mode-crash.md`) also sits at top level instead of `resolved/`. Related remnant: the `[Water Count Debug]` `logger.debug` block (`quickice/gui/main_window.py:1391-1412`) is leftover investigation logging in production GUI code. `.planning/DEFERRED-UAT.md` (v3.0 phases 17–21 "Pending execution", 2026-04) is superseded by the A–G UAT workflow scripts that quick-030 dry-ran green.
-- Files: `.planning/debug/` (top level), `quickice/gui/main_window.py:1391-1412`
+- Issue: Seven top-level `.planning/debug/` docs carry open-ish status headers (`analyzed`/`diagnosed`/`verifying`/`investigating`) but their fixes are verifiably in the current code: `custom-mol-concentration-input.md` (concentration mode implemented: `quickice/gui/custom_molecule_panel.py:334-379`), `custom-mol-water-count-missing.md` + `water-replacement-not-happening.md` (display logic exists: `quickice/gui/main_window.py:1391-1412`), `hydrate-custom-solute-visibility.md` (`render_custom_molecules` paths at `quickice/gui/main_window.py:1088-1095, 1224-1225`), `interface-writer-mixed-guest.md` (per-molecule `mol_type` handling landed in `quickice/output/interface_writer.py:259-334`), `molh-atom-drop-origin.md` (`tests/e2e/custom_guest/test_e2e_custom_guest_mixed_cage.py` exists), `gmx-export-issues.md` (fixed long ago; follow-ups live in `resolved/`). One RESOLVED-status doc (`custom-mol-conc-random-mode-crash.md`) also sits at top level instead of `resolved/`. Related remnant: the `[Water Count Debug]` `logger.debug` block (`quickice/gui/main_window.py:1376-1412`) is leftover investigation logging in production GUI code. `.planning/DEFERRED-UAT.md` (v3.0 phases 17–21 "Pending execution", 2026-04) is superseded by the six UAT workflow scripts — A/B/C/D/E/G in `.planning/uat-workflows/`, no F exists — that quick-030 dry-ran green.
+- Files: `.planning/debug/` (top level), `quickice/gui/main_window.py:1376-1412`
 - Impact: Future agents chasing these statuses re-investigate already-fixed issues; debug noise degrades status-log readability.
 - Fix approach: File the seven docs to `.planning/debug/resolved/` with resolution notes (or delete if redundant with code+tests); delete the `[Water Count Debug]` lines; mark `.planning/DEFERRED-UAT.md` superseded with a pointer to the UAT workflow scripts.
 
 **Scancode test placement split:**
-- Issue: 16 `test_scancode_bugs_*.py` regression files live in `tests/scancode/` (48.2-01 move), but 2 remain at `tests/` root: `tests/test_scancode_bugs_custom_guest_bridge_assert.py` and `tests/test_scancode_bugs_piece_logger.py`. AGENTS.md ("Testing") documents the root-level `test_scancode_bugs_*.py` pattern, so doc and practice each half-match.
+- Issue: 17 `test_scancode_bugs_*.py` regression files live in `tests/scancode/` (48.2-01 move; corroborated by `.planning/ROADMAP.md:444`), but 2 remain at `tests/` root (19 total): `tests/test_scancode_bugs_custom_guest_bridge_assert.py` and `tests/test_scancode_bugs_piece_logger.py`. AGENTS.md ("Testing") documents the root-level `test_scancode_bugs_*.py` pattern, so doc and practice each half-match.
 - Files: `tests/scancode/`, `tests/test_scancode_bugs_custom_guest_bridge_assert.py`, `tests/test_scancode_bugs_piece_logger.py`, `AGENTS.md`
 - Impact: Harmless for pytest discovery but inconsistent; new scancode tests may land in either spot.
 - Fix approach: Move the 2 stragglers into `tests/scancode/` and update the AGENTS.md testing line. Low priority.
 
-**AGENTS.md drift (two stale claims):**
-- Issue: (a) `AGENTS.md:12` says "All tests (~1846)" — the suite now collects **1849** tests (verified via `pytest --collect-only`). (b) `AGENTS.md:42` still points to "ROADMAP.md TEST-06 (deferred)" for headless-VTK guidance, but the current `.planning/ROADMAP.md` TEST-06 is the mixed-cage-occupancy e2e requirement — marked **DONE** (line 261). The operative headless-VTK guidance is the AGENTS.md Testing section itself.
-- Files: `AGENTS.md:12`, `AGENTS.md:42`
-- Impact: Doc-only; misleads future agents about coverage and sends them to an irrelevant ROADMAP entry.
-- Fix approach: Update the count and replace the TEST-06 pointer with a direct statement of the accepted mock/skip/heuristic approach.
+**AGENTS.md drift (three stale claims):**
+- Issue: (a) `AGENTS.md:12` says "All tests (~1846)" — the suite now collects **1849** tests (re-verified via `pytest --collect-only`, 0 errors). (b) `AGENTS.md:42` still points to "ROADMAP.md TEST-06 (deferred)" for headless-VTK guidance, but the current `.planning/ROADMAP.md` TEST-06 is the mixed-cage-occupancy e2e requirement — marked **DONE** (line 261). The operative headless-VTK guidance is the AGENTS.md Testing section itself. (c) The AGENTS.md Lazy Imports section says PySide6/VTK/GenIce2 are "imported inside function bodies (never at module top level)" — **false for `quickice/structure_generation/generator.py:11-12`**, which imports `from genice2.plugin import safe_import` and `from genice2.genice import GenIce` at module top level (new finding, 2026-10-15 verification). Note (c) is a genuine doc-vs-code divergence: only the lazy PEP 562 `__init__` map keeps `import quickice.structure_generation` light; a direct `import quickice.structure_generation.generator` (e.g. `tests/conftest.py:50`, legitimate for tests) loads the full genice2+networkx chain at import time.
+- Files: `AGENTS.md:12`, `AGENTS.md:42`, `quickice/structure_generation/generator.py:11-12`
+- Impact: (a)/(b) doc-only; (c) misleads agents about the import graph and leaves the startup-perf contract enforced by convention alone rather than by code.
+- Fix approach: (a) update the count; (b) replace the TEST-06 pointer with a direct statement of the accepted mock/skip/heuristic approach; (c) EITHER lazify `generator.py`'s genice2 imports into function bodies (matching `hydrate_generator.py:79-82, :254`) OR amend the AGENTS.md invariant to carve out `generator.py` explicitly.
 
 **Implicit exception chaining in GRO parse guard (minor):**
-- Issue: `quickice/structure_generation/hydrate_generator.py:337` raises `RuntimeError("Invalid GRO format from GenIce2")` inside `except (IndexError, ValueError)` without an explicit `from e`. Python's implicit `__context__` chaining preserves the original exception, so no information is lost — but the style is inconsistent with the explicit `from e` wrapper at `hydrate_generator.py:324-327` (and `generator.py:150`, `interface_builder.py:370`).
-- Files: `quickice/structure_generation/hydrate_generator.py:334-338`
+- Issue: `quickice/structure_generation/hydrate_generator.py:339` raises `RuntimeError("Invalid GRO format from GenIce2")` inside `except (IndexError, ValueError)` (guard block `:336-339`, except clause at `:338`) without an explicit `from e`. Python's implicit `__context__` chaining preserves the original exception, so no information is lost — but the style is inconsistent with the explicit `from e` wrapper at `hydrate_generator.py:324-327` (and `generator.py:150`, `interface_builder.py:370`).
+- Files: `quickice/structure_generation/hydrate_generator.py:336-339`
 - Impact: Cosmetic/consistency only. No action required; fix opportunistically if the file is touched.
 
 ## Known Bugs
 
 No actively-crashing bugs were found in the analyzed source. Verified invariants (all currently correct):
 - Inserters return NEW structures, never mutating inputs (V-17 fix): `quickice/structure_generation/solute_inserter.py`, `quickice/structure_generation/ion_inserter.py` — regression-tested under `tests/scancode/`.
-- cKDTree conditional rebuild (rebuild only after successful placement, never on rejection) correctly implemented: `quickice/structure_generation/ion_inserter.py:571,621`; `quickice/structure_generation/solute_inserter.py:971,1046,1051` — regression-tested by `tests/scancode/test_scancode_bugs_ion_tree_rebuild.py` and `tests/scancode/test_scancode_bugs_inserter_perf_rebuild.py`.
-- comb-rule=2 centralized in `quickice/output/_shared.py:71-83` (single source of truth for the `[defaults]` block; the AGENTS.md no-comb-rule-1 constraint holds).
-- TIP4P-ICE parameters centralized as module constants (`TIP4P_ICE_ALPHA`/`TIP4P_ICE_OW_SIGMA`/`TIP4P_ICE_OW_EPSILON` in `quickice/output/_shared.py:29`, re-exported at `quickice/output/gromacs_writer.py:34`).
+- cKDTree conditional rebuild (rebuild only after successful placement, never on rejection) correctly implemented: `quickice/structure_generation/ion_inserter.py:571,621`; `quickice/structure_generation/solute_inserter.py:971,1046,1051` — regression-tested by `tests/scancode/test_scancode_bugs_ion_tree_rebuild.py` and `tests/scancode/test_scancode_bugs_inserter_perf_rebuild.py`. Rebuilds are amortized per batch (`_ION_BATCH_SIZE = 8` at `ion_inserter.py:567`; buffer-tree merge pattern at `solute_inserter.py:1034-1053`), still strictly success-gated — do not misread a batch rebuild as a rule violation.
+- comb-rule=2 centralized in `quickice/output/_shared.py` (`_write_top_defaults`: source-of-truth docstring `:71-83`, `[defaults]` emission `:132-141`; the AGENTS.md no-comb-rule-1 constraint holds repo-wide — comb-rule=1 appears only in deliberate negative-test fixtures under `quickice/data/custom/test_invalid/`).
+- TIP4P-ICE parameters centralized as module constants (`TIP4P_ICE_ALPHA`/`TIP4P_ICE_OW_SIGMA`/`TIP4P_ICE_OW_EPSILON` defined in `quickice/output/_constants.py:15-30`, re-exported via `quickice/output/_shared.py:28-36` and `quickice/output/gromacs_writer.py:34`).
 - `WATER_ATOMS_PER_MOLECULE` (`quickice/structure_generation/types.py:22`) and `WATER_VOLUME_NM3` (`types.py:39`) are the single sources of truth; `quickice/structure_generation/water_filler.py:20` imports the former (usages at 661, 670). No hardcoded `0.0299`/`4` outside these definitions.
 - Moleculetype `_H`/`_L` suffixing handled by `MoleculetypeRegistry` (`quickice/structure_generation/moleculetype_registry.py`).
 - The 48.3-25 exit-audit CLI export bugs (0-ion orphan `ion.itp` include; mixed built-in guest mislabeling) are FIXED by quick-029 (see Resolved).
-- `quickice/cli/pipeline.py` contains NO bare `except Exception` (verified: zero matches) — the AGENTS.md constraint holds. The one production bare `assert` (`quickice/gui/main_window.py:1354`) is noted under Fragile Areas.
+- `quickice/cli/pipeline.py` contains NO bare `except Exception` (verified: zero matches) — the AGENTS.md constraint holds. The one production bare `assert` (`quickice/gui/main_window.py:1355`) is noted under Fragile Areas.
 
 ## Security Considerations
 
 **Path containment is enforced inconsistently between CLI and GUI:**
-- Risk: CLI validates `--output`, custom `.gro`/`.itp`, and positions CSV stay inside the working directory (`quickice/cli/pipeline.py:163-171, 281-283, 533-542` — SEC-02/04/05 checks). The GUI path has no equivalent containment check — custom molecule `.gro`/`.itp` and guest ITP paths come straight from `QFileDialog` and are read/written without sandboxing (verified: no `Path.resolve()`/`is_relative_to` usage in `quickice/gui/custom_molecule_panel.py` or `quickice/gui/export.py`).
-- Files: `quickice/cli/pipeline.py` (containment present), `quickice/gui/custom_molecule_panel.py`, `quickice/gui/export.py`
+- Risk: CLI validates `--output`, custom `.gro`/`.itp`, and positions CSV stay inside the working directory (`quickice/cli/pipeline.py:163-171, 280-287, 532-547` — SEC-04/05 containment checks; SEC-02 at `:518` is the file-extension check, not containment). A third containment site exists: `quickice/output/orchestrator.py:47-56` (`Path.resolve().is_relative_to`) independently guards the ranked-candidate output path. The GUI path has no equivalent containment check — custom molecule `.gro`/`.itp` and guest ITP paths come straight from `QFileDialog` and are read/written without sandboxing (verified: no `Path.resolve()`/`is_relative_to` usage in `quickice/gui/custom_molecule_panel.py` or `quickice/gui/export.py`).
+- Files: `quickice/cli/pipeline.py` + `quickice/output/orchestrator.py:47-56` (containment present), `quickice/gui/custom_molecule_panel.py`, `quickice/gui/export.py`
 - Current mitigation: CLI is sandboxed; GUI relies on the OS file dialog (user-chosen paths). Low risk for a local scientific tool, but the asymmetry is a latent concern if the GUI is ever exposed to untrusted input.
 - Recommendations: If GUI hardening is ever needed, apply the same `Path.resolve().is_relative_to(cwd)` guard used in the CLI before reading user-supplied `.gro`/`.itp`.
 
-**Broad exception swallowing in CLI ITP export:**
-- Risk: `quickice/cli/itp_helpers.py` catches `except Exception` at **lines 162, 196, 317, 528** and returns/continues on any ITP copy/transform failure, logging only a warning. A malformed user-supplied custom-guest ITP (the GUI path feeds `guest_itp_path` into `copy_custom_guest_itp`) can produce a partial export directory missing a guest ITP, with no raised error. Note: the quick-029 ion-branch catch (:528) is now count-gated (`na_count > 0 or cl_count > 0`) but still broadly catches.
-- Files: `quickice/cli/itp_helpers.py:162, 196, 317, 528`
-- Current mitigation: `copy_custom_guest_itp` (`itp_helpers.py:201-231`) uses the narrower `except (OSError, ValueError)` with an explicit "DO NOT broadly swallow" comment; `quickice/cli/pipeline.py` itself is clean — the AGENTS.md no-bare-except constraint holds.
-- Recommendations: Narrow the four broad catches to `(OSError, ValueError)` and surface a non-zero exit / user-visible error when a required ITP fails to stage, rather than silently omitting it.
+**Broad exception swallowing in CLI ITP export (CLI path only — verification 2026-10-15):**
+- Risk: `quickice/cli/itp_helpers.py` catches `except Exception` at **lines 162, 196, 317, 528** and returns/continues on any ITP copy/transform failure, logging only a warning. A malformed user-supplied custom-guest ITP fed through the **CLI** export path can produce a partial export directory missing a guest ITP, with no raised error. The quick-029 ion-branch catch (:528) is now count-gated (gate `if na_count > 0 or cl_count > 0:` at `:524`) but still broadly catches. **Corrected premise:** `copy_custom_guest_itp` is **CLI-only** — defined and called 5×, all within `itp_helpers.py`, sole importer `quickice/cli/pipeline.py:882`. The GUI does NOT use this helper: its hydrate export stages guest ITPs itself in `quickice/gui/hydrate_export.py:349-359` and *raises* `FileNotFoundError`/`ValueError` on missing ITPs (`:221-224, :296-306`), surfaced as `QMessageBox.critical` via the `:363` handler — no silent omission GUI-side through this mechanism.
+- Files: `quickice/cli/itp_helpers.py:162, 196, 317, 528`; GUI-side partial-output surfaces (different mechanism, see below): `quickice/gui/export.py:326, 500, 698, 777, 866, 983, 1070, 1255`
+- Current mitigation: `copy_custom_guest_itp` (`itp_helpers.py:201-238`) uses the narrower `except (OSError, ValueError)` at `:234` with the explicit "DO NOT broadly swallow" comment at `:236`; `quickice/cli/pipeline.py` itself is clean (all 23 except clauses typed; loosest is `except (OSError, ValueError)` at `:1006`) — the AGENTS.md no-bare-except core-pipeline constraint holds. GUI-side, 8 broad catch-and-dialog sites in `quickice/gui/export.py` are permitted by AGENTS.md for GUI user-facing workflows, but each can yield a partial output directory with only a dialog notice.
+- Recommendations: Narrow the four CLI broad catches to `(OSError, ValueError)` and surface a non-zero exit / user-visible error when a required ITP fails to stage, rather than silently omitting it. GUI-side, consider accumulating per-stage failures into one end-of-export report dialog.
 
 ## Performance Bottlenecks
 
@@ -72,15 +77,15 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 - Improvement path: Replace with `scipy.spatial.distance.pdist(com_arr)` (one C-level call) or a `cKDTree.query_ball_tree` self-query; compare against `min_separation`. This is a warning-only path (placement proceeds regardless), so the cost buys only a log line.
 
 **Per-molecule PBC wrapping loop:**
-- Problem: `wrap_positions_triclinic` (`quickice/structure_generation/water_filler.py:85`, loop at `:112-137`) loops molecule-by-molecule in Python, doing fractional-coordinate conversion + matrix multiplies per molecule (`mol_frac = mol @ inv_cell_T`, COM via `.mean(axis=0)`, back via `mol_frac @ cell.T`).
-- Files: `quickice/structure_generation/water_filler.py:85-144`, plus the same per-molecule pattern in `quickice/output/_pbc.py:62` (`wrap_molecules_into_box`, export path)
+- Problem: `wrap_positions_triclinic` (`quickice/structure_generation/water_filler.py:85`, per-molecule loop at `:112-128`, return at `:130`) loops molecule-by-molecule in Python, doing fractional-coordinate conversion + matrix multiplies per molecule (`mol_frac = mol @ inv_cell_T`, COM via `.mean(axis=0)`, back via `mol_frac @ cell.T`).
+- Files: `quickice/structure_generation/water_filler.py:85-130`, plus the same per-molecule pattern in `quickice/output/_pbc.py:62` (`wrap_molecules_into_box`: triclinic loop `:109-120`, orthogonal loop `:124-166`, export path)
 - Cause: For large boxes (tens of thousands of water molecules) the per-iteration numpy dispatch overhead dominates.
 - Improvement path: Vectorize — reshape to `(n_molecules, atoms_per_molecule, 3)`, batch the `@ inv_cell_T`, compute COM per molecule via `.mean(axis=1)`, apply the floor-shift broadcast, and batch-convert back. (The inserters' cKDTree rebuilds are already conditional/batched — `ion_inserter.py`, `solute_inserter.py` — so they are NOT bottlenecks.)
 
 ## Fragile Areas
 
 **Duck-typed runtime attributes on InterfaceStructure (CP-01, accepted design):**
-- Files: `quickice/gui/main_window.py:950-995`, `quickice/cli/pipeline.py:786-830`
+- Files: `quickice/gui/main_window.py:948-986`, `quickice/cli/pipeline.py:786-830`
 - Why fragile: Both paths mutate a shared `InterfaceStructure` instance in place by setting runtime attributes (`interface.solute_type = ...`, `interface.custom_molecule_positions = ...`, etc.). These are optional/defaulted fields on the dataclass, set by duck-typing on an object that may be reused across steps. A typo in an attribute name silently sets an unused field; no type-checker enforcement.
 - Safe modification: Treat as accepted (per AGENTS.md CP-01 — "NOT a bug"; do NOT "fix"). When adding a new carried-through attribute, add it as a defaulted dataclass field on `InterfaceStructure` (`quickice/structure_generation/types.py`) AND set it in BOTH `main_window.py` and `cli/pipeline.py` propagation blocks, or the two paths will diverge. Never assume an `InterfaceStructure` is immutable across pipeline steps. The same applies to MainWindow `_current_*_result` attributes (accepted cross-tab flow design).
 
@@ -95,17 +100,17 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 - Safe modification: Safe today. If a new guest type is added, this heuristic MUST be updated or callers must pass `guest_type` explicitly (the explicit-`guest_type` path short-circuits before the heuristic). Add a regression test for any new guest before relying on the heuristic.
 
 **multi_molecule_writer lacks try/except cleanup (intentional divergence):**
-- Files: `quickice/output/multi_molecule_writer.py:146-160` (NOTE block preserved verbatim through the 48.1 writer split)
+- Files: `quickice/output/multi_molecule_writer.py:146-156` (NOTE block `:146-155`, un-guarded `with open` write at `:156`; preserved verbatim through the 48.1 writer split)
 - Why fragile: This writer INTENTIONALLY omits the `try/except (OSError, ValueError)` partial-file cleanup block that the other GRO writers have. On a mid-write failure it leaves a partial `.gro` file on disk. The in-code NOTE forbids "fixing" this for byte/behavior identity.
 - Safe modification: Do NOT add try/except here for consistency — it is a deliberate behavior contract. If cleanup parity is ever desired, it must be a coordinated behavior change across all writers with updated byte-equivalence tests.
 
 **Broad `except Exception` in output orchestrator produces partial results silently:**
 - Files: `quickice/output/orchestrator.py:77, 105, 123` (all inside `output_ranked_candidates`, `orchestrator.py:17`)
-- Why fragile: The ranking/export orchestrator catches `except Exception` per-candidate and per-phase-diagram, logs a warning, and continues. A candidate whose PDB write or space-group validation fails is silently dropped from the output list; the caller receives a partial result set with no indication that entries were skipped.
+- Why fragile: The ranking/export orchestrator catches `except Exception` per-candidate and per-phase-diagram, logs a warning, and continues. A candidate whose PDB write or space-group validation fails is silently dropped from the output list; the caller receives a partial result set with no indication that entries were skipped. Verification addendum (2026-10-15): the module defines no module `logger` — it calls root `logging.warning(...)` directly at `orchestrator.py:78, 97, 101, 106, 124` (despite `import logging` at `:7`), so these drop-warnings bypass per-module logging naming and are even easier to miss.
 - Safe modification: Acceptable for a best-effort batch exporter, but callers should check `len(output_files)` against the expected candidate count. Consider accumulating failures into a returned report rather than only logging.
 
 **Bare `assert` in GUI slot (stripped under `python -O`):**
-- Files: `quickice/gui/main_window.py:1354` (`assert result.water_atom_count >= 0, ...`)
+- Files: `quickice/gui/main_window.py:1355` (`assert result.water_atom_count >= 0, ...`; `:1354` is a comment)
 - Why fragile: Under `python -O` / `PYTHONOPTIMIZE=1` this sanity check is silently stripped. Same class as the custom-guest-bridge assert that WAS converted to a real raise (`quickice/structure_generation/custom_guest_bridge.py:367` now raises `RuntimeError`; regression test at `tests/test_scancode_bugs_custom_guest_bridge_assert.py`), but this one is a GUI-only debug check on a required dataclass field, so the risk is much lower.
 - Safe modification: Low priority. If touched, replace with an `if ...: raise ValueError(...)` or a `logger.warning` for consistency with the CRIT-04/bridge-assert pattern.
 
@@ -118,7 +123,7 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 
 **GRO atom-number wraparound at 100,000:**
 - Current capacity: The GRO fixed-width format reserves 5 digits for atom numbers; they wrap modulo 100,000.
-- Limit: `quickice/output/multi_molecule_writer.py:141-143` warns when `n_atoms > 99999` but does NOT prevent the write. Structures above ~99,999 atoms (e.g. a large sII supercell + ions + solutes) get wrapped/duplicate atom numbers in the index column (coordinates remain correct, but the index is ambiguous for tools that rely on it).
+- Limit: `quickice/output/multi_molecule_writer.py:142-144` (check at `:143`) warns when `n_atoms > 99999` but does NOT prevent the write. Structures above ~99,999 atoms (e.g. a large sII supercell + ions + solutes) get wrapped/duplicate atom numbers in the index column (coordinates remain correct, but the index is ambiguous for tools that rely on it).
 - Scaling path: Use a format that supports larger atom counts, or split very large systems. The warning is the only guard; there is no hard cap.
 
 **Custom-positions CSV cap:**
@@ -128,10 +133,11 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 
 ## Dependencies at Risk
 
-**GenIce2 (lazy-imported, required for all ice/hydrate generation):**
-- Risk: The entire source step (`quickice/cli/pipeline.py` source step, `quickice/structure_generation/hydrate_generator.py`, `quickice/structure_generation/generator.py`) depends on GenIce2, imported inside function bodies (never at module top level, per AGENTS.md). Note: since the lazy-`__init__` refactor, the heavy generator→genice2+networkx import chain loads on first attribute/use rather than at `import quickice.structure_generation.*` — same requirement, later failure point.
+**GenIce2 (required for all ice/hydrate generation; lazy EXCEPT in `generator.py`):**
+- Risk: The entire source step (`quickice/cli/pipeline.py` source step, `quickice/structure_generation/hydrate_generator.py`, `quickice/structure_generation/generator.py`) depends on GenIce2. Import placement is MIXED, not uniformly lazy: `hydrate_generator.py` defers genice2 into function bodies (`:79-82`, `:254`) and `pipeline.py` is clean, but **`quickice/structure_generation/generator.py:11-12` imports genice2 at module top level** (`from genice2.plugin import safe_import`, `from genice2.genice import GenIce`) — contradicting AGENTS.md's "never at module top level" invariant (new finding, 2026-10-15 verification). The lazy PEP 562 `__init__` map is currently the ONLY thing keeping `import quickice.structure_generation` light; a direct `import quickice.structure_generation.generator` (e.g. `tests/conftest.py:50`, legitimate there) loads the heavy genice2+networkx chain at import time. Since the lazy-`__init__` refactor, the package-level import defers the chain to first attribute/use — same requirement, later failure point.
 - Impact: All structure generation stops if GenIce2 is unavailable. No vendored fallback.
-- Status: PINNED in `environment.yml` (`genice-core==1.4.3`, `genice2==2.2.13.1`, lines 42-43) — the earlier "pin its version" recommendation is satisfied. Remaining risk is upstream behavioral drift on upgrade; QuickIce remains the sole gatekeeper for `depol_mode` validation (`quickice/structure_generation/types.py:571-598` — GenIce2 accepts any string silently).
+- Status: PINNED in `environment.yml` (`genice-core==1.4.3`, `genice2==2.2.13.1`, lines 42-43) — the earlier "pin its version" recommendation is satisfied. Remaining risk is upstream behavioral drift on upgrade; QuickIce remains the sole gatekeeper for `depol_mode` validation (`quickice/structure_generation/types.py:571-601`, validation gate `:598-601`, "accepts any string silently" comment `:595-597`).
+- Resolution needed: either lazify `generator.py:11-12` (matching `hydrate_generator.py`'s pattern) or amend AGENTS.md's Lazy Imports invariant — code and doc currently disagree.
 
 **scipy (cKDTree, Rotation, UnivariateSpline) — core to inserters and phase diagram:**
 - Risk: `scipy.spatial.cKDTree` and `scipy.spatial.transform.Rotation` are required by both inserters (`quickice/structure_generation/ion_inserter.py`, `quickice/structure_generation/solute_inserter.py`); heavy scipy imports are deferred to first use (slow-gui-startup fix). `quickice/output/phase_diagram.py` has an `ImportError` fallback ONLY for `UnivariateSpline` (degrades to direct sampling, `phase_diagram.py:221-235`); cKDTree/Rotation have no fallback.
@@ -144,7 +150,7 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 - Migration plan: Current mock/skip/heuristic approach is the accepted state. NOTE: AGENTS.md:42's "ROADMAP.md TEST-06 (deferred)" pointer is STALE (current ROADMAP TEST-06 = mixed cage occupancy e2e, DONE at `.planning/ROADMAP.md:261`); the operative guidance is the AGENTS.md Testing section itself (see Tech Debt — AGENTS.md drift).
 
 **iapws (IAPWS97) — phase diagram liquid-vapor curve only:**
-- Risk: `quickice/output/phase_diagram.py:949` imports `IAPWS97` inside the function; per-temperature `except Exception` (`:953-957`) swallows failures and logs a warning, producing a partial/empty liquid-vapor curve. (quick-027 additionally upgraded the IAPWS failure logging in `quickice/gui/phase_diagram_widget.py` from debug to warning.)
+- Risk: `quickice/output/phase_diagram.py:949` imports `IAPWS97` inside the function; per-temperature `except Exception` (`:953-957`) swallows failures and logs a warning, producing a partial/empty liquid-vapor curve. (quick-027 additionally upgraded the IAPWS failure logging from debug to warning — the code now lives in `quickice/gui/phase_diagram_canvas.py:81` and `:483` after the widget/canvas split; quick-027's summary cites the pre-split `phase_diagram_widget.py:82/:484`, which line-aligns exactly with today's canvas.py.)
 - Impact: Only the phase-diagram plot degrades; structure generation is unaffected.
 - Migration plan: Optional dependency (pinned `iapws==1.5.5`, `environment.yml:45`). Leave the soft-fail behavior.
 
@@ -152,19 +158,19 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 
 **CLI custom-guest mixed cage occupancy:**
 - Problem: The CLI surface for `--cage-guest` is built-in-only (CH4/THF). Custom-guest mixed occupancy via the CLI is deferred BY DESIGN (`.planning/ROADMAP.md:229` documents CLI-02 as GUI-only for v4.7).
-- Files: `quickice/cli/pipeline.py:59-107` (`_parse_cage_guest_args` at `:59`; rejects non-built-in guests at `:105` with "Custom-guest CLI support is deferred (use the GUI for mixed occupancy).")
+- Files: `quickice/cli/pipeline.py:59-107` (`_parse_cage_guest_args` at `:59`; built-in-only rejection raise at `:103-107`, message at `:105-106`: "Custom-guest CLI support is deferred (use the GUI for custom-guest mixed occupancy).")
 - Blocks: CLI users cannot specify a custom guest `.gro`/`.itp` for mixed cage occupancy; they must use the GUI. The GUI already supports it via the explicit `cage_guest_assignments` API (`quickice/structure_generation/types.py`), and the Python API path is covered by CLI-side e2e tests (`tests/e2e/custom_guest/`, `tests/test_cli/test_mixed_cage_cli.py`).
 
 ## Test Coverage Gaps
 
 **GROMACS (grompp) validation skipped when `gmx` is absent:**
-- What's not tested: Topology correctness is validated by `gmx grompp` only when `gmx` is on PATH. The `gmx_skipif` marker (`tests/conftest.py:44`) gates **133** usages across the suite (e2e trees `tests/e2e/<feature>/`, `tests/test_cli/test_pipeline_grompp_matrix.py`, `tests/e2e/export_validation/`).
+- What's not tested: Topology correctness is validated by `gmx grompp` only when `gmx` is on PATH. The `gmx_skipif` marker (`tests/conftest.py:44`) gates **99** usages across the suite — 98 `@gmx_skipif` decorators (23 class-level, covering multi-test classes such as `test_e2e_gmx_validation.py`) plus one module-level `pytestmark` at `tests/test_cli/test_pipeline_grompp_matrix.py:77`. (The previously quoted 133 is the raw count of `gmx_skipif` string occurrences in `tests/`: 98 decorators + 31 imports + 1 definition + 1 pytestmark + 2 comments/docstring mentions.)
 - Risk: On a machine WITHOUT gmx, byte-equivalence of `.gro`/`.top` is still checked, but actual GROMACS-parseable topology correctness is NOT. A top file that is byte-identical to a baseline but semantically broken would pass file-diff tests yet fail grompp.
 - Mitigation status: In THIS environment `gmx 2023.5` (plumed-2.9.3 build) IS on PATH, so the grompp gates actually run here; the skip only bites on gmx-less machines. The 48.3-25 true-e2e audit plus quick-029 keep widening grompp-validated real-export coverage (e.g. `tests/e2e/solute_ion/test_e2e_mixed_ion_export.py`, `tests/e2e/solute_ion/test_e2e_cli_zero_ion_export.py`, `tests/e2e/hydrate/test_e2e_cli_mixed_builtin_hydrate_grompp.py`).
 - Priority: Medium-low (environment-dependent).
 
 **pytest-qt not installed — 2 permanently skipped tests:**
-- What's not tested: `tests/test_solute_insertion.py:237, 251` carry `@pytest.mark.skip(reason="pytest-qt not installed in test environment")` — Qt-interaction coverage for the solute insertion UI path never runs. `pytest-qt` is not in `environment.yml`.
+- What's not tested: `tests/test_solute_insertion.py:237, 251` carry `@pytest.mark.skip(reason="pytest-qt not installed in test environment")` — Qt-interaction coverage for the solute insertion UI path never runs. `pytest-qt` is not in `environment.yml`. Related reproducibility gap (new finding, 2026-10-15 verification): pytest itself is not pinned in `environment.yml` either (no pytest / pytest-qt / pytest-timeout entries) — the test framework's exact version is whatever is ad hoc in the conda env.
 - Files: `tests/test_solute_insertion.py:237, 251`
 - Risk: Solute-panel Qt signal/slot regressions go uncaught; the skipped tests also silently rot as the surrounding code evolves.
 - Priority: Low-medium. Either add `pytest-qt` to `environment.yml` (requires user approval per AGENTS.md) or delete the dead tests.
@@ -175,7 +181,7 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 - Priority: Low (GUI rendering, not physics correctness). This is the residual behind the (stale) AGENTS.md "TEST-06 deferred" pointer.
 
 **`python -O` / `PYTHONOPTIMIZE=1` code path:**
-- What's not tested: No test suite runs the pipeline with `PYTHONOPTIMIZE=1` to confirm no asserts are load-bearing. One bare assert remains in production code (`quickice/gui/main_window.py:1354`); the previous `custom_guest_bridge.py` assert was converted to a real raise (regression test `tests/test_scancode_bugs_custom_guest_bridge_assert.py` exists).
+- What's not tested: No test runs the FULL CLI pipeline end-to-end under `PYTHONOPTIMIZE=1`. (Correction, 2026-10-15 verification: a targeted stripped-assert check DOES exist — `tests/scancode/test_scancode_bugs_pipeline.py:83` spawns a `python -O` subprocess and verifies `_validate_hydrate_atom_counts` still raises `ValueError` when asserts are stripped, with a source-guard test at `:67-81` preventing reversion.) One bare assert remains in production code (`quickice/gui/main_window.py:1355`); the previous `custom_guest_bridge.py` assert was converted to a real raise (regression test `tests/test_scancode_bugs_custom_guest_bridge_assert.py` exists).
 - Risk: Minimal — the remaining assert is a GUI debug check on a required dataclass field.
 - Priority: Low.
 
@@ -203,7 +209,7 @@ No actively-crashing bugs were found in the analyzed source. Verified invariants
 10. **True-e2e audit gaps** — 48.3-25 fixed the incomplete mixed-ion export mirror + added grompp validation (`tests/e2e/solute_ion/test_e2e_mixed_ion_export.py`); the e2e suite lives in the feature tree `tests/e2e/<feature>/` (chains, custom_guest, export_validation, hydrate, interface, lattice, solute_ion) with shared fixtures in `tests/e2e_chain_fixtures.py` and `tests/e2e_export_helpers.py`.
 11. **Byte-eq baselines buried in `.planning/`** — moved to `tests/_baselines/` with `__file__`-relative loading (48.3-18).
 
-Also verified clean this audit: no TODO/FIXME/HACK comments in `quickice/` or root Python files (the only "XXX" match is the legitimate `GENERIC_RESIDUE_NAMES` set in `quickice/structure_generation/molecule_validator.py:18`); no hardcoded TIP4P-ICE parameters or `0.0299`/`4` water magic numbers outside their single sources of truth; no comb-rule violations; test collection is **1849 tests / 0 errors** (QT_QPA_PLATFORM=offscreen, 1.11s collect).
+Also verified clean this audit: no TODO/FIXME/HACK comments in `quickice/` or root Python files (the only "XXX" match is the legitimate `GENERIC_RESIDUE_NAMES` set in `quickice/structure_generation/molecule_validator.py:18`); no hardcoded TIP4P-ICE parameters or `0.0299`/`4` water magic numbers outside their single sources of truth; no comb-rule violations; test collection is **1849 tests / 0 errors** (QT_QPA_PLATFORM=offscreen; ~1-2s collect, re-run at verification).
 
 ---
 
