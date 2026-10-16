@@ -424,8 +424,8 @@ Planned 2026-09-03 (25 plans / 8 waves); execution COMPLETE 2026-09-04 (25/25). 
 
 Plans:
 - [x] 48.4-01-PLAN.md — CLI export hardening: narrow the 4 broad ITP-staging catches to (OSError, ValueError) + fail export rc=1 when a #include'd ITP is missing from the output dir (post-staging reconciliation in _run_export_step; true-e2e partial-export guard) — DONE 2026-10-16 (eb9dba53 + 03c0b70f)
-- [ ] 48.4-02-PLAN.md — Vectorize the place_custom COM-COM overlap warning via cKDTree.count_neighbors (finite-filtered self-query, byte-identical "K of N" message; ~117 s → seconds at the 10k CSV cap; scancode equivalence + perf/memory gates)
-- [ ] 48.4-03-PLAN.md — Two-token exception-chaining fix in the GenIce GRO parse guard (as e + from e, __cause__ pinned) + phase-final full-suite gate (1850 baseline + ~15 new tests)
+- [x] 48.4-02-PLAN.md — Vectorize the place_custom COM-COM overlap warning via cKDTree.count_neighbors (finite-filtered self-query, byte-identical "K of N" message; ~117 s → seconds at the 10k CSV cap; scancode equivalence + perf/memory gates) — DONE 2026-10-16 (243c8345)
+- [x] 48.4-03-PLAN.md — Two-token exception-chaining fix in the GenIce GRO parse guard (as e + from e, __cause__ pinned) + phase-final full-suite gate (1850 baseline + ~15 new tests) — DONE 2026-10-16 (04fbe006; gate: 1865 collected / 0 errors, 1863 passed / 2 skipped / 0 failed, exit 0, 207 s)
 
 **Details:**
 All items independently verified against code 2026-10-15 (read-only audit, 74 claims checked; file:line cites audit-verified):
@@ -458,7 +458,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
 | 48.2. Group and cleanup tests (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-07-22 |
 | 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 25/25 | ✓ Complete | 2026-09-04 |
-| 48.4. Audit follow-ups — CLI export correctness + inserter perf (INSERTED) | v4.7 | 1/3 | In progress | — |
+| 48.4. Audit follow-ups — CLI export correctness + inserter perf (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-10-16 |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
