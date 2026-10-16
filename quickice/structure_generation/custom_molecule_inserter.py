@@ -1095,13 +1095,29 @@ class CustomMoleculeInserter:
         # molecules close together; the warning is informational.
         if n_molecules >= 2:
             com_arr = np.array(positions, dtype=np.float64)
-            total_pairs = n_molecules * (n_molecules - 1) // 2
-            n_close_pairs = 0
-            for i in range(n_molecules):
-                for j in range(i + 1, n_molecules):
-                    if np.linalg.norm(com_arr[i] - com_arr[j]) < self.config.min_separation:
-                        n_close_pairs += 1
+            # Lazy import (AGENTS.md): scipy is heavy — never at module top.
+            from scipy.spatial import cKDTree
+            # cKDTree requires finite data; the CLI CSV parser's float()
+            # accepts 'nan'/'inf' (pipeline.py _parse_positions_csv).
+            # Non-finite rows were never "close" under the old loop
+            # (nan/inf < min_sep is False), so filtering them out
+            # preserves semantics exactly. Empty/single-row finite
+            # subsets are handled by the formula ((count - n)//2 == 0).
+            finite = com_arr[np.isfinite(com_arr).all(axis=1)]
+            tree = cKDTree(finite)
+            # count_neighbors on the same tree = n_finite self-pairs +
+            # 2 x unordered close pairs (verified on scipy 1.17.1).
+            # NOTE: the radius is inclusive (d <= r) vs the old strict
+            # '<' — a measure-zero difference for real CSV data,
+            # documented + pinned in test_boundary_distance_documented_inclusive.
+            n_close_pairs = (
+                tree.count_neighbors(tree, self.config.min_separation)
+                - len(finite)
+            ) // 2
             if n_close_pairs > 0:
+                # Denominator over ALL placements (incl. any non-finite
+                # rows) — matches the old message + pinned 'K of N' format.
+                total_pairs = n_molecules * (n_molecules - 1) // 2
                 logger.warning(
                     "place_custom: %d of %d molecule pair(s) have COM-COM "
                     "distance < %.3f nm (min_separation) — possible overlap "

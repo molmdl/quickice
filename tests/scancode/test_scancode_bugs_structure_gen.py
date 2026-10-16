@@ -452,3 +452,219 @@ class TestSUSP06PlaceCustomWarning:
                 positions=[(1.0, 1.0, 1.0), (2.0, 2.0, 2.0)],
                 rotations=[(0.0, 0.0, 0.0)],  # length mismatch
             )
+
+
+# ── 48.4: vectorized SUSP-06 scan (cKDTree.count_neighbors) ──────────────────
+
+
+class TestSUSP06VectorizedScan:
+    """Phase 48.4: pins the ``cKDTree.count_neighbors`` vectorization semantics
+    of the SUSP-06 COM-COM overlap warning scan in ``place_custom``.
+
+    The O(n^2) pure-Python double loop (~117 s at the 10,000-row CSV cap) was
+    replaced by a finite-filtered ``cKDTree.count_neighbors`` self-query
+    (~11 ms, O(1) memory). These tests pin exactly what "behavior preserved"
+    means:
+
+    1. The warning count matches the OLD strict-'<' double loop on continuous
+       random fixtures (no pair sits at exactly the boundary ⇒ strict '<' and
+       the inclusive KDTree radius agree).
+    2. The KDTree radius is INCLUSIVE (d <= r) vs the old loop's strict '<' —
+       an accepted, measure-zero semantic change, pinned at an exactly-
+       representable dyadic boundary distance.
+    3. NaN/Inf rows are tolerated by the scan and never counted as close pairs
+       (old semantics: ``nan/inf < min_sep`` is False), while the 'K of N'
+       denominator still counts ALL placements.
+    4. Adversarial all-identical-points inputs complete with the exact
+       C(n, 2) count using O(1) memory (guards against regression to a
+       ``query_pairs`` pair-set implementation).
+
+    NOTE (last content of this file, 48.4-02): plan 48.4-03 will append its
+    own class after this one (same-file sequencing, append-only).
+    """
+
+    @staticmethod
+    def _brute_close_count(positions, min_sep):
+        """Reference oracle: the OLD strict-'<' double loop (SUSP-06 pre-48.4)."""
+        n = len(positions)
+        arr = np.asarray(positions, dtype=np.float64)
+        count = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                if np.linalg.norm(arr[i] - arr[j]) < min_sep:
+                    count += 1
+        return count
+
+    def test_vectorized_count_matches_brute_force(self, tmp_path, caplog):
+        """Equivalence: the vectorized scan's warning count K equals the OLD
+        strict-'<' double-loop oracle on a seeded mixed fixture, and the 'K of
+        N' denominator is C(n, 2).
+
+        Continuous random floats make exact-boundary pairs impossible, so the
+        old strict-'<' and the new inclusive-'<=' radius oracles agree exactly
+        on this fixture — this is the "no pair sits at exactly the boundary"
+        equivalence claim for real data.
+        """
+        import re
+
+        rng = np.random.default_rng(20261016)
+        n = 300
+        positions = rng.uniform(0.0, 4.0, (n, 3)).tolist()
+        min_sep = 0.3
+
+        expected_close = self._brute_close_count(positions, min_sep)
+        assert expected_close > 0, (
+            "fixture must produce at least one close pair to be meaningful "
+            f"(got {expected_close}); re-seed or rescale the box"
+        )
+
+        inserter = _make_custom_inserter(tmp_path, min_separation=min_sep)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=positions,
+                rotations=[(0.0, 0.0, 0.0)] * n,
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 1, (
+            f"expected exactly 1 aggregated 'possible overlap' WARNING, got "
+            f"{[r.getMessage() for r in overlap_records]}"
+        )
+        match = re.search(r"(\d+) of (\d+)", overlap_records[0].getMessage())
+        assert match is not None
+        k_reported, n_reported = int(match.group(1)), int(match.group(2))
+        assert k_reported == expected_close, (
+            f"vectorized scan reported {k_reported} close pairs; brute-force "
+            f"oracle says {expected_close}"
+        )
+        assert n_reported == n * (n - 1) // 2, (
+            f"denominator must be C({n},2)={n * (n - 1) // 2}, got {n_reported}"
+        )
+
+    def test_boundary_distance_documented_inclusive(self, tmp_path, caplog):
+        """Documents + pins the accepted measure-zero semantic change: the new
+        ``cKDTree.count_neighbors`` radius is INCLUSIVE (d <= r) while the old
+        strict-'<' loop was EXCLUSIVE — so a pair at EXACTLY
+        ``min_separation`` IS counted as close post-fix ("1 of 1") where the
+        old code emitted no warning (RED pre-fix, GREEN post-fix).
+
+        The boundary pair uses DYADIC (exactly representable in binary64)
+        coordinates: 1.25 - 1.0 = 0.25 exactly, and ``np.linalg.norm`` of the
+        difference is exactly 0.25 (empirically verified in-env). Dyadic
+        values put the pair at the boundary in BOTH worlds (old: 0 of 1 → no
+        warning; new: inclusive radius → "1 of 1"), sidestepping the floating-
+        point ULP trap entirely — e.g. (1.0, 1.3) with min_separation=0.3 is
+        NOT a boundary pair at all: 1.3 is not representable and
+        1.3 - 1.0 = 0.30000000000000004 > 0.3, so the pair is counted by
+        NEITHER the old strict loop NOR the inclusive radius. ``np.nextafter``
+        contortion was rejected per research: KDTree distances differ from
+        ``np.linalg.norm`` in the last ULP anyway, so "bit-exact" is illusory.
+
+        Real CSV distances are continuous random floats, so exact-boundary
+        pairs have measure zero in practice.
+        """
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.25)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0), (1.25, 1.0, 1.0)],  # exactly 0.25 nm
+                rotations=[(0.0, 0.0, 0.0)] * 2,
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 1, (
+            "inclusive radius must count the exact-boundary pair as close: "
+            f"expected 1 warning, got {[r.getMessage() for r in overlap_records]}"
+        )
+        assert "1 of 1" in overlap_records[0].getMessage(), (
+            f"expected '1 of 1' in message: {overlap_records[0].getMessage()!r}"
+        )
+
+    def test_nan_and_inf_rows_scan_tolerates_and_counts_only_valid(
+        self, tmp_path, caplog
+    ):
+        """NaN/Inf rows: pin the SCAN semantics only — the scan must tolerate
+        non-finite rows without crashing, count ONLY the valid close pair
+        ("1 of 6": denominator C(4,2) = 6 counts ALL placements, including the
+        non-finite rows), and fire that warning BEFORE the downstream
+        finite-data rejection.
+
+        This test is a regression PIN that holds pre- AND post-48.4 (it is
+        NOT a RED test): the OLD scan loop also tolerated NaN/Inf rows
+        (``nan < min_sep`` is False) and emitted "1 of 6", then the SAME
+        pre-existing downstream ValueError fired. The vectorized scan
+        REQUIRES the ``np.isfinite`` filter to preserve that behavior —
+        without it, cKDTree would newly crash (``ValueError: data must be
+        finite``) on inputs the old loop tolerated; the filter is semantically
+        required, not defensive sugar.
+
+        OUT OF 48.4 SCOPE: after the scan, ``place_custom`` calls
+        ``_remove_overlapping_water`` (custom_molecule_inserter.py:1117-1127),
+        which builds ``cKDTree(custom_molecule_positions)`` over the PLACED
+        atoms (:532-534). With NaN/Inf COMs the placed atoms are non-finite,
+        so cKDTree raises ``ValueError: data must be finite...`` in BOTH pre-
+        and post-fix states — a PRE-EXISTING downstream rejection that this
+        phase does not fix. The raise below is that downstream rejection, NOT
+        the vectorization crashing.
+        """
+        nan = float("nan")
+        inf = float("inf")
+        positions = [
+            (nan, nan, nan),
+            (inf, inf, inf),
+            (1.0, 1.0, 1.0),
+            (1.1, 1.0, 1.0),  # 0.1 nm from the previous row -> the 1 close pair
+        ]
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            with pytest.raises(ValueError, match="finite"):
+                inserter.place_custom(
+                    iface, positions=positions, rotations=[(0.0, 0.0, 0.0)] * 4
+                )
+        # The scan warning fired BEFORE the downstream finite-data rejection:
+        scan_records = [r for r in caplog.records if "1 of 6" in r.getMessage()]
+        assert scan_records, (
+            "the '1 of 6' scan warning must fire before the downstream "
+            "_remove_overlapping_water finite-data ValueError"
+        )
+
+    def test_all_identical_positions_adversarial_memory(self, tmp_path, caplog):
+        """Adversarial all-identical-points input: n=50 molecules at one point
+        must report exactly C(50,2) = "1225 of 1225" and complete with trivial
+        memory. Guards against regression to a ``query_pairs`` implementation,
+        which would materialize 1225 pair tuples here and ~50M tuples at the
+        10,000-row CSV cap (``count_neighbors`` counts in O(1) memory and
+        never materializes the pair set).
+        """
+        n = 50
+        inserter = _make_custom_inserter(tmp_path, min_separation=0.3)
+        iface = _make_minimal_interface()
+        with caplog.at_level(logging.WARNING, logger=_SUSP06_LOGGER):
+            inserter.place_custom(
+                iface,
+                positions=[(1.0, 1.0, 1.0)] * n,  # all COMs identical
+                rotations=[(0.0, 0.0, 0.0)] * n,
+            )
+        overlap_records = [
+            r for r in caplog.records
+            if r.levelno >= logging.WARNING
+            and "possible overlap" in r.getMessage()
+        ]
+        assert len(overlap_records) == 1, (
+            f"expected exactly 1 aggregated 'possible overlap' WARNING, got "
+            f"{[r.getMessage() for r in overlap_records]}"
+        )
+        assert "1225 of 1225" in overlap_records[0].getMessage(), (
+            f"all-identical points must report C(50,2)=1225 close pairs: "
+            f"{overlap_records[0].getMessage()!r}"
+        )
