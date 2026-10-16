@@ -149,7 +149,8 @@ def _copy_itp_with_atomtypes_commented(source: Path, dest: Path) -> str | None:
         dest: Destination ITP file path.
 
     Returns:
-        Destination filename if copied successfully, None on failure.
+        Destination filename; raises (OSError, ValueError) on staging failure
+        (I/O, undecodable content) — 48.4 hardening.
     """
     from quickice.output.gromacs_writer import comment_out_atomtypes_in_itp
 
@@ -159,9 +160,9 @@ def _copy_itp_with_atomtypes_commented(source: Path, dest: Path) -> str | None:
         dest.write_text(modified)
         logger.info(f"ITP copied with atomtypes commented: {dest}")
         return dest.name
-    except Exception as e:
-        logger.warning(f"Failed to copy ITP with atomtypes commented ({source}): {e}")
-        return None
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to copy ITP with atomtypes commented ({source}): {e}")
+        raise
 
 
 def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
@@ -177,7 +178,9 @@ def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
         guest_type: Guest molecule type ('ch4' or 'thf').
 
     Returns:
-        ITP filename if copied successfully, None on failure.
+        ITP filename if copied successfully. Returns None ONLY on missing
+        bundled source (FileNotFoundError, first catch); raises
+        (OSError, ValueError) otherwise — 48.4 hardening.
     """
     from quickice.output.gromacs_writer import transform_guest_itp
 
@@ -193,9 +196,9 @@ def _copy_hydrate_guest_itp(output_dir: Path, guest_type: str) -> str | None:
     except FileNotFoundError:
         logger.warning(f"Hydrate guest ITP file not found for guest_type={guest_type!r}")
         return None
-    except Exception as e:
-        logger.warning(f"Failed to copy hydrate guest ITP (guest_type={guest_type!r}): {e}")
-        return None
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to copy hydrate guest ITP (guest_type={guest_type!r}): {e}")
+        raise
 
 
 def copy_custom_guest_itp(output_dir: Path, itp_path: Path, residue_name: str) -> str | None:
@@ -314,8 +317,9 @@ def copy_itp_files_for_structure(
         tip4p_dest = output_dir / "tip4p-ice.itp"
         shutil.copy(tip4p_source, tip4p_dest)
         copied.append("tip4p-ice.itp")
-    except Exception as e:
-        logger.warning(f"Failed to copy tip4p-ice.itp: {e}")
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to copy tip4p-ice.itp: {e}")
+        raise
 
     if step_name == "ice":
         # Ice step: only tip4p-ice.itp needed (already copied)
@@ -525,8 +529,9 @@ def copy_itp_files_for_structure(
             try:
                 write_ion_itp(str(output_dir / "ion.itp"), na_count, cl_count)
                 copied.append("ion.itp")
-            except Exception as e:
-                logger.warning(f"Failed to generate ion.itp: {e}")
+            except (OSError, ValueError) as e:
+                logger.error(f"Failed to generate ion.itp: {e}")
+                raise
         else:
             logger.info("0 ions — skipping ion.itp generation")
 
