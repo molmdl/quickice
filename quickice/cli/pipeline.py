@@ -9,6 +9,7 @@ No GUI imports — this module works without PySide6/VTK.
 import argparse
 import csv
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -998,6 +999,28 @@ class CLIPipeline:
             itp_files = copy_itp_files_for_structure(
                 self._output_dir, structure, step_name, hydrate_config=hydrate_config
             )
+
+            # 48.4 hardening: the .top is already written — every #include'd
+            # ITP must exist in the output dir. One invariant closes every
+            # silent-omission path (helper-None or narrow-catch skip) in
+            # staging. Model: tests/e2e_export_helpers.py::assert_itp_completeness
+            # (never import test code into production — scan re-implemented).
+            # ion.itp needs NO special case: when the .top includes it,
+            # write_ion_itp already wrote it into this same output dir.
+            top_includes = re.findall(
+                r'^\s*#include\s+"([^"]+)"',
+                Path(top_path).read_text(),
+                re.MULTILINE,
+            )
+            missing_itps = [
+                name for name in top_includes
+                if not (self._output_dir / name).exists()
+            ]
+            if missing_itps:
+                raise ValueError(
+                    f"Export incomplete: {step_name}.top #includes missing "
+                    f"ITP file(s): {missing_itps}"
+                )
 
             report_progress(
                 f"Exported GROMACS: {step_name}.gro, {step_name}.top, "
