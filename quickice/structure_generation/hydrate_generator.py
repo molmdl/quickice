@@ -335,8 +335,8 @@ class HydrateStructureGenerator:
         
         try:
             n_atoms = int(lines[1].strip())
-        except (IndexError, ValueError):
-            raise RuntimeError("Invalid GRO format from GenIce2")
+        except (IndexError, ValueError) as e:
+            raise RuntimeError("Invalid GRO format from GenIce2") from e
         
         # Parse atom lines (lines 2 to n_atoms+1)
         positions = []

@@ -668,3 +668,26 @@ class TestSUSP06VectorizedScan:
             f"all-identical points must report C(50,2)=1225 close pairs: "
             f"{overlap_records[0].getMessage()!r}"
         )
+
+
+# ── 48.4: explicit exception chaining in the GRO parse guard ──────────────────
+
+class TestGROParseGuardChaining:
+    """48.4 audit fold-in: the 'Invalid GRO format from GenIce2' RuntimeError
+    explicitly chains the original IndexError/ValueError via 'as e' + 'from e'
+    (no test pinned the chain before; this is pure regression value — richer
+    tracebacks, identical control flow)."""
+
+    def test_invalid_gro_raises_with_explicit_cause(self):
+        gen = HydrateStructureGenerator()
+        # Second line must parse as int atom count; "XX" -> ValueError.
+        with pytest.raises(RuntimeError, match="Invalid GRO format from GenIce2"):
+            gen._parse_gro_result("bad gro\nXX\n")
+        # Re-raise and inspect the chain directly.
+        with pytest.raises(RuntimeError) as excinfo:
+            gen._parse_gro_result("bad gro\nXX\n")
+        assert isinstance(excinfo.value.__cause__, ValueError), (
+            f"explicit __cause__ expected (ValueError), got "
+            f"{excinfo.value.__cause__!r} — 'as e' + 'from e' both required: "
+            "the pre-48.4 except clause bound no 'e' at all"
+        )
