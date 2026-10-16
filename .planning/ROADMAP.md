@@ -416,10 +416,28 @@ May fold in the deferred Phase 48.2 follow-ups (full e2e grouping of 42 files, f
 
 Planned 2026-09-03 (25 plans / 8 waves); execution COMPLETE 2026-09-04 (25/25). Final gate report: .planning/phases/48.3-revise-tests-true-e2e/48.3-VERIFICATION.md
 
+#### Phase 48.4: Audit follow-ups — CLI export correctness + inserter perf (INSERTED)
+
+**Goal:** Close the verified Level-1 findings from the 2026-10 codebase audit (`.planning/codebase/CONCERNS.md`): CLI exports can no longer silently omit a required staged ITP (partial-export hardening), the O(n²) custom-molecule overlap scan is vectorized so large CSV placements no longer stall, plus one cosmetic exception-chaining fix folded in
+**Depends on:** Phase 48.3 (post-milestone insertion — no functional dependency; targets CLI export + inserter code on current main)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 48.4 to break down)
+
+**Details:**
+All items independently verified against code 2026-10-15 (read-only audit, 74 claims checked; file:line cites audit-verified):
+
+1. **CLI silent partial exports (correctness — L1):** `quickice/cli/itp_helpers.py` catches `except Exception` at **:162, :196, :317, :528** and returns/continues with only a logged warning — a malformed user-supplied custom-guest ITP fed through the CLI export path yields a partial export directory missing a guest ITP, with no raised error. The quick-029 ion-branch catch (:528) is count-gated (`na_count > 0 or cl_count > 0` at `:524`) but still broad. Fix: narrow all four to `except (OSError, ValueError)` (the pattern `copy_custom_guest_itp` already uses at `:234`) and surface a non-zero exit / user-visible error when a required ITP fails to stage. GUI path unaffected (stages ITPs itself in `quickice/gui/hydrate_export.py:349-359` and raises).
+2. **O(n²) COM-COM overlap warning loop (performance — L1):** `quickice/structure_generation/custom_molecule_inserter.py:1090-1107` (nested loop `:1100-1102`) — at `MAX_CSV_ROWS = 10000` (`quickice/cli/pipeline.py:21`) ≈ 50M pure-Python iterations for a warning-only path (placement proceeds regardless). Fix: single `scipy.spatial.distance.pdist(com_arr)` call (or cKDTree self-query), compared against `min_separation`.
+3. **Cosmetic fold-in:** `quickice/structure_generation/hydrate_generator.py:339` raises `RuntimeError` inside `except (IndexError, ValueError)` without an explicit `from e` — inconsistent with the `from e` wrappers at `hydrate_generator.py:324-327`, `generator.py:150`, `interface_builder.py:370`. Fix opportunistically while the file is touched.
+
+**Out of scope (decided 2026-10-16, recorded in CONCERNS.md):** GRO >99,999 atom-index wraparound stays warn-only (user decision — `gmx grompp` matches atom order vs `.top`; GROMACS supports very large systems); Level-2 robustness/perf items (PBC wrapping vectorization, orchestrator failure report + module logger, GUI end-of-export failure report) deferred to a possible 48.5; god-object refactor deferred. Quick tasks 031 (genice2 lazy-import fix) + 032 (AGENTS.md drift, scancode moves, debug-doc filing, Water-Count-Debug removal) already executed 2026-10-16 — this phase covers the remaining code-level audit work.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1** → **48.2** → **48.3**
+Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 → **44.1** → 45 → 46 → 47 → 48 → **48.1** → **48.2** → **48.3** → **48.4**
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -438,6 +456,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42 → 43 → 44 �
 | 48.1. Split gromacs_writer.py + dedup GRO writers (INSERTED) | v4.7 | 14/14 | ✓ Complete | 2026-07-21 |
 | 48.2. Group and cleanup tests (INSERTED) | v4.7 | 3/3 | ✓ Complete | 2026-07-22 |
 | 48.3. Revise Tests for True E2E Before User Test (INSERTED) | v4.7 | 25/25 | ✓ Complete | 2026-09-04 |
+| 48.4. Audit follow-ups — CLI export correctness + inserter perf (INSERTED) | v4.7 | 0/TBD | Not planned | — |
 
 **v4.7 status after reorganization:** Phase 48.1 COMPLETE — all 14 plans (48.1-01..48.1-14) done, all 10 waves done. FRAG-03 (split gromacs_writer.py monolith) + TD-01 (dedup GRO writers) BOTH complete and verified. gromacs_writer.py is an 87-line thin re-export shim; ALL 12 writers in per-structure modules; 10 DRY GRO helpers in _gro_format.py; [defaults] block DRY-extracted to _shared._write_top_defaults (3 format variants A/B/C); all scancode regressions preserved (Group 1/5/8); 1840 tests collected, 243 targeted regression PASSED, 0 new failures. **Phases 38-48.1 ALL COMPLETE** — v4.7 milestone requirements 63/63 complete (FRAG-03/TD-01 was the last remaining scancode item). PR notes drafted for manual opening (gh unavailable); branch `refactor/frag03-split-gromacs-writer` ready for user to push + open PR via https://github.com/molmdl/quickice/compare/main...refactor/frag03-split-gromacs-writer. The 2 doc-hygiene gaps logged by the 48-14 verification sweep (gro-itp-guide.md:3,9 stale v4.5 intro; README.md:17 lone 3-lattice list) were FIXED by orchestrator correction commit 1923ab9.
 
@@ -495,9 +514,13 @@ Phase 48.2 (INSERTED)
       ▼
 Phase 48.3 (INSERTED)
   (revise tests for true e2e — GUI + CLI, before user acceptance test)
+       │
+       ▼
+Phase 48.4 (INSERTED)
+  (audit follow-ups — CLI export correctness + inserter perf)
 ```
 
-*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42). Phase 48.1 (INSERTED) is the gromacs_writer.py split + GRO-writer dedup refactor (FRAG-03/TD-01) — executed after Phase 48 on a PR branch. Phase 48.2 (INSERTED) is test-suite hygiene (regroup scancode/e2e files, dedup fixtures, drop legacy names) — executes after 48.1 since several cleanup items (dropping the `phase_48_1_` prefix, organizing the 17 scancode regression files) are post-refactor hygiene. Phase 48.3 (INSERTED) is a complete revision of the test suite and e2e tests for both GUI and CLI so that a passing e2e is a real pass of the workflow — executes after 48.2, before the next manual full-workflow acceptance test.
+*Phase 43 (Depol Mode) executed after Phase 38, parallel with Phases 39-42. Phase 46 (VTK Rendering) requires no new plans — VTK-01/VTK-02 satisfied by 42-04 + the existing element map. Phase 44.1 (INSERTED) handles urgent cross-tab custom-guest issues discovered during 44-02 acceptance testing (Pitfall 6 engine relaxation + Interface tab export wiring) — executes between 44 and 45. Phase 45/47 are reduced to single plans each after reorganization (most stubs were delivered as vertical slices inside 39-42). Phase 48.1 (INSERTED) is the gromacs_writer.py split + GRO-writer dedup refactor (FRAG-03/TD-01) — executed after Phase 48 on a PR branch. Phase 48.2 (INSERTED) is test-suite hygiene (regroup scancode/e2e files, dedup fixtures, drop legacy names) — executes after 48.1 since several cleanup items (dropping the `phase_48_1_` prefix, organizing the 17 scancode regression files) are post-refactor hygiene. Phase 48.3 (INSERTED) is a complete revision of the test suite and e2e tests for both GUI and CLI so that a passing e2e is a real pass of the workflow — executes after 48.2, before the next manual full-workflow acceptance test. Phase 48.4 (INSERTED) closes the verified Level-1 audit concerns from `.planning/codebase/CONCERNS.md` (CLI silent-partial-export hardening + O(n²) overlap-scan vectorization + one cosmetic `from e` fix) — executes after 48.3.
 
 ---
 
