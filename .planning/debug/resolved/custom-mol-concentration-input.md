@@ -1,5 +1,6 @@
 ---
-status: analyzed
+status: resolved
+resolution: "Fix verified in code on 2026-10-15 - see .planning/codebase/CONCERNS.md (Stale-open debug documents + investigation remnants)."
 trigger: "Custom molecule random mode lacks concentration input/calculation functionality. User wants to either input concentration (and see calculated molecule count) or input molecule count (and see calculated concentration). The solute insertion workflow already has this functionality - custom mol random mode should follow the same pattern."
 created: 2026-05-10T00:00:00Z
 updated: 2026-05-10T00:01:00Z

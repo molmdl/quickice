@@ -9,7 +9,7 @@
 ## Run Commands
 
 ```bash
-pytest                          # All tests (~1846)
+pytest                          # All tests (1850)
 pytest tests/test_foo.py        # Single file
 pytest -k "test_pbc"            # Match by name
 pytest -x                       # Stop on first failure
@@ -39,7 +39,7 @@ MainWindow stores results as `_current_*_result` attributes. Duck-typing sets ru
 
 - **Never auto-install dependencies.** Add to `environment.yml`, seek approval, wait for user.
 - **Never make up references or data.** Always verify sources. Document limitations explicitly. If you must guess, explicitly label it as a guess. After verifying a reference, show it to the user and seek approval before including it in the codebase.
-- **Headless/remote VTK:** GUI tests require `QT_QPA_PLATFORM=offscreen` on machines without a display. VTK rendering may still crash in some headless environments — mock or skip VTK-dependent tests if needed. See ROADMAP.md TEST-06 (deferred).
+- **Headless/remote VTK:** GUI tests require `QT_QPA_PLATFORM=offscreen` on machines without a display. VTK rendering may still crash in some headless environments — mock or skip VTK-dependent tests if needed. The accepted approach: `QT_QPA_PLATFORM=offscreen` is enforced at session start by `tests/conftest.py`; MainWindow-level tests force a localhost `DISPLAY` (e.g. `DISPLAY=localhost:11.0`) so the `is_vtk_available()` SSH-X11 heuristic (`quickice/gui/vtk_utils.py`) returns False, and VTK-render-dependent branches are mocked or skipped headless.
 - **No bare `except Exception`** in core pipeline code (`quickice/cli/pipeline.py`). Use `except (ValueError, OSError)` or more specific. GUI code may use broad catches for user-facing workflows.
 - **comb-rule=2** (Lorentz-Berthelot) in ALL GROMACS `.top` files — AMBER/GAFF2 convention. Never use comb-rule=1.
 - **Never hardcode TIP4P-ICE parameters.** Use module constants (`TIP4P_ICE_OW_SIGMA` / `TIP4P_ICE_OW_EPSILON` in `quickice/output/gromacs_writer.py`). For verification, check `quickice/data/tip4p-ice.itp` or the original literature (Abascal et al. 2005, DOI: 10.1063/1.1931662).

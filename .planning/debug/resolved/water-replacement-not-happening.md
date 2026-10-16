@@ -1,5 +1,6 @@
 ---
-status: investigating
+status: resolved
+resolution: "Fix verified in code on 2026-10-15 - see .planning/codebase/CONCERNS.md (Stale-open debug documents + investigation remnants)."
 trigger: "water-replacement-not-happening"
 created: 2026-05-09T00:00:00Z
 updated: 2026-05-09T00:00:03Z

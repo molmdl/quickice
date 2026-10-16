@@ -1,5 +1,6 @@
 ---
-status: diagnosed
+status: resolved
+resolution: "Fix verified in code on 2026-10-15 - see .planning/codebase/CONCERNS.md (Stale-open debug documents + investigation remnants)."
 trigger: "custom-mol-water-count-missing"
 created: 2026-05-09T00:00:00Z
 updated: 2026-05-09T00:00:00Z

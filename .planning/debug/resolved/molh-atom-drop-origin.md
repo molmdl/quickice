@@ -1,5 +1,6 @@
 ---
-status: verifying
+status: resolved
+resolution: "Fix verified in code on 2026-10-15 - see .planning/codebase/CONCERNS.md (Stale-open debug documents + investigation remnants)."
 trigger: "Determine definitively whether committed fix (b990d151) resolves the real UAT failure (864 MOL_H × 6 atoms = 5184, 2592 atoms physically dropped), or whether a second atom-dropping bug exists that the prior agent missed."
 created: 2026-08-05T00:00:00
 updated: 2026-08-05T02:45:00Z

@@ -1,7 +1,7 @@
 # Deferred UAT Testing: v3.0 Interface Generation
 
 **Created:** 2026-04-09
-**Status:** Pending execution
+**Status:** SUPERSEDED (2026-10-16) — supplanted by the six UAT workflow scripts in `.planning/uat-workflows/` (A/B/C/D/E/G — no F), dry-ran green by quick task 030; retained for historical reference only
 **Purpose:** Comprehensive GUI testing for all v3.0 phases after milestone completion
 
 ---

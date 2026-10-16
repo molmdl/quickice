@@ -1,5 +1,6 @@
 ---
-status: verifying
+status: resolved
+resolution: "Fix verified in code on 2026-10-15 - see .planning/codebase/CONCERNS.md (Stale-open debug documents + investigation remnants)."
 trigger: "When using 'hydrate -> custom -> solute' workflow with custom source, the liquid region in 3D viewer shows ONLY the inserted solute, NOT the custom molecule. However, 'ice -> custom -> solute' works correctly and shows both custom molecule and solute."
 created: 2026-05-10T00:00:00Z
 updated: 2026-05-10T00:11:00Z
