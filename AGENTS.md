@@ -53,7 +53,7 @@ MainWindow stores results as `_current_*_result` attributes. Duck-typing sets ru
 ## Testing
 
 - **pytest** with default discovery (no `pytest.ini` or `pyproject.toml`).
-- Test files: `test_*.py` (unit), `tests/e2e/<feature>/test_e2e_*.py` (e2e), `test_scancode_bugs_*.py` (regression).
+- Test files: `test_*.py` (unit), `tests/e2e/<feature>/test_e2e_*.py` (e2e), `tests/scancode/test_scancode_bugs_*.py` (scancode regression).
 - Non-collected helpers: no `test_` prefix (e.g., `e2e_export_helpers.py`).
 - GROMACS-dependent tests use `@gmx_skipif` marker (skip if `gmx` not on PATH).
 - Module-scoped fixtures amortize GenIce2 calls — measured ~17ms (ice_ih 96-mol), ~60ms (sH 2³), ~360ms (sII 3³) per call; amortization is still conventional but no longer load-bearing for runtime.
