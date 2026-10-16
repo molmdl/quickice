@@ -8,9 +8,6 @@ import time
 
 import numpy as np
 
-from genice2.plugin import safe_import
-from genice2.genice import GenIce
-
 from quickice.structure_generation.mapper import (
     get_genice_lattice_name,
     calculate_supercell,
@@ -98,6 +95,11 @@ class IceStructureGenerator:
             QuickIce is designed for sequential execution and does not support
             concurrent generation.
         '''
+        # Lazy import per AGENTS.md (no top-level GenIce2) — quick-031.
+        # ONCE at method top, before the try block (like hydrate_generator.py:254-255).
+        from genice2.plugin import safe_import
+        from genice2.genice import GenIce
+
         # Save global random state BEFORE try block - ensures restoration even on exception
         # GenIce uses np.random internally (see genice2/genice.py lines 58, 816, 1072)
         original_state = np.random.get_state()

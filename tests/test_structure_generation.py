@@ -750,3 +750,52 @@ class TestHydrateStructureToCandidate:
         assert 'C' in candidate.atom_names, "Carbon atoms should be in candidate"
         assert candidate.metadata['guest_count'] == 2, "Should have 2 guests"
         assert candidate.metadata['guest_type_counts'] == {'ch4': 1, 'thf': 1}
+
+
+class TestLazyGenIceImports:
+    """Import-lightness guard: importing the generator module must not load GenIce2.
+
+    RED-first evidence (quick-031, verified 2026-10-15): before the fix,
+    ``quickice/structure_generation/generator.py:11-12`` imported
+    ``genice2.plugin`` and ``genice2.genice`` at module top level, so a direct
+    ``import quickice.structure_generation.generator`` (legitimate at
+    ``tests/conftest.py:50``) pulled the full genice2+networkx chain into
+    sys.modules. The fix defers both imports into
+    ``IceStructureGenerator._generate_single``. This test FAILS on the
+    pre-fix code and PASSES after (AGENTS.md Lazy Imports invariant).
+
+    The assertion runs in a SUBPROCESS (fresh interpreter): sibling tests in
+    this file legitimately load genice2 at generation time in the shared
+    pytest process, so an in-process ``sys.modules`` check would be
+    order-fragile. A fresh interpreter isolates the module import itself.
+    """
+
+    def test_module_import_does_not_load_genice2(self):
+        """A fresh interpreter importing the module must NOT have genice2 in sys.modules."""
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        repo_root = Path(__file__).resolve().parents[1]
+        probe = (
+            "import sys; "
+            "import quickice.structure_generation.generator; "
+            "loaded = [m for m in sys.modules "
+            "          if m == 'genice2' or m.startswith('genice2.')]; "
+            "assert not loaded, f'genice2 loaded at import time: {loaded}'"
+        )
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(repo_root) + os.pathsep + env.get("PYTHONPATH", "")
+        result = subprocess.run(
+            [sys.executable, "-c", probe],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=str(repo_root),
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"generator module import is not genice2-light "
+            f"(rc={result.returncode}):\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        )
